@@ -16,7 +16,7 @@ class AwsExplorerToolWindow : ToolWindowFactory, DumbAware {
         val resources = AwsResourceManager.getInstance(project)
         val s3DetailsView = S3BucketDetailView()
         val s3DetailsController = S3BucketDetailController(resources, s3DetailsView)
-        val mainEventHandler = AwsExplorerMainEventHandler(s3DetailsController)
+        val mainEventHandler = AwsExplorerMainEventHandler(project, s3DetailsController)
         val mainView = AwsExplorerMainView(mainEventHandler, s3DetailsView)
         val mainController = AwsExplorerMainController(resources, mainView)
         mainController.load()

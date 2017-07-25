@@ -24,6 +24,9 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <toolWindow id="AWS Explorer" anchor="bottom" factoryClass="com.amazonaws.intellij.ui.explorer.AwsExplorerToolWindow" icon="/icons/aws-box.gif"/>
+
+    <fileEditorProvider implementation="com.amazonaws.intellij.ui.s3.S3BucketViewerProvider"/>
+    <fileTypeFactory implementation="com.amazonaws.intellij.aws.s3.S3FileTypeFactory"/>
   </extensions>
 
   <actions>
