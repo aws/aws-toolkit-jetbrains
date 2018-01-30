@@ -82,10 +82,10 @@ class S3BucketViewerPanel(private val project: Project, private val s3bucket: S3
             }
 
             val selectedFile = selectedFiles[0]
-            when (selectedFile) {
-                is S3BucketVirtualFile -> details = BucketDetailsPanel(project, selectedFile).component
-                is S3VirtualFile -> details = ObjectDetailsPanel(selectedFile).component
-                else -> details = null
+            details = when (selectedFile) {
+                is S3BucketVirtualFile -> BucketDetailsPanel(project, selectedFile).component
+                is S3VirtualFile -> ObjectDetailsPanel(selectedFile).component
+                else -> null
             }
         }
     }
