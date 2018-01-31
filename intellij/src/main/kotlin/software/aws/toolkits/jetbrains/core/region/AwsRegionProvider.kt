@@ -10,6 +10,8 @@ import com.google.common.collect.ImmutableMap
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import software.amazon.awssdk.core.regions.Region
+import software.amazon.awssdk.core.regions.RegionMetadata
 import software.aws.toolkits.jetbrains.utils.notifyException
 import java.io.IOException
 

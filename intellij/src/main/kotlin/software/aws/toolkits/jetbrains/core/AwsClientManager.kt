@@ -5,8 +5,6 @@ import com.amazonaws.services.codecommit.AWSCodeCommit
 import com.amazonaws.services.codecommit.AWSCodeCommitClientBuilder
 import com.amazonaws.services.lambda.AWSLambda
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.credentials.AwsCredentialsProfileProvider
@@ -21,7 +19,7 @@ class AwsClientManager(private val project: Project) {
 
     companion object {
         private val serviceClientBuilder = mapOf(
-                AmazonS3::class to AmazonS3ClientBuilder.standard(),
+//                AmazonS3::class to AmazonS3ClientBuilder.standard(),
                 AWSLambda::class to AWSLambdaClientBuilder.standard(),
                 AWSCodeCommit::class to AWSCodeCommitClientBuilder.standard()
                 //TODO more clients go here

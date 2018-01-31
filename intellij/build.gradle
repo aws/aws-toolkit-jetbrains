@@ -22,7 +22,7 @@ dokka {
 }
 
 dependencies {
-    compile "com.amazonaws:aws-java-sdk-s3:$awsSdkVersion"
+    compile "software.amazon.awssdk:s3:$awsSdk2Version"
     compile "com.amazonaws:aws-java-sdk-lambda:$awsSdkVersion"
     compile "com.amazonaws:aws-java-sdk-iam:$awsSdkVersion"
     compile "com.amazonaws:aws-java-sdk-codecommit:$awsSdkVersion"

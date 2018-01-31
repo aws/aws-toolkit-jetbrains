@@ -1,6 +1,7 @@
 package software.aws.toolkits.jetbrains.actions
 
 
+import com.amazonaws.services.lambda.AWSLambda
 import com.amazonaws.services.lambda.model.InvokeRequest
 import com.intellij.lang.Language
 import com.intellij.notification.Notification
@@ -10,8 +11,8 @@ import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
-import software.aws.toolkits.jetbrains.aws.AwsResourceManager
 import software.aws.toolkits.jetbrains.aws.lambda.LambdaCreatorFactory
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.ui.LAMBDA_SERVICE_ICON_LARGE
 import software.aws.toolkits.jetbrains.ui.modals.UploadToLambdaModal
 import java.nio.ByteBuffer
@@ -33,11 +34,11 @@ class UploadLambdaFunction : AnAction() {
         }
 
         val uploadModal = UploadToLambdaModal(project, psi) { functionDetails ->
-            LambdaCreatorFactory.create(AwsResourceManager.getInstance(project)).createLambda(functionDetails, project) {
+            LambdaCreatorFactory.create(AwsClientManager.getInstance(project)).createLambda(functionDetails, project) {
                 val notificationListener = NotificationListener { notification, event ->
                     val input = JOptionPane.showInputDialog(null, "Input", "Run ${functionDetails.name}", JOptionPane.PLAIN_MESSAGE, LAMBDA_SERVICE_ICON_LARGE, null, null)
                     val invoke = InvokeRequest().withFunctionName(functionDetails.name).withPayload(ByteBuffer.wrap("\"$input\"".toByteArray()))
-                    val res = AwsResourceManager.getInstance(project).lambdaClient().invoke(invoke)
+                    val res = AwsClientManager.getInstance(project).getClient<AWSLambda>().invoke(invoke)
                     JOptionPane.showMessageDialog(null, String(res.payload.array()), null, JOptionPane.PLAIN_MESSAGE, LAMBDA_SERVICE_ICON_LARGE)
                 }
                 Notifications.Bus.notify(Notification("AWS Toolkit", "AWS Lambda Created", "${functionDetails.name} created <a href=\"$it\">run it</a>", NotificationType.INFORMATION, notificationListener))

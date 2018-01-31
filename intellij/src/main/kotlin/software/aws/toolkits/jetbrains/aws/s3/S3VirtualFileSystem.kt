@@ -1,29 +1,26 @@
 package software.aws.toolkits.jetbrains.aws.s3
 
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.*
 import com.intellij.openapi.util.io.FileTooBigException
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileListener
 import com.intellij.openapi.vfs.VirtualFileSystem
 import com.intellij.util.PathUtil
+import software.amazon.awssdk.core.regions.Region
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.*
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-class S3VirtualFileSystem(val s3Client: AmazonS3) : VirtualFileSystem() {
+class S3VirtualFileSystem(val s3Client: S3Client) : VirtualFileSystem() {
     override fun deleteFile(requestor: Any?, vFile: VirtualFile) {
         TODO("not implemented")
     }
 
-    override fun getProtocol(): String {
-        return "s3"
-    }
+    override fun getProtocol() = "s3"
 
-    fun getBuckets(): List<S3BucketVirtualFile> {
-        return s3Client.listBuckets().map { S3BucketVirtualFile(this, it) }
-    }
+    fun getBuckets(): List<S3BucketVirtualFile> = s3Client.listBuckets().buckets().map { S3BucketVirtualFile(this, it) }
 
     override fun createChildDirectory(requestor: Any?, vDir: VirtualFile, dirName: String): VirtualFile {
         TODO("not implemented")
@@ -51,7 +48,12 @@ class S3VirtualFileSystem(val s3Client: AmazonS3) : VirtualFileSystem() {
 
     override fun removeVirtualFileListener(listener: VirtualFileListener) {}
 
-    override fun copyFile(requestor: Any?, virtualFile: VirtualFile, newParent: VirtualFile, copyName: String): VirtualFile {
+    override fun copyFile(
+        requestor: Any?,
+        virtualFile: VirtualFile,
+        newParent: VirtualFile,
+        copyName: String
+    ): VirtualFile {
         TODO("not implemented")
     }
 
@@ -65,7 +67,7 @@ class S3VirtualFileSystem(val s3Client: AmazonS3) : VirtualFileSystem() {
 }
 
 class S3BucketVirtualFile(private val fileSystem: S3VirtualFileSystem, private val bucket: Bucket) : VirtualFile() {
-    override fun getName(): String = bucket.name
+    override fun getName(): String = bucket.name()
 
     override fun getFileSystem() = fileSystem
 
@@ -79,39 +81,48 @@ class S3BucketVirtualFile(private val fileSystem: S3VirtualFileSystem, private v
 
     override fun getParent() = null
 
-    val versioningEnabled by lazy { versioningStatus != BucketVersioningConfiguration.OFF }
+    val versioningEnabled by lazy { versioningStatus == BucketVersioningStatus.ENABLED }
 
-    val versioningStatus by lazy { fileSystem.s3Client.getBucketVersioningConfiguration(bucket.name).status }
+    val versioningStatus by lazy { fileSystem.s3Client.getBucketVersioning{it.bucket(bucket.name())}.status() }
 
     val region: Region? by lazy {
-        try {
-            Region.fromValue(fileSystem.s3Client.getBucketLocation(bucket.name))
-        } catch (e: IllegalArgumentException) {
-            null
-        }
+        //TODO: Implement me
+//        try {
+//            Region.of(fileSystem.s3Client.getBucketLocation(bucket.name))
+//        } catch (e: IllegalArgumentException) {
+//            null
+//        }
+        null
     }
 
     override fun getChildren(): Array<VirtualFile> {
         val s3Client = fileSystem.s3Client
 
-        val request = ListObjectsV2Request()
-                .withBucketName(bucket.name)
-                .withDelimiter("/")
+        val request = ListObjectsV2Request.builder().bucket(bucket.name()).delimiter("/").build()
         val children = arrayListOf<VirtualFile>()
+        var continuationToken: String? = null
 
         do {
-            val result = s3Client.listObjectsV2(request)
+            val result = s3Client.listObjectsV2(request.copy({ it.continuationToken(continuationToken) }))
 
-            children.addAll(result.commonPrefixes.map { S3VirtualDirectory(fileSystem, result.bucketName, it, this) })
-            children.addAll(result.objectSummaries.map {
-                if (it.key.endsWith("/")) {
-                    S3VirtualDirectory(fileSystem, bucket.name, it.key, this)
+            children.addAll(result.commonPrefixes().map {
+                S3VirtualDirectory(
+                    fileSystem,
+                    result.name(),
+                    it.prefix(),
+                    this
+                )
+            })
+
+            children.addAll(result.contents().map {
+                if (it.key().endsWith("/")) {
+                    S3VirtualDirectory(fileSystem, bucket.name(), it.key(), this)
                 } else {
-                    S3VirtualFile(fileSystem, it, this)
+                    S3VirtualFile(fileSystem, it, bucket.name(), this)
                 }
             })
 
-            request.continuationToken = result.nextContinuationToken
+            continuationToken = result.nextContinuationToken()
         } while (result.isTruncated)
 
         return children.toTypedArray()
@@ -133,7 +144,7 @@ class S3BucketVirtualFile(private val fileSystem: S3VirtualFileSystem, private v
         throw IOException("getInputStream() cannot be called against a bucket")
     }
 
-    override fun getTimeStamp() = bucket.creationDate.time
+    override fun getTimeStamp() = bucket.creationDate().toEpochMilli()
 
     override fun getLength() = -1L
 
@@ -145,28 +156,18 @@ class S3BucketVirtualFile(private val fileSystem: S3VirtualFileSystem, private v
         if (this === other) {
             return true
         }
-        if (other?.javaClass != javaClass) {
-            return false
-        }
-
-        other as S3BucketVirtualFile
-
-        if (bucket.name != other.bucket.name) {
-            return false
-        }
-
-        return true
+        return other is S3BucketVirtualFile && bucket.name() == other.bucket.name()
     }
 
-    override fun hashCode(): Int {
-        return bucket.name.hashCode()
-    }
+    override fun hashCode() = bucket.name().hashCode()
 }
 
-abstract class BaseS3VirtualObject(protected val s3FileSystem: S3VirtualFileSystem,
-                                   val bucketName: String,
-                                   val key: String,
-                                   private val _parent: VirtualFile) : VirtualFile() {
+abstract class BaseS3VirtualObject(
+    protected val s3FileSystem: S3VirtualFileSystem,
+    val bucketName: String,
+    val key: String,
+    private val _parent: VirtualFile
+) : VirtualFile() {
     override fun getName() = PathUtil.getFileName(key)
 
     override fun getFileSystem() = s3FileSystem
@@ -201,31 +202,33 @@ abstract class BaseS3VirtualObject(protected val s3FileSystem: S3VirtualFileSyst
     }
 }
 
-class S3VirtualDirectory(s3FileSystem: S3VirtualFileSystem, bucketName: String, private val directory: String, private val _parent: VirtualFile)
-    : BaseS3VirtualObject(s3FileSystem, bucketName, directory, _parent) {
+class S3VirtualDirectory(
+    s3FileSystem: S3VirtualFileSystem,
+    bucketName: String,
+    directory: String,
+    parent: VirtualFile
+) : BaseS3VirtualObject(s3FileSystem, bucketName, directory, parent) {
     override fun getChildren(): Array<VirtualFile> {
         val s3Client = fileSystem.s3Client
-        val request = ListObjectsV2Request()
-                .withBucketName(bucketName)
-                .withPrefix(key)
-                .withDelimiter("/")
+        val request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).delimiter("/").build()
         val children = arrayListOf<VirtualFile>()
+        var continuationToken: String? = null
 
         do {
-            val result = s3Client.listObjectsV2(request)
+            val result = s3Client.listObjectsV2(request.copy { it.continuationToken(continuationToken) })
 
-            children.addAll(result.commonPrefixes.map { S3VirtualDirectory(fileSystem, result.bucketName, it, this) })
-            children.addAll(result.objectSummaries
-                    .filterNot { it.key == key }
-                    .map {
-                        if (it.key.endsWith("/")) {
-                            S3VirtualDirectory(fileSystem, bucketName, it.key, this)
-                        } else {
-                            S3VirtualFile(fileSystem, it, this)
-                        }
-                    })
+            children.addAll(result.commonPrefixes().map { S3VirtualDirectory(fileSystem, bucketName, it.prefix(), this) })
+            children.addAll(result.contents()
+                .filterNot { it.key() == key }
+                .map {
+                    if (it.key().endsWith("/")) {
+                        S3VirtualDirectory(fileSystem, bucketName, it.key(), this)
+                    } else {
+                        S3VirtualFile(fileSystem, it, bucketName, this)
+                    }
+                })
 
-            request.continuationToken = result.nextContinuationToken
+            continuationToken = result.nextContinuationToken()
         } while (result.isTruncated)
 
         return children.toTypedArray()
@@ -259,12 +262,16 @@ class S3VirtualDirectory(s3FileSystem: S3VirtualFileSystem, bucketName: String, 
     override fun getModificationStamp() = -1L
 }
 
-class S3VirtualFile(s3FileSystem: S3VirtualFileSystem, private val obj: S3ObjectSummary, private val _parent: VirtualFile)
-    : BaseS3VirtualObject(s3FileSystem, obj.bucketName, obj.key, _parent) {
-    val eTag: String
-        get() = obj.eTag
+class S3VirtualFile(
+    s3FileSystem: S3VirtualFileSystem,
+    private val obj: S3Object,
+    bucketName: String,
+    _parent: VirtualFile
+) : BaseS3VirtualObject(s3FileSystem, bucketName, obj.key(), _parent) {
 
-    override fun getChildren(): Array<VirtualFile> = arrayOf<VirtualFile>()
+    val eTag: String get() = obj.eTag()
+
+    override fun getChildren(): Array<VirtualFile> = arrayOf()
 
     @Throws(IOException::class)
     override fun getOutputStream(requestor: Any, newModificationStamp: Long, newTimeStamp: Long): OutputStream {
@@ -277,16 +284,15 @@ class S3VirtualFile(s3FileSystem: S3VirtualFileSystem, private val obj: S3Object
 
     @Throws(IOException::class)
     override fun contentsToByteArray(): ByteArray {
-        if (FileUtilRt.isTooLarge(obj.size)) {
+        if (FileUtilRt.isTooLarge(obj.size())) {
             throw FileTooBigException(path)
         }
-        return inputStream.readBytes(obj.size.toInt())
+        return inputStream.readBytes(obj.size().toInt())
     }
 
     @Throws(IOException::class)
-    override fun getInputStream(): InputStream {
-        return fileSystem.s3Client.getObject(obj.bucketName, obj.key).objectContent
-    }
+    override fun getInputStream() =
+        fileSystem.s3Client.getObject(GetObjectRequest.builder().bucket(bucketName).key(obj.key()).build())
 
     override fun isDirectory() = key.endsWith("/")
 
@@ -294,9 +300,9 @@ class S3VirtualFile(s3FileSystem: S3VirtualFileSystem, private val obj: S3Object
 
     override fun isValid() = true
 
-    override fun getTimeStamp() = obj.lastModified.time
+    override fun getTimeStamp() = obj.lastModified().toEpochMilli()
 
-    override fun getLength() = obj.size
+    override fun getLength() = obj.size()
 
     override fun getModificationStamp() = -1L
 }
