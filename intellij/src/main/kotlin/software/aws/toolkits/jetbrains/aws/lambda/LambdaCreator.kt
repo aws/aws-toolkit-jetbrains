@@ -1,9 +1,5 @@
 package software.aws.toolkits.jetbrains.aws.lambda
 
-import com.amazonaws.services.lambda.AWSLambda
-import com.amazonaws.services.lambda.model.CreateFunctionRequest
-import com.amazonaws.services.lambda.model.FunctionCode
-import com.amazonaws.services.lambda.model.Runtime
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.compiler.CompilerManager
 import com.intellij.openapi.project.Project
@@ -11,6 +7,10 @@ import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import software.amazon.awssdk.services.lambda.LambdaClient
+import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest
+import software.amazon.awssdk.services.lambda.model.FunctionCode
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -46,7 +46,7 @@ class LambdaCreator(
     }
 }
 
-class LambdaFunctionCreator(private val lambdaClient: AWSLambda) {
+class LambdaFunctionCreator(private val lambdaClient: LambdaClient) {
     fun create(
         details: LambdaFunction,
         codeObjectKey: String,
@@ -54,18 +54,19 @@ class LambdaFunctionCreator(private val lambdaClient: AWSLambda) {
         onComplete: (String) -> Unit
     ) {
         ApplicationManager.getApplication().executeOnPooledThread {
-            val code = FunctionCode().withS3Bucket(details.s3Bucket.name()).withS3Key(codeObjectKey)
+            val code = FunctionCode.builder().s3Bucket(details.s3Bucket.name()).s3Key(codeObjectKey)
             if (codeObjectVersion != null) {
-                code.withS3ObjectVersion(codeObjectVersion)
+                code.s3ObjectVersion(codeObjectVersion)
             }
-            val req = CreateFunctionRequest()
-                .withHandler(details.handler)
-                .withFunctionName(details.name)
-                .withRole(details.iamRole.arn)
-                .withRuntime(Runtime.Java8)
-                .withCode(code)
+            val req = CreateFunctionRequest.builder()
+                .handler(details.handler)
+                .functionName(details.name)
+                .role(details.iamRole.arn)
+                .runtime(Runtime.JAVA8)
+                .code(code.build())
+                .build()
             val result = lambdaClient.createFunction(req)
-            onComplete(result.functionArn)
+            onComplete(result.functionArn())
         }
     }
 }

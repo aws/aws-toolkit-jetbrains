@@ -1,7 +1,5 @@
 package software.aws.toolkits.jetbrains.ui.modals
 
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagement
-import com.amazonaws.services.identitymanagement.model.CreateRoleRequest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -10,6 +8,8 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Computable
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
+import software.amazon.awssdk.services.iam.IAMClient
+import software.amazon.awssdk.services.iam.model.CreateRoleRequest
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.jetbrains.aws.*
@@ -19,9 +19,14 @@ import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.*
 
-class UploadToLambdaModal(private val project: Project, private val psi: PsiFile, private val okHandler: (LambdaFunction) -> Unit) : DialogWrapper(project) {
+class UploadToLambdaModal(
+    private val project: Project,
+    private val psi: PsiFile,
+    private val okHandler: (LambdaFunction) -> Unit
+) : DialogWrapper(project) {
     private val clientManager = AwsClientManager.getInstance(project)
-    private val view = UploadToLambdaModalView(UploadToLambdaModalEventHandler(clientManager.getClient(), clientManager.getClient()))
+    private val view =
+        UploadToLambdaModalView(UploadToLambdaModalEventHandler(clientManager.getClient(), clientManager.getClient()))
 
     init {
         super.init()
@@ -35,7 +40,10 @@ class UploadToLambdaModal(private val project: Project, private val psi: PsiFile
     }
 
     override fun doValidate(): ValidationInfo? {
-        if (view.functionName().isNullOrBlank()) return ValidationInfo("Function Name must be specified", view.functionName)
+        if (view.functionName().isNullOrBlank()) return ValidationInfo(
+            "Function Name must be specified",
+            view.functionName
+        )
         if (view.handler().isNullOrBlank()) return ValidationInfo("Handler must be specified", view.handlerPicker)
         if (view.iamRole() == null) return ValidationInfo("Iam role must be specified", view.iamRolePicker)
         if (view.s3Bucket() == null) return ValidationInfo("S3 bucket must be specified", view.s3BucketPicker)
@@ -45,25 +53,40 @@ class UploadToLambdaModal(private val project: Project, private val psi: PsiFile
 
     override fun doOKAction() {
         super.doOKAction()
-        okHandler(LambdaFunction(name = view.functionName()!!, handler = view.handler()!!, iamRole = view.iamRole()!!, s3Bucket = view.s3Bucket()!!, description = view.description()!!))
+        okHandler(
+            LambdaFunction(
+                name = view.functionName()!!,
+                handler = view.handler()!!,
+                iamRole = view.iamRole()!!,
+                s3Bucket = view.s3Bucket()!!,
+                description = view.description()!!
+            )
+        )
     }
 
 }
 
-class UploadToLambdaController(private val view: UploadToLambdaModalView, private val psi: PsiFile, private val clientManager: AwsClientManager) {
+class UploadToLambdaController(
+    private val view: UploadToLambdaModalView,
+    private val psi: PsiFile,
+    private val clientManager: AwsClientManager
+) {
     fun load() {
         populatePicker({ findPossibleFunctions() },
-                { handlers -> view.updateAvailableHandlers(handlers) },
-                { enable -> view.enableHandlerPicker(enable) })
+            { handlers -> view.updateAvailableHandlers(handlers) },
+            { enable -> view.enableHandlerPicker(enable) })
 
-        populatePicker({ clientManager.getClient<AmazonIdentityManagement>().listRoles().roles.filterNotNull().map { IamRole(name = it.roleName, arn = it.arn) } },
-                { roles -> view.updateIamRoles(roles) },
-                { enable -> view.enableIamRolesPicker(enable) }
+        populatePicker({
+            clientManager.getClient<IAMClient>().listRoles().roles().filterNotNull()
+                .map { IamRole(name = it.roleName(), arn = it.arn()) }
+        },
+            { roles -> view.updateIamRoles(roles) },
+            { enable -> view.enableIamRolesPicker(enable) }
         )
 
         populatePicker({ clientManager.getClient<S3Client>().listBuckets().buckets().filterNotNull() },
-                { buckets -> view.updateBuckets(buckets) },
-                { enable -> view.enableBucketPicker(enable) }
+            { buckets -> view.updateBuckets(buckets) },
+            { enable -> view.enableBucketPicker(enable) }
         )
     }
 
@@ -90,9 +113,10 @@ class UploadToLambdaController(private val view: UploadToLambdaModalView, privat
     }
 }
 
-class UploadToLambdaModalEventHandler(private val s3Client: S3Client, private val iamClient: AmazonIdentityManagement) {
+class UploadToLambdaModalEventHandler(private val s3Client: S3Client, private val iamClient: IAMClient) {
     fun createS3BucketClicked(source: UploadToLambdaModalView) {
-        val bucketName = JOptionPane.showInputDialog(source, "S3 Bucket Name:", "Create S3 Bucket", JOptionPane.PLAIN_MESSAGE)
+        val bucketName =
+            JOptionPane.showInputDialog(source, "S3 Bucket Name:", "Create S3 Bucket", JOptionPane.PLAIN_MESSAGE)
         if (bucketName != null) run {
             s3Client.createBucket { it.bucket(bucketName) }
         }
@@ -101,7 +125,7 @@ class UploadToLambdaModalEventHandler(private val s3Client: S3Client, private va
     fun createIamRoleClicked(source: UploadToLambdaModalView) {
         val iamRole = JOptionPane.showInputDialog(source, "Role Name:", "Create IAM Role", JOptionPane.PLAIN_MESSAGE)
         if (iamRole != null) run {
-            iamClient.createRole(CreateRoleRequest().withRoleName(iamRole))
+            iamClient.createRole { it.roleName(iamRole) }
         }
     }
 }
@@ -144,7 +168,13 @@ class UploadToLambdaModalView(private val eventHandler: UploadToLambdaModalEvent
         createS3Bucket.addActionListener { eventHandler.createS3BucketClicked(this) }
     }
 
-    private fun constraint(x: Int, y: Int, width: Int = 1, fillHorizontal: Boolean = true, alignLeft: Boolean = true): GridBagConstraints {
+    private fun constraint(
+        x: Int,
+        y: Int,
+        width: Int = 1,
+        fillHorizontal: Boolean = true,
+        alignLeft: Boolean = true
+    ): GridBagConstraints {
         val c = GridBagConstraints()
         if (fillHorizontal) {
             c.fill = GridBagConstraints.HORIZONTAL

@@ -22,10 +22,16 @@ dokka {
 }
 
 dependencies {
-    compile "software.amazon.awssdk:s3:$awsSdk2Version"
-    compile "com.amazonaws:aws-java-sdk-lambda:$awsSdkVersion"
-    compile "com.amazonaws:aws-java-sdk-iam:$awsSdkVersion"
-    compile "com.amazonaws:aws-java-sdk-codecommit:$awsSdkVersion"
+    compile("software.amazon.awssdk:s3:$awsSdk2Version") {
+        exclude group: 'org.slf4j'
+    }
+    compile("software.amazon.awssdk:lambda:$awsSdk2Version") {
+        exclude group: 'org.slf4j'
+    }
+    compile("software.amazon.awssdk:iam:$awsSdk2Version") {
+        exclude group: 'org.slf4j'
+    }
+    compile "com.amazonaws:aws-java-sdk-core:$awsSdkVersion"
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.8.0'
 }
