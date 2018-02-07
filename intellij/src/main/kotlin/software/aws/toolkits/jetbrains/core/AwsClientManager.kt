@@ -13,9 +13,9 @@ import software.amazon.awssdk.core.client.builder.SyncClientBuilder
 import software.amazon.awssdk.core.regions.Region
 import software.amazon.awssdk.http.apache.ApacheSdkHttpClientFactory
 import software.amazon.awssdk.services.s3.S3ClientBuilder
+import software.aws.toolkits.jetbrains.core.credentials.AwsCredentialsProfileProvider
 import software.aws.toolkits.jetbrains.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.AwsRegion.Companion.GLOBAL
-import software.aws.toolkits.jetbrains.credentials.AwsCredentialsProfileProvider
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 

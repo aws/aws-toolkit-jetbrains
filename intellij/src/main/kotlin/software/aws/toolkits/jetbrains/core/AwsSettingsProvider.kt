@@ -5,10 +5,10 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.core.credentials.AwsCredentialsProfileProvider
 import software.aws.toolkits.jetbrains.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkits.jetbrains.credentials.AwsCredentialsProfileProvider
-import software.aws.toolkits.jetbrains.credentials.CredentialProfile
+import software.aws.toolkits.jetbrains.core.credentials.CredentialProfile
 import java.lang.ref.WeakReference
 
 @State(name = "settings", storages = [(Storage("aws.xml"))])
