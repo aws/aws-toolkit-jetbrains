@@ -22,6 +22,8 @@ import software.amazon.awssdk.services.lambda.model.FunctionConfiguration
 import software.amazon.awssdk.services.lambda.model.InvocationType
 import software.amazon.awssdk.services.lambda.model.LambdaException
 import software.amazon.awssdk.services.lambda.model.LogType
+import software.aws.toolkits.jetbrains.lambda.explorer.ExternalResourceManager
+import software.aws.toolkits.jetbrains.lambda.explorer.SampleRequest
 import software.aws.toolkits.jetbrains.ui.LAMBDA_FUNCTION_ICON
 import software.aws.toolkits.jetbrains.ui.LightFileEditor
 import java.nio.charset.StandardCharsets
@@ -31,6 +33,7 @@ import javax.swing.JComponent
 
 class LambdaViewer(private val project: Project, private val model: LambdaVirtualFile) : LightFileEditor() {
     private val view = InvokeLambdaPanel(project)
+    private val externalResources = ExternalResourceManager.getInstance()
 
     init {
         view.title.text = "Function: ${model.function.name}"
@@ -38,17 +41,24 @@ class LambdaViewer(private val project: Project, private val model: LambdaVirtua
         view.handler.text = model.function.handler
         view.arn.text = model.function.arn
         view.invoke.addActionListener { invokeFunction() }
-        view.exampleRequests.model = DefaultComboBoxModel(
-                arrayOf(
-                        LambdaInputSample("First Sample", """{"hello":"world"}"""),
-                        LambdaInputSample("Second sample", """["hello"]""")
-                )
-        )
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val requests = externalResources.sampleRequests.toTypedArray()
+            ApplicationManager.getApplication().invokeLater {
+                view.exampleRequests.model = DefaultComboBoxModel(requests)
+            }
+        }
+
         view.exampleRequests.selectedItem = null
         view.exampleRequests.addActionListener {
-            (view.exampleRequests.selectedItem as? LambdaInputSample)?.run {
-                view.input.text = this.content
-                formatEditor(view.input)
+            (view.exampleRequests.selectedItem as? SampleRequest)?.run {
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    val contents = externalResources.getSampleRequest(this.filename!!)
+                    ApplicationManager.getApplication().invokeLater {
+                        view.input.text = contents
+                        formatEditor(view.input)
+                    }
+                }
             }
         }
     }
@@ -122,10 +132,6 @@ fun CreateFunctionResponse.toDataClass() = LambdaFunction(
         lastModified = this.lastModified(),
         handler = this.handler()
 )
-
-data class LambdaInputSample(val name: String, val content: String) {
-    override fun toString() = name
-}
 
 class LambdaFileType : FakeFileType() {
     override fun getName(): String = "AWS Lambda"
