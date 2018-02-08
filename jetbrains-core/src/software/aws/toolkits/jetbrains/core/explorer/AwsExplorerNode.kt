@@ -84,8 +84,7 @@ abstract class AwsExplorerResourceNode<T>(
 }
 
 class AwsTruncatedResultNode(private val parentNode: AwsExplorerServiceRootNode, val paginationToken: String) :
-        AwsExplorerNode<String>(parentNode.project!!,
-                MESSAGE, null) {
+        AwsExplorerNode<String>(parentNode.project!!, MESSAGE, null) {
 
     override fun getChildren(): Collection<AbstractTreeNode<Any>> {
         return emptyList()
