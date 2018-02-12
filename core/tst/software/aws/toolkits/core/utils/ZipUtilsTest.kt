@@ -6,6 +6,7 @@ import assertk.assertions.isNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.zip.ZipFile
@@ -21,10 +22,23 @@ class ZipUtilsTest {
         val fileToAdd = tmpFolder.newFile()
         fileToAdd.writeText("hello world", StandardCharsets.UTF_8)
         val zipFile = tmpFolder.newFile("blah.zip")
-        val zip = ZipOutputStream(Files.newOutputStream(zipFile.toPath()))
-        zip.putNextEntry("file.txt", fileToAdd.toPath())
-        zip.close()
+        ZipOutputStream(Files.newOutputStream(zipFile.toPath())).use {
+            it.putNextEntry("file.txt", fileToAdd.toPath())
+        }
 
+        assertZipContainsHelloWorldFile(zipFile)
+    }
+
+    @Test fun inputStreamCanBeAddedToAZip() {
+        val zipFile = tmpFolder.newFile("blah.zip")
+        ZipOutputStream(Files.newOutputStream(zipFile.toPath())).use {
+            it.putNextEntry("file.txt", "hello world".byteInputStream(StandardCharsets.UTF_8))
+        }
+
+        assertZipContainsHelloWorldFile(zipFile)
+    }
+
+    private fun assertZipContainsHelloWorldFile(zipFile: File?) {
         val actualZip = ZipFile(zipFile)
         val actualEntry = actualZip.entries().toList().find { it.name == "file.txt" }
 
