@@ -2,11 +2,12 @@ package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.profile.Profile
 import software.amazon.awssdk.auth.profile.ProfileFile
-import software.amazon.awssdk.auth.profile.internal.ProfileFileLocations
+import software.amazon.awssdk.core.AwsSystemSetting
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider
 import software.amazon.awssdk.core.auth.ProfileCredentialsProvider
 import java.io.PrintWriter
 import java.nio.file.Path
+import java.nio.file.Paths
 
 /**
  * Credentials file based profiles provider factory.
@@ -18,14 +19,15 @@ object ToolkitProfileCredentialsProviderFactory : ToolkitCredentialsProviderFact
 
     private val credentialsProviders = mutableListOf<ToolkitProfileCredentialsProvider>()
 
-    // We use the ~/.aws/credentials file as the default location for the credentials file.
-    var profileFilePath: Path? = ProfileFileLocations.credentialsFileLocation().orElse(null)
+    // We find out the default credentials file location. This file could not exist.
+    var profileFilePath: Path = Paths.get(AwsSystemSetting.AWS_SHARED_CREDENTIALS_FILE.stringValue.get())
         set(value) {
             field = value
             load()
         }
 
-    private lateinit var profileFile: ProfileFile
+    private var profileFile: ProfileFile? = null
+
     private var profiles = mutableMapOf<String, Profile>()
 
     init {
@@ -40,30 +42,37 @@ object ToolkitProfileCredentialsProviderFactory : ToolkitCredentialsProviderFact
     override fun getAwsCredentialsProvider(providerId: String): AwsCredentialsProvider? {
         return when {
             providerId.startsWith("__") -> null
-            !profileFile.profiles().containsKey(providerId) -> null
+            profileFile == null -> null
+            !profileFile!!.profiles().containsKey(providerId) -> null
             else -> ProfileCredentialsProvider.builder().profileFile(profileFile).profileName(providerId).build()
         }
     }
 
     /**
-     * Load all the profiles from the configured [profileFilePath]
+     * Clean out all the current credentials and load all the profiles from the configured [profileFilePath].
+     * When the file in [profileFilePath] doesn't exist, do nothing.
      */
     private fun load() {
         credentialsProviders.clear()
         profiles.clear()
 
-        profileFile = ProfileFile.builder()
-                .content(profileFilePath)
-                .type(ProfileFile.Type.CREDENTIALS)
-                .build()
-        profiles.putAll(profileFile.profiles())
+        profileFile = try {
+            ProfileFile.builder()
+                    .content(profileFilePath)
+                    .type(ProfileFile.Type.CREDENTIALS)
+                    .build()
+        } catch (e: Exception) {null}
 
-        profiles.values.forEach { credentialsProviders.add(ToolkitProfileCredentialsProvider(it.name())) }
+        if (profileFile != null) {
+            profiles.putAll(profileFile!!.profiles())
+            profiles.values.forEach { credentialsProviders.add(ToolkitProfileCredentialsProvider(it.name())) }
+        }
     }
 
-    //TODO super simple implementation of saving. Leave it to Java SDK or implement ourselves?
+    // TODO super simple implementation of saving. Leave it to Java SDK or implement ourselves?
+    // Dump all the credentials to the target file path. Create one if not exists.
     fun save() {
-        PrintWriter(profileFilePath?.toFile()).use {
+        PrintWriter(profileFilePath.toFile()).use {
             profiles.values.forEach {profile ->
                 it.println("[${profile.name()}]")
                 profile.properties().forEach { property, value ->

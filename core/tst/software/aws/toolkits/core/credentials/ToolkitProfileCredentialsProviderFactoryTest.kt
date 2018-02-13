@@ -60,14 +60,9 @@ class ToolkitProfileCredentialsProviderFactoryTest {
         assert(profileProviderFactory.getAwsCredentialsProvider(BAR_PROFILE_NAME)).isNull()
     }
 
-    @Test (expected = NullPointerException::class)
-    fun testLoadingFromNullPath() {
-        profileProviderFactory.profileFilePath = null
-    }
-
-    @Test (expected = IllegalStateException::class)
-    fun testLoadingFromInvalidPath() {
+    @Test fun testLoadingFromInvalidPath() {
         profileProviderFactory.profileFilePath = File("none/existing/path").toPath()
+        assert(profileProviderFactory.listAwsToolkitCredentialsProviders()).isEmpty()
     }
 
     companion object {
