@@ -2,7 +2,6 @@ package software.aws.toolkits.core.credentials
 
 import assertk.assert
 import assertk.assertions.*
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder

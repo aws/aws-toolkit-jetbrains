@@ -19,7 +19,7 @@ object ToolkitProfileCredentialsProviderFactory : ToolkitCredentialsProviderFact
     private val credentialsProviders = mutableListOf<ToolkitProfileCredentialsProvider>()
 
     // We use the ~/.aws/credentials file as the default location for the credentials file.
-    var profileFilePath: Path? = ProfileFileLocations.credentialsFileLocation()?.get()
+    var profileFilePath: Path? = ProfileFileLocations.credentialsFileLocation().orElse(null)
         set(value) {
             field = value
             load()

@@ -43,6 +43,7 @@ intellij {
 }
 
 dependencies {
+    compile project(':core')
     compile project(':jetbrains-core')
     compile project(':jetbrains-ultimate')
 }
