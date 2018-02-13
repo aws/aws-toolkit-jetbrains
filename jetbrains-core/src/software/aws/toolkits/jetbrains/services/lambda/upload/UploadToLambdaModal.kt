@@ -28,7 +28,7 @@ import javax.swing.SwingUtilities
 class UploadToLambdaModal(
     private val project: Project,
     private val psi: PsiFile,
-    private val runtime: Runtime?,
+    private val runtime: Runtime,
     private val handlerName: String,
     private val okHandler: (FunctionUploadDetails) -> Unit
 ) : DialogWrapper(project) {
@@ -72,7 +72,7 @@ class UploadToLambdaModal(
                         handler = view.handler()!!,
                         iamRole = view.iamRole()!!,
                         s3Bucket = view.s3Bucket()!!,
-                        runtime = runtime ?: Runtime.JAVA8, //TODO: This needs to be part of a picker
+                        runtime = runtime,
                         description = view.description()!!
                 )
         )

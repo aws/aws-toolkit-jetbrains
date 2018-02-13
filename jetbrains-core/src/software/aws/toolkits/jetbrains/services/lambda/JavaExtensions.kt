@@ -113,5 +113,5 @@ class JavaLambdaPackager : LambdaPackager {
         return Paths.get(File(this.path).toURI())
     }
 
-    override fun determineRuntime(module: Module, file: PsiFile): Runtime? = Runtime.JAVA8
+    override fun determineRuntime(module: Module, file: PsiFile): Runtime = Runtime.JAVA8
 }

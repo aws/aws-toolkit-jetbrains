@@ -9,6 +9,7 @@ import com.jetbrains.extensions.getSdk
 import com.jetbrains.python.PyTokenTypes
 import com.jetbrains.python.psi.PyFile
 import com.jetbrains.python.psi.PyFunction
+import com.jetbrains.python.sdk.PythonSdkType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.putNextEntry
@@ -49,11 +50,9 @@ class PythonLambdaPackager : LambdaPackager {
         onComplete(packagedFile)
     }
 
-    override fun determineRuntime(module: Module, file: PsiFile): Runtime? = module.getSdk()?.versionString?.let {
-        when {
-            it.contains("2.7") -> Runtime.PYTHON2_7
-            it.contains("3.6") -> Runtime.PYTHON3_6
-            else -> null
-        }
+    override fun determineRuntime(module: Module, file: PsiFile): Runtime = if (PythonSdkType.getLanguageLevelForSdk(module.getSdk()).isPy3K) {
+        Runtime.PYTHON3_6
+    } else {
+        Runtime.PYTHON2_7
     }
 }

@@ -21,9 +21,7 @@ interface LambdaPackager {
     /**
      * For a given [module] and [file] try to infer the Lambda language runtime
      */
-    fun determineRuntime(module: Module, file: PsiFile): Runtime? {
-        return null
-    }
+    fun determineRuntime(module: Module, file: PsiFile): Runtime
 }
 
 object LambdaPackagerProvider {
