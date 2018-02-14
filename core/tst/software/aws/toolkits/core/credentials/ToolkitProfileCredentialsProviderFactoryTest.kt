@@ -2,18 +2,12 @@ package software.aws.toolkits.core.credentials
 
 import assertk.assert
 import assertk.assertions.*
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.profile.Profile
 import software.amazon.awssdk.auth.profile.ProfileProperties
 import java.io.File
 
 class ToolkitProfileCredentialsProviderFactoryTest {
-
-    @Rule
-    @JvmField
-    var temporaryAwsFolder = TemporaryFolder()
 
     private val profileProviderFactory = ToolkitProfileCredentialsProviderFactory
     private val expectedProfilePath = File("tst-resources/credentials").toPath()
@@ -53,7 +47,7 @@ class ToolkitProfileCredentialsProviderFactoryTest {
         assert(profileProviderFactory.getAwsCredentialsProvider(FOO_PROFILE_NAME)).isNull()
         assertHasCredentials(profileProviderFactory, BAR_PROFILE_NAME, BAR_ACCESS_KEY, BAR_SECRET_KEY)
 
-        profileProviderFactory.remove("bar")
+        profileProviderFactory.remove(BAR_PROFILE_NAME)
         profileProviderFactory.save()
 
         assert(profileProviderFactory.listAwsToolkitCredentialsProviders()).isEmpty()

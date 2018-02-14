@@ -30,9 +30,7 @@ class ToolkitCredentialsManagerTest {
     }
 
     @Test
-    fun testListRegisteredCredentialsProviderFactories() {
-        val manager = ToolkitCredentialsManager
-        manager.register(factoryAlpha)
+    fun testRegisterFactory() {
         val factories = manager.listRegisteredCredentialsProviderFactories()
 
         assert(factories).hasSize(1)
@@ -46,9 +44,7 @@ class ToolkitCredentialsManagerTest {
     }
 
     @Test
-    fun testFindAwsCredentialsProvider_alpha() {
-        val manager = ToolkitCredentialsManager
-        manager.register(factoryAlpha)
+    fun testFindAwsCredentialsProvider_withBetaFactoryNotRegistered_alphaCredentialsFound() {
         val mockId = "__alpha_foo"
         val provider = manager.findAwsCredentialsProvider(mockId)
         verify(factoryAlpha).getAwsCredentialsProvider(mockId)
@@ -58,9 +54,7 @@ class ToolkitCredentialsManagerTest {
     }
 
     @Test
-    fun testFindAwsCredentialsProvider_beta() {
-        val manager = ToolkitCredentialsManager
-        manager.register(factoryAlpha)
+    fun testFindAwsCredentialsProvider_withBetaFactoryNotRegistered_betaCredentialsNotFound() {
         val mockId = "__beta_foo"
         val provider = manager.findAwsCredentialsProvider(mockId)
         verify(factoryAlpha).getAwsCredentialsProvider(mockId)
@@ -69,7 +63,7 @@ class ToolkitCredentialsManagerTest {
     }
 
     @Test
-    fun testFindAwsCredentialsProvider_alpha_withBetaRegistered() {
+    fun testFindAwsCredentialsProvider_withBetaFactoryRegistered_alphaCredentialsFound() {
         val mockId = "__alpha_foo"
         manager.register(factoryBeta)
         val provider = manager.findAwsCredentialsProvider(mockId)
@@ -79,7 +73,7 @@ class ToolkitCredentialsManagerTest {
     }
 
     @Test
-    fun testFindAwsCredentialsProvider_beta_withBetaRegistered() {
+    fun testFindAwsCredentialsProvider_withBetaFactoryRegistered_betaCredentialsFound() {
         val mockId = "__beta_foo"
         manager.register(factoryBeta)
         val provider = manager.findAwsCredentialsProvider(mockId)

@@ -1,13 +1,14 @@
 package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * The central hub for managing AWS profiles, ie. [AwsCredentialsProvider].
  */
 object ToolkitCredentialsManager {
 
-    private val factories = mutableSetOf<ToolkitCredentialsProviderFactory>()
+    private val factories = CopyOnWriteArrayList<ToolkitCredentialsProviderFactory>()
 
     /**
      * Return the corresponding [AwsCredentialsProvider] based on the provided provider ID. It iterates all the
@@ -16,15 +17,7 @@ object ToolkitCredentialsManager {
      * @return The [AwsCredentialsProvider] if either factory could handle it, null otherwise
      */
     fun findAwsCredentialsProvider(providerId: String): AwsCredentialsProvider? {
-        var credentialsProvider: AwsCredentialsProvider?
-
-        for (factory in factories) {
-            credentialsProvider = factory.getAwsCredentialsProvider(providerId)
-            if (credentialsProvider != null) {
-                return credentialsProvider
-            }
-        }
-        return null
+        return factories.mapNotNull { it.getAwsCredentialsProvider(providerId) }.firstOrNull()
     }
 
     /**
@@ -37,7 +30,7 @@ object ToolkitCredentialsManager {
     /**
      * List all the registered factories in an immutable way
      */
-    fun listRegisteredCredentialsProviderFactories(): Set<ToolkitCredentialsProviderFactory> {
+    fun listRegisteredCredentialsProviderFactories(): Collection<ToolkitCredentialsProviderFactory> {
         return factories
     }
 
