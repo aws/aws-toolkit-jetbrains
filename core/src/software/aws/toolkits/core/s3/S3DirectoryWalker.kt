@@ -138,8 +138,7 @@ class S3File internal constructor(
     private val client: S3Client
 ) : S3Key(bucket, key) {
 
-    fun tags(): Set<Tag> =
-            client.getObjectTagging { it.bucket(bucket).key(key) }?.tagSet()?.filterNotNull().orEmpty().toSet()
+    fun tags(): Set<Tag> = client.getObjectTagging { it.bucket(bucket).key(key) }?.tagSet()?.filterNotNull().orEmpty().toSet()
 
     fun metadata(): Map<String, String> = client.headObject { it.bucket(bucket).key(key) }.metadata()
 
@@ -148,11 +147,7 @@ class S3File internal constructor(
     }
 
     fun updateMetadata(metadata: Map<String, String>) {
-        try {
-            client.copyObject (baseUpdateMetadataRequest(metadata).build())
-        } catch (e: S3Exception) {
-            throw e
-        }
+        client.copyObject (baseUpdateMetadataRequest(metadata).build())
     }
 
     fun updateMetadataAndTags(metadata: Map<String, String>, tags: Set<Tag>) {
