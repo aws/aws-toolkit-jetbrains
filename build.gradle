@@ -76,6 +76,13 @@ subprojects {
         integrationTestRuntime configurations.testRuntime
     }
 
+    test {
+        testLogging {
+            showStandardStreams = true
+            exceptionFormat = 'full'
+        }
+    }
+
     idea {
         module {
             sourceDirs -= file("it")
