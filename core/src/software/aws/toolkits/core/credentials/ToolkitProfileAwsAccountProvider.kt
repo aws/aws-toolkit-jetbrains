@@ -19,8 +19,8 @@ class ToolkitProfileAwsAccountProvider(profileFilePath: Path = Paths.get(AwsSyst
 
     companion object {
         const val ID = "profile"
-        const val NAME = "Profile Credentials Provider"
-        const val DESCRIPTION = "AWS Credentials Provider provider"
+        const val NAME = "Profile File"
+        const val DESCRIPTION = "Toolkit AWS account using profile file for the credentials"
     }
 
     /**

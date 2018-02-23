@@ -12,11 +12,11 @@ abstract class ToolkitAwsAccountProvider protected constructor(
          */
         val id: String,
         /**
-         * Return the name of the Toolkit Credentials Provider Factory.
+         * Return the name of this account provider.
          */
         val name: String,
         /**
-         * Return the descriptive information about the Toolkit Credentials Provider Factory.
+         * Return the descriptive information about this account provider.
          */
         val description: String
 ) {
@@ -35,7 +35,7 @@ abstract class ToolkitAwsAccountProvider protected constructor(
      */
     protected abstract fun justLoadToolkitAwsAccount(account: Map<String, String>): ToolkitAwsAccount?
 
-    fun loadAndStoreToolkitAwsAccount(account: Map<String, String>): ToolkitAwsAccount? =
+    fun loadToolkitAwsAccount(account: Map<String, String>): ToolkitAwsAccount? =
             justLoadToolkitAwsAccount(account)?.apply {
                 accounts[this.id] = this
             }

@@ -14,8 +14,8 @@ class ToolkitSystemPropertyAwsAccountProvider() : ToolkitAwsAccountProvider(ID, 
 
     companion object {
         const val ID = "sys"
-        const val NAME = "System Properties Credentials Provider"
-        const val DESCRIPTION = "AWS Credentials Provider using the system properties"
+        const val NAME = "System Properties"
+        const val DESCRIPTION = "Toolkit AWS account using system properties for the credentials"
     }
 
     override fun justLoadToolkitAwsAccount(account: Map<String, String>): ToolkitAwsAccount? {

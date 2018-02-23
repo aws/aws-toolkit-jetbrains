@@ -37,7 +37,7 @@ class ToolkitAwsAccountManager {
      * If neither account provider can parse it, return null.
      */
     fun loadToolkitAwsAccount(persistentData: Map<String, String>): ToolkitAwsAccount? =
-            providers.mapNotNull { it.value.loadAndStoreToolkitAwsAccount(persistentData) }.firstOrNull()
+            providers.mapNotNull { it.value.loadToolkitAwsAccount(persistentData) }.firstOrNull()
 
     /**
      * Clean all the registered providers.

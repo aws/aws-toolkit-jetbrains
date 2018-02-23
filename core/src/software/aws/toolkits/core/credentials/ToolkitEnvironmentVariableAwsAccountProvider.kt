@@ -8,14 +8,14 @@ import software.aws.toolkits.core.credentials.ToolkitAwsAccount.Companion.ACCOUN
 import java.util.*
 
 /**
- * Environment variable based Toolkit AWS provider
+ * Environment variable based Toolkit AWS account provider
  */
 class ToolkitEnvironmentVariableAwsAccountProvider() : ToolkitAwsAccountProvider(ID, NAME, DESCRIPTION) {
 
     companion object {
         const val ID: String = "env"
-        const val NAME: String = "Environment Variables Credentials Provider"
-        const val DESCRIPTION = "AWS Credentials Provider provider using the environment variables"
+        const val NAME: String = "Environment Variables"
+        const val DESCRIPTION: String = "Toolkit AWS account using the environment variables for the credentials"
     }
 
     override fun justLoadToolkitAwsAccount(account: Map<String, String>): ToolkitAwsAccount? {

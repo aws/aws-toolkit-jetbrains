@@ -97,11 +97,11 @@ class ToolkitProfileAwsAccountProviderTest {
 
     @Test
     fun testLoad_persistentDataNotInProfileFile() {
-        initEmptyProfileAccountProvider.loadAndStoreToolkitAwsAccount(PERSISTENT_DATA)
-        initEmptyProfileAccountProvider.loadAndStoreToolkitAwsAccount(FOO_PERSISTENT_DATA)
+        initEmptyProfileAccountProvider.loadToolkitAwsAccount(PERSISTENT_DATA)
+        initEmptyProfileAccountProvider.loadToolkitAwsAccount(FOO_PERSISTENT_DATA)
         assert(initEmptyProfileAccountProvider.listToolkitAwsAccount()).isEmpty()
 
-        initNonEmptyProfileAccountProvider.loadAndStoreToolkitAwsAccount(PERSISTENT_DATA)
+        initNonEmptyProfileAccountProvider.loadToolkitAwsAccount(PERSISTENT_DATA)
         assert(initNonEmptyProfileAccountProvider.listToolkitAwsAccount()).hasSize(2)
         assert(initNonEmptyProfileAccountProvider.getAwsCredentialsProvider(PERSISTENT_DATA[ACCOUNT_ID]!!)).isNull()
     }
@@ -111,7 +111,7 @@ class ToolkitProfileAwsAccountProviderTest {
         var fooAccount = initNonEmptyProfileAccountProvider.getToolkitAwsAccountByName(FOO_PROFILE_NAME)
         assert(fooAccount).isNotNull()
 
-        initNonEmptyProfileAccountProvider.loadAndStoreToolkitAwsAccount(FOO_PERSISTENT_DATA)
+        initNonEmptyProfileAccountProvider.loadToolkitAwsAccount(FOO_PERSISTENT_DATA)
         assert(initNonEmptyProfileAccountProvider.listToolkitAwsAccount()).hasSize(2)
 
         fooAccount = initNonEmptyProfileAccountProvider.getToolkitAwsAccount(fooAccount!!.id)
