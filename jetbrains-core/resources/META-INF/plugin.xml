@@ -24,6 +24,13 @@
         <xi:fallback/>
     </xi:include>
 
+    <application-components>
+        <component>
+            <interface-class>software.aws.toolkits.jetbrains.components.telemetry.ClientTelemetryComponent</interface-class>
+            <implementation-class>software.aws.toolkits.jetbrains.components.telemetry.DefaultClientTelemetryComponent</implementation-class>
+        </component>
+    </application-components>
+
     <extensionPoints>
         <extensionPoint qualifiedName="aws.toolkit.credentialProviderFactory"
                         beanClass="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactoryEP">
