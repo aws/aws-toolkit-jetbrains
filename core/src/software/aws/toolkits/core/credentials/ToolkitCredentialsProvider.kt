@@ -4,32 +4,24 @@ import software.amazon.awssdk.core.auth.AwsCredentials
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider
 import java.util.concurrent.ConcurrentHashMap
 
-abstract class ToolkitCredentialsProvider(val factory: ToolkitCredentialsProviderFactory) : AwsCredentialsProvider {
+interface ToolkitCredentialsProvider : AwsCredentialsProvider {
 
     /**
      * The ID should be unique through all the TCPs. It usually takes the concatenation of the type and the name.
      */
-    abstract fun id(): String
+    fun id(): String
 
     /**
      * A user friendly display name shown in the UI.
      */
-    abstract fun displayName(): String
+    fun displayName(): String
 
     /**
      * Return true if an AWS credentials could be successfully retrieved.
      */
     fun isEnabled(): Boolean = try { credentials; true } catch (e: Exception) { false }
 
-    protected abstract fun getAwsCredentialsProvider(): AwsCredentialsProvider
-
-    override fun getCredentials(): AwsCredentials = getAwsCredentialsProvider().credentials
-
-    abstract fun toMap(): Map<String, String>
-
-    companion object {
-        const val P_TYPE = "type"
-    }
+    fun toMap(): Map<String, String>
 }
 
 /**

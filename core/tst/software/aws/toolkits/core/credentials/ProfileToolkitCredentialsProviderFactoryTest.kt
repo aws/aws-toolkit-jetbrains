@@ -11,7 +11,6 @@ import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.profile.Profile
 import software.amazon.awssdk.auth.profile.ProfileProperties
 import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProvider.Companion.P_PROFILE_NAME
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider.Companion.P_TYPE
 import java.io.File
 import java.nio.file.Path
 
@@ -90,7 +89,6 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         assert(account).isNotNull()
         val persistentData = account!!.toMap()
         assert(persistentData[P_PROFILE_NAME]).isEqualTo(FOO_PROFILE_NAME)
-        assert(persistentData[P_TYPE]).isEqualTo(ProfileToolkitCredentialsProviderFactory.TYPE)
     }
 
     @Test
@@ -159,13 +157,11 @@ class ProfileToolkitCredentialsProviderFactoryTest {
                 .build()
 
         val PERSISTENT_DATA = mapOf(
-                P_PROFILE_NAME to "persistent",
-                P_TYPE to ProfileToolkitCredentialsProviderFactory.TYPE
+                P_PROFILE_NAME to "persistent"
         )
 
         val FOO_PERSISTENT_DATA = mapOf(
-                P_PROFILE_NAME to FOO_PROFILE_NAME,
-                P_TYPE to ProfileToolkitCredentialsProviderFactory.TYPE
+                P_PROFILE_NAME to FOO_PROFILE_NAME
         )
     }
 }

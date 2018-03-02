@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.profile.Profile
 import software.amazon.awssdk.auth.profile.ProfileFile
 import software.amazon.awssdk.core.AwsSystemSetting
+import software.amazon.awssdk.core.auth.AwsCredentials
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider
 import software.amazon.awssdk.core.auth.ProfileCredentialsProvider
 import java.io.PrintWriter
@@ -11,38 +12,37 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
-class ProfileToolkitCredentialsProvider(val name: String, factory: ProfileToolkitCredentialsProviderFactory) : ToolkitCredentialsProvider(factory) {
+class ProfileToolkitCredentialsProvider : ToolkitCredentialsProvider {
 
-    override fun toMap(): Map<String, String> = mapOf(
-            P_TYPE to factory.type,
-            P_PROFILE_NAME to name
-    )
+    val name: String
+    private val factory: ProfileToolkitCredentialsProviderFactory
+    private val awsCredentialsProvider: AwsCredentialsProvider
+
+    constructor(factory: ProfileToolkitCredentialsProviderFactory, name: String) {
+        this.name = name
+        this.factory = factory
+        awsCredentialsProvider = ProfileCredentialsProvider.builder()
+                .profileFile {
+                    it.content(factory.profileFilePath)
+                            .type(ProfileFile.Type.CREDENTIALS)
+                }
+                .profileName(name)
+                .build()
+    }
+
+    constructor(factory: ProfileToolkitCredentialsProviderFactory, data: Map<String, String>)
+            : this(factory, data[P_PROFILE_NAME]?:throw IllegalArgumentException("AWS profile name cannot be null!"))
+
+    override fun toMap(): Map<String, String> = mapOf(P_PROFILE_NAME to name)
 
     override fun id(): String = factory.type + ":" + name
 
     override fun displayName(): String = factory.type + ":" + name
 
-    override fun getAwsCredentialsProvider(): AwsCredentialsProvider =
-            ProfileCredentialsProvider.builder()
-                    .profileFile {
-                        it.content((factory as ProfileToolkitCredentialsProviderFactory).profileFilePath)
-                                .type(ProfileFile.Type.CREDENTIALS)
-                    }
-                    .profileName(name)
-                    .build()
+    override fun getCredentials(): AwsCredentials = awsCredentialsProvider.credentials
 
     companion object {
         const val P_PROFILE_NAME = "profileName"
-
-        @JvmStatic
-        fun fromMap(data: Map<String, String>, factory: ProfileToolkitCredentialsProviderFactory): ProfileToolkitCredentialsProvider? {
-            val profileType = data[P_TYPE]
-            val profileName = data[P_PROFILE_NAME]
-            return when {
-                profileType != factory.type || profileName == null -> null
-                else -> ProfileToolkitCredentialsProvider(profileName, factory)
-            }
-        }
     }
 }
 
@@ -67,7 +67,11 @@ class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get
         loadFromProfileFile()
     }
 
-    override fun create(data: Map<String, String>): ToolkitCredentialsProvider? = ProfileToolkitCredentialsProvider.fromMap(data, this)
+    override fun create(data: Map<String, String>): ToolkitCredentialsProvider? =
+            try {ProfileToolkitCredentialsProvider(this, data)} catch (e: IllegalArgumentException) {
+                LOG.warn("Failed to create AWS profile from the map data.", e)
+                null
+            }
 
     fun getByName(name: String): ProfileToolkitCredentialsProvider? =
             tcps.values.firstOrNull { (it as ProfileToolkitCredentialsProvider).name == name } as ProfileToolkitCredentialsProvider
@@ -100,7 +104,7 @@ class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get
                     .apply {
                         profiles.putAll(this.profiles())
                         profiles.values.forEach { profile ->
-                            add(ProfileToolkitCredentialsProvider(profile.name(), this@ProfileToolkitCredentialsProviderFactory))
+                            add(ProfileToolkitCredentialsProvider(this@ProfileToolkitCredentialsProviderFactory, profile.name()))
                         }
                     }
         } catch (e: Exception) {
@@ -110,7 +114,8 @@ class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get
 
     fun create(profile: Profile): ProfileToolkitCredentialsProvider {
         profiles[profile.name()] = profile.toBuilder().build()
-        return add(ProfileToolkitCredentialsProvider(profile.name(), this)) as ProfileToolkitCredentialsProvider
+        saveToProfileFile()
+        return add(ProfileToolkitCredentialsProvider(this, profile.name())) as ProfileToolkitCredentialsProvider
     }
 
     // Update operation might change the name of the profile. Do a deletion against the original one and add a new one.
@@ -119,13 +124,17 @@ class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get
             profiles.remove(this.name)  // Remove the original profile from the profile list
             remove(id)  // Remove the original Toolkit Credentials Provider from the factory
             profiles[profile.name()] = profile.toBuilder().build()   // Update the profile as if creating a new one
+            saveToProfileFile()
             // Add a new Toolkit Credentials Provider
-            add(ProfileToolkitCredentialsProvider(profile.name(), this@ProfileToolkitCredentialsProviderFactory))
+            add(ProfileToolkitCredentialsProvider(this@ProfileToolkitCredentialsProviderFactory, profile.name()))
         }
     }
 
     override fun remove(id: String): ToolkitCredentialsProvider? =
-            super.remove(id)?.apply { profiles.remove((this as ProfileToolkitCredentialsProvider).name) }
+            super.remove(id)?.apply {
+                profiles.remove((this as ProfileToolkitCredentialsProvider).name)
+                saveToProfileFile()
+            }
 
 
     companion object {
