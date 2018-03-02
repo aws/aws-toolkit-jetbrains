@@ -106,7 +106,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         fooProvider = initNonEmptyProfileAccountProvider.load(FOO_PERSISTENT_DATA)
         assert(initNonEmptyProfileAccountProvider.list()).hasSize(2)
 
-        assertFalse(barProvider!!.isEnabled())
+        assertFalse(barProvider.isEnabled())
         assertTrue(fooProvider!!.isEnabled())
     }
 
