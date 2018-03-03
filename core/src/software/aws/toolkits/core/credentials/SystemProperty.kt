@@ -3,8 +3,9 @@ package software.aws.toolkits.core.credentials
 import software.amazon.awssdk.core.auth.AwsCredentials
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider
 import software.amazon.awssdk.core.auth.SystemPropertyCredentialsProvider
+import software.aws.toolkits.core.credentials.SystemPropertyToolkitCredentialsProviderFactory.Companion.TYPE
 
-class SystemPropertyToolkitCredentialsProvider(private val factory: SystemPropertyToolkitCredentialsProviderFactory) : ToolkitCredentialsProvider {
+class SystemPropertyToolkitCredentialsProvider() : ToolkitCredentialsProvider {
 
     private val awsCredentialsProvider: AwsCredentialsProvider
 
@@ -12,7 +13,7 @@ class SystemPropertyToolkitCredentialsProvider(private val factory: SystemProper
         awsCredentialsProvider = SystemPropertyCredentialsProvider.create()
     }
 
-    override fun id(): String = factory.type
+    override fun id(): String = TYPE
 
     override fun displayName(): String = DISPLAY_NAME
 
@@ -27,7 +28,7 @@ class SystemPropertyToolkitCredentialsProvider(private val factory: SystemProper
 
 class SystemPropertyToolkitCredentialsProviderFactory() : ToolkitCredentialsProviderFactory(TYPE, NAME, DESCRIPTION) {
 
-    override fun create(data: Map<String, String>): ToolkitCredentialsProvider? = SystemPropertyToolkitCredentialsProvider(this)
+    override fun create(data: Map<String, String>): ToolkitCredentialsProvider? = SystemPropertyToolkitCredentialsProvider()
 
     companion object {
         const val TYPE = "sys"

@@ -7,37 +7,34 @@ import software.amazon.awssdk.core.AwsSystemSetting
 import software.amazon.awssdk.core.auth.AwsCredentials
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider
 import software.amazon.awssdk.core.auth.ProfileCredentialsProvider
+import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderFactory.Companion.TYPE
 import java.io.PrintWriter
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
-class ProfileToolkitCredentialsProvider : ToolkitCredentialsProvider {
+class ProfileToolkitCredentialsProvider(
+        private val profileFilePath: Path,
+        val name: String)
+    : ToolkitCredentialsProvider {
 
-    val name: String
-    private val factory: ProfileToolkitCredentialsProviderFactory
-    private val awsCredentialsProvider: AwsCredentialsProvider
+    private val awsCredentialsProvider: AwsCredentialsProvider = ProfileCredentialsProvider.builder()
+        .profileFile {
+            it.content(profileFilePath)
+                    .type(ProfileFile.Type.CREDENTIALS)
+        }
+        .profileName(name)
+        .build()
 
-    constructor(factory: ProfileToolkitCredentialsProviderFactory, name: String) {
-        this.name = name
-        this.factory = factory
-        awsCredentialsProvider = ProfileCredentialsProvider.builder()
-                .profileFile {
-                    it.content(factory.profileFilePath)
-                            .type(ProfileFile.Type.CREDENTIALS)
-                }
-                .profileName(name)
-                .build()
-    }
 
-    constructor(factory: ProfileToolkitCredentialsProviderFactory, data: Map<String, String>)
-            : this(factory, data[P_PROFILE_NAME]?:throw IllegalArgumentException("AWS profile name cannot be null!"))
+    constructor(profileFilePath: Path, data: Map<String, String>)
+            : this(profileFilePath, data[P_PROFILE_NAME]?:throw IllegalArgumentException("AWS profile name cannot be null!"))
 
     override fun toMap(): Map<String, String> = mapOf(P_PROFILE_NAME to name)
 
-    override fun id(): String = factory.type + ":" + name
+    override fun id(): String = "$TYPE:$name"
 
-    override fun displayName(): String = factory.type + ":" + name
+    override fun displayName(): String = "$TYPE:$name"
 
     override fun getCredentials(): AwsCredentials = awsCredentialsProvider.credentials
 
@@ -68,7 +65,7 @@ class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get
     }
 
     override fun create(data: Map<String, String>): ToolkitCredentialsProvider? =
-            try {ProfileToolkitCredentialsProvider(this, data)} catch (e: IllegalArgumentException) {
+            try {ProfileToolkitCredentialsProvider(profileFilePath, data)} catch (e: IllegalArgumentException) {
                 LOG.warn("Failed to create AWS profile from the map data.", e)
                 null
             }
@@ -97,25 +94,23 @@ class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get
         profiles.clear()
 
         try {
-            ProfileFile.builder()
+            profiles.putAll(ProfileFile.builder()
                     .content(profileFilePath)
                     .type(ProfileFile.Type.CREDENTIALS)
-                    .build()
-                    .apply {
-                        profiles.putAll(this.profiles())
-                        profiles.values.forEach { profile ->
-                            add(ProfileToolkitCredentialsProvider(this@ProfileToolkitCredentialsProviderFactory, profile.name()))
-                        }
-                    }
+                    .build().profiles())
+
+            profiles.values.forEach {
+                add(ProfileToolkitCredentialsProvider(profileFilePath, it.name()))
+            }
         } catch (e: Exception) {
-            LOG.warn("Failed to load AWS profiles from " + profileFilePath, e)
+            LOG.warn("Failed to load AWS profiles from $profileFilePath", e)
         }
     }
 
     fun create(profile: Profile): ProfileToolkitCredentialsProvider {
         profiles[profile.name()] = profile.toBuilder().build()
         saveToProfileFile()
-        return add(ProfileToolkitCredentialsProvider(this, profile.name())) as ProfileToolkitCredentialsProvider
+        return add(ProfileToolkitCredentialsProvider(profileFilePath, profile.name())) as ProfileToolkitCredentialsProvider
     }
 
     // Update operation might change the name of the profile. Do a deletion against the original one and add a new one.
@@ -126,7 +121,7 @@ class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get
             profiles[profile.name()] = profile.toBuilder().build()   // Update the profile as if creating a new one
             saveToProfileFile()
             // Add a new Toolkit Credentials Provider
-            add(ProfileToolkitCredentialsProvider(this@ProfileToolkitCredentialsProviderFactory, profile.name()))
+            add(ProfileToolkitCredentialsProvider(profileFilePath, profile.name()))
         }
     }
 

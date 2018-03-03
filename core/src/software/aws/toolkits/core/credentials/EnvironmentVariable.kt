@@ -3,8 +3,9 @@ package software.aws.toolkits.core.credentials
 import software.amazon.awssdk.core.auth.AwsCredentials
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider
 import software.amazon.awssdk.core.auth.EnvironmentVariableCredentialsProvider
+import software.aws.toolkits.core.credentials.EnvironmentVariableToolkitCredentialsProviderFactory.Companion.TYPE
 
-class EnvironmentVariableToolkitCredentialsProvider(private val factory: EnvironmentVariableToolkitCredentialsProviderFactory) : ToolkitCredentialsProvider {
+class EnvironmentVariableToolkitCredentialsProvider : ToolkitCredentialsProvider {
 
     private val awsCredentialsProvider: AwsCredentialsProvider
 
@@ -17,7 +18,7 @@ class EnvironmentVariableToolkitCredentialsProvider(private val factory: Environ
     /**
      * Uses the factory ID as the ID for the provider as there is only one instance for Environment Variable Credentials Provider
      */
-    override fun id(): String = factory.type
+    override fun id(): String = TYPE
 
     override fun displayName(): String = DISPLAY_NAME
 
@@ -31,7 +32,7 @@ class EnvironmentVariableToolkitCredentialsProvider(private val factory: Environ
 class EnvironmentVariableToolkitCredentialsProviderFactory : ToolkitCredentialsProviderFactory(TYPE, NAME, DESCRIPTION) {
 
     override fun create(data: Map<String, String>): ToolkitCredentialsProvider? =
-            EnvironmentVariableToolkitCredentialsProvider(this)
+            EnvironmentVariableToolkitCredentialsProvider()
 
     companion object {
         const val TYPE: String = "env"
