@@ -1,6 +1,10 @@
 import org.jetbrains.intellij.dependency.IdeaDependencyManager
 import org.jetbrains.intellij.IntelliJPlugin
 
+dependencies {
+    compile("com.willowtreeapps.assertk:assertk:0.9")
+}
+
 project.afterEvaluate {
     def dependencyManger = new IdeaDependencyManager(IntelliJPlugin.DEFAULT_INTELLIJ_REPO)
     def intellijDependency = dependencyManger.resolveRemote(project, ideaVersion, "IC", false, new Object[0])
