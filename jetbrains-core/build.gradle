@@ -1,4 +1,20 @@
+import software.amazon.awssdk.codegen.C2jModels
+import software.amazon.awssdk.codegen.CodeGenerator
+import software.amazon.awssdk.codegen.model.config.customization.CustomizationConfig
+import software.amazon.awssdk.codegen.model.service.ServiceModel
+import software.amazon.awssdk.codegen.utils.ModelLoaderUtils
+
 apply plugin: 'org.jetbrains.intellij'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("software.amazon.awssdk:codegen:$awsSdk2Version")
+    }
+}
 
 intellij {
     version "IC-" + ideaVersion
@@ -14,7 +30,36 @@ configurations {
     testArtifacts
 }
 
-task testJar (type: Jar) {
+def telemetryGeneratedDir = file("$buildDir/generated-srcs/telemetry")
+
+idea {
+    module {
+        sourceDirs += telemetryGeneratedDir
+    }
+}
+
+sourceSets {
+    main.java.srcDir telemetryGeneratedDir
+}
+
+task generateTelemetryModel() {
+    def inputModel = file("resources/models/ToolkitTelemetryLambda.api.json")
+
+    doLast {
+        def models = C2jModels.builder()
+                .serviceModel(ModelLoaderUtils.loadModel(ServiceModel.class, inputModel))
+                .customizationConfig(CustomizationConfig.DEFAULT)
+                .build()
+        CodeGenerator.builder().models(models).sourcesDirectory(telemetryGeneratedDir.toString()).build().execute()
+    }
+
+    inputs.file(inputModel)
+    outputs.dir(telemetryGeneratedDir)
+}
+
+compileKotlin.dependsOn(generateTelemetryModel)
+
+task testJar(type: Jar) {
     baseName = "${project.name}-test"
     from sourceSets.test.output
 }
