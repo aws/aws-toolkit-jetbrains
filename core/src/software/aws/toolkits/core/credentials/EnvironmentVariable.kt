@@ -10,9 +10,10 @@ class EnvironmentVariableToolkitCredentialsProvider : ToolkitCredentialsProvider
     /**
      * Uses the factory ID as the ID for the provider as there is only one instance for Environment Variable Credentials Provider
      */
-    override fun id() = TYPE
-
-    override fun displayName() = DISPLAY_NAME
+    override val id: String
+        get() = TYPE
+    override val displayName: String
+        get() = DISPLAY_NAME
 
     override fun getCredentials(): AwsCredentials = awsCredentialsProvider.credentials
 
@@ -33,7 +34,6 @@ class EnvironmentVariableToolkitCredentialsProviderFactory : ToolkitCredentialsP
     }
 
     companion object {
-        const val TYPE: String = "envVars"
-        const val NAME: String = "Environment Variable"
+        const val TYPE = "envVars"
     }
 }

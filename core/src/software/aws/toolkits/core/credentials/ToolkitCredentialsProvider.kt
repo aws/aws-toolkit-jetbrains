@@ -7,12 +7,12 @@ interface ToolkitCredentialsProvider : AwsCredentialsProvider {
      * The ID should be unique across all [ToolkitCredentialsProvider].
      * It is recommended to concatenate the factory type and the display name.
      */
-    fun id(): String
+    val id: String
 
     /**
      * A user friendly display name shown in the UI.
      */
-    fun displayName(): String
+    val displayName: String
 }
 
 /**
@@ -25,7 +25,7 @@ abstract class ToolkitCredentialsProviderFactory(
     private val tcps = mutableMapOf<String, ToolkitCredentialsProvider>()
 
     protected fun add(provider: ToolkitCredentialsProvider) {
-        tcps[provider.id()] = provider
+        tcps[provider.id] = provider
     }
 
     protected fun clear() {

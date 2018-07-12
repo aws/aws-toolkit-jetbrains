@@ -15,6 +15,7 @@ class ToolkitCredentialsProviderManager(
      */
     fun shutDown() {
         registry.listFactories().forEach {
+            // TODO: Port over LOG.tryOrNull extension methods
             try {
                 it.shutDown()
             } catch (e: Exception) {

@@ -7,9 +7,10 @@ import software.aws.toolkits.core.credentials.SystemPropertyToolkitCredentialsPr
 class SystemPropertyToolkitCredentialsProvider() : ToolkitCredentialsProvider {
     private val awsCredentialsProvider = SystemPropertyCredentialsProvider.create()
 
-    override fun id() = TYPE
-
-    override fun displayName() = DISPLAY_NAME
+    override val id: String
+        get() = TYPE
+    override val displayName: String
+        get() = DISPLAY_NAME
 
     override fun getCredentials(): AwsCredentials = awsCredentialsProvider.credentials
 
@@ -31,6 +32,5 @@ class SystemPropertyToolkitCredentialsProviderFactory() : ToolkitCredentialsProv
 
     companion object {
         internal const val TYPE = "sysProps"
-        private const val NAME = "System Property"
     }
 }

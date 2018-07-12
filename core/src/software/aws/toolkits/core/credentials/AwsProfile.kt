@@ -14,9 +14,10 @@ import java.nio.file.Path
 class ProfileToolkitCredentialsProvider(
     internal val profile: Profile
 ) : ToolkitCredentialsProvider {
-    override fun id() = "$TYPE:${profile.name()}"
-
-    override fun displayName() = "$NAME: ${profile.name()}"
+    override val id: String
+        get() = "$TYPE:${profile.name()}"
+    override val displayName: String
+        get() = "$NAME: ${profile.name()}"
 
     override fun getCredentials(): AwsCredentials {
         // Use an internal AwsCredentialsProvider so that session creds can be refreshed underneath of us

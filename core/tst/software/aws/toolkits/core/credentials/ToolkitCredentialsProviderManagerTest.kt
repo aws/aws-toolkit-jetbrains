@@ -36,10 +36,9 @@ class ToolkitCredentialsProviderManagerTest {
             .containsOnly(MockToolkitCredentialProviderFactory::class, MockToolkitCredentialProviderFactory2::class)
     }
 
-    private class MockToolkitCredentialsProvider(private val id: String) : ToolkitCredentialsProvider {
-        override fun id() = id
-
-        override fun displayName() = id
+    private class MockToolkitCredentialsProvider(override val id: String) : ToolkitCredentialsProvider {
+        override val displayName: String
+            get() = id
 
         override fun getCredentials(): AwsCredentials = throw NotImplementedError()
     }
