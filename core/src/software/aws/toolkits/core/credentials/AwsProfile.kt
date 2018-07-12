@@ -1,143 +1,98 @@
 package software.aws.toolkits.core.credentials
 
 import org.slf4j.LoggerFactory
-import software.amazon.awssdk.auth.profile.Profile
-import software.amazon.awssdk.auth.profile.ProfileFile
-import software.amazon.awssdk.core.AwsSystemSetting
-import software.amazon.awssdk.core.auth.AwsCredentials
-import software.amazon.awssdk.core.auth.AwsCredentialsProvider
-import software.amazon.awssdk.core.auth.ProfileCredentialsProvider
+import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.profiles.Profile
+import software.amazon.awssdk.profiles.ProfileFile
+import software.amazon.awssdk.profiles.ProfileProperties.AWS_ACCESS_KEY_ID
+import software.amazon.awssdk.profiles.ProfileProperties.AWS_SECRET_ACCESS_KEY
+import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderFactory.Companion.NAME
 import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderFactory.Companion.TYPE
-import java.io.PrintWriter
 import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.concurrent.ConcurrentHashMap
 
 class ProfileToolkitCredentialsProvider(
-        private val profileFilePath: Path,
-        val name: String)
-    : ToolkitCredentialsProvider {
+    internal val profile: Profile
+) : ToolkitCredentialsProvider {
+    override fun id() = "$TYPE:${profile.name()}"
 
-    private val awsCredentialsProvider: AwsCredentialsProvider = ProfileCredentialsProvider.builder()
-        .profileFile {
-            it.content(profileFilePath)
-                    .type(ProfileFile.Type.CREDENTIALS)
+    override fun displayName() = "$NAME: ${profile.name()}"
+
+    override fun getCredentials(): AwsCredentials {
+        // Use an internal AwsCredentialsProvider so that session creds can be refreshed underneath of us
+        val internalCredProvider by lazy {
+            when {
+                propertyExists(AWS_ACCESS_KEY_ID) -> {
+                    val credentials = AwsCredentials.create(
+                        requiredProperty(AWS_ACCESS_KEY_ID),
+                        requiredProperty(AWS_SECRET_ACCESS_KEY)
+                    )
+                    StaticCredentialsProvider.create(credentials)
+                }
+                else -> TODO("Add more advanced logic to respect things like MFA, STS, see ProfileCredentialsUtils in V2")
+            }
         }
-        .profileName(name)
-        .build()
 
+        return internalCredProvider.credentials
+    }
 
-    constructor(profileFilePath: Path, data: Map<String, String>)
-            : this(profileFilePath, data[P_PROFILE_NAME]?:throw IllegalArgumentException("AWS profile name cannot be null!"))
+    private fun propertyExists(property: String): Boolean {
+        return profile.property(property).isPresent
+    }
 
-    override fun toMap(): Map<String, String> = mapOf(P_PROFILE_NAME to name)
+    private fun requiredProperty(property: String): String {
+        return profile.property(property)
+            .orElseThrow { IllegalArgumentException("Profile ${profile.name()} is missing required property $property") }
+    }
 
-    override fun id(): String = "$TYPE:$name"
-
-    override fun displayName(): String = "$TYPE:$name"
-
-    override fun getCredentials(): AwsCredentials = awsCredentialsProvider.credentials
-
-    companion object {
-        const val P_PROFILE_NAME = "profileName"
+    override fun toString(): String {
+        return "ProfileToolkitCredentialsProvider(profile=$profile)"
     }
 }
 
-class ProfileToolkitCredentialsProviderFactory(profileFilePath: Path = Paths.get(AwsSystemSetting.AWS_SHARED_CREDENTIALS_FILE.stringValue.get()))
-    : ToolkitCredentialsProviderFactory(TYPE, NAME, DESCRIPTION) {
-
+class ProfileToolkitCredentialsProviderFactory(private val credentialLocationOverride: Path? = null) :
+    ToolkitCredentialsProviderFactory(TYPE) {
     /**
-     * All the AWS profiles in the current configured [profileFilePath], with profile name as the key
+     * All the AWS profiles loaded/merged from the default profile locations
      */
-    private val profiles = ConcurrentHashMap<String, Profile>()
-
-    /**
-     * The profile file path which might not exist. When changing the location, we reload profiles from it.
-     */
-    var profileFilePath: Path = profileFilePath
-        set(value) {
-            field = value
-            loadFromProfileFile()
-        }
+    private var profiles = emptyMap<String, Profile>()
 
     init {
         loadFromProfileFile()
-    }
-
-    override fun create(data: Map<String, String>): ToolkitCredentialsProvider? =
-            try {ProfileToolkitCredentialsProvider(profileFilePath, data)} catch (e: IllegalArgumentException) {
-                LOG.warn("Failed to create AWS profile from the map data.", e)
-                null
-            }
-
-    fun getByName(name: String): ProfileToolkitCredentialsProvider? =
-            tcps.values.firstOrNull { (it as ProfileToolkitCredentialsProvider).name == name } as ProfileToolkitCredentialsProvider
-
-    //TODO To use Austin's existing code for saving profiles
-    fun saveToProfileFile() {
-        PrintWriter(profileFilePath.toFile()).use {
-            profiles.values.forEach { profile ->
-                it.println("[${profile.name()}]")
-                profile.properties().forEach { property, value ->
-                    it.println("${property}=${value}")
-                }
-            }
-        }
+        // TODO: Start file watchers
     }
 
     /**
-     * Clean out all the current credentials and load all the profiles from the configured [profileFilePath].
-     * When the file in [profileFilePath] doesn't exist, do nothing.
+     * Clean out all the current credentials and load all the profiles
      */
     private fun loadFromProfileFile() {
-        tcps.clear()
-        profiles.clear()
-
         try {
-            profiles.putAll(ProfileFile.builder()
-                    .content(profileFilePath)
-                    .type(ProfileFile.Type.CREDENTIALS)
-                    .build().profiles())
+            profiles = credentialLocationOverride?.let {
+                ProfileFile.builder()
+                    .content(credentialLocationOverride)
+                    .type(ProfileFile.Type.CONFIGURATION)
+                    .build()
+                    .profiles()
+            } ?: ProfileFile.defaultProfileFile().profiles()
 
+            clear()
             profiles.values.forEach {
-                add(ProfileToolkitCredentialsProvider(profileFilePath, it.name()))
+                add(ProfileToolkitCredentialsProvider(it))
             }
         } catch (e: Exception) {
-            LOG.warn("Failed to load AWS profiles from $profileFilePath", e)
+            // TODO: Need a better way to report this, a notification SPI?
+            LOG.warn("Failed to load AWS profiles", e)
         }
     }
 
-    fun create(profile: Profile): ProfileToolkitCredentialsProvider {
-        profiles[profile.name()] = profile.toBuilder().build()
-        saveToProfileFile()
-        return add(ProfileToolkitCredentialsProvider(profileFilePath, profile.name())) as ProfileToolkitCredentialsProvider
+    override fun shutDown() {
+        // TODO: Shut down credential file watcher here
     }
-
-    // Update operation might change the name of the profile. Do a deletion against the original one and add a new one.
-    fun update(id: String, profile: Profile) {
-        (get(id) as ProfileToolkitCredentialsProvider).apply {
-            profiles.remove(this.name)  // Remove the original profile from the profile list
-            remove(id)  // Remove the original Toolkit Credentials Provider from the factory
-            profiles[profile.name()] = profile.toBuilder().build()   // Update the profile as if creating a new one
-            saveToProfileFile()
-            // Add a new Toolkit Credentials Provider
-            add(ProfileToolkitCredentialsProvider(profileFilePath, profile.name()))
-        }
-    }
-
-    override fun remove(id: String): ToolkitCredentialsProvider? =
-            super.remove(id)?.apply {
-                profiles.remove((this as ProfileToolkitCredentialsProvider).name)
-                saveToProfileFile()
-            }
-
 
     companion object {
-
         private val LOG = LoggerFactory.getLogger(ProfileToolkitCredentialsProviderFactory::class.java)
 
         const val TYPE = "profile"
         const val NAME = "AWS Profile"
-        const val DESCRIPTION = "AWS Profile based Credential provider"
     }
 }

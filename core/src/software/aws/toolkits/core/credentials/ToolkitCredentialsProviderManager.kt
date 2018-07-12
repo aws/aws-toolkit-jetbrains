@@ -1,55 +1,39 @@
 package software.aws.toolkits.core.credentials
 
+import org.slf4j.LoggerFactory
+
 class ToolkitCredentialsProviderManager(
-        val registry: ToolkitCredentialsProviderRegistry,
-        private val store: ToolkitCredentialsProviderStore
+    private val registry: ToolkitCredentialsProviderRegistry
 ) {
-    init {
-        store.load().forEach { t, u -> loadFactory(t, u) }
+    fun getCredentialProvider(id: String): ToolkitCredentialsProvider {
+        return registry.listFactories().mapNotNull { it.get(id) }.firstOrNull()
+            ?: throw CredentialProviderNotFound("No ToolkitCredentialsProvider found represented by $id")
     }
 
-    private fun loadFactory(factoryId: String, data: List<Map<String, String>>) {
-        registry.getFactory(factoryId)?.apply {
-            data.forEach { this.load(it) }
+    /**
+     * Shuts down the manager and all registered factories
+     */
+    fun shutDown() {
+        registry.listFactories().forEach {
+            try {
+                it.shutDown()
+            } catch (e: Exception) {
+                LOG.warn("ToolkitCredentialsProviderFactory '${it::class.qualifiedName}' threw exception when shutting down", e)
+            }
         }
     }
 
-    fun get(id: String): ToolkitCredentialsProvider? =
-            registry.listFactories().mapNotNull { it.get(id) }.firstOrNull()
-
-    /**
-     * Serialize and save the current managed TCPs [ToolkitCredentialsProvider].
-     */
-    fun save() {
-        store.save(
-                registry.listFactories().map { factory ->
-                    factory.type to factory.list().map { tcp -> tcp.toMap() }
-                }.toMap()
-        )
+    companion object {
+        private val LOG = LoggerFactory.getLogger(ToolkitCredentialsProviderManager::class.java)
     }
 }
 
+class CredentialProviderNotFound(msg: String) : RuntimeException(msg)
+
 /**
- * Mapping all the [ToolkitCredentialsProvider] to the unmodeled map format, e.g
- * {
- *     "profile": [
- *         {"profileName": "default"},
- *         {"profileName": "foo"}
- *     ],
- *     "env": [
- *         {}
- *     ]
- * }
+ * Registry of all possible [ToolkitCredentialsProviderFactory]
  */
-interface ToolkitCredentialsProviderStore {
-
-    fun load(): Map<String, List<Map<String, String>>>
-
-    fun save(data: Map<String, List<Map<String, String>>>)
-}
-
 interface ToolkitCredentialsProviderRegistry {
-
     fun listFactories(): Collection<ToolkitCredentialsProviderFactory>
 
     fun getFactory(id: String): ToolkitCredentialsProviderFactory?

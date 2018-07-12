@@ -1,114 +1,80 @@
 package software.aws.toolkits.core.credentials
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.nio.file.Path
+import software.amazon.awssdk.auth.credentials.AwsCredentials
+import kotlin.reflect.KClass
 
 class ToolkitCredentialsProviderManagerTest {
-
     @Rule
     @JvmField
     val temporaryFolder = TemporaryFolder()
 
-    @Test fun testLoadEnvironment() {
-        val manager = ToolkitCredentialsProviderManager(
-                MockToolkitCredentialsProviderRegistry(temporaryFolder.newFile().toPath()),
-                MockToolkitCredentialsProviderStore(mapOf(
-                        "env" to listOf(mapOf())
-                ))
-        )
-        assertThat(manager.get("env")).isNotNull()
+    private val manager = ToolkitCredentialsProviderManager(MockToolkitCredentialsProviderRegistry())
+
+    private val shutDownFactories = mutableSetOf<KClass<*>>()
+
+    @Test
+    fun testGettingCredentials() {
+        assertThat(manager.getCredentialProvider("Mock1:Cred1")).isNotNull
+        assertThat(manager.getCredentialProvider("Mock2:Cred2")).isNotNull
     }
 
-    @Test fun testLoadSystemProperty() {
-        val manager = ToolkitCredentialsProviderManager(
-                MockToolkitCredentialsProviderRegistry(temporaryFolder.newFile().toPath()),
-                MockToolkitCredentialsProviderStore(mapOf(
-                        "sys" to listOf(mapOf())
-                ))
-        )
-        assertThat(manager.get("sys")).isNotNull()
+    @Test
+    fun testGettingCredentialsThatDontExist() {
+        assertThatThrownBy { manager.getCredentialProvider("DoesNotExist") }
+            .isInstanceOf(CredentialProviderNotFound::class.java)
     }
 
-    @Test fun testLoadProfile_profileInPersistentFileAndProfileFile() {
-        val manager = ToolkitCredentialsProviderManager(
-                MockToolkitCredentialsProviderRegistry(File("tst-resources/credentials").toPath()),
-                MockToolkitCredentialsProviderStore(mapOf(
-                        "profile" to listOf(
-                                mapOf("profileName" to "foo")
-                        )
-                ))
-        )
-        val fooProvider = manager.get("profile:foo")
-        assertThat(fooProvider).isNotNull()
-        assertTrue(fooProvider!!.isEnabled())
+    @Test
+    fun testShutdownIsCalledOnFactories() {
+        manager.shutDown()
+        assertThat(shutDownFactories)
+            .containsOnly(MockToolkitCredentialProviderFactory::class, MockToolkitCredentialProviderFactory2::class)
     }
 
-    @Test fun testLoadProfile_profileNotInPersistentFileButInProfileFile() {
-        val manager = ToolkitCredentialsProviderManager(
-                MockToolkitCredentialsProviderRegistry(File("tst-resources/credentials").toPath()),
-                MockToolkitCredentialsProviderStore(mapOf(
-                        "profile" to listOf()
-                ))
-        )
-        val fooProvider = manager.get("profile:foo")
-        assertThat(fooProvider).isNotNull()
-        assertTrue(fooProvider!!.isEnabled())
+    private class MockToolkitCredentialsProvider(private val id: String) : ToolkitCredentialsProvider {
+        override fun id() = id
+
+        override fun displayName() = id
+
+        override fun getCredentials(): AwsCredentials = throw NotImplementedError()
     }
 
-    @Test fun testLoadProfile_profileInPersistentDataNotInProfile() {
-        val manager = ToolkitCredentialsProviderManager(
-                MockToolkitCredentialsProviderRegistry(File("tst-resources/credentials").toPath()),
-                MockToolkitCredentialsProviderStore(mapOf(
-                        "profile" to listOf(
-                                mapOf("profileName" to "baz")
-                        )
-                ))
-        )
-        val bazProvider = manager.get("profile:baz")
-        assertThat(bazProvider).isNotNull()
-        assertFalse(bazProvider!!.isEnabled())
+    private inner class MockToolkitCredentialProviderFactory : ToolkitCredentialsProviderFactory("Mock1") {
+        init {
+            add(MockToolkitCredentialsProvider("Mock1:Cred1"))
+            add(MockToolkitCredentialsProvider("Mock1:Cred2"))
+        }
+
+        override fun shutDown() {
+            shutDownFactories.add(this::class)
+            throw RuntimeException("Simulated")
+        }
     }
 
-    @Test fun testLoadProfile_invalidPersistentData() {
-        val manager = ToolkitCredentialsProviderManager(
-                MockToolkitCredentialsProviderRegistry(File("tst-resources/credentials").toPath()),
-                MockToolkitCredentialsProviderStore(mapOf(
-                        "profile" to listOf(
-                                mapOf("profileName1" to "baz")
-                        )
-                ))
-        )
-        val bazProvider = manager.get("profile:baz")
-        assertThat(bazProvider).isNull()
+    private inner class MockToolkitCredentialProviderFactory2 : ToolkitCredentialsProviderFactory("Mock2") {
+        init {
+            add(MockToolkitCredentialsProvider("Mock2:Cred1"))
+            add(MockToolkitCredentialsProvider("Mock2:Cred2"))
+        }
+
+        override fun shutDown() {
+            shutDownFactories.add(this::class)
+        }
     }
-}
 
-class MockToolkitCredentialsProviderStore(private val data: Map<String, List<Map<String, String>>>)
-    : ToolkitCredentialsProviderStore {
+    private inner class MockToolkitCredentialsProviderRegistry : ToolkitCredentialsProviderRegistry {
+        private val factories = listOf(
+            MockToolkitCredentialProviderFactory(),
+            MockToolkitCredentialProviderFactory2()
+        ).associateBy { it.type }
 
-    override fun load(): Map<String, List<Map<String, String>>> = data
+        override fun listFactories() = factories.values
 
-    override fun save(data: Map<String, List<Map<String, String>>>) {
-        // do nothing
+        override fun getFactory(id: String) = factories[id]
     }
-}
-
-class MockToolkitCredentialsProviderRegistry(private val profileFileLocation: Path)
-    : ToolkitCredentialsProviderRegistry {
-
-    private val factories: Map<String, ToolkitCredentialsProviderFactory> = listOf(
-            EnvironmentVariableToolkitCredentialsProviderFactory(),
-            SystemPropertyToolkitCredentialsProviderFactory(),
-            ProfileToolkitCredentialsProviderFactory(profileFileLocation)
-    ).map { it.type to it }.toMap()
-
-    override fun listFactories(): Collection<ToolkitCredentialsProviderFactory> = factories.values
-
-    override fun getFactory(id: String): ToolkitCredentialsProviderFactory? = factories[id]
 }

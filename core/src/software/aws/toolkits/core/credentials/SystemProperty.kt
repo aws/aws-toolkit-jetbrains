@@ -1,38 +1,36 @@
 package software.aws.toolkits.core.credentials
 
-import software.amazon.awssdk.core.auth.AwsCredentials
-import software.amazon.awssdk.core.auth.AwsCredentialsProvider
-import software.amazon.awssdk.core.auth.SystemPropertyCredentialsProvider
+import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.SystemPropertyCredentialsProvider
 import software.aws.toolkits.core.credentials.SystemPropertyToolkitCredentialsProviderFactory.Companion.TYPE
 
 class SystemPropertyToolkitCredentialsProvider() : ToolkitCredentialsProvider {
+    private val awsCredentialsProvider = SystemPropertyCredentialsProvider.create()
 
-    private val awsCredentialsProvider: AwsCredentialsProvider
+    override fun id() = TYPE
 
-    init {
-        awsCredentialsProvider = SystemPropertyCredentialsProvider.create()
-    }
-
-    override fun id(): String = TYPE
-
-    override fun displayName(): String = DISPLAY_NAME
-
-    override fun toMap(): Map<String, String> = mapOf()
+    override fun displayName() = DISPLAY_NAME
 
     override fun getCredentials(): AwsCredentials = awsCredentialsProvider.credentials
 
     companion object {
-        const val DISPLAY_NAME = "[syspro]"
+        const val DISPLAY_NAME = "System Properties"
     }
 }
 
-class SystemPropertyToolkitCredentialsProviderFactory() : ToolkitCredentialsProviderFactory(TYPE, NAME, DESCRIPTION) {
-
-    override fun create(data: Map<String, String>): ToolkitCredentialsProvider? = SystemPropertyToolkitCredentialsProvider()
+class SystemPropertyToolkitCredentialsProviderFactory() : ToolkitCredentialsProviderFactory(TYPE) {
+    init {
+        val credentialsProvider = SystemPropertyToolkitCredentialsProvider()
+        try {
+            credentialsProvider.credentials
+            add(credentialsProvider)
+        } catch (_: Exception) {
+            // We can't create creds from sys props, so dont add it
+        }
+    }
 
     companion object {
-        const val TYPE = "sys"
-        const val NAME = "System Property"
-        const val DESCRIPTION = "System Property based Credentials Provider"
+        internal const val TYPE = "sysProps"
+        private const val NAME = "System Property"
     }
 }
