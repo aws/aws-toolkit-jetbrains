@@ -49,7 +49,7 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
         lazyFixture.ifSet {
             try {
                 fixture.tearDown()
-            } catch(e: Exception) {
+            } catch (e: Exception) {
                 LOG.warn("Exception during tear-down", e)
             }
             lazyFixture.clear()
