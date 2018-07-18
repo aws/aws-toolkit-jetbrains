@@ -21,6 +21,7 @@ object PartitionLoader {
         .enable(JsonParser.Feature.ALLOW_COMMENTS)
 
     fun parse(): Partitions? {
+        // TODO: Do not use the embedded SDKs version, https://github.com/aws/aws-toolkit-jetbrains/issues/91
         PartitionLoader::class.java.classLoader.getResourceAsStream(JAVA_SDK_PARTITION_RESOURCE_PATH).use {
             return try {
                 mapper.readValue<Partitions>(it, Partitions::class.java)
