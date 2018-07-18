@@ -15,9 +15,9 @@ import kotlin.reflect.KClass
 /**
  * An SPI for caching of AWS clients inside of a toolkit
  */
-abstract class ToolkitClientManager {
+open class ToolkitClientManager {
     protected data class AwsClientKey(
-        val profileName: String,
+        val credProvider: ToolkitCredentialsProvider,
         val region: AwsRegion,
         val serviceClass: KClass<out SdkClient>
     )
@@ -26,12 +26,12 @@ abstract class ToolkitClientManager {
     private val httpClient = ApacheSdkHttpClientFactory.builder().build().createHttpClient()
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : SdkClient> getClient(clz: KClass<T>): T {
-        val key = AwsClientKey(
-            profileName = getCredentialsProvider().id,
-            region = getRegion(),
-            serviceClass = clz
-        )
+    open fun <T : SdkClient> getClient(
+        clz: KClass<T>,
+        credentialsProvider: ToolkitCredentialsProvider,
+        region: AwsRegion
+    ): T {
+        val key = createCacheKey(credentialsProvider, region, clz)
 
         if (key.region != AwsRegion.GLOBAL && GLOBAL_SERVICES.contains(key.serviceClass.simpleName)) {
             return cachedClients.computeIfAbsent(key.copy(region = AwsRegion.GLOBAL)) { createNewClient(it) } as T
@@ -40,18 +40,20 @@ abstract class ToolkitClientManager {
         return cachedClients.computeIfAbsent(key) { createNewClient(it) } as T
     }
 
-    inline fun <reified T : SdkClient> getClient(): T =
-        this.getClient(T::class)
+    private fun <T : SdkClient> createCacheKey(
+        credProvider: ToolkitCredentialsProvider,
+        region: AwsRegion,
+        clz: KClass<T>
+    ): AwsClientKey {
+        return AwsClientKey(
+            credProvider = credProvider,
+            region = region,
+            serviceClass = clz
+        )
+    }
 
-    /**
-     * Get the current active credential provider for the toolkit
-     */
-    protected abstract fun getCredentialsProvider(): ToolkitCredentialsProvider
-
-    /**
-     * Get the current active region for the toolkit
-     */
-    protected abstract fun getRegion(): AwsRegion
+    inline fun <reified T : SdkClient> getClient(credProvider: ToolkitCredentialsProvider, region: AwsRegion): T =
+        this.getClient(T::class, credProvider, region)
 
     /**
      * Calls [AutoCloseable.close] if client implements [AutoCloseable] and clears the cache
@@ -73,7 +75,7 @@ abstract class ToolkitClientManager {
 
         return builder
             .httpConfiguration(ClientHttpConfiguration.builder().httpClient(httpClient).build())
-            .credentialsProvider(getCredentialsProvider())
+            .credentialsProvider(key.credProvider)
             .region(Region.of(key.region.id))
             .also {
                 if (it is S3ClientBuilder) {

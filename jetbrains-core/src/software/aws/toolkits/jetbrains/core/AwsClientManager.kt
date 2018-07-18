@@ -5,11 +5,13 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import javax.security.auth.login.CredentialNotFoundException
+import kotlin.reflect.KClass
 
 class AwsClientManager internal constructor(
     project: Project
@@ -24,7 +26,13 @@ class AwsClientManager internal constructor(
         shutdown()
     }
 
-    override fun getCredentialsProvider(): ToolkitCredentialsProvider {
+    inline fun <reified T : SdkClient> getClient(): T = this.getClient(T::class)
+
+    fun <T : SdkClient> getClient(clz: KClass<T>): T {
+        return getClient(clz, getCredentialsProvider(), getRegion())
+    }
+
+    private fun getCredentialsProvider(): ToolkitCredentialsProvider {
         try {
             return accountSettingsManager.activeCredentialProvider
         } catch (e: CredentialNotFoundException) {
@@ -35,7 +43,7 @@ class AwsClientManager internal constructor(
         }
     }
 
-    override fun getRegion(): AwsRegion {
+    private fun getRegion(): AwsRegion {
         return accountSettingsManager.activeRegion
     }
 
