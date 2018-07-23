@@ -2,6 +2,7 @@ package software.aws.toolkits.core.credentials
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
@@ -37,14 +38,13 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     val temporaryFolder = TemporaryFolder()
 
     private lateinit var profileFile: File
-    private lateinit var mockSdkHttpClient: SdkHttpClient
-    private lateinit var mockRegionProvider: ToolkitRegionProvider
+    private val mockSdkHttpClient: SdkHttpClient = mock()
+    private val mockRegionProvider: ToolkitRegionProvider = mock()
 
     @Before
     fun setUp() {
         profileFile = temporaryFolder.newFile("config")
-        mockSdkHttpClient = mock()
-        mockRegionProvider = mock()
+        reset(mockSdkHttpClient, mockRegionProvider)
     }
 
     @Test

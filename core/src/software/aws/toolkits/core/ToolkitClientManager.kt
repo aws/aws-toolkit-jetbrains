@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
  */
 abstract class ToolkitClientManager(private val sdkHttpClient: SdkHttpClient) {
     protected data class AwsClientKey(
-        val profileName: String,
+        val credentialProviderId: String,
         val region: AwsRegion,
         val serviceClass: KClass<out SdkClient>
     )
@@ -27,7 +27,7 @@ abstract class ToolkitClientManager(private val sdkHttpClient: SdkHttpClient) {
     @Suppress("UNCHECKED_CAST")
     fun <T : SdkClient> getClient(clz: KClass<T>): T {
         val key = AwsClientKey(
-            profileName = getCredentialsProvider().id,
+            credentialProviderId = getCredentialsProvider().id,
             region = getRegion(),
             serviceClass = clz
         )
