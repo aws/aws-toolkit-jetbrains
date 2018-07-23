@@ -38,6 +38,7 @@
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsSettingsPanelInstaller"/>
 
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.AwsSdkClient"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
                         serviceInterface="software.aws.toolkits.jetbrains.core.AwsResourceCache"

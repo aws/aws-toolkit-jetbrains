@@ -4,11 +4,15 @@ import software.aws.toolkits.core.credentials.EnvironmentVariableToolkitCredenti
 import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderFactory
 import software.aws.toolkits.core.credentials.SystemPropertyToolkitCredentialsProviderFactory
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProviderFactory
+import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
 class ProfileCredentialProviderFactory : CredentialProviderFactory {
     override fun createToolkitCredentialProviderFactory(): ToolkitCredentialsProviderFactory {
-        return ProfileToolkitCredentialsProviderFactory(AwsRegionProvider.getInstance())
+        return ProfileToolkitCredentialsProviderFactory(
+            AwsSdkClient.getInstance().sdkHttpClient,
+            AwsRegionProvider.getInstance()
+        )
     }
 }
 

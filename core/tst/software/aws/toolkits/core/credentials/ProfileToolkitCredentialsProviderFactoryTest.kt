@@ -1,11 +1,10 @@
 package software.aws.toolkits.core.credentials
 
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Condition
@@ -15,19 +14,22 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
+import software.amazon.awssdk.http.Abortable
+import software.amazon.awssdk.http.AbortableCallable
+import software.amazon.awssdk.http.AbortableInputStream
+import software.amazon.awssdk.http.SdkHttpClient
+import software.amazon.awssdk.http.SdkHttpFullResponse
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileProperties.AWS_ACCESS_KEY_ID
 import software.amazon.awssdk.profiles.ProfileProperties.AWS_SECRET_ACCESS_KEY
 import software.amazon.awssdk.profiles.ProfileProperties.AWS_SESSION_TOKEN
-import software.amazon.awssdk.services.sts.STSClient
-import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
-import software.amazon.awssdk.services.sts.model.AssumeRoleResponse
-import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.region.ToolkitRegionProvider
 import java.io.File
-import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAccessor
 
 class ProfileToolkitCredentialsProviderFactoryTest {
     @Rule
@@ -35,13 +37,13 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     val temporaryFolder = TemporaryFolder()
 
     private lateinit var profileFile: File
-    private lateinit var mockClientManager: ToolkitClientManager
+    private lateinit var mockSdkHttpClient: SdkHttpClient
     private lateinit var mockRegionProvider: ToolkitRegionProvider
 
     @Before
     fun setUp() {
         profileFile = temporaryFolder.newFile("config")
-        mockClientManager = mock()
+        mockSdkHttpClient = mock()
         mockRegionProvider = mock()
     }
 
@@ -102,29 +104,21 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         """.trimIndent()
         )
 
-        val stsClient = mock<STSClient> {
-            on {
-                assumeRole(check<AssumeRoleRequest> {
-                    assertThat(it.roleArn()).isEqualTo("arn1")
-                    assertThat(it.roleSessionName()).isEqualTo("testSession")
-                    assertThat(it.externalId()).isEqualTo("externalId")
-                })
-            }.doReturn(
-                AssumeRoleResponse.builder()
-                    .credentials {
-                        it.accessKeyId("AccessKey")
-                        it.secretAccessKey("SecretKey")
-                        it.sessionToken("SessionToken")
-                        it.expiration(Instant.now().plus(1, ChronoUnit.HOURS))
-                    }
-                    .build()
-            )
-        }
-
-        mockClientManager.stub {
-            on {
-                getClient(eq(STSClient::class), any(), any())
-            }.thenReturn(stsClient)
+        mockSdkHttpClient.stub {
+            on { prepareRequest(any(), any()) }
+                .thenReturn(
+                    SdkHttpFullResponse.builder()
+                        .statusCode(200)
+                        .content(
+                            createAssumeRoleResponse(
+                                "AccessKey",
+                                "SecretKey",
+                                "SessionToken",
+                                ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                            )
+                        )
+                        .build().toAbortable()
+                )
         }
 
         val providerFactory = createProviderFactory()
@@ -157,46 +151,33 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         """.trimIndent()
         )
 
-        val stsClientRoleProfile = mock<STSClient> {
-            on {
-                assumeRole(check<AssumeRoleRequest> {
-                    assertThat(it.roleArn()).isEqualTo("arn1")
-                })
-            }.doReturn(
-                AssumeRoleResponse.builder()
-                    .credentials {
-                        it.accessKeyId("AccessKey")
-                        it.secretAccessKey("SecretKey")
-                        it.sessionToken("SessionToken")
-                        it.expiration(Instant.now().plus(1, ChronoUnit.HOURS))
-                    }
-                    .build()
-            )
-        }
-
-        val stsClientSourceProfile = mock<STSClient> {
-            on {
-                assumeRole(check<AssumeRoleRequest> {
-                    assertThat(it.roleArn()).isEqualTo("arn2")
-                })
-            }.doReturn(
-                AssumeRoleResponse.builder()
-                    .credentials {
-                        it.accessKeyId("AccessKey2")
-                        it.secretAccessKey("SecretKey2")
-                        it.sessionToken("SessionToken2")
-                        it.expiration(Instant.now().plus(1, ChronoUnit.HOURS))
-                    }
-                    .build()
-            )
-        }
-
-        mockClientManager.stub {
-            on {
-                getClient(eq(STSClient::class), check {
-                    it.credentials // Hack to replicate the STS client getting the credentials for the assume role call
-                }, any())
-            }.thenReturn(stsClientSourceProfile, stsClientRoleProfile) // Assuming role happens bottom up
+        // In reverse order, since chain is built bottom up
+        mockSdkHttpClient.stub {
+            on { prepareRequest(any(), any()) }
+                .thenReturn(
+                    SdkHttpFullResponse.builder()
+                        .statusCode(200)
+                        .content(
+                            createAssumeRoleResponse(
+                                "AccessKey2",
+                                "SecretKey2",
+                                "SessionToken2",
+                                ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                            )
+                        )
+                        .build().toAbortable(),
+                    SdkHttpFullResponse.builder()
+                        .statusCode(200)
+                        .content(
+                            createAssumeRoleResponse(
+                                "AccessKey",
+                                "SecretKey",
+                                "SessionToken",
+                                ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                            )
+                        )
+                        .build().toAbortable()
+                )
         }
 
         val providerFactory = createProviderFactory()
@@ -209,6 +190,8 @@ class ProfileToolkitCredentialsProviderFactoryTest {
             assertThat(sessionCredentials.secretAccessKey()).isEqualTo("SecretKey")
             assertThat(sessionCredentials.sessionToken()).isEqualTo("SessionToken")
         }
+
+        verify(mockSdkHttpClient, times(2)).prepareRequest(any(), any())
     }
 
     @Test
@@ -227,7 +210,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
             ProfileToolkitCredentialsProvider(
                 profiles(),
                 profiles()["role"]!!,
-                mockClientManager,
+                mockSdkHttpClient,
                 mockRegionProvider
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
@@ -260,7 +243,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
             ProfileToolkitCredentialsProvider(
                 profiles(),
                 profiles()["role"]!!,
-                mockClientManager,
+                mockSdkHttpClient,
                 mockRegionProvider
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
@@ -285,7 +268,31 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     }
 
     private fun createProviderFactory() =
-        ProfileToolkitCredentialsProviderFactory(mockRegionProvider, mockClientManager, profileFile.toPath())
+        ProfileToolkitCredentialsProviderFactory(mockSdkHttpClient, mockRegionProvider, profileFile.toPath())
+
+    private fun createAssumeRoleResponse(
+        accessKey: String,
+        secretKey: String,
+        sessionToken: String,
+        expiration: TemporalAccessor
+    ): AbortableInputStream {
+        val expirationString = DateTimeFormatter.ISO_INSTANT.format(expiration)
+
+        val body = """
+                    <AssumeRoleResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/">
+                        <AssumeRoleResult>
+                            <Credentials>
+                                <SecretAccessKey>$secretKey</SecretAccessKey>
+                                <SessionToken>$sessionToken</SessionToken>
+                                <Expiration>$expirationString</Expiration>
+                                <AccessKeyId>$accessKey</AccessKeyId>
+                            </Credentials>
+                        </AssumeRoleResult>
+                    </AssumeRoleResponse>
+                    """.trimIndent()
+
+        return AbortableInputStream(body.toByteArray().inputStream(), Abortable {})
+    }
 
     companion object {
         val TEST_PROFILE_FILE_CONTENTS = """
@@ -328,5 +335,16 @@ class ProfileToolkitCredentialsProviderFactoryTest {
                 )
             )
             .build()
+    }
+}
+
+private fun SdkHttpFullResponse.toAbortable(): AbortableCallable<SdkHttpFullResponse> {
+    val result = this
+    return object : AbortableCallable<SdkHttpFullResponse> {
+        override fun call(): SdkHttpFullResponse {
+            return result
+        }
+
+        override fun abort() {}
     }
 }

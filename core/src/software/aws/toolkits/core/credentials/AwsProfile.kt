@@ -5,6 +5,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.core.client.builder.ClientHttpConfiguration
+import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileProperties
@@ -14,11 +16,11 @@ import software.amazon.awssdk.profiles.ProfileProperties.AWS_SESSION_TOKEN
 import software.amazon.awssdk.profiles.ProfileProperties.ROLE_ARN
 import software.amazon.awssdk.profiles.ProfileProperties.ROLE_SESSION_NAME
 import software.amazon.awssdk.profiles.ProfileProperties.SOURCE_PROFILE
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 import software.amazon.awssdk.services.sts.STSClient
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
-import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderFactory.Companion.NAME
 import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderFactory.Companion.TYPE
 import software.aws.toolkits.core.region.AwsRegion
@@ -28,7 +30,7 @@ import java.nio.file.Path
 class ProfileToolkitCredentialsProvider(
     private val profiles: MutableMap<String, Profile>,
     internal val profile: Profile,
-    private val clientManager: ToolkitClientManager,
+    private val sdkHttpClient: SdkHttpClient,
     private val regionProvider: ToolkitRegionProvider
 ) : ToolkitCredentialsProvider {
     private val internalCredentialsProvider = createInternalCredentialProvider()
@@ -66,16 +68,20 @@ class ProfileToolkitCredentialsProvider(
 
                 // Override the default SPI for getting the active credentials since we are making an internal
                 // to this provider client
-                val stsClient = clientManager.getClient(
-                    STSClient::class,
-                    ProfileToolkitCredentialsProvider(
-                        profiles,
-                        profiles[sourceProfile]!!,
-                        clientManager,
-                        regionProvider
-                    ),
-                    stsRegion
-                )
+                val stsClient = STSClient.builder()
+                    .httpConfiguration(
+                        ClientHttpConfiguration.builder()
+                            .httpClient(sdkHttpClient).build()
+                    ).credentialsProvider(
+                        ProfileToolkitCredentialsProvider(
+                            profiles,
+                            profiles[sourceProfile]!!,
+                            sdkHttpClient,
+                            regionProvider
+                        )
+                    )
+                    .region(Region.of(stsRegion.id))
+                    .build()
 
                 StsAssumeRoleCredentialsProvider.builder()
                     .stsClient(stsClient)
@@ -135,8 +141,8 @@ class ProfileToolkitCredentialsProvider(
 }
 
 class ProfileToolkitCredentialsProviderFactory(
+    private val sdkHttpClient: SdkHttpClient,
     private val regionProvider: ToolkitRegionProvider,
-    private val clientManager: ToolkitClientManager = ToolkitClientManager(),
     private val credentialLocationOverride: Path? = null
 ) : ToolkitCredentialsProviderFactory(TYPE) {
     init {
@@ -159,7 +165,7 @@ class ProfileToolkitCredentialsProviderFactory(
 
             clear()
             profiles.values.forEach {
-                add(ProfileToolkitCredentialsProvider(profiles, it, clientManager, regionProvider))
+                add(ProfileToolkitCredentialsProvider(profiles, it, sdkHttpClient, regionProvider))
             }
         } catch (e: Exception) {
             // TODO: Need a better way to report this, a notification SPI?
