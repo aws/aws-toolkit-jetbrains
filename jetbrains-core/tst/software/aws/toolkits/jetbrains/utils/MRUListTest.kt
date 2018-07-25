@@ -19,7 +19,7 @@ class MRUListTest {
         list.add(BAZ)
         list.add(FIZ)
 
-        assertThat(list.elements()).containsAnyOf(FIZ, BAZ, BAR)
+        assertThat(list.elements()).containsExactly(FIZ, BAZ, BAR)
     }
 
     @Test
@@ -29,7 +29,7 @@ class MRUListTest {
         list.add(BAZ)
         list.add(FOO)
 
-        assertThat(list.elements()).containsAnyOf(FOO, BAZ, BAR)
+        assertThat(list.elements()).containsExactly(FOO, BAZ, BAR)
     }
 
     private companion object {
