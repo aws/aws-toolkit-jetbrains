@@ -7,16 +7,16 @@ import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiFile
+import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.Icons.Services.LAMBDA_NEW_FUNCTION
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackagerProvider
 import software.aws.toolkits.jetbrains.services.lambda.LambdaVirtualFile
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
-class UploadLambdaFunction(private val handlerName: String) : AnAction(message("lambda.create_new"), null, LAMBDA_NEW_FUNCTION) {
+class UploadLambdaFunction(private val handlerName: String) : AnAction(message("lambda.create_new"), null, AwsIcons.Actions.LAMBDA_FUNCTION_NEW) {
 
     override fun update(e: AnActionEvent?) {
         e?.presentation?.isEnabledAndVisible =
@@ -33,8 +33,8 @@ class UploadLambdaFunction(private val handlerName: String) : AnAction(message("
         UploadToLambdaModal(project,
             packager.determineRuntime(module, psiFile),
             handlerName,
-            UploadToLambdaValidator(),
-            { performUpload(module, psiFile, lambdaCreator, it) }).show()
+            UploadToLambdaValidator()
+        ) { performUpload(module, psiFile, lambdaCreator, it) }.show()
     }
 
     private fun performUpload(module: Module, psiFile: PsiFile, creator: LambdaCreator, functionDetails: FunctionUploadDetails) {
@@ -65,7 +65,8 @@ data class FunctionUploadDetails(
     val iamRole: IamRole,
     val s3Bucket: String,
     val runtime: Runtime,
-    val description: String?
+    val description: String?,
+    val envVars: Map<String, String>
 )
 
 data class IamRole(val name: String, val arn: String) {
