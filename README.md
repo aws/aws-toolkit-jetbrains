@@ -6,7 +6,7 @@ AWS Toolkit for JetBrains - a plugin for interacting with AWS from JetBrains IDE
 The Toolkit is currently in preview and only available if built from [source](#Building-From-Source).
 
 
-## Features
+## Featuresasdfasd
 
 Features are broken broadly into two categories **All IDEs** and **IDE/Language Specific**.
 
