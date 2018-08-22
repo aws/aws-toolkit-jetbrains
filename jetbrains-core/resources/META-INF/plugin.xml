@@ -59,8 +59,7 @@
                             serviceImplementation="software.aws.toolkits.jetbrains.core.region.AwsRegionProvider"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.region.MockRegionProvider"/>
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.CredentialManager"
-                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialManager"
-                            testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager"/>
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultProjectAccountSettingsManager"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager"/>
@@ -71,13 +70,15 @@
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
                         serviceInterface="software.aws.toolkits.jetbrains.core.AwsResourceCache"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.MockResourceCache"/>
-        <toolWindow id="aws.explorer" anchor="left" secondary="true"
+        <toolWindow id="AWS Explorer" anchor="right"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
                     icon="AwsIcons.Logos.AWS"/>
 
         <fileBasedIndex implementation="software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerIndex"/>
         <codeInsight.lineMarkerProvider language="" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
         <configurationType implementation="software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfiguration"/>
+        <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.lambda.execution.local.LambdaLocalRunConfigurationProducer"/>
+        <runLineMarkerContributor language="" implementationClass="software.aws.toolkits.jetbrains.services.lambda.execution.local.LambdaLocalRunLineMarker"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
