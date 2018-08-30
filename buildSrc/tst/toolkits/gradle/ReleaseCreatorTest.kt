@@ -1,3 +1,6 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package toolkits.gradle
 
 import org.assertj.core.api.Assertions.assertThat
@@ -52,11 +55,11 @@ class ReleaseCreatorTest {
               "date" : "2018-08-27",
               "version" : "2.0.0",
               "entries" : [ {
-                "type" : "bugfix",
-                "description" : "Some bugfix"
-              }, {
                 "type" : "feature",
                 "description" : "Some feature"
+              }, {
+                "type" : "bugfix",
+                "description" : "Some bugfix"
               } ]
             }
         """.trimIndent()
