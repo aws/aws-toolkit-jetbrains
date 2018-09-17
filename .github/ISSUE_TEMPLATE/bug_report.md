@@ -5,26 +5,26 @@ about: Create a bug report to help us improve our product
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+<!-- A clear and concise description of what the bug is. -->
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+**To reproduce**
+<!-- Steps to reproduce the behavior: -->
+<!-- 1. Go to '...' -->
+<!-- 2. Click on '....' -->
+<!-- 3. Scroll down to '....' -->
+<!-- 4. See error -->
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+<!-- A clear and concise description of what you expected to happen. -->
 
 **Screenshots**
-If applicable, add screenshots to help explain your problem.
+<!-- If applicable, add screenshots to help explain your problem. -->
 
-**Your Environment):**
+**Your Environment:**
  - OS: 
  - JetBrains' Product:
  - JetBrains' Product Version:
  - Toolkit Version:
 
 **Additional context**
-Add any other context about the problem here.
+<!-- Add any other context about the problem here. -->
