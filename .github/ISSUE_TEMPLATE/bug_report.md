@@ -20,7 +20,7 @@ about: Create a bug report to help us improve our product
 **Screenshots**
 <!-- If applicable, add screenshots to help explain your problem. -->
 
-**Your Environment:**
+**Your Environment**
  - OS: 
  - JetBrains' Product:
  - JetBrains' Product Version:
