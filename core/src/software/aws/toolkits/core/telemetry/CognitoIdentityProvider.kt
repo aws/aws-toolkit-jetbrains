@@ -1,9 +1,12 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.core.telemetry
 
-import software.amazon.awssdk.core.auth.AnonymousCredentialsProvider
-import software.amazon.awssdk.core.auth.AwsCredentialsProvider
-import software.amazon.awssdk.core.auth.AwsSessionCredentials
-import software.amazon.awssdk.core.regions.Region
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cognitoidentity.CognitoIdentityClient
 import software.amazon.awssdk.services.cognitoidentity.model.Credentials
 import software.amazon.awssdk.services.cognitoidentity.model.GetCredentialsForIdentityRequest
@@ -12,7 +15,6 @@ import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.NonBlocking
 import software.amazon.awssdk.utils.cache.RefreshResult
 import java.time.temporal.ChronoUnit
-
 
 /**
  * AWSCredentialsProvider implementation that uses the Amazon Cognito Identity
@@ -34,7 +36,8 @@ class AWSCognitoCredentialsProvider(
         .prefetchStrategy(NonBlocking("Cognito Identity Credential Refresh"))
         .build()
 
-    override fun getCredentials(): AwsSessionCredentials = cacheSupplier.get()
+    override fun resolveCredentials(): AwsSessionCredentials = cacheSupplier.get()
+    val credentials get() = resolveCredentials()
 
     private fun updateCognitoCredentials(): RefreshResult<AwsSessionCredentials> {
         val credentialsForIdentity = credentialsForIdentity()
@@ -63,10 +66,9 @@ class AWSCognitoCredentialsProvider(
          */
         fun createAnonymousClient(region: Region): CognitoIdentityClient {
             val clientBuilder = CognitoIdentityClient.builder().apply {
-                it.credentialsProvider(AnonymousCredentialsProvider.create())
-                it.region(region)
+                credentialsProvider(AnonymousCredentialsProvider.create())
+                region(region)
             }
-
             return clientBuilder.build()
         }
     }

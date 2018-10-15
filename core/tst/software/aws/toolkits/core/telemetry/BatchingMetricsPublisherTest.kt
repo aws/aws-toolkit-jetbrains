@@ -1,3 +1,6 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.core.telemetry
 
 import assertk.assert
@@ -142,8 +145,8 @@ class BatchingMetricsPublisherTest {
 
     private fun createPublishAnswer(publishCount: CountDownLatch, value: Boolean): Answer<Boolean> {
         return Answer {
-            publishCount.countDown();
-            value;
+            publishCount.countDown()
+            value
         }
     }
 
