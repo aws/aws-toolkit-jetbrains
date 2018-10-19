@@ -37,5 +37,14 @@ interface LambdaHandlerResolver {
      */
     fun determineHandler(element: PsiElement): String?
 
+    /**
+     * Return a set of valid handlers from the given [PsiElement]. Different from [determineHandler], it returns all the valid
+     * handler strings contained by the [element].
+     *
+     * For Java implementation, if the element is a Java class, it returns all the valid methods either defined by this class or its
+     * super class(es).
+     */
+    fun determineHandlers(element: PsiElement): Set<String>
+
     companion object : RuntimeGroupExtensionPointObject<LambdaHandlerResolver>(ExtensionPointName.create("aws.toolkit.lambda.handlerResolver"))
 }

@@ -17,6 +17,10 @@ import com.jetbrains.python.psi.resolve.fromModule
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class PythonLambdaHandlerResolver : LambdaHandlerResolver {
+    override fun determineHandlers(element: PsiElement): Set<String> {
+        return determineHandler(element)?.let { setOf(it) }.orEmpty()
+    }
+
     override fun findPsiElements(
         project: Project,
         handler: String,

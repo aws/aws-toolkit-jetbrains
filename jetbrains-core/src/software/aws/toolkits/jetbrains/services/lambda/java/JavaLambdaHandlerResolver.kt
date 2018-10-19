@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
-import com.intellij.execution.JavaExecutionUtil
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
@@ -47,6 +46,24 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         }
     }
 
+    override fun determineHandler(element: PsiElement): String? {
+        return when (element) {
+            is PsiClass -> findByClass(element)
+            is PsiMethod -> findByMethod(element)
+            is PsiIdentifier -> determineHandler(element.parent)
+            else -> null
+        }
+    }
+
+    override fun determineHandlers(element: PsiElement): Set<String> {
+        return when (element) {
+            is PsiClass -> findHandlersByClass(element)
+            is PsiMethod -> findByMethod(element)?.let { setOf(it) }.orEmpty()
+            is PsiIdentifier -> determineHandlers(element.parent)
+            else -> emptySet()
+        }
+    }
+
     /**
      * https://docs.aws.amazon.com/lambda/latest/dg/java-programming-model-handler-types.html
      * Handler Overload Resolution
@@ -79,25 +96,13 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         return methods[0]
     }
 
-    override fun determineHandler(element: PsiElement): String? {
-        return when (element) {
-            is PsiClass -> findByClass(element)
-            is PsiMethod -> findByMethod(element)
-            is PsiIdentifier -> determineHandler(element.parent)
-            else -> null
-        }
-    }
-
     private fun findByMethod(method: PsiMethod): String? {
         val parentClass = method.parent as? PsiClass ?: return null
-        if (method.isPublic &&
-            (method.isStatic ||
-                    (parentClass.canBeInstantiatedByLambda() && !parentClass.implementsLambdaHandlerInterface())) &&
-            method.hasRequiredParameters()
-        ) {
-            return "${parentClass.qualifiedName}::${method.name}"
+        return if (method.isValidHandler(parentClass)) {
+            "${parentClass.qualifiedName}::${method.name}"
+        } else {
+            null
         }
-        return null
     }
 
     private fun findByClass(clz: PsiClass): String? =
@@ -106,6 +111,25 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         } else {
             null
         }
+
+    private fun findHandlersByClass(clz: PsiClass): Set<String> {
+        if (!clz.canBeInstantiatedByLambda()) {
+            return emptySet()
+        }
+
+        val handlers = mutableSetOf<String>()
+        if (clz.implementsLambdaHandlerInterface()) {
+            clz.qualifiedName?.let { handlers.add(it) }
+        }
+
+        handlers.addAll(clz.allMethods
+            .asSequence()
+            .filter { it.isValidHandler(clz) }
+            .map { "${clz.qualifiedName}::${it.name}" }
+            .toSet())
+
+        return handlers
+    }
 
     private fun PsiClass.canBeInstantiatedByLambda() =
         this.isPublic && this.isConcrete && this.hasPublicNoArgsConstructor()
@@ -120,9 +144,8 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         this.constructors.isEmpty() || this.constructors.any { it.hasModifier(JvmModifier.PUBLIC) && it.parameters.isEmpty() }
 
     private fun PsiClass.implementsLambdaHandlerInterface(): Boolean {
-        val module = JavaExecutionUtil.findModule(this) ?: return false
-        val scope = GlobalSearchScope.moduleRuntimeScope(module, false)
-        val psiFacade = JavaPsiFacade.getInstance(module.project)
+        val scope = GlobalSearchScope.everythingScope(this.project)
+        val psiFacade = JavaPsiFacade.getInstance(this.project)
 
         return LAMBDA_INTERFACES.any { interfaceName ->
             psiFacade.findClass(interfaceName, scope)?.let { interfacePsi ->
@@ -131,10 +154,30 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         }
     }
 
-    private fun PsiMethod.hasRequiredParameters(): Boolean =
-        this.parameters.size in 1..2 && this.parameterList.parameters.getOrNull(1)?.isContextParameter() ?: true
+    private fun PsiMethod.isValidHandler(parentClass: PsiClass): Boolean {
+        return this.isPublic &&
+                this.hasRequiredParameters() &&
+                (this.isStatic || parentClass.canBeInstantiatedByLambda()) &&
+                !(parentClass.implementsLambdaHandlerInterface() && this.name.equals("handleRequest"))
+    }
 
-    private fun PsiParameter.isContextParameter(): Boolean {
+    private fun PsiMethod.hasRequiredParameters(): Boolean =
+        when (this.parameters.size) {
+            1 -> true
+            2 -> (this.parameterList.parameters[0].isInputStreamParameter() &&
+                    this.parameterList.parameters[1].isOutputStreamParameter()) ||
+                    this.parameterList.parameters[1].isContextParameter()
+            3 -> this.parameterList.parameters[0].isInputStreamParameter() &&
+                    this.parameterList.parameters[1].isOutputStreamParameter() &&
+                    this.parameterList.parameters[2].isContextParameter()
+            else -> false
+        }
+
+    private fun PsiParameter.isContextParameter(): Boolean = isClass(LAMBDA_CONTEXT)
+    private fun PsiParameter.isInputStreamParameter(): Boolean = isClass(INPUT_STREAM)
+    private fun PsiParameter.isOutputStreamParameter(): Boolean = isClass(OUTPUT_STREAM)
+
+    private fun PsiParameter.isClass(classFullName: String): Boolean {
         val className = (this.type as? PsiClassReferenceType)?.className ?: return false
         val imports = containingFile.children.filterIsInstance<PsiImportList>()
             .flatMap { it.children.filterIsInstance<PsiImportStatement>() }
@@ -142,7 +185,7 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
             .mapNotNull { it.qualifiedName }
             .map { it.substringAfterLast(".") to it }
             .toMap()
-        return imports[className] == LAMBDA_CONTEXT
+        return imports[className] == classFullName
     }
 
     private companion object {
@@ -151,5 +194,7 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
             "com.amazonaws.services.lambda.runtime.RequestHandler"
         )
         const val LAMBDA_CONTEXT = "com.amazonaws.services.lambda.runtime.Context"
+        const val INPUT_STREAM = "java.io.InputStream"
+        const val OUTPUT_STREAM = "java.io.OutputStream"
     }
 }
