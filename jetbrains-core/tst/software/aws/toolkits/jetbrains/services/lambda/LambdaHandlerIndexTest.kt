@@ -19,6 +19,7 @@ class LambdaHandlerIndexTest {
 
     @Before
     fun setUp() {
+
         projectRule.fixture.addClass(
             """
             package com.amazonaws.services.lambda.runtime;
@@ -140,8 +141,7 @@ class LambdaHandlerIndexTest {
     fun testStreamHandlerIsReturned_customMethodInStreamRequestHandlerImplementation() {
         val fixture = projectRule.fixture
 
-        fixture.openClass(
-            """
+        val psiClass = fixture.addClass("""
             package com.example;
 
             import com.amazonaws.services.lambda.runtime.Context;
@@ -159,8 +159,11 @@ class LambdaHandlerIndexTest {
                     return request.toLowerCase();
                 }
             }
-            """
-        )
+            """)
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(psiClass.containingFile.virtualFile)
+        }
 
         runInEdtAndWait {
             assertThat(LambdaHandlerIndex.listHandlers(projectRule.project))
