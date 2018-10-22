@@ -1,0 +1,11 @@
+<!-- Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<idea-plugin>
+    <extensions defaultExtensionNs="aws.toolkit.lambda">
+        <runtimeGroup runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJSRuntimeGroup"/>
+        <packager runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJSLambdaPackager"/>
+        <handlerResolver runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJSLambdaHandlerResolver"/>
+        <sam.debugSupport runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJSSamDebugSupport"/>
+    </extensions>
+</idea-plugin>
