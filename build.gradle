@@ -170,7 +170,7 @@ apply plugin: 'org.jetbrains.intellij'
 apply plugin: ChangeLogPlugin
 
 intellij {
-    version "IC-" + ideaVersion
+    version "IU-" + ideaVersion
     pluginName 'aws-jetbrains-toolkit'
     updateSinceUntilBuild false
     downloadSources = System.getenv("CI") == null
