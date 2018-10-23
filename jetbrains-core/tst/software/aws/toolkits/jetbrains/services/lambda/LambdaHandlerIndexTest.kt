@@ -254,8 +254,7 @@ class LambdaHandlerIndexTest {
         }
 
         runInEdtAndWait {
-            assertThat(LambdaHandlerIndex.listHandlers(projectRule.project))
-                .isEmpty()
+            assertThat(LambdaHandlerIndex.listHandlers(projectRule.project)).isEmpty()
         }
     }
 }
