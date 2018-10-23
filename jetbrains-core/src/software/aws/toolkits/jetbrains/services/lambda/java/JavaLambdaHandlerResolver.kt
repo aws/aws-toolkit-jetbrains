@@ -103,7 +103,6 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         return findByMethod(method, file)
     }
 
-
     private fun findHandlersByMethod(method: PsiMethod, file: VirtualFile): Set<String> =
         findByMethod(method, file)?.let { setOf(it) }.orEmpty()
 
