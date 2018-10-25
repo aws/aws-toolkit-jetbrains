@@ -3,19 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.template
 
-import assertk.assert
-import assertk.assertions.hasSize
-import assertk.assertions.isEmpty
-import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
 import com.intellij.codeInsight.daemon.LineMarkerInfo
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.testutils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.testutils.rules.openFile
 
 class LambdaRunLineMarkerContributorTest {
 
@@ -36,9 +32,9 @@ Resources:
 """)
 
         runAndAssertionMarks(projectRule.fixture) { marks ->
-            assert(marks).hasSize(1)
-            assert(marks.first().lineMarkerInfo.element).isNotNull {
-                it.actual.text == "ServerlessFunction"
+            assertThat(marks).hasSize(1)
+            assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfies {
+                assertThat(it!!.text).isEqualTo("ServerlessFunction")
             }
         }
     }
@@ -55,9 +51,9 @@ Resources:
       Runtime: java8
 """)
         runAndAssertionMarks(projectRule.fixture) { marks ->
-            assert(marks).hasSize(1)
-            assert(marks.first().lineMarkerInfo.element).isNotNull {
-                assert(it.actual.text).isEqualTo("LambdaFunction")
+            assertThat(marks).hasSize(1)
+            assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfies {
+                assertThat(it!!.text).isEqualTo("LambdaFunction")
             }
         }
     }
@@ -73,7 +69,7 @@ Resources:
       DefinitionUri: swagger.yml
 """)
         runAndAssertionMarks(projectRule.fixture) { marks ->
-            assert(marks).isEmpty()
+            assertThat(marks).isEmpty()
         }
     }
 
@@ -82,14 +78,5 @@ Resources:
             val marks = fixture.findAllGutters().filterIsInstance<LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>>()
             assertion(marks)
         }
-    }
-
-    private fun CodeInsightTestFixture.openFile(relativePath: String, fileText: String): VirtualFile {
-        val file = this.addFileToProject(relativePath, fileText).virtualFile
-        runInEdtAndWait {
-            this.openFileInEditor(file)
-        }
-
-        return file
     }
 }

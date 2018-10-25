@@ -8,9 +8,10 @@ import com.intellij.execution.lineMarker.RunLineMarkerContributor
 import com.intellij.icons.AllIcons
 import com.intellij.psi.PsiElement
 import org.jetbrains.yaml.psi.YAMLKeyValue
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.functionFromElement
+import software.aws.toolkits.jetbrains.services.cloudformation.Function
+import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate
 
-class LambdaRunLineMarkerContributor : RunLineMarkerContributor() {
+class YamlLambdaRunLineMarkerContributor : RunLineMarkerContributor() {
 
     override fun getInfo(element: PsiElement): Info? {
         // Only leaf element is allowed
@@ -18,23 +19,12 @@ class LambdaRunLineMarkerContributor : RunLineMarkerContributor() {
             return null
         }
 
-        val parent = element.parent ?: return null
-        return try {
-            functionFromElement(parent) ?: return null
+        val parent = element.parent as? YAMLKeyValue ?: return null
 
-            when (parent) {
-                is YAMLKeyValue -> {
-                    // Only mark the key element
-                    if (parent.key != element) {
-                        return null
-                    }
-                }
-                else -> return null
-            }
-
+        return if (YamlCloudFormationTemplate.convertPsiToResource(parent) as? Function != null && parent.key == element) {
             Info(AllIcons.RunConfigurations.TestState.Run,
                     ExecutorAction.getActions(1), null)
-        } catch (e: Exception) {
+        } else {
             null
         }
     }
