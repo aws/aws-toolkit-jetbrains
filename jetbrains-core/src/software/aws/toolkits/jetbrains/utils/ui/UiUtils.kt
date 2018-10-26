@@ -29,7 +29,6 @@ fun <T> ComboBox<T>.populateValues(selected: T? = null, block: () -> List<T>) {
             model.removeAllElements()
             values.forEach { model.addElement(it) }
             this.selectedItem = selected
-            this.isEnabled = values.isNotEmpty()
         }, ModalityState.any())
     }
 }
