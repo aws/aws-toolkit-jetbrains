@@ -107,7 +107,7 @@
           <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <enabled value="true"/>
+          <enabled value="false"/>
         </properties>
       </component>
       <component id="2ff11" class="com.intellij.openapi.ui.ComboBox" binding="runtime">
@@ -121,7 +121,7 @@
           <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <enabled value="true"/>
+          <enabled value="false"/>
         </properties>
       </component>
       <component id="d4e6f" class="software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField" binding="envVars">
