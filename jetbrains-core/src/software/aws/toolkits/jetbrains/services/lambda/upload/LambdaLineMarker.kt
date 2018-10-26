@@ -12,10 +12,16 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.openapi.module.ModuleUtilCore.findModuleForPsiElement
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.psi.PsiElement
 import icons.AwsIcons
+import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.SamTemplateIndex.Companion.listFunctions
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
@@ -37,25 +43,28 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
         } ?: return null
 
         val handler = handlerResolver.determineHandler(element) ?: return null
+        val runtime = findModuleForPsiElement(element)?.let { ModuleRootManager.getInstance(it).sdk }?.let { RuntimeGroup.runtimeForSdk(it) } ?: return null
 
-        val actionGroup = DefaultActionGroup()
+        return if (isHandlerValid(element, handler, runtime)) {
+            val actionGroup = DefaultActionGroup()
 
-        if (element.language in LambdaPackager.supportedLanguages) {
-            val executorActions = ExecutorAction.getActions(1)
-            executorActions.forEach {
-                actionGroup.add(LineMarkerActionWrapper(element, it))
+            if (element.language in LambdaPackager.supportedLanguages) {
+                val executorActions = ExecutorAction.getActions(1)
+                executorActions.forEach {
+                    actionGroup.add(LineMarkerActionWrapper(element, it))
+                }
+
+                actionGroup.add(UploadLambdaFunction(handler))
             }
 
-            actionGroup.add(UploadLambdaFunction(handler))
-        }
-
-        return object : LineMarkerInfo<PsiElement>(
-            element, element.textRange, icon, Pass.LINE_MARKERS,
-            null, null,
-            GutterIconRenderer.Alignment.CENTER
-        ) {
-            override fun createGutterRenderer(): GutterIconRenderer? = LambdaGutterIcon(this, actionGroup)
-        }
+            object : LineMarkerInfo<PsiElement>(
+                    element, element.textRange, icon, Pass.LINE_MARKERS,
+                    null, null,
+                    GutterIconRenderer.Alignment.CENTER
+            ) {
+                override fun createGutterRenderer(): GutterIconRenderer? = LambdaGutterIcon(this, actionGroup)
+            }
+        } else null
     }
 
     override fun collectSlowLineMarkers(
@@ -63,6 +72,11 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
         result: MutableCollection<LineMarkerInfo<PsiElement>>
     ) {
     }
+
+    private fun isHandlerValid(element: PsiElement, handler: String, runtime: Runtime): Boolean =
+        !handler.contains("::") || // Class level handler is valid
+        listFunctions(element.project).any { it.handler() == handler && it.runtime() == runtime.toString() } || // Handler defined in template is valid
+        AwsResourceCache.getInstance(element.project).lambdaFunctions().any { it.handler == handler && it.runtime == runtime } // Handler in remote Lambda is valid
 
     class LambdaGutterIcon(markerInfo: LineMarkerInfo<PsiElement>, private val actionGroup: ActionGroup) :
         LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>(markerInfo) {
