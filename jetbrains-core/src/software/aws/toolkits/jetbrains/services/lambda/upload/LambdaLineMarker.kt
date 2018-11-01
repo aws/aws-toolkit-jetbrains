@@ -13,7 +13,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.module.ModuleUtilCore.findModuleForPsiElement
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.psi.PsiElement
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -43,7 +42,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
         } ?: return null
 
         val handler = handlerResolver.determineHandler(element) ?: return null
-        val runtime = findModuleForPsiElement(element)?.let { ModuleRootManager.getInstance(it).sdk }?.let { RuntimeGroup.runtimeForSdk(it) } ?: return null
+        val runtime = findModuleForPsiElement(element)?.let { RuntimeGroup.determineRuntime(it) } ?: return null
 
         return if (isHandlerValid(element, handler, runtime)) {
             val actionGroup = DefaultActionGroup()
