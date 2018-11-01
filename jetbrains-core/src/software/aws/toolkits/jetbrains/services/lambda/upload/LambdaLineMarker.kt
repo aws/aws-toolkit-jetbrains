@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.SamTemplateIndex.Companion.listFunctions
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex.Companion.listFunctions
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
@@ -44,7 +44,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
         val handler = handlerResolver.determineHandler(element) ?: return null
         val runtime = findModuleForPsiElement(element)?.let { RuntimeGroup.determineRuntime(it) } ?: return null
 
-        return if (isHandlerValid(element, handler, runtime)) {
+        return if (handlerResolver.shouldShowLineMarker(handler) || shouldShowLineMarker(element, handler, runtime)) {
             val actionGroup = DefaultActionGroup()
 
             if (element.language in LambdaPackager.supportedLanguages) {
@@ -72,8 +72,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
     ) {
     }
 
-    private fun isHandlerValid(element: PsiElement, handler: String, runtime: Runtime): Boolean =
-        !handler.contains("::") || // Class level handler is valid
+    private fun shouldShowLineMarker(element: PsiElement, handler: String, runtime: Runtime): Boolean =
         listFunctions(element.project).any { it.handler() == handler && it.runtime() == runtime.toString() } || // Handler defined in template is valid
         AwsResourceCache.getInstance(element.project).lambdaFunctions().any { it.handler == handler && it.runtime == runtime } // Handler in remote Lambda is valid
 

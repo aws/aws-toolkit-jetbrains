@@ -1,7 +1,7 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.lambda
+package software.aws.toolkits.jetbrains.services.cloudformation
 
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
@@ -10,7 +10,7 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.testutils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.testutils.rules.openFile
 
-class SamTemplateIndexTest {
+class CloudFormationTemplateIndexTest {
     @Rule
     @JvmField
     val projectRule = JavaCodeInsightTestFixtureRule()
@@ -38,10 +38,10 @@ Resources:
 """)
 
         runInEdtAndWait {
-            val functions = SamTemplateIndex.listFunctions(projectRule.project)
+            val functions = CloudFormationTemplateIndex.listFunctions(projectRule.project)
             assertThat(functions).hasSize(2)
-            assertThat(functions.find { it.logicalName == "ServerlessFunction" }).isNotNull
-            assertThat(functions.find { it.logicalName == "LambdaFunction" }).isNotNull
+            assertThat(functions.find { it.handler() == "foo::foo" }).isNotNull
+            assertThat(functions.find { it.handler() == "bar::bar" }).isNotNull
         }
     }
 
@@ -60,7 +60,7 @@ Resources:
 """)
 
         runInEdtAndWait {
-            val functions = SamTemplateIndex.listFunctions(projectRule.project)
+            val functions = CloudFormationTemplateIndex.listFunctions(projectRule.project)
             assertThat(functions).hasSize(1)
             val indexedFunction = functions.toList()[0]
             assertThat(indexedFunction.handler()).isEqualTo("serverless::foo")
@@ -83,7 +83,7 @@ Resources:
 """)
 
         runInEdtAndWait {
-            val functions = SamTemplateIndex.listFunctions(projectRule.project)
+            val functions = CloudFormationTemplateIndex.listFunctions(projectRule.project)
             assertThat(functions).hasSize(1)
             val indexedFunction = functions.toList()[0]
             assertThat(indexedFunction.handler()).isEqualTo("lambda::bar")
@@ -106,7 +106,7 @@ Resources:
 """)
 
         runInEdtAndWait {
-            val functions = SamTemplateIndex.listFunctions(projectRule.project)
+            val functions = CloudFormationTemplateIndex.listFunctions(projectRule.project)
             assertThat(functions).isEmpty()
         }
     }
@@ -126,7 +126,7 @@ Resources:
 """)
 
         runInEdtAndWait {
-            val functions = SamTemplateIndex.listFunctions(projectRule.project)
+            val functions = CloudFormationTemplateIndex.listFunctions(projectRule.project)
             assertThat(functions).hasSize(1)
             val indexedFunction = functions.toList()[0]
             assertThat(indexedFunction.handler()).isEmpty()
@@ -168,10 +168,9 @@ Resources:
 """)
 
         runInEdtAndWait {
-            val resources = SamTemplateIndex.listResourcesByType(projectRule.project, "AWS::Serverless::SimpleTable")
+            val resources = CloudFormationTemplateIndex.listResourcesByType(projectRule.project, "AWS::Serverless::SimpleTable")
             assertThat(resources).hasSize(1)
             val resource = resources.toList()[0]
-            assertThat(resource.logicalName).isEqualTo("DynamodbTable")
             assertThat(resource.indexedProperties).isEmpty()
         }
     }
