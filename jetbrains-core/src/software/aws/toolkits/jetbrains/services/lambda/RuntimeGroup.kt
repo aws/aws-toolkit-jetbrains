@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.lambda
 
 import com.intellij.lang.Language
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.extensions.AbstractExtensionPointBean
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
@@ -86,6 +88,14 @@ val Runtime.runtimeGroup: RuntimeGroup? get() = RuntimeGroup.find { this in it.r
  * For a given [com.intellij.lang.Language] determine the corresponding Lambda [RuntimeGroup]
  */
 val Language.runtimeGroup: RuntimeGroup? get() = RuntimeGroup.find { this.id in it.languageIds }
+
+/**
+ * Given [AnActionEvent] attempt to determine the [Runtime]
+ */
+fun AnActionEvent.runtime(): Runtime? {
+    val runtimeGroup = getData(LangDataKeys.LANGUAGE)?.runtimeGroup ?: return null
+    return getData(LangDataKeys.MODULE)?.let { runtimeGroup.determineRuntime(it) } ?: getData(LangDataKeys.PROJECT)?.let { runtimeGroup.determineRuntime(it) }
+}
 
 /**
  * A bean that represents an extension point based on a [RuntimeGroup]
