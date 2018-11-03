@@ -55,7 +55,7 @@ interface LambdaHandlerResolver {
      *
      * @see LambdaHandlerIndex.getIndexer
      */
-    fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String>
+    fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> = determineHandler(element)?.let { setOf(it) }.orEmpty()
 
     /**
      * Given a [handler] create a shorter name used for display.

@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.lambda.python
 
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
@@ -19,8 +18,6 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class PythonLambdaHandlerResolver : LambdaHandlerResolver {
     override fun version(): Int = 1
-
-    override fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> = determineHandler(element)?.let { setOf(it) }.orEmpty()
 
     override fun findPsiElements(
         project: Project,

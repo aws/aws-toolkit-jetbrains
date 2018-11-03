@@ -1,14 +1,14 @@
-package software.aws.toolkits.jetbrains.services.lambda.nodejs
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
+package software.aws.toolkits.jetbrains.ultimate.services.lambda.nodejs
+
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiFile
-import com.intellij.util.text.SemVer
-import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackage
@@ -46,16 +46,5 @@ class NodeJSLambdaPackager : LambdaPackager {
             }
         }
         return future
-    }
-
-    override fun determineRuntime(module: Module, file: PsiFile): Runtime {
-        val manager = NodeJsInterpreterManager.getInstance(module.project)
-        val version = manager.interpreter?.cachedVersion?.get()
-        if (version != null) {
-            if (version < SemVer("6.10.0", 6, 10, 0)) return Runtime.NODEJS4_3
-            if (version < SemVer("8.1.0", 8, 1, 0)) return Runtime.NODEJS6_10
-            return Runtime.NODEJS8_10
-        }
-        return Runtime.NODEJS
     }
 }

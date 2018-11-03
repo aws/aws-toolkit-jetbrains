@@ -1,4 +1,7 @@
-package software.aws.toolkits.jetbrains.services.lambda.nodejs
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.ultimate.services.lambda.nodejs
 
 import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.lang.javascript.psi.JSAssignmentExpression
@@ -14,6 +17,9 @@ import com.intellij.psi.search.GlobalSearchScope
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class NodeJSLambdaHandlerResolver : LambdaHandlerResolver {
+
+    override fun version(): Int = 1
+
     override fun findPsiElements(project: Project, handler: String, searchScope: GlobalSearchScope): Array<NavigatablePsiElement> {
         val dot = handler.indexOf(".")
         if (dot <= 0) return emptyArray()
@@ -21,7 +27,6 @@ class NodeJSLambdaHandlerResolver : LambdaHandlerResolver {
         val filename = handler.substring(0, dot)
         return elements.filter { it is NavigatablePsiElement && FileUtilRt.getNameWithoutExtension(it.containingFile.name) == filename }.toTypedArray()
     }
-
     override fun determineHandler(element: PsiElement): String? {
         if (element.node?.elementType != JSTokenTypes.IDENTIFIER) {
             return null
