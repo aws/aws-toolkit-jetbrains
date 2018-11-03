@@ -66,6 +66,7 @@ class EditLambdaDialog(
                 runtime = lambdaFunction.runtime,
                 handlerName = lambdaFunction.handler,
                 envVariables = lambdaFunction.envVariables ?: emptyMap(),
+                timeout = lambdaFunction.timeout,
                 role = lambdaFunction.role
             )
 
