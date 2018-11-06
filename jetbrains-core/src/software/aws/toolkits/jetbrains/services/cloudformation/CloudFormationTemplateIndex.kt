@@ -35,28 +35,14 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
     override fun getValueExternalizer(): DataExternalizer<MutableList<IndexedResource>> = object : DataExternalizer<MutableList<IndexedResource>> {
         override fun save(dataOutput: DataOutput, value: MutableList<IndexedResource>) {
             dataOutput.writeInt(value.size)
-            value.forEach { resource ->
-                dataOutput.writeInt(resource.indexedProperties.size)
-                resource.indexedProperties.forEach { key, value ->
-                    dataOutput.writeUTF(key)
-                    dataOutput.writeUTF(value)
-                }
-            }
+            value.forEach { resource -> resource.save(dataOutput) }
         }
 
         override fun read(dataInput: DataInput): MutableList<IndexedResource> {
             val resourceCount = dataInput.readInt()
             val resources = mutableListOf<IndexedResource>()
             repeat(resourceCount) {
-                val mutableMap: MutableMap<String, String> = mutableMapOf()
-
-                val propertySize = dataInput.readInt()
-                repeat(propertySize) {
-                    val key = dataInput.readUTF()
-                    val value = dataInput.readUTF()
-                    mutableMap[key] = value
-                }
-                resources.add(IndexedResource(mutableMap))
+                resources.add(IndexedResource.read(dataInput))
             }
             return resources
         }

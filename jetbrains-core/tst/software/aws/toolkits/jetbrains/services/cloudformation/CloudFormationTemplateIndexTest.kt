@@ -127,8 +127,8 @@ Resources:
             val functions = CloudFormationTemplateIndex.listFunctions(projectRule.project)
             assertThat(functions).hasSize(1)
             val indexedFunction = functions.toList()[0]
-            assertThat(indexedFunction.handler()).isEmpty()
-            assertThat(indexedFunction.runtime()).isEmpty()
+            assertThat(indexedFunction.handler()).isNull()
+            assertThat(indexedFunction.runtime()).isNull()
         }
     }
 
