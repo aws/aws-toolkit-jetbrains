@@ -10,7 +10,13 @@ package software.aws.toolkits.jetbrains.services.cloudformation
 open class IndexedResource internal constructor(val indexedProperties: Map<String, String>) {
 
     protected constructor(resource: Resource, indexProperties: List<String>)
-            : this(indexProperties.map { it to resource.getScalarProperty(it) }.toMap())
+            : this(indexProperties.map {
+        it to try {
+            resource.getScalarProperty(it)
+        } catch (e: Exception) {
+            ""
+        }
+    }.toMap())
 
     override fun equals(other: Any?): Boolean = this === other || (other as? IndexedResource)?.indexedProperties == indexedProperties
 
@@ -25,9 +31,11 @@ open class IndexedResource internal constructor(val indexedProperties: Map<Strin
     }
 }
 
-class IndexedFunction(indexedProperties: Map<String, String>) : IndexedResource(indexedProperties) {
+class IndexedFunction : IndexedResource {
 
-    internal constructor(resource: Resource) : this(listOf("Runtime", "Handler").map { it to resource.getScalarProperty(it) }.toMap())
+    internal constructor(indexedProperties: Map<String, String>) : super(indexedProperties)
+
+    internal constructor(resource: Resource) : super(resource, listOf("Runtime", "Handler"))
 
     fun runtime() = indexedProperties["Runtime"]
 
