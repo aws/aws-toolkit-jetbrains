@@ -14,7 +14,7 @@ class DeployServerlessApplicationAction : AnAction(
         message("serverless.application.deploy"),
         null,
         AwsIcons.Resources.LAMBDA_FUNCTION) {
-    private var templateYamlRegex = Regex("template.y[a]?ml", RegexOption.IGNORE_CASE)
+    private var templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
 
     override fun actionPerformed(e: AnActionEvent?) {
 
