@@ -112,6 +112,25 @@ Resources:
     }
 
     @Test
+    fun listResources_nullType() {
+        val fixture = projectRule.fixture
+
+        fixture.openFile("template.yaml", """
+Resources:
+  ServerlessFunction:
+    Properties:
+      CodeUri: target/HelloWorld-1.0.jar
+      Handler: bar
+      Runtime: java8
+""")
+
+        runInEdtAndWait {
+            val resources = CloudFormationTemplateIndex.listResources(projectRule.project)
+            assertThat(resources).isEmpty()
+        }
+    }
+
+    @Test
     fun nullHandlerAndRuntime() {
         val fixture = projectRule.fixture
 

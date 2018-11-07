@@ -17,6 +17,7 @@ import com.intellij.util.indexing.ID
 import com.intellij.util.io.DataExternalizer
 import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.KeyDescriptor
+import org.jetbrains.annotations.TestOnly
 import org.jetbrains.yaml.YAMLLanguage
 import org.jetbrains.yaml.psi.YAMLKeyValue
 import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate
@@ -103,10 +104,12 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
                     .toList()
         }
 
+        @TestOnly
+        fun listResources(project: Project): Collection<IndexedResource> = listResources(project) { true }
+
         fun listResourcesByType(project: Project, type: String): Collection<IndexedResource> = listResources(project) { it == type }
 
         fun listFunctions(project: Project): Collection<IndexedFunction> =
-                listResources(project) { it == SERVERLESS_FUNCTION_TYPE || it == LAMBDA_FUNCTION_TYPE }
-                        .map { IndexedFunction(it.indexedProperties) }
+                listResources(project).filterIsInstance(IndexedFunction::class.java)
     }
 }
