@@ -76,7 +76,7 @@
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
                     icon="AwsIcons.Logos.AWS"/>
 
-        <projectConfigurable id="aws" groupId="tools" bundle="software.aws.toolkits.resources.localized_messages"
+        <applicationConfigurable id="aws" groupId="tools" bundle="software.aws.toolkits.resources.localized_messages"
                              key="aws.settings.title"
                              instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
 

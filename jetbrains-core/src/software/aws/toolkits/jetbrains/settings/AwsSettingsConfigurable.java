@@ -8,7 +8,6 @@ import static software.aws.toolkits.resources.Localization.message;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.SearchableConfigurable;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.labels.LinkLabel;
@@ -22,19 +21,16 @@ import org.jetbrains.annotations.Nullable;
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String SAM_HELP_LINK = message("lambda.sam.cli.install_url");
 
-    private final Project project;
     private JPanel panel;
     private TextFieldWithBrowseButton samExecutablePath;
     private LinkLabel samHelp;
     private JBCheckBox showAllHandlerGutterIcons;
 
-    public AwsSettingsConfigurable(Project project) {
-        this.project = project;
-
+    public AwsSettingsConfigurable() {
         samExecutablePath.addBrowseFolderListener(
             message("aws.settings.sam.find.title"),
             message("aws.settings.sam.find.description"),
-            project,
+            null,
             FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
         );
     }
