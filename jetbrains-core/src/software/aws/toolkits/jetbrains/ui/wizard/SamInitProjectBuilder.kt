@@ -1,7 +1,7 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.ui
+package software.aws.toolkits.jetbrains.ui.wizard
 
 import com.intellij.ide.projectWizard.ProjectTemplateList
 import com.intellij.ide.util.projectWizard.ModuleBuilder
@@ -24,7 +24,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunn
 import java.nio.file.Paths
 
 class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
-    override fun getNodeIcon(p0: Boolean) = AwsIcons.Resources.LAMBDA_FUNCTION
+    override fun getNodeIcon(p0: Boolean) = ICON
 
     override fun createModuleBuilder() = SamInitModuleBuilder()
 
@@ -33,15 +33,25 @@ class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
     override fun getDescription() = "SAM Module Type Description"
 
     companion object {
+        val ICON = AwsIcons.Resources.LAMBDA_FUNCTION
         val ID = "SAM"
+        val DESCRIPTION = "AWS Serverless Application Model (AWS SAM) prescribes rules for expressing Serverless applications on AWS."
         val instance = SamModuleType()
     }
 }
 
 class SamInitModuleBuilder : ModuleBuilder() {
     var runtime: Runtime = Runtime.UNKNOWN_TO_SDK_VERSION
+    lateinit var runtimeSelectionPanel: SamInitRuntimeSelectionPanel
 
+    /*  Trick IDEA to give us a custom first screen without using the WizardDelegate trick
+        described in AndroidModuleBuilder
+        https://github.com/JetBrains/android/blob/master/android/src/com/android/tools/idea/npw/ideahost/AndroidModuleBuilder.java
+    */
     override fun getModuleType() = SamModuleType.instance
+
+    // we want to use our own custom template selection step
+    override fun isTemplateBased() = false
 
     fun getIdeaModuleType() = when (runtime) {
         Runtime.JAVA8 -> JavaModuleType.getModuleType()
@@ -69,19 +79,23 @@ class SamInitModuleBuilder : ModuleBuilder() {
                 .applyOutputDir(project.baseDir)
                 .execute()
         val moduleDir = Paths.get(project.baseDir.path, samAppName).toAbsolutePath()
-        val module = ModuleManager.getInstance(project).newModule(Paths.get(moduleDir.toString(), "$samAppName.iml").toAbsolutePath().toString(), moduleType)
+        ModuleManager.getInstance(project).newModule(Paths.get(moduleDir.toString(), "$samAppName.iml").toAbsolutePath().toString(), moduleType)
         rootModel.addContentEntry(LocalFileSystem.getInstance().findFileByIoFile(moduleDir.toFile())!!)
     }
 
-    override fun getPresentableName() = "SAM"
+    override fun getPresentableName() = SamModuleType.ID
 
-    override fun getDescription() = "AWS Serverless Application Model (AWS SAM) prescribes rules for expressing Serverless applications on AWS."
+    override fun getDescription() = SamModuleType.DESCRIPTION
 
-    override fun getNodeIcon() = SamInitTemplateSelectionStep.SAM_TEMPLATE_ICON
+    override fun getNodeIcon() = SamModuleType.ICON
 
-    override fun getCustomOptionsStep(context: WizardContext?, parentDisposable: Disposable?) = SamInitRuntimeSelectionPanel(this, context)
+    override fun getCustomOptionsStep(context: WizardContext?, parentDisposable: Disposable?): ModuleWizardStep? {
+        runtimeSelectionPanel = SamInitRuntimeSelectionPanel(this, context)
+        return runtimeSelectionPanel
+    }
 
-    override fun createWizardSteps(wizardContext: WizardContext, modulesProvider: ModulesProvider) = arrayOf(SamInitTemplateSelectionStep(this, wizardContext))
+    override fun createWizardSteps(wizardContext: WizardContext, modulesProvider: ModulesProvider) =
+            arrayOf(SamInitTemplateSelectionStep(this, wizardContext))
 
     companion object {
         val samAppName = "sam-app"
@@ -96,17 +110,17 @@ class SamInitTemplateSelectionStep(
 
     init {
         templateSelectionPanel.setTemplates(listOf(
-                object : ProjectTemplate {
-                    override fun validateSettings() = null
+            object : ProjectTemplate {
+                override fun validateSettings() = null
 
-                    override fun getIcon() = SAM_TEMPLATE_ICON
+                override fun getIcon() = SamModuleType.ICON
 
-                    override fun createModuleBuilder() = builder
+                override fun createModuleBuilder() = builder
 
-                    override fun getName() = "SAM Hello World"
+                override fun getName() = "SAM Hello World"
 
-                    override fun getDescription() = "Hello World Description"
-                }
+                override fun getDescription() = "Hello World Description"
+            }
         ), true)
     }
 
@@ -115,8 +129,4 @@ class SamInitTemplateSelectionStep(
     }
 
     override fun getComponent() = templateSelectionPanel
-
-    companion object {
-        val SAM_TEMPLATE_ICON = AwsIcons.Resources.LAMBDA_FUNCTION
-    }
 }

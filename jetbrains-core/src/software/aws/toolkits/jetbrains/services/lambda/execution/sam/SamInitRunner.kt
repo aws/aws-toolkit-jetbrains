@@ -48,7 +48,6 @@ Options:
     }
 
     fun execute() {
-        println(commandLine.commandLineString)
         val process = CapturingProcessHandler(commandLine).runProcess()
         if (process.exitCode != 0) {
             throw RuntimeException("Could not execute `sam init`!: ${process.stderrLines.last()}")

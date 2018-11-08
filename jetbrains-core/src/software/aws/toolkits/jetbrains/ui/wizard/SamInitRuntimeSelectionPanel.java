@@ -1,4 +1,4 @@
-package software.aws.toolkits.jetbrains.ui;
+package software.aws.toolkits.jetbrains.ui.wizard;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -25,14 +25,14 @@ import static software.aws.toolkits.resources.Localization.message;
 
 public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     private JPanel mainPanel;
-    private ComboBox<Runtime> runtime;
-    private JTextField samExecutableField;
+    ComboBox<Runtime> runtime;
+    JTextField samExecutableField;
     private JButton editSamExecutableButton;
 
     private SamInitModuleBuilder builder;
     private WizardContext context;
 
-    private SdkSettingsStep settingsStep = null;
+    private SdkSettingsStep sdkSettingsStep = null;
 
     SamInitRuntimeSelectionPanel(SamInitModuleBuilder builder, WizardContext context) {
         this.builder = builder;
@@ -64,17 +64,17 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     }
 
     private void buildSdkSettingsPanel() {
-        if (settingsStep != null) {
+        if (sdkSettingsStep != null) {
             // glitchy behavior if we don't clean up any old panels
-            mainPanel.remove(settingsStep.getComponent());
+            mainPanel.remove(sdkSettingsStep.getComponent());
         } else {
             GridConstraints sdkSelectorLabelConstraints = new GridConstraints();
             sdkSelectorLabelConstraints.setRow(2);
-            sdkSelectorLabelConstraints.setAnchor(GridConstraints.ANCHOR_NORTHWEST);
+            sdkSelectorLabelConstraints.setAnchor(GridConstraints.ANCHOR_WEST);
             mainPanel.add(new JBLabel("Project SDK:"), sdkSelectorLabelConstraints);
         }
 
-        settingsStep = new SdkSettingsStep(context, builder, id -> builder.getSdkType() == id, null) {
+        sdkSettingsStep = new SdkSettingsStep(context, builder, id -> builder.getSdkType() == id, null) {
             @Override
             protected void onSdkSelected(Sdk sdk) {
                 builder.setModuleJdk(sdk);
@@ -87,9 +87,9 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
         gridConstraints.setColumn(1);
         gridConstraints.setColSpan(2);
         gridConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_CAN_GROW);
-        gridConstraints.setAnchor(GridConstraints.ANCHOR_NORTH);
+        gridConstraints.setAnchor(GridConstraints.ANCHOR_WEST);
         gridConstraints.setFill(GridConstraints.FILL_HORIZONTAL);
-        mainPanel.add(settingsStep.getComponent(), gridConstraints);
+        mainPanel.add(sdkSettingsStep.getComponent(), gridConstraints);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     @Override
     public void updateDataModel() {
         builder.setRuntime((Runtime) runtime.getSelectedItem());
-        settingsStep.updateDataModel();
+        sdkSettingsStep.updateDataModel();
         context.setProjectBuilder(builder);
     }
 

@@ -91,7 +91,7 @@
         <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.LambdaSamRunConfigurationProducer"/>
         <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.LambdaRemoteRunConfigurationProducer"/>
 
-        <moduleBuilder builderClass="software.aws.toolkits.jetbrains.ui.SamInitModuleBuilder" />
+        <moduleBuilder builderClass="software.aws.toolkits.jetbrains.ui.wizard.SamInitModuleBuilder" />
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
