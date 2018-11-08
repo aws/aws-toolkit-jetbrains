@@ -1,38 +1,36 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.ide.projectWizard.ProjectTemplateList
-import com.intellij.ide.util.projectWizard.EmptyModuleBuilder
 import com.intellij.ide.util.projectWizard.ModuleBuilder
 import com.intellij.ide.util.projectWizard.ModuleWizardStep
 import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.module.JavaModuleType
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.module.ModuleType
+import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.platform.ProjectTemplate
-import com.intellij.platform.ProjectTemplatesFactory
-import com.intellij.platform.templates.BuilderBasedTemplate
+import com.jetbrains.python.module.PythonModuleType
+import com.jetbrains.python.sdk.PythonSdkType
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
-import javax.swing.Icon
-import javax.swing.JComponent
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunner
+import java.nio.file.Paths
 
 class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
-    override fun getNodeIcon(p0: Boolean): Icon {
-        return AwsIcons.Resources.LAMBDA_FUNCTION
-    }
+    override fun getNodeIcon(p0: Boolean) = AwsIcons.Resources.LAMBDA_FUNCTION
 
-    override fun createModuleBuilder(): SamInitModuleBuilder {
-        return SamInitModuleBuilder()
-    }
+    override fun createModuleBuilder() = SamInitModuleBuilder()
 
-    override fun getName(): String {
-        return "SAM Name"
-    }
+    override fun getName() = "SAM Name"
 
-    override fun getDescription(): String {
-        return "SAM Module Type Description"
-    }
+    override fun getDescription() = "SAM Module Type Description"
 
     companion object {
         val ID = "SAM"
@@ -41,32 +39,59 @@ class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
 }
 
 class SamInitModuleBuilder : ModuleBuilder() {
-    lateinit var runtime: Runtime
+    var runtime: Runtime = Runtime.UNKNOWN_TO_SDK_VERSION
 
-    override fun getModuleType(): ModuleType<*> {
-        return SamModuleType.instance
+    override fun getModuleType() = SamModuleType.instance
+
+    fun getIdeaModuleType() = when (runtime) {
+        Runtime.JAVA8 -> JavaModuleType.getModuleType()
+        Runtime.PYTHON2_7, Runtime.PYTHON3_6 -> PythonModuleType.getInstance()
+        else -> ModuleType.EMPTY
     }
 
-    override fun setupRootModel(p0: ModifiableRootModel?) {
+    fun getSdkType() = when (runtime) {
+        Runtime.JAVA8 -> JavaSdk.getInstance()
+        Runtime.PYTHON2_7, Runtime.PYTHON3_6 -> PythonSdkType.getInstance()
+        else -> JavaSdk.getInstance()
     }
 
-    override fun getGroupName(): String {
-        return "SAM"
+    override fun setupRootModel(rootModel: ModifiableRootModel) {
+        if (myJdk != null) {
+            rootModel.sdk = myJdk
+        } else {
+            rootModel.inheritSdk()
+        }
+        val moduleType = getIdeaModuleType().id
+        rootModel.module.setModuleType(moduleType)
+        val project = rootModel.project
+        SamInitRunner().applyRuntime(runtime)
+                .applyName(samAppName)
+                .applyOutputDir(project.baseDir)
+                .execute()
+        val moduleDir = Paths.get(project.baseDir.path, samAppName).toAbsolutePath()
+        val module = ModuleManager.getInstance(project).newModule(Paths.get(moduleDir.toString(), "$samAppName.iml").toAbsolutePath().toString(), moduleType)
+        rootModel.addContentEntry(LocalFileSystem.getInstance().findFileByIoFile(moduleDir.toFile())!!)
     }
 
-    override fun getCustomOptionsStep(context: WizardContext?, parentDisposable: Disposable?): ModuleWizardStep? {
-        return SamInitRuntimeSelectionPanel(this, context)
-    }
+    override fun getPresentableName() = "SAM"
 
-    override fun createWizardSteps(wizardContext: WizardContext, modulesProvider: ModulesProvider): Array<ModuleWizardStep> {
-        return arrayOf(SamInitTemplateSelectionStep(this, wizardContext))
+    override fun getDescription() = "AWS Serverless Application Model (AWS SAM) prescribes rules for expressing Serverless applications on AWS."
+
+    override fun getNodeIcon() = SamInitTemplateSelectionStep.SAM_TEMPLATE_ICON
+
+    override fun getCustomOptionsStep(context: WizardContext?, parentDisposable: Disposable?) = SamInitRuntimeSelectionPanel(this, context)
+
+    override fun createWizardSteps(wizardContext: WizardContext, modulesProvider: ModulesProvider) = arrayOf(SamInitTemplateSelectionStep(this, wizardContext))
+
+    companion object {
+        val samAppName = "sam-app"
     }
 }
 
 class SamInitTemplateSelectionStep(
     val builder: SamInitModuleBuilder,
     val context: WizardContext
-): ModuleWizardStep() {
+) : ModuleWizardStep() {
     val templateSelectionPanel = ProjectTemplateList()
 
     init {
@@ -76,7 +101,7 @@ class SamInitTemplateSelectionStep(
 
                     override fun getIcon() = SAM_TEMPLATE_ICON
 
-                    override fun createModuleBuilder() = EmptyModuleBuilder()
+                    override fun createModuleBuilder() = builder
 
                     override fun getName() = "SAM Hello World"
 
@@ -89,12 +114,9 @@ class SamInitTemplateSelectionStep(
         context.projectBuilder = builder
     }
 
-    override fun getComponent(): JComponent {
-        return templateSelectionPanel
-    }
+    override fun getComponent() = templateSelectionPanel
 
     companion object {
         val SAM_TEMPLATE_ICON = AwsIcons.Resources.LAMBDA_FUNCTION
-
     }
 }
