@@ -9,8 +9,11 @@ import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.components.JBCheckBox;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
+import java.util.Objects;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
@@ -43,6 +46,20 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     private void createUIComponents() {
         samHelp = LinkLabel.create(message("aws.settings.sam.help"), () -> BrowserUtil.browse(SAM_HELP_LINK));
+
+        String autoDetectPath = new SamExecutableDetector().detect();
+        JBTextField samExecutableTextField = new JBTextField();
+        if(autoDetectPath != null) {
+            samExecutableTextField.getEmptyText()
+                                  .setText(message("aws.settings.sam.auto_detect", autoDetectPath));
+        }
+        samExecutablePath = new TextFieldWithBrowseButton(samExecutableTextField);
+        samExecutablePath.addBrowseFolderListener(
+            message("aws.settings.sam.find.title"),
+            message("aws.settings.sam.find.description"),
+            project,
+            FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
+        );
     }
 
     @NotNull
@@ -60,21 +77,30 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @Override
     public boolean isModified() {
         SamSettings samSettings = SamSettings.getInstance();
-        return isModified(samExecutablePath.getTextField(), samSettings.getExecutablePath()) ||
-            isModified(showAllHandlerGutterIcons, samSettings.getShowAllHandlerGutterIcons());
+        LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
+        return !Objects.equals(getSamExecutablePath(), samSettings.getSavedExecutablePath()) ||
+               isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons());
     }
 
     @Override
     public void apply() {
         SamSettings samSettings = SamSettings.getInstance();
-        samSettings.setExecutablePath(samExecutablePath.getText().trim());
-        samSettings.setShowAllHandlerGutterIcons(showAllHandlerGutterIcons.isSelected());
+        LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
+
+        samSettings.setSavedExecutablePath(getSamExecutablePath());
+        lambdaSettings.setShowAllHandlerGutterIcons(showAllHandlerGutterIcons.isSelected());
+    }
+
+    @Nullable
+    private String getSamExecutablePath() {
+        return StringUtil.nullize(samExecutablePath.getText().trim());
     }
 
     @Override
     public void reset() {
         SamSettings samSettings = SamSettings.getInstance();
-        samExecutablePath.setText(samSettings.getExecutablePath());
-        showAllHandlerGutterIcons.setSelected(samSettings.getShowAllHandlerGutterIcons());
+        LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
+        samExecutablePath.setText(samSettings.getSavedExecutablePath());
+        showAllHandlerGutterIcons.setSelected(lambdaSettings.getShowAllHandlerGutterIcons());
     }
 }
