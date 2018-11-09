@@ -1,7 +1,7 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.ui.wizard
+package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
 import com.intellij.ide.projectWizard.ChooseTemplateStep
 import com.intellij.ide.projectWizard.NewProjectWizardTestCase
@@ -15,6 +15,8 @@ import com.intellij.testFramework.IdeaTestUtil
 import com.jetbrains.python.sdk.PythonSdkType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.settings.SamSettings
+import software.aws.toolkits.jetbrains.ui.wizard.SamInitModuleBuilder
+import software.aws.toolkits.jetbrains.ui.wizard.SamInitTemplateSelectionStep
 import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk3x
 import kotlin.reflect.KClass
 

@@ -1,32 +1,27 @@
 package software.aws.toolkits.jetbrains.ui.wizard;
 
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import java.awt.event.ItemEvent;
 import com.intellij.ide.util.projectWizard.ModuleWizardStep;
 import com.intellij.ide.util.projectWizard.SdkSettingsStep;
 import com.intellij.ide.util.projectWizard.WizardContext;
-import com.intellij.openapi.application.ActionsKt;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.uiDesigner.core.GridConstraints;
-import kotlin.Unit;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager;
-import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable;
 import software.aws.toolkits.jetbrains.settings.SamSettings;
 
 import static software.aws.toolkits.resources.Localization.message;
 
 public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     private JPanel mainPanel;
-    ComboBox<Runtime> runtime;
-    com.intellij.openapi.ui.TextFieldWithBrowseButton samExecutableField;
+    public ComboBox<Runtime> runtime;
+    public TextFieldWithBrowseButton samExecutableField;
 
     private SamInitModuleBuilder builder;
     private WizardContext context;
