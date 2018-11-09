@@ -21,14 +21,12 @@ import kotlin.reflect.KClass
 // JUnit3-style to take advantage of IDEA's test base
 class SamInitProjectWizardTest : NewProjectWizardTestCase() {
     fun testExceptionIfSamNotConfigured() {
-        SamSettings.getInstance().executablePath = ""
-
         try {
             createProject { step ->
                 if (step is ProjectTypeStep) {
                     assertTrue(step.setSelectedTemplate("SAM", null))
                     val builder = myWizard.projectBuilder as SamInitModuleBuilder
-                    assertEmpty(builder.runtimeSelectionPanel.samExecutableField.text)
+                    builder.runtimeSelectionPanel.samExecutableField.text = ""
                 }
             }
             fail("Exception was not thrown")
@@ -52,7 +50,7 @@ class SamInitProjectWizardTest : NewProjectWizardTestCase() {
     }
 
     fun helloWorldTest(runtime: Runtime, sdkType: KClass<out SdkType>) {
-        SamSettings.getInstance().executablePath = "sam"
+        SamSettings.getInstance().savedExecutablePath = "sam"
 
         createProject { step ->
             val stepNum = myWizard.currentStep

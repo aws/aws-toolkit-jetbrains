@@ -26,8 +26,7 @@ import static software.aws.toolkits.resources.Localization.message;
 public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     private JPanel mainPanel;
     ComboBox<Runtime> runtime;
-    JTextField samExecutableField;
-    private JButton editSamExecutableButton;
+    com.intellij.openapi.ui.TextFieldWithBrowseButton samExecutableField;
 
     private SamInitModuleBuilder builder;
     private WizardContext context;
@@ -47,13 +46,6 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
                 .forEach(y -> runtime.addItem(y));
 
         samExecutableField.setText(SamSettings.getInstance().getExecutablePath());
-        editSamExecutableButton.addActionListener(e -> {
-            ActionsKt.runInEdt(null, () -> {
-                ShowSettingsUtil.getInstance().showSettingsDialog(null, AwsSettingsConfigurable.class);
-                return Unit.INSTANCE;
-            });
-            samExecutableField.setText(SamSettings.getInstance().getExecutablePath());
-        });
 
         runtime.addItemListener(l -> {
             if (l.getStateChange() == ItemEvent.SELECTED) {
@@ -85,7 +77,6 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
         GridConstraints gridConstraints = new GridConstraints();
         gridConstraints.setRow(2);
         gridConstraints.setColumn(1);
-        gridConstraints.setColSpan(2);
         gridConstraints.setHSizePolicy(GridConstraints.SIZEPOLICY_CAN_GROW);
         gridConstraints.setAnchor(GridConstraints.ANCHOR_WEST);
         gridConstraints.setFill(GridConstraints.FILL_HORIZONTAL);
@@ -104,6 +95,7 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     public void updateDataModel() {
         builder.setRuntime((Runtime) runtime.getSelectedItem());
         sdkSettingsStep.updateDataModel();
+        SamSettings.getInstance().setSavedExecutablePath(samExecutableField.getText());
         context.setProjectBuilder(builder);
     }
 

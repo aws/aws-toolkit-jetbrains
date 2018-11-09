@@ -150,7 +150,7 @@ class SamRunConfiguration(project: Project, factory: ConfigurationFactory) :
         fun validateAndCreateImmutable(project: Project): SamRunSettings {
             if (SamSettings.getInstance().executablePath.isNullOrEmpty()) {
                 throw RuntimeConfigurationError(message("lambda.run_configuration.sam.not_specified")) {
-                    ShowSettingsUtil.getInstance().showSettingsDialog(null, AwsSettingsConfigurable::class.java)
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
                 }
             }
 

@@ -10,9 +10,8 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.settings.SamSettings
 
 internal class SamInitRunner {
-    private val samCliExecutable: String = SamSettings.getInstance().executablePath
-    private var commandLine = GeneralCommandLine()
-            .withExePath(samCliExecutable)
+    private val samCliExecutable = SamSettings.getInstance().executablePath
+    private var commandLine = GeneralCommandLine(samCliExecutable)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withParameters("init")
 
