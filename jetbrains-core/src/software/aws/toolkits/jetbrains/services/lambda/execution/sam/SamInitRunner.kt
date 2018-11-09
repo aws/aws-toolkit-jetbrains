@@ -5,31 +5,47 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.settings.SamSettings
 
-internal class SamInitRunner {
+class SamInitRunner {
     private val samCliExecutable = SamSettings.getInstance().executablePath
     private var commandLine = GeneralCommandLine(samCliExecutable)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withParameters("init")
-
-    fun applyRuntime(runtime: Runtime) = applyParameter("--runtime", runtime.toString())
+            .withParameters("--no-input")
+    private lateinit var outputDir: VirtualFile
+    fun applyLocation(location: String) = applyParameter("--location", location)
 
     fun applyName(name: String) = applyParameter("--name", name)
 
-    fun applyOutputDir(location: VirtualFile) = applyParameter("--output-dir", location.path)
+    fun applyOutputDir(location: VirtualFile) = apply {
+        outputDir = location
+    }
+
+    fun applyRuntime(runtime: Runtime) = applyParameter("--runtime", runtime.toString())
 
     private fun applyParameter(flag: String, value: String) = apply {
         commandLine = commandLine.withParameters(flag)
-                .withParameters(value)
+            .withParameters(value)
     }
 
-    fun execute() {
+    fun execute() = ApplicationManager.getApplication().runWriteAction {
+        // set output to a temp dir
+        val tempDir = LocalFileSystem.getInstance().findFileByIoFile(createTempDir())
+        applyParameter("--output-dir", tempDir!!.path)
+
+        // run
         val process = CapturingProcessHandler(commandLine).runProcess()
         if (process.exitCode != 0) {
             throw RuntimeException("Could not execute `sam init`!: ${process.stderrLines.last()}")
         }
+
+        // copy from temp dir to output dir
+        VfsUtil.copyDirectory(null, VfsUtil.getChildren(tempDir)[0], outputDir, null)
     }
 }
