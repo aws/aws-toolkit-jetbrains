@@ -46,13 +46,13 @@ interface NamedMap {
     fun setScalarProperty(key: String, value: String)
 }
 
-interface Resource: NamedMap {
+interface Resource : NamedMap {
 
     fun isType(requestedType: String): Boolean
     fun type(): String?
 }
 
-interface Parameter: NamedMap {
+interface Parameter : NamedMap {
     fun defaultValue(): String?
     fun description(): String?
     fun constraintDescription(): String?

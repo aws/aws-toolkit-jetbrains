@@ -163,19 +163,19 @@ class DeploySamApplicationValidatorTest {
     }
 
     private class TestParameter(
-            name: String,
-            defaultValue: String
+        name: String,
+        defaultValue: String
     ) : Parameter {
         override fun getScalarProperty(key: String): String {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            throw NotImplementedError()
         }
 
         override fun getOptionalScalarProperty(key: String): String? {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            throw NotImplementedError()
         }
 
         override fun setScalarProperty(key: String, value: String) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            throw NotImplementedError()
         }
 
         var name: String = name
@@ -186,16 +186,10 @@ class DeploySamApplicationValidatorTest {
         override val logicalName: String
             get() = name
 
-        override fun defaultValue(): String? {
-            return defaultValue
-        }
+        override fun defaultValue(): String? = defaultValue
 
-        override fun description(): String? {
-            return description
-        }
+        override fun description(): String? = description
 
-        override fun constraintDescription(): String? {
-            return constraintDescription
-        }
+        override fun constraintDescription(): String? = constraintDescription
     }
 }

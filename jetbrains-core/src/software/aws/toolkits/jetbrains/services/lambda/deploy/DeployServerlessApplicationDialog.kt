@@ -20,11 +20,12 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
 import java.awt.event.ActionEvent
-import javax.swing.*
+import javax.swing.Action
+import javax.swing.JComponent
 
 class DeployServerlessApplicationDialog(
-        private val project: Project,
-        private val parameters: Sequence<Parameter>
+    private val project: Project,
+    private val parameters: Sequence<Parameter>
 ) : DialogWrapper(project) {
 
     private val view = DeployServerlessApplicationForm()
@@ -175,13 +176,9 @@ class DeployServerlessApplicationDialog(
     }
 
     companion object {
-        fun getStackPlaceholderSelectRegion(): String {
-            return message("serverless.application.stack.placeholder.select.region")
-        }
+        fun getStackPlaceholderSelectRegion(): String = message("serverless.application.stack.placeholder.select.region")
 
-        fun getStackSelectionTextForCreateStack(): String {
-            return message("serverless.application.stack.selection.create.stack")
-        }
+        fun getStackSelectionTextForCreateStack(): String = message("serverless.application.stack.selection.create.stack")
     }
 }
 
