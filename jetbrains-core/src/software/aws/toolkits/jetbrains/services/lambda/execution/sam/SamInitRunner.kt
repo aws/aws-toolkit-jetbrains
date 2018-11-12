@@ -11,14 +11,17 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.settings.SamSettings
+import software.aws.toolkits.resources.message
 
 class SamInitRunner {
     private val samCliExecutable = SamSettings.getInstance().executablePath
-    private var commandLine = GeneralCommandLine(samCliExecutable)
+    private val commandLine = GeneralCommandLine(samCliExecutable)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withParameters("init")
             .withParameters("--no-input")
     private lateinit var outputDir: VirtualFile
+    private val parameters = mutableMapOf<String, String>()
+
     fun applyLocation(location: String) = applyParameter("--location", location)
 
     fun applyName(name: String) = applyParameter("--name", name)
@@ -30,19 +33,20 @@ class SamInitRunner {
     fun applyRuntime(runtime: Runtime) = applyParameter("--runtime", runtime.toString())
 
     private fun applyParameter(flag: String, value: String) = apply {
-        commandLine = commandLine.withParameters(flag)
-            .withParameters(value)
+        parameters[flag] = value
     }
 
     fun execute() = ApplicationManager.getApplication().runWriteAction {
         // set output to a temp dir
         val tempDir = LocalFileSystem.getInstance().findFileByIoFile(createTempDir())
-        applyParameter("--output-dir", tempDir!!.path)
+            ?: throw RuntimeException("Cannot create temp file")
+        applyParameter("--output-dir", tempDir.path)
 
         // run
+        val commandLine = commandLine.withParameters(parameters.flatMap { listOf(it.key, it.value) })
         val process = CapturingProcessHandler(commandLine).runProcess()
         if (process.exitCode != 0) {
-            throw RuntimeException("Could not execute `sam init`!: ${process.stderrLines.last()}")
+            throw RuntimeException("${message("sam.init.execution_error")}: ${process.stderrLines.last()}")
         }
 
         // copy from temp dir to output dir

@@ -5,11 +5,19 @@ package software.aws.toolkits.jetbrains.ui.wizard
 
 import com.intellij.ide.util.projectWizard.ModuleBuilder
 import com.intellij.openapi.module.ModuleType
+import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ProjectTemplate
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunner
+import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
+import software.aws.toolkits.jetbrains.settings.SamSettings
+import software.aws.toolkits.jetbrains.ui.wizard.java.SamInitModuleBuilder
+import software.aws.toolkits.resources.message
+import javax.swing.JButton
+import javax.swing.JTextField
 
 class SamProjectTemplateWrapper(
     val samProjectTemplate: SamProjectTemplate,
@@ -33,7 +41,7 @@ abstract class SamProjectTemplate {
 
     override fun toString() = getName()
 
-    fun getIcon() = SamModuleType.ICON
+    fun getIcon() = AwsIcons.Resources.LAMBDA_FUNCTION
 
     fun buildCommand(runtime: Runtime, outputDir: VirtualFile) = SamInitRunner().applyRuntime(runtime)
         .applyName(SamModuleType.ID)
@@ -48,7 +56,7 @@ abstract class SamProjectTemplate {
 }
 
 class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
-    override fun getNodeIcon(p0: Boolean) = ICON
+    override fun getNodeIcon(isOpened: Boolean) = AwsIcons.Resources.LAMBDA_FUNCTION
 
     override fun createModuleBuilder() = SamInitModuleBuilder()
 
@@ -57,29 +65,17 @@ class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
     override fun getDescription() = "SAM Module Type Description"
 
     companion object {
-        val ICON = AwsIcons.Resources.LAMBDA_FUNCTION
-        val ID = "SAM"
-        val DESCRIPTION = "AWS Serverless Application Model (AWS SAM) prescribes rules for expressing Serverless applications on AWS."
+        const val ID = "SAM"
+        val DESCRIPTION = message("sam.init.description")
         val instance = SamModuleType()
     }
 }
 
-class SamHelloWorld : SamProjectTemplate() {
-    override fun getName() = "AWS SAM Hello World"
+fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButton) {
+    samExecutableField.text = SamSettings.getInstance().executablePath
 
-    override fun getDescription() = "Hello World Description"
-}
-
-class SamDynamoDBCookieCutter : SamProjectTemplate() {
-    override fun getName() = "AWS SAM DynamoDB Event Example"
-
-    override fun getDescription() = "Sample SAM Template to interact with DynamoDB Events"
-
-    override fun build(runtime: Runtime, outputDir: VirtualFile) {
-        buildCommand(runtime, outputDir)
-                .applyLocation("gh:aws-samples/cookiecutter-aws-sam-dynamodb-python")
-                .execute()
+    editButton.addActionListener {
+        ShowSettingsUtil.getInstance().showSettingsDialog(DefaultProjectFactory.getInstance().defaultProject, AwsSettingsConfigurable::class.java)
+        samExecutableField.text = SamSettings.getInstance().executablePath
     }
 }
-
-val SAM_TEMPLATES = listOf(SamHelloWorld(), SamDynamoDBCookieCutter())

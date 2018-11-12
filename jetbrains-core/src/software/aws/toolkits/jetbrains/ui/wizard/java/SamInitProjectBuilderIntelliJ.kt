@@ -1,7 +1,7 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.ui.wizard
+package software.aws.toolkits.jetbrains.ui.wizard.java
 
 import com.intellij.ide.projectWizard.ProjectTemplateList
 import com.intellij.ide.util.projectWizard.ModuleBuilder
@@ -15,7 +15,11 @@ import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider
 import com.jetbrains.python.module.PythonModuleType
 import com.jetbrains.python.sdk.PythonSdkType
+import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.ui.wizard.SAM_TEMPLATES
+import software.aws.toolkits.jetbrains.ui.wizard.SamModuleType
+import software.aws.toolkits.jetbrains.ui.wizard.SamProjectTemplateWrapper
 
 class SamInitModuleBuilder : ModuleBuilder() {
     var runtime: Runtime = Runtime.UNKNOWN_TO_SDK_VERSION
@@ -61,7 +65,7 @@ class SamInitModuleBuilder : ModuleBuilder() {
 
     override fun getDescription() = SamModuleType.DESCRIPTION
 
-    override fun getNodeIcon() = SamModuleType.ICON
+    override fun getNodeIcon() = AwsIcons.Resources.LAMBDA_FUNCTION
 
     override fun getCustomOptionsStep(context: WizardContext?, parentDisposable: Disposable?): ModuleWizardStep? {
         runtimeSelectionPanel = SamInitRuntimeSelectionPanel(this, context)

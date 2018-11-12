@@ -13,17 +13,31 @@ import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.SdkType
 import com.intellij.testFramework.IdeaTestUtil
 import com.jetbrains.python.sdk.PythonSdkType
+import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.settings.SamSettings
-import software.aws.toolkits.jetbrains.ui.wizard.SamInitModuleBuilder
-import software.aws.toolkits.jetbrains.ui.wizard.SamInitTemplateSelectionStep
+import software.aws.toolkits.jetbrains.ui.wizard.java.SamInitModuleBuilder
+import software.aws.toolkits.jetbrains.ui.wizard.java.SamInitTemplateSelectionStep
 import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk3x
 import kotlin.reflect.KClass
 
 // JUnit3-style to take advantage of IDEA's test base
 class SamInitProjectWizardTest : NewProjectWizardTestCase() {
+    override fun setUp() {
+        super.setUp()
+        // Since we're setting up real modules, throw away real SDKs...
+        for (sdk in ProjectJdkTable.getInstance().allJdks) {
+            ApplicationManager.getApplication().runWriteAction {
+                ProjectJdkTable.getInstance().removeJdk(sdk)
+            }
+        }
+        // and replace with fake ones
+        addSdk(IdeaTestUtil.getMockJdk18())
+        addSdk((PyTestSdk3x()))
+    }
+
     fun testExceptionIfSamNotConfigured() {
-        try {
+        assertThatExceptionOfType(RuntimeException::class.java).isThrownBy {
             createProject { step ->
                 if (step is ProjectTypeStep) {
                     assertTrue(step.setSelectedTemplate("SAM", null))
@@ -31,11 +45,9 @@ class SamInitProjectWizardTest : NewProjectWizardTestCase() {
                     builder.runtimeSelectionPanel.samExecutableField.text = ""
                 }
             }
-            fail("Exception was not thrown")
-        } catch (e: RuntimeException) {
-            // expected a runtime exception
-            assertTrue(e.message == "SAM CLI executable not configured" ||
-                e.message == "com.intellij.ide.projectWizard.ProjectTypeStep is not validated")
+        }.satisfies {
+            it.localizedMessage == "SAM CLI executable not configured" ||
+            it.localizedMessage == "com.intellij.ide.projectWizard.ProjectTypeStep is not validated"
         }
     }
 
@@ -51,7 +63,7 @@ class SamInitProjectWizardTest : NewProjectWizardTestCase() {
         helloWorldTest(Runtime.JAVA8, JavaSdk::class)
     }
 
-    fun helloWorldTest(runtime: Runtime, sdkType: KClass<out SdkType>) {
+    private fun helloWorldTest(runtime: Runtime, sdkType: KClass<out SdkType>) {
         SamSettings.getInstance().savedExecutablePath = "sam"
 
         createProject { step ->
@@ -79,7 +91,7 @@ class SamInitProjectWizardTest : NewProjectWizardTestCase() {
                     val builder = myWizard.projectBuilder as SamInitModuleBuilder
                     assertEquals(runtime, builder.runtimeSelectionPanel.runtime.selectedItem)
                     assertInstanceOf(builder.getSdkType(), sdkType.java)
-                    assertEquals("SAM Hello World", step.templateSelectionPanel.selectedTemplate!!.name)
+                    assertEquals("AWS SAM Hello World", step.templateSelectionPanel.selectedTemplate!!.name)
                 }
                 is ProjectSettingsStep -> {
                     assertEquals(3, stepNum)
@@ -89,18 +101,5 @@ class SamInitProjectWizardTest : NewProjectWizardTestCase() {
                 }
             }
         }
-    }
-
-    override fun setUp() {
-        super.setUp()
-        // Since we're setting up real modules, throw away real SDKs...
-        for (sdk in ProjectJdkTable.getInstance().allJdks) {
-            ApplicationManager.getApplication().runWriteAction {
-                ProjectJdkTable.getInstance().removeJdk(sdk)
-            }
-        }
-        // and replace with fake ones
-        addSdk(IdeaTestUtil.getMockJdk18())
-        addSdk((PyTestSdk3x()))
     }
 }

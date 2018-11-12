@@ -1,4 +1,4 @@
-package software.aws.toolkits.jetbrains.ui.wizard;
+package software.aws.toolkits.jetbrains.ui.wizard.java;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -9,24 +9,21 @@ import com.intellij.ide.util.projectWizard.ModuleWizardStep;
 import com.intellij.ide.util.projectWizard.SdkSettingsStep;
 import com.intellij.ide.util.projectWizard.WizardContext;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.options.ShowSettingsUtil;
-import com.intellij.openapi.project.DefaultProjectFactory;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.uiDesigner.core.GridConstraints;
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager;
-import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable;
-import software.aws.toolkits.jetbrains.settings.SamSettings;
+import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderCommonKt;
 
 import static software.aws.toolkits.resources.Localization.message;
 
 public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     private JPanel mainPanel;
-    public ComboBox<Runtime> runtime;
-    public JTextField samExecutableField;
+    private ComboBox<Runtime> runtime;
+    private JTextField samExecutableField;
     private JButton editSamExecutableButton;
 
     private SamInitModuleBuilder builder;
@@ -46,7 +43,7 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
                 .sorted()
                 .forEach(y -> runtime.addItem(y));
 
-        SamInitWizardUtilsKt.setupSamSelectionElements(samExecutableField, editSamExecutableButton);
+        SamInitProjectBuilderCommonKt.setupSamSelectionElements(samExecutableField, editSamExecutableButton);
 
         runtime.addItemListener(l -> {
             if (l.getStateChange() == ItemEvent.SELECTED) {
@@ -104,4 +101,10 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     public JComponent getComponent() {
         return mainPanel;
     }
+
+    @NotNull
+    public ComboBox<Runtime> getRuntime() { return runtime; }
+
+    @NotNull
+    public JTextField getSamExecutableField() { return samExecutableField; }
 }
