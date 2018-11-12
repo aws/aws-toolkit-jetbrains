@@ -74,7 +74,7 @@ class DeployServerlessApplicationDialog(
 
             // Show the stacks that exist in this region
             if (view.region.selectedRegion != null) {
-                val cloudFormationClient: CloudFormationClient = project.awsClient(view.region.selectedRegion!!)
+                val cloudFormationClient: CloudFormationClient = project.awsClient(view.region.selectedRegion)
 
                 val stacks = ArrayList<String>()
                 stacks.add(getStackSelectionTextForCreateStack())
@@ -103,7 +103,8 @@ class DeployServerlessApplicationDialog(
 
         view.CreateS3BucketButton.addActionListener {
             // Ensure bucket creation takes place on the currently selected region
-            val currentRegionS3Client: S3Client = project.awsClient(view.region.selectedRegion!!)
+            val selectedRegion = view.region.selectedRegion ?: throw Exception("No region has been selected")
+            val currentRegionS3Client: S3Client = project.awsClient(selectedRegion)
 
             val bucketDialog = CreateS3BucketDialog(
                     project = project,
@@ -170,8 +171,6 @@ class DeployServerlessApplicationDialog(
             }
 
             deployServerlessApplication()
-
-            close(CANCEL_EXIT_CODE)
         }
     }
 

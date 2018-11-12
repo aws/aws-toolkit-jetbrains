@@ -19,10 +19,11 @@ class DeployServerlessApplicationAction : AnAction(
 
     override fun actionPerformed(e: AnActionEvent?) {
 
-        val project = e?.getRequiredData(PlatformDataKeys.PROJECT)
+        val project = e?.getRequiredData(PlatformDataKeys.PROJECT) ?: throw Exception("Unable to determine project")
 
-        val samTemplateFile = e?.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY)!![0]
-        val template = CloudFormationTemplate.parse(project!!, samTemplateFile)
+        val virtualFiles = e?.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: throw Exception("Could not detect template file")
+        val samTemplateFile = virtualFiles[0]
+        val template = CloudFormationTemplate.parse(project, samTemplateFile)
 
         // TODO : Validate the template file (this is likely too slow to do in update())
 
