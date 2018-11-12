@@ -94,8 +94,8 @@ Parameters:
             val tableTag = template.parameters().firstOrNull { it.logicalName == "TableTag" }
             assertNotNull(tableTag)
             assertNull(tableTag!!.defaultValue())
-            assertNotNull(tableTag!!.description())
-            assertNull(tableTag!!.constraintDescription())
+            assertNotNull(tableTag.description())
+            assertNull(tableTag.constraintDescription())
         }
     }
 
