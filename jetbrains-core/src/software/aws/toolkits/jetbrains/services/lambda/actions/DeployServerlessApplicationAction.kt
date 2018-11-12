@@ -21,7 +21,7 @@ class DeployServerlessApplicationAction : AnAction(
 
         val project = e?.getRequiredData(PlatformDataKeys.PROJECT) ?: throw Exception("Unable to determine project")
 
-        val virtualFiles = e?.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: throw Exception("Could not detect template file")
+        val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: throw Exception("Could not detect template file")
         val samTemplateFile = virtualFiles[0]
         val template = CloudFormationTemplate.parse(project, samTemplateFile)
 

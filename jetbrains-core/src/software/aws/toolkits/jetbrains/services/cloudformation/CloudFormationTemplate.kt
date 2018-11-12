@@ -47,7 +47,6 @@ interface NamedMap {
 }
 
 interface Resource : NamedMap {
-
     fun isType(requestedType: String): Boolean
     fun type(): String?
 }

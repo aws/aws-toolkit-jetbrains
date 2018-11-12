@@ -46,7 +46,7 @@ class DeployServerlessApplicationDialog(
 
         view.withTemplateParameters(parameters.toList())
 
-        view.region.setRegions(regionProvider.regions().values.toMutableList())
+        view.region.setRegions(regionProvider.regions().values.toList())
         view.CreateS3BucketButton.isEnabled = view.region.selectedRegion != null
 
         view.s3Bucket.populateValues {
@@ -64,7 +64,7 @@ class DeployServerlessApplicationDialog(
             view.s3Bucket.populateValues {
                 if (!selectedRegionId.isNullOrEmpty()) {
                     s3Client.listBucketsByRegion(selectedRegionId)
-                            .mapNotNull { it?.name() }
+                            .mapNotNull { it.name() }
                             .sortedWith(String.CASE_INSENSITIVE_ORDER)
                             .toList()
                 } else {

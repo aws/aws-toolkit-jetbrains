@@ -108,7 +108,7 @@ class EditLambdaDialog(
         view.sourceBucket.populateValues {
             val activeRegionId = ProjectAccountSettingsManager.getInstance(project).activeRegion.id
             s3Client.listBucketsByRegion(activeRegionId)
-                .mapNotNull { it?.name() }
+                .mapNotNull { it.name() }
                 .sortedWith(String.CASE_INSENSITIVE_ORDER)
                 .toList()
         }
