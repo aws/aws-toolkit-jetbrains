@@ -9,7 +9,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.core.s3.regionForBucket
+import software.aws.toolkits.core.utils.listBucketsByRegion
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
@@ -31,6 +31,7 @@ class DeployServerlessApplicationDialog(
     private val view = DeployServerlessApplicationPanel()
     private val validator = DeploySamApplicationValidator()
     private val s3Client: S3Client = project.awsClient()
+    private var isNewStack: Boolean = false
 
     private val regionProvider = AwsRegionProvider.getInstance()
 
@@ -53,18 +54,17 @@ class DeployServerlessApplicationDialog(
         }
 
         view.stacks.addItem(getStackPlaceholderSelectRegion())
+        setNewStackUIVisibility(isNewStack)
 
         // S3 selector only shows buckets for region of interest
         view.region.addActionListener {
             view.CreateS3BucketButton.isEnabled = view.region.selectedRegion != null
-            val activeRegionId = view.region.selectedRegion?.id
+            val selectedRegionId = view.region.selectedRegion?.id
 
             view.s3Bucket.populateValues {
-                if (!activeRegionId.isNullOrEmpty()) {
-                    s3Client.listBuckets().buckets()
-                            .asSequence()
+                if (!selectedRegionId.isNullOrEmpty()) {
+                    s3Client.listBucketsByRegion(selectedRegionId)
                             .mapNotNull { it?.name() }
-                            .filter { s3Client.regionForBucket(it) == activeRegionId }
                             .sortedWith(String.CASE_INSENSITIVE_ORDER)
                             .toList()
                 } else {
@@ -96,9 +96,8 @@ class DeployServerlessApplicationDialog(
         }
 
         view.stacks.addActionListener {
-            val showNewStackControls = view.stacks.selected() == getStackSelectionTextForCreateStack()
-            view.newStackNameLabel.isVisible = showNewStackControls
-            view.newStackName.isVisible = showNewStackControls
+            isNewStack = view.stacks.selected() == getStackSelectionTextForCreateStack()
+            setNewStackUIVisibility(isNewStack)
         }
 
         view.CreateS3BucketButton.addActionListener {
@@ -117,6 +116,8 @@ class DeployServerlessApplicationDialog(
             }
         }
     }
+
+    public fun getIsNewStack(): Boolean = isNewStack
 
     override fun createCenterPanel(): JComponent? = view.content
 
@@ -141,6 +142,11 @@ class DeployServerlessApplicationDialog(
 
     override fun doOKAction() {
         // Do nothing, close logic is handled separately
+    }
+
+    private fun setNewStackUIVisibility(showNewStackControls: Boolean) {
+        view.newStackNameLabel.isVisible = showNewStackControls
+        view.newStackName.isVisible = showNewStackControls
     }
 
     private fun deployServerlessApplication() {
