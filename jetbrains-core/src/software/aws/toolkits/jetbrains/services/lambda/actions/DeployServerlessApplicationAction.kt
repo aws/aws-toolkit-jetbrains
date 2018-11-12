@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.actions
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
@@ -17,12 +18,11 @@ class DeployServerlessApplicationAction : AnAction(
         AwsIcons.Resources.LAMBDA_FUNCTION) {
     private var templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
 
-    override fun actionPerformed(e: AnActionEvent?) {
+    override fun actionPerformed(e: AnActionEvent) {
 
-        val project = e?.getRequiredData(PlatformDataKeys.PROJECT) ?: throw Exception("Unable to determine project")
+        val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
-        val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: throw Exception("Could not detect template file")
-        val samTemplateFile = virtualFiles[0]
+        val samTemplateFile = getSamTemplateFile(e) ?: throw Exception("Could not detect template file")
         val template = CloudFormationTemplate.parse(project, samTemplateFile)
 
         // TODO : Validate the template file (this is likely too slow to do in update())
@@ -30,11 +30,29 @@ class DeployServerlessApplicationAction : AnAction(
         DeployServerlessApplicationDialog(project, template.parameters()).show()
     }
 
-    override fun update(e: AnActionEvent?) {
+    override fun update(e: AnActionEvent) {
         super.update(e)
 
-        val virtualFiles = e?.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY)
+        e.presentation.isVisible = getSamTemplateFile(e) != null
+    }
 
-        e?.presentation?.isVisible = virtualFiles?.size == 1 && templateYamlRegex.matches(virtualFiles[0].name)
+    /**
+     * Determines the relevant Sam Template, returns null if one can't be found.
+     */
+    private fun getSamTemplateFile(e: AnActionEvent): VirtualFile? {
+        val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return null
+        val virtualFile = virtualFiles.singleOrNull() ?: return null
+
+        if (templateYamlRegex.matches(virtualFile.name)) {
+            return virtualFile
+        }
+
+        // If the module node was selected, see if there is a template file in the top level folder
+        val project = e.getData(PlatformDataKeys.PROJECT) ?: return null
+        if (virtualFile == project.baseDir) {
+            return virtualFile.children.singleOrNull { templateYamlRegex.matches(it.name) }
+        }
+
+        return null
     }
 }
