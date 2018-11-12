@@ -18,7 +18,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="bd7c3" class="javax.swing.JButton" binding="CreateS3BucketButton">
+          <component id="bd7c3" class="javax.swing.JButton" binding="createS3BucketButton">
             <constraints>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="75" height="-1"/>
@@ -63,7 +63,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="2df18" class="javax.swing.JLabel" binding="TemplateParametersLabel">
+          <component id="2df18" class="javax.swing.JLabel" binding="templateParametersLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>

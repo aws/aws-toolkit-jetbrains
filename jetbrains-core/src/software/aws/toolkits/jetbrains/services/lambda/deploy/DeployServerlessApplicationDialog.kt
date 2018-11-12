@@ -30,7 +30,8 @@ class DeployServerlessApplicationDialog(
     private val view = DeployServerlessApplicationPanel()
     private val validator = DeploySamApplicationValidator()
     private val s3Client: S3Client = project.awsClient()
-    private var isNewStack: Boolean = false
+    var isNewStack: Boolean = false
+        private set
 
     private val regionProvider = AwsRegionProvider.getInstance()
 
@@ -44,7 +45,7 @@ class DeployServerlessApplicationDialog(
         view.withTemplateParameters(parameters.toList())
 
         view.region.setRegions(regionProvider.regions().values.toList())
-        view.CreateS3BucketButton.isEnabled = view.region.selectedRegion != null
+        view.createS3BucketButton.isEnabled = view.region.selectedRegion != null
 
         view.s3Bucket.populateValues {
             emptyList()
@@ -55,7 +56,7 @@ class DeployServerlessApplicationDialog(
 
         // S3 selector only shows buckets for region of interest
         view.region.addActionListener {
-            view.CreateS3BucketButton.isEnabled = view.region.selectedRegion != null
+            view.createS3BucketButton.isEnabled = view.region.selectedRegion != null
             val selectedRegionId = view.region.selectedRegion?.id
 
             view.s3Bucket.populateValues {
@@ -97,7 +98,7 @@ class DeployServerlessApplicationDialog(
             setNewStackUIVisibility(isNewStack)
         }
 
-        view.CreateS3BucketButton.addActionListener {
+        view.createS3BucketButton.addActionListener {
             // Ensure bucket creation takes place on the currently selected region
             val selectedRegion = view.region.selectedRegion ?: throw Exception("No region has been selected")
             val currentRegionS3Client: S3Client = project.awsClient(selectedRegion)
@@ -113,8 +114,6 @@ class DeployServerlessApplicationDialog(
             }
         }
     }
-
-    public fun getIsNewStack(): Boolean = isNewStack
 
     override fun createCenterPanel(): JComponent? = view.content
 
