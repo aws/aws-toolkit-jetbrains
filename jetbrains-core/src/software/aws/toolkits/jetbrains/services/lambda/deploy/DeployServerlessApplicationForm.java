@@ -21,23 +21,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class DeployServerlessApplicationForm {
-    @NotNull
-    JTextField newStackName;
-    @NotNull
-    JButton btnCreateS3Bucket;
+    @NotNull JTextField newStackName;
+    @NotNull JButton btnCreateS3Bucket;
     private EnvVariablesTable environmentVariablesTable;
-    @NotNull
-    JPanel content;
-    @NotNull
-    RegionSelector region;
-    @NotNull
-    ComboBox<String> s3Bucket;
-    @NotNull
-    ComboBox<String> stacks;
-    @NotNull
-    JLabel newStackNameLabel;
-    @NotNull
-    Wrapper stackParameters;
+    @NotNull JPanel content;
+    @NotNull RegionSelector region;
+    @NotNull ComboBox<String> s3Bucket;
+    @NotNull ComboBox<String> stacks;
+    @NotNull JLabel newStackNameLabel;
+    @NotNull Wrapper stackParameters;
     private JLabel lblTemplateParameters;
 
     public DeployServerlessApplicationForm withTemplateParameters(final Collection<Parameter> parameters) {
