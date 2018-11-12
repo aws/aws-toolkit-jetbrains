@@ -61,7 +61,7 @@ class DeployServerlessApplicationDialog(
 
             view.s3Bucket.populateValues {
                 if (!selectedRegionId.isNullOrEmpty()) {
-                    s3Client.listBucketsByRegion(selectedRegionId)
+                    s3Client.listBucketsByRegion(selectedRegionId ?: throw Exception("No region selected"))
                             .mapNotNull { it.name() }
                             .sortedWith(String.CASE_INSENSITIVE_ORDER)
                             .toList()

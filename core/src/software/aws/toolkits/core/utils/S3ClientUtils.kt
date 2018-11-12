@@ -7,10 +7,6 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.core.s3.regionForBucket
 
-fun S3Client.listBucketsByRegion(filterRegionId: String?): Sequence<Bucket> = this.listBuckets().buckets()
+fun S3Client.listBucketsByRegion(regionId: String): Sequence<Bucket> = this.listBuckets().buckets()
     .asSequence()
-    .also { buckets ->
-        filterRegionId?.let { _ ->
-            buckets.filter { this.regionForBucket(it.name()) == filterRegionId }
-        }
-    }
+    .filter { this.regionForBucket(it.name()) == regionId }
