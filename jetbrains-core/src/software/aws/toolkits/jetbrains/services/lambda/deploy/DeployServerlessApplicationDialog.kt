@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.utils.ui.addAndSelectValue
 import software.aws.toolkits.jetbrains.utils.ui.populateValues
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
-import java.awt.Dimension
 import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.JComponent
@@ -41,8 +40,6 @@ class DeployServerlessApplicationDialog(
         super.init()
 
         title = message("serverless.application.deploy.title")
-
-        view.content.preferredSize = Dimension(800, 600)
 
         view.withTemplateParameters(parameters.toList())
 

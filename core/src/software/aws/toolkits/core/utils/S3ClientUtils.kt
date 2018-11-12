@@ -9,4 +9,8 @@ import software.aws.toolkits.core.s3.regionForBucket
 
 fun S3Client.listBucketsByRegion(filterRegionId: String?): Sequence<Bucket> = this.listBuckets().buckets()
     .asSequence()
-    .filter { this.regionForBucket(it.name()) == (filterRegionId ?: it.name()) }
+    .also { buckets ->
+        filterRegionId?.let { _ ->
+            buckets.filter { this.regionForBucket(it.name()) == filterRegionId }
+        }
+    }
