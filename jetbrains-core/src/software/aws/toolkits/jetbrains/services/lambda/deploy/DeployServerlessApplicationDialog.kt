@@ -28,7 +28,7 @@ class DeployServerlessApplicationDialog(
     private val parameters: Sequence<Parameter>
 ) : DialogWrapper(project) {
 
-    private val view = DeployServerlessApplicationForm()
+    private val view = DeployServerlessApplicationPanel()
     private val validator = DeploySamApplicationValidator()
     private val s3Client: S3Client = project.awsClient()
 
@@ -183,7 +183,7 @@ class DeployServerlessApplicationDialog(
 }
 
 class DeploySamApplicationValidator {
-    fun validateSettings(view: DeployServerlessApplicationForm): ValidationInfo? {
+    fun validateSettings(view: DeployServerlessApplicationPanel): ValidationInfo? {
 
         // Has the user selected a region
         view.region.selectedRegion ?: return ValidationInfo(
@@ -228,7 +228,7 @@ class DeploySamApplicationValidator {
         return null
     }
 
-    private fun validateParameters(view: DeployServerlessApplicationForm): ValidationInfo? {
+    private fun validateParameters(view: DeployServerlessApplicationPanel): ValidationInfo? {
         val parameters = view.templateParameters
 
         val unsetParameters = parameters.entries

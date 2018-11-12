@@ -31,7 +31,7 @@ class DeploySamApplicationValidatorTest {
     val ruleChain = RuleChain(projectRule, EdtRule())
 
     private val sut = DeploySamApplicationValidator()
-    private lateinit var view: DeployServerlessApplicationForm
+    private lateinit var view: DeployServerlessApplicationPanel
 
     @Before
     fun wireMocksTogetherWithValidOptions() {
@@ -42,7 +42,7 @@ class DeploySamApplicationValidatorTest {
         )
 
         view = runInEdtAndGet {
-            DeployServerlessApplicationForm()
+            DeployServerlessApplicationPanel()
         }
 
         view.withTemplateParameters(parameters)

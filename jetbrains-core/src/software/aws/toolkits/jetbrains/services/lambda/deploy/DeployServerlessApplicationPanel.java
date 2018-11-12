@@ -20,7 +20,7 @@ import javax.swing.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class DeployServerlessApplicationForm {
+public class DeployServerlessApplicationPanel {
     @NotNull JTextField newStackName;
     @NotNull JButton btnCreateS3Bucket;
     private EnvVariablesTable environmentVariablesTable;
@@ -32,7 +32,7 @@ public class DeployServerlessApplicationForm {
     @NotNull Wrapper stackParameters;
     private JLabel lblTemplateParameters;
 
-    public DeployServerlessApplicationForm withTemplateParameters(final Collection<Parameter> parameters) {
+    public DeployServerlessApplicationPanel withTemplateParameters(final Collection<Parameter> parameters) {
 
         environmentVariablesTable.setValues(
                 parameters.stream().map(parameter -> new EnvironmentVariable(
