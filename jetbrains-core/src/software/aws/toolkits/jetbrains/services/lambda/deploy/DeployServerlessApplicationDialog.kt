@@ -46,7 +46,7 @@ class DeployServerlessApplicationDialog(
         view.withTemplateParameters(parameters.toList())
 
         view.region.setRegions(regionProvider.regions().values.toMutableList())
-        view.btnCreateS3Bucket.isEnabled = view.region.selectedRegion != null
+        view.CreateS3BucketButton.isEnabled = view.region.selectedRegion != null
 
         view.s3Bucket.populateValues {
             emptyList()
@@ -56,7 +56,7 @@ class DeployServerlessApplicationDialog(
 
         // S3 selector only shows buckets for region of interest
         view.region.addActionListener {
-            view.btnCreateS3Bucket.isEnabled = view.region.selectedRegion != null
+            view.CreateS3BucketButton.isEnabled = view.region.selectedRegion != null
             val activeRegionId = view.region.selectedRegion?.id
 
             view.s3Bucket.populateValues {
@@ -101,7 +101,7 @@ class DeployServerlessApplicationDialog(
             view.newStackName.isVisible = showNewStackControls
         }
 
-        view.btnCreateS3Bucket.addActionListener {
+        view.CreateS3BucketButton.addActionListener {
             // Ensure bucket creation takes place on the currently selected region
             val currentRegionS3Client: S3Client = project.awsClient(view.region.selectedRegion!!)
 

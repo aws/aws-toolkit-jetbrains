@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class DeployServerlessApplicationPanel {
     @NotNull JTextField newStackName;
-    @NotNull JButton btnCreateS3Bucket;
+    @NotNull JButton CreateS3BucketButton;
     private EnvVariablesTable environmentVariablesTable;
     @NotNull JPanel content;
     @NotNull RegionSelector region;
@@ -30,7 +30,7 @@ public class DeployServerlessApplicationPanel {
     @NotNull ComboBox<String> stacks;
     @NotNull JLabel newStackNameLabel;
     @NotNull Wrapper stackParameters;
-    private JLabel lblTemplateParameters;
+    private JLabel TemplateParametersLabel;
 
     public DeployServerlessApplicationPanel withTemplateParameters(final Collection<Parameter> parameters) {
 
