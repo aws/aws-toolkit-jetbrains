@@ -15,6 +15,7 @@ import com.intellij.testFramework.IdeaTestUtil
 import com.jetbrains.python.sdk.PythonSdkType
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.jetbrains.ui.wizard.java.SamInitModuleBuilder
 import software.aws.toolkits.jetbrains.ui.wizard.java.SamInitTemplateSelectionStep
 import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk3x
@@ -63,6 +64,8 @@ class SamInitProjectWizardTest : NewProjectWizardTestCase() {
     }
 
     private fun helloWorldTest(runtime: Runtime, sdkType: KClass<out SdkType>) {
+        SamSettings.getInstance().savedExecutablePath = System.getenv().getOrDefault("SAM_CLI_EXEC", "sam")
+
         createProject { step ->
             val stepNum = myWizard.currentStep
             when (step) {
