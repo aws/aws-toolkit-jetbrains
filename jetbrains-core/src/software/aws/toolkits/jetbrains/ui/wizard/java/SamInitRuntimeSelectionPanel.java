@@ -11,7 +11,9 @@ import java.awt.event.ItemEvent;
 import com.intellij.ide.util.projectWizard.ModuleWizardStep;
 import com.intellij.ide.util.projectWizard.SdkSettingsStep;
 import com.intellij.ide.util.projectWizard.WizardContext;
+import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.project.DefaultProjectFactory;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBLabel;
@@ -19,6 +21,8 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager;
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunner;
+import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable;
 import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderCommonKt;
 
 import static software.aws.toolkits.resources.Localization.message;
@@ -28,6 +32,7 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
     private ComboBox<Runtime> runtime;
     private JTextField samExecutableField;
     private JButton editSamExecutableButton;
+    private JBLabel samLabel;
 
     private SamInitModuleBuilder builder;
     private WizardContext context;
@@ -46,7 +51,7 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
                 .sorted()
                 .forEach(y -> runtime.addItem(y));
 
-        SamInitProjectBuilderCommonKt.setupSamSelectionElements(samExecutableField, editSamExecutableButton);
+        SamInitProjectBuilderCommonKt.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel);
 
         runtime.addItemListener(l -> {
             if (l.getStateChange() == ItemEvent.SELECTED) {
@@ -54,6 +59,8 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
                 buildSdkSettingsPanel();
             }
         });
+
+        mainPanel.validate();
     }
 
     private void buildSdkSettingsPanel() {
@@ -87,8 +94,16 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
 
     @Override
     public boolean validate() throws ConfigurationException {
+        String error;
+        ConfigurationException exception = null;
         if (samExecutableField.getText().isEmpty()) {
-            throw new ConfigurationException(message("lambda.run_configuration.sam.not_specified"));
+            exception = new ConfigurationException(message("lambda.run_configuration.sam.not_specified"));
+        } else if ((error = SamInitRunner.Companion.testExecutable()) != null) {
+            exception = new ConfigurationException(message("lambda.run_configuration.sam.invalid_executable", error));
+        }
+        if (exception != null) {
+            SamInitProjectBuilderCommonKt.setVisibilitySamSelectionElements(true, samExecutableField, editSamExecutableButton, samLabel);
+            throw exception;
         }
         return true;
     }

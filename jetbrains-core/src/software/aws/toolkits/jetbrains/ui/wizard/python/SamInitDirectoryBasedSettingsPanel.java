@@ -7,25 +7,54 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.util.List;
+import com.intellij.facet.ui.ValidationResult;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.ui.components.JBLabel;
+import org.jetbrains.annotations.NotNull;
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunner;
 import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderCommonKt;
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectTemplate;
+import static software.aws.toolkits.resources.Localization.message;
 
 public class SamInitDirectoryBasedSettingsPanel {
     private JTextField samExecutableField;
     private ComboBox<SamProjectTemplate> templateField;
     private JPanel mainPanel;
     private JButton editSamExecutableButton;
+    private JBLabel samLabel;
 
-    SamInitDirectoryBasedSettingsPanel(List<SamProjectTemplate> templateList) {
+    private SamInitProjectBuilderPyCharm builder;
+
+    SamInitDirectoryBasedSettingsPanel(List<SamProjectTemplate> templateList, SamInitProjectBuilderPyCharm builder) {
+        this.builder = builder;
+
         templateList.forEach(templateField::addItem);
 
-        SamInitProjectBuilderCommonKt.setupSamSelectionElements(samExecutableField, editSamExecutableButton);
+        SamInitProjectBuilderCommonKt.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel, builder::fireStateChanged);
+
+        mainPanel.validate();
     }
 
+    @NotNull
     public JPanel getComponent() {
         return mainPanel;
     }
 
+    @NotNull
     public ComboBox<SamProjectTemplate> getTemplateField() { return templateField; }
+
+    @NotNull
+    public ValidationResult validate() {
+        String error;
+        ValidationResult validationResult = ValidationResult.OK;
+        if (samExecutableField.getText().isEmpty()) {
+            validationResult = new ValidationResult(message("lambda.run_configuration.sam.not_specified"));
+        } else if ((error = SamInitRunner.Companion.testExecutable()) != null) {
+            validationResult = new ValidationResult(message("lambda.run_configuration.sam.invalid_executable", error));
+        }
+        if (!validationResult.isOk()) {
+            SamInitProjectBuilderCommonKt.setVisibilitySamSelectionElements(true, samExecutableField, editSamExecutableButton, samLabel);
+        }
+        return validationResult;
+    }
 }
