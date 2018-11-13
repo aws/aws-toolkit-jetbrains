@@ -20,9 +20,10 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.ui.wizard.SAM_TEMPLATES
 import software.aws.toolkits.jetbrains.ui.wizard.SamModuleType
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectTemplateWrapper
+import software.aws.toolkits.resources.message
 
 class SamInitModuleBuilder : ModuleBuilder() {
-    var runtime: Runtime = Runtime.UNKNOWN_TO_SDK_VERSION
+    var runtime: Runtime? = null
     lateinit var runtimeSelectionPanel: SamInitRuntimeSelectionPanel
     lateinit var template: SamProjectTemplateWrapper
 
@@ -57,7 +58,7 @@ class SamInitModuleBuilder : ModuleBuilder() {
         rootModel.module.setModuleType(moduleType)
         val project = rootModel.project
 
-        template.samProjectTemplate.build(runtime, project.baseDir)
+        template.samProjectTemplate.build(runtime ?: throw RuntimeException(message("sam.init.null_runtime")), project.baseDir)
         rootModel.addContentEntry(project.baseDir)
     }
 

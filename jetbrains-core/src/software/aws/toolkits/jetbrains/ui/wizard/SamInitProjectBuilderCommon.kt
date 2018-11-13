@@ -43,12 +43,8 @@ abstract class SamProjectTemplate {
 
     fun getIcon() = AwsIcons.Resources.LAMBDA_FUNCTION
 
-    fun buildCommand(runtime: Runtime, outputDir: VirtualFile) = SamInitRunner().applyRuntime(runtime)
-        .applyName(SamModuleType.ID)
-        .applyOutputDir(outputDir)
-
     open fun build(runtime: Runtime, outputDir: VirtualFile) {
-        buildCommand(runtime, outputDir).execute()
+        SamInitRunner(SamModuleType.ID, outputDir, runtime).execute()
     }
 
     fun getModuleBuilderProjectTemplate(builder: ModuleBuilder) =
@@ -60,9 +56,9 @@ class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
 
     override fun createModuleBuilder() = SamInitModuleBuilder()
 
-    override fun getName() = "SAM Name"
+    override fun getName() = ID
 
-    override fun getDescription() = "SAM Module Type Description"
+    override fun getDescription() = DESCRIPTION
 
     companion object {
         const val ID = "SAM"
