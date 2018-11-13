@@ -20,20 +20,19 @@ class SamInitRunner(
     private val location: String? = null
 ) {
     private val samCliExecutable = SamSettings.getInstance().executablePath
-    private val commandLine = GeneralCommandLine(samCliExecutable)
-            .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
-            .withParameters("init")
-            .withParameters("--no-input")
-            .withParameters("--name")
-            .withParameters(name)
-            .withParameters("--runtime")
-            .withParameters(runtime.toString())
 
     fun execute() = ApplicationManager.getApplication().runWriteAction {
         // set output to a temp dir
         val tempDir = LocalFileSystem.getInstance().findFileByIoFile(createTempDir())
                 ?: throw RuntimeException("Cannot create temp file")
-        val commandLine = commandLine.withParameters("--output-dir")
+        val commandLine = GeneralCommandLine(samCliExecutable)
+                .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
+                .withParameters("init")
+                .withParameters("--no-input")
+                .withParameters("--name")
+                .withParameters(name)
+                .withParameters("--runtime")
+                .withParameters(runtime.toString()).withParameters("--output-dir")
                 .withParameters(tempDir.path)
                 .apply {
                     if (location != null) {
@@ -41,7 +40,6 @@ class SamInitRunner(
                                 .withParameters(location)
                     }
                 }
-
         // run
         val process = CapturingProcessHandler(commandLine).runProcess()
         if (process.exitCode != 0) {

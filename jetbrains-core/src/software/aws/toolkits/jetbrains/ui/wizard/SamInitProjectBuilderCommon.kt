@@ -41,7 +41,7 @@ abstract class SamProjectTemplate {
 
     override fun toString() = getName()
 
-    fun getIcon() = AwsIcons.Resources.LAMBDA_FUNCTION
+    fun getIcon() = AwsIcons.Resources.SERVERLESS_APP
 
     open fun build(runtime: Runtime, outputDir: VirtualFile) {
         SamInitRunner(SamModuleType.ID, outputDir, runtime).execute()
@@ -52,7 +52,7 @@ abstract class SamProjectTemplate {
 }
 
 class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
-    override fun getNodeIcon(isOpened: Boolean) = AwsIcons.Resources.LAMBDA_FUNCTION
+    override fun getNodeIcon(isOpened: Boolean) = AwsIcons.Resources.SERVERLESS_APP
 
     override fun createModuleBuilder() = SamInitModuleBuilder()
 

@@ -25,7 +25,7 @@ class SamInitProjectBuilderPyCharm : PythonProjectGenerator<PyNewProjectSettings
     // "More Options" panel
     override fun getSettingsPanel(baseDir: File?) = settingsPanel.component
 
-    override fun getLogo() = AwsIcons.Resources.LAMBDA_FUNCTION
+    override fun getLogo() = AwsIcons.Resources.SERVERLESS_APP
 
     override fun configureProject(project: Project, baseDir: VirtualFile, settings: PyNewProjectSettings, module: Module, synchronizer: PyProjectSynchronizer?) {
         val runtime = PythonRuntimeGroup.determineRuntimeForSdk(settings.sdk

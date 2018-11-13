@@ -17,6 +17,8 @@ import com.jetbrains.python.module.PythonModuleType
 import com.jetbrains.python.sdk.PythonSdkType
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.ui.wizard.SAM_TEMPLATES
 import software.aws.toolkits.jetbrains.ui.wizard.SamModuleType
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectTemplateWrapper
@@ -36,15 +38,15 @@ class SamInitModuleBuilder : ModuleBuilder() {
     // we want to use our own custom template selection step
     override fun isTemplateBased() = false
 
-    fun getIdeaModuleType() = when (runtime) {
-        Runtime.JAVA8 -> JavaModuleType.getModuleType()
-        Runtime.PYTHON2_7, Runtime.PYTHON3_6 -> PythonModuleType.getInstance()
+    fun getIdeaModuleType() = when (runtime?.runtimeGroup) {
+        RuntimeGroup.JAVA -> JavaModuleType.getModuleType()
+        RuntimeGroup.PYTHON -> PythonModuleType.getInstance()
         else -> ModuleType.EMPTY
     }
 
-    fun getSdkType() = when (runtime) {
-        Runtime.JAVA8 -> JavaSdk.getInstance()
-        Runtime.PYTHON2_7, Runtime.PYTHON3_6 -> PythonSdkType.getInstance()
+    fun getSdkType() = when (runtime?.runtimeGroup) {
+        RuntimeGroup.JAVA -> JavaSdk.getInstance()
+        RuntimeGroup.PYTHON -> PythonSdkType.getInstance()
         else -> JavaSdk.getInstance()
     }
 
@@ -66,7 +68,7 @@ class SamInitModuleBuilder : ModuleBuilder() {
 
     override fun getDescription() = SamModuleType.DESCRIPTION
 
-    override fun getNodeIcon() = AwsIcons.Resources.LAMBDA_FUNCTION
+    override fun getNodeIcon() = AwsIcons.Resources.SERVERLESS_APP
 
     override fun getCustomOptionsStep(context: WizardContext?, parentDisposable: Disposable?): ModuleWizardStep? {
         runtimeSelectionPanel = SamInitRuntimeSelectionPanel(this, context)
