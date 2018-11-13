@@ -5,7 +5,9 @@ package software.aws.toolkits.jetbrains.services.lambda.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
@@ -16,7 +18,7 @@ class DeployServerlessApplicationAction : AnAction(
         message("serverless.application.deploy"),
         null,
         AwsIcons.Resources.LAMBDA_FUNCTION) {
-    private var templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
+    private val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
 
     override fun actionPerformed(e: AnActionEvent) {
 
@@ -48,9 +50,16 @@ class DeployServerlessApplicationAction : AnAction(
         }
 
         // If the module node was selected, see if there is a template file in the top level folder
-        val project = e.getData(PlatformDataKeys.PROJECT) ?: return null
-        if (virtualFile == project.baseDir) {
-            return virtualFile.children.singleOrNull { templateYamlRegex.matches(it.name) }
+        val module = e.getData(LangDataKeys.MODULE_CONTEXT)
+        if (module != null) {
+            // It is only acceptable if one template file is found
+            val childTemplateFiles = ModuleRootManager.getInstance(module).contentRoots.flatMap { root ->
+                root.children.filter { child -> templateYamlRegex.matches(child.name) }
+            }
+
+            if (childTemplateFiles.size == 1) {
+                return childTemplateFiles.single()
+            }
         }
 
         return null
