@@ -12,7 +12,6 @@ import com.intellij.openapi.util.Key
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ExceptionUtil
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.regions.Region
@@ -36,17 +35,6 @@ class SamDeployTest {
     @Rule
     @JvmField
     val bucketRule = S3TemporaryBucketRule(s3Client)
-
-    @After
-    fun tearDown() {
-        try {
-            cfnClient.deleteStack {
-                it.stackName(stackName)
-            }
-        } catch (e: Exception) {
-            println("Failed to cleanup CFN stack: ${ExceptionUtil.getMessage(e)}")
-        }
-    }
 
     @Test
     fun deployAppUsingSam() {
@@ -101,13 +89,23 @@ class SamDeployTest {
         Disposer.register(projectRule.fixture.testRootDisposable, deployDialog.disposable)
 
         val changeSetArn = deployDialog.executeDeployment().toCompletableFuture().get(5, TimeUnit.MINUTES)
-        assertThat(changeSetArn).isNotNull()
+        try {
+            assertThat(changeSetArn).isNotNull()
 
-        val describeChangeSetResponse = cfnClient.describeChangeSet {
-            it.stackName(stackName)
-            it.changeSetName(changeSetArn)
+            val describeChangeSetResponse = cfnClient.describeChangeSet {
+                it.stackName(stackName)
+                it.changeSetName(changeSetArn)
+            }
+
+            assertThat(describeChangeSetResponse).isNotNull
+        } finally {
+            try {
+                cfnClient.deleteChangeSet {
+                    it.changeSetName(changeSetArn)
+                }
+            } catch (e: Exception) {
+                println("Failed to delete change set $changeSetArn: ${ExceptionUtil.getMessage(e)}")
+            }
         }
-
-        assertThat(describeChangeSetResponse).isNotNull
     }
 }

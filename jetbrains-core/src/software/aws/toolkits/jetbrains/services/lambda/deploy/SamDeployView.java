@@ -87,7 +87,6 @@ public class SamDeployView implements Disposable {
                 }
 
                 if (SwingUtilities.isDescendingFrom(mouseEvent.getComponent(), logPanel)) {
-                    System.out.println("Clicked manually");
                     manuallySelectedTab = true;
                 }
             }, AWTEvent.MOUSE_EVENT_MASK, console);

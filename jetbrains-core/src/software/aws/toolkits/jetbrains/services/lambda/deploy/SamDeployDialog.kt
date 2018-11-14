@@ -39,6 +39,7 @@ open class SamDeployDialog(
     private val view = SamDeployView(project, progressIndicator)
     private var currentStep = 0
     private val credentialsProvider = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider
+    private val changeSetRegex = "(arn:aws:cloudformation:.*changeSet/[^\\s]*)".toRegex()
 
     init {
         Disposer.register(disposable, view)
@@ -95,14 +96,14 @@ open class SamDeployDialog(
             .withParameters("--no-execute-changeset")
 
         return runCommand(message("serverless.application.deploy.step_name.create_change_set"), command) { output ->
-            val changeSet = "(arn:aws:cloudformation:.*changeSet/[^\\s]*)".toRegex()
-            changeSet.find(output.stdout)?.value
+            changeSetRegex.find(output.stdout)?.value
                     ?: throw RuntimeException(message("serverless.application.deploy.change_set_not_found"))
         }
     }
 
     private fun finish(changeSet: String): String = changeSet.also {
         progressIndicator.fraction = 1.0
+        currentStep = NUMBER_OF_STEPS.toInt()
         okAction.isEnabled = true
         cancelAction.isEnabled = true
     }
