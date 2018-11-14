@@ -54,12 +54,12 @@ class SamInitRunner(
     companion object {
         // TODO: change minimum to 0.7.0 before release
         private val expectedSamMinVersion = SemVer("0.6.0", 0, 6, 0)
-        private val expectedSamMaxVersion = SemVer("1.0.0", 1, 0, 0)
+        private val expectedSamMaxVersion = SemVer("0.8.0", 0, 8, 0)
 
         fun checkVersion(samVersionLine: String): String? {
             val parsedSemVer = SemVer.parseFromText(samVersionLine.split(" ").last())
                     ?: return message("sam.executable.version_parse_error", samVersionLine)
-            if (parsedSemVer > expectedSamMaxVersion || parsedSemVer < expectedSamMinVersion) {
+            if (parsedSemVer >= expectedSamMaxVersion || parsedSemVer < expectedSamMinVersion) {
                 return message("sam.executable.version_wrong", expectedSamMinVersion, expectedSamMaxVersion, parsedSemVer)
             }
             return null
@@ -67,15 +67,15 @@ class SamInitRunner(
 
         fun validate(path: String): String? {
             val commandLine = GeneralCommandLine(path).withParameters("--version")
-            try {
+            return try {
                 val process = CapturingProcessHandler(commandLine).runProcess()
                 if (process.exitCode != 0) {
-                    return process.stderr
+                    process.stderr
                 }
                 val samVersionLine = process.stdoutLines.first()
-                return checkVersion(samVersionLine)
+                checkVersion(samVersionLine)
             } catch (e: Exception) {
-                return e.localizedMessage
+                e.localizedMessage
             }
         }
     }
