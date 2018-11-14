@@ -1,5 +1,6 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+@file:JvmName("SamInitProjectBuilderCommon")
 
 package software.aws.toolkits.jetbrains.ui.wizard
 

@@ -11,8 +11,7 @@ import com.intellij.facet.ui.ValidationResult;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBLabel;
 import org.jetbrains.annotations.NotNull;
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunner;
-import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderCommonKt;
+import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderCommon;
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectTemplate;
 import static software.aws.toolkits.resources.Localization.message;
 
@@ -30,7 +29,7 @@ public class SamInitDirectoryBasedSettingsPanel {
 
         templateList.forEach(templateField::addItem);
 
-        SamInitProjectBuilderCommonKt.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel, builder::fireStateChanged);
+        SamInitProjectBuilderCommon.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel, builder::fireStateChanged);
 
         mainPanel.validate();
     }

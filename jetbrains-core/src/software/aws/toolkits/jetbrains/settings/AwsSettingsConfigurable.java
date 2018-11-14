@@ -10,7 +10,6 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.components.JBCheckBox;
@@ -19,13 +18,11 @@ import com.intellij.ui.components.labels.LinkLabel;
 import java.util.Objects;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nls.Capitalization;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunner;
-import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderCommonKt;
 
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String SAM_HELP_LINK = message("lambda.sam.cli.install_url");
@@ -102,7 +99,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         // if path is set and it is a bad executable
         String error;
-        if ((error = SamInitRunner.Companion.testExecutable(path)) != null) {
+        if ((error = SamInitRunner.Companion.validate(path)) != null) {
             throw new ConfigurationException(message("lambda.run_configuration.sam.invalid_executable", error));
         }
 

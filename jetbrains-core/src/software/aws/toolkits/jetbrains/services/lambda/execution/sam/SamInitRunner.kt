@@ -51,7 +51,7 @@ class SamInitRunner(
     }
 
     companion object {
-        fun testExecutable(path: String): String? {
+        fun validate(path: String): String? {
             val commandLine = GeneralCommandLine(path).withParameters("--version")
             return try {
                 val process = CapturingProcessHandler(commandLine).runProcess()
