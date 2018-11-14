@@ -11,6 +11,7 @@ import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction
 
 /**
  * Used to expose Lambda handler information for different [Language]s / [Runtime]s
@@ -66,6 +67,12 @@ interface LambdaHandlerResolver {
      * Given a handler, return whether to show this handler all the time
      */
     fun shouldShowLineMarker(handler: String): Boolean = false
+
+    /**
+     * Given a handler and the element it originated from, produce the appropriate Action that can
+     * be used to create a Lambda Function.
+     */
+    fun generateCreateLambdaFunctionAction(handlerName: String, element: PsiElement): CreateLambdaFunction
 
     companion object : RuntimeGroupExtensionPointObject<LambdaHandlerResolver>(ExtensionPointName.create("aws.toolkit.lambda.handlerResolver"))
 }

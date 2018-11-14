@@ -54,7 +54,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
                     actionGroup.add(LineMarkerActionWrapper(element, it))
                 }
 
-                actionGroup.add(CreateLambdaFunction(handler))
+                actionGroup.add(handlerResolver.generateCreateLambdaFunctionAction(handler, element))
             }
 
             object : LineMarkerInfo<PsiElement>(
