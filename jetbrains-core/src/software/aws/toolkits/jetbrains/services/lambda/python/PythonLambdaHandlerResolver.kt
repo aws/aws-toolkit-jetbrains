@@ -18,8 +18,6 @@ import com.jetbrains.python.psi.PyFile
 import com.jetbrains.python.psi.PyFunction
 import com.jetbrains.python.psi.stubs.PyModuleNameIndex
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction
-import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunctionFromPythonMethod
 
 class PythonLambdaHandlerResolver : LambdaHandlerResolver {
     override fun version(): Int = 1
@@ -69,13 +67,6 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
 
         return NavigatablePsiElement.EMPTY_NAVIGATABLE_ELEMENT_ARRAY
     }
-
-    /**
-     * Given a handler and the element it originated from, produce the appropriate Action that can
-     * be used to create a Lambda Function.
-     */
-    override fun generateCreateLambdaFunctionAction(handlerName: String, element: PsiElement): CreateLambdaFunction =
-        CreateLambdaFunctionFromPythonMethod(handlerName, element.project)
 
     private fun validateHandlerPath(
         module: Module?,

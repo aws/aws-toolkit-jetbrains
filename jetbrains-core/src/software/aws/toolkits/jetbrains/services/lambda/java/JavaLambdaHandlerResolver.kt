@@ -21,9 +21,6 @@ import com.intellij.psi.PsiParameter
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction
-import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunctionFromJavaClass
-import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunctionFromJavaMethod
 
 class JavaLambdaHandlerResolver : LambdaHandlerResolver {
     override fun version(): Int = 1
@@ -79,27 +76,6 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
      * Always show line marker for handler if it is a class which means it implements Lambda interface.
      */
     override fun shouldShowLineMarker(handler: String): Boolean = !handler.contains("::")
-
-    /**
-     * Given a handler and the element it originated from, produce the appropriate Action that can
-     * be used to create a Lambda Function.
-     */
-    override fun generateCreateLambdaFunctionAction(handlerName: String, element: PsiElement): CreateLambdaFunction =
-        if (isClassRelated(element)) {
-            CreateLambdaFunctionFromJavaClass(handlerName, element.project)
-        } else {
-            CreateLambdaFunctionFromJavaMethod(handlerName, element.project)
-        }
-
-    /**
-     * Whether or not the given element is related to a class, or some other entity (like a Method).
-     */
-    private fun isClassRelated(element: PsiElement?): Boolean =
-        when (element) {
-            is PsiClass -> true
-            is PsiIdentifier -> isClassRelated(element.parent)
-            else -> false
-        }
 
     /**
      * https://docs.aws.amazon.com/lambda/latest/dg/java-programming-model-handler-types.html

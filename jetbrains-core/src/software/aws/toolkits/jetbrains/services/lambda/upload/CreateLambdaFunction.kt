@@ -7,10 +7,12 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex
 import software.aws.toolkits.jetbrains.services.iam.IamRole
+import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.runtime
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.NEW
 import software.aws.toolkits.resources.message
@@ -29,57 +31,28 @@ open class CreateLambdaFunction() : AnAction(message("lambda.create_new"), null,
         EditFunctionDialog(project = project, mode = NEW, runtime = runtime)
 }
 
-open class CreateElementBasedLambdaFunction(private val handlerName: String, private val project: Project)
-    : CreateLambdaFunction() {
-    protected var handlerSearch: String = handlerName
-    protected var isExactMatch: Boolean = false
-
+class ConditionalCreateLambdaFunction(
+    private val handlerName: String,
+    private val element: PsiElement,
+    private val lambdaHandlerResolver: LambdaHandlerResolver
+) : CreateLambdaFunction() {
     override fun update(e: AnActionEvent?) {
         super.update(e)
 
-        val allowAction = CloudFormationTemplateIndex.listFunctions(project)
+        val templateFunctionHandlers = CloudFormationTemplateIndex.listFunctions(element.project)
             .mapNotNull { it.handler() }
-            .none {
-                if (isExactMatch) {
-                    it == handlerSearch
-                } else {
-                    it.startsWith(handlerSearch)
-                }
+            .distinct()
+
+        val allowAction = lambdaHandlerResolver.determineHandlers(element, element.containingFile.virtualFile)
+            .none { elementHandler ->
+                templateFunctionHandlers.any { templateHandler -> templateHandler == elementHandler }
             }
 
-        e?.presentation?.isEnabled = allowAction
         e?.presentation?.isVisible = allowAction
     }
 
     override fun getEditFunctionDialog(project: Project, runtime: Runtime?): EditFunctionDialog =
         EditFunctionDialog(project = project, mode = NEW, runtime = runtime, handlerName = handlerName)
-}
-
-class CreateLambdaFunctionFromJavaClass(private val handlerName: String, private val project: Project)
-    : CreateElementBasedLambdaFunction(handlerName, project) {
-
-    init {
-        handlerSearch = "$handlerName::"
-        isExactMatch = false
-    }
-}
-
-class CreateLambdaFunctionFromJavaMethod(private val handlerName: String, private val project: Project)
-    : CreateElementBasedLambdaFunction(handlerName, project) {
-
-    init {
-        handlerSearch = handlerName
-        isExactMatch = true
-    }
-}
-
-class CreateLambdaFunctionFromPythonMethod(private val handlerName: String, private val project: Project)
-    : CreateElementBasedLambdaFunction(handlerName, project) {
-
-    init {
-        handlerSearch = handlerName
-        isExactMatch = true
-    }
 }
 
 data class FunctionUploadDetails(
