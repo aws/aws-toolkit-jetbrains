@@ -53,6 +53,16 @@ class SamInitRunner(
 
     companion object {
         private val expectedSamVersion = SemVer.parseFromText("0.6.0") ?: throw RuntimeException("SemVer parse error")
+
+        fun checkVersion(samVersionLine: String): String? {
+            val parsedSemVer = SemVer.parseFromText(samVersionLine.split(" ").last())
+                    ?: return message("sam.executable.version_parse_error", samVersionLine)
+            if (parsedSemVer < expectedSamVersion) {
+                return message("sam.executable.version_wrong", expectedSamVersion, parsedSemVer)
+            }
+            return null
+        }
+
         fun validate(path: String): String? {
             val commandLine = GeneralCommandLine(path).withParameters("--version")
             try {
@@ -61,15 +71,10 @@ class SamInitRunner(
                     return process.stderr
                 }
                 val samVersionLine = process.stdoutLines.first()
-                val parsedSemVer = SemVer.parseFromText(samVersionLine.split(" ").last())
-                        ?: throw RuntimeException(message("sam.executable.version_parse_error", samVersionLine))
-                if (parsedSemVer < expectedSamVersion) {
-                    return message("sam.executable.version_wrong", expectedSamVersion, parsedSemVer)
-                }
+                return checkVersion(samVersionLine)
             } catch (e: Exception) {
                 return e.localizedMessage
             }
-            return null
         }
     }
 }
