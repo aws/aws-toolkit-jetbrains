@@ -19,7 +19,7 @@ class SamVersionTest {
             "SAM CLI, version 0.7.0-beta+build"
         )
         for (version in versions) {
-            assertNull(SamInitRunner.checkVersion(version))
+            assertNull(SamCommon.checkVersion(version))
         }
     }
 
@@ -31,25 +31,37 @@ class SamVersionTest {
             "12312312.123123131221"
         )
         for (version in versions) {
-            val message = SamInitRunner.checkVersion(version)
+            val message = SamCommon.checkVersion(version)
             assertTrue(message != null && message.contains("Could not parse SAM executable version from"))
         }
     }
 
     @Test
-    fun incompatableSamVersion() {
+    fun incompatableSamVersion_tooLow() {
+        val versions = arrayOf(
+                "SAM CLI, version 0.5.9",
+                "SAM CLI, version 0.0.1",
+                "SAM CLI, version 0.5.9-dev"
+        )
+        for (version in versions) {
+            val message = SamCommon.checkVersion(version)
+            assertTrue(message != null && message.contains("Bad SAM executable version. Expected"))
+            assertTrue(message != null && message.contains("upgrade your SAM CLI"))
+        }
+    }
+
+    @Test
+    fun incompatableSamVersion_tooHigh() {
         val versions = arrayOf(
                 "SAM CLI, version 0.8.0",
                 "SAM CLI, version 1.0.0",
-                "SAM CLI, version 0.5.9",
-                "SAM CLI, version 0.0.1",
-                "SAM CLI, version 0.5.9-dev",
                 "SAM CLI, version 1.5.9",
                 "SAM CLI, version 1.5.9-dev"
         )
         for (version in versions) {
-            val message = SamInitRunner.checkVersion(version)
+            val message = SamCommon.checkVersion(version)
             assertTrue(message != null && message.contains("Bad SAM executable version. Expected"))
+            assertTrue(message != null && message.contains("upgrade your AWS Toolkit"))
         }
     }
 }
