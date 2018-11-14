@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.resources.message
@@ -51,14 +52,24 @@ class SamInitRunner(
     }
 
     companion object {
+        private val expectedSamVersion = SemVer.parseFromText("0.6.0") ?: throw RuntimeException("SemVer parse error")
         fun validate(path: String): String? {
             val commandLine = GeneralCommandLine(path).withParameters("--version")
-            return try {
+            try {
                 val process = CapturingProcessHandler(commandLine).runProcess()
-                if (process.exitCode != 0) process.stderr else null
+                if (process.exitCode != 0) {
+                    return process.stderr
+                }
+                val samVersionLine = process.stdoutLines.first()
+                val parsedSemVer = SemVer.parseFromText(samVersionLine.split(" ").last())
+                        ?: throw RuntimeException(message("sam.executable.version_parse_error", samVersionLine))
+                if (parsedSemVer < expectedSamVersion) {
+                    return message("sam.executable.version_wrong", expectedSamVersion, parsedSemVer)
+                }
             } catch (e: Exception) {
-                e.localizedMessage
+                return e.localizedMessage
             }
+            return null
         }
     }
 }
