@@ -15,8 +15,10 @@ import org.jetbrains.yaml.YAMLLanguage
 import org.jetbrains.yaml.psi.YAMLFile
 import org.jetbrains.yaml.psi.YAMLKeyValue
 import org.jetbrains.yaml.psi.YAMLMapping
+import org.jetbrains.yaml.psi.YAMLScalar
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationParameter
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
+import software.aws.toolkits.jetbrains.services.cloudformation.EnvironmentVariable
 import software.aws.toolkits.jetbrains.services.cloudformation.NamedMap
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.cloudformation.Resource
@@ -72,8 +74,21 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
             properties().putKeyValue(newKeyValue)
         }
 
-        private fun properties(): YAMLMapping = delegate.getKeyValueByKey("Properties")?.value as? YAMLMapping
+        override fun getEnvironmentVariables(): Sequence<EnvironmentVariable> {
+            val variables = properties().childMapping("Environment")?.childMapping("Variables") ?: return emptySequence()
+            return variables.keyValues.asSequence().mapNotNull { it -> it.asEnvironmentVariable()}
+        }
+
+        private fun properties(): YAMLMapping = childMapping("Properties")
                 ?: throw RuntimeException(message("cloudformation.key_not_found", "Properties", logicalName))
+
+    }
+
+    private class YamlEnvironmentVariable(override val variableName: String, val isScalarValue: Boolean, valueScalar : YAMLScalar) : EnvironmentVariable {
+
+        override val variableValue = valueScalar.textValue
+
+        override fun isReference() = !isScalarValue
     }
 
     private class YamlCloudFormationParameter(override val logicalName: String, private val delegate: YAMLMapping) :
@@ -103,6 +118,8 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
             return yamlKeyValue.asResource()
         }
 
+        private fun YAMLMapping.childMapping(keyName: String): YAMLMapping? = this.getKeyValueByKey(keyName)?.value as? YAMLMapping
+
         private fun YAMLKeyValue.asResource(): Resource? = if (PsiTreeUtil.getParentOfType(this, YAMLKeyValue::class.java)?.keyText == "Resources") {
             val lowLevelResource = YamlResource(this.keyText, this.value as YAMLMapping)
             RESOURCE_MAPPINGS[lowLevelResource.type()]?.invoke(lowLevelResource) ?: lowLevelResource
@@ -116,5 +133,19 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
         } else {
             null
         }
+
+        private fun YAMLKeyValue.asEnvironmentVariable(): EnvironmentVariable? {
+            val name = this.keyText
+            val value = this.value
+
+            return when(value){
+                is YAMLScalar -> YamlEnvironmentVariable(name, true, value)
+                is YAMLMapping -> (value.getKeyValueByKey("Ref")?.value as? YAMLScalar)?.let {
+                    YamlEnvironmentVariable(name, false, it)
+                }
+                else -> null
+            }
+        }
+
     }
 }

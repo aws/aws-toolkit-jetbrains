@@ -54,12 +54,22 @@ interface NamedMap {
 interface Resource : NamedMap {
     fun isType(requestedType: String): Boolean
     fun type(): String?
+
+    fun getEnvironmentVariables(): Sequence<EnvironmentVariable>
 }
 
 interface Parameter : NamedMap {
     fun defaultValue(): String?
     fun description(): String?
     fun constraintDescription(): String?
+}
+
+
+interface EnvironmentVariable {
+    val variableName: String
+    val variableValue: String
+
+    fun isReference(): Boolean
 }
 
 class CloudFormationParameter(private val delegate: NamedMap) : NamedMap by delegate, Parameter {

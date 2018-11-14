@@ -14,6 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
+import software.aws.toolkits.jetbrains.services.cloudformation.EnvironmentVariable
+import software.aws.toolkits.jetbrains.services.cloudformation.Resource
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import java.io.File
 import kotlin.test.assertNotNull
@@ -129,6 +131,11 @@ Resources:
             Handler: helloworld.App::handleRequest
             Runtime: java8
             CodeUri: new/uri.jar
+            Environment:
+                Variables:
+                    DIRECT_VALUE: direct-value
+                    REFERENCED_VALUE:
+                        Ref: MyDynamoTable
     MyDynamoTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -187,6 +194,52 @@ Resources:
         }
     }
 
+    @Test
+    fun canListEnvironmentVariables() {
+        val template = yamlTemplate()
+        runInEdtAndWait {
+            val function = template.getResourceByName("MyFunction")
+            assertThat(function).isNotNull
+            assertThat(function?.getEnvironmentVariables()?.toList()).hasSize(2)
+
+            val direct = function?.findEnvironmentVariable("DIRECT_VALUE")
+            assertThat(direct).isNotNull
+            assertThat(direct?.isReference()).isFalse()
+            assertThat(direct?.variableValue).isEqualTo("direct-value")
+
+            val reference = function?.findEnvironmentVariable("REFERENCED_VALUE")
+            assertThat(reference).isNotNull
+            assertThat(reference?.isReference()).isTrue()
+            assertThat(reference?.variableValue).isEqualTo("MyDynamoTable")
+        }
+    }
+
+    @Test
+    fun canParseByExtension() {
+        val fakeFileType = object : FakeFileType() {
+            override fun isMyFileType(@NotNull file: VirtualFile): Boolean = true
+
+            @NotNull
+            override fun getName(): String = "foo"
+
+            @NotNull
+            override fun getDescription(): String = ""
+        }
+
+        runInEdtAndWait {
+            try {
+                FileTypeManagerEx.getInstanceEx().registerFileType(fakeFileType)
+                setOf("template.yaml", "template.yml").forEach {
+                    val yamlFile = projectRule.fixture.addFileToProject(it, TEST_TEMPLATE)
+                    assertThat(yamlFile.fileType).isEqualTo(fakeFileType)
+                    assertThat(CloudFormationTemplate.parse(projectRule.project, yamlFile.virtualFile)).isNotNull
+                }
+            } finally {
+                FileTypeManagerEx.getInstanceEx().unregisterFileType(fakeFileType)
+            }
+        }
+    }
+
     private fun yamlTemplate(template: String = TEST_TEMPLATE): CloudFormationTemplate = runInEdtAndGet {
         val file = projectRule.fixture.addFileToProject("template.yaml", template)
         CloudFormationTemplate.parse(projectRule.project, file.virtualFile)
@@ -210,6 +263,11 @@ Resources:
             Handler: helloworld.App::handleRequest
             Runtime: java8
             CodeUri: target/out.jar
+            Environment:
+                Variables:
+                    DIRECT_VALUE: direct-value
+                    REFERENCED_VALUE:
+                        Ref: MyDynamoTable
     MyDynamoTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -227,5 +285,8 @@ Resources:
                 ReadCapacityUnits: 1
                 WriteCapacityUnits: 1
             """.trimIndent()
+
+        private fun Resource.findEnvironmentVariable(name : String): EnvironmentVariable? =
+                this.getEnvironmentVariables().first { it -> it.variableName == name }
     }
 }
