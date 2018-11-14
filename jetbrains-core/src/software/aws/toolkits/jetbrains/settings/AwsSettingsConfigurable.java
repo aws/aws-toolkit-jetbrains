@@ -88,35 +88,26 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     public void apply() throws ConfigurationException {
         SamSettings samSettings = SamSettings.getInstance();
 
-        String error;
-        ConfigurationException exception = null;
-
         String path = getSamExecutablePath();
-        String samAutoDetectPath = samSettings.getExecutablePath();
         // if user path is empty
         if (path == null || path.isEmpty()) {
             // try to autodetect the path
-            if (samAutoDetectPath != null && !samAutoDetectPath.isEmpty()) {
-                path = samAutoDetectPath;
-            }
+            path = samSettings.getExecutablePath();
 
             // if path is still empty pop the error
             if (path == null || path.isEmpty()) {
-                exception = new ConfigurationException(message("lambda.run_configuration.sam.not_specified"));
+                throw new ConfigurationException(message("lambda.run_configuration.sam.not_specified"));
             }
         }
 
         // if path is set and it is a bad executable
-        if (path != null && (error = SamInitRunner.Companion.testExecutable(path)) != null) {
-            exception = new ConfigurationException(message("lambda.run_configuration.sam.invalid_executable", error));
-        }
-
-        if (exception != null) {
-            throw exception;
+        String error;
+        if ((error = SamInitRunner.Companion.testExecutable(path)) != null) {
+            throw new ConfigurationException(message("lambda.run_configuration.sam.invalid_executable", error));
         }
 
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
-        // preserve null if we autodetected the path
+        // preserve user's null input if we autodetected the path
         samSettings.setSavedExecutablePath(getSamExecutablePath());
         lambdaSettings.setShowAllHandlerGutterIcons(showAllHandlerGutterIcons.isSelected());
     }

@@ -68,12 +68,6 @@ class SamModuleType : ModuleType<SamInitModuleBuilder>(ID) {
     }
 }
 
-fun setVisibilitySamSelectionElements(isVisible: Boolean, samExecutableField: JTextField, editButton: JButton, label: JComponent) {
-    samExecutableField.isVisible = isVisible
-    editButton.isVisible = isVisible
-    label.isVisible = isVisible
-}
-
 @JvmOverloads
 fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButton, label: JComponent, postEditCallback: Runnable? = null) {
     samExecutableField.text = SamSettings.getInstance().executablePath
