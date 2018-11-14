@@ -51,8 +51,8 @@ class SamInitRunner(
     }
 
     companion object {
-        fun testExecutable(): String? {
-            val commandLine = GeneralCommandLine(SamSettings.getInstance().executablePath).withParameters("--version")
+        fun testExecutable(path: String): String? {
+            val commandLine = GeneralCommandLine(path).withParameters("--version")
             return try {
                 val process = CapturingProcessHandler(commandLine).runProcess()
                 if (process.exitCode != 0) process.stderr else null

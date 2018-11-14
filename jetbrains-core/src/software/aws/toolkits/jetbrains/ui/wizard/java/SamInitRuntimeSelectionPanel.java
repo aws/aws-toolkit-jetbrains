@@ -94,16 +94,8 @@ public class SamInitRuntimeSelectionPanel extends ModuleWizardStep {
 
     @Override
     public boolean validate() throws ConfigurationException {
-        String error;
-        ConfigurationException exception = null;
         if (samExecutableField.getText().isEmpty()) {
-            exception = new ConfigurationException(message("lambda.run_configuration.sam.not_specified"));
-        } else if ((error = SamInitRunner.Companion.testExecutable()) != null) {
-            exception = new ConfigurationException(message("lambda.run_configuration.sam.invalid_executable", error));
-        }
-        if (exception != null) {
-            SamInitProjectBuilderCommonKt.setVisibilitySamSelectionElements(true, samExecutableField, editSamExecutableButton, samLabel);
-            throw exception;
+            throw new ConfigurationException(message("lambda.run_configuration.sam.not_specified"));
         }
         return true;
     }

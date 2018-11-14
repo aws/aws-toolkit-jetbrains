@@ -45,16 +45,9 @@ public class SamInitDirectoryBasedSettingsPanel {
 
     @NotNull
     public ValidationResult validate() {
-        String error;
-        ValidationResult validationResult = ValidationResult.OK;
         if (samExecutableField.getText().isEmpty()) {
-            validationResult = new ValidationResult(message("lambda.run_configuration.sam.not_specified"));
-        } else if ((error = SamInitRunner.Companion.testExecutable()) != null) {
-            validationResult = new ValidationResult(message("lambda.run_configuration.sam.invalid_executable", error));
+            return new ValidationResult(message("lambda.run_configuration.sam.not_specified"));
         }
-        if (!validationResult.isOk()) {
-            SamInitProjectBuilderCommonKt.setVisibilitySamSelectionElements(true, samExecutableField, editSamExecutableButton, samLabel);
-        }
-        return validationResult;
+        return ValidationResult.OK;
     }
 }

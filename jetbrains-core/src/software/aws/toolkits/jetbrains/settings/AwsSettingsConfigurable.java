@@ -7,8 +7,10 @@ import static software.aws.toolkits.resources.Localization.message;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.components.JBCheckBox;
@@ -17,10 +19,13 @@ import com.intellij.ui.components.labels.LinkLabel;
 import java.util.Objects;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nls.Capitalization;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInitRunner;
+import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderCommonKt;
 
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String SAM_HELP_LINK = message("lambda.sam.cli.install_url");
@@ -87,10 +92,38 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     }
 
     @Override
-    public void apply() {
+    public void apply() throws ConfigurationException {
         SamSettings samSettings = SamSettings.getInstance();
-        LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
 
+        String error;
+        ConfigurationException exception = null;
+
+        String path = getSamExecutablePath();
+        String samAutoDetectPath = samSettings.getExecutablePath();
+        // if user path is empty
+        if (path == null || path.isEmpty()) {
+            // try to autodetect the path
+            if (samAutoDetectPath != null && !samAutoDetectPath.isEmpty()) {
+                path = samAutoDetectPath;
+            }
+
+            // if path is still empty pop the error
+            if (path == null || path.isEmpty()) {
+                exception = new ConfigurationException(message("lambda.run_configuration.sam.not_specified"));
+            }
+        }
+
+        // if path is set and it is a bad executable
+        if (path != null && (error = SamInitRunner.Companion.testExecutable(path)) != null) {
+            exception = new ConfigurationException(message("lambda.run_configuration.sam.invalid_executable", error));
+        }
+
+        if (exception != null) {
+            throw exception;
+        }
+
+        LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
+        // preserve null if we autodetected the path
         samSettings.setSavedExecutablePath(getSamExecutablePath());
         lambdaSettings.setShowAllHandlerGutterIcons(showAllHandlerGutterIcons.isSelected());
     }
