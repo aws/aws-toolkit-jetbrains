@@ -1,5 +1,9 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -7,13 +11,13 @@ class SamVersionTest {
     @Test
     fun compatableSamVersion() {
         val versions = arrayOf(
-            "SAM CLI, version 0.6.0",
-            "SAM CLI, version 1.2.3",
-            "SAM CLI, version 1.0.0-beta",
-            "SAM CLI, version 1.0.0-beta+build"
+            "SAM CLI, version 0.7.0",
+            "SAM CLI, version 0.9.0",
+            "SAM CLI, version 0.123.0-beta",
+            "SAM CLI, version 0.32423.0-beta+build"
         )
         for (version in versions) {
-            assertTrue(SamInitRunner.checkVersion(version) == null)
+            assertNull(SamInitRunner.checkVersion(version))
         }
     }
 
@@ -35,7 +39,9 @@ class SamVersionTest {
         val versions = arrayOf(
                 "SAM CLI, version 0.5.9",
                 "SAM CLI, version 0.0.1",
-                "SAM CLI, version 0.5.9-dev"
+                "SAM CLI, version 0.5.9-dev",
+                "SAM CLI, version 1.5.9",
+                "SAM CLI, version 1.5.9-dev"
         )
         for (version in versions) {
             val message = SamInitRunner.checkVersion(version)

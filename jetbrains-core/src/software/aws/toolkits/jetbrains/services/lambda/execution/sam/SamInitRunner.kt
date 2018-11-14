@@ -52,13 +52,15 @@ class SamInitRunner(
     }
 
     companion object {
-        private val expectedSamVersion = SemVer.parseFromText("0.6.0") ?: throw RuntimeException("SemVer parse error")
+        // TODO: change minimum to 0.7.0 before release
+        private val expectedSamMinVersion = SemVer("0.6.0", 0, 6, 0)
+        private val expectedSamMaxVersion = SemVer("1.0.0", 1, 0, 0)
 
         fun checkVersion(samVersionLine: String): String? {
             val parsedSemVer = SemVer.parseFromText(samVersionLine.split(" ").last())
                     ?: return message("sam.executable.version_parse_error", samVersionLine)
-            if (parsedSemVer < expectedSamVersion) {
-                return message("sam.executable.version_wrong", expectedSamVersion, parsedSemVer)
+            if (parsedSemVer > expectedSamMaxVersion || parsedSemVer < expectedSamMinVersion) {
+                return message("sam.executable.version_wrong", expectedSamMinVersion, expectedSamMaxVersion, parsedSemVer)
             }
             return null
         }
