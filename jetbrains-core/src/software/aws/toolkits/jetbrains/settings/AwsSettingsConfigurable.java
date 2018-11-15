@@ -12,6 +12,7 @@ import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
@@ -33,9 +34,14 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private LinkLabel samHelp;
     private JBCheckBox showAllHandlerGutterIcons;
     private JBCheckBox enableTelemetry;
+    private JPanel projectLevelSettings;
+    private JPanel applicationLevelSettings;
 
     public AwsSettingsConfigurable(Project project) {
         this.project = project;
+
+        applicationLevelSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.global_level_label")));
+        projectLevelSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.project_level_label")));
     }
 
     @Nullable
