@@ -24,8 +24,9 @@ class CreateLambdaFunction(
 
     init {
         if (handlerName != null) {
-            element ?: throw Error("element must be provided if handlerName is provided")
-            lambdaHandlerResolver ?: throw Error("lambdaHandlerResolver must be provided if handlerName is provided")
+            element ?: throw IllegalArgumentException("element must be provided if handlerName is provided")
+            lambdaHandlerResolver
+                ?: throw IllegalArgumentException("lambdaHandlerResolver must be provided if handlerName is provided")
         }
     }
 
@@ -33,10 +34,10 @@ class CreateLambdaFunction(
         val project = event.getRequiredData(LangDataKeys.PROJECT)
         val runtime = event.runtime()
 
-        val dialog = if (handlerName == null) {
-            EditFunctionDialog(project = project, mode = NEW, runtime = runtime)
-        } else {
+        val dialog = if (handlerName != null) {
             EditFunctionDialog(project = project, mode = NEW, runtime = runtime, handlerName = handlerName)
+        } else {
+            EditFunctionDialog(project = project, mode = NEW, runtime = runtime)
         }
 
         dialog.show()
