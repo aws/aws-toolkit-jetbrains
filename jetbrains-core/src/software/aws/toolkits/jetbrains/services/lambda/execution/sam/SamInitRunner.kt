@@ -21,32 +21,35 @@ class SamInitRunner(
 ) {
     private val samCliExecutable = SamSettings.getInstance().executablePath
 
-    fun execute() = ApplicationManager.getApplication().runWriteAction {
-        // set output to a temp dir
-        val tempDir = LocalFileSystem.getInstance().findFileByIoFile(createTempDir())
-                ?: throw RuntimeException("Cannot create temp file")
-        val commandLine = GeneralCommandLine(samCliExecutable)
-                .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
-                .withParameters("init")
-                .withParameters("--no-input")
-                .withParameters("--name")
-                .withParameters(name)
-                .withParameters("--runtime")
-                .withParameters(runtime.toString()).withParameters("--output-dir")
-                .withParameters(tempDir.path)
-                .apply {
-                    if (location != null) {
-                        this.withParameters("--location")
-                                .withParameters(location)
+    fun execute() {
+        ApplicationManager.getApplication().runWriteAction {
+            // set output to a temp dir
+            val tempDir = LocalFileSystem.getInstance().findFileByIoFile(createTempDir())
+                    ?: throw RuntimeException("Cannot create temp file")
+            val commandLine = GeneralCommandLine(samCliExecutable)
+                    .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
+                    .withParameters("init")
+                    .withParameters("--no-input")
+                    .withParameters("--name")
+                    .withParameters(name)
+                    .withParameters("--runtime")
+                    .withParameters(runtime.toString()).withParameters("--output-dir")
+                    .withParameters(tempDir.path)
+                    .apply {
+                        if (location != null) {
+                            this.withParameters("--location")
+                                    .withParameters(location)
+                        }
                     }
-                }
-        // run
-        val process = CapturingProcessHandler(commandLine).runProcess()
-        if (process.exitCode != 0) {
-            throw RuntimeException("${message("sam.init.execution_error")}: ${process.stderrLines.last()}")
-        }
+            // run
+            val process = CapturingProcessHandler(commandLine).runProcess()
+            if (process.exitCode != 0) {
+                throw RuntimeException("${message("sam.init.execution_error")}: ${process.stderrLines.last()}")
+            }
 
-        // copy from temp dir to output dir
-        VfsUtil.copyDirectory(null, VfsUtil.getChildren(tempDir)[0], outputDir, null)
+            val samOutput = VfsUtil.getChildren(tempDir)[0]
+            // copy from temp dir to output dir
+            VfsUtil.copyDirectory(null, samOutput, outputDir, null)
+        }
     }
 }

@@ -45,9 +45,8 @@ abstract class SamProjectTemplate {
 
     fun getIcon() = AwsIcons.Resources.SERVERLESS_APP
 
-    open fun build(runtime: Runtime, outputDir: VirtualFile) {
-        SamInitRunner(SamModuleType.ID, outputDir, runtime).execute()
-    }
+    open fun build(runtime: Runtime, outputDir: VirtualFile) =
+            SamInitRunner(SamModuleType.ID, outputDir, runtime).execute()
 
     fun getModuleBuilderProjectTemplate(builder: ModuleBuilder) =
             SamProjectTemplateWrapper(this, builder)
