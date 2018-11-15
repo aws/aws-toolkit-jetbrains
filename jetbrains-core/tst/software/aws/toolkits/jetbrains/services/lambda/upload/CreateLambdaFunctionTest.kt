@@ -18,6 +18,7 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openFile
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -54,14 +55,44 @@ Resources:
     }
 
     @Test
-    fun ConditionalCreateLambdaFunction_SamFunction() {
+    fun InvalidNullArgs() {
+        val handlerName = "helloworld.App::handleRequest"
+
+        runInEdtAndWait {
+            assertFails { CreateLambdaFunction(handlerName, null, null) }
+        }
+    }
+
+    @Test
+    fun InvalidNullArgs_Element() {
         val handlerName = "helloworld.App::handleRequest"
         val handlerResolver = mock<LambdaHandlerResolver> {
             on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
         }
 
         runInEdtAndWait {
-            val action = ConditionalCreateLambdaFunction(handlerName, element, handlerResolver)
+            assertFails { CreateLambdaFunction(handlerName, null, handlerResolver) }
+        }
+    }
+
+    @Test
+    fun InvalidNullArgs_HandlerResolver() {
+        val handlerName = "helloworld.App::handleRequest"
+
+        runInEdtAndWait {
+            assertFails { CreateLambdaFunction(handlerName, element, null) }
+        }
+    }
+
+    @Test
+    fun SamFunction() {
+        val handlerName = "helloworld.App::handleRequest"
+        val handlerResolver = mock<LambdaHandlerResolver> {
+            on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
+        }
+
+        runInEdtAndWait {
+            val action = CreateLambdaFunction(handlerName, element, handlerResolver)
 
             val actionEvent = TestActionEvent()
             action.update(actionEvent)
@@ -71,14 +102,14 @@ Resources:
     }
 
     @Test
-    fun ConditionalCreateLambdaFunction_NonSamFunction() {
+    fun NonSamFunction() {
         val handlerName = "helloworld.App2::handleRequest"
         val handlerResolver = mock<LambdaHandlerResolver> {
             on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
         }
 
         runInEdtAndWait {
-            val action = ConditionalCreateLambdaFunction(handlerName, element, handlerResolver)
+            val action = CreateLambdaFunction(handlerName, element, handlerResolver)
 
             val actionEvent = TestActionEvent()
             action.update(actionEvent)
@@ -88,14 +119,14 @@ Resources:
     }
 
     @Test
-    fun ConditionalCreateLambdaFunction_NonSamFunction_Substring() {
+    fun NonSamFunction_Substring() {
         val handlerName = "helloworld.App::handleReques"
         val handlerResolver = mock<LambdaHandlerResolver> {
             on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
         }
 
         runInEdtAndWait {
-            val action = ConditionalCreateLambdaFunction(handlerName, element, handlerResolver)
+            val action = CreateLambdaFunction(handlerName, element, handlerResolver)
 
             val actionEvent = TestActionEvent()
             action.update(actionEvent)
