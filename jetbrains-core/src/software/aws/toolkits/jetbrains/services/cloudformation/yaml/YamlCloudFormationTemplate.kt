@@ -18,7 +18,7 @@ import org.jetbrains.yaml.psi.YAMLMapping
 import org.jetbrains.yaml.psi.YAMLScalar
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationParameter
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
-import software.aws.toolkits.jetbrains.services.cloudformation.EnvironmentVariable
+import software.aws.toolkits.jetbrains.services.cloudformation.Variable
 import software.aws.toolkits.jetbrains.services.cloudformation.NamedMap
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.cloudformation.Resource
@@ -74,7 +74,7 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
             properties().putKeyValue(newKeyValue)
         }
 
-        override fun getEnvironmentVariables(): Sequence<EnvironmentVariable> {
+        override fun getEnvironmentVariables(): Sequence<Variable> {
             val variables = properties().childMapping("Environment")?.childMapping("Variables") ?: return emptySequence()
             return variables.keyValues.asSequence().mapNotNull { it -> it.asEnvironmentVariable()}
         }
@@ -84,7 +84,7 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
 
     }
 
-    private class YamlEnvironmentVariable(override val variableName: String, val isScalarValue: Boolean, valueScalar : YAMLScalar) : EnvironmentVariable {
+    private class YamlVariable(override val variableName: String, val isScalarValue: Boolean, valueScalar : YAMLScalar) : Variable {
 
         override val variableValue = valueScalar.textValue
 
@@ -134,14 +134,14 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
             null
         }
 
-        private fun YAMLKeyValue.asEnvironmentVariable(): EnvironmentVariable? {
+        private fun YAMLKeyValue.asEnvironmentVariable(): Variable? {
             val name = this.keyText
             val value = this.value
 
             return when(value){
-                is YAMLScalar -> YamlEnvironmentVariable(name, true, value)
+                is YAMLScalar -> YamlVariable(name, true, value)
                 is YAMLMapping -> (value.getKeyValueByKey("Ref")?.value as? YAMLScalar)?.let {
-                    YamlEnvironmentVariable(name, false, it)
+                    YamlVariable(name, false, it)
                 }
                 else -> null
             }

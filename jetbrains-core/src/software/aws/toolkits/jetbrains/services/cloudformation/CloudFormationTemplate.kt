@@ -55,7 +55,7 @@ interface Resource : NamedMap {
     fun isType(requestedType: String): Boolean
     fun type(): String?
 
-    fun getEnvironmentVariables(): Sequence<EnvironmentVariable>
+    fun getEnvironmentVariables(): Sequence<Variable>
 }
 
 interface Parameter : NamedMap {
@@ -64,8 +64,7 @@ interface Parameter : NamedMap {
     fun constraintDescription(): String?
 }
 
-
-interface EnvironmentVariable {
+interface Variable {
     val variableName: String
     val variableValue: String
 

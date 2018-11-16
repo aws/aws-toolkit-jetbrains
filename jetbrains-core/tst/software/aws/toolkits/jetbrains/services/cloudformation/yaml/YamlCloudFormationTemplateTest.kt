@@ -14,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
-import software.aws.toolkits.jetbrains.services.cloudformation.EnvironmentVariable
+import software.aws.toolkits.jetbrains.services.cloudformation.Variable
 import software.aws.toolkits.jetbrains.services.cloudformation.Resource
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import java.io.File
@@ -286,7 +286,7 @@ Resources:
                 WriteCapacityUnits: 1
             """.trimIndent()
 
-        private fun Resource.findEnvironmentVariable(name : String): EnvironmentVariable? =
+        private fun Resource.findEnvironmentVariable(name : String): Variable? =
                 this.getEnvironmentVariables().first { it -> it.variableName == name }
     }
 }
