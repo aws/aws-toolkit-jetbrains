@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.deploy
 
+import com.intellij.openapi.module.ModuleUtilCore.findModuleForFile
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.text.nullize
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
@@ -16,6 +18,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsMa
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.cloudformation.listStackSummariesFilter
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
+import software.aws.toolkits.jetbrains.settings.DeploySettings
+import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.ui.addAndSelectValue
 import software.aws.toolkits.jetbrains.utils.ui.populateValues
 import software.aws.toolkits.jetbrains.utils.ui.selected
@@ -24,8 +28,13 @@ import javax.swing.JComponent
 
 class DeployServerlessApplicationDialog(
     private val project: Project,
+    private val templateFile: VirtualFile,
     parameters: Sequence<Parameter>
 ) : DialogWrapper(project) {
+
+    private val module = findModuleForFile(templateFile, project)
+    private val settings: DeploySettings? = module?.let { DeploySettings.getInstance(it) }
+    private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
 
     private val view = DeployServerlessApplicationPanel()
     private val validator = DeploySamApplicationValidator()
@@ -39,17 +48,24 @@ class DeployServerlessApplicationDialog(
         setOKButtonText(message("serverless.application.deploy.action.name"))
         setOKButtonTooltip(message("serverless.application.deploy.action.description"))
 
-        view.newStack.addActionListener {
+        view.createStack.addActionListener {
             view.newStackName.isEnabled = true
             view.stacks.isEnabled = false
         }
 
-        view.selectStack.addActionListener {
+        view.updateStack.addActionListener {
             view.newStackName.isEnabled = false
             view.stacks.isEnabled = true
         }
 
-        view.stacks.populateValues(updateStatus = false) {
+        // If the module has been deployed once, select the updateStack radio instead
+        if (settings?.samStackName(samPath) != null) {
+            view.updateStack.isSelected = true
+            view.newStackName.isEnabled = false
+            view.stacks.isEnabled = true
+        }
+
+        view.stacks.populateValues(default = settings?.samStackName(samPath), updateStatus = false) {
             cloudFormationClient.listStackSummariesFilter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
                     .mapNotNull { it.stackName() }
                     .sortedWith(String.CASE_INSENSITIVE_ORDER)
@@ -58,7 +74,7 @@ class DeployServerlessApplicationDialog(
 
         view.withTemplateParameters(parameters.toList())
 
-        view.s3Bucket.populateValues {
+        view.s3Bucket.populateValues(default = settings?.samBucketName(samPath)) {
             val activeRegionId = ProjectAccountSettingsManager.getInstance(project).activeRegion.id
             s3Client.listBucketsByRegion(activeRegionId)
                     .mapNotNull { it.name() }
@@ -77,16 +93,19 @@ class DeployServerlessApplicationDialog(
                 bucketDialog.bucketName().let { newBucket -> view.s3Bucket.addAndSelectValue { newBucket } }
             }
         }
+
+        view.requireReview.isSelected = !(settings?.samAutoExecute(samPath) ?: true)
     }
 
     override fun createCenterPanel(): JComponent? = view.content
 
-    override fun getPreferredFocusedComponent(): JComponent? = view.newStackName
+    override fun getPreferredFocusedComponent(): JComponent? =
+            if (settings?.samStackName(samPath) == null) view.newStackName else view.updateStack
 
     override fun doValidate(): ValidationInfo? = validator.validateSettings(view)
 
     val stackName: String
-        get() = if (view.newStack.isSelected) {
+        get() = if (view.createStack.isSelected) {
             view.newStackName.text.nullize()
         } else {
             view.stacks.selected()
@@ -105,11 +124,11 @@ class DeployServerlessApplicationDialog(
 class DeploySamApplicationValidator {
 
     fun validateSettings(view: DeployServerlessApplicationPanel): ValidationInfo? {
-        if (view.newStack.isSelected) {
+        if (view.createStack.isSelected) {
             validateStackName(view.newStackName.text)?.let {
                 return ValidationInfo(it, view.newStackName)
             }
-        } else if (view.selectStack.isSelected && view.stacks.selected() == null) {
+        } else if (view.updateStack.isSelected && view.stacks.selected() == null) {
             return ValidationInfo(message("serverless.application.deploy.validation.stack.missing"), view.stacks)
         }
 

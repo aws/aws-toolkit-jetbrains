@@ -7,7 +7,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
@@ -16,7 +18,9 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
+import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
+import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -34,9 +38,11 @@ class DeployServerlessApplicationAction : DumbAwareAction(
         val templateFile = getSamTemplateFile(e) ?: throw Exception("Could not detect template file")
         val template = CloudFormationTemplate.parse(project, templateFile)
 
-        val stackDialog = DeployServerlessApplicationDialog(project, template.parameters())
+        val stackDialog = DeployServerlessApplicationDialog(project, templateFile, template.parameters())
         stackDialog.show()
         if (!stackDialog.isOK) return
+
+        saveSettings(project, templateFile, stackDialog)
 
         val stackName = stackDialog.stackName
         val deployDialog = SamDeployDialog(
@@ -97,5 +103,17 @@ class DeployServerlessApplicationAction : DumbAwareAction(
         }
 
         return null
+    }
+
+    private fun saveSettings(project: Project, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
+        ModuleUtil.findModuleForFile(templateFile, project)?.let { module ->
+            relativeSamPath(module, templateFile)?.let { samPath ->
+                DeploySettings.getInstance(module)?.apply {
+                    setSamStackName(samPath, stackDialog.stackName)
+                    setSamBucketName(samPath, stackDialog.bucket)
+                    setSamAutoExecute(samPath, stackDialog.autoExecute)
+                }
+            }
+        }
     }
 }
