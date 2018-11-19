@@ -19,7 +19,7 @@ import javax.swing.JComponent
  * needs but with similar UX so users are used to it. Namely we
  * <ul>
  * <li>do not support inheriting system env vars</li>
- * <li>have an optional notion of "protected" variables, which have read-only names, can't be removed and should be shown above the others</li>
+ * <li>have an optional notion of "protected" variables, which have read-only names, can't be removed and should be shown above the others in the dialog</li>
  * </ul>
  * When there are no protection, UX is the same
  */
@@ -80,11 +80,11 @@ open class EnvironmentVariablesTextField : TextFieldWithBrowseButton() {
     fun acceptEditedVariablesForTesting(testVariables: List<EnvironmentVariable>) =
             acceptEditedVariables(testVariables)
 
-    protected fun createDialogTable(): EnvVariablesTable = EnvVariablesTable()
+    protected fun createDialogTable(): DialogTable = DelegatingDialogTable()
 
-    private inner class EnvironmentVariablesDialog(private val parent: Component) : DialogWrapper(parent, true) {
+    private inner class EnvironmentVariablesDialog(parent: Component) : DialogWrapper(parent, true) {
         private val envVarTable = createDialogTable().apply {
-            setValues(convertToVariables())
+            variables = convertToVariables()
         }
 
         init {
@@ -96,16 +96,44 @@ open class EnvironmentVariablesTextField : TextFieldWithBrowseButton() {
 
         override fun doOKAction() {
             envVarTable.stopEditing()
-            acceptEditedVariables(envVarTable.environmentVariables)
+            acceptEditedVariables(envVarTable.variables)
             super.doOKAction()
         }
     }
-}
 
-private class VariableWithProtection(name: String, value: String, val nameProtected: Boolean)
-    : EnvironmentVariable(name, value, nameProtected) {
+    class VariableWithProtection(name: String, value: String, private val nameProtected: Boolean = false)
+        : EnvironmentVariable(name, value, nameProtected) {
 
-    override fun getNameIsWriteable(): Boolean {
-        return !nameProtected
+        var customDescription: String? = null
+
+        override fun getDescription(): String? {
+            return customDescription
+        }
+
+        override fun getNameIsWriteable(): Boolean {
+            return !nameProtected
+        }
     }
+
+    protected interface DialogTable {
+        var variables: List<EnvironmentVariable>
+        val component: JComponent
+
+        fun stopEditing()
+    }
+
+    protected class DelegatingDialogTable(private val delegate: EnvVariablesTable = EnvVariablesTable()) : DialogTable {
+        override var variables: List<EnvironmentVariable>
+            get() = delegate.environmentVariables
+            set(value) {
+                delegate.setValues(value)
+            }
+
+        override fun stopEditing() {
+            delegate.stopEditing()
+        }
+
+        override val component: JComponent = delegate.component
+    }
+
 }
