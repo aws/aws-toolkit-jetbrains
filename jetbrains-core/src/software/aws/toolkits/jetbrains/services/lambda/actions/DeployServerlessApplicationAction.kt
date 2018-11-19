@@ -15,11 +15,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
-import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
+import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -36,9 +35,8 @@ class DeployServerlessApplicationAction : DumbAwareAction(
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
         val templateFile = getSamTemplateFile(e) ?: throw Exception("Could not detect template file")
-        val template = CloudFormationTemplate.parse(project, templateFile)
 
-        val stackDialog = DeployServerlessApplicationDialog(project, templateFile, template.parameters())
+        val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
         stackDialog.show()
         if (!stackDialog.isOK) return
 

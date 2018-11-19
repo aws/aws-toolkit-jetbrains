@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.utils.listBucketsByRegion
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.listStackSummariesFilter
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.settings.DeploySettings
@@ -28,8 +28,7 @@ import javax.swing.JComponent
 
 class DeployServerlessApplicationDialog(
     private val project: Project,
-    private val templateFile: VirtualFile,
-    parameters: Sequence<Parameter>
+    private val templateFile: VirtualFile
 ) : DialogWrapper(project) {
 
     private val module = findModuleForFile(templateFile, project)
@@ -72,7 +71,7 @@ class DeployServerlessApplicationDialog(
                     .toList()
         }
 
-        view.withTemplateParameters(parameters.toList())
+        view.withTemplateParameters(CloudFormationTemplate.parse(project, templateFile).parameters().toList())
 
         view.s3Bucket.populateValues(default = settings?.samBucketName(samPath)) {
             val activeRegionId = ProjectAccountSettingsManager.getInstance(project).activeRegion.id

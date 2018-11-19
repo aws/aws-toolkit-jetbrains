@@ -9,6 +9,7 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.utils.rules.addModule
+import java.nio.file.Paths
 
 class DeploySettingsTest {
 
@@ -17,19 +18,12 @@ class DeploySettingsTest {
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
 
     @Test
-    fun relativeSamPath() {
-        val module = projectRule.fixture.addModule("foo")
-        val file = projectRule.fixture.addFileToModule(module, "abc/def/foo.yaml", """foo""")
-
-        assertThat(relativeSamPath(module, file.virtualFile)).isEqualTo("abc/def/foo.yaml")
-    }
-
-    @Test
     fun relativeSamPath_root() {
+        val path = Paths.get("foo.yaml").toString()
         val module = projectRule.fixture.addModule("foo")
-        val file = projectRule.fixture.addFileToModule(module, "foo.yaml", """foo""")
+        val file = projectRule.fixture.addFileToModule(module, path, """foo""")
 
-        assertThat(relativeSamPath(module, file.virtualFile)).isEqualTo("foo.yaml")
+        assertThat(relativeSamPath(module, file.virtualFile)).isEqualTo(path)
     }
 
     @Test
