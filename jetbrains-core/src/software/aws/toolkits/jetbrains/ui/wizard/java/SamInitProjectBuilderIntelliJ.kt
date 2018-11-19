@@ -67,7 +67,7 @@ class SamInitModuleBuilder : ModuleBuilder() {
         rootModel.addContentEntry(project.baseDir)
 
         if (rootModel.sdk?.sdkType is PythonSdkType) {
-            SamCommon.setPythonSourceRoots(rootModel.project.baseDir, rootModel.project, rootModel)
+            SamCommon.setSourceRoots(rootModel.project.baseDir, rootModel.project, rootModel)
         }
         // don't commit because it will be done for us
     }

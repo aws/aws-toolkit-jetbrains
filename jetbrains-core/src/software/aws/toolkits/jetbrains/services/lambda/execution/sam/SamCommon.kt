@@ -70,7 +70,7 @@ class SamCommon {
             return codeUris
         }
 
-        fun setPythonSourceRoots(projectRoot: VirtualFile, project: Project, modifiableModel: ModifiableRootModel) {
+        fun setSourceRoots(projectRoot: VirtualFile, project: Project, modifiableModel: ModifiableRootModel) {
             val template = SamCommon.getTemplateFromDirectory(projectRoot)
             val codeUris = SamCommon.getCodeUrisFromTemplate(project, template)
             modifiableModel.contentEntries.forEach { contentEntry ->
