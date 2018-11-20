@@ -42,20 +42,22 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
 
     override fun resources(): Sequence<Resource> {
         val resourcesBlock = templateRoot.getKeyValueByKey("Resources") ?: return emptySequence()
-        val resources = PsiTreeUtil.findChildOfAnyType(resourcesBlock, YAMLMapping::class.java) ?: return emptySequence()
+        val resources = PsiTreeUtil.findChildOfAnyType(resourcesBlock, YAMLMapping::class.java)
+                ?: return emptySequence()
         return resources.keyValues.asSequence().mapNotNull { it.asResource() }
     }
 
     override fun parameters(): Sequence<Parameter> {
         val parametersBlock = templateRoot.getKeyValueByKey("Parameters") ?: return emptySequence()
-        val parameters = PsiTreeUtil.findChildOfAnyType(parametersBlock, YAMLMapping::class.java) ?: return emptySequence()
+        val parameters = PsiTreeUtil.findChildOfAnyType(parametersBlock, YAMLMapping::class.java)
+                ?: return emptySequence()
         return parameters.keyValues.asSequence().mapNotNull { it.asProperty() }
     }
 
     override fun text(): String = templateRoot.text
 
     private class YamlResource(override val logicalName: String, private val delegate: YAMLMapping) :
-        YAMLMapping by delegate, Resource {
+            YAMLMapping by delegate, Resource {
         override fun isType(requestedType: String): Boolean = try {
             type() == requestedType
         } catch (_: Exception) {
@@ -75,16 +77,16 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
         }
 
         override fun getEnvironmentVariables(): Sequence<Variable> {
-            val variables = properties().childMapping("Environment")?.childMapping("Variables") ?: return emptySequence()
-            return variables.keyValues.asSequence().mapNotNull { it -> it.asEnvironmentVariable()}
+            val variables = properties().childMapping("Environment")?.childMapping("Variables")
+                    ?: return emptySequence()
+            return variables.keyValues.asSequence().mapNotNull { it -> it.asEnvironmentVariable() }
         }
 
         private fun properties(): YAMLMapping = childMapping("Properties")
                 ?: throw RuntimeException(message("cloudformation.key_not_found", "Properties", logicalName))
-
     }
 
-    private class YamlVariable(override val variableName: String, val isScalarValue: Boolean, valueScalar : YAMLScalar) : Variable {
+    private class YamlVariable(override val variableName: String, val isScalarValue: Boolean, valueScalar: YAMLScalar) : Variable {
 
         override val variableValue = valueScalar.textValue
 
@@ -92,7 +94,7 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
     }
 
     private class YamlCloudFormationParameter(override val logicalName: String, private val delegate: YAMLMapping) :
-        YAMLMapping by delegate, NamedMap {
+            YAMLMapping by delegate, NamedMap {
         override fun getScalarProperty(key: String): String = getOptionalScalarProperty(key)
                 ?: throw IllegalStateException(message("cloudformation.missing_property", key, logicalName))
 
@@ -105,12 +107,12 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
 
     companion object {
         private fun loadYamlFile(project: Project, templateFile: VirtualFile): YAMLFile = PsiFileFactory.getInstance(project).createFileFromText(
-            "template_temp.yaml",
-            YAMLLanguage.INSTANCE,
-            StringUtil.convertLineSeparators(VfsUtil.loadText(templateFile)),
-            false,
-            false,
-            true
+                "template_temp.yaml",
+                YAMLLanguage.INSTANCE,
+                StringUtil.convertLineSeparators(VfsUtil.loadText(templateFile)),
+                false,
+                false,
+                true
         ) as YAMLFile
 
         fun convertPsiToResource(psiElement: PsiElement): Resource? {
@@ -138,7 +140,7 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
             val name = this.keyText
             val value = this.value
 
-            return when(value){
+            return when (value) {
                 is YAMLScalar -> YamlVariable(name, true, value)
                 is YAMLMapping -> (value.getKeyValueByKey("Ref")?.value as? YAMLScalar)?.let {
                     YamlVariable(name, false, it)
@@ -146,6 +148,5 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
                 else -> null
             }
         }
-
     }
 }

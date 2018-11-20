@@ -11,7 +11,7 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.resources.message
 import java.awt.Component
-import java.util.*
+import java.util.LinkedHashMap
 import javax.swing.JComponent
 
 /**
@@ -55,18 +55,14 @@ open class EnvironmentVariablesTextField : TextFieldWithBrowseButton() {
             envVars.filter { (name, _) -> !isProtectedVar(name) }
                     .map { (name, value) -> name to value }
 
-    fun convertToVariables(): List<EnvironmentVariable> {
-        return protectedEntries().map { (name, value) -> createProtectedVariable(name, value) } +
-                unprotectedEntries().map { (name, value) -> EnvironmentVariable(name, value, false) }
-    }
+    fun convertToVariables(): List<EnvironmentVariable> =
+            protectedEntries().map { (name, value) -> createProtectedVariable(name, value) } +
+                    unprotectedEntries().map { (name, value) -> EnvironmentVariable(name, value, false) }
 
-    protected open fun createProtectedVariable(name: String, value: String): EnvironmentVariable {
-        return object : EnvironmentVariable(name, value, true) {
-            override fun getNameIsWriteable(): Boolean {
-                return false
+    protected open fun createProtectedVariable(name: String, value: String): EnvironmentVariable =
+            object : EnvironmentVariable(name, value, true) {
+                override fun getNameIsWriteable(): Boolean = false
             }
-        }
-    }
 
     private fun stringify(): String {
         val entries = protectedEntries().filter { (_, value) -> value.isNotBlank() } + unprotectedEntries()

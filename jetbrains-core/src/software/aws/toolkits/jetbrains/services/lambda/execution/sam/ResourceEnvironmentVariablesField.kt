@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.services.cloudformation.ResourceMapping
 import software.aws.toolkits.jetbrains.services.cloudformation.Variable
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField
 import software.aws.toolkits.jetbrains.ui.ExtensibleEnvVariablesTable
-import java.util.*
+import java.util.Collections
 import javax.swing.table.TableCellEditor
 
 class ResourceEnvironmentVariablesField : EnvironmentVariablesTextField() {
@@ -67,36 +67,27 @@ class ResourceEnvironmentVariablesField : EnvironmentVariablesTextField() {
                 ?: throw IllegalArgumentException("Unexpected variable name: $name")
     }
 
-    override fun createDialogTable(): EnvVariablesTable {
-        return HintedEnvVariablesTable()
-    }
+    override fun createDialogTable(): EnvVariablesTable = HintedEnvVariablesTable()
 
     private inner class HintedEnvVariablesTable : ExtensibleEnvVariablesTable() {
-        override fun createValueColumn(): ColumnInfo<EnvironmentVariable, String> {
-            return HintedValueColumn()
-        }
+        override fun createValueColumn(): ColumnInfo<EnvironmentVariable, String> = HintedValueColumn()
 
         private inner class HintedValueColumn : ValueColumn() {
 
-            override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean {
-                return true
-            }
+            override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean = true
 
-            override fun getEditor(variable: EnvironmentVariable): TableCellEditor {
-                return when (variable) {
-                    is ResourceReferenceVariable -> getComboBoxEditor(variable.model)
-                    else -> super.getEditor(variable)
-                }
-            }
+            override fun getEditor(variable: EnvironmentVariable): TableCellEditor =
+                    when (variable) {
+                        is ResourceReferenceVariable -> getComboBoxEditor(variable.model)
+                        else -> super.getEditor(variable)
+                    }
 
             private fun getComboBoxEditor(model: Variable): TableCellEditor {
                 val logicalResource = model.variableValue
                 val result = object : ComboBoxCellEditor() {
-                    override fun getComboBoxItems(): List<String> {
-                        return resourceMapping.listAllSummaries(logicalResource)
-                                .map { it.physicalResourceId() }
-                                .toList()
-                    }
+                    override fun getComboBoxItems(): List<String> = resourceMapping.listAllSummaries(logicalResource)
+                            .map { it.physicalResourceId() }
+                            .toList()
 
                     override fun isComboboxEditable() = true
                 }
@@ -109,9 +100,6 @@ class ResourceEnvironmentVariablesField : EnvironmentVariablesTextField() {
     private class ResourceReferenceVariable(name: String, value: String, internal val model: Variable) :
             EnvironmentVariable(name, value, true) {
 
-        override fun getNameIsWriteable(): Boolean {
-            return false
-        }
+        override fun getNameIsWriteable(): Boolean = false
     }
-
 }

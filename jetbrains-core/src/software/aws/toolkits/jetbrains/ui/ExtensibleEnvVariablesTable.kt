@@ -16,22 +16,18 @@ import javax.swing.table.TableCellEditor
  */
 open class ExtensibleEnvVariablesTable : EnvVariablesTable() {
 
-    override fun createListModel(): ListTableModel<EnvironmentVariable> {
-        return ListTableModel(createNameColumn(), createValueColumn())
-    }
+    override fun createListModel(): ListTableModel<EnvironmentVariable> =
+            ListTableModel(createNameColumn(), createValueColumn())
 
     protected open fun createNameColumn(): ColumnInfo<EnvironmentVariable, String> = NameColumn()
 
     protected open fun createValueColumn(): ColumnInfo<EnvironmentVariable, String> = ValueColumn()
 
     protected open inner class NameColumn(name: String = "Name") : ElementsColumnInfoBase<EnvironmentVariable>(name) {
-        override fun valueOf(environmentVariable: EnvironmentVariable): String? {
-            return environmentVariable.name
-        }
+        override fun valueOf(environmentVariable: EnvironmentVariable): String? = environmentVariable.name
 
-        override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean {
-            return environmentVariable.nameIsWriteable
-        }
+        override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean =
+                environmentVariable.nameIsWriteable
 
         override fun setValue(environmentVariable: EnvironmentVariable, s: String?) {
             if (s == valueOf(environmentVariable)) {
@@ -41,19 +37,14 @@ open class ExtensibleEnvVariablesTable : EnvVariablesTable() {
             setModified()
         }
 
-        override fun getDescription(environmentVariable: EnvironmentVariable): String? {
-            return environmentVariable.description
-        }
+        override fun getDescription(environmentVariable: EnvironmentVariable): String? = environmentVariable.description
     }
 
     protected open inner class ValueColumn(name: String = "Value") : ElementsColumnInfoBase<EnvironmentVariable>(name) {
-        override fun valueOf(environmentVariable: EnvironmentVariable): String? {
-            return environmentVariable.value
-        }
+        override fun valueOf(environmentVariable: EnvironmentVariable): String? = environmentVariable.value
 
-        override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean {
-            return !environmentVariable.isPredefined
-        }
+        override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean =
+                !environmentVariable.isPredefined
 
         override fun setValue(environmentVariable: EnvironmentVariable, s: String?) {
             if (s == valueOf(environmentVariable)) {
@@ -63,9 +54,7 @@ open class ExtensibleEnvVariablesTable : EnvVariablesTable() {
             setModified()
         }
 
-        override fun getDescription(environmentVariable: EnvironmentVariable): String? {
-            return environmentVariable.description
-        }
+        override fun getDescription(environmentVariable: EnvironmentVariable): String? = environmentVariable.description
 
         override fun getEditor(variable: EnvironmentVariable): TableCellEditor {
             val editor = StringWithNewLinesCellEditor()

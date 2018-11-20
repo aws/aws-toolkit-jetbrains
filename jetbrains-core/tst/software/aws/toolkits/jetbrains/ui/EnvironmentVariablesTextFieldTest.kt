@@ -1,3 +1,6 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.execution.util.EnvironmentVariable
@@ -23,7 +26,7 @@ class EnvironmentVariablesTextFieldTest {
         assertThat(a.nameIsWriteable).isFalse()
         assertThat(b.nameIsWriteable).isFalse()
 
-        //can't be removed
+        // can't be removed
         assertThat(a.isPredefined).isTrue()
         assertThat(b.isPredefined).isTrue()
 
@@ -92,7 +95,7 @@ class EnvironmentVariablesTextFieldTest {
 
         field.acceptEditedVariablesForTesting(vars.filter { it -> it.name != "<unprotected-remove>" })
 
-        assertThat(field.text).doesNotContain("<clear>=") //cleared protected values considered as kinda removed
+        assertThat(field.text).doesNotContain("<clear>=") // cleared protected values considered as kinda removed
         assertThat(field.text).contains("<unprotected-clear>=")
 
         assertThat(field.text).isEqualTo("<edit>=BB;<unprotected-edit>=BB;<unprotected-clear>=")
@@ -108,7 +111,5 @@ class EnvironmentVariablesTextFieldTest {
 
         private fun List<EnvironmentVariable>.require(name: String): EnvironmentVariable =
                 this.first { it -> it.name == name }
-
     }
-
 }

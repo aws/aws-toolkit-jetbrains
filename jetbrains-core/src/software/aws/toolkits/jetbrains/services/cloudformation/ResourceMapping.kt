@@ -7,9 +7,13 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.containers.MultiMap
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
-import software.amazon.awssdk.services.cloudformation.model.*
+import software.amazon.awssdk.services.cloudformation.model.ListStackResourcesRequest
+import software.amazon.awssdk.services.cloudformation.model.ListStacksRequest
+import software.amazon.awssdk.services.cloudformation.model.StackResourceSummary
+import software.amazon.awssdk.services.cloudformation.model.StackStatus
+import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.stream.Stream
@@ -33,17 +37,13 @@ interface ResourceMapping {
 internal class ResourceMappingImpl : ResourceMapping {
     private val logicalToSummary: MultiMap<String, StackResourceSummary> = MultiMap.createLinked()
 
-    override fun listAllSummaries(logicalResource: String): Collection<StackResourceSummary> {
-        return logicalToSummary.get(logicalResource)
-    }
+    override fun listAllSummaries(logicalResource: String): Collection<StackResourceSummary> = logicalToSummary.get(logicalResource)
 
-    override fun guessPhysicalResourceId(logicalResource: String): String? {
-        return listAllSummaries(logicalResource).firstOrNull()?.physicalResourceId()
-    }
+    override fun guessPhysicalResourceId(logicalResource: String): String? =
+            listAllSummaries(logicalResource).firstOrNull()?.physicalResourceId()
 
-    private fun registerResource(resourceSummary: StackResourceSummary) {
-        resourceSummary.logicalResourceId()?.let { logicalToSummary.putValue(it, resourceSummary) }
-    }
+    private fun registerResource(resourceSummary: StackResourceSummary) =
+            resourceSummary.logicalResourceId()?.let { logicalToSummary.putValue(it, resourceSummary) }
 
     override fun isEmpty(): Boolean = logicalToSummary.isEmpty
 

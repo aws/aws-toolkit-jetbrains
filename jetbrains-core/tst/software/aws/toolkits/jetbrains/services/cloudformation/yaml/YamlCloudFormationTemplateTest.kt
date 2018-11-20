@@ -14,8 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
-import software.aws.toolkits.jetbrains.services.cloudformation.Variable
 import software.aws.toolkits.jetbrains.services.cloudformation.Resource
+import software.aws.toolkits.jetbrains.services.cloudformation.Variable
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import java.io.File
 import kotlin.test.assertNotNull
@@ -115,7 +115,7 @@ Parameters:
         }
 
         assertThat(updatedTemplate).isEqualTo(
-            """
+                """
 Description: "Some description"
 Parameters:
     TableName:
@@ -166,32 +166,6 @@ Resources:
         }
 
         assertThat(tempFile).hasContent(TEST_TEMPLATE)
-    }
-
-    @Test
-    fun canParseByExtension() {
-        val fakeFileType = object : FakeFileType() {
-            override fun isMyFileType(@NotNull file: VirtualFile): Boolean = true
-
-            @NotNull
-            override fun getName(): String = "foo"
-
-            @NotNull
-            override fun getDescription(): String = ""
-        }
-
-        runInEdtAndWait {
-            try {
-                FileTypeManagerEx.getInstanceEx().registerFileType(fakeFileType)
-                setOf("template.yaml", "template.yml").forEach {
-                    val yamlFile = projectRule.fixture.addFileToProject(it, TEST_TEMPLATE)
-                    assertThat(yamlFile.fileType).isEqualTo(fakeFileType)
-                    assertThat(CloudFormationTemplate.parse(projectRule.project, yamlFile.virtualFile)).isNotNull
-                }
-            } finally {
-                FileTypeManagerEx.getInstanceEx().unregisterFileType(fakeFileType)
-            }
-        }
     }
 
     @Test
@@ -247,7 +221,7 @@ Resources:
 
     private companion object {
         val TEST_TEMPLATE =
-            """
+                """
 Description: "Some description"
 Parameters:
     TableName:
@@ -286,7 +260,7 @@ Resources:
                 WriteCapacityUnits: 1
             """.trimIndent()
 
-        private fun Resource.findEnvironmentVariable(name : String): Variable? =
+        private fun Resource.findEnvironmentVariable(name: String): Variable? =
                 this.getEnvironmentVariables().first { it -> it.variableName == name }
     }
 }
