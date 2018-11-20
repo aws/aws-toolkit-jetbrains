@@ -1,3 +1,6 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.execution.util.EnvVariablesTable
@@ -21,7 +24,7 @@ open class ExtensibleEnvVariablesTable : EnvVariablesTable() {
 
     protected open fun createValueColumn(): ColumnInfo<EnvironmentVariable, String> = ValueColumn()
 
-    protected inner class NameColumn(name: String = "Name") : ElementsColumnInfoBase<EnvironmentVariable>(name) {
+    protected open inner class NameColumn(name: String = "Name") : ElementsColumnInfoBase<EnvironmentVariable>(name) {
         override fun valueOf(environmentVariable: EnvironmentVariable): String? {
             return environmentVariable.name
         }
@@ -43,7 +46,7 @@ open class ExtensibleEnvVariablesTable : EnvVariablesTable() {
         }
     }
 
-    protected inner class ValueColumn(name: String = "Value") : ElementsColumnInfoBase<EnvironmentVariable>(name) {
+    protected open inner class ValueColumn(name: String = "Value") : ElementsColumnInfoBase<EnvironmentVariable>(name) {
         override fun valueOf(environmentVariable: EnvironmentVariable): String? {
             return environmentVariable.value
         }

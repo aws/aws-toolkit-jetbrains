@@ -13,6 +13,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
@@ -215,6 +216,8 @@ class SamRunSettingsEditor(project: Project) : SettingsEditor<SamRunConfiguratio
     private val credentialManager = CredentialManager.getInstance()
 
     init {
+        Disposer.register(this, view)
+
         val supported = LambdaPackager.supportedRuntimeGroups
             .flatMap { it.runtimes }
             .sorted()

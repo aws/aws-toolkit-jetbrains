@@ -41,8 +41,8 @@ open class EnvironmentVariablesTextField : TextFieldWithBrowseButton() {
         }
     }
 
-    fun protectVariables(varNames: List<String>) {
-        protectedVarNames = varNames
+    fun protectVariables(varNames: Collection<String>) {
+        protectedVarNames = varNames.toList()
         text = stringify()
     }
 
@@ -55,22 +55,29 @@ open class EnvironmentVariablesTextField : TextFieldWithBrowseButton() {
             envVars.filter { (name, _) -> !isProtectedVar(name) }
                     .map { (name, value) -> name to value }
 
-    fun convertToVariables(): List<EnvironmentVariable> =
-            protectedEntries().map { (name, value) -> VariableWithProtection(name, value, true) } +
-                    unprotectedEntries().map { (name, value) -> VariableWithProtection(name, value, false) }
+    fun convertToVariables(): List<EnvironmentVariable> {
+        return protectedEntries().map { (name, value) -> createProtectedVariable(name, value) } +
+                unprotectedEntries().map { (name, value) -> EnvironmentVariable(name, value, false) }
+    }
+
+    protected open fun createProtectedVariable(name: String, value: String): EnvironmentVariable {
+        return object : EnvironmentVariable(name, value, true) {
+            override fun getNameIsWriteable(): Boolean {
+                return false
+            }
+        }
+    }
 
     private fun stringify(): String {
-        val buf = StringBuilder()
-
         val entries = protectedEntries().filter { (_, value) -> value.isNotBlank() } + unprotectedEntries()
-        return entries.joinTo(buf, ";") { (key, value) -> "$key=$value" }
+        return entries.joinTo(StringBuilder(), ";") { (key, value) -> "$key=$value" }
                 .toString()
     }
 
     private fun acceptEditedVariables(editedVariables: List<EnvironmentVariable>) {
         val newEnvVars = LinkedHashMap<String, String>()
         editedVariables
-                .filter { it -> !isProtectedVar(it.name) || it.value.isNotBlank() }
+                .filter { it -> !isProtectedVar(it.name) || it.value?.isNotBlank() ?: false }
                 .forEach { it -> newEnvVars[it.name] = it.value.trim() }
 
         envVars = newEnvVars
@@ -80,11 +87,11 @@ open class EnvironmentVariablesTextField : TextFieldWithBrowseButton() {
     fun acceptEditedVariablesForTesting(testVariables: List<EnvironmentVariable>) =
             acceptEditedVariables(testVariables)
 
-    protected fun createDialogTable(): DialogTable = DelegatingDialogTable()
+    protected open fun createDialogTable(): EnvVariablesTable = EnvVariablesTable()
 
     private inner class EnvironmentVariablesDialog(parent: Component) : DialogWrapper(parent, true) {
         private val envVarTable = createDialogTable().apply {
-            variables = convertToVariables()
+            setValues(convertToVariables())
         }
 
         init {
@@ -96,44 +103,8 @@ open class EnvironmentVariablesTextField : TextFieldWithBrowseButton() {
 
         override fun doOKAction() {
             envVarTable.stopEditing()
-            acceptEditedVariables(envVarTable.variables)
+            acceptEditedVariables(envVarTable.environmentVariables)
             super.doOKAction()
         }
     }
-
-    class VariableWithProtection(name: String, value: String, private val nameProtected: Boolean = false)
-        : EnvironmentVariable(name, value, nameProtected) {
-
-        var customDescription: String? = null
-
-        override fun getDescription(): String? {
-            return customDescription
-        }
-
-        override fun getNameIsWriteable(): Boolean {
-            return !nameProtected
-        }
-    }
-
-    protected interface DialogTable {
-        var variables: List<EnvironmentVariable>
-        val component: JComponent
-
-        fun stopEditing()
-    }
-
-    protected class DelegatingDialogTable(private val delegate: EnvVariablesTable = EnvVariablesTable()) : DialogTable {
-        override var variables: List<EnvironmentVariable>
-            get() = delegate.environmentVariables
-            set(value) {
-                delegate.setValues(value)
-            }
-
-        override fun stopEditing() {
-            delegate.stopEditing()
-        }
-
-        override val component: JComponent = delegate.component
-    }
-
 }

@@ -7,37 +7,39 @@ import static software.aws.toolkits.jetbrains.utils.ui.UiUtils.addQuickSelect;
 import static software.aws.toolkits.jetbrains.utils.ui.UiUtils.find;
 import static software.aws.toolkits.resources.Localization.message;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.ComponentWithBrowseButton;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.IdeBorderFactory;
+import com.intellij.util.concurrency.EdtExecutorService;
 import com.intellij.util.textCompletion.TextCompletionProvider;
 import com.intellij.util.textCompletion.TextFieldWithCompletion;
 import com.intellij.util.ui.UIUtil;
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.yaml.YAMLFileType;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.cloudformation.Function;
+import software.aws.toolkits.jetbrains.services.cloudformation.ResourceMapping;
+import software.aws.toolkits.jetbrains.services.cloudformation.ResourceMappingImpl;
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaInputPanel;
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector;
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField;
 import software.aws.toolkits.jetbrains.ui.RegionSelector;
 
-public final class SamRunSettingsEditorPanel {
+import javax.swing.*;
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+
+public final class SamRunSettingsEditorPanel implements Disposable {
     public JPanel panel;
     public EditorTextField handler;
     public EnvironmentVariablesTextField environmentVariables;
@@ -62,7 +64,14 @@ public final class SamRunSettingsEditorPanel {
         useTemplate.addActionListener(e -> updateComponents());
         addQuickSelect(templateFile.getTextField(), useTemplate, this::updateComponents);
         templateFile.addActionListener(new TemplateFileBrowseListener());
+
         updateComponents();
+        startRefreshResourceMappings();
+    }
+
+    private void startRefreshResourceMappings() {
+        ResourceMappingImpl.promiseMapping(project)
+                .thenAcceptAsync(this::acceptResourceMapping, EdtExecutorService.getInstance());
     }
 
     private void createUIComponents() {
@@ -71,6 +80,19 @@ public final class SamRunSettingsEditorPanel {
         functionModels = new DefaultComboBoxModel<>();
         function = new ComboBox<>(functionModels);
         function.addActionListener(e -> updateComponents());
+
+        environmentVariables = new ResourceEnvironmentVariablesField();
+        Disposer.register(this, environmentVariables);
+    }
+
+    private ResourceEnvironmentVariablesField getEnvironmentVariablesFieldImpl() {
+        return (ResourceEnvironmentVariablesField) environmentVariables;
+    }
+
+    private void acceptResourceMapping(ResourceMapping mapping) {
+        if (!Disposer.isDisposed(this)) {
+            getEnvironmentVariablesFieldImpl().setResourceMapping(mapping);
+        }
     }
 
     private void updateComponents() {
@@ -78,14 +100,15 @@ public final class SamRunSettingsEditorPanel {
         runtime.setEnabled(!useTemplate.isSelected());
         templateFile.setEnabled(useTemplate.isSelected());
 
+        Function selectedFunction = null;
         if (useTemplate.isSelected()) {
             handler.setBackground(UIUtil.getComboBoxDisabledBackground());
             handler.setForeground(UIUtil.getComboBoxDisabledForeground());
 
             if (functionModels.getSelectedItem() instanceof Function) {
-                Function selected = (Function) functionModels.getSelectedItem();
-                handler.setText(selected.handler());
-                runtime.setSelectedItem(Runtime.fromValue(selected.runtime()));
+                selectedFunction = (Function) functionModels.getSelectedItem();
+                handler.setText(selectedFunction.handler());
+                runtime.setSelectedItem(Runtime.fromValue(selectedFunction.runtime()));
                 function.setEnabled(true);
             }
         } else {
@@ -93,6 +116,8 @@ public final class SamRunSettingsEditorPanel {
             handler.setForeground(UIUtil.getTextFieldForeground());
             function.setEnabled(false);
         }
+
+        getEnvironmentVariablesFieldImpl().setFunctionToBind(selectedFunction);
     }
 
     public void setTemplateFile(@Nullable String file) {
@@ -143,5 +168,10 @@ public final class SamRunSettingsEditorPanel {
             List<Function> functions = SamTemplateUtils.findFunctionsFromTemplate(project, chosenFile);
             updateFunctionModel(functions, true);
         }
+    }
+
+    @Override
+    public void dispose() {
+        //
     }
 }
