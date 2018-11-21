@@ -25,18 +25,8 @@ class SamCommon {
         val SAM_BUILD_DIR = ".aws-sam"
         val SAM_INFO_VERSION_KEY = "version"
 
-        private val expectedSamMinVersion = SemVer("0.7.0", 0, 7, 0)
-        private val expectedSamMaxVersion = SemVer("0.8.0", 0, 8, 0)
-
-        private fun getVersionAsJson(version: SemVer): String {
-            val tree = mapper.createObjectNode()
-            tree.put(SAM_INFO_VERSION_KEY, version.parsedVersion)
-            return mapper.writeValueAsString(tree)
-        }
-
-        fun getMinVersionAsJson() = getVersionAsJson(expectedSamMinVersion)
-
-        fun getMaxVersionAsJson() = getVersionAsJson(expectedSamMaxVersion)
+        val expectedSamMinVersion = SemVer("0.7.0", 0, 7, 0)
+        val expectedSamMaxVersion = SemVer("0.8.0", 0, 8, 0)
 
         fun checkVersion(samVersionLine: String): String? {
             val parsedSemVer = SemVer.parseFromText(samVersionLine)
