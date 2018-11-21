@@ -23,9 +23,9 @@ import software.aws.toolkits.resources.message
 import java.io.File
 
 class SamInitProjectBuilderPyCharm : PythonProjectGenerator<PyNewProjectSettings>() {
-    val settingsPanel = SamInitDirectoryBasedSettingsPanel(SAM_TEMPLATES, this)
-    var lastSamPath: String? = null
-    var lastValidationResult: ValidationResult = ValidationResult.OK
+    private val settingsPanel = SamInitDirectoryBasedSettingsPanel(SAM_TEMPLATES, this)
+    private var lastSamPath: String? = null
+    private var lastValidationResult: ValidationResult = ValidationResult.OK
 
     override fun getName() = SamModuleType.ID
 
