@@ -64,7 +64,7 @@ class SamCommonTest {
     @Test
     fun testValidate_ok() {
         Assume.assumeTrue(SystemInfo.isUnix)
-        val path = projectRule.fixture.addFileToProject("good", "echo ${SamCommon.expectedSamMinVersion}").virtualFile.path
+        val path = projectRule.fixture.addFileToProject("good", "echo '${SamCommon.getMinVersionAsJson()}'").virtualFile.path
         Files.setPosixFilePermissions(Paths.get(path), PosixFilePermissions.fromString("r-xr-xr-x"))
 
         val result = SamCommon.validate(path)
