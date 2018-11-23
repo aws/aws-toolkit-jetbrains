@@ -204,7 +204,7 @@ class AwsExplorerErrorNode(project: Project, exception: Exception) :
     }
 }
 
-class AwsExplorerEmptyNode(project: Project) : AwsExplorerNode<String>(project, message("explorer.empty_node"), awsIcon = null) {
+class AwsExplorerEmptyNode(project: Project, value: String = message("explorer.empty_node")) : AwsExplorerNode<String>(project, value, awsIcon = null) {
     override fun getChildren(): Collection<AbstractTreeNode<Any>> = emptyList()
 
     override fun update(presentation: PresentationData?) {

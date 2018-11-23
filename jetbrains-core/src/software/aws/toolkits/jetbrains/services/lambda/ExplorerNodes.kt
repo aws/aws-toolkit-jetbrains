@@ -15,14 +15,14 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerPageableNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsTruncatedResultNode
-import software.aws.toolkits.jetbrains.services.lambda.applications.ServerlessApplicationsNode
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStacksNode
 import software.aws.toolkits.resources.message
 
 class LambdaServiceNode(project: Project) : AwsExplorerServiceRootNode(project, message("lambda.service_name")) {
     override fun serviceName() = LambdaClient.SERVICE_NAME
 
     override fun loadResources(paginationToken: String?): Collection<AwsExplorerNode<*>> = listOf(
-        ServerlessApplicationsNode(nodeProject),
+        CloudFormationStacksNode(nodeProject),
         LambdaFunctionsNode(nodeProject)
     )
 }
