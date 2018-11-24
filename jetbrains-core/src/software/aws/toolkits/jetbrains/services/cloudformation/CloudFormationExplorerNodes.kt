@@ -69,8 +69,8 @@ class CloudFormationStackNode(project: Project, val stackName: String, private v
      * Accounts with many stacks would cause many describeStackResources requests, potentially triggering TPS limits.
      * Instead, we use a placeholder "loading" node, and swap this out the first time the node is expanded.
      */
-    private val loadingChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerLoadingNode(project)) as Collection<AbstractTreeNode<Any>>
-    private val noResourcesChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerEmptyNode(project, message("explorer.stack.no.serverless.resources"))) as Collection<AbstractTreeNode<Any>>
+    private val loadingChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerLoadingNode(project)).filterIsInstance<AbstractTreeNode<Any>>()
+    private val noResourcesChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerEmptyNode(project, message("explorer.stack.no.serverless.resources"))).filterIsInstance<AbstractTreeNode<Any>>()
     private var cachedChildren: Collection<AbstractTreeNode<Any>> = if (stackStatus in FAILED_STACK_STATES || stackStatus in IN_PROGRESS_STACK_STATES) {
         emptyList()
     } else {
@@ -102,7 +102,7 @@ class CloudFormationStackNode(project: Project, val stackName: String, private v
             if (loaded.isEmpty()) {
                 noResourcesChildren
             } else {
-                loaded as Collection<AbstractTreeNode<Any>>
+                loaded.filterIsInstance<AbstractTreeNode<Any>>()
             }
         }
 
