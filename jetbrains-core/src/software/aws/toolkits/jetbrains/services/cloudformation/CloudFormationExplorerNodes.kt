@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerLoadingNode
@@ -59,7 +60,7 @@ class CloudFormationStackNode(project: Project, val stackName: String, private v
         presentation.tooltip = message("cloudformation.stack.status", stackStatus)
     }
 
-    override fun resourceType() = "cloudformation.stack"
+    override fun resourceType() = "stack"
 
     private val cfnClient: CloudFormationClient = project.awsClient()
 
@@ -147,4 +148,12 @@ open class CloudFormationStackResourceNode(
     override fun displayName() = functionName()
 
     fun functionName(): String = stackResource.logicalResourceId()
+}
+
+class DeleteCloudFormationStackAction : DeleteResourceAction<CloudFormationStackNode>(message("cloudformation.stack.delete.action")) {
+    override fun performDelete(selected: CloudFormationStackNode) {
+        val client: CloudFormationClient = AwsClientManager.getInstance(selected.nodeProject).getClient()
+        client.deleteStack { it.stackName(selected.stackName) }
+        client.waitForStackDeletionComplete(selected.stackName)
+    }
 }
