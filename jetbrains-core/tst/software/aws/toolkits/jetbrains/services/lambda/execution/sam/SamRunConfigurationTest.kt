@@ -12,17 +12,18 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.jdom.input.SAXBuilder
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.settings.SamExecutableDetector
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
+import java.io.StringReader
 
 class SamRunConfigurationTest {
     @Rule
@@ -112,40 +113,6 @@ class SamRunConfigurationTest {
     }
 
     @Test
-    fun regionIsAdded() {
-        runInEdtAndWait {
-            val runConfiguration = createRunConfiguration(project = projectRule.project)
-            assertThat(runConfiguration).isNotNull
-            val environmentVariables = getState(runConfiguration).settings.environmentVariables
-            assertThat(environmentVariables)
-                .containsEntry("AWS_REGION", "us-east-1")
-                .containsEntry("AWS_DEFAULT_REGION", "us-east-1")
-        }
-    }
-
-    @Test
-    fun credentialsGetAdded() {
-        val awsCredentials = AwsSessionCredentials.create("Access", "Secret", "Session")
-        val credentialsProvider = MockCredentialsManager.getInstance().addCredentials("SomeId", awsCredentials)
-
-        runInEdtAndWait {
-            val runConfiguration = createRunConfiguration(
-                project = projectRule.project,
-                credentialsProviderId = credentialsProvider.id
-            )
-            assertThat(runConfiguration).isNotNull
-            val environmentVariables = getState(runConfiguration).settings.environmentVariables
-            assertThat(environmentVariables)
-                .containsEntry("AWS_ACCESS_KEY", awsCredentials.accessKeyId())
-                .containsEntry("AWS_ACCESS_KEY_ID", awsCredentials.accessKeyId())
-                .containsEntry("AWS_SECRET_KEY", awsCredentials.secretAccessKey())
-                .containsEntry("AWS_SECRET_ACCESS_KEY", awsCredentials.secretAccessKey())
-                .containsEntry("AWS_SESSION_TOKEN", awsCredentials.sessionToken())
-                .containsEntry("AWS_SECURITY_TOKEN", awsCredentials.sessionToken())
-        }
-    }
-
-    @Test
     fun inputTextIsResolved() {
         runInEdtAndWait {
             val runConfiguration = createRunConfiguration(project = projectRule.project, input = "TestInput")
@@ -167,6 +134,29 @@ class SamRunConfigurationTest {
             )
             assertThat(runConfiguration).isNotNull
             assertThat(getState(runConfiguration).settings.input).isEqualTo("TestInputFile")
+        }
+    }
+
+    @Test
+    fun readExternalDoesNotThrowException() {
+        val element = SAXBuilder().build(StringReader("""
+<configuration name="[Local] HelloWorldFunction (1)" type="aws.lambda" factoryName="Local" temporary="true" nameIsGenerated="true">
+    <option name="credentialProviderId" value="profile:default" />
+    <option name="environmentVariables">
+        <map />
+    </option>
+    <option name="handler" value="helloworld.App::handleRequest" />
+</configuration>
+            """.trimIndent())).rootElement
+
+        runInEdtAndWait {
+            val runConfiguration =
+                createRunConfiguration(project = projectRule.project, handler = null)
+
+            runConfiguration.readExternal(element)
+
+            assertThat(runConfiguration.getHandler()).isEqualTo("helloworld.App::handleRequest")
+            assertThat(runConfiguration.getEnvironmentVariables()).hasSize(0)
         }
     }
 
