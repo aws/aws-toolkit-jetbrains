@@ -102,7 +102,7 @@ class SamInitTemplateSelectionStep(
 
     init {
         templateSelectionPanel.setTemplates(SAM_TEMPLATES.map { it.getModuleBuilderProjectTemplate(builder) }, true)
-        templateSelectionPanel.border = IdeBorderFactory.createTitledBorder(message("sam.init.select_sam_template_step_label"))
+        templateSelectionPanel.border = IdeBorderFactory.createTitledBorder(message("sam.init.select_sam_template_step_label"), false)
         parentPanel.add(templateSelectionPanel, GridConstraints())
     }
 
