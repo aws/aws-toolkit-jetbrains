@@ -15,10 +15,11 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerEmptyNode
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerLoadingNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerPageableNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.AwsNodeAlwaysExpandable
+import software.aws.toolkits.jetbrains.core.explorer.AwsNodeChildCache
 import software.aws.toolkits.jetbrains.core.explorer.AwsTruncatedResultNode
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
@@ -33,13 +34,10 @@ class CloudFormationStacksNode(project: Project) : AwsExplorerPageableNode<Strin
         }
 
         val nodes = response.stacks().filterNotNull().asSequence()
-            .filter {
-                !(it.stackStatus() in DELETING_STACK_STATES)
-            }
+            .filter { it.stackStatus() !in DELETING_STACK_STATES }
             .sortedBy { it.stackName() }
-            .map { stack ->
-                CloudFormationStackNode(nodeProject, stack.stackName(), stack.stackStatus())
-            }.toList()
+            .map { it -> CloudFormationStackNode(nodeProject, it.stackName(), it.stackStatus()) }
+            .toList()
 
         return nodes + paginationNodeIfRequired(response.nextToken())
     }
@@ -55,7 +53,9 @@ class CloudFormationStacksNode(project: Project) : AwsExplorerPageableNode<Strin
 }
 
 class CloudFormationStackNode(project: Project, val stackName: String, private val stackStatus: StackStatus) :
-    AwsExplorerResourceNode<String>(project, CloudFormationClient.SERVICE_NAME, stackName, AwsIcons.Resources.SERVERLESS_APP) {
+    AwsExplorerResourceNode<String>(project, CloudFormationClient.SERVICE_NAME, stackName, AwsIcons.Resources.SERVERLESS_APP),
+    AwsNodeAlwaysExpandable,
+    AwsNodeChildCache {
     init {
         presentation.tooltip = message("cloudformation.stack.status", stackStatus)
     }
@@ -66,19 +66,16 @@ class CloudFormationStackNode(project: Project, val stackName: String, private v
 
     /**
      * CloudFormation Stack Nodes do not immediately query for stack resources.
-     * When the node is added to a tree, getChildren is called immediately, to determine if the node contains any children or not.
-     * Accounts with many stacks would cause many describeStackResources requests, potentially triggering TPS limits.
-     * Instead, we use a placeholder "loading" node, and swap this out the first time the node is expanded.
+     * We wait until node will be expanded before querying, reducing risk of triggering TPS limits.
      */
-    private val loadingChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerLoadingNode(project)).filterIsInstance<AbstractTreeNode<Any>>()
     private val noResourcesChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerEmptyNode(project, message("explorer.stack.no.serverless.resources"))).filterIsInstance<AbstractTreeNode<Any>>()
-    private var cachedChildren: Collection<AbstractTreeNode<Any>> = if (stackStatus in FAILED_STACK_STATES || stackStatus in IN_PROGRESS_STACK_STATES) {
-        emptyList()
-    } else {
-        loadingChildren
-    }
+    private var cachedChildren: Collection<AbstractTreeNode<Any>> = emptyList()
 
-    var isChildCacheInInitialState: Boolean = true
+    private var isChildCacheInInitialState: Boolean = true
+
+    override fun isAlwaysLeaf() = false
+
+    override fun isInitialChildState() = isChildCacheInInitialState
 
     /**
      * Children are cached by default to prevent describeStackResources from being called each time a stack node is expanded.
@@ -86,7 +83,7 @@ class CloudFormationStackNode(project: Project, val stackName: String, private v
     @Suppress("UNCHECKED_CAST")
     override fun getChildren(): Collection<AbstractTreeNode<Any>> = getChildren(false)
 
-    fun getChildren(refresh: Boolean = false): Collection<AbstractTreeNode<Any>> {
+    override fun getChildren(refresh: Boolean): Collection<AbstractTreeNode<Any>> {
         if (refresh) {
             updateCachedChildren()
         }
@@ -111,16 +108,11 @@ class CloudFormationStackNode(project: Project, val stackName: String, private v
     }
 
     private fun loadServerlessStackResources(): List<CloudFormationStackResourceNode> = cfnClient
-        .describeStackResources {
-            it.stackName(stackName)
-        }
+        .describeStackResources { it.stackName(stackName) }
         .stackResources()
-        .filter {
-            it.resourceType() == LAMBDA_FUNCTION_TYPE && it.resourceStatus() in COMPLETE_RESOURCE_STATES
-        }
-        .map {
-            CloudFormationStackResourceNode(nodeProject, it)
-        }.toList()
+        .filter { it.resourceType() == LAMBDA_FUNCTION_TYPE && it.resourceStatus() in COMPLETE_RESOURCE_STATES }
+        .map { CloudFormationStackResourceNode(nodeProject, it) }
+        .toList()
 
     override fun statusText(): String? = stackStatus.toString().toHumanReadable()
 
@@ -141,13 +133,15 @@ open class CloudFormationStackResourceNode(
     project: Project,
     val stackResource: StackResource
 ) : AwsExplorerResourceNode<StackResource>(project, LambdaClient.SERVICE_NAME, stackResource, AwsIcons.Resources.LAMBDA_FUNCTION) {
-    override fun resourceType() = "cloudformation.stack.resource"
+    override fun resourceType() = "stack.resource"
 
     override fun toString(): String = functionName()
 
     override fun displayName() = functionName()
 
     fun functionName(): String = stackResource.logicalResourceId()
+
+    override fun isAlwaysLeaf() = true
 }
 
 class DeleteCloudFormationStackAction : DeleteResourceAction<CloudFormationStackNode>(message("cloudformation.stack.delete.action")) {

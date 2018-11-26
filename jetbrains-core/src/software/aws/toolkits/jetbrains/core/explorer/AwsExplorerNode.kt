@@ -22,6 +22,13 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.MutableTreeNode
 
+interface AwsNodeAlwaysExpandable
+
+interface AwsNodeChildCache {
+    fun isInitialChildState(): Boolean
+    fun getChildren(refresh: Boolean): Collection<AbstractTreeNode<Any>>
+}
+
 abstract class AwsExplorerNode<T>(val nodeProject: Project, value: T, private val awsIcon: Icon?) : AbstractTreeNode<T>(nodeProject, value) {
 
     override fun update(presentation: PresentationData?) {

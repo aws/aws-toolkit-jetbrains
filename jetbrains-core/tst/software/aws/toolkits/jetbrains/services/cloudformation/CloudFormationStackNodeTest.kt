@@ -50,12 +50,11 @@ class CloudFormationStackNodeTest {
     }
 
     @Test
-    fun nodeStartsWithLoadingPlaceholderChild() {
+    fun nodeStartsWithoutChildren() {
         val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_COMPLETE)
 
-        assertThat(node.isChildCacheInInitialState).isEqualTo(true)
-        assertThat(node.children).hasSize(1)
-        assertThat(node.children).hasOnlyElementsOfType(AwsExplorerLoadingNode::class.java)
+        assertThat(node.isInitialChildState()).isEqualTo(true)
+        assertThat(node.children).isEmpty()
     }
 
     @Test
@@ -63,7 +62,7 @@ class CloudFormationStackNodeTest {
         val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_COMPLETE)
         val children = node.getChildren(true)
 
-        assertThat(node.isChildCacheInInitialState).isEqualTo(false)
+        assertThat(node.isInitialChildState()).isEqualTo(false)
         assertThat(children).hasSize(2)
         assertThat(children).doesNotHaveAnyElementsOfTypes(AwsExplorerLoadingNode::class.java)
         assertThat(children).hasOnlyElementsOfType(CloudFormationStackResourceNode::class.java)

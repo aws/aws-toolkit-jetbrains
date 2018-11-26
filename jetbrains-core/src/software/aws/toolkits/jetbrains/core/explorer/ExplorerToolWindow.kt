@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsMa
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
-import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
 import software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaLocation
 import software.aws.toolkits.resources.message
 import java.awt.Component
@@ -122,13 +121,12 @@ class ExplorerToolWindow(val project: Project) : SimpleToolWindowPanel(true, tru
                 }
 
                 val selectedElement = e.path.lastPathComponent as? DefaultMutableTreeNode ?: return
-                val cfnStackNode = selectedElement.userObject as? CloudFormationStackNode
-                    ?: return
+                val node = selectedElement.userObject as? AwsNodeChildCache ?: return
 
-                if (cfnStackNode.isChildCacheInInitialState) {
+                if (node.isInitialChildState()) {
                     // Node currently has a placeholder node
                     // Load the Resources for this Stack and swap the placeholder for this data before the node expands
-                    val children = cfnStackNode.getChildren(true)
+                    val children = node.getChildren(true)
 
                     selectedElement.removeAllChildren()
                     children.forEach {
