@@ -35,7 +35,7 @@ class ClientTelemetryPublisher(
         .flatMap { metric ->
             metric.entries.values.stream().map { entry -> MetricDatum.builder()
                 .metricName(metric.metricNamespace)
-                .epochTimestamp(metric.createTime.toInstant().toEpochMilli())
+                .epochTimestamp(metric.createTime.toEpochMilli())
                 .unit(entry.unit.toSdkUnit())
                 .value(entry.value)
                 .build()

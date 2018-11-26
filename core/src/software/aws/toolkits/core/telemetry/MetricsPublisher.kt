@@ -52,6 +52,12 @@ interface MetricsPublisher : MetricsFactory {
     override fun newMetric(metricNamespace: String): Metric = Metric(metricNamespace, this)
 }
 
+class NoOpMetricsPublisher : MetricsPublisher {
+    override fun publishMetrics(metrics: Collection<Metric>): Boolean = true
+
+    override fun shutdown() {}
+}
+
 /**
  * Implementation of [MetricsPublisher] that batches up events into a minimum batch size before publishing or time
  * elapsed, whichever is sooner

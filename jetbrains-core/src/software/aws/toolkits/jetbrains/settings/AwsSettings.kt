@@ -11,7 +11,6 @@ import java.util.UUID
 
 @State(name = "aws", storages = [Storage("aws.xml")])
 class AwsSettings : PersistentStateComponent<AwsConfiguration> {
-    private val _lock: Any = Any()
     private var state = AwsConfiguration()
 
     override fun getState(): AwsConfiguration = state
@@ -32,15 +31,10 @@ class AwsSettings : PersistentStateComponent<AwsConfiguration> {
             state.promptedForTelemetry = value
         }
 
-    val clientId: UUID
-        get() {
-            synchronized(_lock) {
-                if (state.clientId == null) {
-                    state.clientId = UUID.randomUUID()
-                }
-            }
 
-            return state.clientId!!
+    val clientId: UUID
+        @Synchronized get() = state.clientId ?: UUID.randomUUID().also {
+            state.clientId = it
         }
 
     companion object {

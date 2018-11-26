@@ -6,8 +6,6 @@ package software.aws.toolkits.core.telemetry
 import software.aws.toolkits.core.utils.getLogger
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -18,10 +16,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 open class Metric internal constructor(internal val metricNamespace: String, private val publisher: MetricsPublisher) :
     AutoCloseable {
     private val closed = AtomicBoolean(false)
-    private val _entries: MutableMap<String, MetricEntry> = ConcurrentHashMap()
+    private val entriesMap: MutableMap<String, MetricEntry> = ConcurrentHashMap()
 
-    val createTime: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC)
-    val entries: Map<String, MetricEntry> = Collections.unmodifiableMap(_entries)
+    val createTime: Instant = Instant.now()
+    val entries: Map<String, MetricEntry> = Collections.unmodifiableMap(entriesMap)
 
     /**
      * Finalizes the event and sends it to the [MetricsPublisher] for recording if valid
@@ -30,7 +28,7 @@ open class Metric internal constructor(internal val metricNamespace: String, pri
         if (!closed.compareAndSet(false, true)) {
             return
         }
-        ZonedDateTime.now(ZoneOffset.UTC)
+
         publisher.publishMetric(this)
     }
 
@@ -48,7 +46,7 @@ open class Metric internal constructor(internal val metricNamespace: String, pri
             return this
         }
 
-        _entries[metricName] = MetricEntry(value, unit)
+        entriesMap[metricName] = MetricEntry(value, unit)
         return this
     }
 

@@ -10,7 +10,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import software.amazon.awssdk.codegen.C2jModels
 import software.amazon.awssdk.codegen.CodeGenerator
-import software.amazon.awssdk.codegen.model.config.BasicCodeGenConfig
 import software.amazon.awssdk.codegen.model.config.customization.CustomizationConfig
 import software.amazon.awssdk.codegen.model.service.ServiceModel
 import software.amazon.awssdk.codegen.utils.ModelLoaderUtils
@@ -29,7 +28,6 @@ open class GenerateSdk : DefaultTask() {
         val models = C2jModels.builder()
             .serviceModel(loadServiceModel())
             .customizationConfig(loadCustomizationConfig())
-            .applyMutation { builder -> loadCodeGenConfig()?.let(builder::codeGenConfig) }
             .build()
 
         CodeGenerator.builder()
@@ -47,12 +45,6 @@ open class GenerateSdk : DefaultTask() {
         CustomizationConfig::class.java,
         File(c2jFolder, "customization.config")
     ).orElse(CustomizationConfig.create())
-
-    private fun loadCodeGenConfig(): BasicCodeGenConfig? =
-        ModelLoaderUtils.loadOptionalModel(BasicCodeGenConfig::class.java, File(c2jFolder, "codegen.config"))
-            .orElse(null)?.also {
-                LOG.info("WTF: ${it.interfaceName}")
-            }
 
     private companion object {
         private val LOG = Logging.getLogger(GenerateSdk::class.java)
