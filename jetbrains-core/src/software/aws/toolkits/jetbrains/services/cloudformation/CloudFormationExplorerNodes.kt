@@ -16,15 +16,16 @@ import software.aws.toolkits.jetbrains.core.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNode
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerPageableNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsNodeAlwaysExpandable
 import software.aws.toolkits.jetbrains.core.explorer.AwsNodeChildCache
 import software.aws.toolkits.jetbrains.core.explorer.AwsTruncatedResultNode
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
-class CloudFormationStacksNode(project: Project) : AwsExplorerPageableNode<String>(project, message("cloudformation.stacks"), null) {
+class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(project, message("explorer.node.cloudformation")) {
+    override fun serviceName() = CloudFormationClient.SERVICE_NAME
 
     private val client: CloudFormationClient = AwsClientManager.getInstance(project).getClient()
 

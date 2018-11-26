@@ -24,7 +24,7 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsTruncatedResultNode
 import software.aws.toolkits.jetbrains.utils.delegateMock
 
-class CloudFormationStacksNodeTest {
+class CloudFormationServiceNodeTest {
 
     @JvmField
     @Rule
@@ -44,7 +44,7 @@ class CloudFormationStacksNodeTest {
         mockClient.stacksWithNames(listOf("Stack" to StackStatus.CREATE_COMPLETE))
         mockClient.stackWithResourcesOfType("Stack", "AWS::Lambda::Function" to ResourceStatus.CREATE_COMPLETE)
 
-        val node = CloudFormationStacksNode(projectRule.project)
+        val node = CloudFormationServiceNode(projectRule.project)
 
         assertThat(node.children).hasOnlyOneElementSatisfying { assertThat(it.displayName()).isEqualTo("Stack") }
     }
@@ -54,7 +54,7 @@ class CloudFormationStacksNodeTest {
         mockClient.stacksWithNames(listOf("Stack" to StackStatus.DELETE_COMPLETE))
         mockClient.stackWithResourcesOfType("Stack", "AWS::Lambda::Function" to ResourceStatus.CREATE_COMPLETE)
 
-        val node = CloudFormationStacksNode(projectRule.project)
+        val node = CloudFormationServiceNode(projectRule.project)
 
         assertThat(node.children).hasOnlyElementsOfType(AwsExplorerEmptyNode::class.java)
     }
@@ -64,7 +64,7 @@ class CloudFormationStacksNodeTest {
         mockClient.stacksWithNames(listOf("Stack" to StackStatus.CREATE_COMPLETE))
         mockClient.stackWithResourcesOfType("Stack", "AWS::Lambda::Function" to ResourceStatus.DELETE_COMPLETE)
 
-        val node = CloudFormationStacksNode(projectRule.project)
+        val node = CloudFormationServiceNode(projectRule.project)
 
         assertThat(node.children).hasSize(1)
         assertThat(node.children).hasOnlyElementsOfType(CloudFormationStackNode::class.java)
@@ -75,7 +75,7 @@ class CloudFormationStacksNodeTest {
         mockClient.stacksWithNames(listOf("Stack" to StackStatus.CREATE_COMPLETE))
         mockClient.stackWithResourcesOfType("Stack", "AWS::S3::Bucket" to ResourceStatus.CREATE_COMPLETE)
 
-        val node = CloudFormationStacksNode(projectRule.project)
+        val node = CloudFormationServiceNode(projectRule.project)
 
         assertThat(node.children).hasSize(1)
         assertThat(node.children).hasOnlyElementsOfType(CloudFormationStackNode::class.java)
@@ -85,7 +85,7 @@ class CloudFormationStacksNodeTest {
     fun truncatedNodeIsAddedForPaging() {
         mockClient.stacksWithNames(listOf("Stack1" to StackStatus.CREATE_COMPLETE), nextToken = "blah")
         mockClient.stackWithResourcesOfType("Stack1", "AWS::Lambda::Function" to ResourceStatus.CREATE_COMPLETE)
-        val node = CloudFormationStacksNode(projectRule.project)
+        val node = CloudFormationServiceNode(projectRule.project)
 
         assertThat(node.children).hasSize(2).last().isInstanceOf(AwsTruncatedResultNode::class.java)
     }
