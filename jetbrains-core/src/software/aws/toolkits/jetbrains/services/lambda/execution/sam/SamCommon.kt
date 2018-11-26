@@ -43,7 +43,10 @@ class SamCommon {
 
         fun validate(path: String? = SamSettings.getInstance().executablePath): String? {
             path ?: return message("lambda.run_configuration.sam.not_specified")
-            val commandLine = GeneralCommandLine(path).withParameters("--info")
+            val commandLine = GeneralCommandLine(path)
+                    .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
+                    .withParameters("--info")
+
             return try {
                 val process = CapturingProcessHandler(commandLine).runProcess()
                 if (process.exitCode != 0) {
