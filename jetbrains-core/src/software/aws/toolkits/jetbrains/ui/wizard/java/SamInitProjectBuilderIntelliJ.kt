@@ -12,6 +12,8 @@ import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.uiDesigner.core.GridConstraints
 import icons.AwsIcons
@@ -56,13 +58,16 @@ class SamInitModuleBuilder : ModuleBuilder() {
         rootModel.module.setModuleType(moduleType.id)
         val project = rootModel.project
 
-        template.samProjectTemplate.build(selectedRuntime, project.baseDir)
-        rootModel.addContentEntry(project.baseDir)
+        val projectBasePath: String = project.basePath ?: throw Exception(message("sam.init.error.no.project.basepath"))
+        val outputDir: VirtualFile = LocalFileSystem.getInstance().findFileByPath(projectBasePath) ?: throw Exception(message("sam.init.error.no.virtual.file", projectBasePath))
 
-        SamCommon.excludeSamDirectory(rootModel.project.baseDir, rootModel)
+        template.samProjectTemplate.build(selectedRuntime, outputDir)
+        rootModel.addContentEntry(outputDir)
+
+        SamCommon.excludeSamDirectory(outputDir, rootModel)
 
         if (selectedRuntime.runtimeGroup == RuntimeGroup.PYTHON) {
-            SamCommon.setSourceRoots(rootModel.project.baseDir, rootModel.project, rootModel)
+            SamCommon.setSourceRoots(outputDir, project, rootModel)
         }
         // don't commit because it will be done for us
     }
