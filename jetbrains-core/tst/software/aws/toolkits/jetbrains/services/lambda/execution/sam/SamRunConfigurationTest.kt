@@ -16,6 +16,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.settings.SamExecutableDetector
@@ -108,6 +109,17 @@ class SamRunConfigurationTest {
             assertThatThrownBy { getState(runConfiguration) }
                 .isInstanceOf(ExecutionException::class.java)
                 .hasMessage(message("lambda.run_configuration.no_region_specified"))
+        }
+    }
+
+    @Test
+    fun invalidRuntime() {
+        runInEdtAndWait {
+            val runConfiguration = createRunConfiguration(project = projectRule.project, runtime = Runtime.UNKNOWN_TO_SDK_VERSION)
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { getState(runConfiguration) }
+                    .isInstanceOf(ExecutionException::class.java)
+                    .hasMessage(message("lambda.run_configuration.no_runtime_specified"))
         }
     }
 

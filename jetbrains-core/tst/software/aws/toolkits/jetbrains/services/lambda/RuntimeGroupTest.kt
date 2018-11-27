@@ -27,6 +27,13 @@ class RuntimeGroupTest {
     val projectRule = PythonCodeInsightTestFixtureRule()
 
     @Test
+    fun unknownRuntimeIsNull() {
+        assertThat(Runtime.fromValue("adsfadsffads")).isNotNull()
+        assertThat(Runtime.fromValue("adsfadsffads")).isEqualTo(Runtime.UNKNOWN_TO_SDK_VERSION)
+        assertThat(Runtime.fromValue("adsfadsffads").nullable).isNull()
+    }
+
+    @Test
     fun canDetermineRuntimeFromAnActionEventUsingModule() {
         ModuleRootModificationUtil.setModuleSdk(projectRule.module, PyTestSdk2x())
         val event: AnActionEvent = mock {
