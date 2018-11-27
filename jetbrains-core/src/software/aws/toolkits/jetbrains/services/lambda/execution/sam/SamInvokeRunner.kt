@@ -24,6 +24,7 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager
+import software.aws.toolkits.jetbrains.services.lambda.nullable
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import java.net.ServerSocket
 
@@ -43,7 +44,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
         // Requires SamDebugSupport too
         if (DefaultDebugExecutor.EXECUTOR_ID == executorId) {
             profile.settings.runtime?.let {
-                return SamDebugSupport.supportedRuntimeGroups.contains(Runtime.fromValue(it).runtimeGroup)
+                return SamDebugSupport.supportedRuntimeGroups.contains(Runtime.fromValue(it).nullable?.runtimeGroup)
             }
         }
 

@@ -19,6 +19,7 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamTemplateUtils.functionFromElement
+import software.aws.toolkits.jetbrains.services.lambda.nullable
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 
 class LambdaSamRunConfigurationProducer : RunConfigurationProducer<SamRunConfiguration>(getFactory()) {
@@ -69,7 +70,7 @@ class LambdaSamRunConfigurationProducer : RunConfigurationProducer<SamRunConfigu
         configuration.configure(
             templateFile = file,
             logicalFunctionName = function.logicalName,
-            runtime = Runtime.fromValue(function.runtime()),
+            runtime = Runtime.fromValue(function.runtime()).nullable,
             credentialsProviderId = settings.first,
             region = settings.second
         )

@@ -35,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfig
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationBase
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunConfiguration.MutableLambdaSamRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamTemplateUtils.findFunctionsFromTemplate
+import software.aws.toolkits.jetbrains.services.lambda.nullable
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
 import software.aws.toolkits.jetbrains.settings.SamSettings
@@ -135,7 +136,7 @@ class SamRunConfiguration(project: Project, factory: ConfigurationFactory) :
 
     private fun handlerDisplayName(): String? {
         val handler = settings.handler ?: return null
-        return settings.runtime?.let { Runtime.fromValue(it).runtimeGroup }?.let { LambdaHandlerResolver.getInstance(it) }?.handlerDisplayName(handler) ?: handler
+        return settings.runtime?.let { Runtime.fromValue(it).nullable?.runtimeGroup }?.let { LambdaHandlerResolver.getInstance(it) }?.handlerDisplayName(handler) ?: handler
     }
 
     class MutableLambdaSamRunSettings(
@@ -166,7 +167,9 @@ class SamRunConfiguration(project: Project, factory: ConfigurationFactory) :
                 myLogicalFunctionName ?: throw RuntimeConfigurationError(message("lambda.run_configuration.sam.no_function_specified", myTemplateFile))
                 val function = findFunctionsFromTemplate(project, File(templateFile)).find { it.logicalName == myLogicalFunctionName }
                     ?: throw RuntimeConfigurationError(message("lambda.run_configuration.sam.no_such_function", myLogicalFunctionName, myTemplateFile))
-                Triple(function.handler(), Runtime.fromValue(function.runtime()), SamTemplateDetails(myTemplateFile, myLogicalFunctionName))
+                val runtime = function.runtime().let { Runtime.fromValue(it).nullable }
+                        ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
+                Triple(function.handler(), runtime, SamTemplateDetails(myTemplateFile, myLogicalFunctionName))
             } else {
                 validateHandlerRuntime()
             }
@@ -199,7 +202,7 @@ class SamRunConfiguration(project: Project, factory: ConfigurationFactory) :
         private fun validateHandlerRuntime(): Triple<String, Runtime, SamTemplateDetails?> {
             val handler =
                 handler ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
-            val runtime = runtime?.let { Runtime.fromValue(it) }
+            val runtime = runtime?.let { Runtime.fromValue(it).nullable }
                 ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
             return Triple(handler, runtime, null)
         }
@@ -239,7 +242,7 @@ class SamRunSettingsEditor(project: Project) : SettingsEditor<SamRunConfiguratio
             view.selectFunction(settings.logicalFunctionName)
         } else {
             view.useTemplate.isSelected = false
-            view.runtime.model.selectedItem = settings.runtime?.let { Runtime.fromValue(it) }
+            view.runtime.model.selectedItem = settings.runtime?.let { Runtime.fromValue(it).nullable }
             view.handler.setText(settings.handler)
         }
         view.environmentVariables.envVars = settings.environmentVariables

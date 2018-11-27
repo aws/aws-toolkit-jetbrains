@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.yaml.YAMLFileType;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.cloudformation.Function;
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupUtil;
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaInputPanel;
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector;
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField;
@@ -86,7 +87,7 @@ public final class SamRunSettingsEditorPanel {
             if (functionModels.getSelectedItem() instanceof Function) {
                 Function selected = (Function) functionModels.getSelectedItem();
                 handler.setText(selected.handler());
-                runtime.setSelectedItem(Runtime.fromValue(selected.runtime()));
+                runtime.setSelectedItem(RuntimeGroupUtil.getNullable(Runtime.fromValue(selected.runtime())));
                 function.setEnabled(true);
             }
         } else {
