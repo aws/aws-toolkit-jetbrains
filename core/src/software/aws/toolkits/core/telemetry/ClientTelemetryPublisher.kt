@@ -33,12 +33,12 @@ class ClientTelemetryPublisher(
 
     private fun Collection<Metric>.toMetricData(): Collection<MetricDatum> = this.stream()
         .flatMap { metric ->
-            metric.entries.values.stream().map { entry -> MetricDatum.builder()
-                .metricName(metric.metricNamespace)
-                .epochTimestamp(metric.createTime.toEpochMilli())
-                .unit(entry.unit.toSdkUnit())
-                .value(entry.value)
-                .build()
+            metric.entries.entries.stream().map { entry -> MetricDatum.builder()
+                    .epochTimestamp(metric.createTime.toEpochMilli())
+                    .metricName("${metric.metricNamespace}.${entry.key}")
+                    .unit(entry.value.unit.toSdkUnit())
+                    .value(entry.value.value)
+                    .build()
             }
         }
         .toList()
