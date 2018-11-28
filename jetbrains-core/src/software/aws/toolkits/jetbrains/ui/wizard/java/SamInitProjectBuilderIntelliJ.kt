@@ -10,9 +10,9 @@ import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.project.rootManager
+import com.intellij.openapi.roots.ContentEntry
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.uiDesigner.core.GridConstraints
@@ -58,8 +58,8 @@ class SamInitModuleBuilder : ModuleBuilder() {
         rootModel.module.setModuleType(moduleType.id)
         val project = rootModel.project
 
-        val projectBasePath: String = project.basePath ?: throw Exception(message("sam.init.error.no.project.basepath"))
-        val outputDir: VirtualFile = LocalFileSystem.getInstance().findFileByPath(projectBasePath) ?: throw Exception(message("sam.init.error.no.virtual.file", projectBasePath))
+        val contentEntry: ContentEntry = doAddContentEntry(rootModel) ?: throw Exception(message("sam.init.error.no.project.basepath"))
+        val outputDir: VirtualFile = contentEntry.file ?: throw Exception(message("sam.init.error.no.virtual.file"))
 
         template.samProjectTemplate.build(selectedRuntime, outputDir)
         rootModel.addContentEntry(outputDir)
