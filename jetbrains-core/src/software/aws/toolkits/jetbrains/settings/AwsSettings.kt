@@ -7,10 +7,12 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import java.util.prefs.Preferences
 import java.util.UUID
 
 @State(name = "aws", storages = [Storage("aws.xml")])
 class AwsSettings : PersistentStateComponent<AwsConfiguration> {
+    private val preferences = Preferences.userRoot().node(this.javaClass.canonicalName)
     private var state = AwsConfiguration()
 
     override fun getState(): AwsConfiguration = state
@@ -31,20 +33,20 @@ class AwsSettings : PersistentStateComponent<AwsConfiguration> {
             state.promptedForTelemetry = value
         }
 
-
     val clientId: UUID
-        @Synchronized get() = state.clientId ?: UUID.randomUUID().also {
-            state.clientId = it
+        @Synchronized get() = UUID.fromString(preferences.get(CLIENT_ID_KEY, UUID.randomUUID().toString())).also {
+            preferences.put(CLIENT_ID_KEY, it.toString())
         }
 
     companion object {
         @JvmStatic
         fun getInstance(): AwsSettings = ServiceManager.getService(AwsSettings::class.java)
+
+        const val CLIENT_ID_KEY = "CLIENT_ID"
     }
 }
 
 data class AwsConfiguration(
     var isTelemetryEnabled: Boolean? = null,
-    var promptedForTelemetry: Boolean? = null,
-    var clientId: UUID? = null
+    var promptedForTelemetry: Boolean? = null
 )

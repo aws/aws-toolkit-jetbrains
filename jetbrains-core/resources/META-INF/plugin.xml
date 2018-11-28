@@ -94,6 +94,8 @@
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.AwsSdkClient"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.ClientTelemetryService"
+                            serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultClientTelemetryService" />
         <projectService serviceInterface="software.aws.toolkits.core.ToolkitClientManager"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.MockClientManager"/>

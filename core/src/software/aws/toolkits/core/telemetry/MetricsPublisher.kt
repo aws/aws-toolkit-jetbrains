@@ -68,7 +68,7 @@ class BatchingMetricsPublisher(
     publishUnit: TimeUnit = DEFAULT_PUBLISH_UNIT,
     private val maxBatchSize: Int = MAX_BATCH_SIZE,
     private val executorService: ScheduledExecutorService = createDefaultExecutor()
-) : MetricsPublisher, MetricsFactory {
+) : MetricsPublisher {
 
     private val metricQueue = LinkedBlockingDeque<Metric>(MAX_QUEUE_SIZE)
     private val isShuttingDown = AtomicBoolean(false)
