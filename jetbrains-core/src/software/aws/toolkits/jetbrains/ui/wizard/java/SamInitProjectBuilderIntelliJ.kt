@@ -62,7 +62,6 @@ class SamInitModuleBuilder : ModuleBuilder() {
         val outputDir: VirtualFile = contentEntry.file ?: throw Exception(message("sam.init.error.no.virtual.file"))
 
         template.samProjectTemplate.build(selectedRuntime, outputDir)
-        rootModel.addContentEntry(outputDir)
 
         SamCommon.excludeSamDirectory(outputDir, rootModel)
 
