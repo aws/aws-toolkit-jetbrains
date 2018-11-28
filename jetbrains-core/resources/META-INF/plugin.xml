@@ -23,7 +23,7 @@
     ]]></description>
 
     <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://aws.amazon.com/">Amazon Web Services</vendor>
-    <idea-version since-build="182" until-build="183.*"/>
+    <idea-version since-build="183" until-build="183.*"/>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
@@ -130,11 +130,16 @@
         <group id="aws.toolkit.explorer.lambda" popup="true" compact="false">
             <action id="lambda.function.create" class="software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction"/>
         </group>
-        <group id="aws.toolkit.explorer.lambda.function" popup="true" compact="false">
+
+        <group id="aws.toolkit.explorer.lambda.function.immutable" popup="false" compact="false">
             <reference ref="RunContextGroupInner"/>
             <separator/>
             <action id="lambda.function.gotohandler"
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.GoToHandlerAction"/>
+        </group>
+
+        <group id="aws.toolkit.explorer.lambda.function" popup="false" compact="false">
+            <reference ref="aws.toolkit.explorer.lambda.function.immutable"/>
             <separator/>
             <action id="lambda.function.updateConfiguration"
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.UpdateFunctionConfigurationAction"/>
@@ -142,15 +147,12 @@
             <action id="lambda.function.delete"
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.DeleteFunctionAction"/>
         </group>
-        <group id="aws.toolkit.explorer.lambda.stackFunction" popup="true" compact="false">
-            <reference ref="RunContextGroupInner"/>
-            <separator/>
-            <action id="lambda.stackFunction.gotohandler" class="software.aws.toolkits.jetbrains.services.lambda.actions.GoToHandlerAction"/>
+
+        <group id="aws.toolkit.explorer.cloudformation.stack" popup="true" compact="false">
+            <action id="cloudformation.stack.delete"
+                    class="software.aws.toolkits.jetbrains.services.cloudformation.DeleteCloudFormationStackAction"/>
         </group>
-        <group id="aws.toolkit.explorer.lambda.application" popup="true" compact="false">
-            <action id="lambda.application.delete"
-                    class="software.aws.toolkits.jetbrains.services.lambda.applications.DeleteApplicationAction"/>
-        </group>
+
         <action class="software.aws.toolkits.jetbrains.core.SettingsSelectorAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>
         <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials" icon="AwsIcons.Logos.AWS"/>
 

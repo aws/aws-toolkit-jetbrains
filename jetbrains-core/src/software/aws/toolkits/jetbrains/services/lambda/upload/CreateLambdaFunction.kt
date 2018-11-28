@@ -26,6 +26,9 @@ class CreateLambdaFunction(
     private val lambdaHandlerResolver: LambdaHandlerResolver?
 ) : AnAction(message("lambda.create_new"), null, AwsIcons.Actions.LAMBDA_FUNCTION_NEW) {
 
+    @Suppress("unused") // Used by ActionManager in plugin.xml
+    constructor() : this(null, null, null)
+
     init {
         if (handlerName != null) {
             elementPointer ?: throw IllegalArgumentException("elementPointer must be provided if handlerName is provided")
@@ -52,7 +55,7 @@ class CreateLambdaFunction(
         dialog.show()
     }
 
-    override fun update(e: AnActionEvent?) {
+    override fun update(e: AnActionEvent) {
         super.update(e)
 
         val element: PsiElement? = elementPointer?.element
@@ -67,7 +70,7 @@ class CreateLambdaFunction(
         val allowAction = lambdaHandlerResolver.determineHandlers(element, element.containingFile.virtualFile)
             .none { it in templateFunctionHandlers }
 
-        e?.presentation?.isVisible = allowAction
+        e.presentation.isVisible = allowAction
     }
 }
 
