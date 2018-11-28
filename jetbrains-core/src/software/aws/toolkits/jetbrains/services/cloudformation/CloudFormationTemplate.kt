@@ -9,7 +9,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import org.jetbrains.yaml.YAMLFileType
 import org.jetbrains.yaml.YAMLLanguage
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate
+import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.validOrNull
+import software.aws.toolkits.resources.message
 import java.io.File
 
 interface CloudFormationTemplate {
@@ -115,3 +119,27 @@ fun List<Parameter>.mergeRemoteParameters(remoteParameters: List<software.amazon
         }
         mutableParameter
     }.toList()
+
+/**
+ * Validate whether the Lambda function runtimes in the specified template are supported to build before deployment to AWS.
+ *
+ * @return null if they are supported, or an error message otherwise.
+ */
+fun Project.validateSamTemplateLambdaRuntimes(path: String): String? {
+    val indexedFunctions = CloudFormationTemplateIndex
+        .listFunctions(this)
+        .asSequence()
+        .filter { it.path == path }
+        .takeIf { it.count() != 0 } ?: return message("serverless.application.deploy.error.no_functions_defined", path)
+
+    return indexedFunctions.mapNotNull {
+        Runtime.fromValue(it.runtime()).validOrNull?.let { runtime ->
+            runtime.runtimeGroup?.let { runtimeGroup ->
+                if (runtimeGroup.supportSamBuild()) return@mapNotNull null
+                else message("serverless.application.deploy.error.unsupported_runtime_group", runtime.toString(), path)
+            } ?: message("serverless.application.deploy.error.invalid_runtime_group", runtime.toString(), path)
+        } ?: message("serverless.application.deploy.error.invalid_runtime", it.runtime() ?: message("serverless.application.deploy.error.empty_runtime"), path)
+    }.firstOrNull()
+}
+
+fun Project.validateSamTemplateLambdaRuntimes(virtualFile: VirtualFile): String? = validateSamTemplateLambdaRuntimes(virtualFile.path)

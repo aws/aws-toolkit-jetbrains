@@ -7,8 +7,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.testFramework.TestActionEvent
+import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
 import org.junit.Before
@@ -43,23 +45,13 @@ public class Processor {
         runInEdtAndWait {
             smartElement = SmartPointerManager.createPointer(element)
         }
-
-        fixture.openFile("template.yaml", """
-Resources:
-  ServerlessFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: foo
-      Handler: helloworld.App::handleRequest
-      Runtime: foo
-      Timeout: 800
-""")
     }
 
     @Test
     fun InvalidNullArgs() {
         val handlerName = "helloworld.App::handleRequest"
 
+        openJavaRuntimeTemplate(projectRule.fixture)
         runInEdtAndWait {
             assertFails { CreateLambdaFunction(handlerName, null, null) }
         }
@@ -68,10 +60,9 @@ Resources:
     @Test
     fun InvalidNullArgs_Element() {
         val handlerName = "helloworld.App::handleRequest"
-        val handlerResolver = mock<LambdaHandlerResolver> {
-            on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
-        }
+        val handlerResolver = mockLambdaHandlerResolverWithHandler(handlerName)
 
+        openJavaRuntimeTemplate(projectRule.fixture)
         runInEdtAndWait {
             assertFails { CreateLambdaFunction(handlerName, null, handlerResolver) }
         }
@@ -81,18 +72,34 @@ Resources:
     fun InvalidNullArgs_HandlerResolver() {
         val handlerName = "helloworld.App::handleRequest"
 
+        openJavaRuntimeTemplate(projectRule.fixture)
         runInEdtAndWait {
             assertFails { CreateLambdaFunction(handlerName, smartElement, null) }
         }
     }
 
     @Test
-    fun SamFunction() {
+    fun SamFunction_javaRuntime() {
         val handlerName = "helloworld.App::handleRequest"
-        val handlerResolver = mock<LambdaHandlerResolver> {
-            on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
-        }
+        val handlerResolver = mockLambdaHandlerResolverWithHandler(handlerName)
 
+        openJavaRuntimeTemplate(projectRule.fixture)
+        runInEdtAndWait {
+            val action = CreateLambdaFunction(handlerName, smartElement, handlerResolver)
+
+            val actionEvent = TestActionEvent()
+            action.update(actionEvent)
+
+            assertTrue { actionEvent.presentation.isVisible }
+        }
+    }
+
+    @Test
+    fun SamFunction_pythonRuntime() {
+        val handlerName = "helloworld.App::handleRequest"
+        val handlerResolver = mockLambdaHandlerResolverWithHandler(handlerName)
+
+        openPythonRuntimeTemplate(projectRule.fixture)
         runInEdtAndWait {
             val action = CreateLambdaFunction(handlerName, smartElement, handlerResolver)
 
@@ -104,12 +111,27 @@ Resources:
     }
 
     @Test
-    fun NonSamFunction() {
+    fun NonSamFunction_javaRuntime() {
         val handlerName = "helloworld.App2::handleRequest"
-        val handlerResolver = mock<LambdaHandlerResolver> {
-            on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
-        }
+        val handlerResolver = mockLambdaHandlerResolverWithHandler(handlerName)
 
+        openJavaRuntimeTemplate(projectRule.fixture)
+        runInEdtAndWait {
+            val action = CreateLambdaFunction(handlerName, smartElement, handlerResolver)
+
+            val actionEvent = TestActionEvent()
+            action.update(actionEvent)
+
+            assertTrue { actionEvent.presentation.isVisible }
+        }
+    }
+
+    @Test
+    fun NonSamFunction_pythonRuntime() {
+        val handlerName = "helloworld.App2::handleRequest"
+        val handlerResolver = mockLambdaHandlerResolverWithHandler(handlerName)
+
+        openPythonRuntimeTemplate(projectRule.fixture)
         runInEdtAndWait {
             val action = CreateLambdaFunction(handlerName, smartElement, handlerResolver)
 
@@ -123,10 +145,9 @@ Resources:
     @Test
     fun NonSamFunction_Substring() {
         val handlerName = "helloworld.App::handleReques"
-        val handlerResolver = mock<LambdaHandlerResolver> {
-            on { determineHandlers(any(), any()) }.doAnswer { setOf(handlerName) }
-        }
+        val handlerResolver = mockLambdaHandlerResolverWithHandler(handlerName)
 
+        openJavaRuntimeTemplate(projectRule.fixture)
         runInEdtAndWait {
             val action = CreateLambdaFunction(handlerName, smartElement, handlerResolver)
 
@@ -135,5 +156,38 @@ Resources:
 
             assertTrue { actionEvent.presentation.isVisible }
         }
+    }
+
+    private fun mockLambdaHandlerResolverWithHandler(handler: String): LambdaHandlerResolver {
+        val handler1 = argumentCaptor<String>()
+        val handler2 = argumentCaptor<String>()
+        return mock<LambdaHandlerResolver> {
+            on { determineHandler(any()) }.doAnswer { handler }
+            on { areHandlersEquivalent(handler1.capture(), handler2.capture()) }.doAnswer { handler1.firstValue == handler2.firstValue }
+        }
+    }
+
+    private fun openJavaRuntimeTemplate(fixture: JavaCodeInsightTestFixture) {
+        fixture.openFile("template.yaml", """
+Resources:
+  ServerlessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: foo
+      Handler: helloworld.App::handleRequest
+      Runtime: java8
+""")
+    }
+
+    private fun openPythonRuntimeTemplate(fixture: JavaCodeInsightTestFixture) {
+        fixture.openFile("template.yaml", """
+Resources:
+  ServerlessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: foo
+      Handler: helloworld.App::handleRequest
+      Runtime: python2.7
+""")
     }
 }

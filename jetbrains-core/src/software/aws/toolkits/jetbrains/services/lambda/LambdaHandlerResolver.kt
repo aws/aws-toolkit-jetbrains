@@ -67,5 +67,10 @@ interface LambdaHandlerResolver {
      */
     fun shouldShowLineMarker(handler: String): Boolean = false
 
+    /**
+     * Return whether two handlers are logically the same
+     */
+    fun areHandlersEquivalent(handler1: String?, handler2: String?) = handler1 == handler2
+
     companion object : RuntimeGroupExtensionPointObject<LambdaHandlerResolver>(ExtensionPointName.create("aws.toolkit.lambda.handlerResolver"))
 }

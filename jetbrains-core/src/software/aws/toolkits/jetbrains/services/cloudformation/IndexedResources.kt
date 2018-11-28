@@ -12,10 +12,10 @@ import java.io.DataOutput
  * Immutable data class for indexing [Resource]. Use [from] to create an instance so that it always
  * returns a concrete [IndexedResource] such as [IndexedFunction] if applicable.
  */
-open class IndexedResource protected constructor(val type: String, val indexedProperties: Map<String, String>) {
+open class IndexedResource protected constructor(val path: String, val type: String, val indexedProperties: Map<String, String>) {
 
-    protected constructor(resource: Resource, indexProperties: List<String>)
-        : this(resource.type() ?: throw RuntimeException(message("cloudformation.template_index.missing_type")),
+    protected constructor(path: String, resource: Resource, indexProperties: List<String>)
+        : this(path, resource.type() ?: throw RuntimeException(message("cloudformation.template_index.missing_type")),
             indexProperties
                 .asSequence()
                 .map { it to try { resource.getScalarProperty(it) } catch (e: Exception) { null } }
@@ -23,6 +23,7 @@ open class IndexedResource protected constructor(val type: String, val indexedPr
                 .toMap())
 
     fun save(dataOutput: DataOutput) {
+        dataOutput.writeUTF(path)
         dataOutput.writeUTF(type)
         dataOutput.writeInt(indexedProperties.size)
         indexedProperties.forEach { key, value ->
@@ -39,6 +40,7 @@ open class IndexedResource protected constructor(val type: String, val indexedPr
         fun read(dataInput: DataInput): IndexedResource {
             val propertyList: MutableMap<String, String> = mutableMapOf()
 
+            val path = dataInput.readUTF()
             val type = dataInput.readUTF()
             val propertySize = dataInput.readInt()
             repeat(propertySize) {
@@ -46,23 +48,23 @@ open class IndexedResource protected constructor(val type: String, val indexedPr
                 val value = dataInput.readUTF()
                 propertyList[key] = value
             }
-            return from(type, propertyList)
+            return from(path, type, propertyList)
         }
 
-        fun from(type: String, indexedProperties: Map<String, String>) =
-                INDEXED_RESOURCE_MAPPINGS[type]?.first?.invoke(type, indexedProperties) ?: IndexedResource(type, indexedProperties)
+        fun from(path: String, type: String, indexedProperties: Map<String, String>) =
+                INDEXED_RESOURCE_MAPPINGS[type]?.first?.invoke(path, type, indexedProperties) ?: IndexedResource(path, type, indexedProperties)
 
-        fun from(resource: Resource): IndexedResource? = resource.type()?.let {
-            INDEXED_RESOURCE_MAPPINGS[it]?.second?.invoke(resource) ?: IndexedResource(resource, listOf())
+        fun from(path: String, resource: Resource): IndexedResource? = resource.type()?.let {
+            INDEXED_RESOURCE_MAPPINGS[it]?.second?.invoke(path, resource) ?: IndexedResource(path, resource, listOf())
         }
     }
 }
 
 class IndexedFunction : IndexedResource {
 
-    internal constructor(type: String, indexedProperties: Map<String, String>) : super(type, indexedProperties)
+    internal constructor(path: String, type: String, indexedProperties: Map<String, String>) : super(path, type, indexedProperties)
 
-    internal constructor(resource: Resource) : super(resource, listOf("Runtime", "Handler"))
+    internal constructor(path: String, resource: Resource) : super(path, resource, listOf("Runtime", "Handler"))
 
     fun runtime(): String? = indexedProperties["Runtime"]
 
@@ -71,7 +73,8 @@ class IndexedFunction : IndexedResource {
     override fun toString(): String = indexedProperties.toString()
 }
 
-internal val INDEXED_RESOURCE_MAPPINGS = mapOf<String, Pair<(String, Map<String, String>) -> IndexedResource, (Resource) -> IndexedResource>>(
+internal val INDEXED_RESOURCE_MAPPINGS =
+    mapOf<String, Pair<(String, String, Map<String, String>) -> IndexedResource, (String, Resource) -> IndexedResource>>(
         LAMBDA_FUNCTION_TYPE to Pair(::IndexedFunction, ::IndexedFunction),
         SERVERLESS_FUNCTION_TYPE to Pair(::IndexedFunction, ::IndexedFunction)
 )

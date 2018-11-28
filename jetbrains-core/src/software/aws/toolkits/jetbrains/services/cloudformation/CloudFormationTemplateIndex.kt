@@ -65,7 +65,7 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
 
                     val resource = YamlCloudFormationTemplate.convertPsiToResource(parent) ?: return
                     val resourceType = resource.type() ?: return
-                    IndexedResource.from(resource)?.let {
+                    IndexedResource.from(fileContent.file.path, resource)?.let {
                         indexedResources.computeIfAbsent(resourceType) { mutableListOf() }.add(it)
                     }
                 }

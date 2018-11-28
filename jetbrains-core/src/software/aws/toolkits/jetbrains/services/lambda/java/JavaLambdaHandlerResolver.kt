@@ -78,6 +78,14 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
     override fun shouldShowLineMarker(handler: String): Boolean = !handler.contains("::")
 
     /**
+     * Java Lambda handlers are equivalent if one is a subclass of RequestHandler and the other is the implementation method.
+     */
+    override fun areHandlersEquivalent(handler1: String?, handler2: String?): Boolean =
+        super.areHandlersEquivalent(handler1, handler2) ||
+            handler1 == "$handler2::handleRequest" ||
+            handler2 == "$handler1::handleRequest"
+
+    /**
      * https://docs.aws.amazon.com/lambda/latest/dg/java-programming-model-handler-types.html
      * Handler Overload Resolution
      *

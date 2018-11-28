@@ -21,7 +21,7 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroupInformation() {
 
     override fun runtimeForSdk(sdk: Sdk): Runtime? = when {
         sdk.sdkType is JavaSdkType && JavaSdk.getInstance().getVersion(sdk)
-            ?.let { it == JavaSdkVersion.JDK_1_8 || it.maxLanguageLevel.isLessThan(LanguageLevel.JDK_1_8) } == true -> Runtime.JAVA8
+                ?.let { it == JavaSdkVersion.JDK_1_8 || it.maxLanguageLevel.isLessThan(LanguageLevel.JDK_1_8) } == true -> Runtime.JAVA8
         else -> null
     }
 

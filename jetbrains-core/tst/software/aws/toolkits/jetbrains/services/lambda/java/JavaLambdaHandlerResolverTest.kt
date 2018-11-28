@@ -18,6 +18,8 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openClass
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class JavaLambdaHandlerResolverTest {
     @Rule
@@ -423,6 +425,18 @@ class JavaLambdaHandlerResolverTest {
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler")).isEqualTo("LambdaHandler")
         assertThat(sut.handlerDisplayName("LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
+    }
+
+    @Test
+    fun areHandlersEquivalent() {
+        val sut = LambdaHandlerResolver.getInstanceOrThrow(RuntimeGroup.JAVA)
+        assertTrue { sut.areHandlersEquivalent("com.foo.Bar::handleRequest", "com.foo.Bar::handleRequest") }
+        assertTrue { sut.areHandlersEquivalent("com.foo.Bar", "com.foo.Bar::handleRequest") }
+        assertTrue { sut.areHandlersEquivalent("com.foo.Bar::handleRequest", "com.foo.Bar") }
+        assertTrue { sut.areHandlersEquivalent("com.foo.Bar", "com.foo.Bar") }
+        assertFalse { sut.areHandlersEquivalent("com.foo.Bar::handle", "com.foo.Bar::handleRequest") }
+        assertFalse { sut.areHandlersEquivalent("com.foo.Bar", "com.foo.Baz") }
+        assertFalse { sut.areHandlersEquivalent("com.foo.Bar", "com.foo.Bar::handle") }
     }
 
     private fun runInDumbMode(block: () -> Unit) {

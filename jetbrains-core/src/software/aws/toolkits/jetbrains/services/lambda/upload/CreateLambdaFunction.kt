@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex
+import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateLambdaRuntimes
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.runtime
@@ -63,12 +64,13 @@ class CreateLambdaFunction(
             return
         }
 
-        val templateFunctionHandlers = CloudFormationTemplateIndex.listFunctions(element.project)
-            .mapNotNull { it.handler() }
-            .toSet()
+        val project = e.getRequiredData(LangDataKeys.PROJECT)
 
-        val allowAction = lambdaHandlerResolver.determineHandlers(element, element.containingFile.virtualFile)
-            .none { it in templateFunctionHandlers }
+        val allowAction = lambdaHandlerResolver.determineHandler(element)?.let { handler ->
+            CloudFormationTemplateIndex.listFunctions(element.project)
+                .asSequence()
+                .none { lambdaHandlerResolver.areHandlersEquivalent(it.handler(), handler) && project.validateSamTemplateLambdaRuntimes(it.path) == null }
+        } ?: false
 
         e.presentation.isVisible = allowAction
     }
