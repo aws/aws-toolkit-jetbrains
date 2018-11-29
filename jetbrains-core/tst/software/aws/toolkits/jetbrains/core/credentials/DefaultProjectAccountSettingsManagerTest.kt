@@ -292,7 +292,7 @@ class DefaultProjectAccountSettingsManagerTest {
             </AccountState>
         """.toElement()
 
-        val credentials = mockCredentialManager.addCredentials(
+        mockCredentialManager.addCredentials(
             "Mock",
             AwsBasicCredentials.create("Access", "Secret"),
             false
