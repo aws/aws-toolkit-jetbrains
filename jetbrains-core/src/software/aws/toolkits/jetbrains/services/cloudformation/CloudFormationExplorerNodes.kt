@@ -106,28 +106,26 @@ class CloudFormationStackNode(project: Project, val stackName: String, private v
         isChildCacheInInitialState = false
     }
 
-    private fun loadServerlessStackResources(): List<AwsExplorerNode<*>> {
-        try {
-            return cfnClient
-                .describeStackResources { it.stackName(stackName) }
-                .stackResources()
-                .filter { it.resourceType() == LAMBDA_FUNCTION_TYPE && it.resourceStatus() in COMPLETE_RESOURCE_STATES }
-                .map { resource ->
-                    // TODO: Enable using cache, and a registry for these mappings of CFN -> real resource
-                    val client = project!!.awsClient<LambdaClient>(credentialProvider, region)
-                    val response = client.getFunction { it.functionName(resource.physicalResourceId()) }
+    private fun loadServerlessStackResources(): List<AwsExplorerNode<*>> = try {
+        cfnClient
+            .describeStackResources { it.stackName(stackName) }
+            .stackResources()
+            .filter { it.resourceType() == LAMBDA_FUNCTION_TYPE && it.resourceStatus() in COMPLETE_RESOURCE_STATES }
+            .map { resource ->
+                // TODO: Enable using cache, and a registry for these mappings of CFN -> real resource
+                val client = project!!.awsClient<LambdaClient>(credentialProvider, region)
+                val response = client.getFunction { it.functionName(resource.physicalResourceId()) }
 
-                    LambdaFunctionNode(
-                        nodeProject,
-                        client,
-                        response.configuration().toDataClass(credentialProvider.id, region),
-                        true
-                    )
-                }
-                .toList()
-        } catch (e: Exception) {
-            return listOf(AwsExplorerErrorNode(project!!, e))
-        }
+                LambdaFunctionNode(
+                    nodeProject,
+                    client,
+                    response.configuration().toDataClass(credentialProvider.id, region),
+                    true
+                )
+            }
+            .toList()
+    } catch (e: Exception) {
+        listOf(AwsExplorerErrorNode(project!!, e))
     }
 
     override fun statusText(): String? = stackStatus.toString().toHumanReadable()
