@@ -206,7 +206,7 @@ class AwsExplorerErrorNode(project: Project, exception: Exception) :
             val exception = value
             val errorDetails = if (exception is AwsServiceException) {
                 val awsErrorDetails = exception.awsErrorDetails()
-                "${awsErrorDetails.serviceName()} | ${awsErrorDetails.errorCode()}"
+                "${awsErrorDetails.serviceName()}: ${awsErrorDetails.errorCode()}"
             } else {
                 message("explorer.error_loading_resources_default_details")
             }
