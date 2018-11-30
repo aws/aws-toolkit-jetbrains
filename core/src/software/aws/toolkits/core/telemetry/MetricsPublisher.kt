@@ -151,7 +151,7 @@ class BatchingMetricsPublisher(
     companion object {
         private val LOG = getLogger<BatchingMetricsPublisher>()
         private const val MAX_QUEUE_SIZE = 10_000
-        private const val MAX_BATCH_SIZE = 100
+        private const val MAX_BATCH_SIZE = 20
         private const val DEFAULT_PUBLISH_INTERVAL = 5L
         private val DEFAULT_PUBLISH_UNIT = TimeUnit.MINUTES
 

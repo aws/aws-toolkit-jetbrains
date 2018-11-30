@@ -4,7 +4,6 @@
 package software.aws.toolkits.core.telemetry
 
 import software.aws.toolkits.core.utils.getLogger
-import java.time.Duration
 import java.time.Instant
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -35,36 +34,21 @@ open class Metric internal constructor(internal val metricNamespace: String, pri
     /**
      * Adds a metric to the event
      *
-     * @param metricName Name of the metric
-     * @param value Value of the metric
-     * @param unit Unit for the metric
+     * @param metricName The name of the entry
+     * @param entry A builder to create the entry
      * @return this
      */
-    fun addMetricEntry(metricName: String, value: Double, unit: MetricUnit): Metric {
+    fun addMetricEntry(metricName: String, entry: MetricEntry.Builder.() -> Unit): Metric {
         if (closed.get()) {
             LOG.warn("Attempted to add a metric to a closed metric", Throwable())
             return this
         }
 
-        entriesMap[metricName] = MetricEntry(value, unit)
-        return this
-    }
+        val builder: MetricEntry.Builder = MetricEntry.builder()
+        entry(builder)
+        entriesMap[metricName] = builder.build()
 
-    /**
-     * Auto-add a sub-metric with the time to execute the code block
-     *
-     * @param metricName Name of the metric
-     * @param action Code block to time
-     * @return The new metric
-     */
-    fun <T> addMetricEntry(metricName: String, action: () -> T): T {
-        val start = Instant.now()
-        try {
-            return action()
-        } finally {
-            val duration = Duration.between(start, Instant.now()).toMillis().toDouble()
-            addMetricEntry(metricName, duration, MetricUnit.MILLISECONDS)
-        }
+        return this
     }
 
     companion object {
@@ -79,4 +63,69 @@ enum class MetricUnit {
     BYTES, COUNT, MILLISECONDS, PERCENT
 }
 
-data class MetricEntry(val value: Double, val unit: MetricUnit)
+data class MetricEntry private constructor(
+    val value: Double,
+    val unit: MetricUnit,
+    val metadata: Map<String, String> = HashMap()
+) {
+    interface Builder {
+        fun value(value: Double): Builder
+
+        fun unit(unit: MetricUnit): Builder
+
+        fun metadata(key: String, value: String): Builder
+
+        fun build(): MetricEntry
+    }
+
+    class BuilderImpl : Builder {
+        private var value: Double? = null
+        private var unit: MetricUnit? = null
+        private val metadata: MutableMap<String, String> = HashMap()
+
+        override fun value(value: Double): Builder {
+            this.value = value
+            return this
+        }
+
+        override fun unit(unit: MetricUnit): Builder {
+            this.unit = unit
+            return this
+        }
+
+        override fun metadata(key: String, value: String): Builder {
+            if (metadata.containsKey(key)) {
+                LOG.warn("Attempted to add multiple pieces of metadata with the same key")
+                return this
+            }
+
+            if (metadata.size > MAX_METADATA_ENTRIES) {
+                LOG.warn("Each metric datum may contain a maximum of $MAX_METADATA_ENTRIES metadata entries")
+                return this
+            }
+
+            metadata[key] = value
+            return this
+        }
+
+        override fun build(): MetricEntry {
+            if (value == null) {
+                throw Throwable("Each metric entry must have a value")
+            }
+
+            if (unit == null) {
+                throw Throwable("Each metric entry must have a unit")
+            }
+
+            return MetricEntry(value!!, unit!!, metadata)
+        }
+    }
+
+    companion object {
+        private val LOG = getLogger<MetricEntry>()
+
+        fun builder(): Builder = BuilderImpl()
+
+        const val MAX_METADATA_ENTRIES: Int = 10
+    }
+}

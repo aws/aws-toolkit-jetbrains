@@ -6,12 +6,15 @@ package software.aws.toolkits.jetbrains.services.telemetry
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationNamesInfo
 import software.amazon.awssdk.services.toolkittelemetry.ToolkitTelemetryClient
-import software.aws.toolkits.core.telemetry.MetricUnit
-import software.aws.toolkits.core.telemetry.MetricsPublisher
-import software.aws.toolkits.core.telemetry.NoOpMetricsPublisher
+import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.core.telemetry.BatchingMetricsPublisher
 import software.aws.toolkits.core.telemetry.ClientTelemetryPublisher
+import software.aws.toolkits.core.telemetry.MetricsPublisher
+import software.aws.toolkits.core.telemetry.MetricUnit
+import software.aws.toolkits.core.telemetry.NoOpMetricsPublisher
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -31,9 +34,11 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
         val settings = AwsSettings.getInstance()
         publisher = if (settings.isTelemetryEnabled) {
             BatchingMetricsPublisher(ClientTelemetryPublisher(
-                    AwsToolkit.PLUGIN_NAME,
+                    AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
                     AwsToolkit.PLUGIN_VERSION,
                     settings.clientId.toString(),
+                    ApplicationNamesInfo.getInstance().fullProductNameWithEdition,
+                    ApplicationInfo.getInstance().fullVersion,
                     ToolkitTelemetryClient
                             .builder()
                             // TODO: This is the beta endpoint. Replace with the production endpoint before release.
@@ -48,6 +53,14 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
 
         publisher.newMetric("ToolkitStart").use {
             startupTime = it.createTime
+            it.addMetricEntry("placeholder") {
+                value(0.0)
+                unit(MetricUnit.COUNT)
+                // TODO
+                // val isFirstRun: boolean = ...
+                // metadata("isFirstRun", isFirstRun.toString())
+            }
+
             publisher.publishMetric(it)
         }
     }
@@ -55,8 +68,11 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
     override fun dispose() {
         try {
             publisher.newMetric("ToolkitEnd").use {
-                val duration = Duration.between(startupTime, it.createTime)
-                it.addMetricEntry("duration", duration.toMillis().toDouble(), MetricUnit.MILLISECONDS)
+                it.addMetricEntry("duration") {
+                    value(Duration.between(startupTime, it.createTime).toMillis().toDouble())
+                    unit(MetricUnit.MILLISECONDS)
+                }
+
                 publisher.publishMetric(it)
             }
         } finally {
