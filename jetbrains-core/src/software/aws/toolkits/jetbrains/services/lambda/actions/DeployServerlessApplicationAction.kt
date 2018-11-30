@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
+import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateLambdaRuntimes
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamCommon
@@ -53,6 +54,11 @@ class DeployServerlessApplicationAction : DumbAwareAction(
         if (templateFile == null) {
             Exception(message("serverless.application.deploy.toast.template_file_failure"))
                     .notifyError(message("aws.notification.title"), project)
+            return
+        }
+
+        validateTemplateFile(project, templateFile)?.let {
+            notifyError(content = it, project = project)
             return
         }
 
@@ -137,4 +143,6 @@ class DeployServerlessApplicationAction : DumbAwareAction(
             }
         }
     }
+
+    private fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? = project.validateSamTemplateLambdaRuntimes(templateFile)
 }

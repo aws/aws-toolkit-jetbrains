@@ -9,7 +9,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import org.jetbrains.yaml.YAMLFileType
 import org.jetbrains.yaml.YAMLLanguage
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate
+import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.validOrNull
+import software.aws.toolkits.resources.message
 import java.io.File
 
 interface CloudFormationTemplate {
@@ -115,3 +119,25 @@ fun List<Parameter>.mergeRemoteParameters(remoteParameters: List<software.amazon
         }
         mutableParameter
     }.toList()
+
+/**
+ * Validate whether the Lambda function runtimes in the specified template are supported to build before deployment to AWS.
+ *
+ * @param virtualFile SAM template file
+ * @return null if they are supported, or an error message otherwise.
+ */
+fun Project.validateSamTemplateLambdaRuntimes(virtualFile: VirtualFile): String? {
+    val path = virtualFile.path
+    return CloudFormationTemplateIndex
+            .listFunctions(this, virtualFile)
+            .mapNotNull { indexedFunction ->
+                val runtime = Runtime.fromValue(indexedFunction.runtime()).validOrNull ?: return@mapNotNull indexedFunction.runtime()?.let {
+                    message("serverless.application.deploy.error.invalid_runtime", it, path)
+                } ?: message("serverless.application.deploy.error.empty_runtime", path)
+
+                val runtimeGroup = runtime.runtimeGroup ?: return@mapNotNull message("serverless.application.deploy.error.invalid_runtime_group", runtime.toString(), path)
+
+                return@mapNotNull if (runtimeGroup.supportsSamBuild()) null
+                else message("serverless.application.deploy.error.unsupported_runtime_group", runtime.toString(), path)
+            }.firstOrNull()
+}
