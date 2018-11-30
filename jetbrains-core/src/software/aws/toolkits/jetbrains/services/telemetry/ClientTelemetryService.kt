@@ -1,10 +1,17 @@
+// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.Disposable
 import software.amazon.awssdk.services.toolkittelemetry.ToolkitTelemetryClient
-import software.aws.toolkits.core.telemetry.*
+import software.aws.toolkits.core.telemetry.MetricUnit
+import software.aws.toolkits.core.telemetry.MetricsPublisher
+import software.aws.toolkits.core.telemetry.NoOpMetricsPublisher
+import software.aws.toolkits.core.telemetry.BatchingMetricsPublisher
+import software.aws.toolkits.core.telemetry.ClientTelemetryPublisher
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -14,8 +21,7 @@ import java.time.Instant
 
 interface ClientTelemetryService : Disposable
 
-class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetryService
-{
+class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetryService {
     private lateinit var startupTime: Instant
     private val publisher: MetricsPublisher
 
@@ -42,9 +48,6 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
 
         publisher.newMetric("ToolkitStart").use {
             startupTime = it.createTime
-            // TODO: This is a workaround due the the backend dropping events with no datums.
-            //       Remove once the backend is fixed.
-            it.addMetricEntry("placeholder", 0.0, MetricUnit.COUNT)
             publisher.publishMetric(it)
         }
     }
