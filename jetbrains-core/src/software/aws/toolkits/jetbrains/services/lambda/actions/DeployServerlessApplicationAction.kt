@@ -17,6 +17,7 @@ import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.stack.openStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateLambdaRuntimes
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
@@ -85,6 +86,7 @@ class DeployServerlessApplicationAction : DumbAwareAction(
         if (!deployDialog.isOK) return
 
         val cfnClient = project.awsClient<CloudFormationClient>()
+        openStack(project, stackName)
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
                 cfnClient.executeChangeSetAndWait(stackName, deployDialog.changeSetName)
