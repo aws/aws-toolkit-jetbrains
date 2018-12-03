@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications.Bus.notify
@@ -17,26 +18,26 @@ import software.aws.toolkits.resources.message
 const val GROUP_DISPLAY_ID = "AWS Toolkit"
 
 fun Exception.notifyError(title: String = "", project: Project? = null) =
-        notify(
-                Notification(
-                        GROUP_DISPLAY_ID,
-                        title,
-                        this.message ?: "${this::class.java.name}${this.stackTrace?.joinToString("\n", prefix = "\n")}",
-                        NotificationType.ERROR
-                ), project
-        )
+    notify(
+        Notification(
+            GROUP_DISPLAY_ID,
+            title,
+            this.message ?: "${this::class.java.name}${this.stackTrace?.joinToString("\n", prefix = "\n")}",
+            NotificationType.ERROR
+        ), project
+    )
 
 fun notifyInfo(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null) =
-        notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.INFORMATION, listener), project)
+    notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.INFORMATION, listener), project)
 
 fun notifyWarn(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null) =
     notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.WARNING, listener), project)
 
 fun notifyError(title: String, content: String = "", project: Project? = null, action: AnAction) =
-        notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.ERROR).addAction(action), project)
+    notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.ERROR).addAction(action), project)
 
 fun notifyError(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null) =
-        notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.ERROR, listener), project)
+    notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.ERROR, listener), project)
 
 /**
  * Notify error that AWS credentials are not configured.
@@ -78,4 +79,14 @@ fun <T> tryNotify(message: String, block: () -> T): T? = try {
 } catch (e: Exception) {
     e.notifyError(message)
     null
+}
+
+/**
+ * Creates a Notification Action that will expire a notification after performing some AnAction
+ */
+fun createNotificationExpiringAction(action: AnAction): NotificationAction = NotificationAction.create(
+    action.templatePresentation.text
+) { actionEvent, notification ->
+    action.actionPerformed(actionEvent)
+    notification.expire()
 }
