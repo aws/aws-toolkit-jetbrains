@@ -8,8 +8,12 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationNamesInfo
+import com.intellij.openapi.components.ServiceManager
 import software.amazon.awssdk.services.toolkittelemetry.ToolkitTelemetryClient
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
+import software.aws.toolkits.core.ToolkitClientManager
+import software.aws.toolkits.core.region.ToolkitRegionProvider
+import software.aws.toolkits.core.telemetry.AWSCognitoCredentialsProvider
 import software.aws.toolkits.core.telemetry.BatchingMetricsPublisher
 import software.aws.toolkits.core.telemetry.ClientTelemetryPublisher
 import software.aws.toolkits.core.telemetry.MetricsPublisher
@@ -45,6 +49,11 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
                             .endpointOverride(URI.create("https://client-telemetry.us-east-1.amazonaws.com"))
                             // TODO: Determine why this client is not picked up by default.
                             .httpClient(sdkClient.sdkHttpClient)
+                            .credentialsProvider(AWSCognitoCredentialsProvider(
+                                    "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
+                                    ServiceManager.getService(ToolkitClientManager::class.java),
+                                    ServiceManager.getService(ToolkitRegionProvider::class.java)
+                            ))
                             .build()
             ))
         } else {
