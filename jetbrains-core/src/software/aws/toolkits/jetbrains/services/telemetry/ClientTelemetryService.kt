@@ -42,7 +42,7 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
                     ToolkitTelemetryClient
                             .builder()
                             // TODO: This is the beta endpoint. Replace with the production endpoint before release.
-                            .endpointOverride(URI.create("https://7zftft3lj2.execute-api.us-east-1.amazonaws.com/Beta"))
+                            .endpointOverride(URI.create("https://1ek5zo40ci.execute-api.us-east-1.amazonaws.com/Stage/metrics"))
                             // TODO: Determine why this client is not picked up by default.
                             .httpClient(sdkClient.sdkHttpClient)
                             .build()
@@ -53,7 +53,9 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
 
         publisher.newMetric("ToolkitStart").use {
             startupTime = it.createTime
-            it.addMetricEntry("placeholder") {
+            // Metadata must be attached to a metric entry. There are not metric data points that we need to log for
+            // this event, so we log a placeholder entry with the relevant metadata.
+            it.addMetricEntry("metadata") {
                 value(0.0)
                 unit(MetricUnit.COUNT)
                 // TODO
