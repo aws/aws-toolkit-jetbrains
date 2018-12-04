@@ -30,6 +30,18 @@ fun Exception.notifyError(title: String = "", project: Project? = null) =
 fun notifyInfo(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null) =
     notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.INFORMATION, listener), project)
 
+fun notifyWarn(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
+    val notification = Notification(GROUP_DISPLAY_ID, title, content, NotificationType.WARNING)
+
+    if (notificationActions != null) {
+        notificationActions.forEach {
+            notification.addAction(it)
+        }
+    }
+
+    notify(notification, project)
+}
+
 fun notifyWarn(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null) =
     notify(Notification(GROUP_DISPLAY_ID, title, content, NotificationType.WARNING, listener), project)
 
