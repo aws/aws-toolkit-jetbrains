@@ -33,10 +33,8 @@ fun notifyInfo(title: String, content: String = "", project: Project? = null, li
 fun notifyWarn(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
     val notification = Notification(GROUP_DISPLAY_ID, title, content, NotificationType.WARNING)
 
-    if (notificationActions != null) {
-        notificationActions.forEach {
-            notification.addAction(it)
-        }
+    notificationActions.forEach {
+        notification.addAction(it)
     }
 
     notify(notification, project)
