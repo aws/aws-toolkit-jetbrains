@@ -51,7 +51,6 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient, regionProvider: Too
                     ApplicationInfo.getInstance().fullVersion,
                     ToolkitTelemetryClient
                             .builder()
-                            // TODO: This is the beta endpoint. Replace with the production endpoint before release.
                             .endpointOverride(URI.create("https://client-telemetry.us-east-1.amazonaws.com"))
                             // TODO: Determine why this client is not picked up by default.
                             .httpClient(sdkClient.sdkHttpClient)
