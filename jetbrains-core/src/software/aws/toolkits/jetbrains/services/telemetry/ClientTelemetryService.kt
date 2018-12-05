@@ -9,6 +9,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.project.DefaultProjectFactory
 import software.amazon.awssdk.services.toolkittelemetry.ToolkitTelemetryClient
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.core.ToolkitClientManager
@@ -28,12 +29,17 @@ import java.time.Instant
 
 interface ClientTelemetryService : Disposable
 
-class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetryService {
+class DefaultClientTelemetryService(sdkClient: AwsSdkClient, regionProvider: ToolkitRegionProvider) : ClientTelemetryService {
     private lateinit var startupTime: Instant
     private val publisher: MetricsPublisher
 
     init {
         Disposer.register(ApplicationManager.getApplication(), sdkClient)
+
+        val clientManager = ServiceManager.getService(
+                DefaultProjectFactory.getInstance().defaultProject,
+                ToolkitClientManager::class.java
+        )
 
         val settings = AwsSettings.getInstance()
         publisher = if (settings.isTelemetryEnabled) {
@@ -51,8 +57,8 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient) : ClientTelemetrySe
                             .httpClient(sdkClient.sdkHttpClient)
                             .credentialsProvider(AWSCognitoCredentialsProvider(
                                     "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
-                                    ServiceManager.getService(ToolkitClientManager::class.java),
-                                    ServiceManager.getService(ToolkitRegionProvider::class.java)
+                                    clientManager,
+                                    regionProvider
                             ))
                             .build()
             ))
