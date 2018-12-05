@@ -76,8 +76,6 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient, regionProvider: Too
                 // val isFirstRun: boolean = ...
                 // metadata("isFirstRun", isFirstRun.toString())
             }
-
-            publisher.publishMetric(it)
         }
     }
 
@@ -88,8 +86,6 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient, regionProvider: Too
                     value(Duration.between(startupTime, it.createTime).toMillis().toDouble())
                     unit(MetricUnit.MILLISECONDS)
                 }
-
-                publisher.publishMetric(it)
             }
         } finally {
             publisher.shutdown()
