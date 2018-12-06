@@ -18,6 +18,7 @@ import software.aws.toolkits.core.telemetry.AWSCognitoCredentialsProvider
 import software.aws.toolkits.core.telemetry.BatchingMetricsPublisher
 import software.aws.toolkits.core.telemetry.ClientTelemetryPublisher
 import software.aws.toolkits.core.telemetry.MetricsPublisher
+import software.aws.toolkits.core.telemetry.Metric
 import software.aws.toolkits.core.telemetry.MetricUnit
 import software.aws.toolkits.core.telemetry.NoOpMetricsPublisher
 import software.aws.toolkits.jetbrains.AwsToolkit
@@ -27,23 +28,55 @@ import java.net.URI
 import java.time.Duration
 import java.time.Instant
 
-interface ClientTelemetryService : Disposable
+interface ClientTelemetryService : Disposable {
+    fun recordMetric(metricNamespace: String): Metric
+}
 
-class DefaultClientTelemetryService(sdkClient: AwsSdkClient, regionProvider: ToolkitRegionProvider) : ClientTelemetryService {
+sealed class DefaultClientTelemetryService(
+    private val sdkClient: AwsSdkClient,
+    private val regionProvider: ToolkitRegionProvider
+) : ClientTelemetryService {
     private lateinit var startupTime: Instant
-    private val publisher: MetricsPublisher
+    private var publisher: MetricsPublisher = NoOpMetricsPublisher()
 
     init {
         Disposer.register(ApplicationManager.getApplication(), sdkClient)
 
-        val clientManager = ServiceManager.getService(
+        recordMetric("ToolkitStart").use {
+            startupTime = it.createTime
+            // Metadata must be attached to a metric entry. There are no metric data points that we need to log for
+            // this event, so we log a placeholder entry with the relevant metadata.
+            it.addMetricEntry("metadata") {
+                value(0.0)
+                unit(MetricUnit.COUNT)
+                // TODO
+                // val isFirstRun: boolean = ...
+                // metadata("isFirstRun", isFirstRun.toString())
+            }
+        }
+    }
+
+    @Synchronized
+    override fun recordMetric(metricNamespace: String): Metric {
+        val settings = AwsSettings.getInstance()
+        // if telemetry changed from disabled to enabled
+        if (settings.isTelemetryEnabled && publisher is NoOpMetricsPublisher) {
+            try {
+                publisher.shutdown()
+            } finally {
+                publisher = NoOpMetricsPublisher()
+            }
+        }
+        // if telemetry changed from enabled to disabled
+        if (!settings.isTelemetryEnabled && publisher !is NoOpMetricsPublisher) {
+            val clientManager = ServiceManager.getService(
                 DefaultProjectFactory.getInstance().defaultProject,
                 ToolkitClientManager::class.java
-        )
+            )
 
-        val settings = AwsSettings.getInstance()
-        publisher = if (settings.isTelemetryEnabled) {
-            BatchingMetricsPublisher(ClientTelemetryPublisher(
+            // Don't shutdown the previous publisher, as it would publish telemetry recorded this session before the
+            // user opted out.
+            publisher = BatchingMetricsPublisher(ClientTelemetryPublisher(
                     AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
                     AwsToolkit.PLUGIN_VERSION,
                     settings.clientId.toString(),
@@ -61,27 +94,14 @@ class DefaultClientTelemetryService(sdkClient: AwsSdkClient, regionProvider: Too
                             ))
                             .build()
             ))
-        } else {
-            NoOpMetricsPublisher()
         }
 
-        publisher.newMetric("ToolkitStart").use {
-            startupTime = it.createTime
-            // Metadata must be attached to a metric entry. There are not metric data points that we need to log for
-            // this event, so we log a placeholder entry with the relevant metadata.
-            it.addMetricEntry("metadata") {
-                value(0.0)
-                unit(MetricUnit.COUNT)
-                // TODO
-                // val isFirstRun: boolean = ...
-                // metadata("isFirstRun", isFirstRun.toString())
-            }
-        }
+        return publisher.newMetric(metricNamespace)
     }
 
     override fun dispose() {
         try {
-            publisher.newMetric("ToolkitEnd").use {
+            recordMetric("ToolkitEnd").use {
                 it.addMetricEntry("duration") {
                     value(Duration.between(startupTime, it.createTime).toMillis().toDouble())
                     unit(MetricUnit.MILLISECONDS)
