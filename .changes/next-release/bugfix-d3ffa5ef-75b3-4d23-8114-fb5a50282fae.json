@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Patch the environmental variables that handed over to the SAM CLI"
+}
