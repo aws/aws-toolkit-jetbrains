@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.NEW
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CODE
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CONFIGURATION
+import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -76,7 +77,7 @@ class EditFunctionDialog(
     private val role: IamRole? = null
 ) : DialogWrapper(project) {
 
-    constructor(project: Project, lambdaFunction: LambdaFunction, mode: EditFunctionMode = EditFunctionMode.UPDATE_CONFIGURATION) :
+    constructor(project: Project, lambdaFunction: LambdaFunction, mode: EditFunctionMode = UPDATE_CONFIGURATION) :
             this(
                 project = project,
                 mode = mode,
@@ -98,8 +99,8 @@ class EditFunctionDialog(
 
     private val action: OkAction = when (mode) {
         NEW -> CreateNewLambdaOkAction()
-        EditFunctionMode.UPDATE_CONFIGURATION -> UpdateFunctionOkAction({ validator.validateConfigurationSettings(view) }, ::updateConfiguration)
-        EditFunctionMode.UPDATE_CODE -> UpdateFunctionOkAction({ validator.validateCodeSettings(project, view) }, ::upsertLambdaCode)
+        UPDATE_CONFIGURATION -> UpdateFunctionOkAction({ validator.validateConfigurationSettings(view) }, ::updateConfiguration)
+        UPDATE_CODE -> UpdateFunctionOkAction({ validator.validateCodeSettings(project, view) }, ::upsertLambdaCode)
     }
 
     init {
@@ -146,13 +147,15 @@ class EditFunctionDialog(
         if (mode == UPDATE_CODE) {
             UIUtil.uiChildren(view.configurationSettings).filter { it !== view.handler && it !== view.handlerLabel }.forEach { it.isVisible = false }
         }
-        view.runtime.populateValues(default = runtime) { Runtime.knownValues() }
+
+        view.setRuntimes(Runtime.knownValues())
+        view.runtime.selectedItem = runtime?.validOrNull
 
         view.xrayEnabled.isSelected = xrayEnabled
 
         val regionProvider = AwsRegionProvider.getInstance()
         val settings = ProjectAccountSettingsManager.getInstance(project)
-        view.setXrayControlVisibility(regionProvider.isServiceSupported(settings.activeRegion, "xray"))
+        view.setXrayControlVisibility(mode != UPDATE_CODE && regionProvider.isServiceSupported(settings.activeRegion, "xray"))
 
         view.iamRole.populateValues(default = role) {
             iamClient.listRolesFilter { it.assumeRolePolicyDocument().contains(LAMBDA_PRINCIPAL) }

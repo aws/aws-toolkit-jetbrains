@@ -17,7 +17,9 @@ import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.stack.openStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
+import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateLambdaRuntimes
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamCommon
@@ -56,6 +58,11 @@ class DeployServerlessApplicationAction : DumbAwareAction(
             return
         }
 
+        validateTemplateFile(project, templateFile)?.let {
+            notifyError(content = it, project = project)
+            return
+        }
+
         // Force save before we deploy
         FileDocumentManager.getInstance().saveAllDocuments()
 
@@ -79,6 +86,7 @@ class DeployServerlessApplicationAction : DumbAwareAction(
         if (!deployDialog.isOK) return
 
         val cfnClient = project.awsClient<CloudFormationClient>()
+        openStack(project, stackName)
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
                 cfnClient.executeChangeSetAndWait(stackName, deployDialog.changeSetName)
@@ -137,4 +145,6 @@ class DeployServerlessApplicationAction : DumbAwareAction(
             }
         }
     }
+
+    private fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? = project.validateSamTemplateLambdaRuntimes(templateFile)
 }
