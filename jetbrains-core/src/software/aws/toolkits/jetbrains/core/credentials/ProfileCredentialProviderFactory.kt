@@ -10,13 +10,13 @@ import icons.AwsIcons
 import org.jetbrains.annotations.CalledInAwt
 import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderFactory
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProviderFactory
-import software.aws.toolkits.jetbrains.core.AwsSdkClient
+import software.aws.toolkits.jetbrains.core.DefaultAwsSdkClient
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
 
 class ProfileCredentialProviderFactory : CredentialProviderFactory {
     override fun createToolkitCredentialProviderFactory(): ToolkitCredentialsProviderFactory = ProfileToolkitCredentialsProviderFactory(
-        AwsSdkClient.getInstance().sdkHttpClient,
+        DefaultAwsSdkClient.getInstance().sdkHttpClient,
         AwsRegionProvider.getInstance(),
         { profileName, mfaDevice ->
             invokeAndWaitIfNeed(ModalityState.any()) {

@@ -3,39 +3,30 @@
 
 package software.aws.toolkits.jetbrains.settings
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.util.messages.Topic
+import software.aws.toolkits.jetbrains.services.telemetry.MessageBusService
 import java.util.prefs.Preferences
 import java.util.UUID
 
 @State(name = "aws", storages = [Storage("aws.xml")])
-class AwsSettings : PersistentStateComponent<AwsConfiguration> {
+class AwsSettings(messageBusService: MessageBusService) : PersistentStateComponent<AwsConfiguration> {
     private val preferences = Preferences.userRoot().node(this.javaClass.canonicalName)
-    private val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(TELEMETRY_ENABLED_CHANGED)
     private var state = AwsConfiguration()
-
-    init {
-        publisher.notify(isTelemetryEnabled)
-    }
+    private val publisher = messageBusService.messageBus.syncPublisher(messageBusService.telemetryEnabledTopic)
 
     override fun getState(): AwsConfiguration = state
 
     override fun loadState(state: AwsConfiguration) {
-        notifyTelemetryEnabledChanged {
-            this.state = state
-        }
+        this.state = state
     }
 
     var isTelemetryEnabled: Boolean
         get() = state.isTelemetryEnabled ?: true
         set(value) {
-            notifyTelemetryEnabledChanged {
-                state.isTelemetryEnabled = value
-            }
+            state.isTelemetryEnabled = value
         }
 
     var promptedForTelemetry: Boolean
@@ -49,7 +40,7 @@ class AwsSettings : PersistentStateComponent<AwsConfiguration> {
             preferences.put(CLIENT_ID_KEY, it.toString())
         }
 
-    private fun notifyTelemetryEnabledChanged(action: () -> Unit) {
+    fun notifyTelemetryEnabledChanged(action: () -> Unit) {
         val oldValue: Boolean = isTelemetryEnabled
 
         try {
@@ -67,11 +58,6 @@ class AwsSettings : PersistentStateComponent<AwsConfiguration> {
         fun getInstance(): AwsSettings = ServiceManager.getService(AwsSettings::class.java)
 
         const val CLIENT_ID_KEY = "CLIENT_ID"
-
-        val TELEMETRY_ENABLED_CHANGED: Topic<TelemetryEnabledChangedNotifier> = Topic.create(
-                "IS_TELEMETRY_ENABLED_CHANGED",
-                TelemetryEnabledChangedNotifier::class.java
-        )
     }
 }
 
@@ -79,7 +65,3 @@ data class AwsConfiguration(
     var isTelemetryEnabled: Boolean? = null,
     var promptedForTelemetry: Boolean? = null
 )
-
-interface TelemetryEnabledChangedNotifier {
-    fun notify(isTelemetryEnabled: Boolean)
-}

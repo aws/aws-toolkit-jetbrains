@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.core.telemetry
 
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.core.utils.getLogger
 import java.time.Instant
 
@@ -17,7 +17,7 @@ interface MetricEvent {
 
         fun createTime(createTime: Instant): Builder
 
-        fun datum(buildDatum: Datum.Builder.() -> kotlin.Unit): Builder
+        fun datum(buildDatum: Datum.Builder.() -> Unit): Builder
 
         fun build(): MetricEvent
     }
@@ -25,7 +25,7 @@ interface MetricEvent {
     interface Datum {
         val name: String
         val value: Double
-        val unit: Unit
+        val unit: MetricUnit
         val metadata: Map<String, String>
 
         interface Builder {
@@ -33,7 +33,7 @@ interface MetricEvent {
 
             fun value(value: Double): Builder
 
-            fun unit(unit: Unit): Builder
+            fun unit(unit: MetricUnit): Builder
 
             fun metadata(key: String, value: String): Builder
 
@@ -49,7 +49,7 @@ class DefaultMetricEvent(
 ) : MetricEvent {
     class BuilderImpl : MetricEvent.Builder {
         private var namespace: String? = null
-        private var createTime: Instant? = null
+        private var createTime: Instant = Instant.now()
         private var data: MutableCollection<MetricEvent.Datum> = mutableListOf()
 
         override fun namespace(namespace: String): MetricEvent.Builder {
@@ -62,7 +62,7 @@ class DefaultMetricEvent(
             return this
         }
 
-        override fun datum(buildDatum: MetricEvent.Datum.Builder.() -> kotlin.Unit): MetricEvent.Builder {
+        override fun datum(buildDatum: MetricEvent.Datum.Builder.() -> Unit): MetricEvent.Builder {
             val builder = DefaultDatum.builder()
             buildDatum(builder)
             data.add(builder.build())
@@ -70,14 +70,12 @@ class DefaultMetricEvent(
         }
 
         override fun build(): MetricEvent {
-            if (this.namespace == null) {
-                LOG.error("Cannot build MetricEvent.Datum without a namespace", Throwable())
-            }
-            if (this.createTime == null) {
-                LOG.error("Cannot build MetricEvent.Datum without a createTime", Throwable())
-            }
+            val namespace: String = this.namespace
+                    ?: throw IllegalArgumentException("Cannot build MetricEvent.Datum without a namespace").also {
+                        LOG.error(it.message, it)
+                    }
 
-            return DefaultMetricEvent(namespace!!, createTime!!, data)
+            return DefaultMetricEvent(namespace, createTime, data)
         }
     }
 
@@ -90,13 +88,13 @@ class DefaultMetricEvent(
     class DefaultDatum(
         override val name: String,
         override val value: Double,
-        override val unit: Unit,
+        override val unit: MetricUnit,
         override val metadata: Map<String, String>
     ) : MetricEvent.Datum {
         class BuilderImpl : MetricEvent.Datum.Builder {
             private var name: String? = null
-            private var value: Double? = null
-            private var unit: Unit? = null
+            private var value: Double = 0.0
+            private var unit: MetricUnit = MetricUnit.NONE
             private val metadata: MutableMap<String, String> = HashMap()
 
             override fun name(name: String): MetricEvent.Datum.Builder {
@@ -109,7 +107,7 @@ class DefaultMetricEvent(
                 return this
             }
 
-            override fun unit(unit: Unit): MetricEvent.Datum.Builder {
+            override fun unit(unit: MetricUnit): MetricEvent.Datum.Builder {
                 this.unit = unit
                 return this
             }
@@ -130,20 +128,15 @@ class DefaultMetricEvent(
             }
 
             override fun build(): MetricEvent.Datum {
-                if (this.name == null) {
-                    LOG.error("Cannot build MetricEvent.Datum without a name", Throwable())
-                }
-                if (this.value == null) {
-                    LOG.error("Cannot build MetricEvent.Datum without a value", Throwable())
-                }
-                if (this.unit == null) {
-                    LOG.error("Cannot build MetricEvent.Datum without a unit", Throwable())
-                }
+                val name: String = this.name
+                    ?: throw IllegalArgumentException("Cannot build MetricEvent.Datum without a name").also {
+                        LOG.error(it.message, it)
+                    }
 
                 return DefaultDatum(
-                        this.name!!,
-                        this.value!!,
-                        this.unit!!,
+                        name,
+                        this.value,
+                        this.unit,
                         this.metadata
                 )
             }

@@ -5,10 +5,10 @@ package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.DefaultProjectFactory
+import com.intellij.openapi.util.SystemInfo
 import software.amazon.awssdk.services.toolkittelemetry.ToolkitTelemetryClient
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.amazon.awssdk.services.toolkittelemetry.model.Unit
@@ -24,7 +24,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.settings.TelemetryEnabledChangedNotifier
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
@@ -34,52 +33,58 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryService : Disposable {
-    fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit)
+    fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent
 }
 
 class DefaultTelemetryService(
     sdkClient: AwsSdkClient,
     regionProvider: ToolkitRegionProvider,
+    messageBusService: MessageBusService,
     publishInterval: Long = DEFAULT_PUBLISH_INTERVAL,
     publishIntervalUnit: TimeUnit = DEFAULT_PUBLISH_INTERVAL_UNIT,
-    private val executor: ScheduledExecutorService = createDefaultExecutor()
+    private val executor: ScheduledExecutorService = createDefaultExecutor(),
+    batcher: TelemetryBatcher? = null
 ) : TelemetryService {
     private val isDisposing: AtomicBoolean = AtomicBoolean(false)
-    private val batcher: TelemetryBatcher
     private val startTime: Instant
+    private val _batcher: TelemetryBatcher
 
     init {
-        val settings = AwsSettings.getInstance()
-        val clientManager = ServiceManager.getService(
-                DefaultProjectFactory.getInstance().defaultProject,
-                ToolkitClientManager::class.java
-        )
-        val client: ToolkitTelemetryClient = ToolkitTelemetryClient
-                .builder()
-                .endpointOverride(URI.create("https://client-telemetry.us-east-1.amazonaws.com"))
-                // TODO: Determine why this client is not picked up by default.
-                .httpClient(sdkClient.sdkHttpClient)
-                .credentialsProvider(AWSCognitoCredentialsProvider(
-                        "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
-                        clientManager,
-                        regionProvider
-                ))
-                .build()
-        val publisher = DefaultTelemetryPublisher(
-                AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
-                AwsToolkit.PLUGIN_VERSION,
-                settings.clientId.toString(),
-                ApplicationNamesInfo.getInstance().fullProductNameWithEdition,
-                ApplicationInfo.getInstance().fullVersion,
-                client
-        )
-        batcher = DefaultTelemetryBatcher(publisher)
+        _batcher = batcher ?: {
+            val settings = AwsSettings.getInstance()
+            val clientManager = ServiceManager.getService(
+                    DefaultProjectFactory.getInstance().defaultProject,
+                    ToolkitClientManager::class.java
+            )
+            val client: ToolkitTelemetryClient = ToolkitTelemetryClient
+                    .builder()
+                    .endpointOverride(URI.create("https://client-telemetry.us-east-1.amazonaws.com"))
+                    // TODO: Determine why this client is not picked up by default.
+                    .httpClient(sdkClient.sdkHttpClient)
+                    .credentialsProvider(AWSCognitoCredentialsProvider(
+                            "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
+                            clientManager,
+                            regionProvider
+                    ))
+                    .build()
+            val publisher = DefaultTelemetryPublisher(
+                    AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
+                    AwsToolkit.PLUGIN_VERSION,
+                    settings.clientId.toString(),
+                    ApplicationNamesInfo.getInstance().fullProductNameWithEdition,
+                    ApplicationInfo.getInstance().fullVersion,
+                    client,
+                    SystemInfo.OS_NAME,
+                    SystemInfo.OS_VERSION
+            )
+    DefaultTelemetryBatcher(publisher)
+        }()
 
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
-                AwsSettings.TELEMETRY_ENABLED_CHANGED,
+        messageBusService.messageBus.connect().subscribe(
+                messageBusService.telemetryEnabledTopic,
                 object : TelemetryEnabledChangedNotifier {
                     override fun notify(isTelemetryEnabled: Boolean) {
-                        batcher.onTelemetryEnabledChanged(isTelemetryEnabled)
+                        _batcher.onTelemetryEnabledChanged(isTelemetryEnabled)
                     }
                 }
         )
@@ -91,15 +96,10 @@ class DefaultTelemetryService(
                 publishIntervalUnit
         )
 
-        startTime = Instant.now()
         record {
             namespace("ToolkitStart")
-            createTime(startTime)
-            datum {
-                name("metadata")
-                value(0.0)
-                unit(Unit.COUNT)
-            }
+        }.also {
+            startTime = it.createTime
         }
     }
 
@@ -121,13 +121,15 @@ class DefaultTelemetryService(
             }
         }
 
-        batcher.shutdown()
+        _batcher.shutdown()
     }
 
-    override fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit) {
+    override fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
         val builder = DefaultMetricEvent.builder()
         buildEvent(builder)
-        batcher.enqueue(builder.build())
+        val event = builder.build()
+        _batcher.enqueue(event)
+        return event
     }
 
     private inner class PublishActivity : Runnable {
@@ -136,7 +138,7 @@ class DefaultTelemetryService(
                 return
             }
             try {
-                batcher.flush(true)
+                _batcher.flush(true)
             } catch (e: Exception) {
                 LOG.warn("Unexpected exception while publishing telemetry", e)
             }

@@ -11,7 +11,7 @@ import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.ToolkitClientManager
 import kotlin.reflect.KClass
 
-class MockClientManager(project: Project) : AwsClientManager(project, AwsSdkClient.getInstance()) {
+class MockClientManager(project: Project) : AwsClientManager(project, DefaultAwsSdkClient.getInstance()) {
     private val mockClients = mutableMapOf<KClass<out SdkClient>, SdkClient>()
 
     @Suppress("UNCHECKED_CAST")

@@ -17,7 +17,6 @@ import org.junit.Test
 import org.mockito.ArgumentMatchers.anyCollection
 import org.mockito.stubbing.Answer
 import java.lang.RuntimeException
-import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -41,7 +40,6 @@ class TelemetryBatcherTest {
 
         batcher.enqueue(DefaultMetricEvent.builder()
                 .namespace(EVENT_NAME)
-                .createTime(Instant.now())
                 .build()
         )
         batcher.flush(false)
@@ -146,7 +144,6 @@ class TelemetryBatcherTest {
 
     private fun createEmptyMetricEvent(): MetricEvent = DefaultMetricEvent.builder()
         .namespace(EVENT_NAME)
-        .createTime(Instant.now())
         .build()
 
     private fun waitForPublish(publishCountDown: CountDownLatch) {

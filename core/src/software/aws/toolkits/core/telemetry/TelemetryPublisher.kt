@@ -20,13 +20,10 @@ class DefaultTelemetryPublisher(
     private val clientId: String,
     private val parentProduct: String,
     private val parentProductVersion: String,
-    private val client: ToolkitTelemetryClient
+    private val client: ToolkitTelemetryClient,
+    private val os: String,
+    private val osVersion: String
 ) : TelemetryPublisher {
-    // OS and OS version are IDE-independent, so we can determine them here rather than
-    // passing them to the constructor.
-    private val os: String = System.getProperty("os.name")
-    private val osVersion: String = System.getProperty("os.version")
-
     override fun publish(metricEvents: Collection<MetricEvent>): Boolean = try {
             client.postMetrics {
                 it.awsProduct(productName)
