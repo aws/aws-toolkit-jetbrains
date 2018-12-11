@@ -238,7 +238,7 @@ class JavaLambdaPackagerTest {
         runAndVerifyExpectedEntries(module, mainClassFile, "com/example/UsefulUtils.class")
 
         runInEdt {
-            // Modify the file that was compiled to verify there no lock remains on it
+            // Modify the file that was compiled to verify there is no lock remaining
             fixture.renameElement(
                 mainClass.findMethodsByName("upperCase", false)[0],
                 "foo"
