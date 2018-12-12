@@ -14,6 +14,8 @@ import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.Test
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
+import software.aws.toolkits.jetbrains.settings.MockAwsSettings
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -23,25 +25,6 @@ class TelemetryServiceTest {
 
     @Test
     fun testInitialChangeEvent() {
-        val changeCaptor = argumentCaptor<Boolean>()
-        batcher.stub {
-            on(batcher.onTelemetryEnabledChanged(changeCaptor.capture()))
-                .doAnswer { }
-        }
-
-        DefaultTelemetryService(
-                messageBusService,
-                1,
-                TimeUnit.HOURS,
-                mock(),
-                batcher
-        )
-
-        assert(changeCaptor.allValues).hasSize(0)
-    }
-
-    @Test
-    fun testTriggeredChangeEvent() {
         val changeCountDown = CountDownLatch(1)
         val changeCaptor = argumentCaptor<Boolean>()
         batcher.stub {
@@ -53,6 +36,33 @@ class TelemetryServiceTest {
 
         DefaultTelemetryService(
                 messageBusService,
+                MockAwsSettings(true, true, UUID.randomUUID()),
+                1,
+                TimeUnit.HOURS,
+                mock(),
+                batcher
+        )
+
+        changeCountDown.await(5, TimeUnit.SECONDS)
+        verify(batcher).onTelemetryEnabledChanged(true)
+        assert(changeCaptor.allValues).hasSize(1)
+        assert(changeCaptor.firstValue).isEqualTo(true)
+    }
+
+    @Test
+    fun testTriggeredChangeEvent() {
+        val changeCountDown = CountDownLatch(2)
+        val changeCaptor = argumentCaptor<Boolean>()
+        batcher.stub {
+            on(batcher.onTelemetryEnabledChanged(changeCaptor.capture()))
+                .doAnswer {
+                    changeCountDown.countDown()
+                }
+        }
+
+        DefaultTelemetryService(
+                messageBusService,
+                MockAwsSettings(true, true, UUID.randomUUID()),
                 1,
                 TimeUnit.HOURS,
                 mock(),
@@ -62,11 +72,13 @@ class TelemetryServiceTest {
         val messageBus: MessageBus = messageBusService.messageBus
         val messageBusPublisher: TelemetryEnabledChangedNotifier =
                 messageBus.syncPublisher(messageBusService.telemetryEnabledTopic)
-        messageBusPublisher.notify(true)
+        messageBusPublisher.notify(false)
 
         changeCountDown.await(5, TimeUnit.SECONDS)
         verify(batcher).onTelemetryEnabledChanged(true)
-        assert(changeCaptor.allValues).hasSize(1)
+        verify(batcher).onTelemetryEnabledChanged(false)
+        assert(changeCaptor.allValues).hasSize(2)
         assert(changeCaptor.firstValue).isEqualTo(true)
+        assert(changeCaptor.secondValue).isEqualTo(false)
     }
 }

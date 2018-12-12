@@ -83,7 +83,8 @@ If you come across bugs with the toolkit or have feature requests, please raise 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.CredentialManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialManager"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.AwsSettings"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.AwsSettings"
+                            serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 

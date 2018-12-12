@@ -38,6 +38,7 @@ interface TelemetryService : Disposable {
 
 class DefaultTelemetryService(
     messageBusService: MessageBusService,
+    settings: AwsSettings,
     publishInterval: Long,
     publishIntervalUnit: TimeUnit,
     private val executor: ScheduledExecutorService,
@@ -49,16 +50,18 @@ class DefaultTelemetryService(
     constructor(
         sdkClient: AwsSdkClient,
         regionProvider: ToolkitRegionProvider,
-        messageBusService: MessageBusService
+        messageBusService: MessageBusService,
+        settings: AwsSettings
     ) : this(
             messageBusService,
+            settings,
             DEFAULT_PUBLISH_INTERVAL,
             DEFAULT_PUBLISH_INTERVAL_UNIT,
             createDefaultExecutor(),
             DefaultTelemetryBatcher(DefaultTelemetryPublisher(
                     AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
                     AwsToolkit.PLUGIN_VERSION,
-                    AwsSettings.getInstance().clientId.toString(),
+                    settings.clientId.toString(),
                     ApplicationNamesInfo.getInstance().fullProductNameWithEdition,
                     ApplicationInfo.getInstance().fullVersion,
                     ToolkitTelemetryClient
@@ -90,7 +93,7 @@ class DefaultTelemetryService(
                 }
         )
         messageBusService.messageBus.syncPublisher(messageBusService.telemetryEnabledTopic)
-                .notify(AwsSettings.getInstance().isTelemetryEnabled)
+                .notify(settings.isTelemetryEnabled)
 
         executor.scheduleWithFixedDelay(
                 PublishActivity(),
