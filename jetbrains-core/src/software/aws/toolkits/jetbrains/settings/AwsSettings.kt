@@ -14,6 +14,11 @@ interface AwsSettings {
     var isTelemetryEnabled: Boolean
     var promptedForTelemetry: Boolean
     val clientId: UUID
+
+    companion object {
+        @JvmStatic
+        fun getInstance(): AwsSettings = ServiceManager.getService(AwsSettings::class.java)
+    }
 }
 
 @State(name = "aws", storages = [Storage("aws.xml")])
@@ -45,9 +50,6 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
         }
 
     companion object {
-        @JvmStatic
-        fun getInstance(): AwsSettings = ServiceManager.getService(AwsSettings::class.java)
-
         const val CLIENT_ID_KEY = "CLIENT_ID"
     }
 }

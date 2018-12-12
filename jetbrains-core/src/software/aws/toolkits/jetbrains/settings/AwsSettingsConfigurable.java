@@ -92,7 +92,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     @Override
     public boolean isModified() {
-        AwsSettings awsSettings = DefaultAwsSettings.getInstance();
+        AwsSettings awsSettings = AwsSettings.getInstance();
         SamSettings samSettings = SamSettings.getInstance();
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
 
@@ -123,7 +123,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         // preserve user's null input if we autodetected the path
         samSettings.setSavedExecutablePath(getSamExecutablePath());
 
-        AwsSettings awsSettings = DefaultAwsSettings.getInstance();
+        AwsSettings awsSettings = AwsSettings.getInstance();
         Boolean oldSetting = awsSettings.isTelemetryEnabled();
         try {
             awsSettings.setTelemetryEnabled(enableTelemetry.isSelected());
@@ -145,7 +145,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     @Override
     public void reset() {
-        AwsSettings awsSettings = DefaultAwsSettings.getInstance();
+        AwsSettings awsSettings = AwsSettings.getInstance();
         SamSettings samSettings = SamSettings.getInstance();
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
         enableTelemetry.setSelected(awsSettings.isTelemetryEnabled());

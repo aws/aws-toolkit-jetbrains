@@ -34,6 +34,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryService : Disposable {
     fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent
+
+    companion object {
+        @JvmStatic
+        fun getInstance(): TelemetryService = ServiceManager.getService(TelemetryService::class.java)
+    }
 }
 
 class DefaultTelemetryService(
