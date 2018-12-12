@@ -24,8 +24,4 @@ class DefaultMessageBusService : MessageBusService {
         "TELEMETRY_ENABLED_TOPIC",
         TelemetryEnabledChangedNotifier::class.java
     )
-
-    init {
-        messageBus.syncPublisher(telemetryEnabledTopic).notify(true)
-    }
 }

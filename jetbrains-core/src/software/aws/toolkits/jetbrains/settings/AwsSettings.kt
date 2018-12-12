@@ -7,15 +7,13 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import software.aws.toolkits.jetbrains.services.telemetry.MessageBusService
 import java.util.prefs.Preferences
 import java.util.UUID
 
 @State(name = "aws", storages = [Storage("aws.xml")])
-class AwsSettings(messageBusService: MessageBusService) : PersistentStateComponent<AwsConfiguration> {
+class AwsSettings : PersistentStateComponent<AwsConfiguration> {
     private val preferences = Preferences.userRoot().node(this.javaClass.canonicalName)
     private var state = AwsConfiguration()
-    private val publisher = messageBusService.messageBus.syncPublisher(messageBusService.telemetryEnabledTopic)
 
     override fun getState(): AwsConfiguration = state
 
@@ -39,19 +37,6 @@ class AwsSettings(messageBusService: MessageBusService) : PersistentStateCompone
         @Synchronized get() = UUID.fromString(preferences.get(CLIENT_ID_KEY, UUID.randomUUID().toString())).also {
             preferences.put(CLIENT_ID_KEY, it.toString())
         }
-
-    fun notifyTelemetryEnabledChanged(action: () -> Unit) {
-        val oldValue: Boolean = isTelemetryEnabled
-
-        try {
-            action()
-        } finally {
-            val newValue: Boolean = isTelemetryEnabled
-            if (newValue != oldValue) {
-                publisher.notify(newValue)
-            }
-        }
-    }
 
     companion object {
         @JvmStatic

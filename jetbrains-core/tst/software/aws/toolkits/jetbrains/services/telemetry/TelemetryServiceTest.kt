@@ -30,8 +30,6 @@ class TelemetryServiceTest {
         }
 
         DefaultTelemetryService(
-                mock(),
-                mock(),
                 messageBusService,
                 1,
                 TimeUnit.HOURS,
@@ -54,8 +52,6 @@ class TelemetryServiceTest {
         }
 
         DefaultTelemetryService(
-                mock(),
-                mock(),
                 messageBusService,
                 1,
                 TimeUnit.HOURS,

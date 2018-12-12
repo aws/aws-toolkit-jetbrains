@@ -95,8 +95,7 @@ If you come across bugs with the toolkit or have feature requests, please raise 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsSettingsPanelInstaller"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
 
-        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.AwsSdkClient"
-                            serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsSdkClient"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.AwsSdkClient"/>
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.MessageBusService"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultMessageBusService"
                             testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockMessageBusService"/>

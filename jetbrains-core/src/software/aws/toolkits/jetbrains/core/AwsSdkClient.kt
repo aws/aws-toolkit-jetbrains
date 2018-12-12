@@ -13,16 +13,12 @@ import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 
-interface AwsSdkClient : Disposable {
-    val sdkHttpClient: SdkHttpClient
-}
-
-class DefaultAwsSdkClient : AwsSdkClient {
+class AwsSdkClient : Disposable {
     init {
         Disposer.register(ApplicationManager.getApplication(), this)
     }
 
-    override val sdkHttpClient: SdkHttpClient by lazy {
+    val sdkHttpClient: SdkHttpClient by lazy {
         ValidateCorrectThreadClient(ApacheHttpClient.builder().build())
     }
 
@@ -43,7 +39,7 @@ class DefaultAwsSdkClient : AwsSdkClient {
     }
 
     companion object {
-        private val LOG = Logger.getInstance(DefaultAwsSdkClient::class.java)
+        private val LOG = Logger.getInstance(AwsSdkClient::class.java)
 
         fun getInstance(): AwsSdkClient = ServiceManager.getService(AwsSdkClient::class.java)
     }

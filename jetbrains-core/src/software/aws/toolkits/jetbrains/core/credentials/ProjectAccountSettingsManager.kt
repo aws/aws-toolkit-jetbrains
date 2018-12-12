@@ -15,7 +15,7 @@ import software.aws.toolkits.core.credentials.ProfileToolkitCredentialsProviderF
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.DefaultAwsSdkClient
+import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.Companion.ACCOUNT_SETTINGS_CHANGED
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.MRUList
@@ -136,7 +136,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project) :
     override fun loadState(state: AccountState) {
         activeRegionInternal = regionProvider.lookupRegionById(state.activeRegion)
         state.activeProfile?.let { getCredentialProviderOrNull(it) }?.run {
-            if (this.isValid(DefaultAwsSdkClient.getInstance().sdkHttpClient)) {
+            if (this.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
                 activeProfileInternal = this
             } else {
                 val content = if (this.displayName.toLowerCase() == ProfileToolkitCredentialsProviderFactory.DEFAULT_PROFILE_DISPLAY_NAME.toLowerCase()) {
@@ -172,7 +172,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project) :
         // Prevent repeated checks when a provider is known to be invalid
         // TODO : When profile refreshing is supported, this will need to be revisited
         if (!knownInvalidProfiles.contains(toolkitCredentialsProvider.id)) {
-            if (toolkitCredentialsProvider.isValid(DefaultAwsSdkClient.getInstance().sdkHttpClient)) {
+            if (toolkitCredentialsProvider.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
                 return true
             }
 

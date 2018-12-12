@@ -222,7 +222,7 @@ private class ChangeCredentialsAction(val credentialsProvider: ToolkitCredential
 
     override fun setSelected(e: AnActionEvent, selected: Boolean) {
         if (selected) {
-            if (!credentialsProvider.isValid(DefaultAwsSdkClient.getInstance().sdkHttpClient)) {
+            if (!credentialsProvider.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
                 notifyWarn(
                     title = message("credentials.invalid.title"),
                     content = message("credentials.invalid.notification", credentialsProvider.displayName),

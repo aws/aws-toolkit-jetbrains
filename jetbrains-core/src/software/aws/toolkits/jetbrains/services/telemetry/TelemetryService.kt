@@ -37,57 +37,60 @@ interface TelemetryService : Disposable {
 }
 
 class DefaultTelemetryService(
-    sdkClient: AwsSdkClient,
-    regionProvider: ToolkitRegionProvider,
     messageBusService: MessageBusService,
-    publishInterval: Long = DEFAULT_PUBLISH_INTERVAL,
-    publishIntervalUnit: TimeUnit = DEFAULT_PUBLISH_INTERVAL_UNIT,
-    private val executor: ScheduledExecutorService = createDefaultExecutor(),
-    batcher: TelemetryBatcher? = null
+    publishInterval: Long,
+    publishIntervalUnit: TimeUnit,
+    private val executor: ScheduledExecutorService,
+    private val batcher: TelemetryBatcher
 ) : TelemetryService {
     private val isDisposing: AtomicBoolean = AtomicBoolean(false)
     private val startTime: Instant
-    private val _batcher: TelemetryBatcher
 
-    init {
-        _batcher = batcher ?: {
-            val settings = AwsSettings.getInstance()
-            val clientManager = ServiceManager.getService(
-                    DefaultProjectFactory.getInstance().defaultProject,
-                    ToolkitClientManager::class.java
-            )
-            val client: ToolkitTelemetryClient = ToolkitTelemetryClient
-                    .builder()
-                    .endpointOverride(URI.create("https://client-telemetry.us-east-1.amazonaws.com"))
-                    // TODO: Determine why this client is not picked up by default.
-                    .httpClient(sdkClient.sdkHttpClient)
-                    .credentialsProvider(AWSCognitoCredentialsProvider(
-                            "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
-                            clientManager,
-                            regionProvider
-                    ))
-                    .build()
-            val publisher = DefaultTelemetryPublisher(
+    constructor(
+        sdkClient: AwsSdkClient,
+        regionProvider: ToolkitRegionProvider,
+        messageBusService: MessageBusService
+    ) : this(
+            messageBusService,
+            DEFAULT_PUBLISH_INTERVAL,
+            DEFAULT_PUBLISH_INTERVAL_UNIT,
+            createDefaultExecutor(),
+            DefaultTelemetryBatcher(DefaultTelemetryPublisher(
                     AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
                     AwsToolkit.PLUGIN_VERSION,
-                    settings.clientId.toString(),
+                    AwsSettings.getInstance().clientId.toString(),
                     ApplicationNamesInfo.getInstance().fullProductNameWithEdition,
                     ApplicationInfo.getInstance().fullVersion,
-                    client,
+                    ToolkitTelemetryClient
+                            .builder()
+                            .endpointOverride(URI.create("https://client-telemetry.us-east-1.amazonaws.com"))
+                            // TODO: Determine why this client is not picked up by default.
+                            .httpClient(sdkClient.sdkHttpClient)
+                            .credentialsProvider(AWSCognitoCredentialsProvider(
+                                    "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
+                                    ServiceManager.getService(
+                                            DefaultProjectFactory.getInstance().defaultProject,
+                                            ToolkitClientManager::class.java
+                                    ),
+                                    regionProvider
+                            ))
+                            .build(),
                     SystemInfo.OS_NAME,
                     SystemInfo.OS_VERSION
-            )
-    DefaultTelemetryBatcher(publisher)
-        }()
+            ))
+    )
 
+    init {
         messageBusService.messageBus.connect().subscribe(
                 messageBusService.telemetryEnabledTopic,
                 object : TelemetryEnabledChangedNotifier {
                     override fun notify(isTelemetryEnabled: Boolean) {
-                        _batcher.onTelemetryEnabledChanged(isTelemetryEnabled)
+                        batcher.onTelemetryEnabledChanged(isTelemetryEnabled)
                     }
                 }
         )
+        messageBusService.messageBus.syncPublisher(messageBusService.telemetryEnabledTopic)
+                .notify(AwsSettings.getInstance().isTelemetryEnabled)
 
         executor.scheduleWithFixedDelay(
                 PublishActivity(),
@@ -121,14 +124,14 @@ class DefaultTelemetryService(
             }
         }
 
-        _batcher.shutdown()
+        batcher.shutdown()
     }
 
     override fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
         val builder = DefaultMetricEvent.builder()
         buildEvent(builder)
         val event = builder.build()
-        _batcher.enqueue(event)
+        batcher.enqueue(event)
         return event
     }
 
@@ -138,7 +141,7 @@ class DefaultTelemetryService(
                 return
             }
             try {
-                _batcher.flush(true)
+                batcher.flush(true)
             } catch (e: Exception) {
                 LOG.warn("Unexpected exception while publishing telemetry", e)
             }
