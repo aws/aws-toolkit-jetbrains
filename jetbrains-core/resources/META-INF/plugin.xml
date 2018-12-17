@@ -20,6 +20,8 @@
     <li><strong>Deploy SAM-based Applications</strong> - (<strong>Python only</strong>) Package, deploy & track SAM-based applications</li>
 </ul>
 </p>
+
+If you come across bugs with the toolkit or have feature requests, please raise an <a href="https://github.com/aws/aws-toolkit-jetbrains/issues">issue</a>.
     ]]></description>
 
     <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://aws.amazon.com/">Amazon Web Services</vendor>
@@ -36,6 +38,13 @@
     <!-- xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
     </xi:include-->
+
+    <application-components>
+        <component>
+            <interface-class>software.aws.toolkits.jetbrains.components.telemetry.TelemetryComponent</interface-class>
+            <implementation-class>software.aws.toolkits.jetbrains.components.telemetry.DefaultTelemetryComponent</implementation-class>
+        </component>
+    </application-components>
 
     <extensionPoints>
         <extensionPoint qualifiedName="aws.toolkit.credentialProviderFactory"
@@ -74,7 +83,8 @@
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.CredentialManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialManager"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.AwsSettings"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.AwsSettings"
+                            serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
@@ -87,6 +97,12 @@
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.AwsSdkClient"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.MessageBusService"
+                            serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultMessageBusService"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockMessageBusService"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.TelemetryService"
+                            serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultTelemetryService"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryService" />
         <projectService serviceInterface="software.aws.toolkits.core.ToolkitClientManager"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.MockClientManager"/>
