@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryService : Disposable {
-    fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent
+    fun record(namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent
 
     companion object {
         @JvmStatic
@@ -107,9 +107,7 @@ class DefaultTelemetryService(
                 publishIntervalUnit
         )
 
-        record {
-            namespace("ToolkitStart")
-        }.also {
+        record("ToolkitStart").also {
             startTime = it.createTime
         }
     }
@@ -122,11 +120,9 @@ class DefaultTelemetryService(
         executor.shutdown()
 
         val endTime = Instant.now()
-        record {
-            namespace("ToolkitEnd")
+        record("ToolkitEnd") {
             createTime(endTime)
-            datum {
-                name("duration")
+            datum("duration") {
                 value(Duration.between(startTime, endTime).toMillis().toDouble())
                 unit(Unit.MILLISECONDS)
             }
@@ -135,8 +131,8 @@ class DefaultTelemetryService(
         batcher.shutdown()
     }
 
-    override fun record(buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
-        val builder = DefaultMetricEvent.builder()
+    override fun record(namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
+        val builder = DefaultMetricEvent.builder(namespace)
         buildEvent(builder)
         val event = builder.build()
         batcher.enqueue(event)

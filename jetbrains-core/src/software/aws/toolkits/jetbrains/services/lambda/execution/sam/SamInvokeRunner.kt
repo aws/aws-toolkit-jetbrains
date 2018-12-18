@@ -23,8 +23,10 @@ import com.intellij.xdebugger.XDebuggerManager
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import java.io.File
 import java.net.ServerSocket
 
@@ -72,7 +74,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
         val samState = state as SamRunningState
         val psiFile = samState.settings.handlerElement.containingFile
         val module = getModule(psiFile)
-        val runner = if (environment.executor.id == DefaultDebugExecutor.EXECUTOR_ID) {
+        val runner = if (environment.isDebug()) {
             SamDebugger()
         } else {
             SamRunner()
@@ -92,6 +94,17 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                 LOG.warn("Failed to create Lambda package", it)
                 buildingPromise.setError(it)
                 null
+            }.whenComplete { _, exception ->
+                telemetry.record("SamInvoke") {
+                    val type = if (environment.isDebug()) "Debug" else "Run"
+                    datum(type) {
+                        value(1.0)
+                        unit(MetricUnit.COUNT)
+                        // exception can be null but is not annotated as nullable
+                        metadata("hasException", (exception != null).toString())
+                        metadata("runtime", state.settings.runtime.name)
+                    }
+                }
             }
 
         return buildingPromise
@@ -102,6 +115,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
     private companion object {
         val LOG = Logger.getInstance(SamInvokeRunner::class.java)
+        val telemetry = TelemetryService.getInstance()
     }
 }
 
@@ -114,6 +128,8 @@ internal open class SamRunner {
         return RunContentBuilder(executionResult, environment).showRunContent(environment.contentToReuse)
     }
 }
+
+fun ExecutionEnvironment.isDebug(): Boolean = (executor.id == DefaultDebugExecutor.EXECUTOR_ID)
 
 internal class SamDebugger : SamRunner() {
     private val debugPort = findDebugPort()

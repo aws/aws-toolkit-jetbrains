@@ -19,10 +19,12 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ExceptionUtil
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 import java.nio.file.Files
 import java.nio.file.Path
@@ -214,7 +216,16 @@ open class SamDeployDialog(
 
         processHandler.startNotify()
 
-        return future
+        return future.whenComplete { _, exception ->
+            telemetry.record("SamDeploy") {
+                datum(title) {
+                    value(1.0)
+                    unit(MetricUnit.COUNT)
+                    // exception can be null but is not annotated as nullable
+                    metadata("hasException", (exception != null).toString())
+                }
+            }
+        }
     }
 
     protected open fun createProcess(command: GeneralCommandLine): OSProcessHandler =
@@ -223,5 +234,6 @@ open class SamDeployDialog(
     private companion object {
         const val NUMBER_OF_STEPS = 3.0
         val LOGGER = getLogger<SamDeployDialog>()
+        val telemetry = TelemetryService.getInstance()
     }
 }
