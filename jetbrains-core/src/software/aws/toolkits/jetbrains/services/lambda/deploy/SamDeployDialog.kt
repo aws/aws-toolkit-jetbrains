@@ -222,7 +222,7 @@ open class SamDeployDialog(
                     value(1.0)
                     unit(MetricUnit.COUNT)
                     // exception can be null but is not annotated as nullable
-                    metadata("hasException", (exception != null).toString())
+                    metadata("hasException", exception != null)
                 }
             }
         }

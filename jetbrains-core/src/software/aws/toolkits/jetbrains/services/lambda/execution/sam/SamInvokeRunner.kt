@@ -101,8 +101,9 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                         value(1.0)
                         unit(MetricUnit.COUNT)
                         // exception can be null but is not annotated as nullable
-                        metadata("hasException", (exception != null).toString())
+                        metadata("hasException", exception != null)
                         metadata("runtime", state.settings.runtime.name)
+                        metadata("templateBased", state.settings.templateDetails?.templateFile != null)
                     }
                 }
             }

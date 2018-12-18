@@ -38,6 +38,8 @@ interface MetricEvent {
 
             fun metadata(key: String, value: String): Builder
 
+            fun metadata(key: String, value: Boolean?): Builder = metadata(key, value.toString())
+
             fun build(): Datum
         }
     }
