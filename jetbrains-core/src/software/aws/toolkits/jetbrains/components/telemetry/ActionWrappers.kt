@@ -7,9 +7,14 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ex.ComboBoxAction
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.core.telemetry.TelemetryNamespace
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import javax.swing.Icon
+
+object ToolkitActionPlaces {
+    val EXPLORER_WINDOW = "ExplorerToolWindow"
+}
 
 // Constructor signatures:
 //  public AnAction(){
@@ -33,7 +38,12 @@ abstract class AnActionWrapper : TelemetryNamespace, AnAction {
      */
     final override fun actionPerformed(e: AnActionEvent) {
         doActionPerformed(e)
-        telemetry.record(getNamespace())
+        telemetry.record(getNamespace()) {
+            datum(e.place) {
+                value(1.0)
+                unit(MetricUnit.COUNT)
+            }
+        }
     }
 
     abstract fun doActionPerformed(e: AnActionEvent)
@@ -49,7 +59,12 @@ abstract class ComboBoxActionWrapper : TelemetryNamespace, ComboBoxAction() {
      */
     final override fun actionPerformed(e: AnActionEvent) {
         doActionPerformed(e)
-        telemetry.record(getNamespace())
+        telemetry.record(getNamespace()) {
+            datum(e.place) {
+                value(1.0)
+                unit(MetricUnit.COUNT)
+            }
+        }
     }
 
     open fun doActionPerformed(e: AnActionEvent) = super.actionPerformed(e)
@@ -64,14 +79,18 @@ abstract class ToogleActionWrapper : TelemetryNamespace, ToggleAction {
     constructor(text: String? = null, description: String? = null, icon: Icon? = null):
         super(text, description, icon)
 
-    final override fun isSelected(e: AnActionEvent): Boolean {
-        telemetry.record(getNamespace())
-        return doIsSelected(e)
-    }
+    // this will be repeatedly called by the IDE, so we likely do not want telemetry on this,
+    // but keeping this to maintain API consistency
+    final override fun isSelected(e: AnActionEvent): Boolean = doIsSelected(e)
 
     final override fun setSelected(e: AnActionEvent, state: Boolean) {
         doSetSelected(e, state)
-        telemetry.record(getNamespace())
+        telemetry.record(getNamespace()) {
+            datum(e.place) {
+                value(1.0)
+                unit(MetricUnit.COUNT)
+            }
+        }
     }
 
     abstract fun doIsSelected(e: AnActionEvent): Boolean

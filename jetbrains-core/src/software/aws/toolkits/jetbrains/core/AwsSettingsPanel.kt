@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
@@ -125,7 +126,8 @@ class SettingsSelector(project: Project) {
         ChangeAccountSettingsAction(accountSettingsManager, showRegions).createPopupActionGroup(),
         dataContext,
         JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-        true
+        true,
+        ActionPlaces.STATUS_BAR_PLACE
     )
 
     companion object {
