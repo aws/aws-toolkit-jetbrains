@@ -6,7 +6,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
-import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -37,7 +36,7 @@ interface TableView : View {
 private enum class Fields(val readableName: String, val getData: (StackEvent) -> Any) {
     TIME(message("cloudformation.stack.time"), { e -> e.timestamp() }),
     // CFN Resource Status does not match what we expect (StackStatus enum)
-    STATUS(message("cloudformation.stack.status"), { e -> StackStatus.fromValue(e.resourceStatusAsString()) }),
+    STATUS(message("cloudformation.stack.status"), { e -> e.resourceStatusAsString() }),
     TYPE(message("cloudformation.stack.type"), { e -> e.resourceType() }),
     LOGICAL_ID(message("cloudformation.stack.logical_id"), { e -> e.logicalResourceId() }),
     PHYSICAL_ID(message("cloudformation.stack.physical_id"), { e -> e.physicalResourceId() });
@@ -47,7 +46,7 @@ private enum class Fields(val readableName: String, val getData: (StackEvent) ->
 
 private class StatusCellRenderer : DefaultTableCellRenderer() {
     override fun getTableCellRendererComponent(table: JTable, value: Any, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int) =
-        (value as StackStatus).run { JLabel(name, type.icon, SwingConstants.LEFT) }
+        (value as String).run { JLabel(this, StatusType.fromStatusValue(this).icon, SwingConstants.LEFT) }
 }
 
 private class StackTableModel : DefaultTableModel(Fields.values().map(Fields::readableName).toTypedArray(), 0) {
