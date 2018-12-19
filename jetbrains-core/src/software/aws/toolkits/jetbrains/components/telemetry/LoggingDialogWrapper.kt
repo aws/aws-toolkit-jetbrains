@@ -70,6 +70,6 @@ abstract class LoggingDialogWrapper : DialogWrapper, TelemetryNamespace {
     }
 
     companion object {
-        val telemetry = TelemetryService.getInstance()
+        protected val telemetry = TelemetryService.getInstance()
     }
 }

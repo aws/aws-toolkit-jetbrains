@@ -1,7 +1,7 @@
 // Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.core.telemetry
+package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.cognitoidentity.model.GetIdResponse
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.ToolkitRegionProvider
+import software.aws.toolkits.core.telemetry.CachedIdentityStorage
 import software.aws.toolkits.core.utils.DelegateSdkConsumers
 import java.time.Instant
 import java.time.temporal.ChronoUnit

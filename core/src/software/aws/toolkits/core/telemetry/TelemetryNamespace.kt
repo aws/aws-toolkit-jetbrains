@@ -4,5 +4,5 @@
 package software.aws.toolkits.core.telemetry
 
 interface TelemetryNamespace {
-    fun getNamespace(): String = javaClass.name.split(".").last()
+    fun getNamespace(): String = javaClass.simpleName
 }

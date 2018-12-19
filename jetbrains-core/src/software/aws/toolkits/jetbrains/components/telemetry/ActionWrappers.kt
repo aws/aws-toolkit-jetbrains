@@ -49,7 +49,7 @@ abstract class AnActionWrapper : TelemetryNamespace, AnAction {
     abstract fun doActionPerformed(e: AnActionEvent)
 
     companion object {
-        val telemetry = TelemetryService.getInstance()
+        protected val telemetry = TelemetryService.getInstance()
     }
 }
 
@@ -70,7 +70,7 @@ abstract class ComboBoxActionWrapper : TelemetryNamespace, ComboBoxAction() {
     open fun doActionPerformed(e: AnActionEvent) = super.actionPerformed(e)
 
     companion object {
-        val telemetry = TelemetryService.getInstance()
+        protected val telemetry = TelemetryService.getInstance()
     }
 }
 
@@ -98,6 +98,6 @@ abstract class ToogleActionWrapper : TelemetryNamespace, ToggleAction {
     abstract fun doSetSelected(e: AnActionEvent, state: Boolean)
 
     companion object {
-        val telemetry = TelemetryService.getInstance()
+        protected val telemetry = TelemetryService.getInstance()
     }
 }

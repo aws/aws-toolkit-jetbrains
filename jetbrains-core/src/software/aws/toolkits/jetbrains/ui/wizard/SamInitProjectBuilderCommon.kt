@@ -65,7 +65,7 @@ abstract class SamProjectTemplate {
             SamProjectTemplateWrapper(this, builder)
 
     companion object {
-        val telemetry = TelemetryService.getInstance()
+        private val telemetry = TelemetryService.getInstance()
     }
 }
 

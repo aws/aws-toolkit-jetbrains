@@ -335,7 +335,7 @@ class EditFunctionDialog(
         }
     }
 
-    override fun getNamespace(): String = "EditFunctionDialog"
+    override fun getNamespace(): String = "${mode.name}FunctionDialog"
 
     @TestOnly
     fun getViewForTestAssertions() = view
