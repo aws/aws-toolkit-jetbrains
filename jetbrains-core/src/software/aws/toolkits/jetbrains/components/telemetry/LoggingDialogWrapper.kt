@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.components.telemetry
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.core.telemetry.TelemetryNamespace
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import java.awt.Component
@@ -52,8 +51,7 @@ abstract class LoggingDialogWrapper : DialogWrapper, TelemetryNamespace {
 
         telemetry.record(getNamespace()) {
             datum("OKAction") {
-                value(1.0)
-                unit(MetricUnit.COUNT)
+                count()
             }
         }
     }
@@ -63,8 +61,7 @@ abstract class LoggingDialogWrapper : DialogWrapper, TelemetryNamespace {
 
         telemetry.record(getNamespace()) {
             datum("CancelAction") {
-                value(1.0)
-                unit(MetricUnit.COUNT)
+                count()
             }
         }
     }

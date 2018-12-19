@@ -19,7 +19,6 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ExceptionUtil
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
@@ -219,8 +218,7 @@ open class SamDeployDialog(
         return future.whenComplete { _, exception ->
             telemetry.record("SamDeploy") {
                 datum(title) {
-                    value(1.0)
-                    unit(MetricUnit.COUNT)
+                    count()
                     // exception can be null but is not annotated as nullable
                     metadata("hasException", exception != null)
                 }

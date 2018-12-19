@@ -23,7 +23,6 @@ import com.intellij.xdebugger.XDebuggerManager
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.jetbrains.services.lambda.LambdaPackager
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -98,8 +97,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                 telemetry.record("SamInvoke") {
                     val type = if (environment.isDebug()) "Debug" else "Run"
                     datum(type) {
-                        value(1.0)
-                        unit(MetricUnit.COUNT)
+                        count()
                         // exception can be null but is not annotated as nullable
                         metadata("hasException", exception != null)
                         metadata("runtime", state.settings.runtime.name)

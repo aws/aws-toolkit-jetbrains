@@ -40,6 +40,12 @@ interface MetricEvent {
 
             fun metadata(key: String, value: Boolean): Builder = metadata(key, value.toString())
 
+            fun count(value: Double = 1.0): Builder {
+                value(value)
+                unit(MetricUnit.COUNT)
+                return this
+            }
+
             fun build(): Datum
         }
     }

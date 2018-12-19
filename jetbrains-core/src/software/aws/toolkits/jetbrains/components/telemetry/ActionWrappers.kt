@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ex.ComboBoxAction
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.core.telemetry.TelemetryNamespace
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import javax.swing.Icon
@@ -40,8 +39,7 @@ abstract class AnActionWrapper : TelemetryNamespace, AnAction {
         doActionPerformed(e)
         telemetry.record(getNamespace()) {
             datum(e.place) {
-                value(1.0)
-                unit(MetricUnit.COUNT)
+                count()
             }
         }
     }
@@ -61,8 +59,7 @@ abstract class ComboBoxActionWrapper : TelemetryNamespace, ComboBoxAction() {
         doActionPerformed(e)
         telemetry.record(getNamespace()) {
             datum(e.place) {
-                value(1.0)
-                unit(MetricUnit.COUNT)
+                count()
             }
         }
     }
@@ -87,8 +84,7 @@ abstract class ToogleActionWrapper : TelemetryNamespace, ToggleAction {
         doSetSelected(e, state)
         telemetry.record(getNamespace()) {
             datum(e.place) {
-                value(1.0)
-                unit(MetricUnit.COUNT)
+                count()
             }
         }
     }
