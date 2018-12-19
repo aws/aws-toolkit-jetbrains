@@ -126,7 +126,7 @@ class AwsCognitoCredentialsProviderTest {
             on { getCredentialsForIdentity(getCredentialsRequestCaptor.capture()) }.thenReturn(getCredentialsResult)
         }
 
-        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, clientManager, regionProvider, storage)
+        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, clientManager, regionProvider, cacheStorage = storage)
 
         val awsCredentials = provider.resolveCredentials() as AwsSessionCredentials
 
@@ -156,7 +156,7 @@ class AwsCognitoCredentialsProviderTest {
             on { getCredentialsForIdentity(getCredentialsRequestCaptor.capture()) }.thenReturn(getCredentialsResult)
         }
 
-        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, clientManager, regionProvider, storage)
+        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, clientManager, regionProvider, cacheStorage = storage)
         val awsCredentials = provider.resolveCredentials() as AwsSessionCredentials
 
         verify(storage).loadIdentity(IDENTITY_POOL_ID)
