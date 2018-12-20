@@ -57,10 +57,10 @@ abstract class ToolkitClientManager(private val sdkHttpClient: SdkHttpClient) {
         )
 
         if (key.region != AwsRegion.GLOBAL && GLOBAL_SERVICES.contains(key.serviceClass.simpleName)) {
-            return cachedClients.computeIfAbsent(key.copy(region = AwsRegion.GLOBAL)) { createNewClient(it) } as T
+            return cachedClients.computeIfAbsent(key.copy(region = AwsRegion.GLOBAL)) { createNewClient(it, credProvider) } as T
         }
 
-        return cachedClients.computeIfAbsent(key) { createNewClient(it) } as T
+        return cachedClients.computeIfAbsent(key) { createNewClient(it, credProvider) } as T
     }
 
     /**
@@ -90,7 +90,7 @@ abstract class ToolkitClientManager(private val sdkHttpClient: SdkHttpClient) {
      * Creates a new client for the requested [AwsClientKey]
      */
     @Suppress("UNCHECKED_CAST")
-    protected open fun <T : SdkClient> createNewClient(key: AwsClientKey): T {
+    protected open fun <T : SdkClient> createNewClient(key: AwsClientKey, credProvider: ToolkitCredentialsProvider = getCredentialsProvider()): T {
         val builderMethod = key.serviceClass.java.methods.find {
             it.name == "builder" && Modifier.isStatic(it.modifiers) && Modifier.isPublic(it.modifiers)
         } ?: throw IllegalArgumentException("Expected service interface to have a public static `builder()` method.")
@@ -98,7 +98,7 @@ abstract class ToolkitClientManager(private val sdkHttpClient: SdkHttpClient) {
 
         return builder
             .httpClient(sdkHttpClient)
-            .credentialsProvider(getCredentialsProvider())
+            .credentialsProvider(credProvider)
             .region(Region.of(key.region.id))
             .overrideConfiguration {
                 it.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, userAgent)
