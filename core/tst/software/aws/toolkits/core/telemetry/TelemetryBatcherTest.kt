@@ -20,9 +20,14 @@ import java.lang.RuntimeException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
+class TestTelemetryBatcher(publisher: TelemetryPublisher, maxBatchSize: Int, maxQueueSize: Int) :
+    DefaultTelemetryBatcher(publisher, maxBatchSize, maxQueueSize) {
+    fun eventQueue() = eventQueue
+}
+
 class TelemetryBatcherTest {
     private var publisher: TelemetryPublisher = mock()
-    private var batcher: TelemetryBatcher = DefaultTelemetryBatcher(publisher, MAX_BATCH_SIZE, MAX_QUEUE_SIZE)
+    private var batcher: TestTelemetryBatcher = TestTelemetryBatcher(publisher, MAX_BATCH_SIZE, MAX_QUEUE_SIZE)
 
     init {
         batcher.onTelemetryEnabledChanged(true)
@@ -38,8 +43,7 @@ class TelemetryBatcherTest {
                 .doAnswer(createPublishAnswer(publishCountDown, true))
         }
 
-        batcher.enqueue(DefaultMetricEvent.builder()
-                .namespace(EVENT_NAME)
+        batcher.enqueue(DefaultMetricEvent.builder(EVENT_NAME)
                 .build()
         )
         batcher.flush(false)
@@ -92,11 +96,10 @@ class TelemetryBatcherTest {
         batcher.enqueue(createEmptyMetricEvent())
         batcher.flush(true)
 
-        verify(publisher, times(2)).publish(anyCollection())
+        verify(publisher, times(1)).publish(anyCollection())
 
-        assert(publishCaptor.allValues).hasSize(2)
-        assert(publishCaptor.allValues[0]).hasSize(1)
-        assert(publishCaptor.allValues[1]).hasSize(1)
+        assert(publishCaptor.allValues).hasSize(1)
+        assert(batcher.eventQueue()).hasSize(1)
     }
 
     @Test
@@ -115,11 +118,10 @@ class TelemetryBatcherTest {
 
         waitForPublish(publishCountDown)
 
-        verify(publisher, times(2)).publish(anyCollection())
+        verify(publisher, times(1)).publish(anyCollection())
 
-        assert(publishCaptor.allValues).hasSize(2)
-        assert(publishCaptor.allValues[0]).hasSize(1)
-        assert(publishCaptor.allValues[1]).hasSize(1)
+        assert(publishCaptor.allValues).hasSize(1)
+        assert(batcher.eventQueue()).hasSize(1)
     }
 
     @Test
@@ -142,8 +144,7 @@ class TelemetryBatcherTest {
         assert(publishCaptor.firstValue.toList()).hasSize(1)
     }
 
-    private fun createEmptyMetricEvent(): MetricEvent = DefaultMetricEvent.builder()
-        .namespace(EVENT_NAME)
+    private fun createEmptyMetricEvent(): MetricEvent = DefaultMetricEvent.builder(EVENT_NAME)
         .build()
 
     private fun waitForPublish(publishCountDown: CountDownLatch) {
