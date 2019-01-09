@@ -2,6 +2,3 @@ ignore:
   - "ktlint-rules/**/*"
   - "resources/**/*"
   - "telemetry-client/**/*"
-comment:
-  flags:
-    - unittest
