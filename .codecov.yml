@@ -2,3 +2,9 @@ ignore:
   - "ktlint-rules/**/*"
   - "resources/**/*"
   - "telemetry-client/**/*"
+comment:
+  layout: "diff, unittest, files"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
