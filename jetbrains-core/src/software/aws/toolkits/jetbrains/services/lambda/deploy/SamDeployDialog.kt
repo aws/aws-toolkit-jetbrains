@@ -39,8 +39,7 @@ open class SamDeployDialog(
     private val template: VirtualFile,
     private val parameters: Map<String, String>,
     private val s3Bucket: String,
-    private val autoExecute: Boolean,
-    execute: Boolean = true
+    private val autoExecute: Boolean
 ) : DialogWrapper(project) {
     private val progressIndicator = ProgressIndicatorBase()
     private val view = SamDeployView(project, progressIndicator)
@@ -48,6 +47,7 @@ open class SamDeployDialog(
     private val credentialsProvider = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider
     private val region = ProjectAccountSettingsManager.getInstance(project).activeRegion
     private val changeSetRegex = "(arn:aws:cloudformation:.*changeSet/[^\\s]*)".toRegex()
+    val deployFuture: CompletableFuture<String>
     lateinit var changeSetName: String
         private set
 
@@ -61,10 +61,7 @@ open class SamDeployDialog(
 
         super.init()
 
-        // For unit tests we don't want to execute it immediately
-        if (execute) {
-            executeDeployment()
-        }
+        deployFuture = executeDeployment().toCompletableFuture()
     }
 
     override fun createActions(): Array<Action> = if (autoExecute) {
@@ -75,7 +72,7 @@ open class SamDeployDialog(
 
     override fun createCenterPanel(): JComponent? = view.content
 
-    fun executeDeployment(): CompletionStage<String?> {
+    private fun executeDeployment(): CompletionStage<String> {
         okAction.isEnabled = false
         cancelAction.isEnabled = false
 
@@ -156,7 +153,7 @@ open class SamDeployDialog(
         }
     }
 
-    private fun handleError(error: Throwable): String? {
+    private fun handleError(error: Throwable): String {
         LOGGER.warn("SAM deploy failed", error)
 
         val message = if (error.cause is ProcessCanceledException) {
