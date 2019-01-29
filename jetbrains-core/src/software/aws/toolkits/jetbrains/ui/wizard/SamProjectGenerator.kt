@@ -126,6 +126,76 @@ class SamProjectRuntimeSelectionStep(
         super.registerValidators()
         getGeneratorPeer().registerValidators()
     }
+//    this is how stepped wizard code might work
+//    private val projectSettings = SamNewProjectSettings()
+//    private lateinit var mainPanel: JPanel
+//
+//    private lateinit var stepIterator: Iterator<JPanel>
+//
+//    // used in non-IntelliJ IDEs
+//    override fun createPanel(): JPanel {
+//        // reset state
+//        stepIterator = ADDITIONAL_PANELS.iterator()
+//        this.mainPanel = super.createPanel()
+//
+//        myCreateButton.text = IdeBundle.message("button.wizard.next")
+//        setNextStepActionListener(mainPanel)
+//
+//        mainPanel.revalidate()
+//        mainPanel.repaint()
+//
+//        return mainPanel
+//    }
+//
+//    private fun removeActionListeners() {
+//        val actionListeners = myCreateButton.actionListeners
+//        actionListeners.forEach { myCreateButton.removeActionListener(it) }
+//    }
+//
+//    private fun setNextStepActionListener(mainPanel: JPanel) {
+//        // clear listeners
+//        removeActionListeners()
+//        // new listener
+//        myCreateButton.addActionListener {
+//            println("click")
+//            // advance panel if one exists
+//            if (stepIterator.hasNext()) {
+//                val newPanel = stepIterator.next()
+//                println("replace")
+//                replacePanel(mainPanel, newPanel)
+//            }
+//
+//            // change button text
+//            if (!stepIterator.hasNext()) {
+//                removeActionListeners()
+//                // finish action
+//                myCreateButton.text = IdeBundle.message("button.finish")
+//                myCreateButton.addActionListener(createCloseActionListener())
+//            }
+//
+//            // redraw panel when view is out of focus
+//            mainPanel.addAncestorListener(object : AncestorListenerAdapter() {
+//                override fun ancestorRemoved(event: AncestorEvent?) {
+//                    resetPanelToStart(mainPanel)
+//                    setNextStepActionListener(mainPanel)
+//                }
+//            })
+//        }
+//    }
+//
+//    fun resetPanelToStart(mainPanel: JPanel) {
+//        println("resetPanelToStart")
+//        val settingsPanel = createPanel()
+//        val scrollPane = (settingsPanel.layout as BorderLayout).getLayoutComponent(BorderLayout.CENTER) as JBScrollPane
+//        replacePanel(mainPanel, scrollPane.viewport.view as JPanel)
+//    }
+//
+//    fun replacePanel(currentPanel: JPanel, newPanel: JPanel) {
+//        val scrollPane = (currentPanel.layout as BorderLayout).getLayoutComponent(BorderLayout.CENTER) as JBScrollPane
+//        scrollPane.setViewportView(newPanel)
+//        currentPanel.revalidate()
+//        currentPanel.repaint()
+//    }
 }
 
 class SamProjectGeneratorSettingsPeer(private val generator: SamProjectGenerator) : ProjectGeneratorPeer<SamNewProjectSettings> {
