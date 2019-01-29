@@ -30,7 +30,7 @@ class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallbac
     var currentSdk: Sdk? = null
 
     private fun buildSdkSettingsPanel(runtime: Runtime) {
-        currentSdkPanel = object : SdkSettingsStep(object : WizardContext(null, {}) {}, AwsModuleBuilder(generator), sdkPanelFilter(runtime), null) {
+        currentSdkPanel = object : SdkSettingsStep(object : WizardContext(null, {}) {}, SamProjectBuilder(generator), sdkPanelFilter(runtime), null) {
             override fun onSdkSelected(sdk: Sdk?) {
                 currentSdk = sdk
             }

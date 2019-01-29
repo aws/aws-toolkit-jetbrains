@@ -24,7 +24,7 @@ import software.aws.toolkits.resources.message
 
 // IntelliJ shim requires a ModuleBuilder
 // UI is centralized in generator and is passed in to have access to UI elements
-class AwsModuleBuilder(private val generator: SamProjectGenerator) : ModuleBuilder() {
+class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuilder() {
     // hide this from the new project menu
     override fun isAvailable() = false
 
@@ -33,17 +33,16 @@ class AwsModuleBuilder(private val generator: SamProjectGenerator) : ModuleBuild
 
     // IntelliJ create commit step
     override fun setupRootModel(rootModel: ModifiableRootModel) {
-        // smart-cast fail workaround due to mutability of `runtime`
-        val selectedRuntime = generator.settings.runtime
-        val moduleType = selectedRuntime.runtimeGroup?.getModuleType() ?: ModuleType.EMPTY
-
         // sdk config deviates here since we're not storing information in the module builder like other standard
         // IntelliJ project wizards
-        val sdk = generator.peer.sdkPanel.getSdk()
+        val sdk = generator.settings.sdk
         // project sdk
         ProjectRootManager.getInstance(rootModel.project).projectSdk = sdk
         // module sdk
         rootModel.sdk = sdk
+
+        val selectedRuntime = generator.settings.runtime
+        val moduleType = selectedRuntime.runtimeGroup?.getModuleType() ?: ModuleType.EMPTY
 
         rootModel.module.setModuleType(moduleType.id)
         val project = rootModel.project
@@ -72,7 +71,9 @@ class AwsModuleBuilder(private val generator: SamProjectGenerator) : ModuleBuild
         return object : ModuleWizardStep() {
             override fun getComponent() = null
 
-            override fun updateDataModel() {}
+            override fun updateDataModel() {
+                generator.peer.sdkPanel.ensureSdk()
+            }
 
             @Throws(ConfigurationException::class)
             override fun validate(): Boolean {

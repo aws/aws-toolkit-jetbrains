@@ -5,17 +5,18 @@ package software.aws.toolkits.jetbrains.ui.wizard
 
 import com.intellij.ide.util.projectWizard.AbstractNewProjectStep
 import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.openapi.util.NullableComputable
 import com.intellij.ui.DocumentAdapter
 import com.jetbrains.python.newProject.PyNewProjectSettings
 import com.jetbrains.python.newProject.PythonProjectGenerator
 import com.jetbrains.python.newProject.steps.ProjectSpecificSettingsStep
 import com.jetbrains.python.newProject.steps.PyAddExistingSdkPanel
 import com.jetbrains.python.newProject.steps.PyAddNewEnvironmentPanel
-import com.jetbrains.python.sdk.PyLazySdk
 import com.jetbrains.python.sdk.add.PyAddSdkGroupPanel
 import icons.AwsIcons
+import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
+import software.aws.toolkits.resources.message
 import javax.swing.Icon
 import javax.swing.JPanel
 import javax.swing.event.DocumentEvent
@@ -84,10 +85,18 @@ class PyCharmSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallback
 
     override fun getSdk(): Sdk? {
         val panel = sdkSelectionPanel.selectedPanel
-        // copied from ProjectSpecificSettingsStep
         return when (panel) {
             // this list should be exhaustive
-            is PyAddNewEnvironmentPanel -> PyLazySdk("Uninitialized environment", NullableComputable { panel.getOrCreateSdk() })
+            is PyAddNewEnvironmentPanel -> {
+                val sdk = panel.getOrCreateSdk()?.let {
+                    SdkConfigurationUtil.addSdk(it)
+                    it
+                }
+                generator.settings.runtime = PythonRuntimeGroup.determineRuntimeForSdk(sdk
+                    ?: throw RuntimeException(message("sam.init.python.bad_sdk"))
+                ) ?: throw RuntimeException("Could not determine runtime for SDK")
+                return sdk
+            }
             is PyAddExistingSdkPanel -> panel.sdk
             else -> null
         }

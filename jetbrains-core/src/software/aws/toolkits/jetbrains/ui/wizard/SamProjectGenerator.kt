@@ -13,9 +13,8 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
+import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
@@ -25,17 +24,15 @@ import com.intellij.platform.DirectoryProjectGenerator
 import com.intellij.platform.HideableProjectGenerator
 import com.intellij.platform.ProjectGeneratorPeer
 import com.intellij.platform.ProjectTemplate
-import com.jetbrains.python.sdk.PyLazySdk
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamCommon
-import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
 import javax.swing.JComponent
 
 class SamNewProjectSettings {
-    lateinit var runtime: Runtime // this is only used in IntelliJ
+    lateinit var runtime: Runtime
+    var sdk: Sdk? = null
     lateinit var template: SamProjectTemplate
 }
 
@@ -58,36 +55,13 @@ class SamProjectGenerator : ProjectTemplate,
 
     // non-IntelliJ project commit step
     override fun generateProject(project: Project, baseDir: VirtualFile, settings: SamNewProjectSettings, module: Module) {
-        // first figure out if we even have an sdk...
-        var sdk = peer.sdkPanel.getSdk()
-        if (sdk is PyLazySdk) {
-            val createdSdk = sdk.create()
-            if (createdSdk != null) {
-                SdkConfigurationUtil.addSdk(createdSdk)
-                sdk = createdSdk
-            }
-        }
-
-        val runtime = PythonRuntimeGroup.determineRuntimeForSdk(sdk
-            ?: throw RuntimeException(message("sam.init.python.bad_sdk"))
-        ) ?: throw RuntimeException("Could not determine runtime for SDK")
-
-        // set the project sdk
-        runInEdt {
-            runWriteAction {
-                ProjectRootManager.getInstance(project).projectSdk = sdk
-            }
-        }
-
-        val template = settings.template
-        template.build(runtime, baseDir)
-
+        peer.sdkPanel.ensureSdk()
         runInEdt {
             runWriteAction {
                 val rootModel = ModuleRootManager.getInstance(module).modifiableModel
-                SamCommon.excludeSamDirectory(baseDir, rootModel)
-                SamCommon.setSourceRoots(baseDir, project, rootModel)
-
+                val builder = createModuleBuilder()
+                builder.contentEntryPath = baseDir.path
+                builder.setupRootModel(rootModel)
                 rootModel.commit()
             }
         }
@@ -105,7 +79,7 @@ class SamProjectGenerator : ProjectTemplate,
 
     override fun getIcon(): Icon = logo
 
-    override fun createModuleBuilder(): ModuleBuilder = AwsModuleBuilder(this)
+    override fun createModuleBuilder(): ModuleBuilder = SamProjectBuilder(this)
 
     // force the initial validation
     override fun postponeValidation(): Boolean = false

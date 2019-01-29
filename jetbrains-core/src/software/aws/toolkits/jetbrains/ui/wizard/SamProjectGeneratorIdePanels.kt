@@ -44,7 +44,7 @@ interface SdkSelectionPanel {
 
     fun transformUI(panel: SamInitSelectionPanel)
 
-    fun getSdk(): Sdk?
+    fun ensureSdk()
 
     fun validateAll(): List<ValidationInfo>?
 }
@@ -56,7 +56,9 @@ abstract class SdkSelectionPanelBase(val callback: AbstractNewProjectStep.Abstra
         // common transforms go here
     }
 
-    override fun getSdk(): Sdk? = null
+    open fun getSdk(): Sdk? = null
+
+    override fun ensureSdk() {}
 
     override fun validateAll(): List<ValidationInfo>? = null
 }
@@ -68,8 +70,6 @@ class NoOpSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallback<Sa
     override fun registerListeners() {}
 
     override fun transformUI(panel: SamInitSelectionPanel) {}
-
-    override fun getSdk(): Sdk? = null
 
     override fun validateAll(): List<ValidationInfo>? = null
 }
@@ -92,7 +92,10 @@ class SdkSelectionPanelImpl(private val callback: AbstractNewProjectStep.Abstrac
 
     override fun transformUI(panel: SamInitSelectionPanel) = delegate.transformUI(panel)
 
-    override fun getSdk() = delegate.getSdk()
+    override fun ensureSdk() {
+        val sdk = delegate.getSdk()
+        generator.settings.sdk = sdk
+    }
 
     override fun validateAll() = delegate.validateAll()
 
