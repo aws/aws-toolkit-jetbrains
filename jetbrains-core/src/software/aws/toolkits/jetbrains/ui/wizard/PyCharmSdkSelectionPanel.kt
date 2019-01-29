@@ -76,7 +76,7 @@ class PyCharmSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallback
     override fun transformUI(panel: SamInitSelectionPanel) {
         super.transformUI(panel)
         // remove runtime panel
-
+        panel.hideRuntime()
         // to save space, don't label the sdk selector
         sdkSelectionPanel = newSdkPanel()
         panel.addSdkPanel(null, sdkSelectionPanel)

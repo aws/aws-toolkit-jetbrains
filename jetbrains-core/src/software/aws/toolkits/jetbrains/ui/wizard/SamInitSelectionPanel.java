@@ -28,6 +28,7 @@ public class SamInitSelectionPanel {
     @NotNull private JButton editSamExecutableButton;
     @NotNull private JBLabel samLabel;
     @NotNull private ComboBox<SamProjectTemplate> templateComboBox;
+    @NotNull private JLabel runtimeLabel;
     private final SamNewProjectSettings projectSettings;
     private JComponent currentSdkSelector;
 
@@ -106,5 +107,10 @@ public class SamInitSelectionPanel {
         }
 
         currentSdkSelector = sdkSelector;
+    }
+
+    public void hideRuntime() {
+        runtime.setVisible(false);
+        runtimeLabel.setVisible(false);
     }
 }
