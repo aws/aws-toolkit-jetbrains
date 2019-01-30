@@ -39,7 +39,7 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         // project sdk
         ProjectRootManager.getInstance(rootModel.project).projectSdk = sdk
         // module sdk
-        rootModel.sdk = sdk
+        rootModel.inheritSdk()
 
         val selectedRuntime = generator.settings.runtime
         val moduleType = selectedRuntime.runtimeGroup?.getModuleType() ?: ModuleType.EMPTY

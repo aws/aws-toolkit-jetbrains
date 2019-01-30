@@ -47,6 +47,7 @@ class SamProjectGenerator : ProjectTemplate,
     val settings = SamNewProjectSettings()
     val step = SamProjectRuntimeSelectionStep(this, NOOP_CALLBACK)
     val peer = SamProjectGeneratorSettingsPeer(this)
+    val builder = SamProjectBuilder(this)
 
     override fun isHidden(): Boolean = false
 
@@ -79,7 +80,7 @@ class SamProjectGenerator : ProjectTemplate,
 
     override fun getIcon(): Icon = logo
 
-    override fun createModuleBuilder(): ModuleBuilder = SamProjectBuilder(this)
+    override fun createModuleBuilder(): ModuleBuilder = builder
 
     // force the initial validation
     override fun postponeValidation(): Boolean = false
@@ -103,6 +104,8 @@ class SamProjectRuntimeSelectionStep(
 }
 
 class SamProjectGeneratorSettingsPeer(private val generator: SamProjectGenerator) : ProjectGeneratorPeer<SamNewProjectSettings> {
+    private val templateComboBox = ComboBox<SamProjectTemplate>()
+    private val basePanel = SamInitSelectionPanel(settings)
     val sdkPanel: SdkSelectionPanelImpl by lazy { SdkSelectionPanelImpl(NOOP_CALLBACK, generator) }
 
     // need a listener to autorun this? this hook is used in PyCharm
@@ -117,14 +120,12 @@ class SamProjectGeneratorSettingsPeer(private val generator: SamProjectGenerator
     @Suppress("OverridingDeprecatedMember", "DEPRECATION")
     override fun addSettingsStateListener(listener: com.intellij.platform.WebProjectGenerator.SettingsStateListener) {}
 
-    private val templateComboBox = ComboBox<SamProjectTemplate>()
     // we sacrifice a lot of convenience so we can build the UI here...
     override fun buildUI(settingsStep: SettingsStep) {
         // delegate to another panel instead of trying to write UI as code
-        val panel = SamInitSelectionPanel(settings)
-        sdkPanel.transformUI(panel)
+        sdkPanel.transformUI(basePanel)
 
-        settingsStep.addSettingsComponent(panel.mainPanel)
+        settingsStep.addSettingsComponent(basePanel.mainPanel)
     }
 
     // order matters! we build the peer UI before we build the step UI,

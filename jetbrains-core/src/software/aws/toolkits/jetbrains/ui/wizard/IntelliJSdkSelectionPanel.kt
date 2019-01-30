@@ -11,26 +11,22 @@ import com.intellij.openapi.projectRoots.SdkTypeId
 import com.intellij.openapi.util.Condition
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.resources.message
 import java.awt.event.ItemEvent
 import javax.swing.JComponent
 import javax.swing.JLabel
 
 class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>, generator: SamProjectGenerator) : SdkSelectionPanelBase(callback, generator) {
+    private var currentSdk: Sdk? = null
+
     fun sdkPanelFilter(runtime: Runtime): Condition<SdkTypeId> = Condition { sdkTypeId ->
-        try {
-            // runtime group cannot be null since we populated the list of runtimes from the list of supported runtime groups
-            val runtimeGroup = runtime.runtimeGroup
-            sdkTypeId == runtimeGroup?.getIdeSdkType()
-        } catch (e: NullPointerException) {
-            // degrade experience instead of failing to draw the UI
-            true
-        }
+        // runtime group cannot be null since we populated the list of runtimes from the list of supported runtime groups
+        val runtimeGroup = runtime.runtimeGroup
+        sdkTypeId == runtimeGroup?.getIdeSdkType()
     }
 
-    var currentSdk: Sdk? = null
-
     private fun buildSdkSettingsPanel(runtime: Runtime) {
-        currentSdkPanel = object : SdkSettingsStep(object : WizardContext(null, {}) {}, SamProjectBuilder(generator), sdkPanelFilter(runtime), null) {
+        currentSdkPanel = object : SdkSettingsStep(object : WizardContext(null, {}) {}, generator.builder, sdkPanelFilter(runtime), null) {
             override fun onSdkSelected(sdk: Sdk?) {
                 currentSdk = sdk
             }
@@ -50,12 +46,15 @@ class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallbac
     override fun transformUI(panel: SamInitSelectionPanel) {
         super.transformUI(panel)
 
-        panel.addSdkPanel(JLabel("Project SDK:"), sdkSelectionPanel)
+        val sdkLabel = JLabel(message("sam.init.project_sdk.label"))
 
-        panel.runtime.addItemListener { l ->
-            if (l.stateChange == ItemEvent.SELECTED) {
-                buildSdkSettingsPanel(l.item as Runtime)
-                panel.addSdkPanel(JLabel("Project SDK:"), sdkSelectionPanel)
+        panel.addSdkPanel(sdkLabel, sdkSelectionPanel)
+
+        panel.runtime.addItemListener {
+            if (it.stateChange == ItemEvent.SELECTED) {
+                buildSdkSettingsPanel(it.item as Runtime)
+                panel.addSdkPanel(sdkLabel, sdkSelectionPanel)
+                currentSdkPanel.validate()
             }
         }
     }

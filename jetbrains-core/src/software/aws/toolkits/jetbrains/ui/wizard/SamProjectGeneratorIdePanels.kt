@@ -4,38 +4,11 @@
 package software.aws.toolkits.jetbrains.ui.wizard
 
 import com.intellij.ide.util.projectWizard.AbstractNewProjectStep
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.util.PlatformUtils
-import java.util.Stack
 import javax.swing.JComponent
 import javax.swing.JPanel
-
-// alternatively we can reflect and invoke private methods...
-inline fun <reified T : JComponent> findComponent(panel: JPanel): T? {
-    val stack = Stack<JComponent>()
-    stack.push(panel)
-
-    // this needs to be done on the dispatch thread...
-    var result: T? = null
-    runInEdt {
-        while (!stack.empty()) {
-            val component = stack.pop()
-            component.components.forEach { c ->
-                if (c is JComponent) {
-                    stack.push(c)
-                }
-                if (c is T) {
-                    result = c
-                    return@runInEdt
-                }
-            }
-        }
-    }
-
-    return result
-}
 
 interface SdkSelectionPanel {
     val sdkSelectionPanel: JComponent

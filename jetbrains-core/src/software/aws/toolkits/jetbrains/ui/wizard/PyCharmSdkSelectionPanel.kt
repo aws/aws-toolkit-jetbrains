@@ -8,6 +8,7 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.DocumentAdapter
+import com.intellij.util.ui.UIUtil
 import com.jetbrains.python.newProject.PyNewProjectSettings
 import com.jetbrains.python.newProject.PythonProjectGenerator
 import com.jetbrains.python.newProject.steps.ProjectSpecificSettingsStep
@@ -31,7 +32,7 @@ class PyCharmSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallback
         object : ProjectSpecificSettingsStep<PyNewProjectSettings>(object : PythonProjectGenerator<PyNewProjectSettings>() {
             override fun getLogo(): Icon? = AwsIcons.Logos.AWS
 
-            override fun getName(): String = "?"
+            override fun getName(): String = message("sam.init.name")
         }, callback) {
             // shim validation back to the user UI...
             override fun setErrorText(text: String?) {
@@ -46,7 +47,7 @@ class PyCharmSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallback
                 myLocationField.isEnabled = false
                 // hide label and textbox
                 myLocationField.parent.isVisible = false
-                val myInterpreterPanel = findComponent<PyAddSdkGroupPanel>(panel)
+                val myInterpreterPanel = UIUtil.findComponentOfType(panel, PyAddSdkGroupPanel::class.java)
 
                 return myInterpreterPanel
                     ?: throw RuntimeException("Could not find PyAddSdkGroupPanel in UI Tree")
