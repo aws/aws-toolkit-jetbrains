@@ -50,6 +50,12 @@ public class SamInitSelectionPanel {
             }
         });
 
+        templateComboBox.addItemListener(l -> {
+            if (l.getStateChange() == ItemEvent.SELECTED) {
+                projectSettings.template = (SamProjectTemplate) l.getItem();
+            }
+        });
+
         runtimeUpdate();
 
         mainPanel.validate();
