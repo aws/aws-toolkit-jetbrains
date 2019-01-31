@@ -18,6 +18,11 @@ import javax.swing.JLabel
 
 class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>, generator: SamProjectGenerator) : SdkSelectionPanelBase(callback, generator) {
     private var currentSdk: Sdk? = null
+    private val dummyContext = object : WizardContext(null, {}) {
+        override fun setProjectJdk(sdk: Sdk?) {
+            currentSdk = sdk
+        }
+    }
 
     fun sdkPanelFilter(runtime: Runtime): Condition<SdkTypeId> = Condition { sdkTypeId ->
         // runtime group cannot be null since we populated the list of runtimes from the list of supported runtime groups
@@ -25,23 +30,14 @@ class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallbac
         sdkTypeId == runtimeGroup?.getIdeSdkType()
     }
 
-    private fun buildSdkSettingsPanel(runtime: Runtime) {
-        currentSdkPanel = object : SdkSettingsStep(object : WizardContext(null, {}) {}, generator.builder, sdkPanelFilter(runtime), null) {
-            override fun onSdkSelected(sdk: Sdk?) {
-                currentSdk = sdk
-            }
+    private fun buildSdkSettingsPanel(runtime: Runtime): SdkSettingsStep =
+        object : SdkSettingsStep(dummyContext, generator.builder, sdkPanelFilter(runtime), null) {}.also {
+            it.validate()
         }
-    }
 
-    private lateinit var currentSdkPanel: SdkSettingsStep
+    private var currentSdkPanel: SdkSettingsStep = buildSdkSettingsPanel(generator.settings.runtime)
     override val sdkSelectionPanel: JComponent
-        get() {
-            if (!::currentSdkPanel.isInitialized) {
-                buildSdkSettingsPanel(generator.settings.runtime)
-            }
-
-            return currentSdkPanel.component
-        }
+        get() = currentSdkPanel.component
 
     override fun transformUI(panel: SamInitSelectionPanel) {
         super.transformUI(panel)
@@ -52,12 +48,14 @@ class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallbac
 
         panel.runtime.addItemListener {
             if (it.stateChange == ItemEvent.SELECTED) {
-                buildSdkSettingsPanel(it.item as Runtime)
+                currentSdkPanel = buildSdkSettingsPanel(it.item as Runtime)
                 panel.addSdkPanel(sdkLabel, sdkSelectionPanel)
-                currentSdkPanel.validate()
             }
         }
     }
 
-    override fun getSdk() = currentSdk
+    override fun getSdk(): Sdk? {
+        currentSdkPanel.updateDataModel()
+        return currentSdk
+    }
 }
