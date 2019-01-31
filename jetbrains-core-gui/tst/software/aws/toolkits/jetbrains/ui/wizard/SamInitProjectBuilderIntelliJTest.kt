@@ -40,7 +40,7 @@ class SamInitProjectBuilderIntelliJTest : GuiTestCase() {
     }
 
     @Test
-    fun testNewFromTemplate_defaultsWithClicks() {
+    fun testNewFromTemplate_java() {
         welcomeFrame {
             createNewProject()
             // defensive wait...
