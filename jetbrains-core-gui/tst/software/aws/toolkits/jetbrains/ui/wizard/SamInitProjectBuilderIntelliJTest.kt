@@ -80,12 +80,12 @@ class SamInitProjectBuilderIntelliJTest : GuiTestCase() {
         checkSdkVersion("Python")
     }
 
-    fun GuiTestCase.checkSdkVersion(projectSdk: String, moduleSdk: String = projectSdk) {
+    fun GuiTestCase.checkSdkVersion(projectSdk: String) {
         projectStructureDialogScenarios.openProjectStructureAndCheck {
             // dialog fixture needs to be managed by the model or test will time out and fail
             projectStructureDialogModel.checkModule {
                 val robot = robot()
-                val dependenciesTab = robot.findComponent(target(), TabLabel::class.java) { it.accessibleContext.accessibleName == "Dependencies"}
+                val dependenciesTab = robot.findComponent(target(), TabLabel::class.java) { it.accessibleContext.accessibleName == "Dependencies" }
                 robot.click(dependenciesTab)
                 val moduleSdkCombo = robot.findComponent(target(), JdkComboBox::class.java)
                 // project sdk option is selected
