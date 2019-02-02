@@ -15,7 +15,7 @@ phases:
       - chmod +x gradlew
       - ./gradlew buildPlugin
       - if [ "$RECORD_UI" ]; then avconv -f x11grab -video_size 1920x1080 -i 127.0.0.1:99 /tmp/screen_recording.mp4 -loglevel warning & fi
-      - ./gradlew guiTest coverageReport
+      - ./gradlew guiTest
   post_build:
     commands:
       - if [ "$RECORD_UI" ]; then pkill -2 avconv; fi
