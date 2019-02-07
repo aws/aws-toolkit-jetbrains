@@ -20,6 +20,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ExceptionUtil
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamCommon
@@ -154,7 +155,7 @@ open class SamDeployDialog(
     }
 
     private fun handleError(error: Throwable): String {
-        LOGGER.warn("SAM deploy failed", error)
+        LOG.warn(error) { "SAM deploy failed" }
 
         val message = if (error.cause is ProcessCanceledException) {
             message("serverless.application.deploy.abort")
@@ -218,6 +219,7 @@ open class SamDeployDialog(
                     count()
                     // exception can be null but is not annotated as nullable
                     metadata("hasException", exception != null)
+                    metadata("samVersion", SamCommon.getVersionString())
                 }
             }
         }
@@ -228,7 +230,7 @@ open class SamDeployDialog(
 
     private companion object {
         const val NUMBER_OF_STEPS = 3.0
-        val LOGGER = getLogger<SamDeployDialog>()
+        val LOG = getLogger<SamDeployDialog>()
         val telemetry = TelemetryService.getInstance()
     }
 }
