@@ -20,7 +20,7 @@ import software.aws.toolkits.resources.message
 import java.io.File
 
 class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
-    private val writer: CredentialFileWriter,
+    private val writer: ConfigFileWriter,
     private val configFile: File,
     private val credentialsFile: File
 ) : AnActionWrapper(message("configure.toolkit.upsert_credentials.action")), DumbAware {
@@ -72,11 +72,11 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
     ) == Messages.OK
 }
 
-interface CredentialFileWriter {
+interface ConfigFileWriter {
     fun createFile(file: File)
 }
 
-object DefaultConfigFileWriter : CredentialFileWriter {
+object DefaultConfigFileWriter : ConfigFileWriter {
     val TEMPLATE = """
         # Amazon Web Services Config File used by AWS CLI, SDKs, and tools
         # This file was created by the AWS Toolkit for JetBrains plugin.

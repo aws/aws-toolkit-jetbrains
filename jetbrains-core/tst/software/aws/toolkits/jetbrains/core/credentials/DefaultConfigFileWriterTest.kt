@@ -14,7 +14,7 @@ import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
 
-class DefaultCredentialFileWriterTest {
+class DefaultConfigFileWriterTest {
 
     @Rule
     @JvmField
