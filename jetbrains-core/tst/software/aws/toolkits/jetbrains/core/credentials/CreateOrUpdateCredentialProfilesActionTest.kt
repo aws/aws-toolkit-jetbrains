@@ -42,19 +42,77 @@ class CreateOrUpdateCredentialProfilesActionTest {
     }
 
     @Test
-    fun confirmCalledIfFileDoesNotExist() {
+    fun confirmConfigFileCreated_bothFilesDoNotExist() {
         val writer = mock<CredentialFileWriter> {
             on { createFile(any()) }.doAnswer { it.getArgument<File>(0).writeText("hello") }
         }
 
-        val file = File(folderRule.newFolder(), "credentials")
+        val configFile = File(folderRule.newFolder(), "config")
+        val credFile = File(folderRule.newFolder(), "credentials")
 
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, file)
+        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
         Messages.setTestDialog(TestDialog.OK)
 
         sut.actionPerformed(TestActionEvent(DataContext { projectRule.project }))
 
-        verify(writer).createFile(file)
+        verify(writer).createFile(configFile)
+
+        assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying { assertThat(it.name).isEqualTo("config") }
+    }
+
+    @Test
+    fun bothFilesOpened_bothFilesExists() {
+        val writer = mock<CredentialFileWriter> {
+            on { createFile(any()) }.doAnswer { it.getArgument<File>(0).writeText("hello") }
+        }
+        val configFile = folderRule.newFile("config")
+        val credFile = folderRule.newFile("credentials")
+        // IDE interprets blank files with no extension as binary
+        configFile.writeText("config")
+        credFile.writeText("cred")
+
+        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        Messages.setTestDialog(TestDialog.OK)
+
+        sut.actionPerformed(TestActionEvent(DataContext { projectRule.project }))
+
+        assertThat(fileEditorManager.openFiles).hasSize(2)
+            .anySatisfy { assertThat(it.name).isEqualTo("config") }
+            .anySatisfy { assertThat(it.name).isEqualTo("credentials") }
+    }
+
+    @Test
+    fun configFileOpened_onlyConfigExists() {
+        val writer = mock<CredentialFileWriter> {
+            on { createFile(any()) }.doAnswer { it.getArgument<File>(0).writeText("hello") }
+        }
+
+        val configFile = folderRule.newFile("config")
+        val credFile = File(folderRule.newFolder(), "credentials")
+        configFile.writeText("config")
+
+        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        Messages.setTestDialog(TestDialog.OK)
+
+        sut.actionPerformed(TestActionEvent(DataContext { projectRule.project }))
+
+        assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying { assertThat(it.name).isEqualTo("config") }
+    }
+
+    @Test
+    fun credentialFileOpened_onlyCredentialsExists() {
+        val writer = mock<CredentialFileWriter> {
+            on { createFile(any()) }.doAnswer { it.getArgument<File>(0).writeText("hello") }
+        }
+
+        val configFile = File(folderRule.newFolder(), "config")
+        val credFile = folderRule.newFile("credentials")
+        credFile.writeText("cred")
+
+        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        Messages.setTestDialog(TestDialog.OK)
+
+        sut.actionPerformed(TestActionEvent(DataContext { projectRule.project }))
 
         assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying { assertThat(it.name).isEqualTo("credentials") }
     }
@@ -63,8 +121,10 @@ class CreateOrUpdateCredentialProfilesActionTest {
     fun negativeConfirmationDoesNotCreateFile() {
         val writer = mock<CredentialFileWriter>()
 
-        val file = File(folderRule.newFolder(), "credentials")
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, file)
+        val configFile = File(folderRule.newFolder(), "config")
+        val credFile = File(folderRule.newFolder(), "credentials")
+
+        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
         Messages.setTestDialog(TestDialog.NO)
 
         sut.actionPerformed(TestActionEvent(DataContext { projectRule.project }))
