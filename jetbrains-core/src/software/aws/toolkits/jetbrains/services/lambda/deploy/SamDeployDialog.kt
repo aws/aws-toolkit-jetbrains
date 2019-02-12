@@ -40,7 +40,8 @@ open class SamDeployDialog(
     private val template: VirtualFile,
     private val parameters: Map<String, String>,
     private val s3Bucket: String,
-    private val autoExecute: Boolean
+    private val autoExecute: Boolean,
+    private val useContainer: Boolean
 ) : DialogWrapper(project) {
     private val progressIndicator = ProgressIndicatorBase()
     private val view = SamDeployView(project, progressIndicator)
@@ -95,6 +96,11 @@ open class SamDeployDialog(
             .withParameters(template.path)
             .withParameters("--build-dir")
             .withParameters(buildDir.toString())
+            .apply {
+                if (useContainer) {
+                    withParameters("--use-container")
+                }
+            }
 
         val builtTemplate = buildDir.resolve("template.yaml")
         return runCommand(message("serverless.application.deploy.step_name.build"), command) { builtTemplate }
