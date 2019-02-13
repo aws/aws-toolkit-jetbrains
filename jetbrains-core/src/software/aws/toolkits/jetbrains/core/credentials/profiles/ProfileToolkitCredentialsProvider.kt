@@ -40,6 +40,7 @@ class ProfileToolkitCredentialsProvider(
     private val sdkHttpClient: SdkHttpClient,
     private val regionProvider: ToolkitRegionProvider
 ) : ToolkitCredentialsProvider() {
+    @Volatile
     private var internalCredentialsProvider: AwsCredentialsProvider? = createInternalCredentialProvider()
 
     override val id = "$TYPE:$profileName"
