@@ -8,6 +8,7 @@ import com.intellij.ide.util.projectWizard.SdkSettingsStep
 import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkTypeId
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Condition
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
@@ -31,9 +32,8 @@ class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallbac
     }
 
     private fun buildSdkSettingsPanel(runtime: Runtime): SdkSettingsStep =
-        object : SdkSettingsStep(dummyContext, generator.builder, sdkPanelFilter(runtime), null) {}.also {
-            it.validate()
-        }
+        object : SdkSettingsStep(dummyContext, generator.builder, sdkPanelFilter(runtime), null) {}
+        // don't validate on init of the SettingsStep or weird things will happen if the user has no SDK
 
     private var currentSdkPanel: SdkSettingsStep = buildSdkSettingsPanel(generator.settings.runtime)
     override val sdkSelectionPanel: JComponent
@@ -52,6 +52,15 @@ class IntelliJSdkSelectionPanel(callback: AbstractNewProjectStep.AbstractCallbac
                 panel.addSdkPanel(sdkLabel, sdkSelectionPanel)
             }
         }
+    }
+
+    override fun validateAll(): List<ValidationInfo>? {
+        if (!currentSdkPanel.validate()) {
+            throw ValidationException()
+        }
+        // okay to return null here since any ConfigurationError in the validate() call will propagate up to the ModuleWizardStep
+        // validation checker and do-the-right-thing for us
+        return null
     }
 
     override fun getSdk(): Sdk? {
