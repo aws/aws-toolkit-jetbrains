@@ -224,16 +224,19 @@ private class ChangeCredentialsAction(val credentialsProvider: ToolkitCredential
 
     override fun doSetSelected(e: AnActionEvent, state: Boolean) {
         if (state) {
-            if (!credentialsProvider.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
+            try {
+                if (credentialsProvider.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
+                    getAccountSetting(e).activeCredentialProvider = credentialsProvider
+                }
+            } catch (ex: Exception) {
                 notifyWarn(
                     title = message("credentials.invalid.title"),
-                    content = message("credentials.invalid.notification", credentialsProvider.displayName),
+                    content = message("credentials.profile.validation_error", credentialsProvider.displayName, ex.localizedMessage),
+                    project = e.project,
                     notificationActions = listOf(createNotificationExpiringAction(
                         ActionManager.getInstance().getAction("aws.settings.upsertCredentials")
                     ))
                 )
-            } else {
-                getAccountSetting(e).activeCredentialProvider = credentialsProvider
             }
         }
     }

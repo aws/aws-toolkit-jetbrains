@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.invokeAndWaitIfNeed
 import com.intellij.openapi.ui.Messages
+import com.intellij.util.text.nullize
 import icons.AwsIcons
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
@@ -25,6 +27,8 @@ import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory.Companion.TYPE
+import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.util.function.Supplier
 
@@ -56,7 +60,7 @@ class ProfileToolkitCredentialsProvider(
 
     // Due to the inability to get the MFA into the standard ProfileToolkitProvider in the SDK, we have to recreate
     // the logic
-    private fun createInternalCredentialProvider(): AwsCredentialsProvider =
+    private fun createInternalCredentialProvider(): AwsCredentialsProvider = try {
         when {
             propertyExists(ProfileProperty.ROLE_ARN) -> {
                 validateChain()
@@ -109,6 +113,7 @@ class ProfileToolkitCredentialsProvider(
                     })
                     .build()
             }
+
             propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> {
                 StaticCredentialsProvider.create(
                     AwsSessionCredentials.create(
@@ -118,6 +123,7 @@ class ProfileToolkitCredentialsProvider(
                     )
                 )
             }
+
             propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> {
                 StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(
@@ -126,9 +132,21 @@ class ProfileToolkitCredentialsProvider(
                     )
                 )
             }
-            // TODO: Improve why it is unsupported, https://github.com/aws/aws-toolkit-jetbrains/issues/794
-            else -> throw IllegalArgumentException("Profile `${profile()}` is unsupported")
+
+            else -> {
+                throw IllegalArgumentException(message("credentials.profile.unsupported", profile().name()))
+            }
         }
+    } catch (e: IllegalArgumentException) {
+        notifyInfo(
+            title = message("credentials.invalid.title"),
+            content = e.localizedMessage,
+            action = createNotificationExpiringAction(
+                ActionManager.getInstance().getAction("aws.settings.upsertCredentials")
+            )
+        )
+        throw e
+    }
 
     private fun createAssumeRoleRequest(
         mfaSerial: String?,
@@ -181,6 +199,9 @@ class ProfileToolkitCredentialsProvider(
 
     private fun requiredProperty(propertyName: String, profile: Profile = profile()): String =
         profile.property(propertyName)
+            .filter {
+                it.nullize() != null
+            }
             .orElseThrow {
                 IllegalArgumentException(
                     message(

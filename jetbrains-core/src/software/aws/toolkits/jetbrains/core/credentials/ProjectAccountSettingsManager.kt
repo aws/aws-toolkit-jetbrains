@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
@@ -19,6 +20,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsMa
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.MRUList
+import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 
@@ -136,18 +138,17 @@ class DefaultProjectAccountSettingsManager(private val project: Project) :
     override fun loadState(state: AccountState) {
         activeRegionInternal = regionProvider.lookupRegionById(state.activeRegion)
         state.activeProfile?.let { getCredentialProviderOrNull(it) }?.run {
-            if (this.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
-                activeProfileInternal = this
-            } else {
-                val content = if (this.displayName.equals(ProfileToolkitCredentialsProviderFactory.DEFAULT_PROFILE_DISPLAY_NAME, true)) {
-                    message("credentials.default.profile.invalid.no.fallback.notification")
-                } else {
-                    message("credentials.profile.invalid.notification", this.displayName)
+            try {
+                if (this.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
+                    activeProfileInternal = this
                 }
-
+            } catch (e: Exception) {
                 notifyWarn(
                     title = message("credentials.invalid.title"),
-                    content = content
+                    content = message("credentials.profile.validation_error", this.displayName, e.localizedMessage),
+                    notificationActions = listOf(createNotificationExpiringAction(
+                        ActionManager.getInstance().getAction("aws.settings.upsertCredentials")
+                    ))
                 )
             }
         }
@@ -172,11 +173,13 @@ class DefaultProjectAccountSettingsManager(private val project: Project) :
         // Prevent repeated checks when a provider is known to be invalid
         // TODO : When profile refreshing is supported, this will need to be revisited
         if (!knownInvalidProfiles.contains(toolkitCredentialsProvider.id)) {
-            if (toolkitCredentialsProvider.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
-                return true
+            try {
+                if (toolkitCredentialsProvider.isValid(AwsSdkClient.getInstance().sdkHttpClient)) {
+                    return true
+                }
+            } catch (e: Exception) {
+                knownInvalidProfiles.add(toolkitCredentialsProvider.id)
             }
-
-            knownInvalidProfiles.add(toolkitCredentialsProvider.id)
         }
 
         return false
