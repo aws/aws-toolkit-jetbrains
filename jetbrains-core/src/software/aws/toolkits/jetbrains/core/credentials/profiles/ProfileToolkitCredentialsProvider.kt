@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.invokeAndWaitIfNeed
 import com.intellij.openapi.ui.Messages
@@ -27,8 +26,6 @@ import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory.Companion.TYPE
-import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.util.function.Supplier
 
@@ -60,7 +57,7 @@ class ProfileToolkitCredentialsProvider(
 
     // Due to the inability to get the MFA into the standard ProfileToolkitProvider in the SDK, we have to recreate
     // the logic
-    private fun createInternalCredentialProvider(): AwsCredentialsProvider = try {
+    private fun createInternalCredentialProvider(): AwsCredentialsProvider =
         when {
             propertyExists(ProfileProperty.ROLE_ARN) -> {
                 validateChain()
@@ -137,16 +134,6 @@ class ProfileToolkitCredentialsProvider(
                 throw IllegalArgumentException(message("credentials.profile.unsupported", profile().name()))
             }
         }
-    } catch (e: IllegalArgumentException) {
-        notifyInfo(
-            title = message("credentials.invalid.title"),
-            content = e.localizedMessage,
-            action = createNotificationExpiringAction(
-                ActionManager.getInstance().getAction("aws.settings.upsertCredentials")
-            )
-        )
-        throw e
-    }
 
     private fun createAssumeRoleRequest(
         mfaSerial: String?,

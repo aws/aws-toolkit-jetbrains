@@ -39,7 +39,7 @@ abstract class ToolkitCredentialsProvider : AwsCredentialsProvider {
      * Returns true or throws an Exception
      */
     @Throws(Exception::class)
-    open fun isValid(sdkHttpClient: SdkHttpClient): Boolean {
+    open fun isValidOrThrow(sdkHttpClient: SdkHttpClient): Boolean {
         val client = StsClient.builder()
             .region(Region.US_EAST_1)
             .httpClient(sdkHttpClient)
