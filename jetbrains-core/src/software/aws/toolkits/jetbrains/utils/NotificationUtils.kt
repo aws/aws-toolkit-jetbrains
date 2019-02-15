@@ -120,19 +120,23 @@ fun createShowMoreInfoDialogAction(actionName: String?, title: String?, message:
         override fun doActionPerformed(e: AnActionEvent) {
             val dialogTitle = title ?: ""
 
-            val textArea = JTextArea(moreInfo)
-            textArea.columns = 50
-            textArea.rows = 5
-            textArea.lineWrap = true
-            textArea.wrapStyleWord = true
-            textArea.isEditable = false
+            val textArea = JTextArea(moreInfo).apply {
+                columns = 50
+                rows = 5
+                lineWrap = true
+                wrapStyleWord = true
+                isEditable = false
+            }
 
-            val dialogBuilder = DialogBuilder()
-            dialogBuilder.setTitle(dialogTitle)
-            dialogBuilder.setNorthPanel(JLabel(message))
-            dialogBuilder.setCenterPanel(ScrollPaneFactory.createScrollPane(textArea))
-            dialogBuilder.setPreferredFocusComponent(textArea)
-            dialogBuilder.removeAllActions()
+            val dialogBuilder = DialogBuilder().apply {
+                setTitle(dialogTitle)
+                setNorthPanel(JLabel(message))
+                setCenterPanel(ScrollPaneFactory.createScrollPane(textArea))
+                setPreferredFocusComponent(textArea)
+                removeAllActions()
+                addOkAction()
+            }
+
             dialogBuilder.show()
         }
     }
