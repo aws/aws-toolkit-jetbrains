@@ -95,6 +95,10 @@ abstract class LambdaBuilder {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     // TODO: We should find a way to show the output of this in the UI
                     LOG.info { event.text }
+
+                    if (ApplicationManager.getApplication().isUnitTestMode) {
+                        println("SAM CLI: ${event.text}")
+                    }
                 }
 
                 override fun processTerminated(event: ProcessEvent) {
@@ -149,12 +153,12 @@ abstract class LambdaBuilder {
 /**
  * Represents the result of building a Lambda
  *
- * @param templateLocation The path to the build generated template TODO: Currently nullable during the sam build migration
+ * @param templateLocation The path to the build generated template
  * @param codeLocation The path to the built lambda directory
  * @param mappings Source mappings from original codeLocation to the path inside of the archive
  */
 data class BuiltLambda(
-    val templateLocation: Path?,
+    val templateLocation: Path,
     val codeLocation: Path,
     val mappings: List<PathMapping> = emptyList()
 )
