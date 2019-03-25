@@ -31,7 +31,7 @@ class SamCommon {
         const val SAM_INVALID_OPTION_SUBSTRING = "no such option"
 
         // Inclusive
-        val expectedSamMinVersion = SemVer("0.13.0", 0, 13, 0)
+        val expectedSamMinVersion = SemVer("0.14.0", 0, 14, 0)
 
         // Exclusive
         val expectedSamMaxVersion = SemVer("0.16.0", 0, 16, 0)
@@ -108,6 +108,7 @@ class SamCommon {
         /**
          * @return The error message to display, else null if it is valid
          */
+        @JvmOverloads
         fun validate(path: String? = SamSettings.getInstance().executablePath): String? {
             val sanitizedPath = path.nullize(true)
                 ?: return message("sam.cli_not_configured")
