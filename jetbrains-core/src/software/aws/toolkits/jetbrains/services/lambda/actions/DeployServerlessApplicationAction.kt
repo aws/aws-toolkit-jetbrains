@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.jetbrains.utils.notifySamCliNotValidError
+import software.aws.toolkits.jetbrains.utils.warnStackUpdateAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
 class DeployServerlessApplicationAction : AnActionWrapper(
@@ -71,6 +72,10 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         if (!stackDialog.isOK) return
 
         saveSettings(project, templateFile, stackDialog)
+
+        if (warnStackUpdateAgainstCodePipeline(project, stackDialog.stackName, stackDialog.stackId, message("codepipeline.resource.operation.deploy"))) {
+            return
+        }
 
         val stackName = stackDialog.stackName
         val deployDialog = SamDeployDialog(

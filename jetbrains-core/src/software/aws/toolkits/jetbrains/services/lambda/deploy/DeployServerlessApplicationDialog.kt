@@ -115,6 +115,19 @@ class DeployServerlessApplicationDialog(
             view.stacks.selected()
         } ?: throw RuntimeException(message("serverless.application.deploy.validation.stack.missing"))
 
+    val stackId: String
+        get() = if (view.createStack.isSelected) {
+            ""
+        } else {
+            val stackName = view.stacks.selected()
+            if (stackName == null) {
+                ""
+            } else {
+                val stack = cloudFormationClient.describeStacks { it.stackName(stackName) }.stacks()[0]
+                stack.stackId()
+            }
+        }
+
     val bucket: String
         get() = view.s3Bucket.selected()
                 ?: throw RuntimeException(message("serverless.application.deploy.validation.s3.bucket.empty"))

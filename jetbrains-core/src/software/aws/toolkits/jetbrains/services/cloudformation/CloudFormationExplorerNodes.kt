@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.core.stack.openStack
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
+import software.aws.toolkits.jetbrains.utils.warnStackUpdateAgainstCodePipeline
 import software.aws.toolkits.resources.message
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
@@ -42,7 +43,7 @@ class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(p
         val nodes = response.stacks().filterNotNull().asSequence()
             .filter { it.stackStatus() !in DELETING_STACK_STATES }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.stackName() })
-            .map { it -> CloudFormationStackNode(nodeProject, it.stackName(), it.stackStatus()) }
+            .map { it -> CloudFormationStackNode(nodeProject, it.stackName(), it.stackId(), it.stackStatus()) }
             .toList()
 
         return nodes + paginationNodeIfRequired(response.nextToken())
@@ -58,7 +59,7 @@ class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(p
     }
 }
 
-class CloudFormationStackNode(project: Project, val stackName: String, private val stackStatus: StackStatus) :
+class CloudFormationStackNode(project: Project, val stackName: String, val stackId: String, private val stackStatus: StackStatus) :
     AwsExplorerResourceNode<String>(project, CloudFormationClient.SERVICE_NAME, stackName, AwsIcons.Resources.CLOUDFORMATION_STACK),
     AwsNodeAlwaysExpandable,
     AwsNodeChildCache {
@@ -156,5 +157,9 @@ class DeleteCloudFormationStackAction : DeleteResourceAction<CloudFormationStack
         val client: CloudFormationClient = AwsClientManager.getInstance(selected.nodeProject).getClient()
         client.deleteStack { it.stackName(selected.stackName) }
         client.waitForStackDeletionComplete(selected.stackName)
+    }
+
+    override fun warnResourceUpdateAgainstCodePipeline(selected: CloudFormationStackNode): Boolean {
+        return warnStackUpdateAgainstCodePipeline(selected.nodeProject, selected.stackName, selected.stackId, message("codepipeline.resource.operation.delete"))
     }
 }

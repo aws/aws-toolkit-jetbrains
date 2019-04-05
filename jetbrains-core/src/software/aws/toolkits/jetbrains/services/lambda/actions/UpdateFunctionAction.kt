@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionDialog
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode
+import software.aws.toolkits.jetbrains.utils.warnLambdaUpdateAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
 abstract class UpdateFunctionAction(private val mode: EditFunctionMode, title: String) : SingleResourceNodeAction<LambdaFunctionNode>(title) {
@@ -25,6 +26,10 @@ abstract class UpdateFunctionAction(private val mode: EditFunctionMode, title: S
             selected.function.credentialProviderId,
             selected.function.region
         )
+
+        if (warnLambdaUpdateAgainstCodePipeline(project, selected.function.name, selected.function.arn, message("codepipeline.resource.operation.update"))) {
+            return
+        }
 
         EditFunctionDialog(project, lambdaFunction, mode = mode).show()
     }

@@ -18,6 +18,10 @@ import software.aws.toolkits.resources.message
 abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: String) : SingleResourceNodeAction<T>(text, icon = AllIcons.Actions.Cancel),
     DumbAware {
     final override fun actionPerformed(selected: T, e: AnActionEvent) {
+        if (warnResourceUpdateAgainstCodePipeline(selected)) {
+            return
+        }
+
         val resourceName = selected.displayName()
         ApplicationManager.getApplication().invokeLater {
             val response = Messages.showInputDialog(selected.project,
@@ -44,6 +48,8 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: Str
             }
         }
     }
+
+    abstract fun warnResourceUpdateAgainstCodePipeline(selected: T): Boolean
 
     abstract fun performDelete(selected: T)
 }
