@@ -73,11 +73,13 @@ class DeployServerlessApplicationAction : AnActionWrapper(
 
         saveSettings(project, templateFile, stackDialog)
 
-        if (warnStackUpdateAgainstCodePipeline(project, stackDialog.stackName, stackDialog.stackId, message("codepipeline.resource.operation.deploy"))) {
+        val stackName = stackDialog.stackName
+        val stackId = stackDialog.stackId
+
+        if (stackId != null && warnStackUpdateAgainstCodePipeline(project, stackName, stackId, message("codepipeline.resource.operation.deploy"))) {
             return
         }
 
-        val stackName = stackDialog.stackName
         val deployDialog = SamDeployDialog(
             project,
             stackName,

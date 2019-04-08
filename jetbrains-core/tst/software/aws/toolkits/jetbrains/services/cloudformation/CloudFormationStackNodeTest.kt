@@ -79,7 +79,7 @@ class CloudFormationStackNodeTest {
 
     @Test
     fun nodeStartsWithoutChildren() {
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_COMPLETE)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_COMPLETE)
 
         assertThat(node.isInitialChildState()).isEqualTo(true)
         assertThat(node.children).isEmpty()
@@ -87,7 +87,7 @@ class CloudFormationStackNodeTest {
 
     @Test
     fun nodeRefreshes() {
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_COMPLETE)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_COMPLETE)
         val children = node.getChildren(true)
 
         assertThat(node.isInitialChildState()).isEqualTo(false)
@@ -98,7 +98,7 @@ class CloudFormationStackNodeTest {
 
     @Test
     fun nodeRefreshesAndCaches() {
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_COMPLETE)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_COMPLETE)
         node.getChildren(true)
 
         assertThat(node.children).hasSize(2)
@@ -108,14 +108,14 @@ class CloudFormationStackNodeTest {
 
     @Test
     fun failedStackHaveNoChildren() {
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_FAILED)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_FAILED)
 
         assertThat(node.children).isEmpty()
     }
 
     @Test
     fun failedStackHaveNoChildrenAfterRefresh() {
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_FAILED)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_FAILED)
 
         node.getChildren(true)
 
@@ -124,14 +124,14 @@ class CloudFormationStackNodeTest {
 
     @Test
     fun inProgressStacksHaveNoChildren() {
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_IN_PROGRESS)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_IN_PROGRESS)
 
         assertThat(node.children).isEmpty()
     }
 
     @Test
     fun inProgressStacksHaveNoChildrenAfterRefresh() {
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_IN_PROGRESS)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_IN_PROGRESS)
 
         node.getChildren(true)
 
@@ -149,7 +149,7 @@ class CloudFormationStackNodeTest {
                 .build()
         )
 
-        val node = CloudFormationStackNode(projectRule.project, "stack", StackStatus.CREATE_COMPLETE)
+        val node = CloudFormationStackNode(projectRule.project, "stack", "stackId", StackStatus.CREATE_COMPLETE)
         node.getChildren(true)
 
         assertThat(node.children).hasSize(1)

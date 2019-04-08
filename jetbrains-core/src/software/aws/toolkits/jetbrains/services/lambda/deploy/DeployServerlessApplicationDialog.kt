@@ -115,13 +115,13 @@ class DeployServerlessApplicationDialog(
             view.stacks.selected()
         } ?: throw RuntimeException(message("serverless.application.deploy.validation.stack.missing"))
 
-    val stackId: String
+    val stackId: String?
         get() = if (view.createStack.isSelected) {
-            ""
+            null
         } else {
             val stackName = view.stacks.selected()
             if (stackName == null) {
-                ""
+                null
             } else {
                 val stack = cloudFormationClient.describeStacks { it.stackName(stackName) }.stacks()[0]
                 stack.stackId()
