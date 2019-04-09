@@ -138,11 +138,9 @@ class ResourceSelector<T> : ComboBox<T>() {
         }
     }
 
-    fun values(): List<T> {
-        return ArrayList<T>().apply {
-            for (i in 0..(itemCount - 1)) {
-                add(getItemAt(i))
-            }
+    fun values(): List<T> = ArrayList<T>().apply {
+        for (i in 0..(itemCount - 1)) {
+            add(getItemAt(i))
         }
     }
 
