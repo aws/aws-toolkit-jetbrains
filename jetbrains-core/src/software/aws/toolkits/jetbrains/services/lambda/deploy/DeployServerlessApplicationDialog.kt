@@ -152,7 +152,7 @@ class DeploySamApplicationValidator {
 
     fun validateSettings(view: DeployServerlessApplicationPanel): ValidationInfo? {
         if (view.createStack.isSelected) {
-            validateStackName(view.newStackName.text)?.let {
+            validateStackName(view.newStackName.text, view.stacks.values())?.let {
                 return ValidationInfo(it, view.newStackName)
             }
         } else if (view.updateStack.isSelected && view.stacks.selected() == null) {
@@ -196,7 +196,7 @@ class DeploySamApplicationValidator {
         return null
     }
 
-    private fun validateStackName(name: String?): String? {
+    private fun validateStackName(name: String?, existingNames: List<String>): String? {
         if (name == null || name.isEmpty()) {
             return message("serverless.application.deploy.validation.new.stack.name.missing")
         }
@@ -205,6 +205,10 @@ class DeploySamApplicationValidator {
         }
         if (name.length > MAX_STACK_NAME_LENGTH) {
             return message("serverless.application.deploy.validation.new.stack.name.too.long", MAX_STACK_NAME_LENGTH)
+        }
+        // Check if the new stack name is same as an existing stack name
+        if (existingNames.contains(name)) {
+            return message("serverless.application.deploy.validation.new.stack.name.duplicate")
         }
         return null
     }

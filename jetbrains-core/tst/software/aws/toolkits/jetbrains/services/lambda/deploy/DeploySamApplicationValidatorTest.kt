@@ -95,6 +95,14 @@ class DeploySamApplicationValidatorTest {
     }
 
     @Test
+    fun invalidStackName_Duplicate() {
+        view.createStack.isSelected = true
+        view.newStackName.text = "bar"
+        view.stacks.model = DefaultComboBoxModel(arrayOf("foo", "bar", "baz"))
+        assert(sut.validateSettings(view)).containsMessage(message("serverless.application.deploy.validation.new.stack.name.duplicate"))
+    }
+
+    @Test
     fun invalidStackName_InvalidChars() {
         view.createStack.isSelected = true
         view.newStackName.text = "stack_1"
