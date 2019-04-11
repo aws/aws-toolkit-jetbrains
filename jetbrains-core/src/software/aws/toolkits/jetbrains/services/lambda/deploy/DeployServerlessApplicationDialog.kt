@@ -35,7 +35,7 @@ class DeployServerlessApplicationDialog(
     private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
 
     private val view = DeployServerlessApplicationPanel()
-    private val validator = DeploySamApplicationValidator()
+    private val validator = DeploySamApplicationValidator(view)
     private val s3Client: S3Client = project.awsClient()
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
     private val templateParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
@@ -106,7 +106,7 @@ class DeployServerlessApplicationDialog(
     override fun getPreferredFocusedComponent(): JComponent? =
             if (settings?.samStackName(samPath) == null) view.newStackName else view.updateStack
 
-    override fun doValidate(): ValidationInfo? = validator.validateSettings(view)
+    override fun doValidate(): ValidationInfo? = validator.validateSettings()
 
     val stackName: String
         get() = if (view.createStack.isSelected) {
@@ -148,11 +148,11 @@ class DeployServerlessApplicationDialog(
     }
 }
 
-class DeploySamApplicationValidator {
+class DeploySamApplicationValidator(private val view: DeployServerlessApplicationPanel) {
 
-    fun validateSettings(view: DeployServerlessApplicationPanel): ValidationInfo? {
+    fun validateSettings(): ValidationInfo? {
         if (view.createStack.isSelected) {
-            validateStackName(view.newStackName.text, view.stacks.values())?.let {
+            validateStackName(view.newStackName.text)?.let {
                 return ValidationInfo(it, view.newStackName)
             }
         } else if (view.updateStack.isSelected && view.stacks.selected() == null) {
@@ -196,7 +196,7 @@ class DeploySamApplicationValidator {
         return null
     }
 
-    private fun validateStackName(name: String?, existingNames: List<String>): String? {
+    private fun validateStackName(name: String?): String? {
         if (name == null || name.isEmpty()) {
             return message("serverless.application.deploy.validation.new.stack.name.missing")
         }
@@ -207,7 +207,7 @@ class DeploySamApplicationValidator {
             return message("serverless.application.deploy.validation.new.stack.name.too.long", MAX_STACK_NAME_LENGTH)
         }
         // Check if the new stack name is same as an existing stack name
-        if (existingNames.contains(name)) {
+        if (name in view.stacks.values()) {
             return message("serverless.application.deploy.validation.new.stack.name.duplicate")
         }
         return null

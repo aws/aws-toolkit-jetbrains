@@ -120,7 +120,7 @@ class ResourceSelectorTest {
 
     @Test
     fun comboBoxPopulation_values() {
-        val items = listOf("foo", "bar", "baz")
+        val items = setOf("foo", "bar", "baz")
         comboBox.populateValues() { items }
 
         waitForPopulationComplete(comboBox, items.size)
