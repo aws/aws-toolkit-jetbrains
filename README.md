@@ -9,9 +9,6 @@
 AWS Toolkit for JetBrains - a plugin for interacting with AWS from JetBrains IDEs. The plugin includes features that 
 make it easier to write applications on [Amazon Web Services](https://aws.amazon.com/) using a JetBrains IDE.
 
-The toolkit is generally available for PyCharm and IntelliJ IDEA. It can be installed from the 
-IDE plugin manager or manually from the [JetBrains plugin website](https://plugins.jetbrains.com/plugin/11349-aws-toolkit).
-
 This is an open source project because we want you to be involved. We love issues, feature requests, code reviews, pull 
 requests or any positive contribution. Please see the the [CONTRIBUTING](CONTRIBUTING.md) guide for how to help.  
 
@@ -22,8 +19,12 @@ Supported IDEs:
 
 ## Installation
 
-### Stable
-In your IDE, open of the Plugins page and search for `AWS Toolkit` and click install.
+See [Installing the AWS Toolkit for JetBrains](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/install) in the AWS Toolkit for JetBrains User Guide.
+
+To use this AWS Toolkit, you will first need an AWS account, a user within that account, and an access key for that 
+user. To use the AWS Toolkit to do AWS serverless application development and to run/debug AWS Lambda functions locally,
+you will also need to install the AWS CLI, Docker, and the AWS SAM CLI. The preceding link covers setting up all of 
+these prerequisites.
 
 ### EAP Builds
 We also offer opt-in Early Access Preview builds that are built automatically.
@@ -43,12 +44,14 @@ Please see [CONTRIBUTING](CONTRIBUTING.md#building-from-source) for instructions
 Features that don't relate to a specific AWS service.
 
 * **Credential management** - the ability to select how you want to authenticate with AWS, management of several 
-credential types and the ability to easily switch between profiles.
+credential types and the ability to easily switch between profiles. 
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/credentials)
 * **Region management** - the ability to switch between viewing resources in different AWS regions.
-* **AWS Resource Explorer** - tree-view of AWS resources available 
-(e.g. [AWS Lambda Functions](https://docs.aws.amazon.com/lambda/latest/dg/lambda-introduction-function.html)) in your 
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/regions)
+* **AWS Resource Explorer** - tree-view of AWS resources available in your 
 selected account/region. This does not represent all resources available in your account, only a sub-set of those 
 resource types supported by the plugin.
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer)
 
 ### Services
 
@@ -61,11 +64,16 @@ installation of the SAM CLI.
 **SAM features are currently limited to Java and Python only**
 
 * **New Project Wizard** - Get started quickly by using one of the quickstart serverless application templates.
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/new-project)
 * **Run/Debug Local Lambda Functions** - Locally test and step-through debug functions in a Lambda-like execution 
-environment provided by the [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli)
+environment provided by the SAM CLI.
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-local)
 * **Invoke Remote Lambda Functions** - Invoke remote functions using a sharable run-configuration
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-remote)
 * **Package & Deploy Lambda Functions** - Ability to package a Lambda function zip and create a remote lambda
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-deploy)
 * **Deploy SAM-based Applications** - Package, deploy & track SAM-based applications
+[Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/sam-deploy)
 
 *NB: Python-only features are available in both PyCharm and IntelliJ with the 
 [Python Plugin](https://www.jetbrains.com/help/idea/plugin-overview.html) installed.*
