@@ -3,7 +3,18 @@
 
 package software.aws.toolkits.jetbrains.ui.wizard
 
+import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.idea.maven.project.MavenProjectsManager
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.resources.message
 
 val SAM_TEMPLATES = listOf(
@@ -19,6 +30,14 @@ class SamHelloWorld : SamProjectTemplate() {
     override fun getDescription() = message("sam.init.template.hello_world.description")
 
     override fun unsupportedRuntimes() = setOf(Runtime.JAVA8)
+
+    override fun postCreationAction(runtime: Runtime, contentRoot: VirtualFile, rootModel: ModifiableRootModel) {
+        super.postCreationAction(runtime, contentRoot, rootModel)
+
+        if (runtime.runtimeGroup == RuntimeGroup.PYTHON) {
+            SamCommon.setSourceRoots(contentRoot, rootModel.project, rootModel)
+        }
+    }
 }
 
 class SamHelloWorldMaven : SamProjectTemplate() {
@@ -29,6 +48,30 @@ class SamHelloWorldMaven : SamProjectTemplate() {
     override fun supportedRuntimes() = setOf(Runtime.JAVA8)
 
     override fun dependencyManager(): String? = "maven"
+
+    override fun postCreationAction(runtime: Runtime, contentRoot: VirtualFile, rootModel: ModifiableRootModel) {
+        super.postCreationAction(runtime, contentRoot, rootModel)
+
+        val contentRootFile = VfsUtil.virtualToIoFile(contentRoot)
+        val baseSearchPath = contentRootFile.absolutePath
+        val pomFile = FileUtil.fileTraverser(contentRootFile).bfsTraversal().first { it.name == "pom.xml" }
+        if(pomFile != null) {
+            val projectsManager = MavenProjectsManager.getInstance(rootModel.project)
+
+            val pomVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(pomFile)
+            if (pomVirtualFile != null) {
+                projectsManager.addManagedFilesOrUnignore(listOf(pomVirtualFile))
+            } else {
+                LOG.warn { "Failed to convert $pomFile to VirtualFile"}
+            }
+        } else {
+            LOG.warn { "Failed to locate pom.xml under $baseSearchPath"}
+        }
+    }
+
+    private companion object {
+        val LOG = getLogger<SamHelloWorldMaven>()
+    }
 }
 
 class SamHelloWorldGradle : SamProjectTemplate() {
@@ -49,4 +92,12 @@ class SamDynamoDBCookieCutter : SamProjectTemplate() {
     override fun supportedRuntimes() = setOf(Runtime.PYTHON2_7, Runtime.PYTHON3_6, Runtime.PYTHON3_7)
 
     override fun location(): String? = "gh:aws-samples/cookiecutter-aws-sam-dynamodb-python"
+
+    override fun postCreationAction(runtime: Runtime, contentRoot: VirtualFile, rootModel: ModifiableRootModel) {
+        super.postCreationAction(runtime, contentRoot, rootModel)
+
+        if (runtime.runtimeGroup == RuntimeGroup.PYTHON) {
+            SamCommon.setSourceRoots(contentRoot, rootModel.project, rootModel)
+        }
+    }
 }
