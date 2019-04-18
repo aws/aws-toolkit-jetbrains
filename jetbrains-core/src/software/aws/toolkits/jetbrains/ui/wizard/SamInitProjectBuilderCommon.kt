@@ -71,8 +71,6 @@ abstract class SamProjectTemplate {
     protected open fun dependencyManager(): String? = null
 
     open fun supportedRuntimes(): Set<Runtime> = Runtime.knownValues().toSet()
-
-    open fun unsupportedRuntimes(): Set<Runtime> = emptySet()
 }
 
 @JvmOverloads

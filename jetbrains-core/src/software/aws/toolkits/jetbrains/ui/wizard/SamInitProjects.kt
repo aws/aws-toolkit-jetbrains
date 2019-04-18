@@ -12,33 +12,15 @@ import org.jetbrains.idea.maven.project.MavenProjectsManager
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.resources.message
 
 val SAM_TEMPLATES = listOf(
-    SamHelloWorld(),
+    SamHelloWorldPython(),
     SamHelloWorldMaven(),
     SamHelloWorldGradle(),
     SamDynamoDBCookieCutter()
 )
-
-class SamHelloWorld : SamProjectTemplate() {
-    override fun getName() = message("sam.init.template.hello_world.name")
-
-    override fun getDescription() = message("sam.init.template.hello_world.description")
-
-    override fun unsupportedRuntimes() = setOf(Runtime.JAVA8)
-
-    override fun postCreationAction(runtime: Runtime, contentRoot: VirtualFile, rootModel: ModifiableRootModel) {
-        super.postCreationAction(runtime, contentRoot, rootModel)
-
-        if (runtime.runtimeGroup == RuntimeGroup.PYTHON) {
-            SamCommon.setSourceRoots(contentRoot, rootModel.project, rootModel)
-        }
-    }
-}
 
 class SamHelloWorldMaven : SamProjectTemplate() {
     override fun getName() = message("sam.init.template.hello_world_maven.name")
@@ -55,17 +37,17 @@ class SamHelloWorldMaven : SamProjectTemplate() {
         val contentRootFile = VfsUtil.virtualToIoFile(contentRoot)
         val baseSearchPath = contentRootFile.absolutePath
         val pomFile = FileUtil.fileTraverser(contentRootFile).bfsTraversal().first { it.name == "pom.xml" }
-        if(pomFile != null) {
+        if (pomFile != null) {
             val projectsManager = MavenProjectsManager.getInstance(rootModel.project)
 
             val pomVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(pomFile)
             if (pomVirtualFile != null) {
                 projectsManager.addManagedFilesOrUnignore(listOf(pomVirtualFile))
             } else {
-                LOG.warn { "Failed to convert $pomFile to VirtualFile"}
+                LOG.warn { "Failed to convert $pomFile to VirtualFile" }
             }
         } else {
-            LOG.warn { "Failed to locate pom.xml under $baseSearchPath"}
+            LOG.warn { "Failed to locate pom.xml under $baseSearchPath" }
         }
     }
 
@@ -84,20 +66,25 @@ class SamHelloWorldGradle : SamProjectTemplate() {
     override fun dependencyManager(): String? = "gradle"
 }
 
-class SamDynamoDBCookieCutter : SamProjectTemplate() {
+abstract class SamPythonProjectTemplate : SamProjectTemplate() {
+    override fun supportedRuntimes() = setOf(Runtime.PYTHON2_7, Runtime.PYTHON3_6, Runtime.PYTHON3_7)
+
+    override fun postCreationAction(runtime: Runtime, contentRoot: VirtualFile, rootModel: ModifiableRootModel) {
+        super.postCreationAction(runtime, contentRoot, rootModel)
+        SamCommon.setSourceRoots(contentRoot, rootModel.project, rootModel)
+    }
+}
+
+class SamHelloWorldPython : SamPythonProjectTemplate() {
+    override fun getName() = message("sam.init.template.hello_world.name")
+
+    override fun getDescription() = message("sam.init.template.hello_world.description")
+}
+
+class SamDynamoDBCookieCutter : SamPythonProjectTemplate() {
     override fun getName() = message("sam.init.template.dynamodb_cookiecutter.name")
 
     override fun getDescription() = message("sam.init.template.dynamodb_cookiecutter.description")
 
-    override fun supportedRuntimes() = setOf(Runtime.PYTHON2_7, Runtime.PYTHON3_6, Runtime.PYTHON3_7)
-
     override fun location(): String? = "gh:aws-samples/cookiecutter-aws-sam-dynamodb-python"
-
-    override fun postCreationAction(runtime: Runtime, contentRoot: VirtualFile, rootModel: ModifiableRootModel) {
-        super.postCreationAction(runtime, contentRoot, rootModel)
-
-        if (runtime.runtimeGroup == RuntimeGroup.PYTHON) {
-            SamCommon.setSourceRoots(contentRoot, rootModel.project, rootModel)
-        }
-    }
 }
