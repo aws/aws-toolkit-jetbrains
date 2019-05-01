@@ -72,8 +72,6 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
             """.trimIndent()
         )
 
-        projectRule.fixture.addFileToProject("requirements.txt", "")
-
         runInEdtAndWait {
             fixture.openFileInEditor(psiClass.containingFile.virtualFile)
         }
@@ -106,6 +104,8 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Test
     fun samIsExecutedWithContainer() {
+        projectRule.fixture.addFileToProject("requirements.txt", "")
+
         val samOptions = SamOptions().apply {
             this.buildInContainer = true
         }
@@ -128,6 +128,8 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Test
     fun envVarsArePassed() {
+        projectRule.fixture.addFileToProject("requirements.txt", "")
+
         val envVars = mutableMapOf("Foo" to "Bar", "Bat" to "Baz")
 
         val runConfiguration = createHandlerBasedRunConfiguration(
@@ -150,6 +152,8 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Test
     fun regionIsPassed() {
+        projectRule.fixture.addFileToProject("requirements.txt", "")
+
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
             runtime = runtime,
@@ -168,6 +172,8 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Test
     fun credentialsArePassed() {
+        projectRule.fixture.addFileToProject("requirements.txt", "")
+
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
             runtime = runtime,
@@ -187,7 +193,7 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Test
     fun samIsExecutedWithDebugger() {
-        addBreakpoint()
+        projectRule.fixture.addFileToProject("requirements.txt", "")
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
@@ -198,6 +204,7 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
         )
         assertThat(runConfiguration).isNotNull
 
+        addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
         val executeLambda = executeLambda(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
@@ -210,7 +217,7 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Test
     fun samIsExecutedWithDebuggerSourceRoot() {
-        addBreakpoint()
+        projectRule.fixture.addFileToProject("src/requirements.txt", "")
 
         val srcRoot = projectRule.fixture.file.virtualFile.parent.parent
         PsiTestUtil.addSourceRoot(projectRule.module, srcRoot)
@@ -224,6 +231,7 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
         )
         assertThat(runConfiguration).isNotNull
 
+        addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
         val executeLambda = executeLambda(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
@@ -236,8 +244,50 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Test
     fun samIsExecutedWithTemplate() {
+        projectRule.fixture.addFileToProject("src/requirements.txt", "")
+
+        val srcRoot = projectRule.fixture.file.virtualFile.parent.parent
+        PsiTestUtil.addSourceRoot(projectRule.module, srcRoot)
+
         val templateFile = projectRule.fixture.addFileToProject(
-            "template.yaml", """
+            "template.yaml",
+            """
+            Resources:
+              SomeFunction:
+                Type: AWS::Serverless::Function
+                Properties:
+                  Handler: hello_world.app.lambda_handler
+                  CodeUri: src
+                  Runtime: $runtime
+                  Timeout: 900
+            """.trimIndent()
+        )
+
+        val runConfiguration = createTemplateRunConfiguration(
+            project = projectRule.project,
+            templateFile = templateFile.virtualFile.path,
+            logicalId = "SomeFunction",
+            input = "\"Hello World\"",
+            credentialsProviderId = mockId
+        )
+        assertThat(runConfiguration).isNotNull
+
+        addBreakpoint()
+        val debuggerIsHit = checkBreakPointHit(projectRule.project)
+
+        val executeLambda = executeLambda(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+
+        // assertThat(executeLambda.exitCode).isEqualTo(0) TODO: When debugging, always exits with 137
+        assertThat(executeLambda.stdout).contains("Hello world")
+
+        assertThat(debuggerIsHit.get()).isTrue()
+    }
+
+    @Test
+    fun samIsExecutedWithTemplateWithLocalCodeUri() {
+        val templateFile = projectRule.fixture.addFileToProject(
+            "src/hello_world/template.yaml",
+            """
             Resources:
               SomeFunction:
                 Type: AWS::Serverless::Function
@@ -249,14 +299,19 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
             """.trimIndent()
         )
 
+        projectRule.fixture.addFileToProject("src/hello_world/requirements.txt", "")
+        PsiTestUtil.addSourceRoot(projectRule.module, templateFile.virtualFile.parent)
+
         val runConfiguration = createTemplateRunConfiguration(
             project = projectRule.project,
             templateFile = templateFile.virtualFile.path,
+            logicalId = "SomeFunction",
             input = "\"Hello World\"",
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
 
+        addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
         val executeLambda = executeLambda(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
