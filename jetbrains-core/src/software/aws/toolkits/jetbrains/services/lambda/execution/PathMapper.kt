@@ -52,7 +52,7 @@ class PathMapper(private val mappings: List<PathMapping>) {
                 localPath
             }
 
-            return FileUtil.toCanonicalPath(updatedPath)
+            return FileUtil.toCanonicalPath(updatedPath, true)
         }
     }
 }

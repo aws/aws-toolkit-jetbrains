@@ -50,7 +50,6 @@ fun executeLambda(
                     }
                 })
             }
-
         } catch (e: Exception) {
             executionFuture.completeExceptionally(e)
         }
