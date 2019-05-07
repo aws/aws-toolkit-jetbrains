@@ -36,7 +36,8 @@ abstract class AnActionWrapper(text: String? = null, description: String? = null
      */
     final override fun actionPerformed(e: AnActionEvent) {
         doActionPerformed(e)
-        TelemetryService.getInstance().record(getNamespace()) {
+        val project = e.project ?: return
+        TelemetryService.getInstance(project).record(getNamespace()) {
             datum(e.place) {
                 count()
             }
@@ -52,7 +53,8 @@ abstract class ComboBoxActionWrapper : TelemetryNamespace, ComboBoxAction() {
      */
     final override fun actionPerformed(e: AnActionEvent) {
         doActionPerformed(e)
-        TelemetryService.getInstance().record(getNamespace()) {
+        val project = e.project ?: return
+        TelemetryService.getInstance(project).record(getNamespace()) {
             datum(e.place) {
                 count()
             }
@@ -72,7 +74,8 @@ abstract class ToogleActionWrapper(text: String? = null, description: String? = 
 
     final override fun setSelected(e: AnActionEvent, state: Boolean) {
         doSetSelected(e, state)
-        TelemetryService.getInstance().record(getNamespace()) {
+        val project = e.project ?: return
+        TelemetryService.getInstance(project).record(getNamespace()) {
             datum(e.place) {
                 count()
             }

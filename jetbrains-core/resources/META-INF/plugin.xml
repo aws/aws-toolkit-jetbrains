@@ -83,12 +83,12 @@
         <xi:fallback/>
     </xi:include>
 
-    <application-components>
+    <project-components>
         <component>
             <interface-class>software.aws.toolkits.jetbrains.components.telemetry.TelemetryComponent</interface-class>
             <implementation-class>software.aws.toolkits.jetbrains.components.telemetry.DefaultTelemetryComponent</implementation-class>
         </component>
-    </application-components>
+    </project-components>
 
     <extensionPoints>
         <extensionPoint qualifiedName="aws.toolkit.credentialProviderFactory"
@@ -130,6 +130,9 @@
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.AwsSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
+        <applicationService serviceInterface="software.aws.toolkits.core.telemetry.TelemetryBatcher"
+                            serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultToolkitTelemetryBatcher"/>
+
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.DeploySettings"/>
@@ -144,7 +147,7 @@
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.MessageBusService"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultMessageBusService"
                             testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockMessageBusService"/>
-        <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.TelemetryService"
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.TelemetryService"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultTelemetryService"
                             testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryService" />
         <projectService serviceInterface="software.aws.toolkits.core.ToolkitClientManager"
