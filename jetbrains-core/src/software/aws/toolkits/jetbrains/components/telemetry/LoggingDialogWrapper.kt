@@ -55,7 +55,7 @@ abstract class LoggingDialogWrapper : DialogWrapper, TelemetryNamespace {
     override fun doOKAction() {
         super.doOKAction()
 
-        TelemetryService.getInstance(myProject).record(getNamespace()) {
+        TelemetryService.getInstance().record(myProject, getNamespace()) {
             datum("OKAction") {
                 count()
             }
@@ -65,7 +65,7 @@ abstract class LoggingDialogWrapper : DialogWrapper, TelemetryNamespace {
     override fun doCancelAction() {
         super.doCancelAction()
 
-        TelemetryService.getInstance(myProject).record(getNamespace()) {
+        TelemetryService.getInstance().record(myProject, getNamespace()) {
             datum("CancelAction") {
                 count()
             }

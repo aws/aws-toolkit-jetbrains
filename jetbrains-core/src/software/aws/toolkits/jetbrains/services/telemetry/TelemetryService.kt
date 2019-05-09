@@ -17,21 +17,25 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryService : Disposable {
-    fun record(namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent
+    fun record(project: Project?, namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent
+
+    fun record(namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent = record(null, namespace, buildEvent)
 
     companion object {
         @JvmStatic
-        fun getInstance(project: Project): TelemetryService = ServiceManager.getService(project, TelemetryService::class.java)
+        fun getInstance(): TelemetryService = ServiceManager.getService(TelemetryService::class.java)
     }
 }
 
 class DefaultTelemetryService(
     messageBusService: MessageBusService,
     settings: AwsSettings,
-    private val batcher: TelemetryBatcher
+    private val batcher: TelemetryBatcher = DefaultToolkitTelemetryBatcher()
 ) : TelemetryService {
     private val isDisposing: AtomicBoolean = AtomicBoolean(false)
     private val startTime: Instant
+
+    constructor(messageBusService: MessageBusService, settings: AwsSettings) : this(messageBusService, settings, DefaultToolkitTelemetryBatcher())
 
     init {
         messageBusService.messageBus.connect().subscribe(
@@ -67,7 +71,7 @@ class DefaultTelemetryService(
         batcher.shutdown()
     }
 
-    override fun record(namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
+    override fun record(project: Project?, namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
         val builder = DefaultMetricEvent.builder(namespace)
         buildEvent(builder)
         val event = builder.build()

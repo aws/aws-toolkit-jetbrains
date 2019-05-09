@@ -46,7 +46,7 @@ abstract class SamProjectTemplate {
             hasException = true
             throw e
         } finally {
-            TelemetryService.getInstance(project).record("SAM") {
+            TelemetryService.getInstance().record(project, "SAM") {
                 datum("Init") {
                     metadata("name", getName())
                     metadata("runtime", runtime.name)
