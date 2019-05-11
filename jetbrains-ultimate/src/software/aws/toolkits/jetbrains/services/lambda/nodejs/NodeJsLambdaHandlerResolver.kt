@@ -43,9 +43,10 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
      * Whether the element is a valid Lambda handler found by [JSClassResolver] through the handler name.
      */
     private fun PsiElement.isValidHandlerElement(fileName: String): Boolean {
-        val sourceRoot = inferSourceRoot(project, this.containingFile.virtualFile)
+        val virtualFile = this.containingFile.virtualFile ?: return false
+        val sourceRoot = inferSourceRoot(project, virtualFile)
 
-        val relativePath = VfsUtilCore.findRelativePath(sourceRoot, this.containingFile.virtualFile, '/') ?: return false
+        val relativePath = VfsUtilCore.findRelativePath(sourceRoot, virtualFile, '/') ?: return false
         return this is NavigatablePsiElement &&
             this.parent?.isValidLambdaHandler() == true &&
             FileUtilRt.getNameWithoutExtension(relativePath) == fileName
@@ -54,24 +55,14 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
     // NodeJs lambda handler string format should be: parent/folders/file.handler and handler element should follow
     // https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-handler.html
     override fun determineHandler(element: PsiElement): String? {
-        if (element.node?.elementType != JSTokenTypes.IDENTIFIER) {
+        if (!element.isValidHandlerIdentifier()) {
             return null
         }
 
-        val exportsDefinition = element.parent?.parent ?: return null
+        val virtualFile = element.containingFile.virtualFile ?: return null
 
-        if (!exportsDefinition.isExportsDefinition()) {
-            return null
-        }
-
-        val lambdaHandlerAssignment = exportsDefinition.parent as? JSAssignmentExpression ?: return null
-
-        if (lambdaHandlerAssignment.rOperand?.isLambdaFunctionExpression() != true) {
-            return null
-        }
-
-        val sourceRoot = inferSourceRoot(element.project, element.containingFile.virtualFile)
-        val relativePath = VfsUtilCore.findRelativePath(sourceRoot, element.containingFile.virtualFile, '/') ?: return null
+        val sourceRoot = inferSourceRoot(element.project, virtualFile)
+        val relativePath = VfsUtilCore.findRelativePath(sourceRoot, virtualFile, '/') ?: return null
         val prefix = FileUtilRt.getNameWithoutExtension(relativePath)
         val handlerName = element.text
 
@@ -80,6 +71,28 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
 
     override fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> =
         determineHandler(element)?.let { setOf(it) }.orEmpty()
+
+    /**
+     * Whether the element is a valid lambda handler identifier.
+     */
+    private fun PsiElement.isValidHandlerIdentifier(): Boolean {
+        if (this.node?.elementType != JSTokenTypes.IDENTIFIER) {
+            return false
+        }
+
+        val exportsDefinition = this.parent?.parent ?: return false
+
+        if (!exportsDefinition.isExportsDefinition()) {
+            return false
+        }
+
+        val lambdaHandlerAssignment = exportsDefinition.parent as? JSAssignmentExpression ?: return false
+
+        if (lambdaHandlerAssignment.rOperand?.isLambdaFunctionExpression() != true) {
+            return false
+        }
+        return true
+    }
 
     /**
      * Whether the element is top level PSI element for a valid Lambda handler. It must be in the format as:

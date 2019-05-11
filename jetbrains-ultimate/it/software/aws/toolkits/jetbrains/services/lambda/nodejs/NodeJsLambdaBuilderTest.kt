@@ -116,7 +116,7 @@ class NodeJsLambdaBuilderTest : BaseLambdaBuilderTest() {
 
         val module = projectRule.module
         val handler = projectRule.fixture.addLambdaHandler(subPath, fileName, handlerName)
-        projectRule.fixture.addPackageJsonFile(content =
+        projectRule.fixture.addPackageJsonFile(
             """
             {
                 "name": "hello-world",

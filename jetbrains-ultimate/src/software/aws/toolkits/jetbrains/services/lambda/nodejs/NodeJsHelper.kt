@@ -20,10 +20,12 @@ import com.intellij.openapi.vfs.VirtualFile
 fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile {
     val projectFileIndex = ProjectFileIndex.getInstance(project)
     val contentRoot = projectFileIndex.getContentRootForFile(virtualFile) ?: throw IllegalStateException("Cannot locate content root for file")
-
-    var parentFolder = virtualFile.parent
-    while (PackageJsonUtil.findChildPackageJsonFile(parentFolder) == null && parentFolder != contentRoot) {
-        parentFolder = parentFolder.parent
-    }
-    return parentFolder
+    return findChildPackageJson(virtualFile.parent, contentRoot)
 }
+
+private fun findChildPackageJson(file: VirtualFile, contentRoot: VirtualFile): VirtualFile =
+    when {
+        PackageJsonUtil.findChildPackageJsonFile(file) != null -> file
+        file == contentRoot -> file
+        else -> findChildPackageJson(file.parent, contentRoot)
+    }

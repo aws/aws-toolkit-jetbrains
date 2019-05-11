@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.nodejs
 
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
+import com.intellij.lang.javascript.JavaScriptSupportLoader
 import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleType
@@ -19,7 +20,10 @@ class NodeJsRuntimeGroup : SdkBasedRuntimeGroupInformation() {
         Runtime.NODEJS8_10
     )
 
-    override val languageIds: Set<String> = setOf(JavascriptLanguage.INSTANCE.id)
+    override val languageIds: Set<String> = setOf(
+        JavascriptLanguage.INSTANCE.id,
+        JavaScriptSupportLoader.ECMA_SCRIPT_6.id
+    )
 
     override fun determineRuntime(module: Module): Runtime? = determineRuntime(module.project)
 
