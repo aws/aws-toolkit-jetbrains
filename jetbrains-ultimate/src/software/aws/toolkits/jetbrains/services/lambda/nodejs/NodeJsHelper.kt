@@ -17,10 +17,11 @@ import com.intellij.openapi.vfs.VirtualFile
  * @return The inferred source root that contains package.json file, or content root of the file.
  * @throws IllegalStateException If the contentRoot cannot be located
  */
-fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile {
+fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile? {
     val projectFileIndex = ProjectFileIndex.getInstance(project)
-    val contentRoot = projectFileIndex.getContentRootForFile(virtualFile) ?: throw IllegalStateException("Cannot locate content root for file")
-    return findChildPackageJson(virtualFile.parent, contentRoot)
+    return projectFileIndex.getContentRootForFile(virtualFile)?.let {
+        findChildPackageJson(virtualFile.parent, it)
+    }
 }
 
 private fun findChildPackageJson(file: VirtualFile, contentRoot: VirtualFile): VirtualFile =
