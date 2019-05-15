@@ -11,6 +11,8 @@ import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccount
+import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.time.Duration
 import java.time.Instant
@@ -73,6 +75,18 @@ class DefaultTelemetryService(
 
     override fun record(project: Project?, namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
         val builder = DefaultMetricEvent.builder(namespace)
+
+        val (activeAwsAccount: String?, activeRegion: String?) = if (project == null) {
+            Pair<String?, String?>(null, null)
+        } else {
+            Pair(project.activeAwsAccount() ?: "", project.activeRegion().id)
+        }
+
+        builder.datum("Metadata") {
+            activeAwsAccount?.let { this.metadata("activeAwsAccount", it) }
+            activeRegion?.let { this.metadata("activeAwsRegion", it) }
+        }
+
         buildEvent(builder)
         val event = builder.build()
         batcher.enqueue(event)
