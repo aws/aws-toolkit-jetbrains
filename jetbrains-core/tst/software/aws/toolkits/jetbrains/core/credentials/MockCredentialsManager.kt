@@ -38,7 +38,7 @@ class MockCredentialsManager : CredentialManager {
         private val awsAccountId: String
     ) : ToolkitCredentialsProvider() {
         override fun resolveCredentials(): AwsCredentials = credentials
-        override fun getAwsAccountOrThrow(stsClient: StsClient): String {
+        override fun getAwsAccount(stsClient: StsClient): String {
             if (!isValid) {
                 throw IllegalStateException("$displayName is not valid")
             } else {

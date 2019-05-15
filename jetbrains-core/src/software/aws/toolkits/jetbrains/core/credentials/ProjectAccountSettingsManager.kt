@@ -216,7 +216,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project, private
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val awsAccount = credentialsProvider.getAwsAccountOrThrow(stsClient)
+                val awsAccount = credentialsProvider.getAwsAccount(stsClient)
                 activeProfileInternal = credentialsProvider
                 awsAccountCache[credentialsProvider.id] = awsAccount
             } catch (e: Exception) {

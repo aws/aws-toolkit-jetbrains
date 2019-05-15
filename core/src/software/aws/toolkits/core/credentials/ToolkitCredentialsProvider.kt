@@ -38,7 +38,7 @@ abstract class ToolkitCredentialsProvider : AwsCredentialsProvider {
      * Returns true or throws an Exception
      */
     @Throws(Exception::class)
-    open fun getAwsAccountOrThrow(stsClient: StsClient): String =
+    open fun getAwsAccount(stsClient: StsClient): String =
         stsClient.getCallerIdentity {
             it.overrideConfiguration { overrides ->
                 overrides.credentialsProvider(StaticCredentialsProvider.create(resolveCredentials()))

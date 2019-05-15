@@ -27,7 +27,7 @@ class MockProjectAccountSettingsManager : ProjectAccountSettingsManager {
         get() = internalProvider ?: throw CredentialProviderNotFound("boom")
 
     override val activeAwsAccount: String?
-        get() = if (hasActiveCredentials()) activeCredentialProvider.getAwsAccountOrThrow(delegateMock()) else null
+        get() = if (hasActiveCredentials()) activeCredentialProvider.getAwsAccount(delegateMock()) else null
 
     override fun recentlyUsedRegions(): List<AwsRegion> = recentlyUsedRegions
 
@@ -64,7 +64,7 @@ class MockProjectAccountSettingsManager : ProjectAccountSettingsManager {
 
             override fun resolveCredentials(): AwsCredentials = awsCredentials
 
-            override fun getAwsAccountOrThrow(stsClient: StsClient): String = "111111111111"
+            override fun getAwsAccount(stsClient: StsClient): String = "111111111111"
         }
 
         fun getInstance(project: Project): MockProjectAccountSettingsManager =
