@@ -17,6 +17,14 @@ intellij {
     plugins = idePlugins("RD")
 }
 
+instrumentCode {
+    // javac2 is required to compile .form files from IntelliJ IDEA UI Designer
+    // Since Rider distribution does not contain it, take it from IDEA
+    javac2 {
+        "${project(":jetbrains-core").extensions.getByName("intellij").ideaDependency.classes}/lib/javac2.jar"
+    }
+}
+
 runIde {
     systemProperty("aws.toolkits.enableTelemetry", false)
 }

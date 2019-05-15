@@ -16,10 +16,11 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.resources.message
 
 val SAM_TEMPLATES = listOf(
-    SamHelloWorldPython(),
-    SamHelloWorldMaven(),
-    SamHelloWorldGradle(),
-    SamDynamoDBCookieCutter()
+        SamHelloWorldPython(),
+        SamHelloWorldMaven(),
+        SamHelloWorldGradle(),
+        SamHelloWorldDotNet(),
+        SamDynamoDBCookieCutter()
 )
 
 class SamHelloWorldMaven : SamProjectTemplate() {
@@ -78,6 +79,20 @@ abstract class SamPythonProjectTemplate : SamProjectTemplate() {
 class SamHelloWorldPython : SamPythonProjectTemplate() {
     override fun getName() = message("sam.init.template.hello_world.name")
 
+    override fun getDescription() = message("sam.init.template.hello_world.description")
+}
+
+abstract class SamDotNetProjectTemplate : SamProjectTemplate() {
+    override fun supportedRuntimes() = setOf(Runtime.DOTNETCORE2_0, Runtime.DOTNETCORE2_1)
+
+    override fun postCreationAction(runtime: Runtime, contentRoot: VirtualFile, rootModel: ModifiableRootModel) {
+        super.postCreationAction(runtime, contentRoot, rootModel)
+        SamCommon.setSourceRoots(contentRoot, rootModel.project, rootModel)
+    }
+}
+
+class SamHelloWorldDotNet : SamDotNetProjectTemplate() {
+    override fun getName() = message("sam.init.template.hello_world.name")
     override fun getDescription() = message("sam.init.template.hello_world.description")
 }
 
