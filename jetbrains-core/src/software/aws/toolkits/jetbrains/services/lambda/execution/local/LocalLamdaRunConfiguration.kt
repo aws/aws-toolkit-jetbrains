@@ -218,10 +218,10 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
                     )
                 )
 
-            val runtime = tryOrNull { Runtime.fromValue(function.runtime()).validOrNull }
-                ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
             val handler = tryOrNull { function.handler() }
                 ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
+            val runtime = tryOrNull { Runtime.fromValue(function.runtime()).validOrNull }
+                ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
 
             Triple(handler, runtime, SamTemplateDetails(templateFile.toPath(), functionName))
         } else {
