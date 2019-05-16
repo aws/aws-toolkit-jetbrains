@@ -7,10 +7,13 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ComputableActionGroup
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -20,6 +23,7 @@ import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.psi.util.CachedValueProvider
 import com.intellij.util.Consumer
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -181,18 +185,25 @@ class ChangeAccountSettingsAction(
         return showAll
     }
 
-    private fun createShowAllCredentials(): ActionGroup {
-        val credentialManager = CredentialManager.getInstance()
-        val showAll = DefaultActionGroup(message("settings.credentials.profile_sub_menu"), true)
-
-        credentialManager.getCredentialProviders().forEach {
-            showAll.add(ChangeCredentialsAction(it))
+    private fun createShowAllCredentials(): ActionGroup = object : ComputableActionGroup(true) {
+        init {
+            templatePresentation.text = message("settings.credentials.profile_sub_menu")
         }
 
-        showAll.addSeparator()
-        showAll.add(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+        override fun createChildrenProvider(actionManager: ActionManager): CachedValueProvider<Array<AnAction>> {
+            return CachedValueProvider {
+                val credentialManager = CredentialManager.getInstance()
 
-        return showAll
+                val actions = mutableListOf<AnAction>()
+                credentialManager.getCredentialProviders().forEach {
+                    actions.add(ChangeCredentialsAction(it))
+                }
+                actions.add(Separator.create())
+                actions.add(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+
+                CachedValueProvider.Result.create(actions.toTypedArray(), credentialManager)
+            }
+        }
     }
 
     companion object {
