@@ -16,8 +16,8 @@ import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroupInfor
 
 class NodeJsRuntimeGroup : SdkBasedRuntimeGroupInformation() {
     override val runtimes: Set<Runtime> = setOf(
-        // TODO add nodejs10 support
-        Runtime.NODEJS8_10
+        Runtime.NODEJS8_10,
+        Runtime.NODEJS10_X
     )
 
     override val languageIds: Set<String> = setOf(
@@ -30,9 +30,8 @@ class NodeJsRuntimeGroup : SdkBasedRuntimeGroupInformation() {
     override fun determineRuntime(project: Project): Runtime? =
         NodeJsInterpreterManager.getInstance(project).interpreter?.cachedVersion?.get()?.let {
             when {
-                // How do we decide which runtime to use?
                 it.major <= 8 -> Runtime.NODEJS8_10
-                // TODO add nodejs10 support
+                it.major <= 10 -> Runtime.NODEJS10_X
                 else -> null
             }
         }

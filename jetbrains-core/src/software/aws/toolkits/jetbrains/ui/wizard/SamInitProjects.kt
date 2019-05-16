@@ -91,8 +91,7 @@ class SamDynamoDBCookieCutter : SamPythonProjectTemplate() {
 }
 
 abstract class SamNodeJsProjectTemplate : SamProjectTemplate() {
-    // TODO support NodeJs 10.10 at some point
-    override fun supportedRuntimes(): Set<Runtime> = setOf(Runtime.NODEJS8_10)
+    override fun supportedRuntimes(): Set<Runtime> = setOf(Runtime.NODEJS8_10, Runtime.NODEJS10_X)
 }
 
 class SamHelloWorldNodeJs : SamNodeJsProjectTemplate() {
