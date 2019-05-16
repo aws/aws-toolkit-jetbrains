@@ -40,5 +40,6 @@ class NodeJsLambdaBuilder : LambdaBuilder() {
         return buildLambdaFromTemplate(module, customTemplate.toPath(), logicalId, samOptions, onStart)
     }
 
-    private fun getBaseDirectory(project: Project, virtualFile: VirtualFile): VirtualFile = inferSourceRoot(project, virtualFile)
+    private fun getBaseDirectory(project: Project, virtualFile: VirtualFile): VirtualFile =
+        inferSourceRoot(project, virtualFile) ?: throw IllegalStateException("Cannot locate content root for file")
 }
