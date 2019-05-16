@@ -17,8 +17,6 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.delegateMock
 
 class MockProjectAccountSettingsManager : ProjectAccountSettingsManager {
-    override fun awsAccount(credentialProvider: ToolkitCredentialsProvider): String? = activeCredentialProvider.getAwsAccount(delegateMock())
-
     private var internalProvider: ToolkitCredentialsProvider? = DUMMY_PROVIDER
     private val recentlyUsedRegions = mutableListOf<AwsRegion>()
     private val recentlyUsedCredentials = mutableListOf<ToolkitCredentialsProvider>()

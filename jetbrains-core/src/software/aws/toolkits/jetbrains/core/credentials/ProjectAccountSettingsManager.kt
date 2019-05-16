@@ -23,6 +23,7 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.core.AwsAccountCache
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier.AccountSettingsEvent
@@ -34,7 +35,6 @@ import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
-import java.util.concurrent.ConcurrentHashMap
 
 interface ProjectAccountSettingsManager {
     /**
@@ -65,11 +65,6 @@ interface ProjectAccountSettingsManager {
      * The underlying AWS account for current active credential provider. Return null if credential provider is not set
      */
     val activeAwsAccount: String?
-
-    /**
-     * Return the underlying AWS account for the given credential provider. Return null if the credential provider is invalid
-     */
-    fun awsAccount(credentialProvider: ToolkitCredentialsProvider): String?
 
     fun hasActiveCredentials(): Boolean = try {
         activeCredentialProvider
@@ -121,7 +116,6 @@ interface ProjectAccountSettingsManager {
 fun Project.activeRegion(): AwsRegion = ProjectAccountSettingsManager.getInstance(this).activeRegion
 fun Project.activeCredentialProvider(): ToolkitCredentialsProvider = ProjectAccountSettingsManager.getInstance(this).activeCredentialProvider
 fun Project.activeAwsAccount(): String? = ProjectAccountSettingsManager.getInstance(this).activeAwsAccount
-fun Project.awsAccount(credentialsProvider: ToolkitCredentialsProvider): String? = ProjectAccountSettingsManager.getInstance(this).awsAccount(credentialsProvider)
 
 data class AccountState(
     var activeProfile: String? = null,
@@ -131,8 +125,10 @@ data class AccountState(
 )
 
 @State(name = "accountSettings", storages = [Storage("aws.xml")])
-class DefaultProjectAccountSettingsManager(private val project: Project, private val stsClient: StsClient) :
-    ProjectAccountSettingsManager, PersistentStateComponent<AccountState>, Disposable {
+class DefaultProjectAccountSettingsManager(
+    private val project: Project,
+    private val stsClient: StsClient
+) : ProjectAccountSettingsManager, PersistentStateComponent<AccountState>, Disposable {
 
     constructor(project: Project, sdkClient: AwsSdkClient) : this(
         project,
@@ -145,7 +141,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project, private
         )
     )
 
-    private val awsAccountCache: ConcurrentHashMap<String, String> = ConcurrentHashMap()
+    private val awsAccountCache = AwsAccountCache.getInstance()
     private val credentialManager = CredentialManager.getInstance()
     private val regionProvider = AwsRegionProvider.getInstance()
 
@@ -177,14 +173,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project, private
         get() = activeProfileInternal ?: throw CredentialProviderNotFound(message("credentials.profile.not_configured"))
 
     override val activeAwsAccount: String?
-        get() = if (hasActiveCredentials()) awsAccountCache[activeCredentialProvider.id] else null
-
-    override fun awsAccount(credentialProvider: ToolkitCredentialsProvider): String? =
-        awsAccountCache.getOrPut(credentialProvider.id) {
-            tryOrNull {
-                credentialProvider.getAwsAccount(stsClient)
-            }
-        }
+        get() = if (hasActiveCredentials()) awsAccountCache.awsAccount(activeCredentialProvider) else null
 
     override fun recentlyUsedRegions(): List<AwsRegion> = recentlyUsedRegions.elements()
 
@@ -230,9 +219,8 @@ class DefaultProjectAccountSettingsManager(private val project: Project, private
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val awsAccount = credentialsProvider.getAwsAccount(stsClient)
+                credentialsProvider.getAwsAccount(stsClient)
                 activeProfileInternal = credentialsProvider
-                awsAccountCache[credentialsProvider.id] = awsAccount
             } catch (e: Exception) {
                 val title = message("credentials.invalid.title")
                 val message = message("credentials.profile.validation_error", credentialsProvider.displayName)

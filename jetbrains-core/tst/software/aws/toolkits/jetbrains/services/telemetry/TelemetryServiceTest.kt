@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.settings.MockAwsSettings
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertEquals
 
 class TelemetryServiceTest {
     private val batcher: TelemetryBatcher = mock()
@@ -179,8 +180,8 @@ class TelemetryServiceTest {
         )
 
         telemetryService.record("Foo", TelemetryService.MetricEventMetadata(
-            activeAwsAccount = "222222222222",
-            activeRegion = "bar-region"
+            awsAccount = "222222222222",
+            awsRegion = "bar-region"
         ))
         telemetryService.dispose()
 
@@ -190,11 +191,11 @@ class TelemetryServiceTest {
         assertMetricEvent(fooEvent, "Foo", "222222222222", "bar-region")
     }
 
-    private fun assertMetricEvent(event: MetricEvent, namespace: String, activeAwsAccount: String?, activeAwsRegion: String?) {
+    private fun assertMetricEvent(event: MetricEvent, namespace: String, awsAccount: String?, awsRegion: String?) {
         assertThat(event.namespace).isEqualTo(namespace)
-        val datum = event.data.firstOrNull { it.name == "Metadata" }
+        val datum = event.data.firstOrNull { it.name == TelemetryService.METADATA }
         assertThat(datum).isNotNull
-        assertThat(datum!!.metadata["activeAwsAccount"]).isEqualTo(activeAwsAccount)
-        assertThat(datum.metadata["activeAwsRegion"]).isEqualTo(activeAwsRegion)
+        assertEquals(datum!!.metadata[TelemetryService.METADATA_AWS_ACCOUNT], awsAccount)
+        assertEquals(datum.metadata[TelemetryService.METADATA_AWS_REGION], awsRegion)
     }
 }

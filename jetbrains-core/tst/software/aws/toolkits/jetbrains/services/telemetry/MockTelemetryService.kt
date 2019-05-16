@@ -11,8 +11,8 @@ class MockTelemetryService : TelemetryService {
         val builder = DefaultMetricEvent.builder(namespace)
 
         builder.datum("Metadata") {
-            metricEventMetadata.activeAwsAccount?.let { this.metadata("activeAwsAccount", it) }
-            metricEventMetadata.activeRegion?.let { this.metadata("activeAwsRegion", it) }
+            metricEventMetadata.awsAccount?.let { this.metadata("awsAccount", it) }
+            metricEventMetadata.awsRegion?.let { this.metadata("activeAwsRegion", it) }
         }
 
         buildEvent(builder)
