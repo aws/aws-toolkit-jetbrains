@@ -19,7 +19,22 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryService : Disposable {
-    fun record(project: Project?, namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent
+    data class MetricEventMetadata(
+        val activeAwsAccount: String? = null,
+        val activeRegion: String? = null
+    )
+
+    // TODO consider using DataProvider for the metricEventMetadata.
+    fun record(namespace: String, metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent
+
+    fun record(project: Project?, namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent {
+        val metricEventMetadata = if (project == null) MetricEventMetadata() else MetricEventMetadata(
+            // If credential is not set, send empty string to distinguish from session events when there is no project at all
+            activeAwsAccount = project.activeAwsAccount() ?: "",
+            activeRegion = project.activeRegion().id
+        )
+        return record(namespace, metricEventMetadata, buildEvent)
+    }
 
     fun record(namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent = record(null, namespace, buildEvent)
 
@@ -73,18 +88,12 @@ class DefaultTelemetryService(
         batcher.shutdown()
     }
 
-    override fun record(project: Project?, namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
+    override fun record(namespace: String, metricEventMetadata: TelemetryService.MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
         val builder = DefaultMetricEvent.builder(namespace)
 
-        val (activeAwsAccount: String?, activeRegion: String?) = if (project == null) {
-            Pair<String?, String?>(null, null)
-        } else {
-            Pair(project.activeAwsAccount() ?: "", project.activeRegion().id)
-        }
-
         builder.datum("Metadata") {
-            activeAwsAccount?.let { this.metadata("activeAwsAccount", it) }
-            activeRegion?.let { this.metadata("activeAwsRegion", it) }
+            metricEventMetadata.activeAwsAccount?.let { this.metadata("activeAwsAccount", it) }
+            metricEventMetadata.activeRegion?.let { this.metadata("activeAwsRegion", it) }
         }
 
         buildEvent(builder)

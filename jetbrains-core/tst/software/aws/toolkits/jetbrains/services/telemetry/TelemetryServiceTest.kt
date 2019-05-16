@@ -154,6 +154,42 @@ class TelemetryServiceTest {
         assertMetricEvent(fooEvent, "Foo", "111111111111", "foo-region")
     }
 
+    @Test
+    fun metricEventMetadataIsOverridden() {
+        val accountSettings = MockProjectAccountSettingsManager.getInstance(projectRule.project)
+
+        accountSettings.changeCredentialProvider(
+            MockCredentialsManager.getInstance().addCredentials(
+                "profile:admin",
+                AwsBasicCredentials.create("Access", "Secret"),
+                true,
+                awsAccountId = "111111111111"
+            )
+        )
+
+        val mockRegion = AwsRegion("foo-region", "foo-region")
+        MockRegionProvider.getInstance().addRegion(mockRegion)
+        accountSettings.changeRegion(mockRegion)
+
+        val eventCaptor = argumentCaptor<MetricEvent>()
+        val telemetryService = DefaultTelemetryService(
+            messageBusService,
+            MockAwsSettings(true, true, UUID.randomUUID()),
+            batcher
+        )
+
+        telemetryService.record("Foo", TelemetryService.MetricEventMetadata(
+            activeAwsAccount = "222222222222",
+            activeRegion = "bar-region"
+        ))
+        telemetryService.dispose()
+
+        verify(batcher, times(3)).enqueue(eventCaptor.capture())
+        val fooEvent = eventCaptor.secondValue
+
+        assertMetricEvent(fooEvent, "Foo", "222222222222", "bar-region")
+    }
+
     private fun assertMetricEvent(event: MetricEvent, namespace: String, activeAwsAccount: String?, activeAwsRegion: String?) {
         assertThat(event.namespace).isEqualTo(namespace)
         val datum = event.data.firstOrNull { it.name == "Metadata" }

@@ -349,6 +349,7 @@ class DefaultProjectAccountSettingsManagerTest {
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED)
             .providerRemoved("profile:admin")
         assertThat(manager.hasActiveCredentials()).isFalse()
+        assertThat(manager.activeAwsAccount).isNull()
     }
 
     private fun changeCredentialProvider(credentialsProvider: ToolkitCredentialsProvider) {

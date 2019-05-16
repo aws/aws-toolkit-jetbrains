@@ -66,6 +66,11 @@ interface ProjectAccountSettingsManager {
      */
     val activeAwsAccount: String?
 
+    /**
+     * Return the underlying AWS account for the given credential provider. Return null if the credential provider is invalid
+     */
+    fun awsAccount(credentialProvider: ToolkitCredentialsProvider): String?
+
     fun hasActiveCredentials(): Boolean = try {
         activeCredentialProvider
         true
@@ -116,6 +121,7 @@ interface ProjectAccountSettingsManager {
 fun Project.activeRegion(): AwsRegion = ProjectAccountSettingsManager.getInstance(this).activeRegion
 fun Project.activeCredentialProvider(): ToolkitCredentialsProvider = ProjectAccountSettingsManager.getInstance(this).activeCredentialProvider
 fun Project.activeAwsAccount(): String? = ProjectAccountSettingsManager.getInstance(this).activeAwsAccount
+fun Project.awsAccount(credentialsProvider: ToolkitCredentialsProvider): String? = ProjectAccountSettingsManager.getInstance(this).awsAccount(credentialsProvider)
 
 data class AccountState(
     var activeProfile: String? = null,
@@ -127,6 +133,7 @@ data class AccountState(
 @State(name = "accountSettings", storages = [Storage("aws.xml")])
 class DefaultProjectAccountSettingsManager(private val project: Project, private val stsClient: StsClient) :
     ProjectAccountSettingsManager, PersistentStateComponent<AccountState>, Disposable {
+
     constructor(project: Project, sdkClient: AwsSdkClient) : this(
         project,
         ToolkitClientManager.createNewClient(
@@ -171,6 +178,13 @@ class DefaultProjectAccountSettingsManager(private val project: Project, private
 
     override val activeAwsAccount: String?
         get() = if (hasActiveCredentials()) awsAccountCache[activeCredentialProvider.id] else null
+
+    override fun awsAccount(credentialProvider: ToolkitCredentialsProvider): String? =
+        awsAccountCache.getOrPut(credentialProvider.id) {
+            tryOrNull {
+                credentialProvider.getAwsAccount(stsClient)
+            }
+        }
 
     override fun recentlyUsedRegions(): List<AwsRegion> = recentlyUsedRegions.elements()
 
