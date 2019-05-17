@@ -17,6 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NA
+import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
@@ -26,7 +28,6 @@ import software.aws.toolkits.jetbrains.settings.MockAwsSettings
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
 
 class TelemetryServiceTest {
     private val batcher: TelemetryBatcher = mock()
@@ -97,7 +98,7 @@ class TelemetryServiceTest {
     }
 
     @Test
-    fun metricEventMetadataIsEmpty() {
+    fun metricEventMetadataIsNotSet() {
         val accountSettings = MockProjectAccountSettingsManager.getInstance(projectRule.project)
 
         accountSettings.changeCredentialProvider(null)
@@ -117,9 +118,9 @@ class TelemetryServiceTest {
         val fooEvent = eventCaptor.secondValue
         val endSessionEvent = eventCaptor.thirdValue
 
-        assertMetricEvent(startSessionEvent, "ToolkitStart", null, null)
-        assertMetricEvent(fooEvent, "Foo", "", "us-east-1")
-        assertMetricEvent(endSessionEvent, "ToolkitEnd", null, null)
+        assertMetricEvent(startSessionEvent, "ToolkitStart", METADATA_NA, METADATA_NA)
+        assertMetricEvent(fooEvent, "Foo", METADATA_NOT_SET, "us-east-1")
+        assertMetricEvent(endSessionEvent, "ToolkitEnd", METADATA_NA, METADATA_NA)
     }
 
     @Test
@@ -191,11 +192,9 @@ class TelemetryServiceTest {
         assertMetricEvent(fooEvent, "Foo", "222222222222", "bar-region")
     }
 
-    private fun assertMetricEvent(event: MetricEvent, namespace: String, awsAccount: String?, awsRegion: String?) {
+    private fun assertMetricEvent(event: MetricEvent, namespace: String, awsAccount: String, awsRegion: String) {
         assertThat(event.namespace).isEqualTo(namespace)
-        val datum = event.data.firstOrNull { it.name == TelemetryService.METADATA }
-        assertThat(datum).isNotNull
-        assertEquals(datum!!.metadata[TelemetryService.METADATA_AWS_ACCOUNT], awsAccount)
-        assertEquals(datum.metadata[TelemetryService.METADATA_AWS_REGION], awsRegion)
+        assertThat(event.awsAccount).isEqualTo(awsAccount)
+        assertThat(event.awsRegion).isEqualTo(awsRegion)
     }
 }

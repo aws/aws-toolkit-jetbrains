@@ -320,6 +320,8 @@ class DefaultProjectAccountSettingsManagerTest {
 
         manager.loadState(element.deserialize())
 
+        waitForEvents(2)
+
         assertThat(manager.hasActiveCredentials()).isTrue()
         assertThat(manager.recentlyUsedCredentials()).hasOnlyOneElementSatisfying { assertThat(it.id).isEqualTo("profile:default") }
         assertThat(manager.activeCredentialProvider.id).isEqualTo("profile:default")

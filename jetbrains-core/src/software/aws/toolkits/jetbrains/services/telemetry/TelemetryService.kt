@@ -8,14 +8,13 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
+import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NA
+import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccount
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService.Companion.METADATA
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService.Companion.METADATA_AWS_ACCOUNT
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService.Companion.METADATA_AWS_REGION
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.time.Duration
 import java.time.Instant
@@ -23,8 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryService : Disposable {
     data class MetricEventMetadata(
-        val awsAccount: String? = null,
-        val awsRegion: String? = null
+        val awsAccount: String = METADATA_NA,
+        val awsRegion: String = METADATA_NA
     )
 
     // TODO consider using DataProvider for the metricEventMetadata.
@@ -32,8 +31,7 @@ interface TelemetryService : Disposable {
 
     fun record(project: Project?, namespace: String, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent {
         val metricEventMetadata = if (project == null) MetricEventMetadata() else MetricEventMetadata(
-            // If credential is not set, send empty string to distinguish from session events when there is no project at all
-            awsAccount = project.activeAwsAccount() ?: "",
+            awsAccount = project.activeAwsAccount() ?: METADATA_NOT_SET,
             awsRegion = project.activeRegion().id
         )
         return record(namespace, metricEventMetadata, buildEvent)
@@ -44,10 +42,6 @@ interface TelemetryService : Disposable {
     companion object {
         @JvmStatic
         fun getInstance(): TelemetryService = ServiceManager.getService(TelemetryService::class.java)
-
-        const val METADATA = "Metadata"
-        const val METADATA_AWS_ACCOUNT = "awsAccount"
-        const val METADATA_AWS_REGION = "awsRegion"
     }
 }
 
@@ -97,13 +91,9 @@ class DefaultTelemetryService(
 
     override fun record(namespace: String, metricEventMetadata: TelemetryService.MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent {
         val builder = DefaultMetricEvent.builder(namespace)
-
-        builder.datum(METADATA) {
-            metricEventMetadata.awsAccount?.let { this.metadata(METADATA_AWS_ACCOUNT, it) }
-            metricEventMetadata.awsRegion?.let { this.metadata(METADATA_AWS_REGION, it) }
-        }
-
         buildEvent(builder)
+        builder.awsAccount(metricEventMetadata.awsAccount)
+        builder.awsRegion(metricEventMetadata.awsRegion)
         val event = builder.build()
         batcher.enqueue(event)
         return event

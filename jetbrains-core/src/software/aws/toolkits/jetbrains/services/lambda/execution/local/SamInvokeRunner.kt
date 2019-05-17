@@ -20,6 +20,7 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import org.slf4j.event.Level
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
@@ -106,7 +107,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                 TelemetryService.getInstance().record(
                     "SamInvoke",
                     TelemetryService.MetricEventMetadata(
-                        awsAccount = AwsAccountCache.getInstance().awsAccount(lambdaSettings.credentials) ?: "",
+                        awsAccount = AwsAccountCache.getInstance().awsAccount(lambdaSettings.credentials) ?: METADATA_INVALID,
                         awsRegion = lambdaSettings.region.id
                     )
                 ) {
