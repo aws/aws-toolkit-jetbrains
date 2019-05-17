@@ -26,7 +26,7 @@ interface AwsAccountCache {
     }
 }
 
-class DefaultAwsAccountCache(private val stsClient: StsClient) : AwsAccountCache {
+class DefaultAwsAccountCache(private val stsClient: StsClient) : AwsAccountCache, ToolkitCredentialsChangeListener {
     constructor() : this(ToolkitClientManager.createNewClient(
         StsClient::class,
         AwsSdkClient.getInstance().sdkHttpClient,
@@ -36,18 +36,7 @@ class DefaultAwsAccountCache(private val stsClient: StsClient) : AwsAccountCache
     ))
 
     init {
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
-            CredentialManager.CREDENTIALS_CHANGED,
-            object : ToolkitCredentialsChangeListener {
-                override fun providerRemoved(providerId: String) {
-                    accountCache.remove(providerId)
-                }
-
-                override fun providerModified(provider: ToolkitCredentialsProvider) {
-                    accountCache.remove(provider.id)
-                }
-            }
-        )
+        ApplicationManager.getApplication().messageBus.connect().subscribe(CredentialManager.CREDENTIALS_CHANGED, this)
     }
 
     private val accountCache: ConcurrentHashMap<String, String> = ConcurrentHashMap()
@@ -58,4 +47,12 @@ class DefaultAwsAccountCache(private val stsClient: StsClient) : AwsAccountCache
         }?.also {
             accountCache[credentialProvider.id] = it
         }
+
+    override fun providerModified(provider: ToolkitCredentialsProvider) {
+        accountCache.remove(provider.id)
+    }
+
+    override fun providerRemoved(providerId: String) {
+        accountCache.remove(providerId)
+    }
 }
