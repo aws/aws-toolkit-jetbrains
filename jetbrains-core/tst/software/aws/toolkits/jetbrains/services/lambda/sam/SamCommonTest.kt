@@ -11,7 +11,6 @@ import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume
@@ -21,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.ge
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.makeATestSam
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
+import kotlin.test.assertNotNull
 
 class SamCommonTest {
     @Rule
@@ -193,7 +193,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
             assertEquals(0, codeUris.size)
         }
     }
@@ -218,7 +218,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
             assertEquals(1, codeUris.size)
             assertEquals("hello_world", codeUris[0].name)
         }
@@ -257,7 +257,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
             assertEquals(1, codeUris.size)
             assertEquals("hello_world", codeUris[0].name)
         }
@@ -294,7 +294,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
             assertEquals(2, codeUris.size)
             assertTrue(codeUris.any { it.name == "hello_world" })
             assertTrue(codeUris.any { it.name == "hello_world_42" })
