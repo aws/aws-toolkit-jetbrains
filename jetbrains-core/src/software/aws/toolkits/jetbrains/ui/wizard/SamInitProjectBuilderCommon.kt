@@ -53,7 +53,7 @@ abstract class SamProjectTemplate {
             runConfiguration.useTemplate(template.path, it.logicalName)
             runConfiguration.setGeneratedName()
             runManager.addConfiguration(runConfigurationAndSettings)
-            if(runManager.selectedConfiguration == null) {
+            if (runManager.selectedConfiguration == null) {
                 runManager.selectedConfiguration = runConfigurationAndSettings
             }
         }

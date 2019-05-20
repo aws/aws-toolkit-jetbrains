@@ -193,7 +193,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
             assertEquals(0, codeUris.size)
         }
     }
@@ -218,7 +218,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
             assertEquals(1, codeUris.size)
             assertEquals("hello_world", codeUris[0].name)
         }
@@ -257,7 +257,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
             assertEquals(1, codeUris.size)
             assertEquals("hello_world", codeUris[0].name)
         }
@@ -294,7 +294,7 @@ Resources:
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
-            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
+            val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile!!)
             assertEquals(2, codeUris.size)
             assertTrue(codeUris.any { it.name == "hello_world" })
             assertTrue(codeUris.any { it.name == "hello_world_42" })
