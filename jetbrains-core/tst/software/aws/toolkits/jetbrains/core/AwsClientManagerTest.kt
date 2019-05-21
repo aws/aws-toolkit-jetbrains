@@ -3,19 +3,13 @@
 
 package software.aws.toolkits.jetbrains.core
 
-import assertk.assert
-import assertk.assertions.hasMessageContaining
-import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isNotSameAs
-import assertk.assertions.isSameAs
-import assertk.assertions.isTrue
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.PlatformTestCase
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -64,7 +58,7 @@ class AwsClientManagerTest {
     fun canGetAnInstanceOfAClient() {
         val sut = getClientManager()
         val client = sut.getClient<DummyServiceClient>()
-        assert(client.serviceName()).isEqualTo("dummyClient")
+        assertThat(client.serviceName()).isEqualTo("dummyClient")
     }
 
     @Test
@@ -73,17 +67,19 @@ class AwsClientManagerTest {
         val fooClient = sut.getClient<DummyServiceClient>()
         val barClient = sut.getClient<DummyServiceClient>()
 
-        assert(fooClient).isSameAs(barClient)
+        assertThat(fooClient).isSameAs(barClient)
     }
 
     @Test
     fun oldClientsAreRemovedWhenProfilesAreRemoved() {
         val sut = getClientManager()
         val testSettings = MockProjectAccountSettingsManager.getInstance(projectRule.project)
-        testSettings.activeCredentialProvider = mockCredentialManager.addCredentials(
-            "profile:admin",
-            AwsBasicCredentials.create("Access", "Secret"),
-            true
+        testSettings.changeCredentialProvider(
+            mockCredentialManager.addCredentials(
+                "profile:admin",
+                AwsBasicCredentials.create("Access", "Secret"),
+                true
+            )
         )
 
         sut.getClient<DummyServiceClient>()
@@ -110,7 +106,7 @@ class AwsClientManagerTest {
             PlatformTestCase.closeAndDisposeProjectAndCheckThatNoOpenProjects(project)
         }
 
-        assert(client.closed).isTrue()
+        assertThat(client.closed).isTrue()
     }
 
     @Test
@@ -119,17 +115,16 @@ class AwsClientManagerTest {
         val dummy = sut.getClient<DummyServiceClient>()
         val secondDummy = sut.getClient<SecondDummyServiceClient>()
 
-        assert(dummy.httpClient.delegate).isSameAs(secondDummy.httpClient.delegate)
+        assertThat(dummy.httpClient.delegate).isSameAs(secondDummy.httpClient.delegate)
     }
 
     @Test
     fun clientWithoutBuilderFailsDescriptively() {
         val sut = getClientManager()
 
-        assert { sut.getClient<InvalidServiceClient>() }.thrownError {
-            isInstanceOf(IllegalArgumentException::class)
-            hasMessageContaining("builder()")
-        }
+        assertThatThrownBy { sut.getClient<InvalidServiceClient>() }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("builder()")
     }
 
     @Test
@@ -138,12 +133,11 @@ class AwsClientManagerTest {
         val first = sut.getClient<DummyServiceClient>()
 
         val testSettings = ProjectAccountSettingsManager.getInstance(projectRule.project)
-
-        testSettings.activeRegion = AwsRegion("us-east-1", "US-east-1")
+        testSettings.changeRegion(AwsRegion("us-west-2", "us-west-2"))
 
         val afterRegionUpdate = sut.getClient<DummyServiceClient>()
 
-        assert(afterRegionUpdate).isNotSameAs(first)
+        assertThat(afterRegionUpdate).isNotSameAs(first)
     }
 
     // Test against real version so bypass ServiceManager for the client manager

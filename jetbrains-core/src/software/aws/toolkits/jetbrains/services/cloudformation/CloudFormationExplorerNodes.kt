@@ -19,16 +19,12 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsNodeAlwaysExpandable
-import software.aws.toolkits.jetbrains.core.explorer.AwsNodeChildCache
 import software.aws.toolkits.jetbrains.core.explorer.AwsTruncatedResultNode
-import software.aws.toolkits.jetbrains.core.stack.openStack
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.jetbrains.utils.warnStackUpdateAgainstCodePipeline
 import software.aws.toolkits.resources.message
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.DefaultTreeModel
 
 class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(project, message("explorer.node.cloudformation")) {
     override fun serviceName() = CloudFormationClient.SERVICE_NAME
@@ -43,7 +39,7 @@ class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(p
         val nodes = response.stacks().filterNotNull().asSequence()
             .filter { it.stackStatus() !in DELETING_STACK_STATES }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.stackName() })
-            .map { it -> CloudFormationStackNode(nodeProject, it.stackName(), it.stackId(), it.stackStatus()) }
+            .map { CloudFormationStackNode(nodeProject, it.stackName(), it.stackStatus(), it.stackId()) }
             .toList()
 
         return nodes + paginationNodeIfRequired(response.nextToken())
@@ -59,10 +55,9 @@ class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(p
     }
 }
 
-class CloudFormationStackNode(project: Project, val stackName: String, val stackId: String, private val stackStatus: StackStatus) :
+class CloudFormationStackNode(project: Project, val stackName: String, private val stackStatus: StackStatus, val stackId: String) :
     AwsExplorerResourceNode<String>(project, CloudFormationClient.SERVICE_NAME, stackName, AwsIcons.Resources.CLOUDFORMATION_STACK),
-    AwsNodeAlwaysExpandable,
-    AwsNodeChildCache {
+    AwsNodeAlwaysExpandable {
     override fun resourceType() = "stack"
 
     private val cfnClient: CloudFormationClient = project.awsClient()
@@ -74,29 +69,20 @@ class CloudFormationStackNode(project: Project, val stackName: String, val stack
     private val noResourcesChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerEmptyNode(project, message("explorer.stack.no.serverless.resources"))).filterIsInstance<AbstractTreeNode<Any>>()
     private var cachedChildren: Collection<AbstractTreeNode<Any>> = emptyList()
 
-    private var isChildCacheInInitialState: Boolean = true
+    var isChildCacheInInitialState: Boolean = true
+        private set
 
     override fun isAlwaysLeaf() = false
-
-    override fun isInitialChildState() = isChildCacheInInitialState
 
     /**
      * Children are cached by default to prevent describeStackResources from being called each time a stack node is expanded.
      */
-    @Suppress("UNCHECKED_CAST")
-    override fun getChildren(): Collection<AbstractTreeNode<Any>> = getChildren(false)
-
-    override fun getChildren(refresh: Boolean): Collection<AbstractTreeNode<Any>> {
-        if (refresh) {
+    override fun getChildren(): Collection<AbstractTreeNode<Any>> {
+        if (isChildCacheInInitialState) {
             updateCachedChildren()
         }
 
         return cachedChildren
-    }
-
-    override fun onDoubleClick(model: DefaultTreeModel, selectedElement: DefaultMutableTreeNode) {
-        super.onDoubleClick(model, selectedElement)
-        openStack(nodeProject, stackName)
     }
 
     private fun updateCachedChildren() {

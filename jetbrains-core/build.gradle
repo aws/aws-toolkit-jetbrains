@@ -70,4 +70,6 @@ dependencies {
         exclude group: 'org.slf4j'
     }
     testCompile project(path: ":core", configuration: 'testArtifacts')
+    integrationTestCompile('org.eclipse.jetty:jetty-servlet:9.4.15.v20190215')
+    integrationTestCompile('org.eclipse.jetty:jetty-proxy:9.4.15.v20190215')
 }

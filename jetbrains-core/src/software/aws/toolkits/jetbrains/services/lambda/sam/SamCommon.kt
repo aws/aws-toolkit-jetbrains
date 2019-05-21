@@ -35,7 +35,7 @@ class SamCommon {
         val expectedSamMinVersion = SemVer("0.14.1", 0, 14, 1)
 
         // Exclusive
-        val expectedSamMaxVersion = SemVer("0.16.0", 0, 16, 0)
+        val expectedSamMaxVersion = SemVer("0.23.0", 0, 23, 0)
 
         private val versionCache = object : FileInfoCache<SemVer>() {
             override fun getFileInfo(path: String): SemVer {
@@ -149,8 +149,7 @@ class SamCommon {
             return LocalFileSystem.getInstance().refreshAndFindFileByIoFile(yamlFiles.first())
         }
 
-        fun getCodeUrisFromTemplate(project: Project, template: VirtualFile?): List<VirtualFile> {
-            template ?: return listOf()
+        fun getCodeUrisFromTemplate(project: Project, template: VirtualFile): List<VirtualFile> {
             val cfTemplate = CloudFormationTemplate.parse(project, template)
 
             val codeUris = mutableListOf<VirtualFile>()
@@ -170,7 +169,7 @@ class SamCommon {
         }
 
         fun setSourceRoots(projectRoot: VirtualFile, project: Project, modifiableModel: ModifiableRootModel) {
-            val template = getTemplateFromDirectory(projectRoot)
+            val template = getTemplateFromDirectory(projectRoot) ?: return
             val codeUris = getCodeUrisFromTemplate(project, template)
             modifiableModel.contentEntries.forEach { contentEntry ->
                 if (contentEntry.file == projectRoot) {

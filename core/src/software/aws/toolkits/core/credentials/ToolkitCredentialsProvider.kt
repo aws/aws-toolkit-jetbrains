@@ -4,8 +4,7 @@
 package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.awssdk.http.SdkHttpClient
-import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.services.sts.StsClient
 
 abstract class ToolkitCredentialsProvider : AwsCredentialsProvider {
@@ -39,16 +38,12 @@ abstract class ToolkitCredentialsProvider : AwsCredentialsProvider {
      * Returns true or throws an Exception
      */
     @Throws(Exception::class)
-    open fun isValidOrThrow(sdkHttpClient: SdkHttpClient): Boolean {
-        val client = StsClient.builder()
-            .region(Region.US_EAST_1)
-            .httpClient(sdkHttpClient)
-            .credentialsProvider(this)
-            .build()
-
-        client.callerIdentity
-        return true
-    }
+    open fun getAwsAccount(stsClient: StsClient): String =
+        stsClient.getCallerIdentity {
+            it.overrideConfiguration { overrides ->
+                overrides.credentialsProvider(StaticCredentialsProvider.create(resolveCredentials()))
+            }
+        }.account()
 }
 
 /**

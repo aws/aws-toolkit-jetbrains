@@ -7,10 +7,12 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -20,6 +22,7 @@ import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.psi.util.CachedValueProvider
 import com.intellij.util.Consumer
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -32,9 +35,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
-import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
-import software.aws.toolkits.jetbrains.utils.notifyWarn
+import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import java.awt.event.MouseEvent
@@ -87,11 +88,7 @@ private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
         updateWidget()
     }
 
-    override fun activeRegionChanged(value: AwsRegion) {
-        updateWidget()
-    }
-
-    override fun activeCredentialsChanged(credentialsProvider: ToolkitCredentialsProvider?) {
+    override fun settingsChanged(event: AccountSettingsChangedNotifier.AccountSettingsEvent) {
         updateWidget()
     }
 
@@ -162,13 +159,13 @@ class ChangeAccountSettingsAction(
         val usedCredentials = accountSettingsManager.recentlyUsedCredentials()
         if (usedCredentials.isEmpty()) {
             group.addSeparator(message("settings.credentials"))
-            group.addAll(createShowAllCredentials())
+            group.add(createShowAllCredentials(false))
         } else {
             group.addSeparator(message("settings.credentials.recent"))
             usedCredentials.forEach {
                 group.add(ChangeCredentialsAction(it))
             }
-            group.add(createShowAllCredentials())
+            group.add(createShowAllCredentials(true))
         }
 
         return group
@@ -188,18 +185,22 @@ class ChangeAccountSettingsAction(
         return showAll
     }
 
-    private fun createShowAllCredentials(): ActionGroup {
-        val credentialManager = CredentialManager.getInstance()
-        val showAll = DefaultActionGroup(message("settings.credentials.profile_sub_menu"), true)
+    private fun createShowAllCredentials(popup: Boolean): ActionGroup = object : ComputableActionGroup(
+        message("settings.credentials.profile_sub_menu"),
+        popup
+    ), DumbAware {
+            override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
+                val credentialManager = CredentialManager.getInstance()
 
-        credentialManager.getCredentialProviders().forEach {
-            showAll.add(ChangeCredentialsAction(it))
-        }
+                val actions = mutableListOf<AnAction>()
+                credentialManager.getCredentialProviders().forEach {
+                    actions.add(ChangeCredentialsAction(it))
+                }
+                actions.add(Separator.create())
+                actions.add(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
 
-        showAll.addSeparator()
-        showAll.add(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
-
-        return showAll
+                CachedValueProvider.Result.create(actions.toTypedArray(), credentialManager)
+            }
     }
 
     companion object {
@@ -213,7 +214,7 @@ private class ChangeRegionAction(val region: AwsRegion) : ToogleActionWrapper(re
 
     override fun doSetSelected(e: AnActionEvent, state: Boolean) {
         if (state) {
-            getAccountSetting(e).activeRegion = region
+            getAccountSetting(e).changeRegion(region)
         }
     }
 }
@@ -225,23 +226,7 @@ private class ChangeCredentialsAction(val credentialsProvider: ToolkitCredential
 
     override fun doSetSelected(e: AnActionEvent, state: Boolean) {
         if (state) {
-            try {
-                if (credentialsProvider.isValidOrThrow(AwsSdkClient.getInstance().sdkHttpClient)) {
-                    getAccountSetting(e).activeCredentialProvider = credentialsProvider
-                }
-            } catch (ex: Exception) {
-                val title = message("credentials.invalid.title")
-                val message = message("credentials.profile.validation_error", credentialsProvider.displayName)
-                notifyWarn(
-                    title = title,
-                    content = message,
-                    project = e.project,
-                    notificationActions = listOf(
-                        createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), title, message, ex.localizedMessage),
-                        createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
-                    )
-                )
-            }
+            getAccountSetting(e).changeCredentialProvider(credentialsProvider)
         }
     }
 }

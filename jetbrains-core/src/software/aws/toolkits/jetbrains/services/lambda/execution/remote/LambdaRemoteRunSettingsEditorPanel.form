@@ -12,7 +12,9 @@
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.region.tooltip"/>
+        </properties>
       </component>
       <component id="9e917" class="javax.swing.JLabel">
         <constraints>
@@ -20,13 +22,16 @@
         </constraints>
         <properties>
           <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.run_configuration.region.label"/>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.region.tooltip"/>
         </properties>
       </component>
       <component id="e0920" class="software.aws.toolkits.jetbrains.ui.CredentialProviderSelector" binding="credentialSelector">
         <constraints>
           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.credentials.tooltip"/>
+        </properties>
       </component>
       <component id="125e9" class="javax.swing.JLabel">
         <constraints>
@@ -34,6 +39,7 @@
         </constraints>
         <properties>
           <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.credentials.label"/>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.credentials.tooltip"/>
         </properties>
       </component>
       <component id="45df9" class="javax.swing.JLabel">
@@ -42,6 +48,7 @@
         </constraints>
         <properties>
           <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.function.label"/>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.run_configuration.remote.function.tooltip"/>
         </properties>
       </component>
       <component id="36042" class="com.intellij.openapi.ui.ComboBox" binding="functionNames" custom-create="true">
@@ -50,6 +57,7 @@
         </constraints>
         <properties>
           <editable value="true"/>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.run_configuration.remote.function.tooltip"/>
         </properties>
       </component>
       <grid id="3a42" binding="lambdaInputPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
