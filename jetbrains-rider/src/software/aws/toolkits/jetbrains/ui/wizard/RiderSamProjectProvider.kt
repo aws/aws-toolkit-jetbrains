@@ -43,10 +43,9 @@ class RiderSamProjectProvider : RiderProjectTemplateProvider {
                 settings.runtime = getCurrentRuntime()
             }
 
-            val item = context.item
             return RiderSamProjectGenerator(
                     samGenerator = generator,
-                    item = item,
+                    context = context,
                     group = group,
                     categoryName = name,
                     model = transferableModel)
