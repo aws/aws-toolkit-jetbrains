@@ -16,11 +16,11 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.resources.message
 
 val SAM_TEMPLATES = listOf(
-        SamHelloWorldPython(),
-        SamHelloWorldMaven(),
-        SamHelloWorldGradle(),
-        SamHelloWorldDotNet(),
-        SamDynamoDBCookieCutter()
+    SamHelloWorldPython(),
+    SamHelloWorldMaven(),
+    SamHelloWorldGradle(),
+    SamHelloWorldDotNet(),
+    SamDynamoDBCookieCutter()
 )
 
 class SamHelloWorldMaven : SamProjectTemplate() {

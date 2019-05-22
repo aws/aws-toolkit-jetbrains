@@ -22,6 +22,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.Nls.Capitalization;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
@@ -83,7 +84,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         return "aws";
     }
 
-    @Nls
+    @Nls(capitalization = Capitalization.Title)
     @Override
     public String getDisplayName() {
         return message("aws.settings.title");

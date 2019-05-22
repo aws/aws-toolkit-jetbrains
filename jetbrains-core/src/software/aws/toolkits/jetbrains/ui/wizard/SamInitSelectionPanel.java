@@ -44,8 +44,6 @@ public class SamInitSelectionPanel implements ValidatablePanel {
                                .sorted()
                                .forEach(y -> runtime.addItem(y));
 
-        runtime.setSelectedItem(this.projectSettings.runtime);
-
         SamInitProjectBuilderCommon.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel);
 
         runtime.addItemListener(l -> {
