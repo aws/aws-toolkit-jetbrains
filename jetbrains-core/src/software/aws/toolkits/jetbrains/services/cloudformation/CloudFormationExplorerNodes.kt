@@ -22,8 +22,10 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsNodeAlwaysExpandable
 import software.aws.toolkits.jetbrains.core.explorer.AwsTruncatedResultNode
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
+import software.aws.toolkits.jetbrains.utils.Operation
+import software.aws.toolkits.jetbrains.utils.ResourceType
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
-import software.aws.toolkits.jetbrains.utils.warnStackUpdateAgainstCodePipeline
+import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
 class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(project, message("explorer.node.cloudformation")) {
@@ -145,7 +147,9 @@ class DeleteCloudFormationStackAction : DeleteResourceAction<CloudFormationStack
         client.waitForStackDeletionComplete(selected.stackName)
     }
 
-    override fun warnResourceUpdateAgainstCodePipeline(selected: CloudFormationStackNode): Boolean {
-        return warnStackUpdateAgainstCodePipeline(selected.nodeProject, selected.stackName, selected.stackId, message("codepipeline.resource.operation.delete"))
+    override fun warnResourceDeleteAgainstCodePipeline(selected: CloudFormationStackNode, callback: () -> Unit) {
+        warnResourceOperationAgainstCodePipeline(selected.nodeProject, selected.stackName, selected.stackId, ResourceType.CLOUDFORMATION_STACK, Operation.DELETE) {
+            callback()
+        }
     }
 }

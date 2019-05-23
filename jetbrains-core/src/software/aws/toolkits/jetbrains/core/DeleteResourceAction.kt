@@ -18,15 +18,13 @@ import software.aws.toolkits.resources.message
 abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: String) : SingleResourceNodeAction<T>(text, icon = AllIcons.Actions.Cancel),
     DumbAware {
     final override fun actionPerformed(selected: T, e: AnActionEvent) {
-        if (warnResourceUpdateAgainstCodePipeline(selected)) {
-            return
-        }
+        warnResourceDeleteAgainstCodePipeline(selected) {
+            val resourceType = selected.resourceType()
+            val resourceName = selected.displayName()
 
-        val resourceName = selected.displayName()
-        ApplicationManager.getApplication().invokeLater {
             val response = Messages.showInputDialog(selected.project,
-                    message("delete_resource.message", selected.resourceType(), resourceName),
-                    message("delete_resource.title", selected.resourceType(), resourceName),
+                    message("delete_resource.message", resourceType, resourceName),
+                    message("delete_resource.title", resourceType, resourceName),
                     Messages.getWarningIcon(),
                     null,
                     object : InputValidator {
@@ -40,16 +38,16 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: Str
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         performDelete(selected)
-                        notifyInfo(message("delete_resource.deleted", selected.resourceType(), resourceName))
+                        notifyInfo(message("delete_resource.deleted", resourceType, resourceName))
                     } catch (e: Exception) {
-                        e.notifyError(message("delete_resource.delete_failed", selected.resourceType(), resourceName), selected.project)
+                        e.notifyError(message("delete_resource.delete_failed", resourceType, resourceName), selected.project)
                     }
                 }
             }
         }
     }
 
-    abstract fun warnResourceUpdateAgainstCodePipeline(selected: T): Boolean
+    abstract fun warnResourceDeleteAgainstCodePipeline(selected: T, callback: () -> Unit)
 
     abstract fun performDelete(selected: T)
 }

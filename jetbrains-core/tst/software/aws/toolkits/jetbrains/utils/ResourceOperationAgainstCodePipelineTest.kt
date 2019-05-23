@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.utils
 
-import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.ui.TestDialog
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.whenever
@@ -17,11 +15,9 @@ import software.amazon.awssdk.services.resourcegroupstaggingapi.model.ResourceTa
 import software.amazon.awssdk.services.resourcegroupstaggingapi.model.Tag
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
-class ResourceUpdateAgainstCodePipelineTest {
+class ResourceOperationAgainstCodePipelineTest {
 
     @Rule
     @JvmField
@@ -38,9 +34,6 @@ class ResourceUpdateAgainstCodePipelineTest {
     private val RESOURCE_ARN = "resourceARN"
     private val RESOURCE_TYPE_FILTER = "resourceTypeFilter"
     private val CODEPIPELINE_ARN = "codePipelineArn"
-    private val RESOURCE_NAME = "resourceName"
-    private val RESOURCE_TYPE = "resourceType"
-    private val OPERATION = "operation"
 
     @Test
     fun getCodePipelineArnForResource_resourceTagMappingNotFound() {
@@ -92,23 +85,6 @@ class ResourceUpdateAgainstCodePipelineTest {
                 )
 
         assertEquals(CODEPIPELINE_ARN, getCodePipelineArnForResource(projectRule.project, RESOURCE_ARN, RESOURCE_TYPE_FILTER))
-    }
-
-    @Test
-    fun warnResourceUpdateAgainstCodePipeline_codePipelineArnIsNull() {
-        assertFalse(warnResourceUpdateAgainstCodePipeline(projectRule.project, null, RESOURCE_NAME, RESOURCE_TYPE, OPERATION))
-    }
-
-    @Test
-    fun warnResourceUpdateAgainstCodePipeline_userClicksYes() {
-        Messages.setTestDialog(TestDialog.OK)
-        assertTrue(warnResourceUpdateAgainstCodePipeline(projectRule.project, CODEPIPELINE_ARN, RESOURCE_NAME, RESOURCE_TYPE, OPERATION))
-    }
-
-    @Test
-    fun warnResourceUpdateAgainstCodePipeline_userClicksNo() {
-        Messages.setTestDialog(TestDialog.NO)
-        assertFalse(warnResourceUpdateAgainstCodePipeline(projectRule.project, CODEPIPELINE_ARN, RESOURCE_NAME, RESOURCE_TYPE, OPERATION))
     }
 
     private fun getResourceTagMapping(resourceARN: String, tagKey: String, tagValue: String): ResourceTagMapping {

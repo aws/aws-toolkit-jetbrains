@@ -31,7 +31,9 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.jetbrains.utils.notifySamCliNotValidError
-import software.aws.toolkits.jetbrains.utils.warnStackUpdateAgainstCodePipeline
+import software.aws.toolkits.jetbrains.utils.Operation
+import software.aws.toolkits.jetbrains.utils.ResourceType
+import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
 class DeployServerlessApplicationAction : AnActionWrapper(
@@ -78,18 +80,24 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         val stackName = stackDialog.stackName
         val stackId = stackDialog.stackId
 
-        if (stackId != null && warnStackUpdateAgainstCodePipeline(project, stackName, stackId, message("codepipeline.resource.operation.deploy"))) {
-            return
+        if (stackId == null) {
+            continueDeployment(project, stackName, templateFile, stackDialog)
+        } else {
+            warnResourceOperationAgainstCodePipeline(project, stackName, stackId, ResourceType.CLOUDFORMATION_STACK, Operation.DEPLOY) {
+                continueDeployment(project, stackName, templateFile, stackDialog)
+            }
         }
+    }
 
+    private fun continueDeployment(project: Project, stackName: String, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
         val deployDialog = SamDeployDialog(
-            project,
-            stackName,
-            templateFile,
-            stackDialog.parameters,
-            stackDialog.bucket,
-            stackDialog.autoExecute,
-            stackDialog.useContainer
+                project,
+                stackName,
+                templateFile,
+                stackDialog.parameters,
+                stackDialog.bucket,
+                stackDialog.autoExecute,
+                stackDialog.useContainer
         )
 
         deployDialog.show()
@@ -108,9 +116,9 @@ class DeployServerlessApplicationAction : AnActionWrapper(
             try {
                 cfnClient.executeChangeSetAndWait(stackName, deployDialog.changeSetName)
                 notifyInfo(
-                    message("cloudformation.execute_change_set.success.title"),
-                    message("cloudformation.execute_change_set.success", stackName),
-                    project
+                        message("cloudformation.execute_change_set.success.title"),
+                        message("cloudformation.execute_change_set.success", stackName),
+                        project
                 )
             } catch (e: Exception) {
                 e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)

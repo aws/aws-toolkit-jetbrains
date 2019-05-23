@@ -43,6 +43,7 @@ class DeployServerlessApplicationDialog(
     private val s3Client: S3Client = project.awsClient()
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
     private val templateParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
+    private lateinit var stackNameToStackId: Map<String, String>
 
     init {
         super.init()
@@ -72,8 +73,14 @@ class DeployServerlessApplicationDialog(
         }
 
         view.stacks.populateValues(default = settings?.samStackName(samPath), updateStatus = false) {
-            cloudFormationClient.listStackSummariesFilter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
-                    .mapNotNull { it.stackName() }
+            stackNameToStackId = cloudFormationClient.listStackSummariesFilter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
+                    .filterNotNull()
+                    .filter { it.stackName() != null }
+                    .map { it.stackName() to it.stackId() }
+                    .toMap()
+
+            stackNameToStackId
+                    .keys
                     .sortedWith(String.CASE_INSENSITIVE_ORDER)
                     .toList()
         }
@@ -129,8 +136,7 @@ class DeployServerlessApplicationDialog(
             if (stackName == null) {
                 null
             } else {
-                val stack = cloudFormationClient.describeStacks { it.stackName(stackName) }.stacks()[0]
-                stack.stackId()
+                stackNameToStackId[stackName]
             }
         }
 
