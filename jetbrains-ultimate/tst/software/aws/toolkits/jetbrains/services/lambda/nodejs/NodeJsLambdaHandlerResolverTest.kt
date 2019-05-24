@@ -49,13 +49,61 @@ class NodeJsLambdaHandlerResolverTest {
     }
 
     @Test
-    fun determineHandler_tooFewParametersReturnsNull() {
+    fun determineHandler_oneParameter() {
+        val handlerElement = projectRule.fixture.addLambdaHandler(
+            subPath = ".",
+            fileName = "app",
+            handlerName = "lambdaHandler",
+            fileContent = """
+                exports.lambdaHandler = function(event) {
+                    return "Hello World"
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun determineHandler_TooManyParametersReturnsNull() {
+        val handlerElement = projectRule.fixture.addLambdaHandler(
+            subPath = ".",
+            fileName = "app",
+            handlerName = "lambdaHandler",
+            fileContent = """
+                exports.lambdaHandler = function(event, context, callback, foo) {
+                    return "Hello World"
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun determineHandler_oneParameterForAsync() {
         val handlerElement = projectRule.fixture.addLambdaHandler(
             subPath = ".",
             fileName = "app",
             handlerName = "lambdaHandler",
             fileContent = """
                 exports.lambdaHandler = async (event) => {
+                    return "Hello World"
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun determineHandler_ThreeParametersForAsyncReturnsNull() {
+        val handlerElement = projectRule.fixture.addLambdaHandler(
+            subPath = ".",
+            fileName = "app",
+            handlerName = "lambdaHandler",
+            fileContent = """
+                exports.lambdaHandler = async (event, context, callback) => {
                     return "Hello World"
                 }
             """.trimIndent()
@@ -71,7 +119,7 @@ class NodeJsLambdaHandlerResolverTest {
             fileName = "app",
             handlerName = "lambdaHandler",
             fileContent = """
-                exports.lambdaHandler = function(event, context) {
+                exports.lambdaHandler = function(event, context, callback) {
                     return "Hello World"
                 }
             """.trimIndent()
@@ -149,7 +197,7 @@ class NodeJsLambdaHandlerResolverTest {
         """.trimIndent()
 
         projectRule.fixture.addFileToProject("app.js", fileContent)
-        assertFindPsiElements("app.lambdaHandler", true)
+        assertFindPsiElements("app.lambdaHandler", false)
     }
 
     @Test
@@ -161,7 +209,7 @@ class NodeJsLambdaHandlerResolverTest {
         """.trimIndent()
 
         projectRule.fixture.addFileToProject("app.js", fileContent)
-        assertFindPsiElements("app.lambdaHandler", false)
+        assertFindPsiElements("app.lambdaHandler", true)
     }
 
     @Test
