@@ -30,7 +30,8 @@ class ResourceSelector<T> : ComboBox<T>() {
      * [ResourceLoadingStatus.SUCCESSFUL] - same as the standard [setEnabled] behavior.
      * [ResourceLoadingStatus.FAILED]     - always disable it, and always set the desired status to false.
      */
-    @Synchronized override fun setEnabled(enabled: Boolean) {
+    @Synchronized
+    override fun setEnabled(enabled: Boolean) {
         shouldBeEnabled = when (loadingStatus) {
             ResourceLoadingStatus.SUCCESSFUL -> {
                 super.setEnabled(enabled)
@@ -84,7 +85,8 @@ class ResourceSelector<T> : ComboBox<T>() {
 
             runInEdt(ModalityState.any()) {
                 values.forEach { model.addElement(it) }
-                this.selectedItem = if (forceSelectDefault || previouslySelected == null) default else previouslySelected
+                this.selectedItem =
+                    if (forceSelectDefault || previouslySelected == null) default else previouslySelected
                 if (updateStatus) {
                     this.isEnabled = values.isNotEmpty()
                 } else {
@@ -125,7 +127,11 @@ class ResourceSelector<T> : ComboBox<T>() {
         }
     }
 
-    fun toValidationInfo(loading: String = message("loading_resource.loading"), failed: String = message("loading_resource.failed"), notSelected: String): ValidationInfo? {
+    fun toValidationInfo(
+        loading: String = message("loading_resource.loading"),
+        failed: String = message("loading_resource.failed"),
+        notSelected: String
+    ): ValidationInfo? {
         if (this.selected() != null) {
             return null
         }

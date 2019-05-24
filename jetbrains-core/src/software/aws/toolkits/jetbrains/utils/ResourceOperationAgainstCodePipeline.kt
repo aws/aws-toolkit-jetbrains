@@ -16,7 +16,10 @@ import software.aws.toolkits.resources.message
 
 const val CODEPIPELINE_SYSTEM_TAG_KEY = "aws:codepipeline:pipelineArn"
 
-enum class ResourceType(val value: String, val filter: String) {
+/**
+ * @property tagFilter used by ResourceGroupsTaggingApi to filter response by ResourceType (resourceTypeFilter)
+ */
+enum class ResourceType(val value: String, val tagFilter: String) {
     LAMBDA_FUNCTION(message("codepipeline.lambda.resource_type"), "lambda:function"),
     CLOUDFORMATION_STACK(message("codepipeline.stack.resource_type"), "cloudformation:stack");
 
@@ -45,16 +48,23 @@ fun warnResourceOperationAgainstCodePipeline(
     callback: () -> Unit
 ) {
     ApplicationManager.getApplication().executeOnPooledThread {
-        val codePipelineArn = getCodePipelineArnForResource(project, resourceArn, resourceType.filter)
+        val codePipelineArn = getCodePipelineArnForResource(project, resourceArn, resourceType.tagFilter)
 
         runInEdt {
             var shouldCallbackRun = true
             if (codePipelineArn != null) {
                 val title = message("codepipeline.resource.update.warning.title")
-                val message = message("codepipeline.resource.update.warning.message", resourceType, resourceName, codePipelineArn, operation)
+                val message = message(
+                    "codepipeline.resource.update.warning.message",
+                    resourceType,
+                    resourceName,
+                    codePipelineArn,
+                    operation
+                )
                 val noText = message("codepipeline.resource.update.warning.no_text")
                 val yesText = message("codepipeline.resource.update.warning.yes_text")
-                shouldCallbackRun = !showYesNoDialog(title, message, project, noText, yesText, Messages.getWarningIcon())
+                shouldCallbackRun =
+                    !showYesNoDialog(title, message, project, noText, yesText, Messages.getWarningIcon())
             }
             if (shouldCallbackRun) {
                 callback()
@@ -67,16 +77,26 @@ fun getCodePipelineArnForResource(project: Project, resourceArn: String, resourc
     val client: ResourceGroupsTaggingApiClient = project.awsClient()
 
     val tagFilter = TagFilter.builder().key(CODEPIPELINE_SYSTEM_TAG_KEY).build()
-    val request = GetResourcesRequest.builder().tagFilters(tagFilter).resourceTypeFilters(resourceTypeFilter).build()
-    val response = client.getResources(request)
 
-    for (resourceTagMapping in response.resourceTagMappingList().filterNotNull()) {
-        if (resourceTagMapping.resourceARN() == resourceArn) {
-            val tagValue = resourceTagMapping.tags().filterNotNull().find { it.key() == CODEPIPELINE_SYSTEM_TAG_KEY }?.value()
-            if (tagValue != null) {
-                return tagValue
+    var paginationToken: String? = ""
+
+    do {
+        val request =
+            GetResourcesRequest.builder().tagFilters(tagFilter).resourceTypeFilters(resourceTypeFilter)
+                .paginationToken(paginationToken).build()
+        val response = client.getResources(request)
+
+        for (resourceTagMapping in response.resourceTagMappingList().filterNotNull()) {
+            if (resourceTagMapping.resourceARN() == resourceArn) {
+                val tagValue =
+                    resourceTagMapping.tags().filterNotNull().find { it.key() == CODEPIPELINE_SYSTEM_TAG_KEY }?.value()
+                if (tagValue != null) {
+                    return tagValue
+                }
             }
         }
-    }
+        paginationToken = response.paginationToken()
+    } while (!paginationToken.isNullOrEmpty())
+
     return null
 }

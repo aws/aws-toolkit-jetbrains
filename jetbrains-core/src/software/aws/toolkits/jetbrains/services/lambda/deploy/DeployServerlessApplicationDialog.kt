@@ -43,7 +43,6 @@ class DeployServerlessApplicationDialog(
     private val s3Client: S3Client = project.awsClient()
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
     private val templateParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
-    private lateinit var stackNameToStackId: Map<String, String>
 
     init {
         super.init()
@@ -72,17 +71,13 @@ class DeployServerlessApplicationDialog(
             updateTemplateParameters()
         }
 
-        view.stacks.populateValues(default = settings?.samStackName(samPath), updateStatus = false) {
-            stackNameToStackId = cloudFormationClient.listStackSummariesFilter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
-                    .filterNotNull()
-                    .filter { it.stackName() != null }
-                    .map { it.stackName() to it.stackId() }
-                    .toMap()
-
-            stackNameToStackId
-                    .keys
-                    .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                    .toList()
+        view.stacks.populateValues(default = settings?.samStackName(samPath)?.let { Stack(it) }, updateStatus = false) {
+            cloudFormationClient.listStackSummariesFilter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
+                .filterNotNull()
+                .filter { it.stackName() != null }
+                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.stackName() })
+                .map { Stack(it.stackName(), it.stackId()) }
+                .toList()
         }
 
         updateTemplateParameters()
@@ -90,16 +85,16 @@ class DeployServerlessApplicationDialog(
         view.s3Bucket.populateValues(default = settings?.samBucketName(samPath)) {
             val activeRegionId = ProjectAccountSettingsManager.getInstance(project).activeRegion.id
             s3Client.listBucketsByRegion(activeRegionId)
-                    .mapNotNull { it.name() }
-                    .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                    .toList()
+                .mapNotNull { it.name() }
+                .sortedWith(String.CASE_INSENSITIVE_ORDER)
+                .toList()
         }
 
         view.createS3BucketButton.addActionListener {
             val bucketDialog = CreateS3BucketDialog(
-                    project = project,
-                    s3Client = s3Client,
-                    parent = view.content
+                project = project,
+                s3Client = s3Client,
+                parent = view.content
             )
 
             if (bucketDialog.showAndGet()) {
@@ -115,7 +110,7 @@ class DeployServerlessApplicationDialog(
     override fun createCenterPanel(): JComponent? = view.content
 
     override fun getPreferredFocusedComponent(): JComponent? =
-            if (settings?.samStackName(samPath) == null) view.newStackName else view.updateStack
+        if (settings?.samStackName(samPath) == null) view.newStackName else view.updateStack
 
     override fun doValidate(): ValidationInfo? = validator.validateSettings()
 
@@ -125,24 +120,24 @@ class DeployServerlessApplicationDialog(
         get() = if (view.createStack.isSelected) {
             view.newStackName.text.nullize()
         } else {
-            view.stacks.selected()
+            view.stacks.selected()?.name
         } ?: throw RuntimeException(message("serverless.application.deploy.validation.stack.missing"))
 
     val stackId: String?
         get() = if (view.createStack.isSelected) {
             null
         } else {
-            val stackName = view.stacks.selected()
-            if (stackName == null) {
-                null
-            } else {
-                stackNameToStackId[stackName]
+            view.stacks.selected()?.let { stack ->
+                // selected stack id will be null in case it was restored from DeploySettings
+                // DeploySettings doesn't store stack id because it doesn't have access to stack id
+                // at times when deployment happens with createStack selected
+                stack.id ?: view.stacks.values().find { it.name == stack.name }?.id
             }
         }
 
     val bucket: String
         get() = view.s3Bucket.selected()
-                ?: throw RuntimeException(message("serverless.application.deploy.validation.s3.bucket.empty"))
+            ?: throw RuntimeException(message("serverless.application.deploy.validation.s3.bucket.empty"))
 
     val autoExecute: Boolean
         get() = !view.requireReview.isSelected
@@ -162,7 +157,7 @@ class DeployServerlessApplicationDialog(
         if (view.createStack.isSelected) {
             view.withTemplateParameters(templateParameters)
         } else if (view.updateStack.isSelected) {
-            val stackName = view.stacks.selected()
+            val stackName = view.stacks.selected()?.name
             if (stackName == null) {
                 view.withTemplateParameters(emptyList())
             } else {
@@ -214,9 +209,9 @@ class DeploySamApplicationValidator(private val view: DeployServerlessApplicatio
         val parameters = view.templateParameters
 
         val unsetParameters = parameters.entries
-                .filter { it.value.isNullOrBlank() }
-                .map { it.key }
-                .toList()
+            .filter { it.value.isNullOrBlank() }
+            .map { it.key }
+            .toList()
 
         if (unsetParameters.any()) {
             return ValidationInfo(
@@ -241,7 +236,7 @@ class DeploySamApplicationValidator(private val view: DeployServerlessApplicatio
             return message("serverless.application.deploy.validation.new.stack.name.too.long", MAX_STACK_NAME_LENGTH)
         }
         // Check if the new stack name is same as an existing stack name
-        if (name in view.stacks.values()) {
+        view.stacks.values().find { it.name == name }?.let {
             return message("serverless.application.deploy.validation.new.stack.name.duplicate")
         }
         return null
@@ -253,4 +248,8 @@ class DeploySamApplicationValidator(private val view: DeployServerlessApplicatio
         private val STACK_NAME_PATTERN = "[a-zA-Z][a-zA-Z0-9-]*".toRegex()
         const val MAX_STACK_NAME_LENGTH = 128
     }
+}
+
+data class Stack(val name: String, val id: String? = null) {
+    override fun toString() = name
 }

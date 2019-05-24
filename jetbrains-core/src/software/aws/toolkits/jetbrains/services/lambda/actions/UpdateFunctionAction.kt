@@ -18,7 +18,8 @@ import software.aws.toolkits.jetbrains.utils.ResourceType
 import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
-abstract class UpdateFunctionAction(private val mode: EditFunctionMode, title: String) : SingleResourceNodeAction<LambdaFunctionNode>(title) {
+abstract class UpdateFunctionAction(private val mode: EditFunctionMode, title: String) :
+    SingleResourceNodeAction<LambdaFunctionNode>(title) {
     override fun actionPerformed(selected: LambdaFunctionNode, e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
@@ -33,16 +34,24 @@ abstract class UpdateFunctionAction(private val mode: EditFunctionMode, title: S
                 selected.function.region
             )
 
-            warnResourceOperationAgainstCodePipeline(project, selected.function.name, selected.function.arn, ResourceType.LAMBDA_FUNCTION, Operation.UPDATE) {
+            warnResourceOperationAgainstCodePipeline(
+                project,
+                selected.function.name,
+                selected.function.arn,
+                ResourceType.LAMBDA_FUNCTION,
+                Operation.UPDATE
+            ) {
                 EditFunctionDialog(project, lambdaFunction, mode = mode).show()
             }
         }
     }
 }
 
-class UpdateFunctionConfigurationAction : UpdateFunctionAction(EditFunctionMode.UPDATE_CONFIGURATION, message("lambda.function.updateConfiguration.action"))
+class UpdateFunctionConfigurationAction :
+    UpdateFunctionAction(EditFunctionMode.UPDATE_CONFIGURATION, message("lambda.function.updateConfiguration.action"))
 
-class UpdateFunctionCodeAction : UpdateFunctionAction(EditFunctionMode.UPDATE_CODE, message("lambda.function.updateCode.action")) {
+class UpdateFunctionCodeAction :
+    UpdateFunctionAction(EditFunctionMode.UPDATE_CODE, message("lambda.function.updateCode.action")) {
     override fun update(selected: LambdaFunctionNode, e: AnActionEvent) {
         if (selected.function.runtime.runtimeGroup?.let { LambdaBuilder.getInstance(it) } != null) {
             return

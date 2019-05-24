@@ -59,7 +59,7 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         val templateFile = getSamTemplateFile(e)
         if (templateFile == null) {
             Exception(message("serverless.application.deploy.toast.template_file_failure"))
-                    .notifyError(message("aws.notification.title"), project)
+                .notifyError(message("aws.notification.title"), project)
             return
         }
 
@@ -83,21 +83,32 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         if (stackId == null) {
             continueDeployment(project, stackName, templateFile, stackDialog)
         } else {
-            warnResourceOperationAgainstCodePipeline(project, stackName, stackId, ResourceType.CLOUDFORMATION_STACK, Operation.DEPLOY) {
+            warnResourceOperationAgainstCodePipeline(
+                project,
+                stackName,
+                stackId,
+                ResourceType.CLOUDFORMATION_STACK,
+                Operation.DEPLOY
+            ) {
                 continueDeployment(project, stackName, templateFile, stackDialog)
             }
         }
     }
 
-    private fun continueDeployment(project: Project, stackName: String, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
+    private fun continueDeployment(
+        project: Project,
+        stackName: String,
+        templateFile: VirtualFile,
+        stackDialog: DeployServerlessApplicationDialog
+    ) {
         val deployDialog = SamDeployDialog(
-                project,
-                stackName,
-                templateFile,
-                stackDialog.parameters,
-                stackDialog.bucket,
-                stackDialog.autoExecute,
-                stackDialog.useContainer
+            project,
+            stackName,
+            templateFile,
+            stackDialog.parameters,
+            stackDialog.bucket,
+            stackDialog.autoExecute,
+            stackDialog.useContainer
         )
 
         deployDialog.show()
@@ -116,9 +127,9 @@ class DeployServerlessApplicationAction : AnActionWrapper(
             try {
                 cfnClient.executeChangeSetAndWait(stackName, deployDialog.changeSetName)
                 notifyInfo(
-                        message("cloudformation.execute_change_set.success.title"),
-                        message("cloudformation.execute_change_set.success", stackName),
-                        project
+                    message("cloudformation.execute_change_set.success.title"),
+                    message("cloudformation.execute_change_set.success", stackName),
+                    project
                 )
             } catch (e: Exception) {
                 e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
@@ -159,7 +170,11 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         return null
     }
 
-    private fun saveSettings(project: Project, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
+    private fun saveSettings(
+        project: Project,
+        templateFile: VirtualFile,
+        stackDialog: DeployServerlessApplicationDialog
+    ) {
         ModuleUtil.findModuleForFile(templateFile, project)?.let { module ->
             relativeSamPath(module, templateFile)?.let { samPath ->
                 DeploySettings.getInstance(module)?.apply {
@@ -172,5 +187,6 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         }
     }
 
-    private fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? = project.validateSamTemplateLambdaRuntimes(templateFile)
+    private fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? =
+        project.validateSamTemplateLambdaRuntimes(templateFile)
 }

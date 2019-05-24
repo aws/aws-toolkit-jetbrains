@@ -31,8 +31,8 @@ class DeploySamApplicationValidatorTest {
     fun wireMocksTogetherWithValidOptions() {
 
         val parameters = listOf<Parameter>(
-                TestParameter("param1", "value1"),
-                TestParameter("param2", "value2")
+            TestParameter("param1", "value1"),
+            TestParameter("param2", "value2")
         )
 
         view = runInEdtAndGet {
@@ -42,7 +42,7 @@ class DeploySamApplicationValidatorTest {
         view.withTemplateParameters(parameters)
 
         view.updateStack.isSelected = true
-        view.stacks.model = DefaultComboBoxModel(arrayOf("stack123"))
+        view.stacks.model = DefaultComboBoxModel(arrayOf(Stack("stack123")))
         view.stacks.selectedItem = "stack123"
 
         view.s3Bucket.model = DefaultComboBoxModel(arrayOf("bucket123"))
@@ -87,7 +87,10 @@ class DeploySamApplicationValidatorTest {
         view.createStack.isSelected = true
         view.newStackName.text = "x".repeat(DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH + 1)
         assertThat(sut.validateSettings()?.message).contains(
-                message("serverless.application.deploy.validation.new.stack.name.too.long", DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH)
+            message(
+                "serverless.application.deploy.validation.new.stack.name.too.long",
+                DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH
+            )
         )
     }
 
@@ -95,7 +98,7 @@ class DeploySamApplicationValidatorTest {
     fun invalidStackName_Duplicate() {
         view.createStack.isSelected = true
         view.newStackName.text = "bar"
-        view.stacks.model = DefaultComboBoxModel(arrayOf("foo", "bar", "baz"))
+        view.stacks.model = DefaultComboBoxModel(arrayOf(Stack("foo"), Stack("bar"), Stack("baz")))
         assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.duplicate"))
     }
 
@@ -124,8 +127,8 @@ class DeploySamApplicationValidatorTest {
     @Test
     fun templateParameterMissing_Single() {
         val parameters = listOf<Parameter>(
-                TestParameter("param1", "value1"),
-                TestParameter("param2", "")
+            TestParameter("param1", "value1"),
+            TestParameter("param2", "")
         )
         view.withTemplateParameters(parameters)
         assertThat(sut.validateSettings()?.message).contains("Template values are missing:")
@@ -135,8 +138,8 @@ class DeploySamApplicationValidatorTest {
     @Test
     fun templateParameterMissing_Multi() {
         val parameters = listOf<Parameter>(
-                TestParameter("param1", ""),
-                TestParameter("param2", "")
+            TestParameter("param1", ""),
+            TestParameter("param2", "")
         )
         view.withTemplateParameters(parameters)
         assertThat(sut.validateSettings()?.message).contains("Template values are missing:")
