@@ -14,21 +14,14 @@ import software.aws.toolkits.jetbrains.core.explorer.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.Operation
-import software.aws.toolkits.jetbrains.utils.ResourceType
+import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
-abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: String) :
-    SingleResourceNodeAction<T>(text, icon = AllIcons.Actions.Cancel),
-    DumbAware {
+abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: String, private val taggingResourceType: TaggingResourceType) :
+    SingleResourceNodeAction<T>(text, icon = AllIcons.Actions.Cancel), DumbAware {
     final override fun actionPerformed(selected: T, e: AnActionEvent) {
-        warnResourceOperationAgainstCodePipeline(
-            selected.nodeProject,
-            selected.displayName(),
-            selected.resourceArn(),
-            getResourceType(),
-            Operation.DELETE
-        ) {
+        warnResourceOperationAgainstCodePipeline(selected.nodeProject, selected.displayName(), selected.resourceArn(), taggingResourceType, Operation.DELETE) {
             val resourceType = selected.resourceType()
             val resourceName = selected.displayName()
 
@@ -50,17 +43,12 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: Str
                         performDelete(selected)
                         notifyInfo(message("delete_resource.deleted", resourceType, resourceName))
                     } catch (e: Exception) {
-                        e.notifyError(
-                            message("delete_resource.delete_failed", resourceType, resourceName),
-                            selected.project
-                        )
+                        e.notifyError(message("delete_resource.delete_failed", resourceType, resourceName), selected.project)
                     }
                 }
             }
         }
     }
-
-    abstract fun getResourceType(): ResourceType
 
     abstract fun performDelete(selected: T)
 }

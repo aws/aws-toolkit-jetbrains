@@ -50,12 +50,8 @@ class CloudFormationStackNodeTest {
         whenever(mockCfnClient.describeStackResources(any<DescribeStackResourcesRequest>())).thenReturn(
             DescribeStackResourcesResponse.builder()
                 .stackResources(
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId(
-                        "processor"
-                    ).build(),
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId(
-                        "processor2"
-                    ).build(),
+                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId("processor").build(),
+                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId("processor2").build(),
                     StackResource.builder().resourceType("a dynamodb table").resourceStatus(ResourceStatus.CREATE_COMPLETE).build(),
                     StackResource.builder().resourceType("an IAM role").resourceStatus(ResourceStatus.CREATE_COMPLETE).build()
                 )
@@ -124,12 +120,8 @@ class CloudFormationStackNodeTest {
         whenever(mockCfnClient.describeStackResources(any<DescribeStackResourcesRequest>())).thenReturn(
             DescribeStackResourcesResponse.builder()
                 .stackResources(
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId(
-                        "processor"
-                    ).build(),
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId(
-                        "processor2"
-                    ).build()
+                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId("processor").build(),
+                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId("processor2").build()
                 )
                 .build()
         )
@@ -140,6 +132,5 @@ class CloudFormationStackNodeTest {
         assertThat(node.children).hasOnlyElementsOfType(AwsExplorerEmptyNode::class.java)
     }
 
-    private fun aCloudFormationStackNode(status: StackStatus) =
-        CloudFormationStackNode(projectRule.project, "stack", status, "stackId")
+    private fun aCloudFormationStackNode(status: StackStatus) = CloudFormationStackNode(projectRule.project, "stack", status, "stackId")
 }

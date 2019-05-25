@@ -22,12 +22,11 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsNodeAlwaysExpandable
 import software.aws.toolkits.jetbrains.core.explorer.AwsTruncatedResultNode
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
-import software.aws.toolkits.jetbrains.utils.ResourceType
+import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
-class CloudFormationServiceNode(project: Project) :
-    AwsExplorerServiceRootNode(project, message("explorer.node.cloudformation")) {
+class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(project, message("explorer.node.cloudformation")) {
     override fun serviceName() = CloudFormationClient.SERVICE_NAME
 
     private val client: CloudFormationClient = AwsClientManager.getInstance(project).getClient()
@@ -56,18 +55,8 @@ class CloudFormationServiceNode(project: Project) :
     }
 }
 
-class CloudFormationStackNode(
-    project: Project,
-    val stackName: String,
-    private val stackStatus: StackStatus,
-    val stackId: String
-) :
-    AwsExplorerResourceNode<String>(
-        project,
-        CloudFormationClient.SERVICE_NAME,
-        stackName,
-        AwsIcons.Resources.CLOUDFORMATION_STACK
-    ),
+class CloudFormationStackNode(project: Project, val stackName: String, private val stackStatus: StackStatus, val stackId: String) :
+    AwsExplorerResourceNode<String>(project, CloudFormationClient.SERVICE_NAME, stackName, AwsIcons.Resources.CLOUDFORMATION_STACK),
     AwsNodeAlwaysExpandable {
     override fun resourceType() = "stack"
 
@@ -81,12 +70,7 @@ class CloudFormationStackNode(
      * CloudFormation Stack Nodes do not immediately query for stack resources.
      * We wait until node will be expanded before querying, reducing risk of triggering TPS limits.
      */
-    private val noResourcesChildren: Collection<AbstractTreeNode<Any>> = listOf(
-        AwsExplorerEmptyNode(
-            project,
-            message("explorer.stack.no.serverless.resources")
-        )
-    ).filterIsInstance<AbstractTreeNode<Any>>()
+    private val noResourcesChildren: Collection<AbstractTreeNode<Any>> = listOf(AwsExplorerEmptyNode(project, message("explorer.stack.no.serverless.resources"))).filterIsInstance<AbstractTreeNode<Any>>()
     private var cachedChildren: Collection<AbstractTreeNode<Any>> = emptyList()
 
     var isChildCacheInInitialState: Boolean = true
@@ -147,8 +131,7 @@ class CloudFormationStackNode(
 
     private companion object {
         val COMPLETE_RESOURCE_STATES = setOf(ResourceStatus.CREATE_COMPLETE, ResourceStatus.UPDATE_COMPLETE)
-        val FAILED_STACK_STATES =
-            setOf(StackStatus.CREATE_FAILED, StackStatus.DELETE_FAILED, StackStatus.ROLLBACK_FAILED)
+        val FAILED_STACK_STATES = setOf(StackStatus.CREATE_FAILED, StackStatus.DELETE_FAILED, StackStatus.ROLLBACK_FAILED)
         val IN_PROGRESS_STACK_STATES = setOf(
             StackStatus.CREATE_IN_PROGRESS,
             StackStatus.DELETE_IN_PROGRESS,
@@ -159,13 +142,10 @@ class CloudFormationStackNode(
     }
 }
 
-class DeleteCloudFormationStackAction :
-    DeleteResourceAction<CloudFormationStackNode>(message("cloudformation.stack.delete.action")) {
+class DeleteCloudFormationStackAction : DeleteResourceAction<CloudFormationStackNode>(message("cloudformation.stack.delete.action"), TaggingResourceType.CLOUDFORMATION_STACK) {
     override fun performDelete(selected: CloudFormationStackNode) {
         val client: CloudFormationClient = AwsClientManager.getInstance(selected.nodeProject).getClient()
         client.deleteStack { it.stackName(selected.stackName) }
         client.waitForStackDeletionComplete(selected.stackName)
     }
-
-    override fun getResourceType() = ResourceType.CLOUDFORMATION_STACK
 }

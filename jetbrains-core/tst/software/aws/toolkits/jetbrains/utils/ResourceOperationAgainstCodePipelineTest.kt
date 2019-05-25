@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.resourcegroupstaggingapi.model.GetResourc
 import software.amazon.awssdk.services.resourcegroupstaggingapi.model.GetResourcesResponse
 import software.amazon.awssdk.services.resourcegroupstaggingapi.model.ResourceTagMapping
 import software.amazon.awssdk.services.resourcegroupstaggingapi.model.Tag
+import software.amazon.awssdk.services.resourcegroupstaggingapi.paginators.GetResourcesIterable
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -37,9 +38,13 @@ class ResourceOperationAgainstCodePipelineTest {
 
     @Test
     fun getCodePipelineArnForResource_resourceTagMappingNotFound() {
-        whenever(mockClient.getResources(any<GetResourcesRequest>()))
+        whenever(mockClient.getResourcesPaginator(any<GetResourcesRequest>()))
             .thenReturn(
-                GetResourcesResponse.builder().build()
+                object : GetResourcesIterable(null, null) {
+                    override fun iterator() = mutableListOf(
+                        GetResourcesResponse.builder().build()
+                    ).iterator()
+                }
             )
 
         assertNull(getCodePipelineArnForResource(projectRule.project, RESOURCE_ARN, RESOURCE_TYPE_FILTER))
@@ -47,13 +52,17 @@ class ResourceOperationAgainstCodePipelineTest {
 
     @Test
     fun getCodePipelineArnForResource_resourceArnNotFound() {
-        whenever(mockClient.getResources(any<GetResourcesRequest>()))
+        whenever(mockClient.getResourcesPaginator(any<GetResourcesRequest>()))
             .thenReturn(
-                GetResourcesResponse.builder()
-                    .resourceTagMappingList(
-                        getResourceTagMapping("arn", "key", "value")
-                    )
-                    .build()
+                object : GetResourcesIterable(null, null) {
+                    override fun iterator() = mutableListOf(
+                        GetResourcesResponse.builder()
+                            .resourceTagMappingList(
+                                getResourceTagMapping("arn", "key", "value")
+                            )
+                            .build()
+                    ).iterator()
+                }
             )
 
         assertNull(getCodePipelineArnForResource(projectRule.project, RESOURCE_ARN, RESOURCE_TYPE_FILTER))
@@ -61,13 +70,17 @@ class ResourceOperationAgainstCodePipelineTest {
 
     @Test
     fun getCodePipelineArnForResource_pipelineTagNotFound() {
-        whenever(mockClient.getResources(any<GetResourcesRequest>()))
+        whenever(mockClient.getResourcesPaginator(any<GetResourcesRequest>()))
             .thenReturn(
-                GetResourcesResponse.builder()
-                    .resourceTagMappingList(
-                        getResourceTagMapping(RESOURCE_ARN, "key", "value")
-                    )
-                    .build()
+                object : GetResourcesIterable(null, null) {
+                    override fun iterator() = mutableListOf(
+                        GetResourcesResponse.builder()
+                            .resourceTagMappingList(
+                                getResourceTagMapping(RESOURCE_ARN, "key", "value")
+                            )
+                            .build()
+                    ).iterator()
+                }
             )
 
         assertNull(getCodePipelineArnForResource(projectRule.project, RESOURCE_ARN, RESOURCE_TYPE_FILTER))
@@ -75,19 +88,20 @@ class ResourceOperationAgainstCodePipelineTest {
 
     @Test
     fun getCodePipelineArnForResource_pipelineTagFound() {
-        whenever(mockClient.getResources(any<GetResourcesRequest>()))
+        whenever(mockClient.getResourcesPaginator(any<GetResourcesRequest>()))
             .thenReturn(
-                GetResourcesResponse.builder()
-                    .resourceTagMappingList(
-                        getResourceTagMapping(RESOURCE_ARN, CODEPIPELINE_SYSTEM_TAG_KEY, CODEPIPELINE_ARN)
-                    )
-                    .build()
+                object : GetResourcesIterable(null, null) {
+                    override fun iterator() = mutableListOf(
+                        GetResourcesResponse.builder()
+                            .resourceTagMappingList(
+                                getResourceTagMapping(RESOURCE_ARN, CODEPIPELINE_SYSTEM_TAG_KEY, CODEPIPELINE_ARN)
+                            )
+                            .build()
+                    ).iterator()
+                }
             )
 
-        assertEquals(
-            CODEPIPELINE_ARN,
-            getCodePipelineArnForResource(projectRule.project, RESOURCE_ARN, RESOURCE_TYPE_FILTER)
-        )
+        assertEquals(CODEPIPELINE_ARN, getCodePipelineArnForResource(projectRule.project, RESOURCE_ARN, RESOURCE_TYPE_FILTER))
     }
 
     private fun getResourceTagMapping(resourceARN: String, tagKey: String, tagValue: String): ResourceTagMapping {

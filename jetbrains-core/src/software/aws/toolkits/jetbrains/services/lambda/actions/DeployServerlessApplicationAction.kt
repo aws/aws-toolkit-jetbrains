@@ -32,7 +32,7 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.jetbrains.utils.notifySamCliNotValidError
 import software.aws.toolkits.jetbrains.utils.Operation
-import software.aws.toolkits.jetbrains.utils.ResourceType
+import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
@@ -59,7 +59,7 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         val templateFile = getSamTemplateFile(e)
         if (templateFile == null) {
             Exception(message("serverless.application.deploy.toast.template_file_failure"))
-                .notifyError(message("aws.notification.title"), project)
+                    .notifyError(message("aws.notification.title"), project)
             return
         }
 
@@ -83,24 +83,13 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         if (stackId == null) {
             continueDeployment(project, stackName, templateFile, stackDialog)
         } else {
-            warnResourceOperationAgainstCodePipeline(
-                project,
-                stackName,
-                stackId,
-                ResourceType.CLOUDFORMATION_STACK,
-                Operation.DEPLOY
-            ) {
+            warnResourceOperationAgainstCodePipeline(project, stackName, stackId, TaggingResourceType.CLOUDFORMATION_STACK, Operation.DEPLOY) {
                 continueDeployment(project, stackName, templateFile, stackDialog)
             }
         }
     }
 
-    private fun continueDeployment(
-        project: Project,
-        stackName: String,
-        templateFile: VirtualFile,
-        stackDialog: DeployServerlessApplicationDialog
-    ) {
+    private fun continueDeployment(project: Project, stackName: String, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
         val deployDialog = SamDeployDialog(
             project,
             stackName,
@@ -170,11 +159,7 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         return null
     }
 
-    private fun saveSettings(
-        project: Project,
-        templateFile: VirtualFile,
-        stackDialog: DeployServerlessApplicationDialog
-    ) {
+    private fun saveSettings(project: Project, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
         ModuleUtil.findModuleForFile(templateFile, project)?.let { module ->
             relativeSamPath(module, templateFile)?.let { samPath ->
                 DeploySettings.getInstance(module)?.apply {
@@ -187,6 +172,5 @@ class DeployServerlessApplicationAction : AnActionWrapper(
         }
     }
 
-    private fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? =
-        project.validateSamTemplateLambdaRuntimes(templateFile)
+    private fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? = project.validateSamTemplateLambdaRuntimes(templateFile)
 }

@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.cloudformation.mergeRemoteParame
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
+import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
@@ -73,11 +74,11 @@ class DeployServerlessApplicationDialog(
 
         view.stacks.populateValues(default = settings?.samStackName(samPath)?.let { Stack(it) }, updateStatus = false) {
             cloudFormationClient.listStackSummariesFilter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
-                .filterNotNull()
-                .filter { it.stackName() != null }
-                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.stackName() })
-                .map { Stack(it.stackName(), it.stackId()) }
-                .toList()
+                    .filterNotNull()
+                    .filter { it.stackName() != null }
+                    .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.stackName() })
+                    .map { Stack(it.stackName(), it.stackId()) }
+                    .toList()
         }
 
         updateTemplateParameters()
@@ -85,16 +86,16 @@ class DeployServerlessApplicationDialog(
         view.s3Bucket.populateValues(default = settings?.samBucketName(samPath)) {
             val activeRegionId = ProjectAccountSettingsManager.getInstance(project).activeRegion.id
             s3Client.listBucketsByRegion(activeRegionId)
-                .mapNotNull { it.name() }
-                .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                .toList()
+                    .mapNotNull { it.name() }
+                    .sortedWith(String.CASE_INSENSITIVE_ORDER)
+                    .toList()
         }
 
         view.createS3BucketButton.addActionListener {
             val bucketDialog = CreateS3BucketDialog(
-                project = project,
-                s3Client = s3Client,
-                parent = view.content
+                    project = project,
+                    s3Client = s3Client,
+                    parent = view.content
             )
 
             if (bucketDialog.showAndGet()) {
@@ -110,7 +111,7 @@ class DeployServerlessApplicationDialog(
     override fun createCenterPanel(): JComponent? = view.content
 
     override fun getPreferredFocusedComponent(): JComponent? =
-        if (settings?.samStackName(samPath) == null) view.newStackName else view.updateStack
+            if (settings?.samStackName(samPath) == null) view.newStackName else view.updateStack
 
     override fun doValidate(): ValidationInfo? = validator.validateSettings()
 
@@ -131,13 +132,13 @@ class DeployServerlessApplicationDialog(
                 // selected stack id will be null in case it was restored from DeploySettings
                 // DeploySettings doesn't store stack id because it doesn't have access to stack id
                 // at times when deployment happens with createStack selected
-                stack.id ?: view.stacks.values().find { it.name == stack.name }?.id
+                stack.id ?: view.stacks.model.find { it.name == stack.name }?.id
             }
         }
 
     val bucket: String
         get() = view.s3Bucket.selected()
-            ?: throw RuntimeException(message("serverless.application.deploy.validation.s3.bucket.empty"))
+                ?: throw RuntimeException(message("serverless.application.deploy.validation.s3.bucket.empty"))
 
     val autoExecute: Boolean
         get() = !view.requireReview.isSelected
@@ -209,9 +210,9 @@ class DeploySamApplicationValidator(private val view: DeployServerlessApplicatio
         val parameters = view.templateParameters
 
         val unsetParameters = parameters.entries
-            .filter { it.value.isNullOrBlank() }
-            .map { it.key }
-            .toList()
+                .filter { it.value.isNullOrBlank() }
+                .map { it.key }
+                .toList()
 
         if (unsetParameters.any()) {
             return ValidationInfo(
@@ -236,7 +237,7 @@ class DeploySamApplicationValidator(private val view: DeployServerlessApplicatio
             return message("serverless.application.deploy.validation.new.stack.name.too.long", MAX_STACK_NAME_LENGTH)
         }
         // Check if the new stack name is same as an existing stack name
-        view.stacks.values().find { it.name == name }?.let {
+        view.stacks.model.find { it.name == name }?.let {
             return message("serverless.application.deploy.validation.new.stack.name.duplicate")
         }
         return null
