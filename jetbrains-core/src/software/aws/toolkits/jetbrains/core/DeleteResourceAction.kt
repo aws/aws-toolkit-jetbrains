@@ -26,15 +26,15 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: Str
             val resourceName = selected.displayName()
 
             val response = Messages.showInputDialog(selected.project,
-                message("delete_resource.message", resourceType, resourceName),
-                message("delete_resource.title", resourceType, resourceName),
-                Messages.getWarningIcon(),
-                null,
-                object : InputValidator {
-                    override fun checkInput(inputString: String?): Boolean = inputString == resourceName
+                    message("delete_resource.message", resourceType, resourceName),
+                    message("delete_resource.title", resourceType, resourceName),
+                    Messages.getWarningIcon(),
+                    null,
+                    object : InputValidator {
+                        override fun checkInput(inputString: String?): Boolean = inputString == resourceName
 
-                    override fun canClose(inputString: String?): Boolean = checkInput(inputString)
-                }
+                        override fun canClose(inputString: String?): Boolean = checkInput(inputString)
+                    }
             )
 
             if (response != null) {

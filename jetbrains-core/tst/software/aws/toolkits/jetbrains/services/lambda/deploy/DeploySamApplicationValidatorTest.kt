@@ -87,7 +87,7 @@ class DeploySamApplicationValidatorTest {
         view.createStack.isSelected = true
         view.newStackName.text = "x".repeat(DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH + 1)
         assertThat(sut.validateSettings()?.message).contains(
-            message("serverless.application.deploy.validation.new.stack.name.too.long", DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH)
+                message("serverless.application.deploy.validation.new.stack.name.too.long", DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH)
         )
     }
 
