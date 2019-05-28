@@ -3,11 +3,11 @@
 
 package toolkits.gradle.changelog
 
-import org.gradle.api.logging.Logging
 import java.nio.file.Path
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.streams.toList
+import org.gradle.api.logging.Logging
 
 /* ktlint-disable custom-ktlint-rules:log-not-lazy */
 /**

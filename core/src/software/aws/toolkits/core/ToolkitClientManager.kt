@@ -3,6 +3,10 @@
 
 package software.aws.toolkits.core
 
+import java.lang.reflect.Modifier
+import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KClass
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.awscore.client.builder.AwsDefaultClientBuilder
@@ -19,10 +23,6 @@ import software.amazon.awssdk.services.s3.internal.handlers.EndpointAddressInter
 import software.amazon.awssdk.services.s3.internal.handlers.PutObjectInterceptor
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import java.lang.reflect.Modifier
-import java.net.URI
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 
 /**
  * An SPI for caching of AWS clients inside of a toolkit

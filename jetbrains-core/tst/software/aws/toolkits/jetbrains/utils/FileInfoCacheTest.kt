@@ -3,12 +3,12 @@
 
 package software.aws.toolkits.jetbrains.utils
 
+import java.io.File
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class FileInfoCacheTest {
     @Rule

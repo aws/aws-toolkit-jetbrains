@@ -5,11 +5,11 @@ package software.aws.toolkits.ktlint.rules
 
 import com.pinterest.ktlint.core.LintError
 import com.pinterest.ktlint.test.lint
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Test
 
 class CopyrightHeaderRuleTest {
     private val rule = CopyrightHeaderRule(Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))

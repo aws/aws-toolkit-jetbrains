@@ -6,12 +6,12 @@ package software.aws.toolkits.jetbrains.core
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ProjectRule
+import kotlin.reflect.KClass
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import kotlin.reflect.KClass
 
 class MockClientManager(project: Project) : AwsClientManager(project, AwsSdkClient.getInstance()) {
     private val mockClients = mutableMapOf<KClass<out SdkClient>, SdkClient>()

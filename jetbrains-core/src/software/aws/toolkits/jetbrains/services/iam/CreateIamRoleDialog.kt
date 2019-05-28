@@ -8,6 +8,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ValidationInfo
+import java.awt.Component
+import javax.swing.JComponent
 import org.intellij.lang.annotations.Language
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.iam.IamClient
@@ -16,8 +18,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.components.telemetry.LoggingDialogWrapper
 import software.aws.toolkits.jetbrains.utils.ui.formatAndSet
 import software.aws.toolkits.resources.message
-import java.awt.Component
-import javax.swing.JComponent
 
 class CreateIamRoleDialog(
     private val project: Project,

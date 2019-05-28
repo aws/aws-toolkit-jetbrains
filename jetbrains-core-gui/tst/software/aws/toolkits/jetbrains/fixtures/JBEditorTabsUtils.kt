@@ -9,11 +9,11 @@ import com.intellij.testGuiFramework.util.step
 import com.intellij.ui.tabs.JBTabs
 import com.intellij.ui.tabs.TabInfo
 import com.intellij.ui.tabs.impl.TabLabel
+import java.awt.Container
 import org.fest.swing.edt.GuiActionRunner.execute
 import org.fest.swing.edt.GuiTask
 import org.fest.swing.fixture.ContainerFixture
 import org.fest.swing.timing.Timeout
-import java.awt.Container
 
 class JBTabsFixture(private val tabInfo: TabInfo, private val tabs: JBTabs) {
     fun selectTab() {

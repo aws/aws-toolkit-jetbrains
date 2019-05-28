@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Ref
 import com.intellij.util.text.nullize
 import icons.AwsIcons
+import java.util.function.Supplier
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
@@ -31,7 +32,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory.Companion.TYPE
 import software.aws.toolkits.resources.message
-import java.util.function.Supplier
 
 /**
  * @param profiles Holds references to the loaded profiles, should always be fetched from to handle loading of newer data

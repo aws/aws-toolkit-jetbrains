@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.openapi.application.ApplicationManager
+import java.time.temporal.ChronoUnit
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
@@ -15,7 +16,6 @@ import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.NonBlocking
 import software.amazon.awssdk.utils.cache.RefreshResult
 import software.aws.toolkits.core.telemetry.CachedIdentityStorage
-import java.time.temporal.ChronoUnit
 
 /**
  * [AwsCredentialsProvider] implementation that uses the Amazon Cognito Identity

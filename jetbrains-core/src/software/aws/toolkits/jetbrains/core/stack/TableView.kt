@@ -5,13 +5,13 @@ package software.aws.toolkits.jetbrains.core.stack
 import com.intellij.openapi.Disposable
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import software.amazon.awssdk.services.cloudformation.model.StackEvent
-import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JTable
 import javax.swing.SwingUtilities
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
+import software.amazon.awssdk.services.cloudformation.model.StackEvent
+import software.aws.toolkits.resources.message
 
 /**
  * Events table

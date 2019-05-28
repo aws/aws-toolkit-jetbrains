@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.core.rules
 
-import org.junit.rules.ExternalResource
 import java.util.Properties
+import org.junit.rules.ExternalResource
 
 /**
  * A utility that can temporarily forcibly set environment variables and

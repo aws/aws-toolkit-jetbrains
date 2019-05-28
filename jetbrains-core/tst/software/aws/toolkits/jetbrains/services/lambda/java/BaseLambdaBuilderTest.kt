@@ -9,6 +9,10 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.io.isFile
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.TimeUnit
+import kotlin.streams.toList
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -19,10 +23,6 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.execution.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.settings.SamSettings
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.concurrent.TimeUnit
-import kotlin.streams.toList
 
 abstract class BaseLambdaBuilderTest {
     protected abstract val lambdaBuilder: LambdaBuilder

@@ -8,6 +8,8 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -22,8 +24,6 @@ import software.amazon.awssdk.services.cognitoidentity.model.GetIdRequest
 import software.amazon.awssdk.services.cognitoidentity.model.GetIdResponse
 import software.aws.toolkits.core.telemetry.CachedIdentityStorage
 import software.aws.toolkits.core.utils.DelegateSdkConsumers
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 class AwsCognitoCredentialsProviderTest {
     @Rule

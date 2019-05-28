@@ -5,12 +5,6 @@ package software.aws.toolkits.jetbrains.core.credentials.profiles
 
 import com.intellij.openapi.Disposable
 import com.intellij.util.io.isFile
-import software.amazon.awssdk.profiles.ProfileFileLocation
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.core.utils.warn
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -19,6 +13,12 @@ import java.nio.file.WatchKey
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import software.amazon.awssdk.profiles.ProfileFileLocation
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.core.utils.warn
 
 class ProfileWatcher : Disposable {
     private val listeners = ConcurrentHashMap.newKeySet<ProfileChangeListener>()

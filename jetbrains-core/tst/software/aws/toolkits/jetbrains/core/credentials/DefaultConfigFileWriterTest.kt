@@ -3,16 +3,16 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.PosixFilePermissions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.IterableAssert
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.attribute.PosixFilePermission
-import java.nio.file.attribute.PosixFilePermissions
 
 class DefaultConfigFileWriterTest {
 

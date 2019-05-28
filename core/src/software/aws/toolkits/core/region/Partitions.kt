@@ -7,12 +7,12 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import java.io.InputStream
+import java.time.Duration
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.resources.BundledResources
-import java.io.InputStream
-import java.time.Duration
 
 data class Partitions(val partitions: List<Partition>) {
     fun getPartition(name: String): Partition =

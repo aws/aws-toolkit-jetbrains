@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.components.telemetry
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import java.awt.Component
 import software.aws.toolkits.core.telemetry.TelemetryNamespace
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import java.awt.Component
 
 // DialogWrapper constructor signatures:
 //  protected DialogWrapper(@Nullable Project project, boolean canBeParent)

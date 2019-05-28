@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.utils
 
-import software.aws.toolkits.resources.message
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Paths
 import java.time.Instant
+import software.aws.toolkits.resources.message
 
 abstract class FileInfoCache<T> {
     private val infoCache = mutableMapOf<String, InfoResult<T>>()

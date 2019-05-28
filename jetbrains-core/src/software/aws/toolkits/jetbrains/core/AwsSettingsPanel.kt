@@ -24,6 +24,9 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.util.Consumer
+import java.awt.Component
+import java.awt.event.MouseEvent
+import javax.swing.JComponent
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
@@ -37,9 +40,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsMa
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
-import java.awt.Component
-import java.awt.event.MouseEvent
-import javax.swing.JComponent
 
 class AwsSettingsPanelInstaller : StartupActivity {
     override fun runActivity(project: Project) {

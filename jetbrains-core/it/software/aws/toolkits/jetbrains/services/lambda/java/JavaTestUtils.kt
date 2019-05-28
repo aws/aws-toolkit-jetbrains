@@ -29,6 +29,9 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.io.isDirectory
 import com.intellij.util.io.readBytes
 import com.intellij.util.io.write
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import org.jetbrains.idea.maven.project.MavenProjectsManager
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
@@ -36,9 +39,6 @@ import org.junit.Assert.fail
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 
 internal fun HeavyJavaCodeInsightTestFixtureRule.setUpGradleProject(): PsiClass {
     val fixture = this.fixture

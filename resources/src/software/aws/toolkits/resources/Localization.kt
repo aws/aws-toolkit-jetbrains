@@ -4,9 +4,9 @@
 @file:JvmName("Localization")
 package software.aws.toolkits.resources
 
-import org.jetbrains.annotations.PropertyKey
 import java.text.MessageFormat
 import java.util.ResourceBundle
+import org.jetbrains.annotations.PropertyKey
 
 private const val BUNDLE_NAME = "software.aws.toolkits.resources.localized_messages"
 private val BUNDLE by lazy {

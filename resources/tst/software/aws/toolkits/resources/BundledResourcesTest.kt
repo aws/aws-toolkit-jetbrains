@@ -3,12 +3,12 @@
 
 package software.aws.toolkits.resources
 
+import java.io.InputStream
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.InputStream
 
 @RunWith(Parameterized::class)
 class BundledResourcesTest(private val file: InputStream) {

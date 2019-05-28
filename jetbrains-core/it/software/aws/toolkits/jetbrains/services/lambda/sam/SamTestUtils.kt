@@ -19,9 +19,9 @@ import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugSessionListener
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.XDebuggerManagerListener
-import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 
 fun executeLambda(
     runConfiguration: LocalLambdaRunConfiguration,

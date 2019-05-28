@@ -9,12 +9,12 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkTypeId
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Condition
-import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
-import software.aws.toolkits.resources.message
 import java.awt.event.ItemEvent
 import javax.swing.JComponent
 import javax.swing.JLabel
+import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.resources.message
 
 class IntelliJSdkSelectionPanel(generator: SamProjectGenerator) : SdkSelectionPanelBase(generator) {
     private var currentSdk: Sdk? = null

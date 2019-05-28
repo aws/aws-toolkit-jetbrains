@@ -7,15 +7,15 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
-import one.util.streamex.StreamEx
-import software.amazon.awssdk.services.cloudformation.model.StackResource
-import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.resources.message
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.MutableTreeNode
+import one.util.streamex.StreamEx
+import software.amazon.awssdk.services.cloudformation.model.StackResource
+import software.amazon.awssdk.services.cloudformation.model.StackStatus
+import software.aws.toolkits.resources.message
 
 /**
  *

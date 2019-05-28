@@ -6,9 +6,9 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.local
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.OptionTag
 import com.intellij.util.xmlb.annotations.Property
+import java.util.LinkedHashMap
 import software.aws.toolkits.jetbrains.services.lambda.execution.BaseLambdaOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
-import java.util.LinkedHashMap
 
 class LocalLambdaOptions : BaseLambdaOptions() {
     @get:Property(flat = true) // flat for backwards compat

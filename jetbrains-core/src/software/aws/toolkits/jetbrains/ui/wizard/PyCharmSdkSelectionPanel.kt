@@ -16,12 +16,12 @@ import com.jetbrains.python.newProject.steps.PyAddExistingSdkPanel
 import com.jetbrains.python.newProject.steps.PyAddNewEnvironmentPanel
 import com.jetbrains.python.sdk.add.PyAddSdkGroupPanel
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
-import software.aws.toolkits.resources.message
 import javax.swing.Icon
 import javax.swing.JPanel
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
+import software.aws.toolkits.resources.message
 
 class PyCharmSdkSelectionPanel(generator: SamProjectGenerator) : SdkSelectionPanelBase(generator) {
     private var documentListener: DocumentListener? = null

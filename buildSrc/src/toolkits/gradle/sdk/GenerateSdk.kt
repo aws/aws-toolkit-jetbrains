@@ -3,6 +3,7 @@
 
 package toolkits.gradle.sdk
 
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.InputDirectory
@@ -13,7 +14,6 @@ import software.amazon.awssdk.codegen.CodeGenerator
 import software.amazon.awssdk.codegen.model.config.customization.CustomizationConfig
 import software.amazon.awssdk.codegen.model.service.ServiceModel
 import software.amazon.awssdk.codegen.utils.ModelLoaderUtils
-import java.io.File
 
 /* ktlint-disable custom-ktlint-rules:log-not-lazy */
 open class GenerateSdk : DefaultTask() {

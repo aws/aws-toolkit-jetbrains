@@ -3,12 +3,12 @@
 
 package toolkits.gradle.changelog
 
+import java.io.File
+import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.time.LocalDate
 
 class ReleaseCreatorTest {
 

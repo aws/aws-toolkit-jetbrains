@@ -5,6 +5,10 @@ package software.aws.toolkits.jetbrains.core.stack
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.atLeast
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
+import javax.swing.JLabel
+import javax.swing.SwingUtilities
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -21,10 +25,6 @@ import software.amazon.awssdk.services.cloudformation.model.Stack
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import java.util.concurrent.Semaphore
-import java.util.concurrent.TimeUnit
-import javax.swing.JLabel
-import javax.swing.SwingUtilities
 
 private fun createSemaphore() = Semaphore(1).apply { acquire() }
 private fun Semaphore.waitFor() = assert(tryAcquire(10, TimeUnit.SECONDS)) { "operation never completed" }

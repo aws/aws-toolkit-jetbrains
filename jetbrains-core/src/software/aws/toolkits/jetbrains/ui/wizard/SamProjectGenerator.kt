@@ -25,11 +25,11 @@ import com.intellij.platform.HideableProjectGenerator
 import com.intellij.platform.ProjectGeneratorPeer
 import com.intellij.platform.ProjectTemplate
 import icons.AwsIcons
+import javax.swing.Icon
+import javax.swing.JComponent
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
-import javax.swing.Icon
-import javax.swing.JComponent
 
 class SamNewProjectSettings {
     lateinit var runtime: Runtime

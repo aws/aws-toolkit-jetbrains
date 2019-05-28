@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.settings
 
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.FileUtil
+import java.io.File
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume
 import org.junit.Before
@@ -12,7 +13,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
-import java.io.File
 
 abstract class SamExecutableDetectorTestBase {
     @Rule

@@ -3,13 +3,13 @@
 
 package toolkits.gradle.changelog
 
+import java.io.File
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jgit.api.Git
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class GitStagerTest {
     @Rule

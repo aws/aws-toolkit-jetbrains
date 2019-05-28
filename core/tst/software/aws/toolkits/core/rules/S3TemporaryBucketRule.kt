@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.core.rules
 
+import java.util.Random
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.aws.toolkits.core.s3.deleteBucketAndContents
-import java.util.Random
 
 class S3TemporaryBucketRule(private val s3Client: S3Client) : ExternalResource() {
     private val buckets = mutableListOf<String>()

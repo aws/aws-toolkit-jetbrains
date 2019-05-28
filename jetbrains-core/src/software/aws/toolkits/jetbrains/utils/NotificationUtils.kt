@@ -14,13 +14,13 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.ui.ScrollPaneFactory
+import javax.swing.JLabel
+import javax.swing.JTextArea
 import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
 import software.aws.toolkits.jetbrains.core.SettingsSelectorAction
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
 import software.aws.toolkits.resources.message
-import javax.swing.JLabel
-import javax.swing.JTextArea
 
 const val GROUP_DISPLAY_ID = "AWS Toolkit"
 

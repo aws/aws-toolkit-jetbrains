@@ -3,13 +3,13 @@
 
 package toolkits.gradle.changelog
 
+import java.io.File
+import java.lang.Math.max
+import java.lang.Math.min
 import org.commonmark.node.AbstractVisitor
 import org.commonmark.node.Heading
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
-import java.io.File
-import java.lang.Math.max
-import java.lang.Math.min
 
 class JetBrainsWriter(private val changeNotesFile: File, issueUrl: String? = null) : ChangeLogWriter(issueUrl) {
     private val sb = StringBuilder()

@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.utils.ui
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.Test
 import java.awt.event.MouseEvent
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JCheckBox
 import javax.swing.JTextField
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Test
 
 class UiUtilsTest {
 

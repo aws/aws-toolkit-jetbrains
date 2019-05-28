@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.core.utils
 
-import software.amazon.awssdk.awscore.exception.AwsServiceException
 import java.time.Duration
+import software.amazon.awssdk.awscore.exception.AwsServiceException
 
 /**
  * Generic waiter method to wait for a certain AWS resource to be in a steady status until it reaches in a failed status

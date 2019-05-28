@@ -19,11 +19,11 @@ import com.intellij.util.indexing.PsiDependentIndex
 import com.intellij.util.io.DataExternalizer
 import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.KeyDescriptor
+import java.io.DataInput
+import java.io.DataOutput
 import org.jetbrains.yaml.YAMLLanguage
 import org.jetbrains.yaml.psi.YAMLKeyValue
 import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate
-import java.io.DataInput
-import java.io.DataOutput
 
 class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<IndexedResource>>(), PsiDependentIndex {
     private val fileFilter by lazy {

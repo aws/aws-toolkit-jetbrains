@@ -13,6 +13,9 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JTextField
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer
@@ -21,9 +24,6 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
 import software.aws.toolkits.jetbrains.settings.SamSettings
-import javax.swing.JButton
-import javax.swing.JComponent
-import javax.swing.JTextField
 
 interface ValidatablePanel {
     fun validate(): ValidationInfo? = null

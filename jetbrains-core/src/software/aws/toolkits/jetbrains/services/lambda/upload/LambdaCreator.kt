@@ -7,6 +7,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest
 import software.amazon.awssdk.services.lambda.model.FunctionCode
@@ -24,9 +27,6 @@ import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.resources.message
-import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
 
 object LambdaCreatorFactory {
     fun create(clientManager: ToolkitClientManager, builder: LambdaBuilder): LambdaCreator = LambdaCreator(

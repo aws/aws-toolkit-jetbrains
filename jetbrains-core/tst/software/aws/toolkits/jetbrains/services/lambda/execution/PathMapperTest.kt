@@ -4,13 +4,13 @@
 package software.aws.toolkits.jetbrains.services.lambda.execution
 
 import com.intellij.openapi.util.SystemInfo
+import java.nio.file.Files
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.file.Files
 
 class PathMapperTest {
     @Rule

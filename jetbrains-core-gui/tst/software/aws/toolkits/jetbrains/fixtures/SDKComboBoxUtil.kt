@@ -8,11 +8,11 @@ import com.intellij.testGuiFramework.cellReader.ExtendedJComboboxCellReader
 import com.intellij.testGuiFramework.framework.Timeouts
 import com.intellij.testGuiFramework.impl.findComponentWithTimeout
 import com.intellij.testGuiFramework.util.step
+import java.awt.Container
 import org.fest.swing.core.Robot
 import org.fest.swing.fixture.ContainerFixture
 import org.fest.swing.fixture.JComboBoxFixture
 import org.fest.swing.timing.Timeout
-import java.awt.Container
 
 class SdkChooserFixture(robot: Robot, jdkComboBox: JdkComboBox) : JComboBoxFixture(robot, jdkComboBox) {
     init {

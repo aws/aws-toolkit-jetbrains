@@ -14,6 +14,8 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
+import javax.swing.JPanel
+import kotlin.streams.toList
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -26,8 +28,6 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationBase
 import software.aws.toolkits.resources.message
-import javax.swing.JPanel
-import kotlin.streams.toList
 
 class LambdaRemoteRunConfigurationFactory(configuration: LambdaRunConfiguration) : ConfigurationFactory(configuration) {
     override fun createTemplateConfiguration(project: Project) = LambdaRemoteRunConfiguration(project, this)

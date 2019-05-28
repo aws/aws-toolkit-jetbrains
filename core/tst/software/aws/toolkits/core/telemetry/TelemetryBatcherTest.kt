@@ -11,12 +11,12 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyCollection
 import org.mockito.stubbing.Answer
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 class TestTelemetryBatcher(publisher: TelemetryPublisher, maxBatchSize: Int, maxQueueSize: Int) :
     DefaultTelemetryBatcher(publisher, maxBatchSize, maxQueueSize) {

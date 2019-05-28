@@ -3,8 +3,8 @@
 
 package toolkits.gradle.changelog
 
-import org.eclipse.jgit.api.Git
 import java.io.File
+import org.eclipse.jgit.api.Git
 
 class GitStager(private val rootDirectory: File) {
     private val git = Git.open(rootDirectory)

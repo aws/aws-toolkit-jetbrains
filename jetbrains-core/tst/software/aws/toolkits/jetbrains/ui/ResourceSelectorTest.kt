@@ -4,11 +4,11 @@
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.openapi.ui.ComboBox
+import java.util.concurrent.CountDownLatch
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import java.util.concurrent.CountDownLatch
 
 class ResourceSelectorTest {
     @Rule

@@ -7,6 +7,7 @@ import com.intellij.openapi.application.Application
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
+import javax.swing.SwingUtilities
 import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.DescribeStackResourcesRequest
@@ -14,7 +15,6 @@ import software.amazon.awssdk.services.cloudformation.model.DescribeStacksReques
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import javax.swing.SwingUtilities
 
 /**
  * CallBacks for Updater. Called on EDT.

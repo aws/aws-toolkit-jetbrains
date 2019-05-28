@@ -9,6 +9,8 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import java.util.stream.Collectors
+import java.util.stream.IntStream
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.mockito.stubbing.Answer
@@ -18,8 +20,6 @@ import software.amazon.awssdk.services.iam.model.ListRolesResponse
 import software.amazon.awssdk.services.iam.model.Role
 import software.amazon.awssdk.services.iam.paginators.ListRolesIterable
 import software.aws.toolkits.jetbrains.utils.DelegateSdkConsumers
-import java.util.stream.Collectors
-import java.util.stream.IntStream
 
 class IamTest {
 

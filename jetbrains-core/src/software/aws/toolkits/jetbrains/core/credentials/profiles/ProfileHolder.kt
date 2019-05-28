@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
+import java.util.concurrent.ConcurrentHashMap
 import software.amazon.awssdk.profiles.Profile
 import software.aws.toolkits.resources.message
-import java.util.concurrent.ConcurrentHashMap
 
 class ProfileHolder {
     private val profiles = ConcurrentHashMap<String, Profile>()

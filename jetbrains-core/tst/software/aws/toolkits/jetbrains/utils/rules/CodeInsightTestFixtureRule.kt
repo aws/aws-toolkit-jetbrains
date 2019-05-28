@@ -22,11 +22,11 @@ import com.intellij.testFramework.fixtures.impl.LightTempDirTestFixtureImpl
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.writeChild
+import java.nio.file.Paths
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import java.nio.file.Paths
 
 /**
  * JUnit test Rule that will create a Light [Project] and [CodeInsightTestFixture]. Projects are lazily created and are

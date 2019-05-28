@@ -6,13 +6,13 @@ package software.aws.toolkits.jetbrains.core
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 
 // TODO to be replaced with an actual resource implementation
 

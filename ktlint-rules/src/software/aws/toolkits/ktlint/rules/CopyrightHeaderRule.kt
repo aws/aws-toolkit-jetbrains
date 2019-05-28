@@ -4,9 +4,9 @@
 package software.aws.toolkits.ktlint.rules
 
 import com.pinterest.ktlint.core.Rule
-import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 import java.time.Clock
 import java.time.LocalDate
+import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 
 class CopyrightHeaderRule(clock: Clock = Clock.systemUTC()) : Rule("copyright-header"), Rule.Modifier.RestrictToRoot {
     private val header = """

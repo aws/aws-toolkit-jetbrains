@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.core.stack
 
+import javax.swing.SwingUtilities
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsRequest
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
-import javax.swing.SwingUtilities
 
 /**
  * AWS returns events in Events in reverse chronological order. This class remembers last event id and returns only new one.

@@ -6,9 +6,9 @@ package software.aws.toolkits.jetbrains.ui
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.ListCellRendererWrapper
+import javax.swing.JList
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.utils.ui.selected
-import javax.swing.JList
 
 /**
  * Combo box used to select a region

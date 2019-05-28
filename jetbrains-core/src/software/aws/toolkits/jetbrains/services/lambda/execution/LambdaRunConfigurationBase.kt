@@ -14,11 +14,11 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.xmlb.annotations.Property
+import java.nio.charset.StandardCharsets
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
-import java.nio.charset.StandardCharsets
 
 abstract class LambdaRunConfigurationBase<T : BaseLambdaOptions>(
     project: Project,

@@ -5,11 +5,11 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.nhaarman.mockitokotlin2.KStubbing
 import com.nhaarman.mockitokotlin2.withSettings
+import kotlin.reflect.full.isSubclassOf
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import software.amazon.awssdk.core.SdkRequest
-import kotlin.reflect.full.isSubclassOf
 
 /**
  * Mockito Answer that will delegate the default helper methods (such as the consumers) to the final method that takes

@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.core.telemetry
 
+import java.time.Instant
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 import software.aws.toolkits.core.telemetry.MetricEvent.Companion.illegalCharsRegex
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import java.time.Instant
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 
 interface MetricEvent {
     val namespace: String

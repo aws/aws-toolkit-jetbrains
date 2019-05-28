@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.core.utils
 
+import kotlin.reflect.full.isSubclassOf
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import software.amazon.awssdk.core.SdkRequest
-import kotlin.reflect.full.isSubclassOf
 
 // TODO: Copy pasted from jetbrains-core, better way to share this?
 class DelegateSdkConsumers : Answer<Any> {

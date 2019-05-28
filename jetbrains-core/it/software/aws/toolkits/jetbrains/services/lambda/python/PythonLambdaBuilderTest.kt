@@ -7,13 +7,13 @@ import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.runInEdtAndGet
 import com.jetbrains.python.psi.PyFile
 import com.jetbrains.python.psi.PyFunction
+import java.nio.file.Paths
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.java.BaseLambdaBuilderTest
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
-import java.nio.file.Paths
 
 class PythonLambdaBuilderTest : BaseLambdaBuilderTest() {
     @Rule

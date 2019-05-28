@@ -6,6 +6,7 @@ package software.aws.toolkits.core.lambda
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import java.util.concurrent.CompletableFuture
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
@@ -13,7 +14,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.utils.RemoteResourceResolver
-import java.util.concurrent.CompletableFuture
 
 class LambdaSampleEventProviderTest {
 

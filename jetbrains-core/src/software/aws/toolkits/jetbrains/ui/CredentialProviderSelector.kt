@@ -7,9 +7,9 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.ListCellRendererWrapper
 import com.intellij.util.containers.OrderedSet
+import javax.swing.JList
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.jetbrains.utils.ui.selected
-import javax.swing.JList
 
 /**
  * Combo box used to select a credential provider

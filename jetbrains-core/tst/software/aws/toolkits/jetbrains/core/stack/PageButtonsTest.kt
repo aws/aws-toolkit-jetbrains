@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.core.stack
 
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.Test
 import java.awt.Container
 import java.awt.event.ActionEvent
 import javax.swing.AbstractButton
 import javax.swing.SwingUtilities
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Test
 
 class PageButtonsTest {
 

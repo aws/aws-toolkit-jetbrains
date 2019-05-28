@@ -7,8 +7,8 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import java.util.prefs.Preferences
 import java.util.UUID
+import java.util.prefs.Preferences
 
 interface AwsSettings {
     var isTelemetryEnabled: Boolean

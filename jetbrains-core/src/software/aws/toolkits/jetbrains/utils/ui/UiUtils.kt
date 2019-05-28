@@ -10,7 +10,6 @@ import com.intellij.openapi.command.CommandProcessor
 import com.intellij.ui.ClickListener
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.JBColor
-import software.aws.toolkits.jetbrains.utils.formatText
 import java.awt.Color
 import java.awt.event.MouseEvent
 import javax.swing.AbstractButton
@@ -18,6 +17,7 @@ import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JTextField
 import javax.swing.ListModel
+import software.aws.toolkits.jetbrains.utils.formatText
 
 fun JTextField?.blankAsNull(): String? = if (this?.text?.isNotBlank() == true) {
     text

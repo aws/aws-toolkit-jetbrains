@@ -8,12 +8,12 @@ import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.createDirectories
-import software.aws.toolkits.core.utils.DefaultRemoteResourceResolver
-import software.aws.toolkits.core.utils.RemoteResourceResolver
-import software.aws.toolkits.core.utils.UrlFetcher
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
+import software.aws.toolkits.core.utils.DefaultRemoteResourceResolver
+import software.aws.toolkits.core.utils.RemoteResourceResolver
+import software.aws.toolkits.core.utils.UrlFetcher
 
 interface RemoteResourceResolverProvider {
     fun get(): RemoteResourceResolver

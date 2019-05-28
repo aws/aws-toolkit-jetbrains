@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
+import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
@@ -13,7 +14,6 @@ import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtu
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.resources.message
-import java.nio.file.Paths
 
 class JavaLambdaBuilderTest : BaseLambdaBuilderTest() {
     @Rule

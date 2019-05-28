@@ -8,12 +8,12 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.JBColor
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
-import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
-import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.jetbrains.utils.ui.BETTER_GREEN
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
+import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
+import software.amazon.awssdk.services.cloudformation.model.StackStatus
+import software.aws.toolkits.jetbrains.utils.ui.BETTER_GREEN
 
 interface View {
     val component: JComponent

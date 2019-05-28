@@ -12,6 +12,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.util.text.nullize
 import com.intellij.util.ui.UIUtil
+import java.awt.event.ActionEvent
+import java.awt.event.FocusAdapter
+import java.awt.event.FocusEvent
+import java.util.concurrent.TimeUnit
+import java.util.function.Function
+import javax.swing.Action
+import javax.swing.JComponent
+import javax.swing.JSlider
+import javax.swing.JTextField
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.lambda.LambdaClient
@@ -41,15 +50,6 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
-import java.awt.event.ActionEvent
-import java.awt.event.FocusAdapter
-import java.awt.event.FocusEvent
-import java.util.concurrent.TimeUnit
-import java.util.function.Function
-import javax.swing.Action
-import javax.swing.JComponent
-import javax.swing.JSlider
-import javax.swing.JTextField
 
 private const val MIN_MEMORY = 128
 private const val MAX_MEMORY = 3008

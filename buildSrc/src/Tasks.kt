@@ -4,6 +4,12 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
 import ChangeLogPlugin.Companion.NAME
+import java.io.File
+import java.io.FileFilter
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Scanner
+import java.util.UUID
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -21,12 +27,6 @@ import toolkits.gradle.changelog.GithubWriter
 import toolkits.gradle.changelog.JetBrainsWriter
 import toolkits.gradle.changelog.MAPPER
 import toolkits.gradle.changelog.ReleaseCreator
-import java.io.File
-import java.io.FileFilter
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Scanner
-import java.util.UUID
 
 /* ktlint-disable custom-ktlint-rules:log-not-lazy */
 class ChangeLogPlugin : Plugin<Project> {

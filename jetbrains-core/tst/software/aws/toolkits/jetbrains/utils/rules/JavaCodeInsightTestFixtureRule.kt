@@ -25,12 +25,12 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
 import com.intellij.testFramework.fixtures.JavaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.LightTempDirTestFixtureImpl
 import com.intellij.testFramework.runInEdtAndWait
+import java.io.File
+import java.nio.file.Paths
 import org.intellij.lang.annotations.Language
 import org.jetbrains.jps.model.java.JavaResourceRootType
 import org.jetbrains.jps.model.java.JavaSourceRootType
 import org.jetbrains.jps.model.module.JpsModuleSourceRootType
-import java.io.File
-import java.nio.file.Paths
 
 /**
  * JUnit test Rule that will create a Light [Project] and [JavaCodeInsightTestFixture]. Projects are lazily created

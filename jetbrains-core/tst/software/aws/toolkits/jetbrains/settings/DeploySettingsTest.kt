@@ -3,13 +3,13 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import java.nio.file.Paths
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.utils.rules.addModule
-import java.nio.file.Paths
 
 class DeploySettingsTest {
 

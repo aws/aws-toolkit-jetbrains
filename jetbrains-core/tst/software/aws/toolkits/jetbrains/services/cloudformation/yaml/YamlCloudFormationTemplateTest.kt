@@ -12,6 +12,9 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
+import java.io.File
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.annotations.NotNull
 import org.junit.Rule
@@ -19,9 +22,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import java.io.File
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 class YamlCloudFormationTemplateTest {
     @Rule

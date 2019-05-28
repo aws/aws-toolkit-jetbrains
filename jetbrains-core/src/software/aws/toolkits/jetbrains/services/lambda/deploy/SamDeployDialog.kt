@@ -18,13 +18,6 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ExceptionUtil
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.aws.toolkits.resources.message
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -32,6 +25,13 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import javax.swing.Action
 import javax.swing.JComponent
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.resources.message
 
 open class SamDeployDialog(
     private val project: Project,

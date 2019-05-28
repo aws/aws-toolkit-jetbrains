@@ -14,6 +14,12 @@ import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import java.io.File
+import java.time.Duration
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAccessor
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Condition
@@ -44,12 +50,6 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileHolder
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProvider
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
-import java.io.File
-import java.time.Duration
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAccessor
 
 class ProfileToolkitCredentialsProviderFactoryTest {
     @Rule

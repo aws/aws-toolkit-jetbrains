@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cloudformation
 
 import com.intellij.openapi.application.ApplicationManager
+import java.time.Duration
+import kotlin.streams.asSequence
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException
 import software.amazon.awssdk.services.cloudformation.model.DescribeStacksRequest
@@ -12,8 +14,6 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.aws.toolkits.core.utils.wait
 import software.aws.toolkits.resources.message
-import java.time.Duration
-import kotlin.streams.asSequence
 
 fun CloudFormationClient.listStackSummariesFilter(predicate: (StackSummary) -> Boolean): Sequence<StackSummary> =
         this.listStacksPaginator().stackSummaries().stream().asSequence().filter(predicate)

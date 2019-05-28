@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
@@ -23,7 +24,6 @@ import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.delegateMock
-import java.time.Duration
 
 class UpdateWaiterTest {
     @JvmField

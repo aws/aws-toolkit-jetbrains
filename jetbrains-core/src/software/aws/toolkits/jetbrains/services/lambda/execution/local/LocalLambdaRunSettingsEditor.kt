@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.local
 
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
+import javax.swing.JComponent
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
@@ -13,7 +14,6 @@ import software.aws.toolkits.jetbrains.services.lambda.HandlerCompletionProvider
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.utils.ui.selected
-import javax.swing.JComponent
 
 class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambdaRunConfiguration>() {
     private val view = LocalLambdaRunSettingsEditorPanel(project, HandlerCompletionProvider(project))

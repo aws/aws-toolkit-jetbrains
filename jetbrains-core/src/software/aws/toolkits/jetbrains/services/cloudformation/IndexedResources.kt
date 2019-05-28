@@ -3,10 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation
 
-import software.aws.toolkits.jetbrains.services.cloudformation.IndexedResource.Companion.from
-import software.aws.toolkits.resources.message
 import java.io.DataInput
 import java.io.DataOutput
+import software.aws.toolkits.jetbrains.services.cloudformation.IndexedResource.Companion.from
+import software.aws.toolkits.resources.message
 
 /**
  * Immutable data class for indexing [Resource]. Use [from] to create an instance so that it always

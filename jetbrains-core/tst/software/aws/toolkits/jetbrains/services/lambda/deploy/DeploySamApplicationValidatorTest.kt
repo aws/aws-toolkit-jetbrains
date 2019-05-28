@@ -7,6 +7,7 @@ import com.intellij.testFramework.EdtRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
 import com.intellij.testFramework.runInEdtAndGet
+import javax.swing.DefaultComboBoxModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -14,7 +15,6 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
-import javax.swing.DefaultComboBoxModel
 
 @RunsInEdt
 class DeploySamApplicationValidatorTest {

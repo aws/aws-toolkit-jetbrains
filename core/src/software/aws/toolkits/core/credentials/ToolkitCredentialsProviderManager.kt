@@ -3,10 +3,10 @@
 
 package software.aws.toolkits.core.credentials
 
+import java.util.concurrent.ConcurrentHashMap
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
-import java.util.concurrent.ConcurrentHashMap
 
 interface ToolkitCredentialsChangeListener {
     fun providerAdded(provider: ToolkitCredentialsProvider) {}

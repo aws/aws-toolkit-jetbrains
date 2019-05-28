@@ -17,15 +17,15 @@ import com.intellij.execution.runners.ProgramRunner
 import com.intellij.json.JsonLanguage
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import java.io.OutputStream
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.LogType
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.utils.formatText
 import software.aws.toolkits.resources.message
-import java.io.OutputStream
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 
 class RemoteLambdaState(
     private val environment: ExecutionEnvironment,

@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.services.lambda.execution
 
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.FileUtil
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.lambda.execution.PathMapper.Companion.normalizeLocal
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Objects
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.lambda.execution.PathMapper.Companion.normalizeLocal
 
 /**
  * Maps a local path to a remote path. The order of the list indicates the order of priority where first possible

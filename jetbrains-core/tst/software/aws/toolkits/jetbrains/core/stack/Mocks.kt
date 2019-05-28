@@ -3,6 +3,8 @@
 package software.aws.toolkits.jetbrains.core.stack
 
 import com.nhaarman.mockitokotlin2.mock
+import java.time.Instant
+import javax.swing.SwingUtilities
 import org.junit.Assert
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
@@ -12,8 +14,6 @@ import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsR
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import java.time.Instant
-import javax.swing.SwingUtilities
 
 internal class MockEventsGenerator {
     private val events = mutableListOf<StackEvent>()

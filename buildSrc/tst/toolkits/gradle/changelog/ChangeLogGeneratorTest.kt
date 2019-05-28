@@ -8,6 +8,8 @@ import com.nhaarman.mockitokotlin2.inOrder
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import java.nio.file.Path
+import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.Rule
@@ -17,8 +19,6 @@ import org.mockito.ArgumentMatchers.anyString
 import toolkits.gradle.changelog.ChangeLogGenerator.Companion.renderEntry
 import toolkits.gradle.changelog.ChangeType.BUGFIX
 import toolkits.gradle.changelog.ChangeType.FEATURE
-import java.nio.file.Path
-import java.time.LocalDate
 
 class ChangeLogGeneratorTest {
     @Rule

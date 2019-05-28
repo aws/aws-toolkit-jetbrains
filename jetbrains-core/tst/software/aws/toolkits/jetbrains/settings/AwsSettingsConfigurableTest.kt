@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.settings
 
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.testFramework.ProjectRule
+import java.nio.file.Path
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
-import java.nio.file.Path
 
 class AwsSettingsConfigurableTest : SamExecutableDetectorTestBase() {
     @JvmField

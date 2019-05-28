@@ -9,14 +9,14 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import software.aws.toolkits.core.utils.RemoteResource
-import software.aws.toolkits.core.utils.RemoteResourceResolver
-import software.aws.toolkits.core.utils.inputStream
-import software.aws.toolkits.core.utils.readText
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicReference
+import software.aws.toolkits.core.utils.RemoteResource
+import software.aws.toolkits.core.utils.RemoteResourceResolver
+import software.aws.toolkits.core.utils.inputStream
+import software.aws.toolkits.core.utils.readText
 
 class LambdaSampleEventProvider(private val resourceResolver: RemoteResourceResolver) {
     private val mapper = XmlMapper().registerKotlinModule().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

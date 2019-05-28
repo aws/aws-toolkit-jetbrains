@@ -9,14 +9,14 @@ import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.OnePixelSplitter
+import javax.swing.BoxLayout
+import javax.swing.JPanel
+import javax.swing.SwingUtilities
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.explorer.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
 import software.aws.toolkits.resources.message
-import javax.swing.BoxLayout
-import javax.swing.JPanel
-import javax.swing.SwingUtilities
 
 private const val UPDATE_STACK_STATUS_INTERVAL = 5000
 private const val REDRAW_ANIMATED_ICON_INTERVAL = 70

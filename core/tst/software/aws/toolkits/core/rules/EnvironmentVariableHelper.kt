@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.core.rules
 
-import org.junit.rules.ExternalResource
 import java.security.AccessController
 import java.security.PrivilegedAction
+import org.junit.rules.ExternalResource
 
 /**
  * A utility that can temporarily forcibly set environment variables and

@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
+import java.io.File
 import org.jetbrains.yaml.YAMLFileType
 import org.jetbrains.yaml.YAMLLanguage
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -14,7 +15,6 @@ import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFor
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.resources.message
-import java.io.File
 
 interface CloudFormationTemplate {
     fun resources(): Sequence<Resource>

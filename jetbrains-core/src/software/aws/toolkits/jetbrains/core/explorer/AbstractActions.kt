@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.core.explorer
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
 import javax.swing.Icon
+import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
 
 /**
  * An action from a [AwsExplorerResourceNode] that only operates on a single resource.

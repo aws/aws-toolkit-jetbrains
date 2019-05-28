@@ -12,6 +12,8 @@ import com.intellij.testGuiFramework.util.scenarios.openProjectStructureAndCheck
 import com.intellij.testGuiFramework.util.scenarios.projectStructureDialogModel
 import com.intellij.testGuiFramework.util.scenarios.projectStructureDialogScenarios
 import com.intellij.testGuiFramework.util.step
+import java.io.Serializable
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -21,8 +23,6 @@ import software.aws.toolkits.jetbrains.fixtures.checkProject
 import software.aws.toolkits.jetbrains.fixtures.createServerlessProject
 import software.aws.toolkits.jetbrains.fixtures.jbTab
 import software.aws.toolkits.jetbrains.fixtures.sdkChooser
-import java.io.Serializable
-import kotlin.test.assertTrue
 
 @RunWith(GuiTestSuiteParam::class)
 class SamInitProjectBuilderIntelliJTest(private val testParameters: TestParameters) : GuiTestCase() {

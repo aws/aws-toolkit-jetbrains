@@ -11,6 +11,7 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
+import java.util.concurrent.CompletionStage
 import org.jetbrains.idea.maven.project.MavenProjectsManager
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltLambda
@@ -18,7 +19,6 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.resources.message
-import java.util.concurrent.CompletionStage
 
 class JavaLambdaBuilder : LambdaBuilder() {
     override fun buildLambda(

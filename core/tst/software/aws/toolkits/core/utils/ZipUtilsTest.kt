@@ -3,17 +3,17 @@
 
 package software.aws.toolkits.core.utils
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.zip.ZipFile
-import java.util.zip.ZipOutputStream
 
 class ZipUtilsTest {
 

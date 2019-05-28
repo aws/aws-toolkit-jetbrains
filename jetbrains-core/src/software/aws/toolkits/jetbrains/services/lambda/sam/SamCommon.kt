@@ -16,13 +16,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.EnvironmentUtil
 import com.intellij.util.text.SemVer
 import com.intellij.util.text.nullize
+import java.io.FileFilter
+import java.nio.file.Paths
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.SERVERLESS_FUNCTION_TYPE
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.jetbrains.utils.FileInfoCache
 import software.aws.toolkits.resources.message
-import java.io.FileFilter
-import java.nio.file.Paths
 
 class SamCommon {
     companion object {

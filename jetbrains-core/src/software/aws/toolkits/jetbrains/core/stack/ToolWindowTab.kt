@@ -9,8 +9,8 @@ import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.content.impl.ContentImpl
 import icons.AwsIcons
-import software.aws.toolkits.resources.message
 import javax.swing.JComponent
+import software.aws.toolkits.resources.message
 
 internal const val STACK_TOOLWINDOW_ID = "AWS.CloudFormation"
 

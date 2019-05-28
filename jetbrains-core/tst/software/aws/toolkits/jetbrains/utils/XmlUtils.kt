@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.utils
 
+import java.io.ByteArrayInputStream
 import org.jdom.Element
 import org.jdom.input.SAXBuilder
-import java.io.ByteArrayInputStream
 
 fun String.toElement(): Element {
     val stream = ByteArrayInputStream(this.toByteArray())

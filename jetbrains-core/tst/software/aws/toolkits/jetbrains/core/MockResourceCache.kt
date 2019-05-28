@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core
 
-import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import java.util.concurrent.CompletableFuture
+import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 
 class MockResourceCache : AwsResourceCache {
     override fun lambdaFunctions(): CompletableFuture<List<LambdaFunction>> =
