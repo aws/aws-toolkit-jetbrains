@@ -1,7 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-@file:Suppress("DEPRECATION") // TODO: Migrate to GlobalSearchScopes.executionScope when we drop < 192
+@file:Suppress("DEPRECATION") // TODO: Migrate to GlobalSearchScopes.executionScope when we drop < 192 DROP_WHEN_MIN_IS_192
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.remote
 

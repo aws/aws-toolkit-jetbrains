@@ -92,7 +92,7 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     private fun createTree(model: DefaultTreeModel): Tree {
         val awsTree = Tree()
         TreeUIHelper.getInstance().installTreeSpeedSearch(awsTree)
-        @Suppress("DEPRECATION") // TODO: Remove when we drop < 192
+        @Suppress("DEPRECATION") // TODO: Remove when we drop < 192 DROP_WHEN_MIN_IS_192
         UIUtil.setLineStyleAngled(awsTree)
         awsTree.isRootVisible = false
         awsTree.autoscrolls = true
