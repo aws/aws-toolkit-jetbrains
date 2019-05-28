@@ -1,6 +1,8 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("DEPRECATION")
+
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.openapi.ui.ComboBox

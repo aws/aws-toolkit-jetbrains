@@ -23,6 +23,18 @@ static def ideProfiles() {
                                     "properties" // Used by Maven
                             ]
                     ]
+            ],
+            "2019.2": [
+                    "IC": [
+                            version: "192-EAP-SNAPSHOT",
+                            plugins: [
+                                    "yaml",
+                                    "PythonCore:2019.2.192.4205.45",
+                                    "gradle",
+                                    "maven",
+                                    "properties" // Used by Maven
+                            ]
+                    ]
             ]
     ]
 }
