@@ -27,7 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettin
 import software.aws.toolkits.jetbrains.core.credentials.runUnderRealCredentials
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class SamDeployTest {
