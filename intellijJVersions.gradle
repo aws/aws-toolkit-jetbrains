@@ -12,7 +12,7 @@ static def ideProfiles() {
                             ]
                     ]
             ],
-            "2019.1": [ // TODO: Marker comment: DROP_WHEN_MIN_IS_192
+            "2019.1": [ // TODO: Marker comment: FIX_WHEN_MIN_IS_192
                     "IC": [
                             version: "IC-2019.1",
                             plugins: [
