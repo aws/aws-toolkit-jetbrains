@@ -18,6 +18,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
@@ -49,7 +50,7 @@ abstract class SamProjectTemplate {
     private fun openReadmeFile(contentRoot: VirtualFile, project: Project) {
         VfsUtil.findRelativeFile(contentRoot, "README.md")?.let {
             val fileEditorManager = FileEditorManager.getInstance(project)
-            fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) ?: LOG.warn("Failed to open README.md")
+            fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) ?: LOG.warn { "Failed to open README.md" }
         }
     }
 
