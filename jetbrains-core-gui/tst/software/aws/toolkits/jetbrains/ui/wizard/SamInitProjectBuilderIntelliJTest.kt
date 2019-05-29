@@ -22,6 +22,8 @@ import software.aws.toolkits.jetbrains.fixtures.createServerlessProject
 import software.aws.toolkits.jetbrains.fixtures.jbTab
 import software.aws.toolkits.jetbrains.fixtures.sdkChooser
 import java.io.Serializable
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @RunWith(GuiTestSuiteParam::class)
 class SamInitProjectBuilderIntelliJTest(private val testParameters: TestParameters) : GuiTestCase() {
@@ -29,7 +31,8 @@ class SamInitProjectBuilderIntelliJTest(private val testParameters: TestParamete
         val runtime: String,
         val templateName: String,
         val sdk: String,
-        val libraries: Set<String> = emptySet()
+        val libraries: Set<String> = emptySet(),
+        val runConfigNames: Set<String> = emptySet()
     ) : Serializable {
         override fun toString() = "$runtime - $templateName"
     }
@@ -80,6 +83,14 @@ class SamInitProjectBuilderIntelliJTest(private val testParameters: TestParamete
                     }
                 }
             }
+
+            step("check the run configuration is created") {
+                assertTrue(runConfigurationList.getRunConfigurationList().containsAll(testParameters.runConfigNames))
+            }
+
+            step("check the default README.md file is open in editor") {
+                assertEquals("README.md", editor.currentFileName)
+            }
         }
     }
 
@@ -91,17 +102,20 @@ class SamInitProjectBuilderIntelliJTest(private val testParameters: TestParamete
                 runtime = "java8",
                 templateName = "AWS SAM Hello World (Maven)",
                 sdk = "1.8",
-                libraries = setOf("Maven: com.amazonaws:aws-lambda-java-core:")
+                libraries = setOf("Maven: com.amazonaws:aws-lambda-java-core:"),
+                runConfigNames = setOf("[Local] HelloWorldFunction")
             ),
             TestParameters(
                 runtime = "java8",
-                templateName = "AWS SAM Hello World (Maven)",
-                sdk = "1.8"
+                templateName = "AWS SAM Hello World (Gradle)",
+                sdk = "1.8",
+                runConfigNames = setOf("[Local] HelloWorldFunction")
             ),
             TestParameters(
                 runtime = "python3.6",
                 templateName = "AWS SAM Hello World",
-                sdk = "Python"
+                sdk = "Python",
+                runConfigNames = setOf("[Local] HelloWorldFunction")
             )
         )
     }
