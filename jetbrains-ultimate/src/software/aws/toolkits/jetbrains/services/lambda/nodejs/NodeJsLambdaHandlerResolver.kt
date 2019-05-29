@@ -8,6 +8,7 @@ import com.intellij.lang.javascript.psi.JSAssignmentExpression
 import com.intellij.lang.javascript.psi.JSDefinitionExpression
 import com.intellij.lang.javascript.psi.JSFunction
 import com.intellij.lang.javascript.psi.JSReferenceExpression
+import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList
 import com.intellij.lang.javascript.psi.resolve.JSClassResolver
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtilRt
@@ -112,10 +113,14 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
             this.children.size == 1 &&
             this.children[0].isExportsReference()
 
-    // Whether the element is function element that follows AWS Lambda function format. It must have 2 or 3 parameters
-    private fun PsiElement.isLambdaFunctionExpression(): Boolean =
-        this is JSFunction &&
-            (this.parameterList?.parameters?.size == 2 || this.parameterList?.parameters?.size == 3)
+    // Whether the element is function element that follows AWS Lambda function format. It allows non-async functions to
+    // have at most 3 parameters while async functions 2.
+    private fun PsiElement.isLambdaFunctionExpression(): Boolean {
+        if (this !is JSFunction) return false
+        val parameterSize = this.parameters.size
+        val isAsyncFunction = this.attributeList?.hasModifier(JSAttributeList.ModifierType.ASYNC) == true
+        return (isAsyncFunction && parameterSize <= 2) || (!isAsyncFunction && parameterSize <= 3)
+    }
 
     // Whether the element is exports reference element in the format of exports.lambdaHandler
     private fun PsiElement.isExportsReference(): Boolean =
