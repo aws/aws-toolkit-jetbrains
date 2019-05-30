@@ -8,5 +8,6 @@ import java.util.UUID
 class MockAwsSettings(
     override var isTelemetryEnabled: Boolean,
     override var promptedForTelemetry: Boolean,
+    override var lastInstalledVersion: String,
     override val clientId: UUID
 ) : AwsSettings

@@ -57,7 +57,7 @@ class TelemetryServiceTest {
 
         DefaultTelemetryService(
                 messageBusService,
-                MockAwsSettings(true, true, UUID.randomUUID()),
+                MockAwsSettings(true, true, "1.4", UUID.randomUUID()),
                 batcher
         )
 
@@ -80,7 +80,7 @@ class TelemetryServiceTest {
 
         DefaultTelemetryService(
                 messageBusService,
-                MockAwsSettings(true, true, UUID.randomUUID()),
+                MockAwsSettings(true, true, "1.4", UUID.randomUUID()),
                 batcher
         )
 
@@ -106,7 +106,7 @@ class TelemetryServiceTest {
         val eventCaptor = argumentCaptor<MetricEvent>()
         val telemetryService = DefaultTelemetryService(
             messageBusService,
-            MockAwsSettings(true, true, UUID.randomUUID()),
+            MockAwsSettings(true, true, "1.4", UUID.randomUUID()),
             batcher
         )
 
@@ -140,7 +140,7 @@ class TelemetryServiceTest {
         val eventCaptor = argumentCaptor<MetricEvent>()
         val telemetryService = DefaultTelemetryService(
             messageBusService,
-            MockAwsSettings(true, true, UUID.randomUUID()),
+            MockAwsSettings(true, true, "1.4", UUID.randomUUID()),
             batcher
         )
 
@@ -171,7 +171,7 @@ class TelemetryServiceTest {
         val eventCaptor = argumentCaptor<MetricEvent>()
         val telemetryService = DefaultTelemetryService(
             messageBusService,
-            MockAwsSettings(true, true, UUID.randomUUID()),
+            MockAwsSettings(true, true, "1.4", UUID.randomUUID()),
             batcher
         )
 

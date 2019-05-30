@@ -7,12 +7,13 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import java.util.prefs.Preferences
 import java.util.UUID
+import java.util.prefs.Preferences
 
 interface AwsSettings {
     var isTelemetryEnabled: Boolean
     var promptedForTelemetry: Boolean
+    var lastInstalledVersion: String
     val clientId: UUID
 
     companion object {
@@ -49,6 +50,12 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
             preferences.put(CLIENT_ID_KEY, it.toString())
         }
 
+    override var lastInstalledVersion: String
+        get() = state.lastInstalledVersion ?: ""
+        set(value) {
+            state.lastInstalledVersion = value
+        }
+
     companion object {
         const val CLIENT_ID_KEY = "CLIENT_ID"
     }
@@ -56,5 +63,6 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
 
 data class AwsConfiguration(
     var isTelemetryEnabled: Boolean? = null,
-    var promptedForTelemetry: Boolean? = null
+    var promptedForTelemetry: Boolean? = null,
+    var lastInstalledVersion: String? = null
 )

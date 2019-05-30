@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.core.ChangeAccountSettingsAction
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
+import software.aws.toolkits.jetbrains.welcome.OpenWelcomePageAction
 import software.aws.toolkits.resources.message
 
 @Suppress("unused")
@@ -47,6 +48,7 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
                             url = "https://github.com/aws/aws-toolkit-jetbrains"
                         )
                     )
+                    add(OpenWelcomePageAction(title = message("welcome_page.open.action")))
                 }
             )
         }
