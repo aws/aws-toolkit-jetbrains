@@ -9,15 +9,18 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfiguration
 
-fun createRunConfiguration(project: Project,
-                           input: String? = "",
-                           inputIsFile: Boolean = false,
-                           regionId: AwsRegion? = MockRegionProvider.US_EAST_1,
-                           credentialId: String? = "MockCredentials",
-                           functionName: String? = "DummyFunction"
+fun createRunConfiguration(
+    project: Project,
+    input: String? = "",
+    inputIsFile: Boolean = false,
+    regionId: AwsRegion? = MockRegionProvider.US_EAST_1,
+    credentialId: String? = "MockCredentials",
+    functionName: String? = "DummyFunction"
 ): LambdaRemoteRunConfiguration {
     val runManager = RunManager.getInstance(project)
-    val factory = LambdaRunConfiguration.getInstance().configurationFactories.first { it is LambdaRemoteRunConfigurationFactory }
+    val factory = LambdaRunConfiguration.getInstance()
+        .configurationFactories
+        .first { it is LambdaRemoteRunConfigurationFactory }
     val runConfigurationAndSettings = runManager.createConfiguration("Test", factory)
     val runConfiguration = runConfigurationAndSettings.configuration as LambdaRemoteRunConfiguration
     runManager.addConfiguration(runConfigurationAndSettings)
