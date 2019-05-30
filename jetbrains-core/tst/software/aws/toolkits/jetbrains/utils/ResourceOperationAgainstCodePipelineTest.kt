@@ -104,15 +104,13 @@ class ResourceOperationAgainstCodePipelineTest {
         assertEquals(CODEPIPELINE_ARN, getCodePipelineArnForResource(projectRule.project, RESOURCE_ARN, RESOURCE_TYPE_FILTER))
     }
 
-    private fun getResourceTagMapping(resourceARN: String, tagKey: String, tagValue: String): ResourceTagMapping {
-        return ResourceTagMapping.builder()
-            .resourceARN(resourceARN)
-            .tags(
-                Tag.builder()
-                    .key(tagKey)
-                    .value(tagValue)
-                    .build()
-            )
-            .build()
-    }
+    private fun getResourceTagMapping(resourceARN: String, tagKey: String, tagValue: String) = ResourceTagMapping.builder()
+        .resourceARN(resourceARN)
+        .tags(
+            Tag.builder()
+                .key(tagKey)
+                .value(tagValue)
+                .build()
+        )
+        .build()
 }
