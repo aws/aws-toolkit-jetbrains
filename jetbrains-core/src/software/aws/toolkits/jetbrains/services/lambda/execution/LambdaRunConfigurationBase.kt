@@ -57,7 +57,7 @@ abstract class LambdaRunConfigurationBase<T : BaseLambdaOptions>(
     }
 
     protected fun resolveInput() = inputSource()?.let {
-        if (isUsingInputFile() && inputSource()?.isNotEmpty() == true) {
+        if (isUsingInputFile() && it.isNotEmpty()) {
             FileDocumentManager.getInstance().saveAllDocuments()
             try {
                 LocalFileSystem.getInstance().refreshAndFindFileByPath(it)
