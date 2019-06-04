@@ -278,7 +278,11 @@ class NodeJsLambdaHandlerResolverTest {
         val resolver = LambdaHandlerResolver.getInstanceOrThrow(RuntimeGroup.NODEJS)
 
         runInEdtAndWait {
-            assertThat(resolver.determineHandler(handlerElement)).isEqualTo(expectedHandlerFullName)
+            if (expectedHandlerFullName != null) {
+                assertThat(resolver.determineHandler(handlerElement)).isEqualTo(expectedHandlerFullName)
+            } else {
+                assertThat(resolver.determineHandler(handlerElement)).isNull()
+            }
         }
     }
 
