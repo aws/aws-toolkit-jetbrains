@@ -3,7 +3,19 @@
 
 package software.aws.toolkits.jetbrains.ui.wizard;
 
+import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.ui.ColoredListCellRenderer;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.uiDesigner.core.GridConstraints;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import software.amazon.awssdk.services.lambda.model.Runtime;
+import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder;
+import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings;
+import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate;
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
+
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -12,30 +24,28 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.Dimension;
 import java.awt.event.ItemEvent;
-import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.ui.ColoredListCellRenderer;
-import com.intellij.ui.components.JBLabel;
-import com.intellij.uiDesigner.core.GridConstraints;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder;
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
+import java.util.List;
 
 @SuppressWarnings("NullableProblems")
 public class SamInitSelectionPanel implements ValidatablePanel {
     @NotNull JPanel mainPanel;
-    @NotNull public ComboBox<Runtime> runtime;
-    @NotNull public JTextField samExecutableField;
+    @NotNull private ComboBox<Runtime> runtime;
+    @NotNull private JTextField samExecutableField;
     @NotNull private JButton editSamExecutableButton;
     @NotNull private JBLabel samLabel;
     @NotNull private ComboBox<SamProjectTemplate> templateComboBox;
     @NotNull private JLabel runtimeLabel;
-    private final SamNewProjectSettings projectSettings;
+    private SdkSelectionPanel sdkSelectionUi;
+    private JLabel currentSdkSelectorLabel;
     private JComponent currentSdkSelector;
 
-    SamInitSelectionPanel(SamNewProjectSettings projectSettings) {
-        this.projectSettings = projectSettings;
+    private final SamProjectGenerator generator;
+    private final SamNewProjectSettings projectSettings;
+
+    SamInitSelectionPanel(SamProjectGenerator generator) {
+        this.generator = generator;
+        this.projectSettings = generator.getSettings();
+        this.currentSdkSelectorLabel = null;
         this.currentSdkSelector = null;
 
         LambdaBuilder.Companion.getSupportedRuntimeGroups()
@@ -64,12 +74,12 @@ public class SamInitSelectionPanel implements ValidatablePanel {
     }
 
     private void runtimeUpdate() {
-        templateComboBox.removeAllItems();
         Runtime selectedRuntime = (Runtime) runtime.getSelectedItem();
-        SamInitProjectsKt.getSAM_TEMPLATES().stream()
+
+        templateComboBox.removeAllItems();
+        SamProjectTemplate.SAM_TEMPLATES.stream()
                 .filter(template -> template.supportedRuntimes().contains(selectedRuntime))
                 .forEach(template -> templateComboBox.addItem(template));
-
         templateComboBox.setRenderer(new ColoredListCellRenderer<SamProjectTemplate>() {
             @Override
             protected void customizeCellRenderer(@NotNull JList<? extends SamProjectTemplate> list, SamProjectTemplate value, int index, boolean selected, boolean hasFocus) {
@@ -78,6 +88,9 @@ public class SamInitSelectionPanel implements ValidatablePanel {
             }
         });
 
+        this.sdkSelectionUi = SdkSelectionPanel.create(selectedRuntime, generator);
+        addSdkPanel(sdkSelectionUi.getSdkSelectionLabel(), sdkSelectionUi.getSdkSelectionPanel());
+
         // if selected runtime is null, we're on an unsupported platform
         projectSettings.setRuntime(selectedRuntime);
         projectSettings.setTemplate((SamProjectTemplate) templateComboBox.getSelectedItem());
@@ -85,6 +98,9 @@ public class SamInitSelectionPanel implements ValidatablePanel {
 
     public void addSdkPanel(@Nullable JLabel label, JComponent sdkSelector) {
         // glitchy behavior if we don't clean up any old panels
+        if (currentSdkSelectorLabel != null) {
+            mainPanel.remove(currentSdkSelectorLabel);
+        }
         if (currentSdkSelector != null) {
             mainPanel.remove(currentSdkSelector);
         }
@@ -108,12 +124,13 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         mainPanel.add(sdkSelector, gridConstraints);
 
         // and then the label if available, and it doesn't already exist
-        if (label != null && currentSdkSelector == null) {
+        if (label != null) {
             gridConstraints.setColumn(0);
             gridConstraints.setColSpan(1);
             mainPanel.add(label, gridConstraints);
         }
 
+        currentSdkSelectorLabel = label;
         currentSdkSelector = sdkSelector;
     }
 
@@ -125,11 +142,28 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         if (samValidationMessage != null) {
             return new ValidationInfo(samValidationMessage, samExecutableField);
         }
-        return null;
+
+        if (sdkSelectionUi == null) {
+            return null;
+        }
+
+        List<ValidationInfo> validationInfoList = sdkSelectionUi.validateAll();
+        if (validationInfoList == null || validationInfoList.isEmpty()) {
+            return null;
+        } else {
+            return validationInfoList.get(0);
+        }
     }
 
-    public void hideRuntime() {
-        runtime.setVisible(false);
-        runtimeLabel.setVisible(false);
+    public void registerValidators() {
+        if (sdkSelectionUi != null) {
+            sdkSelectionUi.registerListeners();
+        }
+    }
+
+    public void ensureSdk() {
+        if (sdkSelectionUi != null) {
+            sdkSelectionUi.ensureSdk();
+        }
     }
 }

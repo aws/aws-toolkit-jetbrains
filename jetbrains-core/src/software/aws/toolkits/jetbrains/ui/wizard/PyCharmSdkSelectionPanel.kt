@@ -16,18 +16,21 @@ import com.jetbrains.python.newProject.steps.PyAddExistingSdkPanel
 import com.jetbrains.python.newProject.steps.PyAddNewEnvironmentPanel
 import com.jetbrains.python.sdk.add.PyAddSdkGroupPanel
 import icons.AwsIcons
+import software.aws.toolkits.jetbrains.services.lambda.SdkBasedSdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
+import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-class PyCharmSdkSelectionPanel(generator: SamProjectGenerator) : SdkSelectionPanelBase(generator) {
+class PyCharmSdkSelectionPanel(val generator: SamProjectGenerator) : SdkSelectionPanelBase() {
     private var documentListener: DocumentListener? = null
-    override lateinit var sdkSelectionPanel: PyAddSdkGroupPanel
 
-    private val callback = object : AbstractNewProjectStep.AbstractCallback<PyNewProjectSettings>() {}
+    override val sdkSelectionPanel: PyAddSdkGroupPanel = newSdkPanel()
+
+    override val sdkSelectionLabel: JLabel? = null
 
     private fun newSdkPanel(): PyAddSdkGroupPanel =
     // construct a py-specific settings step and grab its sdk panel instance
@@ -35,7 +38,7 @@ class PyCharmSdkSelectionPanel(generator: SamProjectGenerator) : SdkSelectionPan
             override fun getLogo(): Icon? = AwsIcons.Logos.AWS
 
             override fun getName(): String = message("sam.init.name")
-        }, callback) {
+        }, AbstractNewProjectStep.AbstractCallback<PyNewProjectSettings>()) {
             // shim validation back to the user UI...
             override fun setErrorText(text: String?) {
                 generator.step.setErrorText(text)
@@ -77,18 +80,12 @@ class PyCharmSdkSelectionPanel(generator: SamProjectGenerator) : SdkSelectionPan
         })
     }
 
-    override fun transformUI(panel: SamInitSelectionPanel) {
-        super.transformUI(panel)
-        // remove runtime panel
-        panel.hideRuntime()
-        // to save space, don't label the sdk selector
-        sdkSelectionPanel = newSdkPanel()
-        panel.addSdkPanel(null, sdkSelectionPanel)
+    override fun ensureSdk() {
+        generator.settings.sdkSettings = SdkBasedSdkSettings(sdk = getSdk())
     }
 
-    override fun getSdk(): Sdk? {
-        val panel = sdkSelectionPanel.selectedPanel
-        return when (panel) {
+    private fun getSdk(): Sdk? {
+        return when (val panel = sdkSelectionPanel.selectedPanel) {
             // this list should be exhaustive
             is PyAddNewEnvironmentPanel -> {
                 val sdk = panel.getOrCreateSdk()?.let {

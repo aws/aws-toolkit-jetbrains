@@ -3,73 +3,44 @@
 
 package software.aws.toolkits.jetbrains.ui.wizard
 
-import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.util.PlatformUtils
+import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.SamProject
+import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import javax.swing.JComponent
+import javax.swing.JLabel
 import javax.swing.JPanel
 
 interface SdkSelectionPanel {
     val sdkSelectionPanel: JComponent
 
-    fun registerListeners()
+    val sdkSelectionLabel: JLabel?
 
-    fun transformUI(panel: SamInitSelectionPanel)
+    fun registerListeners()
 
     fun ensureSdk()
 
     fun validateAll(): List<ValidationInfo>?
+
+    companion object {
+        @JvmStatic
+        fun create(runtime: Runtime, generator: SamProjectGenerator): SdkSelectionPanel =
+            runtime.runtimeGroup?.let {
+                SamProject.getInstanceOrThrow(it).createSdkSelectionPanel(generator)
+            } ?: NoOpSdkSelectionPanel()
+    }
 }
 
-abstract class SdkSelectionPanelBase(val generator: SamProjectGenerator) : SdkSelectionPanel {
+abstract class SdkSelectionPanelBase : SdkSelectionPanel {
     override fun registerListeners() {}
-
-    override fun transformUI(panel: SamInitSelectionPanel) {
-        // common transforms go here
-    }
-
-    open fun getSdk(): Sdk? = null
 
     override fun ensureSdk() {}
 
     override fun validateAll(): List<ValidationInfo>? = null
 }
 
-class NoOpSdkSelectionPanel(generator: SamProjectGenerator) : SdkSelectionPanelBase(generator) {
-    override val sdkSelectionPanel: JComponent
-        get() = JPanel()
+class NoOpSdkSelectionPanel : SdkSelectionPanelBase() {
+    override val sdkSelectionPanel: JComponent = JPanel()
 
-    override fun registerListeners() {}
-
-    override fun transformUI(panel: SamInitSelectionPanel) {}
-
-    override fun validateAll(): List<ValidationInfo>? = null
-}
-
-class SdkSelectionPanelImpl(val generator: SamProjectGenerator) : SdkSelectionPanel {
-    private val delegate: SdkSelectionPanelBase by lazy {
-        when {
-            PlatformUtils.isIntelliJ() -> {
-                IntelliJSdkSelectionPanel(generator)
-            }
-            PlatformUtils.isPyCharm() -> {
-                PyCharmSdkSelectionPanel(generator)
-            }
-            else -> { NoOpSdkSelectionPanel(generator) }
-        }
-    }
-
-    override val sdkSelectionPanel: JComponent
-        get() = delegate.sdkSelectionPanel
-
-    override fun transformUI(panel: SamInitSelectionPanel) = delegate.transformUI(panel)
-
-    override fun ensureSdk() {
-        val sdk = delegate.getSdk()
-        generator.settings.sdk = sdk
-    }
-
-    override fun validateAll() = delegate.validateAll()
-
-    override fun registerListeners() = delegate.registerListeners()
+    override val sdkSelectionLabel: JLabel? = null
 }
