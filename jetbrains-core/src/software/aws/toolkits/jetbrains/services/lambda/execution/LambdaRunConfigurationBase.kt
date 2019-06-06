@@ -49,12 +49,8 @@ abstract class LambdaRunConfigurationBase<T : BaseLambdaOptions>(
 
     protected fun checkInput() {
         inputSource()?.let {
-            if (isUsingInputFile()) {
-                if (FileUtil.exists(it)) {
-                    return
-                }
-            } else {
-                return // Using input text and its not null
+            if (!isUsingInputFile() || FileUtil.exists(it)) {
+                return
             }
         }
         throw RuntimeConfigurationError(message("lambda.run_configuration.no_input_specified"))
