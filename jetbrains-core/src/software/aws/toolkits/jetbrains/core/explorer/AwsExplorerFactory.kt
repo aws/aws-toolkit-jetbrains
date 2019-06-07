@@ -49,7 +49,7 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
                     )
                     add(
                         OpenBrowserAction(
-                            title = message("explorer.cut_issue"),
+                            title = message("explorer.create_new_issue"),
                             icon = AllIcons.Vcs.Vendors.Github,
                             url = "https://github.com/aws/aws-toolkit-jetbrains/issues/new/choose"
                         )
