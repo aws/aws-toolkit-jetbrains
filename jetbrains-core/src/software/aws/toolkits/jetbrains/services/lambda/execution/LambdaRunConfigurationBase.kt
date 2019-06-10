@@ -49,7 +49,7 @@ abstract class LambdaRunConfigurationBase<T : BaseLambdaOptions>(
 
     protected fun checkInput() {
         inputSource()?.let {
-            if (isUsingInputFile() && FileUtil.exists(it)) {
+            if (!isUsingInputFile() || FileUtil.exists(it)) {
                 return
             }
         }
@@ -117,8 +117,8 @@ open class BaseLambdaOptions : LocatableRunConfigurationOptions() {
 }
 
 class AccountOptions : BaseState() {
-    var credentialProviderId by string()
-    var regionId by string()
+    var credentialProviderId by property("")
+    var regionId by property("")
 }
 
 class InputOptions : BaseState() {
