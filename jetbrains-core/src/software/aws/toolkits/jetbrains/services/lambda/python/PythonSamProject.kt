@@ -21,7 +21,7 @@ import software.aws.toolkits.resources.message
 
 class PythonSamProject : SamProject {
     override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
-        when  {
+        when {
             PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel(generator)
             else -> IntelliJSdkSelectionPanel(generator, RuntimeGroup.PYTHON)
         }

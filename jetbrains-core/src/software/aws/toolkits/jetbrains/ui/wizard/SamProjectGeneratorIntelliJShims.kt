@@ -54,7 +54,6 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         val contentEntry: ContentEntry = doAddContentEntry(rootModel) ?: throw Exception(message("sam.init.error.no.project.basepath"))
         val outputDir: VirtualFile = contentEntry.file ?: throw Exception(message("sam.init.error.no.virtual.file"))
 
-
         samTemplate.build(rootModel.project, selectedRuntime, outputDir)
 
         runPostModuleCreationStep(generator.settings, outputDir, rootModel)

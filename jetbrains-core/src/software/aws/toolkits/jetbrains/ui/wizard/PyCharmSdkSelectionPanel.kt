@@ -81,26 +81,24 @@ class PyCharmSdkSelectionPanel(val generator: SamProjectGenerator) : SdkSelectio
     }
 
     override fun ensureSdk() {
-        generator.settings.sdkSettings = SdkBasedSdkSettings(sdk = getSdk())
+        getSdk()?.let {
+            generator.settings.sdkSettings = SdkBasedSdkSettings(sdk = it)
+            generator.settings.runtime = PythonRuntimeGroup.determineRuntimeForSdk(it)
+                ?: throw RuntimeException("Could not determine runtime for SDK")
+        } ?: throw RuntimeException(message("sam.init.python.bad_sdk"))
     }
 
-    private fun getSdk(): Sdk? {
-        return when (val panel = sdkSelectionPanel.selectedPanel) {
+    private fun getSdk(): Sdk? =
+        when (val panel = sdkSelectionPanel.selectedPanel) {
             // this list should be exhaustive
             is PyAddNewEnvironmentPanel -> {
-                val sdk = panel.getOrCreateSdk()?.let {
+                panel.getOrCreateSdk()?.also {
                     SdkConfigurationUtil.addSdk(it)
-                    it
                 }
-                generator.settings.runtime = PythonRuntimeGroup.determineRuntimeForSdk(sdk
-                    ?: throw RuntimeException(message("sam.init.python.bad_sdk"))
-                ) ?: throw RuntimeException("Could not determine runtime for SDK")
-                return sdk
             }
             is PyAddExistingSdkPanel -> panel.sdk
             else -> null
         }
-    }
 
     override fun validateAll(): List<ValidationInfo>? = sdkSelectionPanel.validateAll()
 }

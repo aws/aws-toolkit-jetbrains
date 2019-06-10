@@ -104,9 +104,7 @@ class SamProjectGeneratorSettingsPeer(private val generator: SamProjectGenerator
     /**
      * This hook is used in PyCharm and is called via {@link SamProjectBuilder#modifySettingsStep} for IntelliJ
      */
-    override fun validate(): ValidationInfo? {
-        return basePanel.validate()
-    }
+    override fun validate(): ValidationInfo? = basePanel.validate()
 
     override fun getSettings(): SamNewProjectSettings = generator.settings
 
