@@ -15,9 +15,6 @@ intellij {
 publishPlugin.enabled = false
 buildSearchableOptions.enabled = false
 
-publishPlugin.enabled = false
-buildSearchableOptions.enabled = false
-
 configurations {
     testArtifacts
 }
