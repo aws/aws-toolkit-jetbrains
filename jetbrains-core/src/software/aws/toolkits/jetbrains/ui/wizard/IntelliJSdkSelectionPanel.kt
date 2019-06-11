@@ -9,13 +9,13 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkTypeId
 import com.intellij.openapi.ui.ValidationInfo
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.SamProject
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedSdkSettings
+import software.aws.toolkits.jetbrains.services.lambda.SdkSettings
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel
 
-class IntelliJSdkSelectionPanel(val generator: SamProjectGenerator, val runtimeGroup: RuntimeGroup) : SdkSelectionPanelBase() {
+class IntelliJSdkSelectionPanel(val builder: SamProjectBuilder, val runtimeGroup: RuntimeGroup) : SdkSelectionPanelBase() {
     private var currentSdk: Sdk? = null
     private val dummyContext = object : WizardContext(null, {}) {
         override fun setProjectJdk(sdk: Sdk?) {
@@ -37,25 +37,21 @@ class IntelliJSdkSelectionPanel(val generator: SamProjectGenerator, val runtimeG
         return null
     }
 
-    override fun ensureSdk() {
+    override fun getSdkSettings(): SdkSettings {
         currentSdkPanel.updateDataModel()
 
-        val settings = generator.settings
-        val sdkSettings = SamProject.getInstanceOrThrow(runtimeGroup).createSdkSettings()
-
-        when (sdkSettings) {
-            is SdkBasedSdkSettings -> sdkSettings.sdk = currentSdk
-            else -> throw RuntimeException("Unrecognized SDK settings: " + sdkSettings.javaClass.name)
+        return when (runtimeGroup) {
+            RuntimeGroup.JAVA, RuntimeGroup.PYTHON -> SdkBasedSdkSettings(sdk = currentSdk)
+            // TODO add this line when supporting node
+//            else -> throw RuntimeException("Unrecognized runtime group: $runtimeGroup")
         }
-
-        settings.sdkSettings = sdkSettings
     }
 
     // don't validate on init of the SettingsStep or weird things will happen if the user has no SDK
     private fun buildSdkSettingsPanel(): SdkSettingsStep =
         SdkSettingsStep(
             dummyContext,
-            generator.builder,
+            builder,
             { t: SdkTypeId? -> t == runtimeGroup.getIdeSdkType() },
             null
         )

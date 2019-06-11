@@ -14,7 +14,6 @@ import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.roots.ContentEntry
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ui.configuration.ModulesProvider
 import com.intellij.openapi.startup.StartupManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ProjectTemplatesFactory
@@ -42,12 +41,13 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
 
     // IntelliJ create commit step
     override fun setupRootModel(rootModel: ModifiableRootModel) {
-        val samTemplate = generator.settings.template
+        val settings = generator.peer.settings
+        val samTemplate = settings.template
 
-        samTemplate.setupSdk(rootModel, generator.settings)
+        samTemplate.setupSdk(rootModel, settings)
 
         // Set module type
-        val selectedRuntime = generator.settings.runtime
+        val selectedRuntime = settings.runtime
         val moduleType = selectedRuntime.runtimeGroup?.getModuleType() ?: ModuleType.EMPTY
         rootModel.module.setModuleType(moduleType.id)
 
@@ -56,7 +56,7 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
 
         samTemplate.build(rootModel.project, selectedRuntime, outputDir)
 
-        runPostModuleCreationStep(generator.settings, outputDir, rootModel)
+        runPostModuleCreationStep(settings, outputDir, rootModel)
     }
 
     private fun runPostModuleCreationStep(
@@ -91,21 +91,15 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         }
     }
 
-    // IntelliJ wizard steps would go here. We will have to build a custom wizard in SamProjectRuntimeSelectionStep
-    override fun createFinishingSteps(wizardContext: WizardContext, modulesProvider: ModulesProvider): Array<ModuleWizardStep> =
-        super.createFinishingSteps(wizardContext, modulesProvider)
-
     // add things
     override fun modifySettingsStep(settingsStep: SettingsStep): ModuleWizardStep? {
-        generator.createPeer().buildUI(settingsStep)
+        generator.peer.buildUI(settingsStep)
 
         // need to return an object with validate() implemented for validation
         return object : ModuleWizardStep() {
             override fun getComponent() = null
 
-            override fun updateDataModel() {
-                generator.peer.ensureSdk()
-            }
+            override fun updateDataModel() {}
 
             @Throws(ConfigurationException::class)
             override fun validate(): Boolean {

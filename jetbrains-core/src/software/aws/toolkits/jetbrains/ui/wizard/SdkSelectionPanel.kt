@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.ui.wizard
 
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.SamProject
+import software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard
+import software.aws.toolkits.jetbrains.services.lambda.SdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 
+// UI for selecting target SDK of a Runtime
 interface SdkSelectionPanel {
     val sdkSelectionPanel: JComponent
 
@@ -18,15 +20,16 @@ interface SdkSelectionPanel {
 
     fun registerListeners()
 
-    fun ensureSdk()
+    fun getSdkSettings(): SdkSettings
 
+    // Validate the SDK selection panel, return a list of violations if any, otherwise null
     fun validateAll(): List<ValidationInfo>?
 
     companion object {
         @JvmStatic
         fun create(runtime: Runtime, generator: SamProjectGenerator): SdkSelectionPanel =
             runtime.runtimeGroup?.let {
-                SamProject.getInstanceOrThrow(it).createSdkSelectionPanel(generator)
+                SamProjectWizard.getInstanceOrThrow(it).createSdkSelectionPanel(generator)
             } ?: NoOpSdkSelectionPanel()
     }
 }
@@ -34,7 +37,7 @@ interface SdkSelectionPanel {
 abstract class SdkSelectionPanelBase : SdkSelectionPanel {
     override fun registerListeners() {}
 
-    override fun ensureSdk() {}
+    override fun getSdkSettings(): SdkSettings = object : SdkSettings {}
 
     override fun validateAll(): List<ValidationInfo>? = null
 }

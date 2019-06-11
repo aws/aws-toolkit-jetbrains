@@ -9,9 +9,8 @@ import com.intellij.util.PlatformUtils
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings
-import software.aws.toolkits.jetbrains.services.lambda.SamProject
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate
-import software.aws.toolkits.jetbrains.services.lambda.SdkBasedSdkSettings
+import software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.ui.wizard.IntelliJSdkSelectionPanel
 import software.aws.toolkits.jetbrains.ui.wizard.PyCharmSdkSelectionPanel
@@ -19,19 +18,17 @@ import software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.ui.wizard.SdkSelectionPanel
 import software.aws.toolkits.resources.message
 
-class PythonSamProject : SamProject {
+class PythonSamProjectWizard : SamProjectWizard {
     override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
         when {
-            PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel(generator)
-            else -> IntelliJSdkSelectionPanel(generator, RuntimeGroup.PYTHON)
+            PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel(generator.step)
+            else -> IntelliJSdkSelectionPanel(generator.builder, RuntimeGroup.PYTHON)
         }
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
         SamHelloWorldPython(),
         SamDynamoDBCookieCutter()
     )
-
-    override fun createSdkSettings(): SdkBasedSdkSettings = SdkBasedSdkSettings()
 }
 
 abstract class PythonSamProjectTemplate : SamProjectTemplate() {

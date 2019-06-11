@@ -35,7 +35,6 @@ class SamProjectGenerator : ProjectTemplate,
                             DirectoryProjectGenerator<SamNewProjectSettings>,
                             CustomStepProjectGenerator<SamNewProjectSettings>,
                             HideableProjectGenerator {
-    val settings = SamNewProjectSettings()
     val builder = SamProjectBuilder(this)
     val step = SamProjectRuntimeSelectionStep(this)
     val peer = SamProjectGeneratorSettingsPeer(this)
@@ -43,11 +42,18 @@ class SamProjectGenerator : ProjectTemplate,
     override fun isHidden(): Boolean = false
 
     // steps are used by non-IntelliJ IDEs
-    override fun createStep(projectGenerator: DirectoryProjectGenerator<SamNewProjectSettings>?, callback: AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>?): AbstractActionWithPanel = step
+    override fun createStep(
+        projectGenerator: DirectoryProjectGenerator<SamNewProjectSettings>?,
+        callback: AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>?
+    ): AbstractActionWithPanel = step
 
     // non-IntelliJ project commit step
-    override fun generateProject(project: Project, baseDir: VirtualFile, settings: SamNewProjectSettings, module: Module) {
-        peer.ensureSdk()
+    override fun generateProject(
+        project: Project,
+        baseDir: VirtualFile,
+        settings: SamNewProjectSettings,
+        module: Module
+    ) {
         runInEdt {
             runWriteAction {
                 val rootModel = ModuleRootManager.getInstance(module).modifiableModel
@@ -90,23 +96,22 @@ class SamProjectRuntimeSelectionStep(
     AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>()
 ) {
     fun getLocationField(): TextFieldWithBrowseButton = myLocationField
-    private fun getGeneratorPeer(): SamProjectGeneratorSettingsPeer = peer as SamProjectGeneratorSettingsPeer
 
     override fun registerValidators() {
         super.registerValidators()
-        getGeneratorPeer().registerValidators()
+        (peer as SamProjectGeneratorSettingsPeer).registerValidators()
     }
 }
 
-class SamProjectGeneratorSettingsPeer(private val generator: SamProjectGenerator) : ProjectGeneratorPeer<SamNewProjectSettings> {
-    private val basePanel = SamInitSelectionPanel(generator)
+class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator) : ProjectGeneratorPeer<SamNewProjectSettings> {
+    private val samInitSelectionPanel by lazy { SamInitSelectionPanel(generator) }
 
     /**
      * This hook is used in PyCharm and is called via {@link SamProjectBuilder#modifySettingsStep} for IntelliJ
      */
-    override fun validate(): ValidationInfo? = basePanel.validate()
+    override fun validate(): ValidationInfo? = samInitSelectionPanel.validate()
 
-    override fun getSettings(): SamNewProjectSettings = generator.settings
+    override fun getSettings(): SamNewProjectSettings = samInitSelectionPanel.newProjectSettings
 
     // "Deprecated" but required to implement. Not importing to avoid the import deprecation warning.
     @Suppress("OverridingDeprecatedMember", "DEPRECATION")
@@ -115,21 +120,17 @@ class SamProjectGeneratorSettingsPeer(private val generator: SamProjectGenerator
     // we sacrifice a lot of convenience so we can build the UI here...
     override fun buildUI(settingsStep: SettingsStep) {
         // delegate to another panel instead of trying to write UI as code
-        settingsStep.addSettingsComponent(basePanel.mainPanel)
+        settingsStep.addSettingsComponent(component)
     }
 
     // order matters! we build the peer UI before we build the step UI,
     // so validators should be done after BOTH have been constructed
     fun registerValidators() {
         // register any IDE-specific behavior
-        basePanel.registerValidators()
+        samInitSelectionPanel.registerValidators()
     }
 
     override fun isBackgroundJobRunning(): Boolean = false
 
-    override fun getComponent(): JComponent = basePanel.mainPanel
-
-    fun ensureSdk() {
-        basePanel.ensureSdk()
-    }
+    override fun getComponent(): JComponent = samInitSelectionPanel.mainPanel
 }

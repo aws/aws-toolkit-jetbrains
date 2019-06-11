@@ -17,7 +17,7 @@ import com.jetbrains.python.newProject.steps.PyAddNewEnvironmentPanel
 import com.jetbrains.python.sdk.add.PyAddSdkGroupPanel
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedSdkSettings
-import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.SdkSettings
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
 import javax.swing.JLabel
@@ -25,10 +25,10 @@ import javax.swing.JPanel
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-class PyCharmSdkSelectionPanel(val generator: SamProjectGenerator) : SdkSelectionPanelBase() {
+class PyCharmSdkSelectionPanel(val step: SamProjectRuntimeSelectionStep) : SdkSelectionPanelBase() {
     private var documentListener: DocumentListener? = null
 
-    override val sdkSelectionPanel: PyAddSdkGroupPanel = newSdkPanel()
+    override val sdkSelectionPanel: PyAddSdkGroupPanel by lazy { newSdkPanel() }
 
     override val sdkSelectionLabel: JLabel? = null
 
@@ -41,7 +41,7 @@ class PyCharmSdkSelectionPanel(val generator: SamProjectGenerator) : SdkSelectio
         }, AbstractNewProjectStep.AbstractCallback<PyNewProjectSettings>()) {
             // shim validation back to the user UI...
             override fun setErrorText(text: String?) {
-                generator.step.setErrorText(text)
+                step.setErrorText(text)
             }
 
             override fun createPanel(): JPanel {
@@ -60,14 +60,14 @@ class PyCharmSdkSelectionPanel(val generator: SamProjectGenerator) : SdkSelectio
         }.createPanel() as PyAddSdkGroupPanel
 
     override fun registerListeners() {
-        val document = generator.step.getLocationField().textField.document
+        val document = step.getLocationField().textField.document
         // cleanup because generators are re-used
         if (documentListener != null) {
             document.removeDocumentListener(documentListener)
         }
 
         documentListener = object : DocumentAdapter() {
-            val locationField = generator.step.getLocationField()
+            val locationField = step.getLocationField()
             override fun textChanged(e: DocumentEvent) {
                 sdkSelectionPanel.newProjectPath = locationField.text.trim()
             }
@@ -76,17 +76,14 @@ class PyCharmSdkSelectionPanel(val generator: SamProjectGenerator) : SdkSelectio
         document.addDocumentListener(documentListener)
 
         sdkSelectionPanel.addChangeListener(Runnable {
-            generator.step.checkValid()
+            step.checkValid()
         })
     }
 
-    override fun ensureSdk() {
+    override fun getSdkSettings(): SdkSettings =
         getSdk()?.let {
-            generator.settings.sdkSettings = SdkBasedSdkSettings(sdk = it)
-            generator.settings.runtime = PythonRuntimeGroup.determineRuntimeForSdk(it)
-                ?: throw RuntimeException("Could not determine runtime for SDK")
+            SdkBasedSdkSettings(sdk = it)
         } ?: throw RuntimeException(message("sam.init.python.bad_sdk"))
-    }
 
     private fun getSdk(): Sdk? =
         when (val panel = sdkSelectionPanel.selectedPanel) {

@@ -14,24 +14,21 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings
-import software.aws.toolkits.jetbrains.services.lambda.SamProject
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate
-import software.aws.toolkits.jetbrains.services.lambda.SdkBasedSdkSettings
+import software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard
 import software.aws.toolkits.jetbrains.ui.wizard.IntelliJSdkSelectionPanel
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.ui.wizard.SdkSelectionPanel
 import software.aws.toolkits.resources.message
 
-class JavaSamProject : SamProject {
+class JavaSamProjectWizard : SamProjectWizard {
     override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
-        IntelliJSdkSelectionPanel(generator, RuntimeGroup.JAVA)
+        IntelliJSdkSelectionPanel(generator.builder, RuntimeGroup.JAVA)
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
         SamHelloWorldMaven(),
         SamHelloWorldGradle()
     )
-
-    override fun createSdkSettings(): SdkBasedSdkSettings = SdkBasedSdkSettings()
 }
 
 abstract class JavaSamProjectTemplate : SamProjectTemplate() {

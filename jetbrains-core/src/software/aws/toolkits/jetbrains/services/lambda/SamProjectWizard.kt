@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.ui.wizard.SdkSelectionPanel
 /**
  * Used to manage SAM project information for different [RuntimeGroup]s
  */
-interface SamProject {
+interface SamProjectWizard {
 
     /**
      * Return a collection of templates supported by the [RuntimeGroup]
@@ -38,31 +38,26 @@ interface SamProject {
     fun listTemplates(): Collection<SamProjectTemplate>
 
     /**
-     * Return the SDK settings instance for the [RuntimeGroup]
-     */
-    fun createSdkSettings(): SdkSettings
-
-    /**
      * Return an instance of UI section for selecting SDK for the [RuntimeGroup]
      */
     fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel
 
-    companion object : RuntimeGroupExtensionPointObject<SamProject>(ExtensionPointName("aws.toolkit.lambda.sam.project"))
+    companion object : RuntimeGroupExtensionPointObject<SamProjectWizard>(ExtensionPointName("aws.toolkit.lambda.sam.projectWizard"))
 }
 
-class SamNewProjectSettings {
-    lateinit var runtime: Runtime
-    lateinit var template: SamProjectTemplate
-    lateinit var sdkSettings: SdkSettings
-}
+data class SamNewProjectSettings(
+    val runtime: Runtime,
+    val template: SamProjectTemplate,
+    val sdkSettings: SdkSettings
+)
 
 interface SdkSettings
 
 /**
  * Sdk settings that supports [Sdk] as the language's SDK, such as Java, Python.
  */
-class SdkBasedSdkSettings(
-    var sdk: Sdk? = null
+data class SdkBasedSdkSettings(
+    val sdk: Sdk?
 ) : SdkSettings
 
 abstract class SamProjectTemplate {
@@ -148,15 +143,15 @@ abstract class SamProjectTemplate {
 
     protected open fun dependencyManager(): String? = null
 
-    open fun supportedRuntimes(): Set<Runtime> = Runtime.knownValues().toSet()
+    abstract fun supportedRuntimes(): Set<Runtime>
 
     companion object {
         private val LOG = getLogger<SamProjectTemplate>()
 
         @JvmField
         val SAM_TEMPLATES =
-            SamProject.supportedRuntimeGroups.flatMap {
-                SamProject.getInstanceOrThrow(it).listTemplates()
+            SamProjectWizard.supportedRuntimeGroups.flatMap {
+                SamProjectWizard.getInstanceOrThrow(it).listTemplates()
             }
     }
 }
