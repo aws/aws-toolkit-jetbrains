@@ -11,9 +11,7 @@ import java.util.concurrent.CompletableFuture
 class MockResourceCache : AwsResourceCache {
     val lambdaFuture = CompletableFuture<List<LambdaFunction>>()
 
-    override fun lambdaFunctions(): CompletableFuture<List<LambdaFunction>> {
-        return lambdaFuture
-    }
+    override fun lambdaFunctions(): CompletableFuture<List<LambdaFunction>> = lambdaFuture
 
     companion object {
         @JvmStatic
