@@ -13,7 +13,10 @@ intellij {
     version ideVersion("RD")
     pluginName parentIntellijTask.pluginName
     updateSinceUntilBuild parentIntellijTask.updateSinceUntilBuild
-    plugins = idePlugins("RD")
+
+    // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+    def extraPlugins = [ "rider-plugins-appender" ]
+    plugins = idePlugins("RD") + extraPlugins
 
     // Disable downloading source to avoid issues related to Rider SDK naming that is missed in Idea
     // snapshots repository. The task is failed due to unable to find related IC sources.

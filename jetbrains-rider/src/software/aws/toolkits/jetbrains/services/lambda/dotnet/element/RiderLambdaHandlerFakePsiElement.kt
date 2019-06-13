@@ -5,11 +5,13 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet.element
 
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.FakePsiElement
 import com.jetbrains.rider.projectView.ProjectModelViewHost
+import com.jetbrains.rider.projectView.nodes.containingProject
 import com.jetbrains.rider.todo.getPsiFile
 import com.jetbrains.rider.util.idea.getComponent
 import javax.swing.Icon
@@ -40,4 +42,9 @@ class RiderLambdaHandlerFakePsiElement(
     override fun getName() = myName
     override fun toString() = name
     override fun getManager() = PsiManager.getInstance(project)
+
+    fun getContainingProjectFile(): VirtualFile? =
+            project.getComponent<ProjectModelViewHost>().getItemById(fileId)
+                    ?.containingProject()
+                    ?.getVirtualFile()
 }

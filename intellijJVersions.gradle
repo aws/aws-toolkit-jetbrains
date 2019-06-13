@@ -14,7 +14,7 @@ static def ideProfiles() {
                     "RD": [
                             version: "RD-2018.3.4",
                             plugins: [
-                                    "rider-plugins-appender"
+                                    "yaml"
                             ]
                     ]
             ],
@@ -32,7 +32,7 @@ static def ideProfiles() {
                     "RD": [
                             version: "RD-2019.1",
                             plugins: [
-                                    "rider-plugins-appender"
+                                    "yaml"
                             ]
                     ]
             ],
@@ -50,7 +50,7 @@ static def ideProfiles() {
                     "RD": [
                             version: "RD-2019.2-SNAPSHOT",
                             plugins: [
-                                    "rider-plugins-appender"
+                                    "yaml"
                             ]
                     ]
             ]

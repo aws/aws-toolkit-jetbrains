@@ -11,6 +11,9 @@ import org.testng.annotations.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 
+/**
+ * Tests to verify R# backend PSI element based on handler string
+ */
 class DotNetLambdaHandlerResolverTest : BaseTestWithSolution() {
 
     override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"

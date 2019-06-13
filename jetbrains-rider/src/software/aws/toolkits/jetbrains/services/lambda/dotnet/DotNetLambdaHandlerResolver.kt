@@ -26,6 +26,10 @@ import java.time.Duration
 
 class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
 
+    companion object {
+        private const val handlerValidationTimeoutMs = 2000L
+    }
+
     override fun version(): Int = 1
 
     override fun findPsiElements(
@@ -35,7 +39,7 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
     ): Array<NavigatablePsiElement> {
 
         val handlerParts = handler.split("::")
-        if (handlerParts.size < 3) return emptyArray()
+        if (handlerParts.size != 3) return emptyArray()
 
         val assemblyName = handlerParts[0]
         val type = handlerParts[1]
@@ -55,16 +59,22 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
 
         val fieldId = methodForHandler?.fileId ?: return emptyArray()
 
-        return arrayOf(RiderLambdaHandlerFakePsiElement(project, methodName, fieldId))
+        return arrayOf(RiderLambdaHandlerFakePsiElement(project, "$assemblyName::$type::$methodName", fieldId))
     }
 
-    override fun determineHandler(element: PsiElement): String? = null
+    override fun determineHandler(element: PsiElement): String? {
+        if (element !is RiderLambdaHandlerFakePsiElement) return null
+        return element.name
+    }
 
-    override fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> = emptySet()
+    override fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> {
+        val handler = determineHandler(element) ?: return emptySet()
+        return setOf(handler)
+    }
 
     override fun isHandlerValid(project: Project, handler: String): Boolean {
         val handlerParts = handler.split("::")
-        if (handlerParts.size < 3) return false
+        if (handlerParts.size != 3) return false
 
         val assemblyName = handlerParts[0]
         val type = handlerParts[1]
@@ -81,7 +91,7 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
                 isCompleted = true
             }
 
-            SpinWait.spinUntil(Lifetime.Eternal, Duration.ofMillis(1000)) {
+            SpinWait.spinUntil(Lifetime.Eternal, Duration.ofMillis(handlerValidationTimeoutMs)) {
                 ProgressManager.checkCanceled()
                 isCompleted
             }
