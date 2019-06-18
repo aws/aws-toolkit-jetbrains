@@ -40,7 +40,7 @@ object SamCommonTestUtils {
             """.trimIndent()
         } else {
             """
-                echo '$message' >&$stream
+                printf '$message' >&$stream
                 exit $exitCode
             """.trimIndent()
         }
