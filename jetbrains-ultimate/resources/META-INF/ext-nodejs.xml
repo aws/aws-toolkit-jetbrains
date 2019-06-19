@@ -7,5 +7,6 @@
         <builder runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaBuilder"/>
         <handlerResolver runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaHandlerResolver"/>
         <sam.debugSupport runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsSamDebugSupport"/>
+        <sam.projectWizard runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsSamProjectWizard"/>
     </extensions>
 </idea-plugin>
