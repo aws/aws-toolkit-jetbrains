@@ -35,7 +35,7 @@ class SamFunction(private val delegate: Resource) : Resource by delegate, Functi
         ?: throw IllegalStateException(message("cloudformation.missing_property", key, logicalName))
 
     override fun getOptionalScalarProperty(key: String): String? =
-        delegate.getOptionalScalarProperty(key) ?: globals["Function"]?.getScalarProperty(key)
+        delegate.getOptionalScalarProperty(key) ?: globals["Function"]?.getOptionalScalarProperty(key)
 
     override fun setCodeLocation(location: String) {
         setScalarProperty("CodeUri", location)
