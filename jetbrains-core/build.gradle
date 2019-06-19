@@ -12,9 +12,8 @@ intellij {
     plugins = idePlugins("IC")
 }
 
-runIde {
-    systemProperty("aws.toolkits.enableTelemetry", false)
-}
+publishPlugin.enabled = false
+buildSearchableOptions.enabled = false
 
 configurations {
     testArtifacts
@@ -62,6 +61,9 @@ dependencies {
         exclude group: 'org.slf4j'
     }
     compile("software.amazon.awssdk:apache-client:$awsSdkVersion") {
+        exclude group: 'org.slf4j'
+    }
+    compile("software.amazon.awssdk:resourcegroupstaggingapi:$awsSdkVersion") {
         exclude group: 'org.slf4j'
     }
     testCompile project(path: ":core", configuration: 'testArtifacts')
