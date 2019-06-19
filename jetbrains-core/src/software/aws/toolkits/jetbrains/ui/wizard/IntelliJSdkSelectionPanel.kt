@@ -43,7 +43,7 @@ class IntelliJSdkSelectionPanel(val builder: SamProjectBuilder, val runtimeGroup
         return when (runtimeGroup) {
             RuntimeGroup.JAVA, RuntimeGroup.PYTHON -> SdkBasedSdkSettings(sdk = currentSdk)
             // TODO add this line when supporting node
-//            else -> throw RuntimeException("Unrecognized runtime group: $runtimeGroup")
+            else -> throw RuntimeException("Unrecognized runtime group: $runtimeGroup")
         }
     }
 
