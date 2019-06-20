@@ -13,7 +13,7 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
@@ -53,7 +53,7 @@ abstract class LambdaBuilder {
     ): CompletionStage<BuiltLambda> {
         val baseDir = baseDirectory(module, handlerElement)
 
-        val customTemplate = File(getOrCreateBuildDirectory(module.project), "template.yaml")
+        val customTemplate = File(getOrCreateBuildDirectory(module), "template.yaml")
         FileUtil.createIfDoesntExist(customTemplate)
 
         val logicalId = "Function"
@@ -86,7 +86,7 @@ abstract class LambdaBuilder {
         }
 
         ApplicationManager.getApplication().executeOnPooledThread {
-            val buildDir = getOrCreateBuildDirectory(module.project).toPath()
+            val buildDir = getOrCreateBuildDirectory(module).toPath()
 
             val commandLine = SamCommon.getSamCommandLine()
                 .withParameters("build")
@@ -174,10 +174,11 @@ abstract class LambdaBuilder {
     /**
      * Returns the build directory of the project. Create this if it doesn't exist yet.
      */
-    private fun getOrCreateBuildDirectory(project: Project): File =
+    private fun getOrCreateBuildDirectory(module: Module): File =
         WriteAction.computeAndWait<File, Throwable> {
-            val projectBasePath = project.basePath ?: throw IllegalStateException("Invalid project with no base path!")
-            val buildFolder = File(projectBasePath, ".aws-toolkit")
+            val contentRoot = module.rootManager.contentRoots.firstOrNull()
+                ?: throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))
+            val buildFolder = File(contentRoot.path, ".aws-toolkit")
             FileUtil.createDirectory(buildFolder)
             buildFolder
         }
