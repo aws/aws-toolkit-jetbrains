@@ -36,7 +36,7 @@ class NodeJsSdkSelectionPanel : SdkSelectionPanel {
     private var interpreterPanel: NodeJsInterpreterField? = null
 
     override val sdkSelectionLabel: JLabel?
-        get() = JLabel("Node interpreter:")
+        get() = JLabel(message("sam.init.node_interpreter.label"))
 
     override val sdkSelectionPanel: JComponent
         get() {
@@ -57,8 +57,8 @@ class NodeJsSdkSelectionPanel : SdkSelectionPanel {
 }
 
 class NodeJsSdkSettings(
-    var interpreter: NodeJsInterpreter? = null,
-    var languageLevel: JSLanguageLevel = JSLanguageLevel.ES6
+    val interpreter: NodeJsInterpreter? = null,
+    val languageLevel: JSLanguageLevel = JSLanguageLevel.ES6
 ) : SdkSettings
 
 abstract class SamNodeJsProjectTemplate : SamProjectTemplate() {
