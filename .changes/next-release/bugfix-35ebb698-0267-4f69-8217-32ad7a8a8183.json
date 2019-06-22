@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix invalid credentials file errors out the Toolkit"
+}
