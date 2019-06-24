@@ -23,8 +23,22 @@ class PythonLambdaBuilder : LambdaBuilder() {
 
     private fun getBaseDirectory(project: Project, virtualFile: VirtualFile): VirtualFile {
         val fileIndex = ProjectFileIndex.getInstance(project)
-        return fileIndex.getSourceRootForFile(virtualFile)
-            ?: fileIndex.getContentRootForFile(virtualFile)
-            ?: throw IllegalStateException("Failed to locate the root of the handler")
+
+        fileIndex.getSourceRootForFile(virtualFile)?.let {
+            return it
+        }
+
+        fileIndex.getContentRootForFile(virtualFile)?.let { contentRoot ->
+            var dir: VirtualFile? = virtualFile
+            while (dir != null) {
+                if (dir == contentRoot || dir.findChild("requirements.txt") != null) {
+                    return dir
+                }
+
+                dir = dir.parent
+            }
+        }
+
+        throw IllegalStateException("Failed to locate the root of the handler")
     }
 }
