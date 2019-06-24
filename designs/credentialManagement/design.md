@@ -42,7 +42,8 @@ window can have a different active credential selected.
 
 We register all `ToolkitCredentialsProviderFactory` through the IntelliJ extension point system by creating a custom
 extension point bean (`CredentialProviderFactoryEP`) under the FQN `aws.toolkit.credentialProviderFactory` which has a 
-single `implementation` attribute. This extension pointbean must return a singleton of the `ToolkitCredentialsProviderFactory`.
+single `implementation` attribute. The extension system is only queried once, and the list of instances of
+`ToolkitCredentialsProviderFactory` must be immutable.
 
 Example of usage:
 ```xml
