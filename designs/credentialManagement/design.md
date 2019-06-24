@@ -1,0 +1,114 @@
+# Credential Management
+
+## Abstract
+
+This document describes the process of managing and switching of AWS credentials within the toolkit.
+
+## Motivation
+
+AWS provides many different ways to retrieve the credentials required to make calls to AWS including but not limited to:
+credential/config files, environment variables, system properties, EC2 metadata APIs. You can also assume roles using 
+a source set of credentials or use MFA. Due to this large matrix of possibilities the toolkit strives to provide an 
+intuitive abstraction layer on top of some of these sources so that the implementation details are hidden and a 
+consistent user experience can be provided, while also enabling future expansion of new sources, including possibly by 
+third party plugins.
+
+## Specification
+
+This toolkit will introduce the following concepts:
+
+1. `ToolkitCredentialsProvider` - An abstract class that implements [AwsCredentialProvider] in the SDK. This class does not
+do and actual resolving of credentials, but instead leaves that that to concrete implementations. It instead provides
+an ID that is globally unique across all credential providers as well as defining a way to generate a display name.
+
+2. `ToolkitCredentialsProviderFactory` - Factory interface that knows how to create one or more `ToolkitCredentialsProvider`
+for a credential source. I.e. The `ProfileToolkitCredentialsProviderFactory` will create a `ProfileToolkitCredentialsProviderFactory`
+for each valid profile in the shared credentials file.
+
+3. `ToolkitCredentialsProviderRegistry` - This interface acts as a holder for all `ToolkitCredentialsProviderFactory`. Concrete 
+implementation uses IntelliJ extension system to load and store factories from `plugin.xml` instead of managing a hard 
+coded list. This enables the system to be extended in a dynamic manor by other plugins.
+
+4. `ToolkitCredentialsProviderManager` - This class acts as the union of all `ToolkitCredentialsProviderFactory`. Its 
+job is to be able to list all `ToolkitCredentialsProvider` and return a one when referenced by its global ID. It also
+has the ability to have listeners registered to it so they can listen for changes when `ToolkitCredentialsProvider` are
+added in removed such as when the shared credentials file is modified.
+
+5. `Active Credentials` - Represents the current credentials that the toolkit uses to perform actions or defaults to when
+more than one option is possible. Due to the nature of the IntellJ IDE being multiple windows in one JVM, each project
+window can have a different active credential selected.
+
+### Extension System
+
+We register all `ToolkitCredentialsProviderFactory` through the IntelliJ extension point system by creating a custom
+extension point bean (`CredentialProviderFactoryEP`) under the FQN `aws.toolkit.credentialProviderFactory` which has a 
+single `implementation` attribute. This extension pointbean must return a singleton of the `ToolkitCredentialsProviderFactory`.
+
+Example of usage:
+```xml
+    <extensions defaultExtensionNs="aws.toolkit">
+        <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
+    </extensions>
+```
+
+### Credential Validation
+
+In order to validate the credentials returned by the  `ToolkitCredentialsProvider` are valid, we make a call to 
+`sts::GetCallerInfo`.
+
+### Built-in Providers
+
+#### Shared Credentials File(s) (Profile file)
+
+Also known as credential profiles, this sources the credentials from the `~/.aws/config` and `~/.aws/credentials` file
+according to [CLI documentation][CliConfigDocs]. We try to comply as close as possible with the CLI behavior, but not
+all keys are supported in the toolkit. We ignore properties not related to credential management as well.
+
+Supported keys:
+* `aws_access_key_id`
+* `aws_secret_access_key`
+* `aws_session_token`
+* `source_profile`
+* `external_id`
+* `role_session_name`
+* `mfa_serial`
+* `credential_process`
+
+## User Experience Walkthrough
+
+### Status Bar
+
+We register a status bar widget in order to provide the user with an indicator of what credential is active in their 
+project. The status bar also acts as an entry point to switching by having a switcher in the context menu.
+
+![NoCredentialsStatusBar]
+
+*Image when no credentials are active*
+
+![DefaultCredentialsStatusBar]
+
+*Image when a profile named `default is active*
+
+### On Toolkit Start Run
+
+If the user has no active credentials from their last session, we should see if they have a profile named `default` 
+and select it for them if the credentials are valid.
+
+### On Switching Credentials
+
+When the user wishes to switch their active credentials, we first perform a check to see if the call is valid. See 
+[Credential Validation](#Credential-Validation).
+
+* If the check passes, we will mark the selected credentials active for the project window.
+* If the check fails, we will fall back to having no credentials specified and tell the user that the validation 
+failed.
+
+### Multi-Factor Authentication
+
+If the credential provider has MFA, we will need to prompt the user for their OTP. This works by blocking the 
+`resolveCredentials` call until a input dialog message prompt is filled in.
+
+[AwsCredentialProvider]: https://github.com/aws/aws-sdk-java-v2/blob/master/core/auth/src/main/java/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.java
+[CliConfigDocs]: https://docs.aws.amazon.com/cli/latest/topic/config-vars.html#credentials
+[DefaultCredentialsStatusBar]: defaultCrdentialsStatusBar.png
+[NoCredentialsStatusBar]: noCrdentialsStatusBar.png
