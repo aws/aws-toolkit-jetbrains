@@ -10,6 +10,7 @@ import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.rootManager
@@ -29,7 +30,7 @@ import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutionException
+import java.util.concurrent.CompletionStage
 
 abstract class LambdaBuilder {
 
@@ -49,7 +50,7 @@ abstract class LambdaBuilder {
         envVars: Map<String, String>,
         samOptions: SamOptions,
         onStart: (ProcessHandler) -> Unit = {}
-    ): BuiltLambda {
+    ): CompletionStage<BuiltLambda> {
         val baseDir = baseDirectory(module, handlerElement)
 
         val customTemplate = File(getOrCreateBuildDirectory(module), "template.yaml")
@@ -67,16 +68,13 @@ abstract class LambdaBuilder {
         logicalId: String,
         samOptions: SamOptions,
         onStart: (ProcessHandler) -> Unit = {}
-    ): BuiltLambda {
+    ): CompletionStage<BuiltLambda> {
         val future = CompletableFuture<BuiltLambda>()
-
-        val functions = SamTemplateUtils.findFunctionsFromTemplate(
-            module.project,
-            templateLocation.toFile()
-        )
-
         val codeLocation = ReadAction.compute<String, Throwable> {
-            functions.find { it.logicalName == logicalId }
+            SamTemplateUtils.findFunctionsFromTemplate(
+                module.project,
+                templateLocation.toFile()
+            ).find { it.logicalName == logicalId }
                 ?.codeLocation()
                 ?: throw RuntimeConfigurationError(
                     message(
@@ -154,11 +152,7 @@ abstract class LambdaBuilder {
             processHandler.startNotify()
         }
 
-        return try {
-            future.get()
-        } catch (e: ExecutionException) {
-            throw e.cause ?: e
-        }
+        return future
     }
 
     open fun packageLambda(
@@ -168,25 +162,26 @@ abstract class LambdaBuilder {
         runtime: Runtime,
         samOptions: SamOptions,
         onStart: (ProcessHandler) -> Unit = {}
-    ): Path {
-        val builtLambda = buildLambda(module, handlerElement, handler, runtime, emptyMap(), samOptions, onStart)
-        val zipLocation = FileUtil.createTempFile("builtLambda", "zip", true)
-        Compressor.Zip(zipLocation).use {
-            it.addDirectory(builtLambda.codeLocation.toFile())
+    ): CompletionStage<Path> = buildLambda(module, handlerElement, handler, runtime, emptyMap(), samOptions, onStart)
+        .thenApply { lambdaLocation ->
+            val zipLocation = FileUtil.createTempFile("builtLambda", "zip", true)
+            Compressor.Zip(zipLocation).use {
+                it.addDirectory(lambdaLocation.codeLocation.toFile())
+            }
+            zipLocation.toPath()
         }
-        return zipLocation.toPath()
-    }
 
     /**
      * Returns the build directory of the project. Create this if it doesn't exist yet.
      */
-    private fun getOrCreateBuildDirectory(module: Module): File {
-        val contentRoot = module.rootManager.contentRoots.firstOrNull()
-            ?: throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))
-        val buildFolder = File(contentRoot.path, ".aws-sam/build")
-        FileUtil.createDirectory(buildFolder)
-        return buildFolder
-    }
+    private fun getOrCreateBuildDirectory(module: Module): File =
+        WriteAction.computeAndWait<File, Throwable> {
+            val contentRoot = module.rootManager.contentRoots.firstOrNull()
+                ?: throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))
+            val buildFolder = File(contentRoot.path, ".aws-toolkit")
+            FileUtil.createDirectory(buildFolder)
+            buildFolder
+        }
 
     companion object : RuntimeGroupExtensionPointObject<LambdaBuilder>(
         ExtensionPointName("aws.toolkit.lambda.builder")
