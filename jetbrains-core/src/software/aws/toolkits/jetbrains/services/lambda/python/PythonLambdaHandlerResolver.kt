@@ -93,11 +93,9 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
             if (rootVirtualFile.findChild("requirements.txt") != null) {
                 return true
             }
-
-            return false
         }
 
-        return true
+        return false
     }
 
     private fun directoryHasInitPy(psiDirectory: PsiDirectory) = psiDirectory.findFile("__init__.py") != null

@@ -112,9 +112,18 @@ class PythonLambdaHandlerResolverTest {
     @Test
     fun findDoesntWorkIfNotASourceOrContentRoot() {
         createHandler("src/hello_world/foo_bar/app.py")
+        createInitPy("src/hello_world")
         createInitPy("src/hello_world/foo_bar")
 
         assertHandler("hello_world.foo_bar.app.handle", false)
+    }
+
+    @Test
+    fun findDoesntWorkIfParentFolderDoesntExist() {
+        createHandler("src/hello_world/foo_bar/app.py")
+        createInitPy("src/hello_world/foo_bar")
+
+        assertHandler("doesnt_exist/foo_bar.app.handle", false)
     }
 
     @Test
@@ -134,8 +143,8 @@ class PythonLambdaHandlerResolverTest {
     @Test
     fun findWorkIfRequirementsFileIsFound() {
         createHandler("src/hello_world/foo_bar/app.py")
-        createInitPy("src/hello_world/foo_bar")
         createInitPy("src/hello_world")
+        createInitPy("src/hello_world/foo_bar")
         projectRule.fixture.addFileToModule(projectRule.module, "src/requirements.txt", "")
 
         assertHandler("hello_world.foo_bar.app.handle", true)

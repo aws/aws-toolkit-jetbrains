@@ -64,7 +64,7 @@ class PythonLambdaBuilderTest : BaseLambdaBuilderTest() {
     }
 
     @Test
-    fun baseDirBasedOnRequreimentsFileAtRootOfHandler() {
+    fun baseDirBasedOnRequirementsFileAtRootOfHandler() {
         val module = projectRule.module
         val handler = addPythonHandler("src")
         addRequirementsFile("src")
