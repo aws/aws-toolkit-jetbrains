@@ -179,7 +179,7 @@ abstract class LambdaBuilder {
     private fun getOrCreateBuildDirectory(module: Module): File {
         val contentRoot = module.rootManager.contentRoots.firstOrNull()
             ?: throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))
-        val buildFolder = File(contentRoot.path, ".aws-toolkit")
+        val buildFolder = File(contentRoot.path, ".aws-sam/build")
         FileUtil.createDirectory(buildFolder)
         return buildFolder
     }
