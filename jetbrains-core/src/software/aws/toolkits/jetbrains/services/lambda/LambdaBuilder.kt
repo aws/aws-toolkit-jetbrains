@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
@@ -25,15 +26,22 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.resources.message
+import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
 abstract class LambdaBuilder {
+
+    /**
+     * Returns the base directory of the Lambda handler
+     */
+    abstract fun baseDirectory(module: Module, handlerElement: PsiElement): String
+
     /**
      * Creates a package for the given lambda including source files archived in the correct format.
      */
-    abstract fun buildLambda(
+    fun buildLambda(
         module: Module,
         handlerElement: PsiElement,
         handler: String,
@@ -41,7 +49,17 @@ abstract class LambdaBuilder {
         envVars: Map<String, String>,
         samOptions: SamOptions,
         onStart: (ProcessHandler) -> Unit = {}
-    ): CompletionStage<BuiltLambda>
+    ): CompletionStage<BuiltLambda> {
+        val baseDir = baseDirectory(module, handlerElement)
+
+        val customTemplate = File(getOrCreateBuildDirectory(module), "template.yaml")
+        FileUtil.createIfDoesntExist(customTemplate)
+
+        val logicalId = "Function"
+        SamTemplateUtils.writeDummySamTemplate(customTemplate, logicalId, runtime, baseDir, handler, envVars)
+
+        return buildLambdaFromTemplate(module, customTemplate.toPath(), logicalId, samOptions, onStart)
+    }
 
     open fun buildLambdaFromTemplate(
         module: Module,
@@ -51,11 +69,14 @@ abstract class LambdaBuilder {
         onStart: (ProcessHandler) -> Unit = {}
     ): CompletionStage<BuiltLambda> {
         val future = CompletableFuture<BuiltLambda>()
+
+        val functions = SamTemplateUtils.findFunctionsFromTemplate(
+            module.project,
+            templateLocation.toFile()
+        )
+
         val codeLocation = ReadAction.compute<String, Throwable> {
-            SamTemplateUtils.findFunctionsFromTemplate(
-                module.project,
-                templateLocation.toFile()
-            ).find { it.logicalName == logicalId }
+            functions.find { it.logicalName == logicalId }
                 ?.codeLocation()
                 ?: throw RuntimeConfigurationError(
                     message(
@@ -67,7 +88,7 @@ abstract class LambdaBuilder {
         }
 
         ApplicationManager.getApplication().executeOnPooledThread {
-            val buildDir = FileUtil.createTempDirectory("lambdaBuild", null, true).toPath()
+            val buildDir = getOrCreateBuildDirectory(module).toPath()
 
             val commandLine = SamCommon.getSamCommandLine()
                 .withParameters("build")
@@ -151,6 +172,17 @@ abstract class LambdaBuilder {
             }
             zipLocation.toPath()
         }
+
+    /**
+     * Returns the build directory of the project. Create this if it doesn't exist yet.
+     */
+    private fun getOrCreateBuildDirectory(module: Module): File {
+        val contentRoot = module.rootManager.contentRoots.firstOrNull()
+            ?: throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))
+        val buildFolder = File(contentRoot.path, ".aws-sam/build")
+        FileUtil.createDirectory(buildFolder)
+        return buildFolder
+    }
 
     companion object : RuntimeGroupExtensionPointObject<LambdaBuilder>(
         ExtensionPointName("aws.toolkit.lambda.builder")
