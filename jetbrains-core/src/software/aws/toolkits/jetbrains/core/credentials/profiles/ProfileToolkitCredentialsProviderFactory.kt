@@ -99,7 +99,7 @@ class ProfileToolkitCredentialsProviderFactory(
             } ?: ""
             notifyError(
                 title = refreshTitle,
-                content =  "$loadingFailureMessage$detail",
+                content = "$loadingFailureMessage$detail",
                 action = createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
             )
         } else if (errors.isNotEmpty()) {

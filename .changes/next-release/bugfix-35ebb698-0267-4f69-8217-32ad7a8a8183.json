@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix invalid credentials file errors out the Toolkit"
+  "description" : "Fix invalid credentials file reporting an IDE error"
 }
