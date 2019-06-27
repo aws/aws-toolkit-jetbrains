@@ -44,7 +44,7 @@ class NodeJsRuntimeGroup : SdkBasedRuntimeGroupInformation() {
      */
     override fun runtimeForSdk(sdk: Sdk): Runtime? = null
 
-    // WebModuleType.getInstance() is deprecated in 191, use WebModuleTypeBase#getInstance for version 191+
+    // TODO: FIX_WHEN_MIN_IS_192 WebModuleType.getInstance() is deprecated in 191, use WebModuleTypeBase#getInstance for version 191+
     override fun getModuleType(): ModuleType<*>? =
         ModuleTypeManager.getInstance().findByID(WEB_MODULE) as? WebModuleTypeBase
             ?: WebModuleTypeManager.getInstance().defaultModuleType
