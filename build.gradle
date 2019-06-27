@@ -210,7 +210,7 @@ task ktlint(type: JavaExec, group: "verification") {
     description = "Check Kotlin code style."
     classpath = configurations.ktlint
     main = "com.pinterest.ktlint.Main"
-    args "-v", project.rootDir.absolutePath + "/**/*.kt"
+    args "-v", "${project.rootDir.absolutePath}/**/*.kt", "!${project.rootDir.absolutePath}/jetbrains-rider/**/*.Generated.kt"
 
     inputs.files(project.fileTree(dir: "src", include: "**/*.kt"))
     outputs.dir("${project.buildDir}/reports/ktlint/")

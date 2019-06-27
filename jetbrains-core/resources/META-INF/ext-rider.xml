@@ -3,6 +3,18 @@
 
 <idea-plugin>
 
+    <application-components>
+        <component>
+            <implementation-class>software.aws.toolkits.jetbrains.icons.RiderAwsIconsPatcherRegistrar</implementation-class>
+        </component>
+    </application-components>
+
+    <project-components>
+        <component>
+            <implementation-class>software.aws.toolkits.jetbrains.services.lambda.LambdaHost</implementation-class>
+        </component>
+    </project-components>
+
     <extensions defaultExtensionNs="com.intellij">
         <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.ui.wizard.RiderSamProjectProvider" order="last"/>
     </extensions>

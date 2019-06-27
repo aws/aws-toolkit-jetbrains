@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net461</TargetFramework>
+        <RootNamespace>ReSharper.AWS</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Rider.SDK" Version="$(RiderSDKVersion)" />
+    </ItemGroup>
+
+</Project>
