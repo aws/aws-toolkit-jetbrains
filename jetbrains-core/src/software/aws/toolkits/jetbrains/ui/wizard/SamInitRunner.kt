@@ -11,7 +11,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.resources.message
-import java.io.FileFilter
 
 object SamInitRunner {
     fun execute(
@@ -49,10 +48,13 @@ object SamInitRunner {
             throw RuntimeException("${message("sam.init.execution_error")}: ${process.stderrLines.last()}")
         }
 
-        val rootFolder = tempDir.listFiles(FileFilter { it.isDirectory })?.firstOrNull()
-            ?: throw RuntimeException(message("sam.init.error.no.root_folder"))
+        val subFolders = tempDir.listFiles()
 
-        FileUtil.copyDirContent(rootFolder, VfsUtil.virtualToIoFile(outputDir))
+        assert(subFolders != null && subFolders.size == 1 && subFolders[0].isDirectory) {
+            message("sam.init.error.subfolder_not_one", tempDir.name)
+        }
+
+        FileUtil.copyDirContent(subFolders[0], VfsUtil.virtualToIoFile(outputDir))
         FileUtil.delete(tempDir)
     }
 }
