@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.resources.message
+import java.io.FileFilter
 
 object SamInitRunner {
     fun execute(
@@ -48,6 +49,10 @@ object SamInitRunner {
             throw RuntimeException("${message("sam.init.execution_error")}: ${process.stderrLines.last()}")
         }
 
-        FileUtil.copyDirContent(tempDir.resolve(name), VfsUtil.virtualToIoFile(outputDir))
+        val rootFolder = tempDir.listFiles(FileFilter { it.isDirectory })?.firstOrNull()
+            ?: throw RuntimeException(message("sam.init.error.no.root_folder"))
+
+        FileUtil.copyDirContent(rootFolder, VfsUtil.virtualToIoFile(outputDir))
+        FileUtil.delete(tempDir)
     }
 }
