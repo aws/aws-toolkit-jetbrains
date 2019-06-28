@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Support build the only function for testing when sam cli version is newer than 0.16"
+}
