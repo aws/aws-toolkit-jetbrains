@@ -638,7 +638,7 @@ class LocalLambdaRunConfigurationTest {
                 input = "{}"
             )
 
-            val clonedConfiguration= runConfiguration.clone() as LocalLambdaRunConfiguration
+            val clonedConfiguration = runConfiguration.clone() as LocalLambdaRunConfiguration
             clonedConfiguration.name = "Cloned"
 
             clonedConfiguration.useInputText("Changed input")

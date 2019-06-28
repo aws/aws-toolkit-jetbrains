@@ -211,7 +211,7 @@ class RemoteLambdaRunConfigurationTest {
                 input = "{}"
             )
 
-            val clonedConfiguration= runConfiguration.clone() as LambdaRemoteRunConfiguration
+            val clonedConfiguration = runConfiguration.clone() as LambdaRemoteRunConfiguration
             clonedConfiguration.name = "Cloned"
 
             clonedConfiguration.useInputText("Changed input")

@@ -136,7 +136,7 @@ open class BaseLambdaOptions {
     @get:Property(flat = true) // flat for backwards compat
     var accountOptions = AccountOptions()
     @get:Property(flat = true) // flat for backwards compat
-    var inputOptions  = InputOptions()
+    var inputOptions = InputOptions()
 }
 
 class AccountOptions {
