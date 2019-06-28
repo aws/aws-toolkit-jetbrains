@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix a cloned run config's changing altering the original as well"
+}

@@ -629,6 +629,24 @@ class LocalLambdaRunConfigurationTest {
         }
     }
 
+    @Test // https://github.com/aws/aws-toolkit-jetbrains/issues/1072
+    fun creatingACopyDoesNotAliasFields() {
+        runInEdtAndWait {
+            val runConfiguration = createHandlerBasedRunConfiguration(
+                project = projectRule.project,
+                credentialsProviderId = mockId,
+                input = "{}"
+            )
+
+            val clonedConfiguration= runConfiguration.clone() as LocalLambdaRunConfiguration
+            clonedConfiguration.name = "Cloned"
+
+            clonedConfiguration.useInputText("Changed input")
+
+            assertThat(clonedConfiguration.inputSource()).isNotEqualTo(runConfiguration.inputSource())
+        }
+    }
+
     private fun getState(runConfiguration: LocalLambdaRunConfiguration): SamRunningState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
         val environmentMock = mock<ExecutionEnvironment> {
