@@ -193,41 +193,43 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     private fun resolveLambdaInfo() = if (isUsingTemplate()) {
-            val templateFile = templateFile()
-                ?.takeUnless { it.isEmpty() }
-                ?.let { LocalFileSystem.getInstance().findFileByPath(it) }
-                ?: throw RuntimeConfigurationError(message("lambda.run_configuration.sam.no_template_specified"))
+        val templatePath = templateFile()
+            ?.takeUnless { it.isEmpty() }
+            ?: throw RuntimeConfigurationError(message("lambda.run_configuration.sam.no_template_specified"))
 
-            val functionName = logicalId() ?: throw RuntimeConfigurationError(
-                message("lambda.run_configuration.sam.no_function_specified")
+        val functionName = logicalId() ?: throw RuntimeConfigurationError(
+            message("lambda.run_configuration.sam.no_function_specified")
+        )
+
+        val templateFile = LocalFileSystem.getInstance().findFileByPath(templatePath)
+            ?: throw RuntimeConfigurationError(message("lambda.run_configuration.sam.template_file_not_found"))
+
+        val function = findFunctionsFromTemplate(
+            project,
+            templateFile
+        ).find { it.logicalName == functionName }
+            ?: throw RuntimeConfigurationError(
+                message(
+                    "lambda.run_configuration.sam.no_such_function",
+                    functionName,
+                    templateFile.path
+                )
             )
 
-            val function = findFunctionsFromTemplate(
-                project,
-                templateFile
-            ).find { it.logicalName == functionName }
-                ?: throw RuntimeConfigurationError(
-                    message(
-                        "lambda.run_configuration.sam.no_such_function",
-                        functionName,
-                        templateFile.path
-                    )
-                )
+        val handler = tryOrNull { function.handler() }
+            ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
+        val runtime = tryOrNull { Runtime.fromValue(function.runtime()).validOrNull }
+            ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
 
-            val handler = tryOrNull { function.handler() }
-                ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
-            val runtime = tryOrNull { Runtime.fromValue(function.runtime()).validOrNull }
-                ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
+        Triple(handler, runtime, SamTemplateDetails(VfsUtil.virtualToIoFile(templateFile).toPath(), functionName))
+    } else {
+        val handler = handler()
+            ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
+        val runtime = runtime()
+            ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
 
-            Triple(handler, runtime, SamTemplateDetails(VfsUtil.virtualToIoFile(templateFile).toPath(), functionName))
-        } else {
-            val handler = handler()
-                ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
-            val runtime = runtime()
-                ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
-
-            Triple(handler, runtime, null)
-        }
+        Triple(handler, runtime, null)
+    }
 
     private fun handlerPsiElement(handler: String? = handler(), runtime: Runtime? = runtime()) = try {
         runtime?.let {
