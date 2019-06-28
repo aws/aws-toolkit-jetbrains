@@ -166,6 +166,22 @@ class LocalLambdaRunConfigurationTest {
     }
 
     @Test
+    fun templateFileDoesNotExist() {
+        runInEdtAndWait {
+            val runConfiguration = createTemplateRunConfiguration(
+                project = projectRule.project,
+                templateFile = "IAmFake",
+                logicalId = "Function",
+                credentialsProviderId = mockId
+            )
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.run_configuration.sam.template_file_not_found"))
+        }
+    }
+
+    @Test
     fun functionDoesNotExist() {
         runInEdtAndWait {
             val template = tempDir.newFile("template.yaml").also {
