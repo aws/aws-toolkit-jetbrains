@@ -58,61 +58,69 @@ import java.util.Timer
 import kotlin.concurrent.schedule
 
 /**
+ * Rider uses it's own DebuggerWorker process that run under .NET with extra parameters to configure:
+ *    - path to runtime
+ *    - path to DLL
+ *    - debugger mode (client/server)
+ *    - frontend port
+ *    - backend port
+ *
  * Debugger is launched via SAM CLI command: '$ sam local invoke' and pass debugger parameters --debugger-path and --debugger-args.
  * Under SAM CLI this command is translated into:
- * - volume that is mounted in Docker to launch debugger (--debugger-path)
- * - additional debugger arguments that are applied when launching debugger inside Docker (--debugger-args):
- *    '$ dotnet <debug_args_list> MockBootstraps.dll --debugger-spin-wait'
+ *    - volume that is mounted in Docker to launch debugger (--debugger-path).
+ *      This volume is set to path with debugger process used in Rider - DebuggerWorker - inside Rider SDK.
+ *    - additional debugger arguments that are applied when launching debugger inside Docker (--debugger-args):
+ *      '$ dotnet <debug_args_list> MockBootstraps.dll --debugger-spin-wait'
  *
- * Rider uses it's own Debugger Worker process that run under .NET with extra parameters to configure:
- * - path to runtime
- * - path to DLL
- * - debugger mode (client/server)
- * - frontend port
- * - backend port
+ * We use <debugger_args_list> to inject a simple custom dotnet core application 'JetBrains.Rider.Debugger.Launcher'
+ * that run Rider's debugger. This app starts Rider's debugger under Mono runtime that is bundled with Rider SDK (runtime.sh).
+ * The app read arguments and start a Rider's DebuggerWorker process with ports and compiled lambda DLL - MockBootstraps.dll
  *
- * To launch Rider Debugger under Docker we have created a simple dotnet core app that launch Debugger Worker instance
- * using Mono runtime that is taken from Rider SDK (runtime.sh).
- * This app is hosted in github repo - https://github.com/JetBrains/JetBrains.Rider.Debugger.Launcher and is
- * delivered via GutHub releases with packed output.
- * This output is copied to the same Rider SDK path that is mounted in Docker (app should be placed under "Amazon.Runner" folder).
- *
- * After Debugger Worker process is started on Docker instance it initializes ports and process to run - MockBootstraps.dll
- * (the internal compiled with lambda code)
+ * 'JetBrains.Rider.Debugger.Launcher' app is hosted on github repo - https://github.com/JetBrains/JetBrains.Rider.Debugger.Launcher.
+ * The app is packed to NuGet package and is accessible in Rider SDK in '<SDKPath>/lib/ReSharperHost/' directory.
  */
 class DotNetSamDebugSupport : SamDebugSupport {
     companion object {
         private val logger = getLogger<DotNetSamDebugSupport>()
 
-        private const val debuggerDir = "/tmp/lambci_debug_files"
-        private const val dotnetCorCliPath = "/var/lang/bin/dotnet"
-        private const val mockBootstrapsPath = "/var/runtime/MockBootstraps.dll"
+        const val DEBUGGER_LAUNCHER_NAME = "JetBrains.Rider.Debugger.Launcher"
+        private const val DEBUGGER_MODE = "server"
+
+        private const val REMOTE_DEBUGGER_DIR = "/tmp/lambci_debug_files"
+        private const val REMOTE_NETCORE_CLI_PATH = "/var/lang/bin/dotnet"
+        private const val REMOTE_LAMBDA_COMPILED_PATH = "/var/runtime/MockBootstraps.dll"
     }
 
+    private val debuggerAssemblyFile =
+        RiderEnvironment.getBundledFile(DebuggerWorkerPlatform.AnyCpu.assemblyName)
+
+    private val debuggerBinDirectory = debuggerAssemblyFile.parentFile
+
     /**
-     * Check whether the Rider Debugger Worker Launcher app (that is required to run Debugger) is downloaded into Rider SDK.
+     * Check whether the JatBrains.Rider.Worker.Launcher app (that is required to run Debugger) is downloaded into Rider SDK.
      */
     override fun isSupported(): Boolean {
-        val debuggerWorkerAssembly = RiderEnvironment.getBundledFile(DebuggerWorkerPlatform.AnyCpu.assemblyName)
-        val binDir = debuggerWorkerAssembly.parentFile
-        val debugLauncherFile = File(binDir, "Amazon.Runner").resolve("JetBrains.Debugger.Launcher.dll")
+        val debugLauncherFile = File(debuggerBinDirectory, "$DEBUGGER_LAUNCHER_NAME.dll")
 
         val debuggerLauncherExists = debugLauncherFile.exists()
         if (!debuggerLauncherExists) {
-            logger.error { "JetBrains.Rider.Debugger.Launcher runnable does not exists" }
+            logger.error { "$DEBUGGER_LAUNCHER_NAME runnable does not exists" }
         }
         return debuggerLauncherExists
     }
 
     override fun patchCommandLine(debugPort: Int, state: SamRunningState, commandLine: GeneralCommandLine) {
-        val debuggerWorkerAssembly = RiderEnvironment.getBundledFile(DebuggerWorkerPlatform.AnyCpu.assemblyName)
-        val binDir = debuggerWorkerAssembly.parentFile
-        val debuggerMode = "server"
-
-        val debugArgs = "$debuggerDir/Amazon.Runner/JetBrains.Debugger.Launcher.dll $debuggerDir/runtime.sh $debuggerDir/${debuggerWorkerAssembly.name} $debuggerMode $debugPort $debugPort"
+        val debugArgs = StringBuilder()
+            .append("$REMOTE_DEBUGGER_DIR/$DEBUGGER_LAUNCHER_NAME.dll ")
+            .append("$REMOTE_DEBUGGER_DIR/runtime.sh ")
+            .append("$REMOTE_DEBUGGER_DIR/${debuggerAssemblyFile.name} ")
+            .append("$DEBUGGER_MODE ")
+            .append("$debugPort ")
+            .append("$debugPort")
+            .toString()
 
         commandLine.withParameters("--debugger-path")
-                .withParameters(binDir.path)
+                .withParameters(debuggerBinDirectory.path)
                 .withParameters("--debug-args")
                 .withParameters(debugArgs)
 
@@ -135,7 +143,20 @@ class DotNetSamDebugSupport : SamDebugSupport {
 
         val promise = AsyncPromise<XDebugProcessStarter?>()
 
+        try {
+            val exitValue = Runtime.getRuntime().exec("docker ps").waitFor()
+            if (exitValue != 0) {
+                promise.setError(message("lambda.debug.docker.not_connected"))
+                return promise
+            }
+        } catch (t: Throwable) {
+            promise.setError(t)
+            return promise
+        }
+
         val project = environment.project
+
+        // Define a debugger lifetime to be able to dispose the debugger process and all nested component on termination
         val debuggerLifetimeDefinition = project.defineNestedLifetime()
         val debuggerLifetime = debuggerLifetimeDefinition.lifetime
 
@@ -178,18 +199,10 @@ class DotNetSamDebugSupport : SamDebugSupport {
                     }
 
                     workerModel.activeSession.set(sessionModel)
-                    val console =
-                        TextConsoleBuilderFactory.getInstance().createBuilder(environment.project).console
+                    val console = TextConsoleBuilderFactory.getInstance().createBuilder(environment.project).console
                     val processHandler = object : ProcessHandler() {
                         override fun detachProcessImpl() {
-                            val process =
-                                (executionResult.processHandler as? BaseProcessHandler<*>)?.process
-                            if (process == null) {
-                                logger.error { "Unable to get process handler for SAM CLI invoke" }
-                                return
-                            }
-                            process.destroy()
-                            notifyProcessTerminated(0)
+                            destroyProcessImpl()
                         }
 
                         override fun detachIsDefault(): Boolean = false
@@ -261,8 +274,8 @@ class DotNetSamDebugSupport : SamDebugSupport {
 
     private fun createNetCoreStartInfo(state: SamRunningState): DotNetCoreExeStartInfo =
         DotNetCoreExeStartInfo(
-            dotNetCoreInfo = DotNetCoreInfo(dotnetCorCliPath, null),
-            exePath = mockBootstrapsPath,
+            dotNetCoreInfo = DotNetCoreInfo(REMOTE_NETCORE_CLI_PATH, null),
+            exePath = REMOTE_LAMBDA_COMPILED_PATH,
             workingDirectory = "",
             arguments = state.settings.handler,
             environmentVariables = emptyList(),
@@ -285,21 +298,27 @@ class DotNetSamDebugSupport : SamDebugSupport {
 
         val consoleKind = ConsoleKind.ExternalConsole
 
-        if (consoleKind != ConsoleKind.Normal) {
-            (executionConsole as? ConsoleView)
-                    ?.print(
-                            "Input/Output redirection disabled: ${consoleKind.message}${System.lineSeparator()}",
-                            ConsoleViewContentType.SYSTEM_OUTPUT
-                    )
-        }
+        (executionConsole as? ConsoleView)
+            ?.print(
+                "Input/Output redirection disabled: ${consoleKind.message}${System.lineSeparator()}",
+                ConsoleViewContentType.SYSTEM_OUTPUT
+            )
+
         val fireInitializedManually = env.getUserData(DotNetDebugRunner.FIRE_INITIALIZED_MANUALLY) ?: false
 
         return object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess =
                 DotNetDebugProcess(
-                    sessionLifetime, session,
-                    processHandler, executionConsole, protocol, sessionModel, fireInitializedManually,
-                    outputEventsListener, OptionsUtil.toDebugKind(sessionModel.sessionProperties.debugKind.valueOrNull), env.project)
+                    sessionLifetime = sessionLifetime,
+                    session = session,
+                    debuggerWorkerProcessHandler = processHandler,
+                    console = executionConsole,
+                    protocol = protocol,
+                    sessionProxy = sessionModel,
+                    fireInitializedManually = fireInitializedManually,
+                    customListener = outputEventsListener,
+                    debugKind = OptionsUtil.toDebugKind(sessionModel.sessionProperties.debugKind.valueOrNull),
+                    project = env.project)
         }
     }
 }
