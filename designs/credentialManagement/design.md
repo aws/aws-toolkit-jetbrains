@@ -18,25 +18,30 @@ third party plugins.
 This toolkit will introduce the following concepts:
 
 1. `ToolkitCredentialsProvider` - An abstract class that implements [AwsCredentialProvider] in the SDK. This class does not
-do and actual resolving of credentials, but instead leaves that that to concrete implementations. It instead provides
+do any actual resolving of credentials, but instead leaves that that to concrete implementations. It instead provides
 an ID that is globally unique across all credential providers as well as defining a way to generate a display name.
 
 2. `ToolkitCredentialsProviderFactory` - Factory interface that knows how to create one or more `ToolkitCredentialsProvider`
-for a credential source. I.e. The `ProfileToolkitCredentialsProviderFactory` will create a `ProfileToolkitCredentialsProviderFactory`
-for each valid profile in the shared credentials file.
+for a credential source. A `ToolkitCredentialsProviderFactory` can create 0 or more instances of `ToolkitCredentialsProvider` 
+as long as each one is valid. Valid is defined as a profile that contains all the required 
+keys and does not contain any circular dependencies. It does not validate if the credentials are valid or can be 
+retrieved at `ProfileToolkitCredentialsProvider` creation time.
 
 3. `ToolkitCredentialsProviderRegistry` - This interface acts as a holder for all `ToolkitCredentialsProviderFactory`. Concrete 
 implementation uses IntelliJ extension system to load and store factories from `plugin.xml` instead of managing a hard 
 coded list. This enables the system to be extended in a dynamic manor by other plugins.
 
 4. `ToolkitCredentialsProviderManager` - This class acts as the union of all `ToolkitCredentialsProviderFactory`. Its 
-job is to be able to list all `ToolkitCredentialsProvider` and return a one when referenced by its global ID. It also
-has the ability to have listeners registered to it so they can listen for changes when `ToolkitCredentialsProvider` are
-added in removed such as when the shared credentials file is modified.
+job is to be able to list all `ToolkitCredentialsProvider` and return the provider that is referenced by its unique global ID.
+ It also has the ability to have listeners registered to it so they can listen for changes when `ToolkitCredentialsProvider` are
+added or removed such as when the shared credentials file is modified.
 
 5. `Active Credentials` - Represents the current credentials that the toolkit uses to perform actions or defaults to when
 more than one option is possible. Due to the nature of the IntellJ IDE being multiple windows in one JVM, each project
 window can have a different active credential selected.
+
+### Diagram
+![ClassDiagram]
 
 ### Extension System
 
@@ -54,8 +59,8 @@ Example of usage:
 
 ### Credential Validation
 
-In order to validate the credentials returned by the  `ToolkitCredentialsProvider` are valid, we make a call to 
-`sts::GetCallerInfo`.
+In order to validate the credentials returned by the `ToolkitCredentialsProvider`, we make a call to 
+`sts::getCallerIdentity`. If the call fails, we consider the credentials to be invalid.
 
 ### Built-in Providers
 
@@ -74,6 +79,14 @@ Supported keys:
 * `role_session_name`
 * `mfa_serial`
 * `credential_process`
+
+##### Refreshing
+
+We start a file watcher to watch the `credential` and `config` files for changes. Upon detecting changes we will internally
+reload, add, or remove instances of `ProfileToolkitCredentialsProvider` based on if the profile is still syntactically valid.
+
+If a profile is modified, but its name is not changed, its `ProfileToolkitCredentialsProvider` should be modified internally. 
+This means external references to the object are still valid.
 
 ## User Experience Walkthrough
 
@@ -107,9 +120,10 @@ failed.
 ### Multi-Factor Authentication
 
 If the credential provider has MFA, we will need to prompt the user for their OTP. This works by blocking the 
-`resolveCredentials` call until a input dialog message prompt is filled in.
+`resolveCredentials` call in [AwsCredentialProvider] until a input dialog message prompt is filled in.
 
 [AwsCredentialProvider]: https://github.com/aws/aws-sdk-java-v2/blob/master/core/auth/src/main/java/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.java
 [CliConfigDocs]: https://docs.aws.amazon.com/cli/latest/topic/config-vars.html#credentials
 [DefaultCredentialsStatusBar]: ./defaultCrdentialsStatusBar.png
 [NoCredentialsStatusBar]: ./noCrdentialsStatusBar.png
+[ClassDiagram] ./classDiagram.svg
