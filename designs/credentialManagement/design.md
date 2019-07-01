@@ -122,4 +122,4 @@ If the credential provider has MFA, we will need to prompt the user for their OT
 [CliConfigDocs]: https://docs.aws.amazon.com/cli/latest/topic/config-vars.html#credentials
 [DefaultCredentialsStatusBar]: ./defaultCrdentialsStatusBar.png
 [NoCredentialsStatusBar]: ./noCrdentialsStatusBar.png
-[ClassDiagram] ./classDiagram.svg
+[ClassDiagram]: ./classDiagram.svg
