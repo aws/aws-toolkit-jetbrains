@@ -47,6 +47,17 @@ internal class SamDebugger : SamRunner() {
         val debugSupport = SamDebugSupport.getInstanceOrThrow(state.settings.runtimeGroup)
         val promise = AsyncPromise<RunContentDescriptor>()
 
+        try {
+            val exitValue = Runtime.getRuntime().exec("docker ps").waitFor()
+            if (exitValue != 0) {
+                promise.setError(message("lambda.debug.docker.not_connected"))
+                return promise
+            }
+        } catch (t: Throwable) {
+            promise.setError(t)
+            return promise
+        }
+
         var isDebuggerAttachDone = false
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(environment.project, message("lambda.debug.waiting"), false) {

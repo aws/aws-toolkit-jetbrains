@@ -17,7 +17,6 @@ import com.intellij.openapi.rd.defineNestedLifetime
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
-import com.intellij.xdebugger.XDebuggerManager
 import com.jetbrains.rd.framework.IProtocol
 import com.jetbrains.rd.framework.IdKind
 import com.jetbrains.rd.framework.Identities
@@ -140,20 +139,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
         state: SamRunningState,
         debugPort: Int
     ): Promise<XDebugProcessStarter?> {
-
         val promise = AsyncPromise<XDebugProcessStarter?>()
-
-        try {
-            val exitValue = Runtime.getRuntime().exec("docker ps").waitFor()
-            if (exitValue != 0) {
-                promise.setError(message("lambda.debug.docker.not_connected"))
-                return promise
-            }
-        } catch (t: Throwable) {
-            promise.setError(t)
-            return promise
-        }
-
         val project = environment.project
 
         // Define a debugger lifetime to be able to dispose the debugger process and all nested component on termination
@@ -294,10 +280,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
         sessionModel: DotNetDebuggerSessionModel,
         outputEventsListener: IDebuggerOutputListener
     ): XDebugProcessStarter {
-        XDebuggerManager.getInstance(env.project)
-
         val consoleKind = ConsoleKind.ExternalConsole
-
         (executionConsole as? ConsoleView)
             ?.print(
                 "Input/Output redirection disabled: ${consoleKind.message}${System.lineSeparator()}",
