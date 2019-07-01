@@ -27,16 +27,12 @@ as long as each one is valid. Valid is defined as a profile that contains all th
 keys and does not contain any circular dependencies. It does not validate if the credentials are valid or can be 
 retrieved at `ProfileToolkitCredentialsProvider` creation time.
 
-3. `ToolkitCredentialsProviderRegistry` - This interface acts as a holder for all `ToolkitCredentialsProviderFactory`. Concrete 
-implementation uses IntelliJ extension system to load and store factories from `plugin.xml` instead of managing a hard 
-coded list. This enables the system to be extended in a dynamic manor by other plugins.
-
-4. `ToolkitCredentialsProviderManager` - This class acts as the union of all `ToolkitCredentialsProviderFactory`. Its 
+3. `ToolkitCredentialsProviderManager` - This class acts as the union of all `ToolkitCredentialsProviderFactory`. Its 
 job is to be able to list all `ToolkitCredentialsProvider` and return the provider that is referenced by its unique global ID.
  It also has the ability to have listeners registered to it so they can listen for changes when `ToolkitCredentialsProvider` are
 added or removed such as when the shared credentials file is modified.
 
-5. `Active Credentials` - Represents the current credentials that the toolkit uses to perform actions or defaults to when
+4. `Active Credentials` - Represents the current credentials that the toolkit uses to perform actions or defaults to when
 more than one option is possible. Due to the nature of the IntellJ IDE being multiple windows in one JVM, each project
 window can have a different active credential selected.
 
