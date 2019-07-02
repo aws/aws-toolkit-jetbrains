@@ -17,7 +17,7 @@ third party plugins.
 
 This toolkit will introduce the following concepts:
 
-1. `ToolkitCredentialsProvider` - An abstract class that implements [AwsCredentialProvider] in the SDK. This class does not
+1. `ToolkitCredentialsProvider` - An abstract class that implements [AwsCredentialsProvider] in the SDK. This class does not
 do any actual resolving of credentials, but instead leaves that to concrete implementations. It instead provides
 an ID that is globally unique across all credential providers as well as defining a way to generate a display name.
 
@@ -118,7 +118,7 @@ failed.
 If the credential provider has MFA, we will need to prompt the user for their OTP. This works by blocking the 
 `resolveCredentials` call in [AwsCredentialProvider] until a input dialog message prompt is filled in.
 
-[AwsCredentialProvider]: https://github.com/aws/aws-sdk-java-v2/blob/master/core/auth/src/main/java/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.java
+[AwsCredentialsProvider]: https://github.com/aws/aws-sdk-java-v2/blob/master/core/auth/src/main/java/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.java
 [CliConfigDocs]: https://docs.aws.amazon.com/cli/latest/topic/config-vars.html#credentials
 [DefaultCredentialsStatusBar]: ./defaultCrdentialsStatusBar.png
 [NoCredentialsStatusBar]: ./noCrdentialsStatusBar.png
