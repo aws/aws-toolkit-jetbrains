@@ -18,7 +18,7 @@ third party plugins.
 This toolkit will introduce the following concepts:
 
 1. `ToolkitCredentialsProvider` - An abstract class that implements [AwsCredentialProvider] in the SDK. This class does not
-do any actual resolving of credentials, but instead leaves that that to concrete implementations. It instead provides
+do any actual resolving of credentials, but instead leaves that to concrete implementations. It instead provides
 an ID that is globally unique across all credential providers as well as defining a way to generate a display name.
 
 2. `ToolkitCredentialsProviderFactory` - Factory interface that knows how to create one or more `ToolkitCredentialsProvider`
