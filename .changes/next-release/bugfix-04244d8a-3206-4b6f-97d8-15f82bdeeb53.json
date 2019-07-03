@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix a cloned run config's changing altering the original as well"
+  "description" : "Fix issue where modifying a cloned run config results in mutation of the original"
 }
