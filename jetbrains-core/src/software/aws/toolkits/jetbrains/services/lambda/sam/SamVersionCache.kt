@@ -27,15 +27,17 @@ object SamVersionCache : FileInfoCache<SemVer>() {
         val process = CapturingProcessHandler(commandLine).runProcess()
 
         if (process.exitCode != 0) {
-            if (process.stderr.contains(SamCommon.SAM_INVALID_OPTION_SUBSTRING)) {
-                throw IllegalStateException(message("sam.executable.unexpected_output", process.stderr))
+            val output = process.stderr.trimEnd()
+            if (output.contains(SamCommon.SAM_INVALID_OPTION_SUBSTRING)) {
+                throw IllegalStateException(message("sam.executable.unexpected_output", output))
             }
-            throw IllegalStateException(process.stderr)
+            throw IllegalStateException(output)
         } else {
-            if (process.stdout.isEmpty()) {
+            val output = process.stdout.trimEnd()
+            if (output.isEmpty()) {
                 throw IllegalStateException(message("sam.executable.empty_info"))
             }
-            val tree = SamCommon.mapper.readTree(process.stdout)
+            val tree = SamCommon.mapper.readTree(output)
             val version = tree.get(SamCommon.SAM_INFO_VERSION_KEY).asText()
             return SemVer.parseFromText(version)
                 ?: throw IllegalStateException(message("sam.executable.version_parse_error", version))
