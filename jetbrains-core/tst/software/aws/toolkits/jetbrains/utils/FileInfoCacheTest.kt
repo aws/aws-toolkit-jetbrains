@@ -4,11 +4,15 @@
 package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.testFramework.ProjectRule
+import com.intellij.util.containers.ContainerUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.jetbrains.concurrency.Promise
+import org.jetbrains.concurrency.all
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import software.aws.toolkits.resources.message
 import java.io.File
 import java.time.Instant
 
@@ -97,5 +101,109 @@ class FileInfoCacheTest {
 
         assertThat(infoProvider.evaluateBlocking(filePath)).isEqualTo(info)
         assertThat(callCount).isEqualTo(2)
+    }
+
+    @Test
+    fun emptyCache_SingleExecutableRequest() {
+        val tempFile = tempFolder.newFile().also { it.writeText("tempFile") }
+        val infoProvider = TestFileInfoCache()
+        val pathPromise = infoProvider.evaluate(tempFile.absolutePath)
+        waitAll(listOf(pathPromise))
+
+        assertThat(pathPromise.blockingGet(0)).isEqualTo("tempFile")
+
+        assertThat(infoProvider.testOnlyGetRequestCache()).hasSize(1)
+            .describedAs("Cache size does not match expected value")
+    }
+
+    @Test
+    fun nonEmptyCache_SingleExecutableRequest() {
+        val tempFile = tempFolder.newFile().also { it.writeText("tempFile") }
+        val infoProvider = TestFileInfoCache()
+        val pathPromise = infoProvider.evaluate(tempFile.absolutePath)
+        waitAll(listOf(pathPromise))
+
+        // Get the value with no wait because the value should be already cached
+        val samePathPromise = infoProvider.evaluate(tempFile.absolutePath).blockingGet(0)
+        assertThat(samePathPromise).isEqualTo("tempFile")
+
+        assertThat(infoProvider.testOnlyGetRequestCache()).hasSize(1)
+            .describedAs("Cache size does not match expected value")
+    }
+
+    @Test
+    fun differentExecutableRequests() {
+        val tempFile1 = tempFolder.newFile().also { it.writeText("tempFile1") }
+        val tempFile2 = tempFolder.newFile().also { it.writeText("tempFile2") }
+        val infoProvider = TestFileInfoCache()
+
+        val pathTempFile1Promise = infoProvider.evaluate(tempFile1.absolutePath)
+        val pathTempFile2Promise = infoProvider.evaluate(tempFile2.absolutePath)
+        waitAll(listOf(pathTempFile1Promise, pathTempFile2Promise))
+
+        assertThat(pathTempFile1Promise.blockingGet(0)).isEqualTo("tempFile1")
+        assertThat(pathTempFile2Promise.blockingGet(0)).isEqualTo("tempFile2")
+
+        assertThat(infoProvider.testOnlyGetRequestCache()).hasSize(2)
+            .describedAs("Cache size does not match expected value")
+    }
+
+    @Test
+    fun multipleThreads_SameSamPath() {
+        val threadsCount = 20
+        val tempFile = tempFolder.newFile()
+        val results = ContainerUtil.newConcurrentSet<Promise<String>>()
+        val infoProvider = TestFileInfoCache()
+
+        val info = "v1"
+        tempFile.writeText(info)
+
+        fun retrieveVersion() {
+            val promise = infoProvider.evaluate(tempFile.absolutePath)
+            results.add(promise)
+        }
+
+        val threads = (1..threadsCount).map { Thread(::retrieveVersion).apply { start() } }.toList()
+        for (thread in threads) {
+            thread.join()
+        }
+
+        waitAll(results)
+
+        assertThat(results).hasSize(1).describedAs("Number of threads does not match expected value")
+
+        for (result in results) {
+            assertThat(result.blockingGet(0)).isEqualTo(info)
+        }
+
+        assertThat(infoProvider.testOnlyGetRequestCache()).hasSize(1)
+            .describedAs("Cache size does not match expected value")
+    }
+
+    @Test
+    fun invalidExecutablePath() {
+        val invalidPath = "invalid_path"
+
+        assertThatThrownBy { TestFileInfoCache().evaluateBlocking(invalidPath) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage(message("general.file_not_found", invalidPath))
+    }
+
+    private class TestFileInfoCache : FileInfoCache<String>() {
+        var callCount = 0
+            private set
+
+        override fun getFileInfo(path: String): String {
+            try {
+                return File(path).readText()
+            } finally {
+                callCount++
+            }
+        }
+    }
+
+    private fun waitAll(promises: Collection<Promise<*>>) {
+        val all = promises.all(null, ignoreErrors = true)
+        all.blockingGet(3000)
     }
 }
