@@ -14,7 +14,6 @@ import org.junit.Test
 import org.junit.rules.ExpectedException
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
-import java.util.concurrent.ExecutionException
 
 class SamVersionCacheTest {
 
@@ -121,18 +120,20 @@ class SamVersionCacheTest {
         assertEquals("Cache size does not match expected value", 1, cache.size)
     }
 
-    @Test(expected = ExecutionException::class)
+    @Test
     fun evaluate_InvalidSamExecutablePath() {
-        val pathPromise = SamVersionCache.evaluate("invalid_path")
-        waitAll(listOf(pathPromise))
+        val invalidPath = "invalid_path"
 
-        pathPromise.blockingGet(0)
+        expectedException.expect(IllegalStateException::class.java)
+        expectedException.expectMessage(message("general.file_not_found", invalidPath))
+
+        SamVersionCache.evaluateBlocking(invalidPath)
     }
 
     @Test
     fun getFileInfo_SamCliMinVersion() {
         val samPath = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
-        val samVersion = SamVersionCache.getFileInfo(samPath)
+        val samVersion = SamVersionCache.evaluateBlocking(samPath)
         assertEquals("Mismatch SAM executable version", samVersion, SamCommon.expectedSamMinVersion)
     }
 
@@ -144,7 +145,7 @@ class SamVersionCacheTest {
         expectedException.expectMessage(message("sam.executable.version_parse_error", version))
 
         val samPath = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getVersionAsJson(version)).toString()
-        SamVersionCache.getFileInfo(samPath)
+        SamVersionCache.evaluateBlocking(samPath)
     }
 
     @Test
@@ -155,7 +156,7 @@ class SamVersionCacheTest {
         expectedException.expectMessage(message)
 
         val samPath = SamCommonTestUtils.makeATestSam(message, exitCode = 1).toString()
-        SamVersionCache.getFileInfo(samPath)
+        SamVersionCache.evaluateBlocking(samPath)
     }
 
     @Test
@@ -166,7 +167,7 @@ class SamVersionCacheTest {
         expectedException.expectMessage(message("sam.executable.unexpected_output", message))
 
         val samPath = SamCommonTestUtils.makeATestSam(message, exitCode = 1).toString()
-        SamVersionCache.getFileInfo(samPath)
+        SamVersionCache.evaluateBlocking(samPath)
     }
 
     @Test
@@ -177,11 +178,11 @@ class SamVersionCacheTest {
         expectedException.expectMessage(message("sam.executable.empty_info"))
 
         val samPath = SamCommonTestUtils.makeATestSam(message).toString()
-        SamVersionCache.getFileInfo(samPath)
+        SamVersionCache.evaluateBlocking(samPath)
     }
 
     private fun waitAll(promises: Collection<Promise<*>>) {
-        val all = promises.all()
+        val all = promises.all(null, ignoreErrors = true)
         all.blockingGet(3000)
     }
 }

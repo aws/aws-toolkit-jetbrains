@@ -3,17 +3,23 @@
 
 package software.aws.toolkits.jetbrains.utils
 
+import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.time.Instant
 
 class FileInfoCacheTest {
     @Rule
     @JvmField
     val tempFolder = TemporaryFolder()
+
+    @Rule
+    @JvmField
+    val projectRule = ProjectRule()
 
     @Test
     fun cachedResultsAreReturned() {
@@ -30,8 +36,8 @@ class FileInfoCacheTest {
             }
         }
 
-        assertThat(infoProvider.getResult(filePath)).isEqualTo(info)
-        assertThat(infoProvider.getResult(filePath)).isEqualTo(info)
+        assertThat(infoProvider.evaluateBlocking(filePath)).isEqualTo(info)
+        assertThat(infoProvider.evaluateBlocking(filePath)).isEqualTo(info)
         assertThat(callCount).isEqualTo(1)
     }
 
@@ -57,8 +63,12 @@ class FileInfoCacheTest {
             }
         }
 
-        assertThatThrownBy { infoProvider.getResult(filePath) }
-        assertThat(infoProvider.getResult(filePath)).isEqualTo(info)
+        assertThatThrownBy { infoProvider.evaluateBlocking(filePath) }
+
+        Thread.sleep(1000)
+        tempFile.setLastModified(Instant.now().toEpochMilli())
+
+        assertThat(infoProvider.evaluateBlocking(filePath)).isEqualTo(info)
         assertThat(callCount).isEqualTo(2)
     }
 
@@ -77,7 +87,7 @@ class FileInfoCacheTest {
             }
         }
 
-        assertThat(infoProvider.getResult(filePath)).isEqualTo(info)
+        assertThat(infoProvider.evaluateBlocking(filePath)).isEqualTo(info)
 
         // Mac timestamp granularity is 1 sec
         Thread.sleep(1000)
@@ -85,7 +95,7 @@ class FileInfoCacheTest {
         info = "v2"
         tempFile.writeText(info)
 
-        assertThat(infoProvider.getResult(filePath)).isEqualTo(info)
+        assertThat(infoProvider.evaluateBlocking(filePath)).isEqualTo(info)
         assertThat(callCount).isEqualTo(2)
     }
 }
