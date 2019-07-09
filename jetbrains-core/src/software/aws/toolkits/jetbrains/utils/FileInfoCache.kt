@@ -94,8 +94,14 @@ abstract class FileInfoCache<T> {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun evaluateBlocking(path: String, blockingTime: Int = 500, blockingUnit: TimeUnit = TimeUnit.MILLISECONDS): T =
-        evaluate(path).blockingGet(blockingTime, blockingUnit) as T
+    fun evaluateBlocking(path: String, blockingTime: Int = 500, blockingUnit: TimeUnit = TimeUnit.MILLISECONDS): T {
+        val promise = evaluate(path)
+        return promise.blockingGet(blockingTime, blockingUnit).also {
+            if (!promise.isSucceeded) {
+                throw IllegalStateException("Promise did not succeed successfully")
+            }
+        } as T
+    }
 
     @TestOnly
     fun testOnlyGetRequestCache() = infoCache
