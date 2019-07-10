@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
@@ -26,6 +27,7 @@ import software.aws.toolkits.jetbrains.ui.wizard.AwsModuleType
 import software.aws.toolkits.jetbrains.ui.wizard.SamInitRunner
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.ui.wizard.SdkSelectionPanel
+import java.io.File
 
 /**
  * Used to manage SAM project information for different [RuntimeGroup]s
@@ -85,7 +87,8 @@ abstract class SamProjectTemplate {
     }
 
     private fun openReadmeFile(contentRoot: VirtualFile, project: Project) {
-        VfsUtil.findRelativeFile(contentRoot, "README.md")?.let {
+        val ioFile = VfsUtil.virtualToIoFile(contentRoot)
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(File(ioFile, "README.md"))?.let {
             val fileEditorManager = FileEditorManager.getInstance(project)
             fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) ?: LOG.warn { "Failed to open README.md" }
         }
