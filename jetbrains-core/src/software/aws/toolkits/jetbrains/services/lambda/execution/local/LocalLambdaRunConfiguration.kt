@@ -21,6 +21,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.listeners.RefactoringElementAdapter
 import com.intellij.refactoring.listeners.RefactoringElementListener
+import com.intellij.util.ExceptionUtil
 import org.jetbrains.concurrency.isPending
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -53,12 +54,11 @@ class LocalLambdaRunConfigurationFactory(configuration: LambdaRunConfiguration) 
 class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactory) :
     LambdaRunConfigurationBase<LocalLambdaOptions>(project, factory, "SAM CLI"),
     RefactoringListenerProvider {
-
     companion object {
         private val logger = getLogger<LocalLambdaRunConfiguration>()
     }
 
-    override val state = LocalLambdaOptions()
+    override val lambdaOptions = LocalLambdaOptions()
 
     override fun getConfigurationEditor(): SettingsEditor<LocalLambdaRunConfiguration> {
         val group = SettingsEditorGroup<LocalLambdaRunConfiguration>()
@@ -78,9 +78,14 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
             throw RuntimeConfigurationError(message("lambda.run_configuration.sam.validation.in_progress"))
         }
 
-        val version = promise.blockingGet(0)!!
+        val errorMessage = try {
+            val semVer = promise.blockingGet(0)!!
+            SamCommon.getInvalidVersionMessage(semVer)
+        } catch (e: Exception) {
+            ExceptionUtil.getRootCause(e).message ?: message("general.unknown_error")
+        }
 
-        SamCommon.getInvalidVersionMessage(version)?.let {
+        errorMessage?.let {
             throw RuntimeConfigurationError(message("lambda.run_configuration.sam.invalid_executable", it)) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
             }
@@ -109,7 +114,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
                 resolveRegion(),
                 psiElement,
                 templateDetails,
-                state.samOptions.copy()
+                lambdaOptions.samOptions.copy()
             )
 
             return SamRunningState(environment, samRunSettings)
@@ -128,16 +133,16 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
 
             if (PsiTreeUtil.isAncestor(element, handlerPsi, false)) {
                 return object : RefactoringElementAdapter() {
-                    private val originalHandler = state.functionOptions.handler
+                    private val originalHandler = lambdaOptions.functionOptions.handler
 
                     override fun elementRenamedOrMoved(newElement: PsiElement) {
                         handlerResolver.determineHandler(handlerPsi)?.let { newHandler ->
-                            state.functionOptions.handler = newHandler
+                            lambdaOptions.functionOptions.handler = newHandler
                         }
                     }
 
                     override fun undoElementMovedOrRenamed(newElement: PsiElement, oldQualifiedName: String) {
-                        state.functionOptions.handler = originalHandler
+                        lambdaOptions.functionOptions.handler = originalHandler
                     }
                 }
             }
@@ -146,7 +151,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     fun useTemplate(templateLocation: String?, logicalId: String?) {
-        val functionOptions = state.functionOptions
+        val functionOptions = lambdaOptions.functionOptions
         functionOptions.useTemplate = true
 
         functionOptions.templateFile = templateLocation
@@ -157,7 +162,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     fun useHandler(runtime: Runtime?, handler: String?) {
-        val functionOptions = state.functionOptions
+        val functionOptions = lambdaOptions.functionOptions
         functionOptions.useTemplate = false
 
         functionOptions.templateFile = null
@@ -167,47 +172,47 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         functionOptions.runtime = runtime.toString()
     }
 
-    fun isUsingTemplate() = state.functionOptions.useTemplate
+    fun isUsingTemplate() = lambdaOptions.functionOptions.useTemplate
 
-    fun templateFile() = state.functionOptions.templateFile
+    fun templateFile() = lambdaOptions.functionOptions.templateFile
 
-    fun logicalId() = state.functionOptions.logicalId
+    fun logicalId() = lambdaOptions.functionOptions.logicalId
 
-    fun handler() = state.functionOptions.handler
+    fun handler() = lambdaOptions.functionOptions.handler
 
-    fun runtime(): Runtime? = Runtime.fromValue(state.functionOptions.runtime)?.validOrNull
+    fun runtime(): Runtime? = Runtime.fromValue(lambdaOptions.functionOptions.runtime)?.validOrNull
 
-    fun environmentVariables() = state.functionOptions.environmentVariables
+    fun environmentVariables() = lambdaOptions.functionOptions.environmentVariables
 
     fun environmentVariables(envVars: Map<String, String>) {
-        state.functionOptions.environmentVariables = envVars
+        lambdaOptions.functionOptions.environmentVariables = envVars
     }
 
-    fun dockerNetwork(): String? = state.samOptions.dockerNetwork
+    fun dockerNetwork(): String? = lambdaOptions.samOptions.dockerNetwork
 
     fun dockerNetwork(network: String?) {
-        state.samOptions.dockerNetwork = network
+        lambdaOptions.samOptions.dockerNetwork = network
     }
 
-    fun skipPullImage(): Boolean = state.samOptions.skipImagePull
+    fun skipPullImage(): Boolean = lambdaOptions.samOptions.skipImagePull
 
     fun skipPullImage(skip: Boolean) {
-        state.samOptions.skipImagePull = skip
+        lambdaOptions.samOptions.skipImagePull = skip
     }
 
-    fun buildInContainer(): Boolean = state.samOptions.buildInContainer
+    fun buildInContainer(): Boolean = lambdaOptions.samOptions.buildInContainer
 
     fun buildInContainer(useContainer: Boolean) {
-        state.samOptions.buildInContainer = useContainer
+        lambdaOptions.samOptions.buildInContainer = useContainer
     }
 
     override fun suggestedName(): String? {
-        val subName = state.functionOptions.logicalId ?: handlerDisplayName()
+        val subName = lambdaOptions.functionOptions.logicalId ?: handlerDisplayName()
         return "[${message("lambda.run_configuration.local")}] $subName"
     }
 
     private fun handlerDisplayName(): String? {
-        val handler = state.functionOptions.handler ?: return null
+        val handler = lambdaOptions.functionOptions.handler ?: return null
         return runtime()
             ?.runtimeGroup
             ?.let { LambdaHandlerResolver.getInstance(it) }
