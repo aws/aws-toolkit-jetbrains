@@ -22,7 +22,7 @@ class ToolkitCredentialsProviderManagerTest {
 
     private val mockChangeListener: ToolkitCredentialsChangeListener = mock()
     private val mockRegistry = MockToolkitCredentialsProviderRegistry()
-    private val manager = DefaultToolkitCredentialsProviderManager(mockRegistry).also {
+    private val manager = ToolkitCredentialsProviderManager(mockRegistry).also {
         it.addChangeListener(mockChangeListener)
     }
     private val shutDownFactories = mutableSetOf<ToolkitCredentialsProviderFactory<*>>()
