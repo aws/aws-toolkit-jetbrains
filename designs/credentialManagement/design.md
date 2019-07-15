@@ -25,7 +25,7 @@ an ID that is globally unique across all credential providers as well as definin
 for a credential source. A `ToolkitCredentialsProviderFactory` can create 0 or more instances of `ToolkitCredentialsProvider` 
 as long as each one is valid. Valid is defined as the credential source has all the required information to comply with
 the underlying credential source's contract. For example, a factory that handles static credentials would need to make sure that 
-both access and secret keys are provided.It does not verify if the credentials are valid (able to make an AWS call) 
+both access and secret keys are provided. It does not verify if the credentials themselves are valid (able to make an AWS call) 
 at creation time of the `ToolkitCredentialsProvider`.
 
 3. `ToolkitCredentialsProviderManager` - This class acts as the union of all `ToolkitCredentialsProviderFactory`. Its 
