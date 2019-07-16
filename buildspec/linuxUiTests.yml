@@ -53,6 +53,6 @@ phases:
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" ] && [ "$CODE_COV_TOKEN" ]; then bash ./codecov.sh -t $CODE_COV_TOKEN -F uitest || true; fi
 
 artifacts:
+  base-directory: /tmp/testArtifacts
   files:
     - "**/*"
-  base-directory: /tmp/testArtifacts
