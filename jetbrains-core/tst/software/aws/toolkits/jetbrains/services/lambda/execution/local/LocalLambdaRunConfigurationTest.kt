@@ -8,6 +8,7 @@ import com.intellij.execution.configurations.RuntimeConfigurationError
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.runInEdtAndWait
@@ -24,6 +25,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamVersionCache
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
@@ -49,7 +52,12 @@ class LocalLambdaRunConfigurationTest {
 
     @Before
     fun setUp() {
-        SamSettings.getInstance().savedExecutablePath = System.getenv()["SAM_CLI_EXEC"]
+        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
+        SamSettings.getInstance().savedExecutablePath = validSam
+
+        // Pre-warm the SAM validation cache
+        SamVersionCache.evaluateBlocking(validSam)
+
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
 
         val fixture = projectRule.fixture
@@ -75,7 +83,14 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun samIsNotSet() {
-        SamSettings.getInstance().savedExecutablePath = "NotValid"
+        val fakeSamPath = "NotValid"
+        SamSettings.getInstance().savedExecutablePath = fakeSamPath
+        // Pre-warm the SAM validation cache
+        try {
+            SamVersionCache.evaluateBlocking(fakeSamPath)
+        } catch (e: Exception) {
+            // Do nothing
+        }
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
@@ -166,6 +181,22 @@ class LocalLambdaRunConfigurationTest {
     }
 
     @Test
+    fun templateFileDoesNotExist() {
+        runInEdtAndWait {
+            val runConfiguration = createTemplateRunConfiguration(
+                project = projectRule.project,
+                templateFile = "IAmFake",
+                logicalId = "Function",
+                credentialsProviderId = mockId
+            )
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.run_configuration.sam.template_file_not_found"))
+        }
+    }
+
+    @Test
     fun functionDoesNotExist() {
         runInEdtAndWait {
             val template = tempDir.newFile("template.yaml").also {
@@ -193,7 +224,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("lambda.run_configuration.sam.no_such_function", logicalName, template))
+                .hasMessage(message("lambda.run_configuration.sam.no_such_function", logicalName, FileUtil.normalize(template)))
         }
     }
 
@@ -626,6 +657,24 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration.skipPullImage()).isTrue()
             assertThat(runConfiguration.buildInContainer()).isTrue()
             assertThat(runConfiguration.dockerNetwork()).isEqualTo("aws-lambda")
+        }
+    }
+
+    @Test // https://github.com/aws/aws-toolkit-jetbrains/issues/1072
+    fun creatingACopyDoesNotAliasFields() {
+        runInEdtAndWait {
+            val runConfiguration = createHandlerBasedRunConfiguration(
+                project = projectRule.project,
+                credentialsProviderId = mockId,
+                input = "{}"
+            )
+
+            val clonedConfiguration = runConfiguration.clone() as LocalLambdaRunConfiguration
+            clonedConfiguration.name = "Cloned"
+
+            clonedConfiguration.useInputText("Changed input")
+
+            assertThat(clonedConfiguration.inputSource()).isNotEqualTo(runConfiguration.inputSource())
         }
     }
 
