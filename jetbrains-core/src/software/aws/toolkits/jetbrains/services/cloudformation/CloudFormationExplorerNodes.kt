@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.DeleteResourceAction
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
@@ -26,9 +27,10 @@ import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
-class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(project, message("explorer.node.cloudformation")) {
-    override fun serviceName() = CloudFormationClient.SERVICE_NAME
-
+class CloudFormationServiceNode(
+    project: Project,
+    explorerService: AwsExplorerService
+) : AwsExplorerServiceRootNode(project, explorerService) {
     private val client: CloudFormationClient = AwsClientManager.getInstance(project).getClient()
 
     override fun loadResources(paginationToken: String?): Collection<AwsExplorerNode<*>> {
@@ -60,8 +62,18 @@ class CloudFormationServiceNode(project: Project) : AwsExplorerServiceRootNode(p
     }
 }
 
-class CloudFormationStackNode(project: Project, val stackName: String, private val stackStatus: StackStatus, val stackId: String) :
-    AwsExplorerResourceNode<String>(project, CloudFormationClient.SERVICE_NAME, stackName, AwsIcons.Resources.CLOUDFORMATION_STACK),
+class CloudFormationStackNode(
+    project: Project,
+    val stackName: String,
+    private val stackStatus: StackStatus,
+    val stackId: String
+) :
+    AwsExplorerResourceNode<String>(
+        project,
+        CloudFormationClient.SERVICE_NAME,
+        stackName,
+        AwsIcons.Resources.CLOUDFORMATION_STACK
+    ),
     AwsNodeAlwaysExpandable {
     override fun resourceType() = "stack"
 
