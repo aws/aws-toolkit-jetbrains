@@ -85,7 +85,6 @@ class CloudFormationServiceNodeTest {
     fun truncatedNodeIsAddedForPaging() {
         mockClient.stacksWithNames(listOf("Stack1" to StackStatus.CREATE_COMPLETE), nextToken = "blah")
         mockClient.stackWithResourcesOfType("Stack1", "AWS::Lambda::Function" to ResourceStatus.CREATE_COMPLETE)
-
         val node = CloudFormationServiceNode(projectRule.project)
 
         assertThat(node.children).hasSize(2).last().isInstanceOf(AwsTruncatedResultNode::class.java)

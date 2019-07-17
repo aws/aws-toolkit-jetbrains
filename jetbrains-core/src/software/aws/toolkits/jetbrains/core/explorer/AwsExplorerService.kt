@@ -13,12 +13,10 @@ import software.aws.toolkits.resources.message
 
 enum class AwsExplorerService(val serviceId: String, val displayName: String) {
     CLOUDFORMATION(CloudFormationClient.SERVICE_NAME, message("explorer.node.cloudformation")) {
-        override fun buildServiceRootNode(project: Project): CloudFormationServiceNode = CloudFormationServiceNode(
-            project
-        )
+        override fun buildServiceRootNode(project: Project) = CloudFormationServiceNode(project)
     },
     LAMBDA(LambdaClient.SERVICE_NAME, message("explorer.node.lambda")) {
-        override fun buildServiceRootNode(project: Project): LambdaServiceNode = LambdaServiceNode(project)
+        override fun buildServiceRootNode(project: Project) = LambdaServiceNode(project)
     },
     ;
 
