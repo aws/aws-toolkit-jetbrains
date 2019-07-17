@@ -14,18 +14,16 @@ import software.aws.toolkits.resources.message
  * Offloads fetching credentials to a background task and a modal progress bar if the current thread is EDT
  */
 class CorrectThreadCredentialsProvider(private val delegate: AwsCredentialsProvider) : AwsCredentialsProvider {
-    override fun resolveCredentials(): AwsCredentials {
-        return if (ApplicationManager.getApplication().isDispatchThread) {
-            ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                ThrowableComputable<AwsCredentials, Exception> {
-                    delegate.resolveCredentials()
-                },
-                message("credentials.retrieving"),
-                /* canBeCancelled */false,
-                /* project */null
-            )
-        } else {
-            delegate.resolveCredentials()
-        }
+    override fun resolveCredentials(): AwsCredentials = if (ApplicationManager.getApplication().isDispatchThread) {
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(
+            ThrowableComputable<AwsCredentials, Exception> {
+                delegate.resolveCredentials()
+            },
+            message("credentials.retrieving"),
+            /* canBeCancelled */false,
+            /* project */null
+        )
+    } else {
+        delegate.resolveCredentials()
     }
 }
