@@ -27,10 +27,9 @@ import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
-class CloudFormationServiceNode(
-    project: Project,
-    explorerService: AwsExplorerService
-) : AwsExplorerServiceRootNode(project, explorerService) {
+class CloudFormationServiceNode(project: Project) :
+    AwsExplorerServiceRootNode(project, AwsExplorerService.CLOUDFORMATION) {
+
     private val client: CloudFormationClient = AwsClientManager.getInstance(project).getClient()
 
     override fun loadResources(paginationToken: String?): Collection<AwsExplorerNode<*>> {

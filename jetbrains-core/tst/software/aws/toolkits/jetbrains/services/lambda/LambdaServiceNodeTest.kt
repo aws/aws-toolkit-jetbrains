@@ -18,7 +18,6 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
 import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
 
 class LambdaServiceNodeTest {
 
@@ -41,7 +40,7 @@ class LambdaServiceNodeTest {
                 functionConfiguration("AEF"))
         }.build())
 
-        val children = LambdaServiceNode(projectRule.project, AwsExplorerService.LAMBDA).children
+        val children = LambdaServiceNode(projectRule.project).children
 
         assertThat(children).allMatch { it is LambdaFunctionNode }
         assertThat(children.filterIsInstance<LambdaFunctionNode>().map { it.functionName() }).containsExactly("abc", "AEF", "bcd", "zzz")

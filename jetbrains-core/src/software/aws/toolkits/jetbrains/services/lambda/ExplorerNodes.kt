@@ -16,10 +16,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsTruncatedResultNode
 
-class LambdaServiceNode(
-    project: Project,
-    explorerService: AwsExplorerService
-) : AwsExplorerServiceRootNode(project, explorerService) {
+class LambdaServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsExplorerService.LAMBDA) {
     private val client: LambdaClient = AwsClientManager.getInstance(project).getClient()
 
     override fun loadResources(paginationToken: String?): Collection<AwsExplorerNode<*>> {
