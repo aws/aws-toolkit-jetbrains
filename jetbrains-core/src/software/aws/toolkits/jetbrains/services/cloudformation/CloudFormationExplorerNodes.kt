@@ -61,18 +61,8 @@ class CloudFormationServiceNode(project: Project) :
     }
 }
 
-class CloudFormationStackNode(
-    project: Project,
-    val stackName: String,
-    private val stackStatus: StackStatus,
-    val stackId: String
-) :
-    AwsExplorerResourceNode<String>(
-        project,
-        CloudFormationClient.SERVICE_NAME,
-        stackName,
-        AwsIcons.Resources.CLOUDFORMATION_STACK
-    ),
+class CloudFormationStackNode(project: Project, val stackName: String, private val stackStatus: StackStatus, val stackId: String) :
+    AwsExplorerResourceNode<String>(project, CloudFormationClient.SERVICE_NAME, stackName, AwsIcons.Resources.CLOUDFORMATION_STACK),
     AwsNodeAlwaysExpandable {
     override fun resourceType() = "stack"
 
