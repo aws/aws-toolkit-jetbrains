@@ -98,7 +98,7 @@ class SamHelloWorldGradle : JavaSamProjectTemplate() {
         val importSpecBuilder = ImportSpecBuilder(rootModel.project, GradleConstants.SYSTEM_ID)
             .forceWhenUptodate()
             .useDefaultCallback()
-            .use(ProgressExecutionMode.START_IN_FOREGROUND_ASYNC)
+            .use(ProgressExecutionMode.IN_BACKGROUND_ASYNC)
 
         ExternalSystemUtil.refreshProjects(importSpecBuilder)
     }
