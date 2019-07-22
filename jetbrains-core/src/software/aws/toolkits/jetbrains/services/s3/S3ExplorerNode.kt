@@ -21,7 +21,6 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsNodeAlwaysExpandable
 
-
 class S3ServiceNode(project: Project) : AwsExplorerServiceRootNode(project, "S3"),
         AwsNodeAlwaysExpandable {
     override fun serviceName() = S3Client.SERVICE_NAME
@@ -41,9 +40,7 @@ class S3ServiceNode(project: Project) : AwsExplorerServiceRootNode(project, "S3"
     }
 
     private fun mapResourceToNode(resource: S3Bucket) = S3BucketNode(project!!, resource)
-
 }
-
 
 class S3BucketNode(project: Project, val bucket: S3Bucket) :
         AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.name, AwsIcons.Resources.CLOUDFORMATION_STACK) {
@@ -62,5 +59,3 @@ class S3BucketNode(project: Project, val bucket: S3Bucket) :
     }
     override fun toString(): String = bucket.name
 }
-
-
