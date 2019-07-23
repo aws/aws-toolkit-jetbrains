@@ -30,17 +30,19 @@ abstract class BaseS3VirtualFile(
 
     override fun getTimeStamp(): Long = 0
 
+    @Throws(UnsupportedOperationException::class)
     override fun contentsToByteArray(): ByteArray {
-        TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+        throw UnsupportedOperationException("contentsToByteArray() cannot be called against this object type")
     }
-
+    @Throws(UnsupportedOperationException::class)
     override fun getInputStream(): InputStream {
-        TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+        throw UnsupportedOperationException("getInputStream() cannot be called against this object type")
     }
-
+    @Throws(UnsupportedOperationException::class)
     override fun getOutputStream(requestor: Any?, newModificationStamp: Long, newTimeStamp: Long): OutputStream {
-        TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+        throw UnsupportedOperationException("getOutputStream() cannot be called against this object type")
     }
+    override fun refresh(asynchronous: Boolean, recursive: Boolean, postRunnable: Runnable?) {}
 }
 
 class S3VirtualFile(
@@ -56,20 +58,6 @@ class S3VirtualFile(
     override fun getLength(): Long = file.size
 
     override fun getTimeStamp(): Long = file.lastModified.toEpochMilli()
-
-    override fun contentsToByteArray(): ByteArray {
-        TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getInputStream(): InputStream {
-        TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getOutputStream(requestor: Any?, newModificationStamp: Long, newTimeStamp: Long): OutputStream {
-        TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun refresh(asynchronous: Boolean, recursive: Boolean, postRunnable: Runnable?) {}
 }
 
 open class S3VirtualBucket(
@@ -82,8 +70,6 @@ open class S3VirtualBucket(
     fun getCreationDate(): Instant = s3Bucket.creationDate
 
     fun getVirtualBucketName(): String = s3Bucket.name
-
-    override fun refresh(asynchronous: Boolean, recursive: Boolean, postRunnable: Runnable?) {}
 
     override fun getChildren(): Array<VirtualFile> =
         s3Bucket.children()!!.sortedBy { it.name }
@@ -102,6 +88,7 @@ class S3VirtualDirectory(
     private val directory: S3Directory,
     parent: VirtualFile
 ) : BaseS3VirtualFile(s3filesystem, parent, directory) {
+
     override fun getChildren(): Array<VirtualFile> =
         directory.children()!!.sortedBy { it.name }.filterNot { it.key == directory.key }
             .map {
@@ -111,6 +98,6 @@ class S3VirtualDirectory(
                 }
             }.toTypedArray()
 
-    override fun refresh(asynchronous: Boolean, recursive: Boolean, postRunnable: Runnable?) {}
+
     override fun isDirectory(): Boolean = true
 }
