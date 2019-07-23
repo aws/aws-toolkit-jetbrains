@@ -54,8 +54,8 @@ class S3BucketNode(project: Project, val bucket: S3Bucket) :
     override fun resourceType(): String = "bucket"
 
     override fun onDoubleClick(model: DefaultTreeModel, selectedElement: DefaultMutableTreeNode) {
-        val bucketVirtualFile = S3VirtualBucket(S3VFS(client), bucket)
-        editorManager.openTextEditor(OpenFileDescriptor(project!!, bucketVirtualFile), true)
+        val virtualBucket = S3VirtualBucket(S3VFS(client), bucket)
+        editorManager.openTextEditor(OpenFileDescriptor(project!!, virtualBucket), true)
     }
     override fun toString(): String = bucket.name
 }
