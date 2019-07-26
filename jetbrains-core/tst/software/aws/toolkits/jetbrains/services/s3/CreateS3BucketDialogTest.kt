@@ -30,14 +30,14 @@ class CreateS3BucketDialogTest {
     @Test
     fun validateBucketName_emptyBucketName() {
         runInEdtAndWait {
-            val dialog = CreateS3BucketDialog(project = projectRule.project, s3Client = s3Mock)
-            val view = dialog.getViewForTesting()
-            view.bucketName.text = "  "
+        val dialog = CreateS3BucketDialog(project = projectRule.project, s3Client = s3Mock)
+        val view = dialog.getViewForTesting()
+        view.bucketName.text = "  "
 
-            val validationInfo = dialog.validateBucketName()
-            assertThat(validationInfo).isNotNull()
-        }
+        val validationInfo = dialog.validateBucketName()
+        assertThat(validationInfo).isNotNull()
     }
+}
 
     @Test
     fun createBucketSuccessful() {
