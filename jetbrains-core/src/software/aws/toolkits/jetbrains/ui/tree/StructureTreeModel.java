@@ -593,6 +593,7 @@ public class StructureTreeModel
     }
   }
 
+
   /**
    * @deprecated do not use
    */
@@ -620,5 +621,10 @@ public class StructureTreeModel
       }
     }
     return prefix;
+  }
+
+  @Override
+  public void valueForPathChanged(TreePath path, Object value) {
+    throw new UnsupportedOperationException("editable tree have to implement TreeModel#valueForPathChanged");
   }
 }
