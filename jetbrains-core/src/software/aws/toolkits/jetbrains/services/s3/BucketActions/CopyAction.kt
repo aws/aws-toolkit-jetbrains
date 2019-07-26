@@ -4,8 +4,8 @@ package software.aws.toolkits.jetbrains.services.s3.BucketActions
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.DumbAware
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.SingleResourceNodeAction
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 
 abstract class CopyAction<in T : AwsExplorerResourceNode<*>>(text: String) : SingleResourceNodeAction<T>(text, icon = AllIcons.Actions.Copy),
         DumbAware {

@@ -2,22 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3.BucketEditor
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.tree.treeTable.TreeTableModelWithColumns
 import com.intellij.ui.treeStructure.SimpleTreeStructure
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import com.intellij.ui.treeStructure.treetable.TreeTableModel
-import com.intellij.ui.treeStructure.treetable.TreeTableModelAdapter
-import com.intellij.util.ui.tree.TreeModelAdapter
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
-import java.awt.dnd.DropTarget
-import javax.swing.event.TreeModelEvent
-import javax.swing.event.TreeModelListener
 
 open class S3TreeTable(treeTableModel: TreeTableModel) : TreeTable(treeTableModel) {
     val tModel: TreeTableModel = treeTableModel

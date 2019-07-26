@@ -1,34 +1,22 @@
 package software.aws.toolkits.jetbrains.services.s3.BucketEditor;
 
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
-
-import com.intellij.openapi.actionSystem.*;
-import com.intellij.openapi.application.ModalityState;
-//import com.intellij.openapi.application.runInEdt;
-
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
-
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.Project;
-//import com.intellij.openapi.roots.ui.configuration.classpath.ChangeLibraryLevelInClasspathAction;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.tree.AsyncTreeModel;
 import com.intellij.ui.tree.StructureTreeModel;
-//import com.intellij.ui.tree.treeTable.TreeTableModelWithColumns;
+import com.intellij.ui.tree.treeTable.TreeTableModelWithColumns;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
-import com.intellij.ui.treeStructure.treetable.ListTreeTableModelOnColumns;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.util.ui.ColumnInfo;
-import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.Nullable;
-
-import com.intellij.ui.tree.treeTable.TreeTableModelWithColumns;
 import software.aws.toolkits.jetbrains.services.s3.ObjectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.ObjectActions.DownloadObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.ObjectActions.RenameObjectAction;
@@ -37,6 +25,14 @@ import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile;
 import software.aws.toolkits.jetbrains.ui.ProgressPanel;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.tree.DefaultMutableTreeNode;
+
+//import com.intellij.openapi.application.runInEdt;
+//import com.intellij.openapi.roots.ui.configuration.classpath.ChangeLibraryLevelInClasspathAction;
+//import com.intellij.ui.tree.treeTable.TreeTableModelWithColumns;
 
 @SuppressWarnings("unchecked")
 

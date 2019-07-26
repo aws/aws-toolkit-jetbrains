@@ -40,7 +40,7 @@ class DeleteObjectTest {
     fun deleteObjectTest() {
 
         val deleteCaptor = argumentCaptor<DeleteObjectRequest>()
-        val vfsMock = S3VFS(s3Client)
+        val vfsMock = S3VirtualFileSystem(s3Client)
         val treeTableMock = delegateMock<S3TreeTable> { on { getValueAt(any(), any()) } doReturn "testKey" }
         val virtualBucket = S3VirtualBucket(vfsMock, S3Bucket("TestBucket", s3Client, Instant.parse("1995-10-23T10:12:35Z")))
         val deleteObject = DeleteObjectAction(treeTableMock, virtualBucket)

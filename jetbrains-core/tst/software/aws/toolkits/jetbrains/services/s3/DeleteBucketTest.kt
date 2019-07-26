@@ -9,7 +9,6 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.aws.toolkits.core.rules.S3TemporaryBucketRule
 import software.aws.toolkits.core.s3.deleteBucketAndContents
@@ -29,15 +28,6 @@ class DeleteBucketTest {
     @Test
     fun deleteABucketWithObjects() {
         createAndDeleteBucket { bucket ->
-            s3Client.putObject(PutObjectRequest.builder().bucket(bucket).key("hello").build(), RequestBody.fromString(""))
-        }
-    }
-
-    @Test
-    fun deleteABucketWithVersionedObjects() {
-        createAndDeleteBucket { bucket ->
-            s3Client.putBucketVersioning { it.bucket(bucket).versioningConfiguration { it.status(BucketVersioningStatus.ENABLED) } }
-            s3Client.putObject(PutObjectRequest.builder().bucket(bucket).key("hello").build(), RequestBody.fromString(""))
             s3Client.putObject(PutObjectRequest.builder().bucket(bucket).key("hello").build(), RequestBody.fromString(""))
         }
     }

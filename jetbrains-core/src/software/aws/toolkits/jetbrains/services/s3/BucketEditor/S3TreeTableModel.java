@@ -1,37 +1,21 @@
 package software.aws.toolkits.jetbrains.services.s3.BucketEditor;
 
-import com.intellij.build.ExecutionNode;
 import com.intellij.ide.util.treeView.AbstractTreeNode;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.jetbrains.concurrency.AsyncPromise;
-import org.jetbrains.concurrency.Promise;
-import org.jetbrains.concurrency.Promises;
-import com.intellij.ui.LoadingNode;
 import com.intellij.ui.tree.AsyncTreeModel;
 import com.intellij.ui.tree.TreeVisitor;
-import com.intellij.ui.tree.treeTable.TreeTableModelWithColumns;
-import com.intellij.util.ui.tree.TreeUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.Promise;
-
-
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
+import com.intellij.util.ui.tree.TreeUtil;
+import org.jetbrains.concurrency.Promise;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelListener;
-import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Collections.emptyList;
-import static org.jetbrains.concurrency.Promises.*;
 
 public class S3TreeTableModel implements TreeTableModel, TreeVisitor.Acceptor {
 

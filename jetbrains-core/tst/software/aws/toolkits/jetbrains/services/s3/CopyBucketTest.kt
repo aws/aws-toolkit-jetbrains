@@ -29,7 +29,7 @@ class CopyBucketTest {
     @Test
     fun copyBucketName() {
 
-        val bucket = S3BucketNode(projectRule.project, S3Bucket("foo", s3Mock, Instant.parse("1995-10-23T10:12:35Z")))
+        val bucket = S3BucketNode(projectRule.project, S3Bucket("foo", s3Mock, Instant.parse("1995-10-23T10:12:35Z")),s3Mock)
         val copy = CopyBucketName()
         copy.performCopy(bucket)
         val content = CopyPasteManager.getInstance().contents
@@ -39,7 +39,7 @@ class CopyBucketTest {
     @Test
     fun copyBucketArn() {
 
-        val bucket = S3BucketNode(projectRule.project, S3Bucket("foo", s3Mock, Instant.parse("1995-10-23T10:12:35Z")))
+        val bucket = S3BucketNode(projectRule.project, S3Bucket("foo", s3Mock, Instant.parse("1995-10-23T10:12:35Z")), s3Mock)
         val copy = CopyBucketARN()
         copy.performCopy(bucket)
         val content = CopyPasteManager.getInstance().contents

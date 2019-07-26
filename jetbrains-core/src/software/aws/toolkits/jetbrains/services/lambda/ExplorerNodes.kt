@@ -36,7 +36,7 @@ class LambdaServiceNode(project: Project) : AwsExplorerServiceRootNode(project, 
         return resources
     }
 
-    private fun mapResourceToNode(resource: FunctionConfiguration) = LambdaFunctionNode(project!!, client, resource.toDataClass(credentialProvider.id, region))
+    private fun mapResourceToNode(resource: FunctionConfiguration) = LambdaFunctionNode(nodeProject, client, resource.toDataClass(credentialProvider.id, region))
 }
 
 open class LambdaFunctionNode(

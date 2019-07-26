@@ -5,11 +5,10 @@ package software.aws.toolkits.jetbrains.services.s3.BucketActions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ide.CopyPasteManager
-
-import java.awt.datatransfer.StringSelection
 import software.aws.toolkits.jetbrains.services.s3.S3BucketNode
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
+import java.awt.datatransfer.StringSelection
 
 class CopyBucketName : CopyAction<S3BucketNode>("Copy Bucket Name") {
 

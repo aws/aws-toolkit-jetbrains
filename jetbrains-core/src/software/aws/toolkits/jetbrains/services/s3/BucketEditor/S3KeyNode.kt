@@ -9,13 +9,18 @@ import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 
 class S3KeyNode(val virtualFile: VirtualFile) : SimpleNode() {
 
-    override fun getChildren(): Array<S3KeyNode> {
+    override fun getChildren(): Array<S3KeyNode> =
         when (virtualFile) {
-            is S3VirtualBucket -> return virtualFile.children.map { S3KeyNode(it) }.toTypedArray()
-            is S3VirtualDirectory -> return virtualFile.children.map { S3KeyNode(it) }.toTypedArray()
-            else -> return emptyArray()
+            is S3VirtualBucket ->  virtualFile.children
+                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                .map { S3KeyNode(it) }.toTypedArray()
+
+            is S3VirtualDirectory ->  virtualFile.children
+                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                .map { S3KeyNode(it) }.toTypedArray()
+
+            else ->  emptyArray()
         }
-    }
 
     override fun getName(): String {
         when (virtualFile) {

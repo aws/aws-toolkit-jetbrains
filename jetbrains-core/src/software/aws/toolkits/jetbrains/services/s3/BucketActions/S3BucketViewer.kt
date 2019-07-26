@@ -4,23 +4,23 @@ package software.aws.toolkits.jetbrains.services.s3.BucketActions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.utils.notifyError
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3BucketNode
-import software.aws.toolkits.jetbrains.services.s3.S3VFS
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
+import software.aws.toolkits.jetbrains.services.s3.S3VirtualFileSystem
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 
 class S3BucketViewer : OpenBucketViewerAction<S3BucketNode>("Open Bucket in Viewer") {
 
     override fun openEditor(selected: S3BucketNode, client: S3Client, project: Project) {
         val editorManager = FileEditorManager.getInstance(project)
-        val virtualBucket = S3VirtualBucket(S3VFS(client), selected.s3Bucket)
+        val virtualBucket = S3VirtualBucket(S3VirtualFileSystem(client), selected.bucket)
         editorManager.openTextEditor(OpenFileDescriptor(project, virtualBucket), true)
     }
 

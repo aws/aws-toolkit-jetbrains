@@ -9,12 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.stub
-import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.*
 import org.assertj.core.api.Assertions
 import org.junit.Rule
 import org.junit.Test
@@ -52,7 +47,7 @@ class UploadObjectTest {
 
         mockClientManager.register(S3Client::class, s3Client)
 
-        val vfsMock = S3VFS(s3Client)
+        val vfsMock = S3VirtualFileSystem(s3Client)
         val virtualBucket = S3VirtualBucket(vfsMock, S3Bucket("TestBucket", s3Client, Instant.parse("1995-10-23T10:12:35Z")))
         val mockDialog = delegateMock<FileChooserDialog>()
         val treeTableMock = delegateMock<S3TreeTable> { on { getValueAt(any(), any()) } doReturn "testKey" }

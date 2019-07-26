@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.settings;
 
-import static software.aws.toolkits.resources.Localization.message;
-
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -17,17 +15,16 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
-import java.util.Objects;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-
-import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.Nls.Capitalization;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
 import software.aws.toolkits.jetbrains.services.telemetry.MessageBusService;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryEnabledChangedNotifier;
+
+import javax.swing.*;
+import java.util.Objects;
+
+import static software.aws.toolkits.resources.Localization.message;
 
 @SuppressWarnings("NullableProblems")
 public class AwsSettingsConfigurable implements SearchableConfigurable {
@@ -84,7 +81,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         return "aws";
     }
 
-    @Nls(capitalization = Capitalization.Title)
+//    @Nls(capitalization = Capitalization.Title)
     @Override
     public String getDisplayName() {
         return message("aws.settings.title");

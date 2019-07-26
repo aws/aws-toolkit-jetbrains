@@ -12,11 +12,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.stub
-import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.*
+import org.assertj.core.api.Assertions
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.s3.S3Client
@@ -27,9 +24,8 @@ import software.aws.toolkits.jetbrains.services.s3.BucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.services.s3.ObjectActions.DownloadObjectAction
 import software.aws.toolkits.jetbrains.utils.delegateMock
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import java.time.Instant
-import org.assertj.core.api.Assertions
 import java.nio.file.Path
+import java.time.Instant
 
 class DownloadObjectTest {
 
@@ -52,7 +48,7 @@ class DownloadObjectTest {
 
         mockClientManager.register(S3Client::class, s3Client)
 
-        val vfsMock = S3VFS(s3Client)
+        val vfsMock = S3VirtualFileSystem(s3Client)
         val treeTableMock = delegateMock<S3TreeTable> { on { getValueAt(any(), any()) } doReturn "testKey" }
         val virtualBucket = S3VirtualBucket(vfsMock, S3Bucket("TestBucket", s3Client, Instant.parse("1995-10-23T10:12:35Z")))
 

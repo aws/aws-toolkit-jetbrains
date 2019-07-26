@@ -7,7 +7,7 @@ import com.intellij.openapi.vfs.VirtualFileListener
 import com.intellij.openapi.vfs.VirtualFileSystem
 import software.amazon.awssdk.services.s3.S3Client
 
-class S3VFS(
+class S3VirtualFileSystem(
     val client: S3Client
 ) : VirtualFileSystem() {
     override fun getProtocol(): String = "S3"
@@ -38,14 +38,17 @@ class S3VFS(
     override fun copyFile(requestor: Any?, virtualFile: VirtualFile, newParent: VirtualFile, copyName: String): VirtualFile {
         throw UnsupportedOperationException("copyFile() cannot be called against this object type")
     }
+
     @Throws(UnsupportedOperationException::class)
     override fun deleteFile(requestor: Any?, vFile: VirtualFile) {
         throw UnsupportedOperationException("deleteFile() cannot be called against this object type")
     }
+
     @Throws(UnsupportedOperationException::class)
     override fun createChildDirectory(requestor: Any?, vDir: VirtualFile, dirName: String): VirtualFile {
         throw UnsupportedOperationException("createChildDirectory() cannot be called against this object type")
     }
+
     @Throws(UnsupportedOperationException::class)
     override fun createChildFile(requestor: Any?, vDir: VirtualFile, fileName: String): VirtualFile {
         throw UnsupportedOperationException("createChildDirectory() cannot be called against this object type")
