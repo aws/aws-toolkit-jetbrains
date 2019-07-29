@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.AsyncPromise;
 import org.jetbrains.concurrency.Promise;
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructure;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -47,44 +46,50 @@ import static org.jetbrains.concurrency.Promises.rejectedPromise;
 /**
  * @author Sergey.Malenkov
  */
-public class StructureTreeModel
-  extends AbstractTreeModel implements Disposable, InvokerSupplier, ChildrenProvider<TreeNode> {
+public class StructureTreeModel<Structure extends AbstractTreeStructure>
+        extends AbstractTreeModel implements Disposable, InvokerSupplier, ChildrenProvider<TreeNode> {
 
   private static final TreePath ROOT_INVALIDATED = new TreePath(new DefaultMutableTreeNode());
   private static final Logger LOG = Logger.getInstance(StructureTreeModel.class);
   private final Reference<Node> root = new Reference<>();
   private final String description;
   private final Invoker invoker;
-  private final AwsExplorerTreeStructure structure;
+  private final Structure structure;
   private volatile Comparator<? super Node> comparator;
 
-  private StructureTreeModel(@NotNull AwsExplorerTreeStructure structure, boolean background, @NotNull Disposable parentDisposable) {
+  private StructureTreeModel(@NotNull Structure structure, boolean background, @NotNull Disposable parentDisposable) {
     this.structure = structure;
     description = format(structure.toString());
     invoker = background
-              ? new Invoker.BackgroundThread(this)
-              : new Invoker.EDT(this);
+            ? new Invoker.BackgroundThread(this)
+            : new Invoker.EDT(this);
     Disposer.register(parentDisposable, this);
   }
 
+  /**
+   * @deprecated Please use {@link #StructureTreeModel(AbstractTreeStructure, Disposable)}
+   */
   @Deprecated
   @ApiStatus.ScheduledForRemoval(inVersion = "2019.3")
-  public StructureTreeModel(@NotNull AwsExplorerTreeStructure structure) {
+  public StructureTreeModel(@NotNull Structure structure) {
     this(structure, Disposer.newDisposable());
   }
 
+  /**
+   * @deprecated Please use {@link #StructureTreeModel(AbstractTreeStructure, Comparator, Disposable)}
+   */
   @Deprecated
   @ApiStatus.ScheduledForRemoval(inVersion = "2019.3")
-  public StructureTreeModel(@NotNull AwsExplorerTreeStructure structure,
+  public StructureTreeModel(@NotNull Structure structure,
                             @NotNull Comparator<? super NodeDescriptor> comparator) {
     this(structure, comparator, Disposer.newDisposable());
   }
 
-  public StructureTreeModel(@NotNull AwsExplorerTreeStructure structure, @NotNull Disposable parentDisposable) {
+  public StructureTreeModel(@NotNull Structure structure, @NotNull Disposable parentDisposable) {
     this(structure, true, parentDisposable);
   }
 
-  public StructureTreeModel(@NotNull AwsExplorerTreeStructure structure,
+  public StructureTreeModel(@NotNull Structure structure,
                             @NotNull Comparator<? super NodeDescriptor> comparator,
                             @NotNull Disposable parentDisposable) {
     this(structure, parentDisposable);
@@ -138,7 +143,7 @@ public class StructureTreeModel
    * @return a promise that will be succeed if the specified function returns non-null value
    */
   @NotNull
-  private <Result> Promise<Result> onValidThread(@NotNull Function<? super AwsExplorerTreeStructure, ? extends Result> function) {
+  private <Result> Promise<Result> onValidThread(@NotNull Function<? super Structure, ? extends Result> function) {
     AsyncPromise<Result> promise = new AsyncPromise<>();
     invoker.runOrInvokeLater(() -> {
       if (!disposed) {
@@ -299,8 +304,8 @@ public class StructureTreeModel
   @NotNull
   public final Promise<TreeVisitor> promiseVisitor(@NotNull Object element) {
     return onValidThread(structure -> new TreeVisitor.ByTreePath<>(
-      TreePathUtil.pathToCustomNode(element, structure::getParentElement),
-      node -> node instanceof Node ? ((Node)node).getElement() : null));
+            TreePathUtil.pathToCustomNode(element, structure::getParentElement),
+            node -> node instanceof Node ? ((Node)node).getElement() : null));
   }
 
   @Override
@@ -447,7 +452,7 @@ public class StructureTreeModel
     private final LeafState leafState;
     private final int hashCode;
 
-    private Node(@NotNull AwsExplorerTreeStructure structure, @NotNull Object element, NodeDescriptor parent) {
+    private Node(@NotNull AbstractTreeStructure structure, @NotNull Object element, NodeDescriptor parent) {
       this(structure.createDescriptor(element, parent), structure.getLeafState(element), element.hashCode());
     }
 
@@ -607,6 +612,7 @@ public class StructureTreeModel
 
   /**
    * @return a descriptive name for the instance to help a tree identification
+   * @see Invoker#Invoker(String, Disposable)
    */
   @Override
   public String toString() {
