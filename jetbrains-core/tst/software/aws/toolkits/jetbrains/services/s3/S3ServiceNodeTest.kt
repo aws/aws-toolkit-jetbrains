@@ -53,7 +53,6 @@ class S3ServiceNodeTest {
             listBuckets(any<ListBucketsRequest>()) } doReturn ListBucketsResponse.builder().build() }
         val children = S3ServiceNode(projectRule.project).children
         assertThat(children).allMatch{it is AwsExplorerEmptyNode}
-
     }
 
     @Test
