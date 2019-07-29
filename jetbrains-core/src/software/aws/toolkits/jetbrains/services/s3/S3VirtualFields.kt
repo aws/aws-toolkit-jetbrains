@@ -10,7 +10,7 @@ import java.time.Instant
 
 // base class to represent a virtual file
 abstract class BaseS3VirtualFile(
-    val fileSystem: S3VFS,
+    val fileSystem: S3VirtualFileSystem,
     private val parent: VirtualFile?,
     open val key: S3Key
 ) : VirtualFile() {
@@ -21,11 +21,13 @@ abstract class BaseS3VirtualFile(
     override fun getPath(): String = "${key.bucket}/${key.key}"
 
     override fun isValid(): Boolean = true
+
     override fun getParent(): VirtualFile? = parent
 
     override fun toString(): String = "${key.key}"
 
     override fun getFileSystem(): VirtualFileSystem = fileSystem
+
     override fun getLength(): Long = 0
 
     override fun getTimeStamp(): Long = 0
@@ -34,19 +36,22 @@ abstract class BaseS3VirtualFile(
     override fun contentsToByteArray(): ByteArray {
         throw UnsupportedOperationException("contentsToByteArray() cannot be called against this object type")
     }
+
     @Throws(UnsupportedOperationException::class)
     override fun getInputStream(): InputStream {
         throw UnsupportedOperationException("getInputStream() cannot be called against this object type")
     }
+
     @Throws(UnsupportedOperationException::class)
     override fun getOutputStream(requestor: Any?, newModificationStamp: Long, newTimeStamp: Long): OutputStream {
         throw UnsupportedOperationException("getOutputStream() cannot be called against this object type")
     }
+
     override fun refresh(asynchronous: Boolean, recursive: Boolean, postRunnable: Runnable?) {}
 }
 
 class S3VirtualFile(
-    s3Vfs: S3VFS,
+    s3Vfs: S3VirtualFileSystem,
     val file: S3Object,
     parent: VirtualFile
 ) : BaseS3VirtualFile(s3Vfs, parent, file) {
@@ -61,7 +66,7 @@ class S3VirtualFile(
 }
 
 open class S3VirtualBucket(
-    fileSystem: S3VFS,
+    fileSystem: S3VirtualFileSystem,
     val s3Bucket: S3Bucket
 ) : BaseS3VirtualFile(fileSystem, parent = null, key = s3Bucket) {
 
@@ -69,10 +74,10 @@ open class S3VirtualBucket(
 
     fun getCreationDate(): Instant = s3Bucket.creationDate
 
-    fun getVirtualBucketName(): String = s3Bucket.name
+    fun getVirtualBucketName(): String = s3Bucket.bucket
 
     override fun getChildren(): Array<VirtualFile> =
-        s3Bucket.children()!!.sortedBy { it.name }
+        s3Bucket.children().sortedBy { it.bucket }
             .map {
                 when (it) {
                     is S3Object -> S3VirtualFile(fileSystem, it, this)
@@ -84,20 +89,19 @@ open class S3VirtualBucket(
 }
 
 class S3VirtualDirectory(
-    s3filesystem: S3VFS,
+    s3filesystem: S3VirtualFileSystem,
     private val directory: S3Directory,
     parent: VirtualFile
 ) : BaseS3VirtualFile(s3filesystem, parent, directory) {
 
     override fun getChildren(): Array<VirtualFile> =
-        directory.children()!!.sortedBy { it.name }.filterNot { it.key == directory.key }
+        directory.children().sortedBy { it.bucket }.filterNot { it.key == directory.key }
             .map {
                 when (it) {
                     is S3Object -> S3VirtualFile(fileSystem, it, this)
                     is S3Directory -> S3VirtualDirectory(fileSystem, it, this)
                 }
             }.toTypedArray()
-
 
     override fun isDirectory(): Boolean = true
 }

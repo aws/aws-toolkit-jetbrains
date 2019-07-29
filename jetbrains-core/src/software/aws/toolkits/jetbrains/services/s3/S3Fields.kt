@@ -3,13 +3,13 @@
 package software.aws.toolkits.jetbrains.services.s3
 
 import software.amazon.awssdk.services.s3.S3Client
-import java.time.Instant
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
+import java.time.Instant
 
 // S3 Key class represents a base class for S3 Directory and S3 Objects
 
 sealed class S3Key(val bucket: String, val key: String) {
-    open val name = if (key.endsWith("/")) {
+    open val name : String =  if (key.endsWith("/")) {
         key.dropLast(1)
     } else {
         key.substringAfterLast("/")
@@ -17,21 +17,21 @@ sealed class S3Key(val bucket: String, val key: String) {
 }
 
 class S3Bucket(
-    override val bucketName: String,
+    bucket: String,
     val client: S3Client,
     val creationDate: Instant
-) : S3Directory(bucketName, "", client) {
-    override val name: String = bucketName
+) : S3Directory(bucket, "", client) {
+    override val name: String = bucket
 }
 
 class S3Object(
-    val bucketName: String,
+    bucket: String,
     key: String,
     val eTag: String,
     val size: Long,
     val lastModified: Instant,
     val client: S3Client
-) : S3Key(bucketName, key)
+) : S3Key(bucket, key)
 
 open class S3Directory(
     open val bucketName: String,
@@ -39,15 +39,15 @@ open class S3Directory(
     private val client: S3Client
 ) : S3Key(bucketName, key) {
 
-    fun children(): List<S3Key>? {
-
+    fun children(): List<S3Key> {
         val request = ListObjectsV2Request.builder().bucket(bucketName)
             .delimiter("/").prefix(key).build()
         val response = client.listObjectsV2(request)
 
         // gives common prefixed folders
-        val folders = (response!!.commonPrefixes() ?: emptyList())
+        val folders = (response?.commonPrefixes() ?: emptyList())
             .map { S3Directory(bucketName, it.prefix(), client) }
+
         val s3Objects = (response.contents()
             ?: emptyList()).filterNotNull().filterNot { it.key() == key }
             .map { S3Object(bucketName, it.key(), it.eTag(), it.size(), it.lastModified(), client) }

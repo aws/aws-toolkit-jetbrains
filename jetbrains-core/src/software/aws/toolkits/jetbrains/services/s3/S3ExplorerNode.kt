@@ -3,59 +3,65 @@
 
 package software.aws.toolkits.jetbrains.services.s3
 
-import com.intellij.openapi.project.Project
-import icons.AwsIcons
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
-
+import com.intellij.openapi.project.Project
+import icons.AwsIcons
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.s3.regionForBucket
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsNodeAlwaysExpandable
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNode
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerResourceNode
-import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.core.explorer.AwsNodeAlwaysExpandable
-
-class S3ServiceNode(project: Project) : AwsExplorerServiceRootNode(project, "S3"),
+class S3ServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsExplorerService.S3),
         AwsNodeAlwaysExpandable {
-    override fun serviceName() = S3Client.SERVICE_NAME
     private val client: S3Client = AwsClientManager.getInstance(project).getClient()
 
     override fun loadResources(paginationToken: String?): Collection<AwsExplorerNode<*>> {
-        val activeRegionId = ProjectAccountSettingsManager.getInstance(project!!).activeRegion.id
+        val activeRegionId = ProjectAccountSettingsManager.getInstance(nodeProject).activeRegion.id
         val response = client.listBuckets().buckets()
                 .asSequence()
                 .filter { client.regionForBucket(it.name()) == activeRegionId }
 
-        val allS3Buckets = response.map { S3Bucket(bucketName = it.name(), client = client, creationDate = it.creationDate()) }
+        val allS3Buckets = response.map { S3Bucket(bucket = it.name(), client = client, creationDate = it.creationDate()) }
         return allS3Buckets
-                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.bucket })
                 .map { mapResourceToNode(it) }
                 .toList()
     }
 
-    private fun mapResourceToNode(resource: S3Bucket) = S3BucketNode(project!!, resource)
+    private fun mapResourceToNode(resource: S3Bucket) = S3BucketNode(nodeProject, resource, client)
 }
 
-class S3BucketNode(project: Project, val bucket: S3Bucket) :
-        AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.name, AwsIcons.Resources.CLOUDFORMATION_STACK) {
+class S3BucketNode(project: Project, val bucket: S3Bucket, val client: S3Client) :
+        AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.bucket, AwsIcons.Resources.CLOUDFORMATION_STACK) {
 
-    val s3Bucket: S3Bucket = bucket
     private val editorManager = FileEditorManager.getInstance(project)
-    val client: S3Client = AwsClientManager.getInstance(project).getClient()
 
     override fun getChildren(): Collection<AbstractTreeNode<Any>> = emptyList()
 
     override fun resourceType(): String = "bucket"
 
+    override fun resourceArn() = "arn:aws:s3:::${bucket.bucket}"
+
     override fun onDoubleClick(model: DefaultTreeModel, selectedElement: DefaultMutableTreeNode) {
-        val virtualBucket = S3VirtualBucket(S3VFS(client), bucket)
-        editorManager.openTextEditor(OpenFileDescriptor(project!!, virtualBucket), true)
+        val virtualBucket = S3VirtualBucket(S3VirtualFileSystem(client), bucket)
+        editorManager.openTextEditor(OpenFileDescriptor(nodeProject, virtualBucket), true)
+
+        TelemetryService.getInstance().record(nodeProject, "s3") {
+            datum("openeditor") {
+                count()
+            }
+        }
     }
-    override fun toString(): String = bucket.name
+    override fun toString(): String = bucket.bucket
+
 }
