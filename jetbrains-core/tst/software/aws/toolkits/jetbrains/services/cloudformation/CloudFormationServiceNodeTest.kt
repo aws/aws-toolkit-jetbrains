@@ -20,7 +20,6 @@ import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsTruncatedResultNode
 
 class CloudFormationServiceNodeTest {
 
@@ -74,15 +73,6 @@ class CloudFormationServiceNodeTest {
 
         assertThat(node.children).hasSize(1)
         assertThat(node.children).hasOnlyElementsOfType(CloudFormationStackNode::class.java)
-    }
-
-    @Test
-    fun truncatedNodeIsAddedForPaging() {
-        mockClient.stacksWithNames(listOf("Stack1" to StackStatus.CREATE_COMPLETE), nextToken = "blah")
-        mockClient.stackWithResourcesOfType("Stack1", "AWS::Lambda::Function" to ResourceStatus.CREATE_COMPLETE)
-        val node = CloudFormationServiceNode(projectRule.project)
-
-        assertThat(node.children).hasSize(2).last().isInstanceOf(AwsTruncatedResultNode::class.java)
     }
 
     private fun CloudFormationClient.stacksWithNames(names: List<Pair<String, StackStatus>>, nextToken: String? = null) {

@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
+import software.aws.toolkits.jetbrains.utils.delegateMock
 
 class CloudFormationStackNodeTest {
 
@@ -69,17 +70,6 @@ class CloudFormationStackNodeTest {
                 }
                 .build()
         )
-    }
-
-    @Test
-    fun nodeRefreshesHitCache() {
-        val node = aCloudFormationStackNode(StackStatus.CREATE_COMPLETE)
-        assertThat(node.isChildCacheInInitialState).isEqualTo(true)
-        val children = node.children
-
-        assertThat(node.isChildCacheInInitialState).isEqualTo(false)
-        assertThat(children).hasSize(2)
-        assertThat(children).hasOnlyElementsOfType(LambdaFunctionNode::class.java)
     }
 
     @Test
