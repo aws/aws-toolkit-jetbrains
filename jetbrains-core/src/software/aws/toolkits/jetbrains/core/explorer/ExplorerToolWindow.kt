@@ -181,7 +181,7 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         }
     }
 
-    private inline fun <reified T : AwsExplorerNode<*>> getSelectedNodes() = awsTree?.selectionPaths?.let {
+    private inline fun <reified T : AwsExplorerNode<*>> getSelectedNodes() = awsTree.selectionPaths?.let {
         it.map { it.lastPathComponent }
             .filterIsInstance<DefaultMutableTreeNode>()
             .map { it.userObject }
