@@ -63,5 +63,4 @@ class S3BucketNode(project: Project, val bucket: S3Bucket, val client: S3Client)
         }
     }
     override fun toString(): String = bucket.bucket
-
 }

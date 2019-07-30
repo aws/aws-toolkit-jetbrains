@@ -211,8 +211,6 @@
                 implementation="software.aws.toolkits.jetbrains.ui.wizard.SamProjectGeneratorIntelliJAdapter"/>
 
         <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
-        <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.s3.S3ViewerEditorProvider"/>
-
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
@@ -251,25 +249,6 @@
             <action id="cloudformation.stack.delete"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.DeleteCloudFormationStackAction"/>
         </group>
-
-    <group id="aws.toolkit.explorer.s3.bucket" popup="true" compact="false">
-        <action id="s3.open.bucket.viewer"
-                class="software.aws.toolkits.jetbrains.services.s3.BucketActions.S3BucketViewer"/>
-        <action id="s3.create.bucket"
-                class="software.aws.toolkits.jetbrains.services.s3.BucketActions.CreateS3Bucket"/>
-        <action id="s3.delete.bucket"
-                class="software.aws.toolkits.jetbrains.services.s3.BucketActions.DeleteBucketAction"/>
-    </group>
-
-    <group id="aws.toolkit.explorer.s3.bucket.copy.groupAction" text="Copy" popup="true">
-        <add-to-group group-id="aws.toolkit.explorer.s3.bucket" anchor="after" relative-to-action="s3.delete.bucket"/>
-        <action id="s3.copy.bucketname.check"
-                class="software.aws.toolkits.jetbrains.services.s3.BucketActions.CopyBucketName" text="Copy name">
-        </action>
-        <action id="s3.copy.bucketarn" class="software.aws.toolkits.jetbrains.services.s3.BucketActions.CopyBucketARN"
-                text="Copy arn">
-        </action>
-    </group>
 
     <action class="software.aws.toolkits.jetbrains.core.SettingsSelectorAction" id="aws.settings.selector"
             icon="AwsIcons.Logos.AWS"/>

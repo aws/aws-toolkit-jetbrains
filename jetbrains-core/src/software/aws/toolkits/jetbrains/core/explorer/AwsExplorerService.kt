@@ -23,10 +23,6 @@ enum class AwsExplorerService(val serviceId: String, val displayName: String) {
     S3(S3Client.SERVICE_NAME, message("explorer.node.s3")) {
         override fun buildServiceRootNode(project: Project) = S3ServiceNode(project)
     },
-    S3(S3Client.SERVICE_NAME) {
-        override fun buildServiceRootNode(project: Project): S3ServiceNode = S3ServiceNode(project)
-    },
-
     ;
 
     abstract fun buildServiceRootNode(project: Project): AbstractTreeNode<String>

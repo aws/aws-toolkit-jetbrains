@@ -9,7 +9,7 @@ import java.time.Instant
 // S3 Key class represents a base class for S3 Directory and S3 Objects
 
 sealed class S3Key(val bucket: String, val key: String) {
-    open val name : String =  if (key.endsWith("/")) {
+    val name: String = if (key.endsWith("/")) {
         key.dropLast(1)
     } else {
         key.substringAfterLast("/")
@@ -20,9 +20,7 @@ class S3Bucket(
     bucket: String,
     val client: S3Client,
     val creationDate: Instant
-) : S3Directory(bucket, "", client) {
-    override val name: String = bucket
-}
+) : S3Directory(bucket, "", client)
 
 class S3Object(
     bucket: String,
