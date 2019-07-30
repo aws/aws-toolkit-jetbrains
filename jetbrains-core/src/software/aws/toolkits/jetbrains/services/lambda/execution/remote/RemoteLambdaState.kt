@@ -1,6 +1,8 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("DEPRECATION") // TODO: Migrate to GlobalSearchScopes.executionScope when we drop < 192 FIX_WHEN_MIN_IS_192
+
 package software.aws.toolkits.jetbrains.services.lambda.execution.remote
 
 import com.intellij.execution.DefaultExecutionResult
@@ -29,7 +31,7 @@ import java.util.Base64
 
 class RemoteLambdaState(
     private val environment: ExecutionEnvironment,
-    val settings: LambdaRemoteRunSettings
+    val settings: RemoteLambdaRunSettings
 ) : RunProfileState {
     private val consoleBuilder: TextConsoleBuilder
 
