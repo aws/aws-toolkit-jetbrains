@@ -55,6 +55,16 @@ static def ideProfiles() {
                                     "maven",
                                     "properties" // Used by Maven
                             ]
+                    ],
+                    "IU": [
+                            version: "IU-2019.2",
+                            plugins: [
+                                    "yaml",
+                                    "JavaScriptLanguage",
+                                    "JavaScriptDebugger",
+                                    "CSS",
+                                    "PythonCore:2019.2.192.5728.98"
+                            ]
                     ]
             ]
     ]
