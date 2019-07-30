@@ -8,35 +8,26 @@ import com.intellij.psi.NavigatablePsiElement
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration
-import software.amazon.awssdk.services.lambda.model.ListFunctionsRequest
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsTruncatedResultNode
+import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
+import java.util.concurrent.CompletableFuture
 
 class LambdaServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsExplorerService.LAMBDA) {
     private val client: LambdaClient = AwsClientManager.getInstance(project).getClient()
 
-    override fun loadResources(paginationToken: String?): Collection<AwsExplorerNode<*>> {
-        val request = ListFunctionsRequest.builder()
-        paginationToken?.let { request.marker(paginationToken) }
-
-        val response = client.listFunctions(request.build())
-        val resources: MutableList<AwsExplorerNode<*>> =
-            response.functions().asSequence()
-                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.functionName() })
-                .map { mapResourceToNode(it) }
-                .toMutableList()
-        response.nextMarker()?.let {
-            resources.add(AwsTruncatedResultNode(this, it))
-        }
-
-        return resources
+    override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
+        val future =
+            AwsResourceCache.getInstance(nodeProject).getResource(LambdaResources.LIST_FUNCTIONS) as CompletableFuture
+        return future.get().map { mapResourceToNode(it) }
     }
 
-    private fun mapResourceToNode(resource: FunctionConfiguration) = LambdaFunctionNode(project!!, client, resource.toDataClass(credentialProvider.id, region))
+    private fun mapResourceToNode(resource: FunctionConfiguration) =
+        LambdaFunctionNode(nodeProject, client, resource.toDataClass(credentialProvider.id, region))
 }
 
 open class LambdaFunctionNode(
@@ -44,7 +35,13 @@ open class LambdaFunctionNode(
     val client: LambdaClient,
     val function: LambdaFunction,
     immutable: Boolean = false
-) : AwsExplorerResourceNode<LambdaFunction>(project, LambdaClient.SERVICE_NAME, function, AwsIcons.Resources.LAMBDA_FUNCTION, immutable) {
+) : AwsExplorerResourceNode<LambdaFunction>(
+    project,
+    LambdaClient.SERVICE_NAME,
+    function,
+    AwsIcons.Resources.LAMBDA_FUNCTION,
+    immutable
+) {
     override fun resourceType() = "function"
 
     override fun resourceArn() = function.arn
@@ -53,9 +50,8 @@ open class LambdaFunctionNode(
 
     override fun displayName() = functionName()
 
-    override fun isAlwaysLeaf() = true
-
     fun functionName(): String = function.name
 
-    fun handlerPsi(): Array<NavigatablePsiElement> = Lambda.findPsiElementsForHandler(super.getProject()!!, function.runtime, function.handler)
+    fun handlerPsi(): Array<NavigatablePsiElement> =
+        Lambda.findPsiElementsForHandler(super.getProject()!!, function.runtime, function.handler)
 }
