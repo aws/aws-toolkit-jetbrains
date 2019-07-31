@@ -7,6 +7,7 @@ import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.LambdaClient
@@ -16,7 +17,10 @@ import software.amazon.awssdk.services.lambda.model.ListFunctionsResponse
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
 import software.amazon.awssdk.services.lambda.model.TracingMode
+import software.amazon.awssdk.services.lambda.paginators.ListFunctionsIterable
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.utils.delegateMock
 
 class LambdaServiceNodeTest {
 
@@ -30,8 +34,17 @@ class LambdaServiceNodeTest {
 
     private val mockClient by lazy { mockClientManagerRule.create<LambdaClient>() }
 
+    @After
+    fun tearDown() {
+        AwsResourceCache.getInstance(projectRule.project).clear()
+    }
+
     @Test
     fun lambdaFunctionsAreSortedAlphabetically() {
+        whenever(mockClient.listFunctionsPaginator(any<ListFunctionsRequest>())).thenReturn(
+            ListFunctionsIterable(mockClient, ListFunctionsRequest.builder().build())
+        )
+
         whenever(mockClient.listFunctions(any<ListFunctionsRequest>())).thenReturn(ListFunctionsResponse.builder().apply {
             this.functions(functionConfiguration("bcd"),
                 functionConfiguration("abc"),

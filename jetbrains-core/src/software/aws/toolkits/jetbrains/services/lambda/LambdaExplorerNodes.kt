@@ -23,7 +23,9 @@ class LambdaServiceNode(project: Project) : AwsExplorerServiceRootNode(project, 
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
         val future =
             AwsResourceCache.getInstance(nodeProject).getResource(LambdaResources.LIST_FUNCTIONS) as CompletableFuture
-        return future.get().map { mapResourceToNode(it) }
+        return future.get()
+            .map { mapResourceToNode(it) }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.functionName() })
     }
 
     private fun mapResourceToNode(resource: FunctionConfiguration) =
