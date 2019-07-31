@@ -12,8 +12,8 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.HeadBucketResponse
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.ListBucketsRequest
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse
 import software.amazon.awssdk.services.s3.model.Bucket
@@ -42,7 +42,7 @@ class S3ServiceNodeTest {
 
         mockClient.stub {
             on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder()
-                .sdkHttpResponse(mockSdkResponse).build() as HeadBucketResponse
+                .apply { this.sdkHttpResponse(mockSdkResponse) }.build()
         }
         mockClient.stub {
             on { listBuckets(any<ListBucketsRequest>()) } doReturn ListBucketsResponse.builder()
@@ -72,14 +72,9 @@ class S3ServiceNodeTest {
         }
 
         mockClient.stub {
-            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder()
-                .sdkHttpResponse(mockSdkResponse).build() as HeadBucketResponse
-        }
-        mockClient.stub {
-            on {
-                listBuckets(any<ListBucketsRequest>())
-            } doReturn ListBucketsResponse.builder().build()
-        }
+            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder().apply {
+                this.sdkHttpResponse(mockSdkResponse)}.build() }
+        mockClient.stub { on { listBuckets(any<ListBucketsRequest>()) }doReturn ListBucketsResponse.builder().build() }
 
         mockClientManager.register(S3Client::class, mockClient)
         val children = S3ServiceNode(projectRule.project).children
@@ -95,9 +90,8 @@ class S3ServiceNodeTest {
         }
 
         mockClient.stub {
-            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder()
-                .sdkHttpResponse(mockSdkResponse).build() as HeadBucketResponse
-        }
+            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder().apply {
+                this.sdkHttpResponse(mockSdkResponse)}.build() }
 
         mockClientManager.register(S3Client::class, mockClient)
         val children = S3ServiceNode(projectRule.project).children

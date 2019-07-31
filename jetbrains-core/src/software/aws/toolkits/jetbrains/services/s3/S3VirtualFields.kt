@@ -8,12 +8,16 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.time.Instant
 
-// base class to represent a virtual file
+/**
+ * BaseS3VirtualFile is a base class to represent a virtual file
+ */
+
 abstract class BaseS3VirtualFile(
     val fileSystem: S3VirtualFileSystem,
     private val parent: VirtualFile?,
     open val key: S3Key
 ) : VirtualFile() {
+
     override fun getName(): String = key.key
 
     override fun isWritable(): Boolean = false
@@ -32,17 +36,14 @@ abstract class BaseS3VirtualFile(
 
     override fun getTimeStamp(): Long = 0
 
-    @Throws(UnsupportedOperationException::class)
     override fun contentsToByteArray(): ByteArray {
         throw UnsupportedOperationException("contentsToByteArray() cannot be called against this object type")
     }
 
-    @Throws(UnsupportedOperationException::class)
     override fun getInputStream(): InputStream {
         throw UnsupportedOperationException("getInputStream() cannot be called against this object type")
     }
 
-    @Throws(UnsupportedOperationException::class)
     override fun getOutputStream(requestor: Any?, newModificationStamp: Long, newTimeStamp: Long): OutputStream {
         throw UnsupportedOperationException("getOutputStream() cannot be called against this object type")
     }
@@ -67,7 +68,7 @@ class S3VirtualFile(
 
 open class S3VirtualBucket(
     fileSystem: S3VirtualFileSystem,
-    val s3Bucket: S3Bucket
+    private val s3Bucket: S3Bucket
 ) : BaseS3VirtualFile(fileSystem, parent = null, key = s3Bucket) {
 
     override fun getTimeStamp(): Long = s3Bucket.creationDate.toEpochMilli()

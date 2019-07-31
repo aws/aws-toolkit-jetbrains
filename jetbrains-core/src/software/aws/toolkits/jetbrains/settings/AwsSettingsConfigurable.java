@@ -21,7 +21,8 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
 import software.aws.toolkits.jetbrains.services.telemetry.MessageBusService;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryEnabledChangedNotifier;
 
-import javax.swing.*;
+import javax.swing.JPanel;
+import javax.swing.JComponent;
 import java.util.Objects;
 
 import static software.aws.toolkits.resources.Localization.message;
@@ -81,7 +82,6 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         return "aws";
     }
 
-//    @Nls(capitalization = Capitalization.Title)
     @Override
     public String getDisplayName() {
         return message("aws.settings.title");

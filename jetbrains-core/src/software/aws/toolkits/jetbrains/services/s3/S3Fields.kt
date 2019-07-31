@@ -6,7 +6,9 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import java.time.Instant
 
-// S3 Key class represents a base class for S3 Directory and S3 Objects
+/**
+ * S3 Key class represents a base class for S3 Directory and S3 Objects
+ */
 
 sealed class S3Key(val bucket: String, val key: String) {
     val name: String = if (key.endsWith("/")) {
@@ -32,23 +34,25 @@ class S3Object(
 ) : S3Key(bucket, key)
 
 open class S3Directory(
-    open val bucketName: String,
+    bucket: String,
     key: String,
     private val client: S3Client
-) : S3Key(bucketName, key) {
+) : S3Key(bucket, key) {
 
     fun children(): List<S3Key> {
-        val request = ListObjectsV2Request.builder().bucket(bucketName)
-            .delimiter("/").prefix(key).build()
+        val request = ListObjectsV2Request.builder()
+            .bucket(bucket)
+            .delimiter("/")
+            .prefix(key)
+            .build()
         val response = client.listObjectsV2(request)
 
-        // gives common prefixed folders
         val folders = (response?.commonPrefixes() ?: emptyList())
-            .map { S3Directory(bucketName, it.prefix(), client) }
+            .map { S3Directory(bucket, it.prefix(), client) }
 
         val s3Objects = (response.contents()
             ?: emptyList()).filterNotNull().filterNot { it.key() == key }
-            .map { S3Object(bucketName, it.key(), it.eTag(), it.size(), it.lastModified(), client) }
+            .map { S3Object(bucket, it.key(), it.eTag(), it.size(), it.lastModified(), client) }
 
         return folders + s3Objects
     }
