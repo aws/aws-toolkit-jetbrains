@@ -53,7 +53,10 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     private val treePanelWrapper: Wrapper = Wrapper()
     private val errorPanel: JPanel
     private val awsTreeModel = AwsExplorerTreeStructure(project)
-    private val structureTreeModel = StructureTreeModel(awsTreeModel, project)
+    private val structureTreeModel = StructureTreeModel(
+        awsTreeModel,
+        compareBy(String.CASE_INSENSITIVE_ORDER) { it.toString() },
+        project)
     private var awsTree = createTree(AsyncTreeModel(structureTreeModel, true, project))
     private val awsTreePanel = ScrollPaneFactory.createScrollPane(awsTree)
     private val settingsSelector by lazy {
@@ -80,14 +83,14 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                 if (!projectAccountSettingsManager.hasActiveCredentials()) {
                     treePanelWrapper.setContent(errorPanel)
                 } else {
-                    refreshTree()
+                    invalidateTree()
                     treePanelWrapper.setContent(awsTreePanel)
                 }
             }
         }
     }
 
-    internal fun refreshTree() {
+    internal fun invalidateTree() {
         structureTreeModel.invalidate()
     }
 

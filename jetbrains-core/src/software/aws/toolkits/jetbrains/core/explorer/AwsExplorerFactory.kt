@@ -30,7 +30,7 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
                 object : DumbAwareAction(message("explorer.refresh.title"), message("explorer.refresh.description"), AllIcons.Actions.Refresh) {
                     override fun actionPerformed(e: AnActionEvent) {
                         AwsResourceCache.getInstance(project).clear()
-                        explorer.refreshTree()
+                        explorer.invalidateTree()
                     }
                 })
             toolWindow.setAdditionalGearActions(

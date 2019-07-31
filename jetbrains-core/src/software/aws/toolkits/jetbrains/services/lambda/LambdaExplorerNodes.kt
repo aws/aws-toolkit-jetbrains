@@ -15,17 +15,16 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
-import java.util.concurrent.CompletableFuture
 
 class LambdaServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsExplorerService.LAMBDA) {
     private val client: LambdaClient = AwsClientManager.getInstance(project).getClient()
 
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
-        val future =
-            AwsResourceCache.getInstance(nodeProject).getResource(LambdaResources.LIST_FUNCTIONS) as CompletableFuture
+        val future = AwsResourceCache.getInstance(nodeProject)
+            .getResource(LambdaResources.LIST_FUNCTIONS)
+            .toCompletableFuture()
         return future.get()
             .map { mapResourceToNode(it) }
-            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.functionName() })
     }
 
     private fun mapResourceToNode(resource: FunctionConfiguration) =

@@ -29,16 +29,16 @@ import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
-import java.util.concurrent.CompletableFuture
 
 class CloudFormationServiceNode(project: Project) :
     AwsExplorerServiceRootNode(project, AwsExplorerService.CLOUDFORMATION) {
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
-        val future = AwsResourceCache.getInstance(nodeProject).getResource(CloudFormationResources.listStacks())
+        val future = AwsResourceCache.getInstance(nodeProject)
+            .getResource(CloudFormationResources.listStacks())
+            .toCompletableFuture()
         return future.get().asSequence()
             .filter { it.stackStatus() !in DELETING_STACK_STATES }
             .map { CloudFormationStackNode(nodeProject, it.stackName(), it.stackStatus(), it.stackId()) }
-            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.stackName })
             .toList()
     }
 
@@ -77,8 +77,9 @@ class CloudFormationStackNode(
 
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
         val lambdaClient = nodeProject.awsClient<LambdaClient>(credentialProvider, region)
-        val future =
-            AwsResourceCache.getInstance(nodeProject).getResource(CloudFormationResources.listStackResources(stackId)) as CompletableFuture
+        val future = AwsResourceCache.getInstance(nodeProject)
+            .getResource(CloudFormationResources.listStackResources(stackId))
+            .toCompletableFuture()
         return future.get().asSequence()
             .filter { it.resourceType() == LAMBDA_FUNCTION_TYPE && it.resourceStatus() in COMPLETE_RESOURCE_STATES }
             .map { resource ->
