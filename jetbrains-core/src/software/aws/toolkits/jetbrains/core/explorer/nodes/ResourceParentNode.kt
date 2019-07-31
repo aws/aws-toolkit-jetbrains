@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.core.explorer.nodes
 
 import com.intellij.execution.ExecutionException
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 
 interface ResourceParentNode {
     val nodeProject: Project
@@ -19,8 +21,10 @@ interface ResourceParentNode {
             children
         }
     } catch (e: ExecutionException) {
+        getLogger(this::class).info(e) { "Failed to get children" }
         listOf(AwsExplorerErrorNode(nodeProject, e.cause ?: e))
     } catch (e: Exception) {
+        getLogger(this::class).info(e) { "Failed to get children" }
         listOf(AwsExplorerErrorNode(nodeProject, e))
     }
 
