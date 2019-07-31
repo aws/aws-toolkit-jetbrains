@@ -30,33 +30,26 @@
     If you come across bugs with the toolkit or have feature requests, please raise an <a
         href="https://github.com/aws/aws-toolkit-jetbrains/issues">issue</a>.
 </p>
-
 <p><h2><strong>Features</strong></h2></p>
-
 <p><strong>SAM features are currently limited to Java and Python only</strong></p>
-
 <ul>
     <li>
         <strong>New Project Wizard</strong> - Get started quickly by using one of the quickstart serverless application
         templates <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/new-project">Learn More</a>
     </li>
-
     <li>
         <strong>Run/Debug Local Lambda Functions</strong> - Locally test and step-through debug functions in a
         Lambda-like execution environment provided by the AWS SAM CLI
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-local">Learn More</a>
     </li>
-
     <li>
         <strong>Resource Explorer</strong> - View your AWS Lambda remote functions & related CloudFormation stacks
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer">Learn More</a>
     </li>
-
     <li>
         <strong>Invoke Remote Lambda Functions</strong> - Invoke remote functions using a sharable run-configuration
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-remote">Learn More</a>
     </li>
-
     <li>
         <strong>Deploy SAM-based Applications</strong> - Package, deploy & track SAM-based applications
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/sam-deploy">Learn More</a>
@@ -87,50 +80,37 @@
     <application-components>
         <component>
             <interface-class>software.aws.toolkits.jetbrains.components.telemetry.TelemetryComponent</interface-class>
-            <implementation-class>software.aws.toolkits.jetbrains.components.telemetry.DefaultTelemetryComponent
-            </implementation-class>
+            <implementation-class>software.aws.toolkits.jetbrains.components.telemetry.DefaultTelemetryComponent</implementation-class>
         </component>
     </application-components>
 
     <extensionPoints>
-        <extensionPoint qualifiedName="aws.toolkit.credentialProviderFactory"
-                        beanClass="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactoryEP">
-            <with attribute="implementation"
-                  implements="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory"/>
+        <extensionPoint qualifiedName="aws.toolkit.credentialProviderFactory" beanClass="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactoryEP">
+            <with attribute="implementation" implements="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory"/>
         </extensionPoint>
 
-        <extensionPoint qualifiedName="aws.toolkit.lambda.runtimeGroup"
-                        beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
-            <with attribute="implementation"
-                  implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupInformation"/>
+        <extensionPoint qualifiedName="aws.toolkit.lambda.runtimeGroup" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
+            <with attribute="implementation" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupInformation"/>
             <with attribute="runtimeGroup" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup"/>
         </extensionPoint>
 
-        <extensionPoint qualifiedName="aws.toolkit.lambda.builder"
-                        beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
-            <with attribute="implementation"
-                  implements="software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder"/>
+        <extensionPoint qualifiedName="aws.toolkit.lambda.builder" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
+            <with attribute="implementation" implements="software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder"/>
             <with attribute="runtimeGroup" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup"/>
         </extensionPoint>
 
-        <extensionPoint qualifiedName="aws.toolkit.lambda.sam.debugSupport"
-                        beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
-            <with attribute="implementation"
-                  implements="software.aws.toolkits.jetbrains.services.lambda.execution.local.SamDebugSupport"/>
+        <extensionPoint qualifiedName="aws.toolkit.lambda.sam.debugSupport" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
+            <with attribute="implementation" implements="software.aws.toolkits.jetbrains.services.lambda.execution.local.SamDebugSupport"/>
             <with attribute="runtimeGroup" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup"/>
         </extensionPoint>
 
-        <extensionPoint qualifiedName="aws.toolkit.lambda.handlerResolver"
-                        beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
-            <with attribute="implementation"
-                  implements="software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver"/>
+        <extensionPoint qualifiedName="aws.toolkit.lambda.handlerResolver" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
+            <with attribute="implementation" implements="software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver"/>
             <with attribute="runtimeGroup" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup"/>
         </extensionPoint>
 
-        <extensionPoint qualifiedName="aws.toolkit.lambda.sam.projectWizard"
-                        beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
-            <with attribute="implementation"
-                  implements="software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard"/>
+        <extensionPoint qualifiedName="aws.toolkit.lambda.sam.projectWizard" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
+            <with attribute="implementation" implements="software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard"/>
             <with attribute="runtimeGroup" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup"/>
         </extensionPoint>
 
@@ -157,10 +137,9 @@
 
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.DeploySettings"/>
 
-        <projectService
-                serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager"
-                serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultProjectAccountSettingsManager"
-                testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager"/>
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager"
+                        serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultProjectAccountSettingsManager"
+                        testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsSettingsPanelInstaller"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
 
@@ -170,7 +149,7 @@
                             testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockMessageBusService"/>
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.telemetry.TelemetryService"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultTelemetryService"
-                            testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryService"/>
+                            testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryService" />
         <projectService serviceInterface="software.aws.toolkits.core.ToolkitClientManager"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.MockClientManager"/>
@@ -186,42 +165,31 @@
                              key="aws.settings.title"
                              instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
 
-        <programRunner
-                implementation="software.aws.toolkits.jetbrains.services.lambda.execution.local.SamInvokeRunner"/>
-        <programRunner
-                implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>
-        <fileBasedIndex
-                implementation="software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex"/>
+        <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.local.SamInvokeRunner"/>
+        <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>
+        <fileBasedIndex implementation="software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex"/>
 
-        <codeInsight.lineMarkerProvider language=""
-                                        implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
-        <runLineMarkerContributor language="yaml"
-                                  implementationClass="software.aws.toolkits.jetbrains.services.lambda.execution.template.YamlLambdaRunLineMarkerContributor"/>
-        <configurationType
-                implementation="software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfiguration"/>
-        <runConfigurationProducer
-                implementation="software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer"/>
-        <runConfigurationProducer
-                implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunConfigurationProducer"/>
+        <codeInsight.lineMarkerProvider language="" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
+        <runLineMarkerContributor language="yaml" implementationClass="software.aws.toolkits.jetbrains.services.lambda.execution.template.YamlLambdaRunLineMarkerContributor"/>
+        <configurationType implementation="software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfiguration"/>
+        <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer"/>
+        <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunConfigurationProducer"/>
 
         <!-- Project Wizard components -->
-        <moduleType id="AWS" implementationClass="software.aws.toolkits.jetbrains.ui.wizard.AwsModuleType"/>
-        <directoryProjectGenerator implementation="software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator"/>
-        <projectTemplatesFactory
-                implementation="software.aws.toolkits.jetbrains.ui.wizard.SamProjectGeneratorIntelliJAdapter"/>
+        <moduleType id="AWS" implementationClass="software.aws.toolkits.jetbrains.ui.wizard.AwsModuleType" />
+        <directoryProjectGenerator implementation="software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator" />
+        <projectTemplatesFactory implementation="software.aws.toolkits.jetbrains.ui.wizard.SamProjectGeneratorIntelliJAdapter" />
 
         <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
-        <credentialProviderFactory
-                implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
+        <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
     </extensions>
 
     <actions>
         <group id="aws.toolkit.explorer.lambda" popup="true" compact="false">
-            <action id="lambda.function.create"
-                    class="software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction"/>
+            <action id="lambda.function.create" class="software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction"/>
         </group>
 
         <group id="aws.toolkit.explorer.lambda.function.immutable" popup="false" compact="false">
@@ -236,8 +204,7 @@
             <separator/>
             <action id="lambda.function.updateConfiguration"
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.UpdateFunctionConfigurationAction"/>
-            <action id="lambda.function.updateCode"
-                    class="software.aws.toolkits.jetbrains.services.lambda.actions.UpdateFunctionCodeAction"/>
+            <action id="lambda.function.updateCode" class="software.aws.toolkits.jetbrains.services.lambda.actions.UpdateFunctionCodeAction"/>
             <separator/>
             <action id="lambda.function.delete"
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.DeleteFunctionAction"/>
@@ -250,21 +217,19 @@
                     class="software.aws.toolkits.jetbrains.services.cloudformation.DeleteCloudFormationStackAction"/>
         </group>
 
-    <action class="software.aws.toolkits.jetbrains.core.SettingsSelectorAction" id="aws.settings.selector"
-            icon="AwsIcons.Logos.AWS"/>
-    <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction"
-            id="aws.settings.upsertCredentials" icon="AwsIcons.Logos.AWS"/>
+        <action class="software.aws.toolkits.jetbrains.core.SettingsSelectorAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>
+        <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials" icon="AwsIcons.Logos.AWS"/>
 
-    <group id="aws.toolkit.serverless.template">
-        <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-        <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-        <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
+        <group id="aws.toolkit.serverless.template">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
 
-        <separator/>
-        <action id="serverless.application.deploy"
-                class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
-        <separator/>
-    </group>
-</actions>
+            <separator/>
+            <action id="serverless.application.deploy"
+                    class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
+            <separator/>
+        </group>
+    </actions>
 
-        </idea-plugin>
+</idea-plugin>
