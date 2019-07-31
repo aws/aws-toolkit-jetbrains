@@ -7,21 +7,24 @@ import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
-import software.amazon.awssdk.services.cloudformation.model.DescribeStackResourcesRequest
-import software.amazon.awssdk.services.cloudformation.model.DescribeStackResourcesResponse
+import software.amazon.awssdk.services.cloudformation.model.ListStackResourcesRequest
+import software.amazon.awssdk.services.cloudformation.model.ListStackResourcesResponse
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
-import software.amazon.awssdk.services.cloudformation.model.StackResource
+import software.amazon.awssdk.services.cloudformation.model.StackResourceSummary
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
+import software.amazon.awssdk.services.cloudformation.paginators.ListStackResourcesIterable
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
 import software.amazon.awssdk.services.lambda.model.TracingMode
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
@@ -42,14 +45,18 @@ class CloudFormationStackNodeTest {
     private val mockLambdaClient by lazy { mockClientManager.create<LambdaClient>() }
 
     @Before
-    fun setup() {
-        whenever(mockCfnClient.describeStackResources(any<DescribeStackResourcesRequest>())).thenReturn(
-            DescribeStackResourcesResponse.builder()
-                .stackResources(
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId("processor").build(),
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId("processor2").build(),
-                    StackResource.builder().resourceType("a dynamodb table").resourceStatus(ResourceStatus.CREATE_COMPLETE).build(),
-                    StackResource.builder().resourceType("an IAM role").resourceStatus(ResourceStatus.CREATE_COMPLETE).build()
+    fun setUp() {
+        whenever(mockCfnClient.listStackResourcesPaginator(any<ListStackResourcesRequest>())).thenReturn(
+            ListStackResourcesIterable(mockCfnClient, ListStackResourcesRequest.builder().build())
+        )
+
+        whenever(mockCfnClient.listStackResources(any<ListStackResourcesRequest>())).thenReturn(
+            ListStackResourcesResponse.builder()
+                .stackResourceSummaries(
+                    StackResourceSummary.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId("processor").build(),
+                    StackResourceSummary.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.CREATE_COMPLETE).logicalResourceId("processor2").build(),
+                    StackResourceSummary.builder().resourceType("a dynamodb table").resourceStatus(ResourceStatus.CREATE_COMPLETE).build(),
+                    StackResourceSummary.builder().resourceType("an IAM role").resourceStatus(ResourceStatus.CREATE_COMPLETE).build()
                 )
                 .build()
         )
@@ -70,6 +77,11 @@ class CloudFormationStackNodeTest {
                 }
                 .build()
         )
+    }
+
+    @After
+    fun tearDown() {
+        AwsResourceCache.getInstance(projectRule.project).clear()
     }
 
     @Test
@@ -102,11 +114,11 @@ class CloudFormationStackNodeTest {
 
     @Test
     fun stackOnlyContainingDeletedResourceHasPlaceholderChild() {
-        whenever(mockCfnClient.describeStackResources(any<DescribeStackResourcesRequest>())).thenReturn(
-            DescribeStackResourcesResponse.builder()
-                .stackResources(
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId("processor").build(),
-                    StackResource.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId("processor2").build()
+        whenever(mockCfnClient.listStackResources(any<ListStackResourcesRequest>())).thenReturn(
+            ListStackResourcesResponse.builder()
+                .stackResourceSummaries(
+                    StackResourceSummary.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId("processor").build(),
+                    StackResourceSummary.builder().resourceType(LAMBDA_FUNCTION_TYPE).resourceStatus(ResourceStatus.DELETE_COMPLETE).logicalResourceId("processor2").build()
                 )
                 .build()
         )

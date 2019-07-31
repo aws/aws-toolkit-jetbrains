@@ -35,8 +35,10 @@ class CloudFormationServiceNode(project: Project) :
     AwsExplorerServiceRootNode(project, AwsExplorerService.CLOUDFORMATION) {
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
         val future = AwsResourceCache.getInstance(nodeProject).getResource(CloudFormationResources.listStacks())
-        return future.get().asSequence().filter { it.stackStatus() !in DELETING_STACK_STATES }
+        return future.get().asSequence()
+            .filter { it.stackStatus() !in DELETING_STACK_STATES }
             .map { CloudFormationStackNode(nodeProject, it.stackName(), it.stackStatus(), it.stackId()) }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.stackName })
             .toList()
     }
 
@@ -66,7 +68,12 @@ class CloudFormationStackNode(
 
     override fun isAlwaysShowPlus(): Boolean = true
 
-    override fun getChildren(): List<AwsExplorerNode<*>> = super<ResourceParentNode>.getChildren()
+    override fun getChildren(): List<AwsExplorerNode<*>> =
+        if (stackStatus in FAILED_STACK_STATES || stackStatus in IN_PROGRESS_STACK_STATES) {
+            emptyList()
+        } else {
+            super<ResourceParentNode>.getChildren()
+        }
 
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
         val lambdaClient = nodeProject.awsClient<LambdaClient>(credentialProvider, region)
@@ -99,7 +106,22 @@ class CloudFormationStackNode(
     override fun statusText(): String? = stackStatus.toString().toHumanReadable()
 
     private companion object {
-        val COMPLETE_RESOURCE_STATES = setOf(ResourceStatus.CREATE_COMPLETE, ResourceStatus.UPDATE_COMPLETE)
+        val COMPLETE_RESOURCE_STATES = setOf(
+            ResourceStatus.CREATE_COMPLETE,
+            ResourceStatus.UPDATE_COMPLETE
+        )
+        val FAILED_STACK_STATES = setOf(
+            StackStatus.CREATE_FAILED,
+            StackStatus.DELETE_FAILED,
+            StackStatus.ROLLBACK_FAILED
+        )
+        val IN_PROGRESS_STACK_STATES = setOf(
+            StackStatus.CREATE_IN_PROGRESS,
+            StackStatus.DELETE_IN_PROGRESS,
+            StackStatus.ROLLBACK_IN_PROGRESS,
+            StackStatus.UPDATE_IN_PROGRESS,
+            StackStatus.UPDATE_ROLLBACK_IN_PROGRESS
+        )
     }
 }
 
