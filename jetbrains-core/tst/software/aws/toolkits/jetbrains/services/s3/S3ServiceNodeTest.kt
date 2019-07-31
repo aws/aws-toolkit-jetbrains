@@ -12,11 +12,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.HeadBucketResponse
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
-import software.amazon.awssdk.services.s3.model.ListBucketsRequest
-import software.amazon.awssdk.services.s3.model.ListBucketsResponse
-import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.*
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
@@ -31,36 +27,6 @@ class S3ServiceNodeTest {
     @JvmField
     @Rule
     val mockClientManager = MockClientManagerRule(projectRule)
-
-    @Test
-    fun s3BucketsSortedAlphabetically() {
-        val mockClient = delegateMock<S3Client>()
-        val mockSdkResponse = mock<SdkHttpResponse>()
-        mockSdkResponse.stub {
-            on { headers() } doReturn mapOf("x-amz-bucket-region" to listOf("us-east-1"))
-        }
-
-        mockClient.stub {
-            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder()
-                .apply { this.sdkHttpResponse(mockSdkResponse) }.build()
-        }
-        mockClient.stub {
-            on { listBuckets(any<ListBucketsRequest>()) } doReturn ListBucketsResponse.builder()
-                .apply {
-                    this.buckets(
-                        bucketData("BBB"),
-                        bucketData("AAA"),
-                        bucketData("ZZZ")
-                    )
-                }.build()
-        }
-
-        mockClientManager.register(S3Client::class, mockClient)
-        val children = S3ServiceNode(projectRule.project).children
-
-        assertThat(children).allMatch { it is S3BucketNode }
-        assertThat(children.map { it.displayName() }).containsExactly("AAA", "BBB", "ZZZ")
-    }
 
     @Test
     fun noBucketsInTheRegion() {
