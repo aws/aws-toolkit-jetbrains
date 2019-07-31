@@ -14,12 +14,24 @@ import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.services.iam.IamRole
+import java.util.concurrent.TimeUnit
 
 object Lambda {
     fun findPsiElementsForHandler(project: Project, runtime: Runtime, handler: String): Array<NavigatablePsiElement> {
         val resolver = runtime.runtimeGroup?.let { LambdaHandlerResolver.getInstance(it) } ?: return emptyArray()
         return resolver.findPsiElements(project, handler, GlobalSearchScope.allScope(project))
     }
+}
+
+// @see https://docs.aws.amazon.com/lambda/latest/dg/limits.html
+object LambdaLimits {
+    const val MIN_MEMORY = 128
+    const val MAX_MEMORY = 3008
+    const val MEMORY_INCREMENT = 64
+    const val DEFAULT_MEMORY_SIZE = 128
+    const val MIN_TIMEOUT = 1
+    @JvmField val MAX_TIMEOUT = TimeUnit.MINUTES.toSeconds(15).toInt()
+    @JvmField val DEFAULT_TIMEOUT = TimeUnit.MINUTES.toSeconds(5).toInt()
 }
 
 data class LambdaFunction(
