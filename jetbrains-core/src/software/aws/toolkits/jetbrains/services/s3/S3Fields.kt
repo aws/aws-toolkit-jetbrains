@@ -3,7 +3,6 @@
 package software.aws.toolkits.jetbrains.services.s3
 
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import java.time.Instant
 
 /**
