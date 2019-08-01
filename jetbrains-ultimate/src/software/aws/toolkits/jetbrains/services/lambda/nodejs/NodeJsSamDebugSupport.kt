@@ -12,7 +12,6 @@ import com.intellij.javascript.debugger.LocalFileSystemFileFinder
 import com.intellij.javascript.debugger.RemoteDebuggingFileFinder
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.Urls
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
@@ -66,9 +65,8 @@ class NodeJsSamDebugSupport : SamDebugSupport {
         listOf(".", NODE_MODULES).forEach { subPath ->
             pathMapping.forEach {
                 val remotePath = FileUtil.toCanonicalPath("$TASK_PATH/${it.remoteRoot}/$subPath")
-                val remoteUrl = Urls.newUri("file", remotePath).toString()
                 LocalFileFinder.findFile("${it.localRoot}/$subPath")?.let { localFile ->
-                    mappings.putIfAbsent(remoteUrl, localFile)
+                    mappings.putIfAbsent("file://$remotePath", localFile)
                 }
             }
         }
