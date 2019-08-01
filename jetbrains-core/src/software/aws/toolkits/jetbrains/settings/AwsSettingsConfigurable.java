@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.settings;
 
+import static software.aws.toolkits.resources.Localization.message;
+
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -15,17 +17,16 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
+
+import java.util.Objects;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
 import software.aws.toolkits.jetbrains.services.telemetry.MessageBusService;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryEnabledChangedNotifier;
-
-import javax.swing.JPanel;
-import javax.swing.JComponent;
-import java.util.Objects;
-
-import static software.aws.toolkits.resources.Localization.message;
 
 @SuppressWarnings("NullableProblems")
 public class AwsSettingsConfigurable implements SearchableConfigurable {
@@ -33,10 +34,12 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     private final Project project;
     private JPanel panel;
-    @NotNull TextFieldWithBrowseButton samExecutablePath;
+    @NotNull
+    TextFieldWithBrowseButton samExecutablePath;
     private LinkLabel samHelp;
     private JBCheckBox showAllHandlerGutterIcons;
-    @NotNull JBCheckBox enableTelemetry;
+    @NotNull
+    JBCheckBox enableTelemetry;
     private JPanel projectLevelSettings;
     private JPanel applicationLevelSettings;
 
@@ -63,16 +66,16 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         String autoDetectPath = new SamExecutableDetector().detect();
         JBTextField samExecutableTextField = new JBTextField();
-        if(autoDetectPath != null) {
+        if (autoDetectPath != null) {
             samExecutableTextField.getEmptyText()
-                                  .setText(message("aws.settings.sam.auto_detect", autoDetectPath));
+                    .setText(message("aws.settings.sam.auto_detect", autoDetectPath));
         }
         samExecutablePath = new TextFieldWithBrowseButton(samExecutableTextField);
         samExecutablePath.addBrowseFolderListener(
-            message("aws.settings.sam.find.title"),
-            message("aws.settings.sam.find.description"),
-            project,
-            FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
+                message("aws.settings.sam.find.title"),
+                message("aws.settings.sam.find.description"),
+                project,
+                FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
         );
     }
 

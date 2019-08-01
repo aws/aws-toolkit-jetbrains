@@ -30,26 +30,33 @@
     If you come across bugs with the toolkit or have feature requests, please raise an <a
         href="https://github.com/aws/aws-toolkit-jetbrains/issues">issue</a>.
 </p>
+
 <p><h2><strong>Features</strong></h2></p>
+
 <p><strong>SAM features are currently limited to Java and Python only</strong></p>
+
 <ul>
     <li>
         <strong>New Project Wizard</strong> - Get started quickly by using one of the quickstart serverless application
         templates <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/new-project">Learn More</a>
     </li>
+
     <li>
         <strong>Run/Debug Local Lambda Functions</strong> - Locally test and step-through debug functions in a
         Lambda-like execution environment provided by the AWS SAM CLI
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-local">Learn More</a>
     </li>
+
     <li>
         <strong>Resource Explorer</strong> - View your AWS Lambda remote functions & related CloudFormation stacks
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer">Learn More</a>
     </li>
+
     <li>
         <strong>Invoke Remote Lambda Functions</strong> - Invoke remote functions using a sharable run-configuration
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-remote">Learn More</a>
     </li>
+
     <li>
         <strong>Deploy SAM-based Applications</strong> - Package, deploy & track SAM-based applications
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/sam-deploy">Learn More</a>

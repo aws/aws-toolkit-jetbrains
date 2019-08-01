@@ -12,11 +12,8 @@ import java.time.Instant
  * BaseS3VirtualFile is a base class to represent a virtual file
  */
 
-abstract class BaseS3VirtualFile(
-    val fileSystem: S3VirtualFileSystem,
-    private val parent: VirtualFile?,
-    open val key: S3Key
-) : VirtualFile() {
+abstract class BaseS3VirtualFile(val fileSystem: S3VirtualFileSystem, private val parent: VirtualFile?, open val key: S3Key) :
+    VirtualFile() {
 
     override fun getName(): String = key.key
 
@@ -51,11 +48,8 @@ abstract class BaseS3VirtualFile(
     override fun refresh(asynchronous: Boolean, recursive: Boolean, postRunnable: Runnable?) {}
 }
 
-class S3VirtualFile(
-    s3Vfs: S3VirtualFileSystem,
-    val file: S3Object,
-    parent: VirtualFile
-) : BaseS3VirtualFile(s3Vfs, parent, file) {
+class S3VirtualFile(s3Vfs: S3VirtualFileSystem, val file: S3Object, parent: VirtualFile) :
+    BaseS3VirtualFile(s3Vfs, parent, file) {
 
     override fun isDirectory(): Boolean = false
 
@@ -66,10 +60,8 @@ class S3VirtualFile(
     override fun getTimeStamp(): Long = file.lastModified.toEpochMilli()
 }
 
-open class S3VirtualBucket(
-    fileSystem: S3VirtualFileSystem,
-    private val s3Bucket: S3Bucket
-) : BaseS3VirtualFile(fileSystem, parent = null, key = s3Bucket) {
+open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket: S3Bucket) :
+    BaseS3VirtualFile(fileSystem, parent = null, key = s3Bucket) {
 
     override fun getTimeStamp(): Long = s3Bucket.creationDate.toEpochMilli()
 
@@ -89,11 +81,8 @@ open class S3VirtualBucket(
     override fun isDirectory(): Boolean = true
 }
 
-class S3VirtualDirectory(
-    s3filesystem: S3VirtualFileSystem,
-    private val directory: S3Directory,
-    parent: VirtualFile
-) : BaseS3VirtualFile(s3filesystem, parent, directory) {
+class S3VirtualDirectory(s3filesystem: S3VirtualFileSystem, private val directory: S3Directory, parent: VirtualFile) :
+    BaseS3VirtualFile(s3filesystem, parent, directory) {
 
     override fun getChildren(): Array<VirtualFile> =
         directory.children().sortedBy { it.bucket }.filterNot { it.key == directory.key }

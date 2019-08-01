@@ -11,48 +11,23 @@ import java.time.Instant
  */
 
 sealed class S3Key(val bucket: String, val key: String) {
-    val name: String = if (key.endsWith("/")) {
-        key.dropLast(1)
-    } else {
-        key.substringAfterLast("/")
-    }
+    val name: String = if (key.endsWith("/")) key.dropLast(1) else key.substringAfterLast("/")
 }
 
-class S3Bucket(
-    bucket: String,
-    val client: S3Client,
-    val creationDate: Instant
-) : S3Directory(bucket, "", client)
+class S3Bucket(bucket: String, val client: S3Client, val creationDate: Instant) : S3Directory(bucket, "", client)
 
-class S3Object(
-    bucket: String,
-    key: String,
-    val eTag: String,
-    val size: Long,
-    val lastModified: Instant,
-    val client: S3Client
-) : S3Key(bucket, key)
+class S3Object(bucket: String, key: String, val eTag: String, val size: Long, val lastModified: Instant, val client: S3Client) :
+    S3Key(bucket, key)
 
-open class S3Directory(
-    bucket: String,
-    key: String,
-    private val client: S3Client
-) : S3Key(bucket, key) {
+open class S3Directory(bucket: String, key: String, private val client: S3Client) : S3Key(bucket, key) {
 
     fun children(): List<S3Key> {
-        val request = ListObjectsV2Request.builder()
-            .bucket(bucket)
-            .delimiter("/")
-            .prefix(key)
-            .build()
-        val response = client.listObjectsV2(request)
+        val response = client.listObjectsV2 { it.bucket(bucket).delimiter("/").prefix(key) }
 
-        val folders = (response?.commonPrefixes() ?: emptyList())
-            .map { S3Directory(bucket, it.prefix(), client) }
+        val folders = response.commonPrefixes()?.map { S3Directory(bucket, it.prefix(), client) } ?: emptyList()
 
-        val s3Objects = (response.contents()
-            ?: emptyList()).filterNotNull().filterNot { it.key() == key }
-            .map { S3Object(bucket, it.key(), it.eTag(), it.size(), it.lastModified(), client) }
+        val s3Objects = response.contents()?.filterNotNull()?.filterNot { it.key() == key }
+            ?.map { S3Object(bucket, it.key(), it.eTag(), it.size(), it.lastModified(), client) } ?: emptyList()
 
         return folders + s3Objects
     }
