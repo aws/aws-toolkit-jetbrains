@@ -11,7 +11,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.http.SdkHttpResponse
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.HeadBucketResponse
@@ -62,14 +61,13 @@ class S3ServiceNodeTest {
                     )
                 }.build()
         }
-
         mockClientManager.register(S3Client::class, mockClient)
-        
         val children = S3ServiceNode(projectRule.project).children
         assertThat(children.size).isEqualTo(3)
         assertThat(children).allMatch { it is S3BucketNode }
         assertThat(children.map { it.displayName() }).containsExactly("AAA", "BBB", "ZZZ")
     }
+
     @Test
     fun noBucketsInTheRegion() {
         val mockClient = delegateMock<S3Client>()
@@ -81,7 +79,9 @@ class S3ServiceNodeTest {
 
         mockClient.stub {
             on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder().apply {
-                this.sdkHttpResponse(mockSdkResponse) }.build() }
+                this.sdkHttpResponse(mockSdkResponse)
+            }.build()
+        }
         mockClient.stub { on { listBuckets(any<ListBucketsRequest>()) } doReturn ListBucketsResponse.builder().build() }
 
         mockClientManager.register(S3Client::class, mockClient)
@@ -99,7 +99,9 @@ class S3ServiceNodeTest {
 
         mockClient.stub {
             on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder().apply {
-                this.sdkHttpResponse(mockSdkResponse) }.build() }
+                this.sdkHttpResponse(mockSdkResponse)
+            }.build()
+        }
 
         mockClientManager.register(S3Client::class, mockClient)
         val children = S3ServiceNode(projectRule.project).children
