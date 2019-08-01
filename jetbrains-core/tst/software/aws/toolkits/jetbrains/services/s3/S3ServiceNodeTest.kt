@@ -12,14 +12,17 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
+import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.HeadBucketResponse
-import software.amazon.awssdk.services.s3.model.ListBucketsRequest
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse
+import software.amazon.awssdk.services.s3.model.ListBucketsRequest
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.utils.delegateMock
+import java.time.Instant
+
 class S3ServiceNodeTest {
 
     @Rule
@@ -30,6 +33,34 @@ class S3ServiceNodeTest {
     @Rule
     val mockClientManager = MockClientManagerRule(projectRule)
 
+    @Test
+    fun s3BucketsSortedAlphabetically() {
+        val mockClient = delegateMock<S3Client>()
+        val mockSdkResponse = mock<SdkHttpResponse>()
+        mockSdkResponse.stub {
+            on { headers() } doReturn mapOf("x-amz-bucket-region" to listOf("us-east-1"))
+        }
+
+        mockClient.stub {
+            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder()
+                .apply { this.sdkHttpResponse(mockSdkResponse) }.build()
+        }
+        mockClient.stub {
+            on { listBuckets(any<ListBucketsRequest>()) } doReturn ListBucketsResponse.builder()
+                .apply {
+                    this.buckets(
+                        bucketData("BBB"),
+                        bucketData("AAA"),
+                        bucketData("ZZZ")
+                    )
+                }.build()
+        }
+
+        mockClientManager.register(S3Client::class, mockClient)
+        val children = S3ServiceNode(projectRule.project).children
+        assertThat(children.size).isEqualTo(3)
+        assertThat(children.map { it.displayName() }).containsExactly("AAA", "BBB", "ZZZ")
+    }
     @Test
     fun noBucketsInTheRegion() {
         val mockClient = delegateMock<S3Client>()
@@ -65,4 +96,10 @@ class S3ServiceNodeTest {
         val children = S3ServiceNode(projectRule.project).children
         assertThat(children).allMatch { it is AwsExplorerErrorNode }
     }
+
+    private fun bucketData(bucketName: String) =
+        Bucket.builder()
+            .creationDate(Instant.parse("1995-10-23T10:12:35Z"))
+            .name(bucketName)
+            .build()
 }
