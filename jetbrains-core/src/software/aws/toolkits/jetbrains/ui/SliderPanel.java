@@ -12,13 +12,6 @@ import javax.swing.JTextField;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
-import static software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE;
-import static software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT;
-import static software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MAX_MEMORY;
-import static software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MAX_TIMEOUT;
-import static software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MEMORY_INCREMENT;
-import static software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_MEMORY;
-import static software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_TIMEOUT;
 import static software.aws.toolkits.resources.Localization.message;
 
 // A panel with a slider and text field, of which the slider and text field always synced up.
@@ -30,17 +23,7 @@ public class SliderPanel {
     public JSlider slider;
     public JTextField textField;
 
-    public static SliderPanel lambdaTimeout() {
-        int minorTick = 10; // Minor tick for 10s
-        int majorTick = 100; // Major tick for 100s
-        return new SliderPanel(MIN_TIMEOUT, MAX_TIMEOUT, DEFAULT_TIMEOUT, 0, MAX_TIMEOUT, minorTick, majorTick, false);
-    }
-
-    public static SliderPanel lambdaMemory() {
-        return new SliderPanel(MIN_MEMORY, MAX_MEMORY, DEFAULT_MEMORY_SIZE, MIN_MEMORY, MAX_MEMORY, MEMORY_INCREMENT, MEMORY_INCREMENT * 5, true);
-    }
-
-    private SliderPanel(int min, int max, int defaultValue, int minTick, int maxTick, int minorTick, int majorTick, boolean snap) {
+    public SliderPanel(int min, int max, int defaultValue, int minTick, int maxTick, int minorTick, int majorTick, boolean snap) {
         this.min = min;
         this.max = max;
         this.defaultValue = defaultValue;

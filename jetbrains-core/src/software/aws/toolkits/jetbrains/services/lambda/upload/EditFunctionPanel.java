@@ -10,6 +10,7 @@ import com.intellij.ui.SortedComboBoxModel;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.iam.IamRole;
+import software.aws.toolkits.jetbrains.services.lambda.LambdaWidgets;
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField;
 import software.aws.toolkits.jetbrains.ui.ResourceSelector;
 import software.aws.toolkits.jetbrains.ui.SliderPanel;
@@ -66,8 +67,8 @@ public class EditFunctionPanel {
         runtimeModel = new SortedComboBoxModel<>(Comparator.comparing(Runtime::toString, Comparator.naturalOrder()));
         runtime = new ComboBox<>(runtimeModel);
         envVars = new EnvironmentVariablesTextField(project);
-        memorySlider = SliderPanel.lambdaMemory();
-        timeoutSlider = SliderPanel.lambdaTimeout();
+        memorySlider = LambdaWidgets.INSTANCE.lambdaMemory();
+        timeoutSlider = LambdaWidgets.INSTANCE.lambdaTimeout();
     }
 
     public void setRuntimes(Collection<Runtime> runtimes) {

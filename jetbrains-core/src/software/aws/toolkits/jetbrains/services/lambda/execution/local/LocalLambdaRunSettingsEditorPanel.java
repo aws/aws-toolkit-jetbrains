@@ -21,6 +21,7 @@ import org.jetbrains.yaml.YAMLFileType;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.core.utils.ExceptionUtils;
 import software.aws.toolkits.jetbrains.services.cloudformation.Function;
+import software.aws.toolkits.jetbrains.services.lambda.LambdaWidgets;
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupUtil;
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaInputPanel;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils;
@@ -86,8 +87,8 @@ public final class LocalLambdaRunSettingsEditorPanel {
         runtimeModel = new SortedComboBoxModel<>(Comparator.comparing(Runtime::toString, Comparator.naturalOrder()));
         runtime = new ComboBox<>(runtimeModel);
         environmentVariables = new EnvironmentVariablesTextField(project);
-        timeoutSlider = SliderPanel.lambdaTimeout();
-        memorySlider = SliderPanel.lambdaMemory();
+        timeoutSlider = LambdaWidgets.INSTANCE.lambdaTimeout();
+        memorySlider = LambdaWidgets.INSTANCE.lambdaMemory();
     }
 
     private void updateComponents() {

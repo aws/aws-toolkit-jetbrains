@@ -14,6 +14,14 @@ import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.services.iam.IamRole
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MAX_MEMORY
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MAX_TIMEOUT
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MEMORY_INCREMENT
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_MEMORY
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_TIMEOUT
+import software.aws.toolkits.jetbrains.ui.SliderPanel
 import java.util.concurrent.TimeUnit
 
 object Lambda {
@@ -32,6 +40,14 @@ object LambdaLimits {
     const val MIN_TIMEOUT = 1
     @JvmField val MAX_TIMEOUT = TimeUnit.MINUTES.toSeconds(15).toInt()
     @JvmField val DEFAULT_TIMEOUT = TimeUnit.MINUTES.toSeconds(5).toInt()
+}
+
+object LambdaWidgets {
+    fun lambdaTimeout(): SliderPanel =
+        SliderPanel(MIN_TIMEOUT, MAX_TIMEOUT, DEFAULT_TIMEOUT, 0, MAX_TIMEOUT, 10, 100, false)
+
+    fun lambdaMemory(): SliderPanel =
+        SliderPanel(MIN_MEMORY, MAX_MEMORY, DEFAULT_MEMORY_SIZE, MIN_MEMORY, MAX_MEMORY, MEMORY_INCREMENT, MEMORY_INCREMENT * 5, true)
 }
 
 data class LambdaFunction(
