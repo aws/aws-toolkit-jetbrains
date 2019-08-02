@@ -91,7 +91,6 @@ open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket
     override fun isDirectory(): Boolean = true
 }
 
-
 class S3VirtualDirectory(s3filesystem: S3VirtualFileSystem, private val directory: S3Directory, parent: VirtualFile) :
     BaseS3VirtualFile(s3filesystem, parent, directory) {
 
