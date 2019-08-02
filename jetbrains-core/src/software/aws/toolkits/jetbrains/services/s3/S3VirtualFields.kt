@@ -14,11 +14,8 @@ import java.time.format.DateTimeFormatter
  * BaseS3VirtualFile is a base class to represent a virtual file
  */
 
-abstract class BaseS3VirtualFile(
-    val fileSystem: S3VirtualFileSystem,
-    private val parent: VirtualFile?,
-    open val key: S3Key
-) : VirtualFile() {
+abstract class BaseS3VirtualFile(val fileSystem: S3VirtualFileSystem, private val parent: VirtualFile?, open val key: S3Key) :
+    VirtualFile() {
 
     override fun getName(): String = key.key
 
@@ -95,11 +92,8 @@ open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket
 }
 
 
-class S3VirtualDirectory(
-    s3filesystem: S3VirtualFileSystem,
-    private val directory: S3Directory,
-    parent: VirtualFile
-) : BaseS3VirtualFile(s3filesystem, parent, directory) {
+class S3VirtualDirectory(s3filesystem: S3VirtualFileSystem, private val directory: S3Directory, parent: VirtualFile) :
+    BaseS3VirtualFile(s3filesystem, parent, directory) {
 
     override fun getChildren(): Array<VirtualFile> =
         directory.children().sortedBy { it.bucket }.filterNot { it.key == directory.key }

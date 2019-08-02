@@ -18,14 +18,8 @@ sealed class S3Key(val bucket: String, val key: String) {
 
 class S3Bucket(bucket: String, val client: S3Client, val creationDate: Instant) : S3Directory(bucket, "", client)
 
-class S3Object(
-    bucket: String,
-    key: String,
-    val eTag: String,
-    val size: Long,
-    val lastModified: String,
-    val client: S3Client
-) : S3Key(bucket, key)
+class S3Object(bucket: String, key: String, val eTag: String, val size: Long, val lastModified: String, val client: S3Client) :
+    S3Key(bucket, key)
 
 open class S3Directory(bucket: String, key: String, private val client: S3Client) : S3Key(bucket, key) {
 
