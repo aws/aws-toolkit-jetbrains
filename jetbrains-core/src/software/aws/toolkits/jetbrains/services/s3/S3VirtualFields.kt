@@ -6,14 +6,19 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
 import java.io.InputStream
 import java.io.OutputStream
-import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * BaseS3VirtualFile is a base class to represent a virtual file
  */
 
-abstract class BaseS3VirtualFile(val fileSystem: S3VirtualFileSystem, private val parent: VirtualFile?, open val key: S3Key) :
-    VirtualFile() {
+abstract class BaseS3VirtualFile(
+    val fileSystem: S3VirtualFileSystem,
+    private val parent: VirtualFile?,
+    open val key: S3Key
+) : VirtualFile() {
 
     override fun getName(): String = key.key
 
@@ -51,13 +56,18 @@ abstract class BaseS3VirtualFile(val fileSystem: S3VirtualFileSystem, private va
 class S3VirtualFile(s3Vfs: S3VirtualFileSystem, val file: S3Object, parent: VirtualFile) :
     BaseS3VirtualFile(s3Vfs, parent, file) {
 
+    override fun getName(): String = if (file.name.contains("/")) file.name.substringAfterLast("/") else file.name
+
     override fun isDirectory(): Boolean = false
 
     override fun getChildren(): Array<VirtualFile> = emptyArray()
 
     override fun getLength(): Long = file.size
 
-    override fun getTimeStamp(): Long = file.lastModified.toEpochMilli()
+    override fun getTimeStamp(): Long {
+        val time = LocalDateTime.parse(file.lastModified, DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss"))
+        return time.toInstant(ZoneOffset.UTC).toEpochMilli()
+    }
 }
 
 open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket: S3Bucket) :
@@ -65,7 +75,10 @@ open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket
 
     override fun getTimeStamp(): Long = s3Bucket.creationDate.toEpochMilli()
 
-    fun getCreationDate(): Instant = s3Bucket.creationDate
+    fun getCreationDate(): String {
+        val datetime = LocalDateTime.ofInstant(s3Bucket.creationDate, ZoneOffset.UTC)
+        return DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss").format(datetime)
+    }
 
     fun getVirtualBucketName(): String = s3Bucket.bucket
 
@@ -81,8 +94,12 @@ open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket
     override fun isDirectory(): Boolean = true
 }
 
-class S3VirtualDirectory(s3filesystem: S3VirtualFileSystem, private val directory: S3Directory, parent: VirtualFile) :
-    BaseS3VirtualFile(s3filesystem, parent, directory) {
+
+class S3VirtualDirectory(
+    s3filesystem: S3VirtualFileSystem,
+    private val directory: S3Directory,
+    parent: VirtualFile
+) : BaseS3VirtualFile(s3filesystem, parent, directory) {
 
     override fun getChildren(): Array<VirtualFile> =
         directory.children().sortedBy { it.bucket }.filterNot { it.key == directory.key }
@@ -94,4 +111,6 @@ class S3VirtualDirectory(s3filesystem: S3VirtualFileSystem, private val director
             }.toTypedArray()
 
     override fun isDirectory(): Boolean = true
+
+    override fun getName(): String = directory.name
 }
