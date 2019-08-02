@@ -43,9 +43,11 @@ object LambdaLimits {
 }
 
 object LambdaWidgets {
+    @JvmStatic
     fun lambdaTimeout(): SliderPanel =
         SliderPanel(MIN_TIMEOUT, MAX_TIMEOUT, DEFAULT_TIMEOUT, 0, MAX_TIMEOUT, 10, 100, false)
 
+    @JvmStatic
     fun lambdaMemory(): SliderPanel =
         SliderPanel(MIN_MEMORY, MAX_MEMORY, DEFAULT_MEMORY_SIZE, MIN_MEMORY, MAX_MEMORY, MEMORY_INCREMENT, MEMORY_INCREMENT * 5, true)
 }

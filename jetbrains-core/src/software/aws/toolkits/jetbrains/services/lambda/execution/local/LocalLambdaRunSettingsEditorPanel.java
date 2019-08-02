@@ -87,8 +87,8 @@ public final class LocalLambdaRunSettingsEditorPanel {
         runtimeModel = new SortedComboBoxModel<>(Comparator.comparing(Runtime::toString, Comparator.naturalOrder()));
         runtime = new ComboBox<>(runtimeModel);
         environmentVariables = new EnvironmentVariablesTextField(project);
-        timeoutSlider = LambdaWidgets.INSTANCE.lambdaTimeout();
-        memorySlider = LambdaWidgets.INSTANCE.lambdaMemory();
+        timeoutSlider = LambdaWidgets.lambdaTimeout();
+        memorySlider = LambdaWidgets.lambdaMemory();
     }
 
     private void updateComponents() {

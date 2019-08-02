@@ -67,8 +67,8 @@ public class EditFunctionPanel {
         runtimeModel = new SortedComboBoxModel<>(Comparator.comparing(Runtime::toString, Comparator.naturalOrder()));
         runtime = new ComboBox<>(runtimeModel);
         envVars = new EnvironmentVariablesTextField(project);
-        memorySlider = LambdaWidgets.INSTANCE.lambdaMemory();
-        timeoutSlider = LambdaWidgets.INSTANCE.lambdaTimeout();
+        memorySlider = LambdaWidgets.lambdaMemory();
+        timeoutSlider = LambdaWidgets.lambdaTimeout();
     }
 
     public void setRuntimes(Collection<Runtime> runtimes) {
