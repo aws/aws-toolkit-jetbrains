@@ -4,9 +4,6 @@ package software.aws.toolkits.jetbrains.services.s3
 
 import software.amazon.awssdk.services.s3.S3Client
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * S3 Key class represents a base class for S3 Directory and S3 Objects
@@ -18,7 +15,7 @@ sealed class S3Key(val bucket: String, val key: String) {
 
 class S3Bucket(bucket: String, val client: S3Client, val creationDate: Instant) : S3Directory(bucket, "", client)
 
-class S3Object(bucket: String, key: String, val eTag: String, val size: Long, val lastModified: String, val client: S3Client) :
+class S3Object(bucket: String, key: String, val eTag: String, val size: Long, val lastModified: Instant, val client: S3Client) :
     S3Key(bucket, key)
 
 open class S3Directory(bucket: String, key: String, private val client: S3Client) : S3Key(bucket, key) {
@@ -29,15 +26,8 @@ open class S3Directory(bucket: String, key: String, private val client: S3Client
         val folders = response.commonPrefixes()?.map { S3Directory(bucket, it.prefix(), client) } ?: emptyList()
 
         val s3Objects = response.contents()?.filterNotNull()?.filterNot { it.key() == key }
-            ?.map { S3Object(bucket, it.key(), it.eTag(), it.size(), formatObjectDate(it.lastModified()), client) }
-            ?: emptyList()
+            ?.map { S3Object(bucket, it.key(), it.eTag(), it.size(), it.lastModified(), client) } ?: emptyList()
 
         return folders + s3Objects
-    }
-
-    private fun formatObjectDate(date: Instant): String {
-        val datetime = LocalDateTime.ofInstant(date, ZoneId.of("America/Los_Angeles"))
-        return datetime.atZone(ZoneId.of("America/Los_Angeles"))
-            .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
     }
 }

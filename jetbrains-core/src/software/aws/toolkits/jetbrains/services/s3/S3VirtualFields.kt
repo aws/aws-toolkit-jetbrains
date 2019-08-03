@@ -7,7 +7,7 @@ import com.intellij.openapi.vfs.VirtualFileSystem
 import java.io.InputStream
 import java.io.OutputStream
 import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
@@ -61,9 +61,20 @@ class S3VirtualFile(s3Vfs: S3VirtualFileSystem, val file: S3Object, parent: Virt
 
     override fun getLength(): Long = file.size
 
-    override fun getTimeStamp(): Long {
-        val time = LocalDateTime.parse(file.lastModified, DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss"))
-        return time.toInstant(ZoneOffset.UTC).toEpochMilli()
+    override fun getTimeStamp(): Long = file.lastModified.toEpochMilli()
+
+    fun formatLastModified(): String {
+        val datetime = LocalDateTime.ofInstant(file.lastModified, ZoneId.systemDefault())
+        return datetime.atZone(ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
+    }
+
+    fun formatSize(): String {
+        val unit = 1024
+        if (file.size < 1024) return "${file.size} B"
+        val exp = (Math.log(file.size.toDouble()) / Math.log(unit.toDouble())).toInt()
+        val pre = "KMGTPE"[exp - 1]
+        return String.format("%.1f %sB", file.size / Math.pow(unit.toDouble(), exp.toDouble()), pre)
     }
 }
 
@@ -73,8 +84,9 @@ open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket
     override fun getTimeStamp(): Long = s3Bucket.creationDate.toEpochMilli()
 
     fun getCreationDate(): String {
-        val datetime = LocalDateTime.ofInstant(s3Bucket.creationDate, ZoneOffset.UTC)
-        return DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss").format(datetime)
+        val datetime = LocalDateTime.ofInstant(s3Bucket.creationDate, ZoneId.systemDefault())
+        return datetime.atZone(ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
     }
 
     fun getVirtualBucketName(): String = s3Bucket.bucket
