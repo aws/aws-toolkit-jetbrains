@@ -14,11 +14,6 @@ buildscript {
     }
 }
 
-plugins {
-    id 'org.jetbrains.intellij'
-    id 'com.ullink.nuget' version '2.18'
-}
-
 ext.resharperPluginPath = new File(projectDir, "ReSharper.AWS")
 
 def buildConfiguration = ext.properties["BuildConfiguration"] ?: "Debug"
@@ -29,6 +24,7 @@ def pluginFiles = [
         "AWS.Psi/bin/$buildConfiguration/net461/AWS.Psi.pdb"
 ]
 
+apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'com.jetbrains.rdgen'
 
 apply from: 'protocol.gradle'

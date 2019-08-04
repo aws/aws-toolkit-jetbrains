@@ -39,19 +39,16 @@ task prepareNuGetConfig {
     }
 }
 
-task restoreReSharperPluginPackages(type: nugetRestore.class) {
+task restoreReSharperPluginPackages() {
     group = backendGroup
     description = 'Restores packages for backend plugin'
     dependsOn prepareBuildProps, prepareNuGetConfig
 
-    solutionFile = "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
-    sources = [
-            'https://api.nuget.org/v3/index.json'
-    ]
-
-    doFirst {
-        logger.info("Restoring packages for $solutionFile")
-        sources.add(getReSharperSdkPath())
+    doLast {
+        exec {
+            executable = "dotnet"
+            args = ["restore", "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln" ]
+        }
     }
 }
 
