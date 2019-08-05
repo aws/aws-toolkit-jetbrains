@@ -17,7 +17,6 @@ import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.core.utils.listBucketsByRegion
 import software.aws.toolkits.jetbrains.components.telemetry.LoggingDialogWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -26,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.iam.CreateIamRoleDialog
 import software.aws.toolkits.jetbrains.services.iam.IamRole
-import software.aws.toolkits.jetbrains.services.iam.listRolesFilter
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
@@ -42,9 +40,9 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
 import software.aws.toolkits.jetbrains.utils.ui.selected
+import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import java.awt.event.ActionEvent
-import java.util.function.Function
 import javax.swing.Action
 import javax.swing.JComponent
 
@@ -114,13 +112,8 @@ class EditFunctionDialog(
             view.name.isEnabled = false
             view.deploySettings.isVisible = false
         } else {
-            view.sourceBucket.populateValues {
-                val activeRegionId = ProjectAccountSettingsManager.getInstance(project).activeRegion.id
-                s3Client.listBucketsByRegion(activeRegionId)
-                    .mapNotNull { it.name() }
-                    .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                    .toList()
-            }
+
+            view.sourceBucket.load()
 
             view.createBucket.addActionListener {
                 val bucketDialog = CreateS3BucketDialog(
@@ -130,7 +123,7 @@ class EditFunctionDialog(
                 )
 
                 if (bucketDialog.showAndGet()) {
-                    bucketDialog.bucketName().let { newBucket -> view.sourceBucket.addAndSelectValue { newBucket } }
+                    bucketDialog.bucketName().let { view.sourceBucket.load(default = it, forceFetch = true) }
                 }
             }
         }
@@ -148,12 +141,7 @@ class EditFunctionDialog(
         val settings = ProjectAccountSettingsManager.getInstance(project)
         view.setXrayControlVisibility(mode != UPDATE_CODE && regionProvider.isServiceSupported(settings.activeRegion, "xray"))
 
-        view.iamRole.populateValues(default = role) {
-            iamClient.listRolesFilter { it.assumeRolePolicyDocument().contains(LAMBDA_PRINCIPAL) }
-                .map { IamRole(it.arn()) }
-                .sortedWith(Comparator.comparing<IamRole, String>(Function { it.toString() }, String.CASE_INSENSITIVE_ORDER))
-                .toList()
-        }
+        view.iamRole.load(default = role)
 
         view.createRole.addActionListener {
             val iamRoleDialog = CreateIamRoleDialog(
@@ -164,7 +152,7 @@ class EditFunctionDialog(
                 defaultPolicyDocument = DEFAULT_POLICY
             )
             if (iamRoleDialog.showAndGet()) {
-                iamRoleDialog.iamRole?.let { newRole -> view.iamRole.addAndSelectValue { newRole } }
+                iamRoleDialog.iamRole?.let { newRole -> view.iamRole.load(default = newRole, forceFetch = true) }
             }
         }
     }
@@ -314,10 +302,7 @@ class UploadToLambdaValidator {
             view.handler
         )
         view.runtime.selected() ?: return ValidationInfo(message("lambda.upload_validation.runtime"), view.runtime)
-        view.iamRole.selected() ?: return view.iamRole.toValidationInfo(
-            loading = message("lambda.upload_validation.iam_role.loading"),
-            notSelected = message("lambda.upload_validation.iam_role")
-        )
+        view.iamRole.selected() ?: return view.iamRole.validationInfo(message("lambda.upload_validation.iam_role"))
 
         return view.timeoutSlider.validate() ?: view.memorySlider.validate()
     }
@@ -337,11 +322,7 @@ class UploadToLambdaValidator {
             view.handler
         )
 
-        view.sourceBucket.selected() ?: return view.sourceBucket.toValidationInfo(
-            loading = message("lambda.upload_validation.source_bucket.loading"),
-            notSelected = message("lambda.upload_validation.source_bucket")
-        )
-
+        view.sourceBucket.selected() ?: return view.sourceBucket.validationInfo(message("lambda.upload_validation.source_bucket"))
         return null
     }
 
