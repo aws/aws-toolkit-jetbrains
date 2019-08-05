@@ -40,7 +40,5 @@ abstract class AwsExplorerNode<T>(val nodeProject: Project, value: T, private va
      */
     open fun onDoubleClick() {}
 
-    override fun toString(): String {
-        return value.toString()
-    }
+    override fun toString(): String = displayName()
 }

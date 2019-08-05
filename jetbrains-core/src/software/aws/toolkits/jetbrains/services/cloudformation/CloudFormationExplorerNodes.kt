@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation
 
-import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
@@ -22,8 +21,8 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
-import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.core.stack.StackWindowManager
+import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.utils.TaggingResourceType
@@ -34,7 +33,7 @@ class CloudFormationServiceNode(project: Project) :
     AwsExplorerServiceRootNode(project, AwsExplorerService.CLOUDFORMATION) {
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
         val future = AwsResourceCache.getInstance(nodeProject)
-            .getResource(CloudFormationResources.listStacks())
+            .getResource(CloudFormationResources.LIST_STACKS)
             .toCompletableFuture()
         return future.get().asSequence()
             .filter { it.stackStatus() !in DELETING_STACK_STATES }

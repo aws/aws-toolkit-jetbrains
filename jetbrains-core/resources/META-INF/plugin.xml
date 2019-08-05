@@ -158,7 +158,8 @@
                         serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.MockClientManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.core.AwsResourceCache"
-                        serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"/>
+                        serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
+                        testServiceImplementation="software.aws.toolkits.jetbrains.core.MockResourceCache"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.stack.StackWindowManager"/>
         <toolWindow id="aws.explorer" anchor="left" secondary="true"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"

@@ -55,7 +55,7 @@ class MockResourceCache : AwsResourceCache {
     }
 
     override fun clear() {
-        TODO("not implemented")
+        map.clear()
     }
 
     fun <T> addEntry(resource: Resource<T>, value: T) {

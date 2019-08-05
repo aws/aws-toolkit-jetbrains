@@ -10,15 +10,13 @@ import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
 
 object CloudFormationResources {
-    private val listStacks: Resource.Cached<List<StackSummary>> =
-        ClientBackedCachedResource(CloudFormationClient::class) {
+    val LIST_STACKS: Resource.Cached<List<StackSummary>> =
+        ClientBackedCachedResource(CloudFormationClient::class, "cloudformation.list_stacks") {
             listStacksPaginator().stackSummaries().toList()
         }
 
-    fun listStacks() = listStacks
-
     fun listStackResources(stackId: String): Resource.Cached<List<StackResourceSummary>> =
-        ClientBackedCachedResource(CloudFormationClient::class) {
+        ClientBackedCachedResource(CloudFormationClient::class, "cloudformation.list_resources.$stackId") {
             listStackResourcesPaginator { it.stackName(stackId) }.stackResourceSummaries().toList()
         }
 }
