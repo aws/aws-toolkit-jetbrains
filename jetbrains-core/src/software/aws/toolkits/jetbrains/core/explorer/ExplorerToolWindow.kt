@@ -154,7 +154,7 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                 return null
             }
 
-            return RemoteLambdaLocation(project, lambdas.first().function)
+            return RemoteLambdaLocation(project, lambdas.first().value)
         }
 
         return super.getData(dataId)

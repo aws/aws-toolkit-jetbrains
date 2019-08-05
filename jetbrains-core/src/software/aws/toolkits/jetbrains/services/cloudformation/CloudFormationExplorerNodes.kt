@@ -87,7 +87,6 @@ class CloudFormationStackNode(
                     val response = lambdaClient.getFunction { it.functionName(resource.physicalResourceId()) }
                     LambdaFunctionNode(
                         nodeProject,
-                        lambdaClient,
                         response.configuration().toDataClass(credentialProvider.id, region),
                         true
                     )
