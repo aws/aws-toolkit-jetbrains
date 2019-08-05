@@ -31,15 +31,12 @@ import software.aws.toolkits.resources.message
 
 class CloudFormationServiceNode(project: Project) :
     AwsExplorerServiceRootNode(project, AwsExplorerService.CLOUDFORMATION) {
-    override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
-        val future = AwsResourceCache.getInstance(nodeProject)
-            .getResource(CloudFormationResources.LIST_STACKS)
-            .toCompletableFuture()
-        return future.get().asSequence()
-            .filter { it.stackStatus() !in DELETING_STACK_STATES }
-            .map { CloudFormationStackNode(nodeProject, it.stackName(), it.stackStatus(), it.stackId()) }
-            .toList()
-    }
+    override fun getChildrenInternal(): List<AwsExplorerNode<*>> = AwsResourceCache.getInstance(nodeProject)
+        .getResourceNow(CloudFormationResources.LIST_STACKS)
+        .asSequence()
+        .filter { it.stackStatus() !in DELETING_STACK_STATES }
+        .map { CloudFormationStackNode(nodeProject, it.stackName(), it.stackStatus(), it.stackId()) }
+        .toList()
 
     private companion object {
         val DELETING_STACK_STATES = setOf(StackStatus.DELETE_COMPLETE)
@@ -76,10 +73,9 @@ class CloudFormationStackNode(
 
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
         val lambdaClient = nodeProject.awsClient<LambdaClient>(credentialProvider, region)
-        val future = AwsResourceCache.getInstance(nodeProject)
-            .getResource(CloudFormationResources.listStackResources(stackId))
-            .toCompletableFuture()
-        return future.get().asSequence()
+        return AwsResourceCache.getInstance(nodeProject)
+            .getResourceNow(CloudFormationResources.listStackResources(stackId))
+            .asSequence()
             .filter { it.resourceType() == LAMBDA_FUNCTION_TYPE && it.resourceStatus() in COMPLETE_RESOURCE_STATES }
             .map { resource ->
                 // TODO: Enable using cache, and a registry for these mappings of CFN -> real resource

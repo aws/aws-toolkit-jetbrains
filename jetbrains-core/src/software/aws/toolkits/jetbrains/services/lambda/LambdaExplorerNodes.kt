@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.NavigatablePsiElement
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.LambdaClient
-import software.amazon.awssdk.services.lambda.model.FunctionConfiguration
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
@@ -16,16 +15,9 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRoo
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 
 class LambdaServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsExplorerService.LAMBDA) {
-    override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
-        val future = AwsResourceCache.getInstance(nodeProject)
-            .getResource(LambdaResources.LIST_FUNCTIONS)
-            .toCompletableFuture()
-        return future.get()
-            .map { mapResourceToNode(it) }
-    }
-
-    private fun mapResourceToNode(resource: FunctionConfiguration) =
-        LambdaFunctionNode(nodeProject, resource.toDataClass(credentialProvider.id, region))
+    override fun getChildrenInternal(): List<AwsExplorerNode<*>> = AwsResourceCache.getInstance(nodeProject)
+        .getResourceNow(LambdaResources.LIST_FUNCTIONS)
+        .map { LambdaFunctionNode(nodeProject, it.toDataClass(credentialProvider.id, region)) }
 }
 
 open class LambdaFunctionNode(

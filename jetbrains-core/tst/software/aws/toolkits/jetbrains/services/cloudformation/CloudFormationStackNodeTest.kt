@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.cloudformation.model.ListStackResourcesRe
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
 import software.amazon.awssdk.services.cloudformation.model.StackResourceSummary
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.amazon.awssdk.services.cloudformation.paginators.ListStackResourcesIterable
+import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse
@@ -26,9 +26,12 @@ import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
 import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
+import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.utils.delegateMock
+import java.util.concurrent.CompletableFuture
 
 class CloudFormationStackNodeTest {
 
@@ -46,9 +49,7 @@ class CloudFormationStackNodeTest {
 
     @Before
     fun setUp() {
-        whenever(mockCfnClient.listStackResourcesPaginator(any<ListStackResourcesRequest>())).thenReturn(
-            ListStackResourcesIterable(mockCfnClient, ListStackResourcesRequest.builder().build())
-        )
+        resourceCache().clear()
 
         whenever(mockCfnClient.listStackResources(any<ListStackResourcesRequest>())).thenReturn(
             ListStackResourcesResponse.builder()
@@ -130,4 +131,20 @@ class CloudFormationStackNodeTest {
     }
 
     private fun aCloudFormationStackNode(status: StackStatus) = CloudFormationStackNode(projectRule.project, "stack", status, "stackId")
+
+    private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
+
+    private fun MockResourceCache.stacksWithNames(names: List<Pair<String, StackStatus>>) {
+        this.addEntry(
+            CloudFormationResources.LIST_STACKS,
+            CompletableFuture.completedFuture(
+                names.map {
+                    StackSummary.builder()
+                        .stackName(it.first)
+                        .stackId(it.first)
+                        .stackStatus(it.second)
+                        .build()
+                }
+            ))
+    }
 }
