@@ -34,7 +34,7 @@ class CreateWaiterTest {
     @Rule
     val mockClientManagerRule = MockClientManagerRule(projectRule)
 
-    private val mockClient by lazy { mockClientManagerRule.register(CloudFormationClient::class, delegateMock()) }
+    private val mockClient by lazy { mockClientManagerRule.create<CloudFormationClient>() }
 
     @Test
     fun createSuccessful() {
