@@ -43,11 +43,11 @@ class DeploySamApplicationValidatorTest {
         view.withTemplateParameters(parameters)
 
         view.updateStack.isSelected = true
-        view.stacks.model = DefaultComboBoxModel(arrayOf(Stack("stack123")))
-        view.stacks.selectedItem = Stack("stack123")
+        view.stacks.model = DefaultComboBoxModel(arrayOf(Stack("stack123"))).also { it.selectedItem = Stack("stack123") }
+        view.stacks.forceLoaded()
 
-        view.s3Bucket.model = DefaultComboBoxModel(arrayOf("bucket123"))
-        view.s3Bucket.selectedItem = "bucket123"
+        view.s3Bucket.model = DefaultComboBoxModel(arrayOf("bucket123")).also { it.selectedItem = "bucket123" }
+        view.s3Bucket.forceLoaded()
 
         sut = DeploySamApplicationValidator(view)
     }

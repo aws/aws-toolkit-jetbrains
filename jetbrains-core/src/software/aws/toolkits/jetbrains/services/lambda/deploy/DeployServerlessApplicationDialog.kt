@@ -69,11 +69,13 @@ class DeployServerlessApplicationDialog(
             updateTemplateParameters()
         }
 
-        view.stacks.load(defaultMatcher = settings?.samStackName(samPath)?.let { { s: Stack -> it == s.name } })
+        settings?.samStackName(samPath)?.let {
+            view.stacks.selectedItem { s: Stack -> it == s.name }
+        }
 
         updateTemplateParameters()
 
-        view.s3Bucket.load(default = settings?.samBucketName(samPath))
+        view.s3Bucket.selectedItem = settings?.samBucketName(samPath)
 
         view.createS3BucketButton.addActionListener {
             val bucketDialog = CreateS3BucketDialog(
@@ -83,7 +85,10 @@ class DeployServerlessApplicationDialog(
             )
 
             if (bucketDialog.showAndGet()) {
-                bucketDialog.bucketName().let { view.s3Bucket.load(it, forceFetch = true) }
+                bucketDialog.bucketName().let {
+                    view.s3Bucket.reload(forceFetch = true)
+                    view.s3Bucket.selectedItem = it
+                }
             }
         }
 

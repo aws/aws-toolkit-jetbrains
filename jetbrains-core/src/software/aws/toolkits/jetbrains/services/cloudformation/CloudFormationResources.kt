@@ -11,7 +11,9 @@ import software.aws.toolkits.jetbrains.core.Resource
 object CloudFormationResources {
     @JvmField
     val ACTIVE_STACK_SUMMARIES = ClientBackedCachedResource(CloudFormationClient::class, "cfn.active_stacks") {
-        listStackSummariesFilter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
+        listStacksPaginator()
+            .stackSummaries()
+            .filter { it.stackStatus() != StackStatus.DELETE_COMPLETE }
             .filterNotNull()
             .filter { it.stackName() != null }
             .toList()

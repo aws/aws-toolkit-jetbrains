@@ -112,9 +112,6 @@ class EditFunctionDialog(
             view.name.isEnabled = false
             view.deploySettings.isVisible = false
         } else {
-
-            view.sourceBucket.load()
-
             view.createBucket.addActionListener {
                 val bucketDialog = CreateS3BucketDialog(
                     project = project,
@@ -123,7 +120,10 @@ class EditFunctionDialog(
                 )
 
                 if (bucketDialog.showAndGet()) {
-                    bucketDialog.bucketName().let { view.sourceBucket.load(default = it, forceFetch = true) }
+                    bucketDialog.bucketName().let {
+                        view.sourceBucket.reload(forceFetch = true)
+                        view.sourceBucket.selectedItem = it
+                    }
                 }
             }
         }
@@ -141,7 +141,7 @@ class EditFunctionDialog(
         val settings = ProjectAccountSettingsManager.getInstance(project)
         view.setXrayControlVisibility(mode != UPDATE_CODE && regionProvider.isServiceSupported(settings.activeRegion, "xray"))
 
-        view.iamRole.load(default = role)
+        view.iamRole.selectedItem = role
 
         view.createRole.addActionListener {
             val iamRoleDialog = CreateIamRoleDialog(
@@ -152,7 +152,10 @@ class EditFunctionDialog(
                 defaultPolicyDocument = DEFAULT_POLICY
             )
             if (iamRoleDialog.showAndGet()) {
-                iamRoleDialog.iamRole?.let { newRole -> view.iamRole.load(default = newRole, forceFetch = true) }
+                iamRoleDialog.iamRole?.let { newRole ->
+                    view.iamRole.reload(forceFetch = true)
+                    view.iamRole.selectedItem = newRole
+                }
             }
         }
     }
