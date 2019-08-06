@@ -26,5 +26,4 @@ abstract class AwsExplorerResourceNode<T>(
     abstract fun resourceType(): String
 
     abstract fun resourceArn(): String
-
 }

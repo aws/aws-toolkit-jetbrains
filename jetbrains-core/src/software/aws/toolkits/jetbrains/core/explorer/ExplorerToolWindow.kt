@@ -131,7 +131,7 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                 (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { actionGroup.addAll(it) }
                 additionalActions.forEach { actionGroup.add(it) }
 
-                if(actionGroup.childrenCount > 0) {
+                if (actionGroup.childrenCount > 0) {
                     val popupMenu = actionManager.createActionPopupMenu(ToolkitActionPlaces.EXPLORER_WINDOW, actionGroup)
                     popupMenu.component.show(comp, x, y)
                 }

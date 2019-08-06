@@ -9,11 +9,9 @@ import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.DeleteResourceAction
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
@@ -24,6 +22,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
+import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
@@ -60,7 +59,7 @@ class CloudFormationStackNode(
 
     override fun displayName() = stackName
 
-    override fun isAlwaysLeaf(): Boolean  = false
+    override fun isAlwaysLeaf(): Boolean = false
 
     override fun isAlwaysShowPlus(): Boolean = true
 
@@ -72,20 +71,21 @@ class CloudFormationStackNode(
         }
 
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
-        val lambdaClient = nodeProject.awsClient<LambdaClient>(credentialProvider, region)
-        return AwsResourceCache.getInstance(nodeProject)
+        val resourceCache = AwsResourceCache.getInstance(nodeProject)
+        return resourceCache
             .getResourceNow(CloudFormationResources.listStackResources(stackId))
             .asSequence()
             .filter { it.resourceType() == LAMBDA_FUNCTION_TYPE && it.resourceStatus() in COMPLETE_RESOURCE_STATES }
-            .map { resource ->
-                // TODO: Enable using cache, and a registry for these mappings of CFN -> real resource
+            .mapNotNull { resource ->
+                // TODO: Use a registry for these mappings of CFN -> real resource
                 try {
-                    val response = lambdaClient.getFunction { it.functionName(resource.physicalResourceId()) }
-                    LambdaFunctionNode(
-                        nodeProject,
-                        response.configuration().toDataClass(credentialProvider.id, region),
-                        true
-                    )
+                    resourceCache.getResourceNow(LambdaResources.function(resource.physicalResourceId()))?.let {
+                        LambdaFunctionNode(
+                            nodeProject,
+                            it.toDataClass(credentialProvider.id, region),
+                            true
+                        )
+                    }
                 } catch (e: Exception) {
                     AwsExplorerErrorNode(nodeProject, e)
                 }

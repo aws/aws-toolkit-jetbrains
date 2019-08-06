@@ -8,11 +8,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
 import software.amazon.awssdk.services.cloudformation.model.StackResourceSummary
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
@@ -23,7 +21,6 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
-import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.util.concurrent.CompletableFuture
 
 class CloudFormationStackNodeTest {
@@ -84,7 +81,6 @@ class CloudFormationStackNodeTest {
         )
 
         resourceCache().lambdaFunction(
-            "arn:aws:lambda:us-west-2:0123456789:function:processorf",
             FunctionConfiguration.builder()
                 .functionName("processor")
                 .functionArn("arn:aws:lambda:us-west-2:0123456789:function:processor")
@@ -122,9 +118,9 @@ class CloudFormationStackNodeTest {
             ))
     }
 
-    private fun MockResourceCache.lambdaFunction(arn: String, functionConfiguration: FunctionConfiguration) {
+    private fun MockResourceCache.lambdaFunction(functionConfiguration: FunctionConfiguration) {
         this.addEntry(
-            LambdaResources.function(arn),
-            CompletableFuture.completedFuture(functionConfiguration))
+            LambdaResources.LIST_FUNCTIONS,
+            CompletableFuture.completedFuture(listOf(functionConfiguration)))
     }
 }
