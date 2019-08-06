@@ -41,7 +41,7 @@ class EditFunctionDialogTest {
     private val mockSettingsManager by lazy { ProjectAccountSettingsManager.getInstance(projectRule.project) as MockProjectAccountSettingsManager }
 
     private lateinit var s3Client: S3Client
-    private lateinit var  iamClient: IamClient
+    private lateinit var iamClient: IamClient
 
     @Before
     fun setup() {

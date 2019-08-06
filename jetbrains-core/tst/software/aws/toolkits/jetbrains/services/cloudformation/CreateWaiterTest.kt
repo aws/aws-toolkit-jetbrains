@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.time.Duration
 
 class CreateWaiterTest {
