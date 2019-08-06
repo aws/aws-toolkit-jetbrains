@@ -51,7 +51,9 @@ class LambdaServiceNodeTest {
 
     @Test
     fun exceptionLeadsToErrorNode() {
-        resourceCache().addEntry(LambdaResources.LIST_FUNCTIONS, CompletableFuture.failedFuture(RuntimeException("Simulated error")))
+        resourceCache().addEntry(LambdaResources.LIST_FUNCTIONS, CompletableFuture<List<FunctionConfiguration>>().also {
+            it.completeExceptionally(RuntimeException("Simulated error"))
+        })
 
         val children = LambdaServiceNode(projectRule.project).children
 
