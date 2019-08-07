@@ -77,10 +77,6 @@ tasks.withType(prepareSandbox.class).all {
 
 compileKotlin.dependsOn(generateModel)
 
-clean.doLast {
-    cleanProtocolModels
-}
-
 test {
     useTestNG()
     ignoreFailures = true
