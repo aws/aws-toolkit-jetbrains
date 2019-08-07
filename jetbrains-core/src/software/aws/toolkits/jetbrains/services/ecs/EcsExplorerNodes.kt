@@ -20,7 +20,7 @@ import software.aws.toolkits.resources.message
 class EcsParentNode(project: Project) : AwsExplorerServiceRootNode(project, AwsExplorerService.ECS) {
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = listOf(
         EcsClusterParentNode(nodeProject),
-        EcsTaskDefinitionFamiliesParentNode (nodeProject)
+        EcsTaskDefinitionsParentNode (nodeProject)
     )
 }
 
@@ -64,7 +64,7 @@ class EcsServiceNode(project: Project, service: Service) :
     override fun displayName(): String = value.serviceName()
 }
 
-class EcsTaskDefinitionFamiliesParentNode(project: Project) :
+class EcsTaskDefinitionsParentNode(project: Project) :
     AwsExplorerNode<String>(project, message("ecs.task_definitions"), AwsIcons.Logos.AWS),
     ResourceParentNode {
 
@@ -73,10 +73,10 @@ class EcsTaskDefinitionFamiliesParentNode(project: Project) :
     override fun getChildren(): List<AwsExplorerNode<*>> = super.getChildren()
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = AwsResourceCache.getInstance(nodeProject)
         .getResourceNow(EcsResources.LIST_TASK_DEFINITION_FAMILIES)
-        .map { EcsTaskDefinitionsFamilyNode(nodeProject, it) }
+        .map { EcsTaskDefinitionNode(nodeProject, it) }
 }
 
-class EcsTaskDefinitionsFamilyNode(project: Project, familyName: String) :
+class EcsTaskDefinitionNode(project: Project, familyName: String) :
     AwsExplorerNode<String>(project, familyName, AwsIcons.Logos.AWS) {
 
     override fun getChildren(): List<AwsExplorerResourceNode<*>> = emptyList()

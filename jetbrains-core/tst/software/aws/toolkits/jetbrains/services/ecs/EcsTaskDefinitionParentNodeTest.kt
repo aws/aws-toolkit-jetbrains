@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import java.util.concurrent.CompletableFuture
 
-class EcsTaskDefinitionFamilyParentNodeTest {
+class EcsTaskDefinitionParentNodeTest {
 
     @JvmField
     @Rule
@@ -28,7 +28,7 @@ class EcsTaskDefinitionFamilyParentNodeTest {
 
     @Test
     fun failedCallShowsErrorNode() {
-        val node = aEcsTaskDefinitionFamilyParentNode()
+        val node = aEcsTaskDefinitionParentNode()
 
         resourceCache().addEntry(
             EcsResources.LIST_TASK_DEFINITION_FAMILIES,
@@ -41,17 +41,17 @@ class EcsTaskDefinitionFamilyParentNodeTest {
 
     @Test
     fun eachArnGetsANode() {
-        val node = aEcsTaskDefinitionFamilyParentNode()
+        val node = aEcsTaskDefinitionParentNode()
 
         resourceCache().taskDefinitionFamilies("family1", "family1")
 
         assertThat(node.children).hasSize(2)
-        assertThat(node.children).hasOnlyElementsOfType(EcsTaskDefinitionsFamilyNode::class.java)
+        assertThat(node.children).hasOnlyElementsOfType(EcsTaskDefinitionNode::class.java)
     }
 
     @Test
     fun noClusterShowsEmpty() {
-        val node = aEcsTaskDefinitionFamilyParentNode()
+        val node = aEcsTaskDefinitionParentNode()
 
         resourceCache().taskDefinitionFamilies()
 
@@ -59,7 +59,7 @@ class EcsTaskDefinitionFamilyParentNodeTest {
         assertThat(node.children).hasOnlyElementsOfType(AwsExplorerEmptyNode::class.java)
     }
 
-    private fun aEcsTaskDefinitionFamilyParentNode() = EcsTaskDefinitionFamiliesParentNode(projectRule.project)
+    private fun aEcsTaskDefinitionParentNode() = EcsTaskDefinitionsParentNode(projectRule.project)
 
     private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
 
