@@ -58,9 +58,15 @@ task buildReSharperPlugin {
     dependsOn restoreReSharperPluginPackages, generateModel
 
     doLast {
+        // Build using Mono MSBuild on Mac OS and Linux and use dotnet core MSBuild on Windows
+        def isWindows = System.properties['os.name'].toLowerCase().contains('windows')
+        def executableName = (isWindows) ? "dotnet" : "msbuild"
+        def arguments = (isWindows) ? [ "build" ] : []
+        arguments << "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
+
         exec {
-            executable = "msbuild"
-            args = [ "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln" ]
+            executable = executableName
+            args = arguments
         }
     }
 }
