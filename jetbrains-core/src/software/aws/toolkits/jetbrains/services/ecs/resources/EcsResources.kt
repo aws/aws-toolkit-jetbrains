@@ -19,7 +19,7 @@ object EcsResources {
             listTaskDefinitionFamiliesPaginator().families().toList()
         }
 
-    fun listServiceArns(clusterArn: String):Resource.Cached<List<String>> =
+    fun listServiceArns(clusterArn: String): Resource.Cached<List<String>> =
         ClientBackedCachedResource(EcsClient::class, "ecs.list_services.$clusterArn") {
             listServicesPaginator { it.cluster(clusterArn) }.serviceArns().toList()
         }

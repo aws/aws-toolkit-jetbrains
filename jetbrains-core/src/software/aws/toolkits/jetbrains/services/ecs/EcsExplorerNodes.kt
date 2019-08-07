@@ -20,7 +20,7 @@ import software.aws.toolkits.resources.message
 class EcsParentNode(project: Project) : AwsExplorerServiceRootNode(project, AwsExplorerService.ECS) {
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = listOf(
         EcsClusterParentNode(nodeProject),
-        EcsTaskDefinitionsParentNode (nodeProject)
+        EcsTaskDefinitionsParentNode(nodeProject)
     )
 }
 
