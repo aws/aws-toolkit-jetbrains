@@ -9,6 +9,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.ecs.model.Service
+import software.amazon.awssdk.utils.CompletableFutureUtils
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
@@ -49,7 +50,7 @@ class EcsClusterNodeTest {
 
         resourceCache().addEntry(
             EcsResources.listServiceArns(clusterArn),
-            CompletableFuture.failedFuture(RuntimeException("Simulated error"))
+            CompletableFutureUtils.failedFuture(RuntimeException("Simulated error"))
         )
 
         assertThat(node.children).hasSize(1)

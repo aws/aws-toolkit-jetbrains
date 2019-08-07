@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.amazon.awssdk.utils.CompletableFutureUtils
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
@@ -31,7 +32,7 @@ class EcsTaskDefinitionFamilyParentNodeTest {
 
         resourceCache().addEntry(
             EcsResources.LIST_TASK_DEFINITION_FAMILIES,
-            CompletableFuture.failedFuture(RuntimeException("Simulated error"))
+            CompletableFutureUtils.failedFuture(RuntimeException("Simulated error"))
         )
 
         assertThat(node.children).hasSize(1)
