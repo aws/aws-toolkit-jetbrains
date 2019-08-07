@@ -22,8 +22,6 @@ class EcsParentNode(project: Project) : AwsExplorerServiceRootNode(project, AwsE
         EcsClusterParentNode(nodeProject),
         EcsTaskDefinitionFamiliesParentNode (nodeProject)
     )
-
-    override fun isAlwaysShowPlus(): Boolean = true
 }
 
 class EcsClusterParentNode(project: Project) :
@@ -39,11 +37,12 @@ class EcsClusterParentNode(project: Project) :
 }
 
 class EcsClusterNode(project: Project, private val clusterArn: String) :
-    AwsExplorerResourceNode<String>(project, EcsClient.SERVICE_NAME, clusterArn.split("cluster/", limit = 1).last(), AwsIcons.Logos.AWS),
+    AwsExplorerResourceNode<String>(project, EcsClient.SERVICE_NAME, clusterArn, AwsIcons.Logos.AWS),
     ResourceParentNode {
 
     override fun resourceType(): String = "cluster"
     override fun resourceArn(): String = clusterArn
+    override fun displayName(): String = clusterArn.split("cluster/", limit = 2).last()
     override fun isAlwaysShowPlus(): Boolean = true
     override fun emptyChildrenNode(): AwsExplorerEmptyNode = AwsExplorerEmptyNode(nodeProject, message("ecs.no_services_in_cluster"))
 
@@ -52,7 +51,7 @@ class EcsClusterNode(project: Project, private val clusterArn: String) :
         val resourceCache = AwsResourceCache.getInstance(nodeProject)
         return AwsResourceCache.getInstance(nodeProject)
             .getResourceNow(EcsResources.listServiceArns(clusterArn))
-            .flatMap { resourceCache.getResourceNow(EcsResources.describeService(clusterArn, it)) }
+            .map { resourceCache.getResourceNow(EcsResources.describeService(clusterArn, it)) }
             .map { EcsServiceNode(nodeProject, it) }
     }
 }
@@ -74,13 +73,11 @@ class EcsTaskDefinitionFamiliesParentNode(project: Project) :
     override fun getChildren(): List<AwsExplorerNode<*>> = super.getChildren()
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = AwsResourceCache.getInstance(nodeProject)
         .getResourceNow(EcsResources.LIST_TASK_DEFINITION_FAMILIES)
-        .map { EcsTaskDefinitionsFamiliesNode(nodeProject, it) }
+        .map { EcsTaskDefinitionsFamilyNode(nodeProject, it) }
 }
 
-class EcsTaskDefinitionsFamiliesNode(
-    project: Project,
-    familyName: String
-) : AwsExplorerNode<String>(project, familyName, AwsIcons.Logos.AWS) {
+class EcsTaskDefinitionsFamilyNode(project: Project, familyName: String) :
+    AwsExplorerNode<String>(project, familyName, AwsIcons.Logos.AWS) {
 
     override fun getChildren(): List<AwsExplorerResourceNode<*>> = emptyList()
 }

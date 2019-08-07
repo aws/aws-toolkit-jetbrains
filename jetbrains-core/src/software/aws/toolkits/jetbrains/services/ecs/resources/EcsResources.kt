@@ -24,8 +24,8 @@ object EcsResources {
             listServicesPaginator { it.cluster(clusterArn) }.serviceArns().toList()
         }
 
-    fun describeService(clusterArn: String, serviceName: String):Resource.Cached<List<Service>> =
-        ClientBackedCachedResource(EcsClient::class, "ecs.describe_service.$clusterArn.$serviceName") {
-            describeServices { it.cluster(clusterArn).services(serviceName) }.services().toList()
+    fun describeService(clusterArn: String, serviceArn: String):Resource.Cached<Service> =
+        ClientBackedCachedResource(EcsClient::class, "ecs.describe_service.$clusterArn.$serviceArn") {
+            describeServices { it.cluster(clusterArn).services(serviceArn) }.services().first()
         }
 }
