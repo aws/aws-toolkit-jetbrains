@@ -71,8 +71,13 @@ class S3ServiceNodeTest {
 
     @Test
     fun errorLoadingBuckets() {
-        resourceCache().s3buckets(listOf("foo"))
-        resourceCache().bucketRegion("hello")
+        resourceCache().addEntry(S3Resources.LIST_BUCKETS, CompletableFuture<List<Bucket>>().also {
+            it.completeExceptionally(RuntimeException("Simulated error"))
+        })
+
+        resourceCache().addEntry(S3Resources.bucketRegion("foo"), CompletableFuture<String>().also {
+            it.completeExceptionally(RuntimeException("Simulated error"))
+        })
         val children = S3ServiceNode(projectRule.project).children
         assertThat(children).allMatch { it is AwsExplorerErrorNode }
     }
