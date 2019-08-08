@@ -32,7 +32,6 @@ class S3ServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsE
             .map { S3BucketNode(nodeProject, it, client) }
             .toList()
     }
-
 }
 
 class S3BucketNode(project: Project, val bucket: S3Bucket, val client: S3Client) :
