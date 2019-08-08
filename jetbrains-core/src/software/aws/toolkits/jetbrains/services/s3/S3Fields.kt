@@ -8,7 +8,6 @@ import java.time.Instant
 /**
  * S3 Key class represents a base class for S3 Directory and S3 Objects
  */
-
 sealed class S3Key(val bucket: String, val key: String) {
     val name: String = if (key.endsWith("/")) key.dropLast(1) else key.substringAfterLast("/")
 }
