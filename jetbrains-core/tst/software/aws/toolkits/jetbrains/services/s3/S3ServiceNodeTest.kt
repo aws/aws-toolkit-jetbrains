@@ -3,107 +3,75 @@
 package software.aws.toolkits.jetbrains.services.s3
 
 import com.intellij.testFramework.ProjectRule
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
-import software.amazon.awssdk.services.s3.model.HeadBucketResponse
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
-import software.amazon.awssdk.services.s3.model.ListBucketsResponse
-import software.amazon.awssdk.services.s3.model.ListBucketsRequest
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
+import software.aws.toolkits.jetbrains.services.s3.resoucres.S3Resources
 import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 
 class S3ServiceNodeTest {
 
-    @Rule
     @JvmField
+    @Rule
     val projectRule = ProjectRule()
 
-    @JvmField
     @Rule
-    val mockClientManager = MockClientManagerRule(projectRule)
+    @JvmField
+    val mockClientManager = MockClientManagerRule { projectRule.project }
 
-    private val mockSettingsManager by lazy { ProjectAccountSettingsManager.getInstance(projectRule.project) as MockProjectAccountSettingsManager }
+    private val mockClient = delegateMock<S3Client>()
+    private val mockSettingsManager by lazy {
+        ProjectAccountSettingsManager.getInstance(projectRule.project)
+                as MockProjectAccountSettingsManager
+    }
+
+    @Before
+    fun setUp() {
+        resourceCache().clear()
+        mockSettingsManager.changeRegion(AwsRegion.GLOBAL)
+        mockClientManager.manager().register(S3Client::class, mockClient)
+    }
 
     @Test
-    fun s3BucketsSortedAlphabetically() {
-        val mockClient = delegateMock<S3Client>()
-        val mockSdkResponse = mock<SdkHttpResponse>()
-        mockSdkResponse.stub {
-            on { headers() } doReturn mapOf("x-amz-bucket-region" to listOf("aws-global"))
-        }
-        mockSettingsManager.changeRegion(AwsRegion.GLOBAL)
-
-        mockClient.stub {
-            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder()
-                .apply { this.sdkHttpResponse(mockSdkResponse) }.build()
-        }
-        mockClient.stub {
-            on { listBuckets(any<ListBucketsRequest>()) } doReturn ListBucketsResponse.builder()
-                .apply {
-                    this.buckets(
-                        bucketData("BBB"),
-                        bucketData("AAA"),
-                        bucketData("ZZZ")
-                    )
-                }.build()
-        }
-        mockClientManager.register(S3Client::class, mockClient)
+    fun s3BucketsAreListed() {
+        val bucketList = listOf("bcd", "abc", "AEF", "ZZZ")
+        resourceCache().s3buckets(bucketList)
+        bucketList.map { resourceCache().bucketRegion(it) }
         val children = S3ServiceNode(projectRule.project).children
-        assertThat(children.size).isEqualTo(3)
+
         assertThat(children).allMatch { it is S3BucketNode }
-        assertThat(children.map { it.displayName() }).containsExactly("AAA", "BBB", "ZZZ")
+        assertThat(children.filterIsInstance<S3BucketNode>().map { it.displayName() }).containsExactlyInAnyOrder(
+            "abc",
+            "AEF",
+            "bcd",
+            "ZZZ"
+        )
     }
 
     @Test
     fun noBucketsInTheRegion() {
-        val mockClient = delegateMock<S3Client>()
 
-        val mockSdkResponse = mock<SdkHttpResponse>()
-        mockSdkResponse.stub {
-            on { headers() } doReturn mapOf("x-amz-bucket-region" to listOf("us-east-1"))
-        }
-
-        mockClient.stub {
-            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder().apply {
-                this.sdkHttpResponse(mockSdkResponse)
-            }.build()
-        }
-        mockClient.stub { on { listBuckets(any<ListBucketsRequest>()) } doReturn ListBucketsResponse.builder().build() }
-
-        mockClientManager.register(S3Client::class, mockClient)
+        val bucketList = emptyList<String>()
+        resourceCache().s3buckets(bucketList)
+        bucketList.map { resourceCache().bucketRegion(it) }
         val children = S3ServiceNode(projectRule.project).children
         assertThat(children).allMatch { it is AwsExplorerEmptyNode }
     }
 
     @Test
     fun errorLoadingBuckets() {
-        val mockClient = delegateMock<S3Client>()
-        val mockSdkResponse = mock<SdkHttpResponse>()
-        mockSdkResponse.stub {
-            on { headers() } doReturn mapOf("x-amz-bucket-region" to listOf("us-east-1"))
-        }
-
-        mockClient.stub {
-            on { headBucket(any<HeadBucketRequest>()) } doReturn HeadBucketResponse.builder().apply {
-                this.sdkHttpResponse(mockSdkResponse)
-            }.build()
-        }
-
-        mockClientManager.register(S3Client::class, mockClient)
         val children = S3ServiceNode(projectRule.project).children
         assertThat(children).allMatch { it is AwsExplorerErrorNode }
     }
@@ -113,4 +81,17 @@ class S3ServiceNodeTest {
             .creationDate(Instant.parse("1995-10-23T10:12:35Z"))
             .name(bucketName)
             .build()
+
+    private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
+
+    private fun MockResourceCache.bucketRegion(name: String) {
+        this.addEntry(S3Resources.regionBucket(name), CompletableFuture.completedFuture("aws-global"))
+    }
+
+    private fun MockResourceCache.s3buckets(names: List<String>) {
+        this.addEntry(
+            S3Resources.LIST_BUCKETS,
+            CompletableFuture.completedFuture(names.map(::bucketData))
+        )
+    }
 }

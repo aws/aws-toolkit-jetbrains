@@ -78,7 +78,7 @@ class S3VirtualFile(s3Vfs: S3VirtualFileSystem, val file: S3Object, parent: Virt
     }
 }
 
-open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, private val s3Bucket: S3Bucket) :
+open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: S3Bucket) :
     BaseS3VirtualFile(fileSystem, parent = null, key = s3Bucket) {
 
     override fun getTimeStamp(): Long = s3Bucket.creationDate.toEpochMilli()
