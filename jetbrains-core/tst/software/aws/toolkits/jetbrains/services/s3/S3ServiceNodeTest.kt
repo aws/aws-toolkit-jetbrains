@@ -62,7 +62,6 @@ class S3ServiceNodeTest {
 
     @Test
     fun noBucketsInTheRegion() {
-
         val bucketList = emptyList<String>()
         resourceCache().s3buckets(bucketList)
         bucketList.map { resourceCache().bucketRegion(it) }
@@ -72,6 +71,8 @@ class S3ServiceNodeTest {
 
     @Test
     fun errorLoadingBuckets() {
+        resourceCache().s3buckets(listOf("foo"))
+        resourceCache().bucketRegion("hello")
         val children = S3ServiceNode(projectRule.project).children
         assertThat(children).allMatch { it is AwsExplorerErrorNode }
     }
@@ -85,7 +86,7 @@ class S3ServiceNodeTest {
     private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
 
     private fun MockResourceCache.bucketRegion(name: String) {
-        this.addEntry(S3Resources.regionBucket(name), CompletableFuture.completedFuture("aws-global"))
+        this.addEntry(S3Resources.bucketRegion(name), CompletableFuture.completedFuture("aws-global"))
     }
 
     private fun MockResourceCache.s3buckets(names: List<String>) {
