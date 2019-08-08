@@ -16,7 +16,7 @@ import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettin
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
-import software.aws.toolkits.jetbrains.services.s3.resoucres.S3Resources
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.time.Instant
 import java.util.concurrent.CompletableFuture

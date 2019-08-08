@@ -7,9 +7,7 @@ import com.intellij.openapi.vfs.VirtualFileListener
 import com.intellij.openapi.vfs.VirtualFileSystem
 import software.amazon.awssdk.services.s3.S3Client
 
-class S3VirtualFileSystem(
-    val client: S3Client
-) : VirtualFileSystem() {
+class S3VirtualFileSystem(val client: S3Client) : VirtualFileSystem() {
 
     override fun getProtocol(): String = "S3"
 
