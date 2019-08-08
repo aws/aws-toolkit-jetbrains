@@ -17,11 +17,11 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
-
 import java.util.Objects;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
@@ -34,12 +34,10 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     private final Project project;
     private JPanel panel;
-    @NotNull
-    TextFieldWithBrowseButton samExecutablePath;
+    @NotNull TextFieldWithBrowseButton samExecutablePath;
     private LinkLabel samHelp;
     private JBCheckBox showAllHandlerGutterIcons;
-    @NotNull
-    JBCheckBox enableTelemetry;
+    @NotNull JBCheckBox enableTelemetry;
     private JPanel projectLevelSettings;
     private JPanel applicationLevelSettings;
 
@@ -66,7 +64,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         String autoDetectPath = new SamExecutableDetector().detect();
         JBTextField samExecutableTextField = new JBTextField();
-        if (autoDetectPath != null) {
+        if(autoDetectPath != null) {
             samExecutableTextField.getEmptyText()
                     .setText(message("aws.settings.sam.auto_detect", autoDetectPath));
         }
@@ -85,6 +83,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         return "aws";
     }
 
+    @Nls
     @Override
     public String getDisplayName() {
         return message("aws.settings.title");

@@ -11,7 +11,7 @@ object S3Resources {
         listBuckets().buckets().toList()
     }
 
-    fun regionBucket(bucketName: String) = ClientBackedCachedResource(S3Client::class, "s3.head_bucket.$bucketName") {
+    fun bucketRegion(bucketName: String) = ClientBackedCachedResource(S3Client::class, "s3.head_bucket.$bucketName") {
         try {
             headBucket { it.bucket(bucketName) }
                 .sdkHttpResponse()

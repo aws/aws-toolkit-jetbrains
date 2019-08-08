@@ -23,12 +23,12 @@ class S3ServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsE
 
     private val activeRegionId = ProjectAccountSettingsManager.getInstance(nodeProject).activeRegion.id
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
-        val allS3Buckets = AwsResourceCache.getInstance(nodeProject)
+        val bucketsInRegion = AwsResourceCache.getInstance(nodeProject)
             .getResourceNow(S3Resources.LIST_BUCKETS)
             .asSequence()
-            .filter { AwsResourceCache.getInstance(nodeProject).getResourceNow(S3Resources.regionBucket(it.name())) == activeRegionId }
+            .filter { AwsResourceCache.getInstance(nodeProject).getResourceNow(S3Resources.bucketRegion(it.name())) == activeRegionId }
 
-        return allS3Buckets.map { S3Bucket(it.name(), client, it.creationDate()) }
+        return bucketsInRegion.map { S3Bucket(it.name(), client, it.creationDate()) }
             .map { S3BucketNode(nodeProject, it, client) }
             .toList()
     }
@@ -37,8 +37,6 @@ class S3ServiceNode(project: Project) : AwsExplorerServiceRootNode(project, AwsE
 class S3BucketNode(project: Project, val bucket: S3Bucket, val client: S3Client) :
     AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.bucket, AwsIcons.Resources.CLOUDFORMATION_STACK) {
 
-    private val editorManager = FileEditorManager.getInstance(project)
-
     override fun resourceType(): String = "bucket"
 
     override fun resourceArn() = "arn:aws:s3:::${bucket.bucket}"
@@ -46,6 +44,7 @@ class S3BucketNode(project: Project, val bucket: S3Bucket, val client: S3Client)
     override fun isAlwaysShowPlus(): Boolean = false
 
     override fun onDoubleClick() {
+        val editorManager = FileEditorManager.getInstance(nodeProject)
         val virtualBucket = S3VirtualBucket(S3VirtualFileSystem(client), bucket)
         editorManager.openTextEditor(OpenFileDescriptor(nodeProject, virtualBucket), true)
         TelemetryService.getInstance().record(nodeProject, "s3") {
@@ -55,5 +54,5 @@ class S3BucketNode(project: Project, val bucket: S3Bucket, val client: S3Client)
         }
     }
 
-    override fun toString(): String = bucket.bucket
+    override fun displayName(): String = bucket.bucket
 }

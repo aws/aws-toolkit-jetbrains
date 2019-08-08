@@ -9,12 +9,20 @@ import java.io.OutputStream
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.intellij.openapi.util.text.StringUtil
+import java.time.Instant
 
 /**
  * BaseS3VirtualFile is a base class to represent a virtual file
  */
 abstract class BaseS3VirtualFile(val fileSystem: S3VirtualFileSystem, private val parent: VirtualFile?, open val key: S3Key) :
     VirtualFile() {
+
+    fun formatDate(date: Instant): String {
+        val datetime = LocalDateTime.ofInstant(date, ZoneId.systemDefault())
+        return datetime.atZone(ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
+    }
 
     override fun getName(): String = key.key
 
@@ -62,31 +70,13 @@ class S3VirtualFile(s3Vfs: S3VirtualFileSystem, val file: S3Object, parent: Virt
 
     override fun getTimeStamp(): Long = file.lastModified.toEpochMilli()
 
-    fun formatLastModified(): String {
-        val datetime = LocalDateTime.ofInstant(file.lastModified, ZoneId.systemDefault())
-        return datetime.atZone(ZoneId.systemDefault())
-            .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
-    }
-
-    fun formatSize(): String {
-        val unit = 1024
-        if (file.size < 1024) return "${file.size} B"
-        val exp = (Math.log(file.size.toDouble()) / Math.log(unit.toDouble())).toInt()
-        val pre = "KMGTPE"[exp - 1]
-        return String.format("%.1f %sB", file.size / Math.pow(unit.toDouble(), exp.toDouble()), pre)
-    }
+    fun formatSize(): String = StringUtil.formatFileSize(file.size)
 }
 
 open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: S3Bucket) :
     BaseS3VirtualFile(fileSystem, parent = null, key = s3Bucket) {
 
     override fun getTimeStamp(): Long = s3Bucket.creationDate.toEpochMilli()
-
-    fun getCreationDate(): String {
-        val datetime = LocalDateTime.ofInstant(s3Bucket.creationDate, ZoneId.systemDefault())
-        return datetime.atZone(ZoneId.systemDefault())
-            .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
-    }
 
     fun getVirtualBucketName(): String = s3Bucket.bucket
 
