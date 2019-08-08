@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter
 /**
  * BaseS3VirtualFile is a base class to represent a virtual file
  */
-
 abstract class BaseS3VirtualFile(val fileSystem: S3VirtualFileSystem, private val parent: VirtualFile?, open val key: S3Key) :
     VirtualFile() {
 
