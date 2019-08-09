@@ -74,7 +74,6 @@ class S3ServiceNodeTest {
         resourceCache().addEntry(S3Resources.LIST_BUCKETS, CompletableFuture<List<Bucket>>().also {
             it.completeExceptionally(RuntimeException("Simulated error"))
         })
-
         resourceCache().addEntry(S3Resources.bucketRegion("foo"), CompletableFuture<String>().also {
             it.completeExceptionally(RuntimeException("Simulated error"))
         })
