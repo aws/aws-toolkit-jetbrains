@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import java.awt.datatransfer.StringSelection
 
-class CopyBucketName : CopyAction<S3BucketNode>("Copy Name") {
+class CopyBucketAction : CopyAction<S3BucketNode>("Copy Name") {
 
     override fun performCopy(selected: S3BucketNode) {
         val bucketName = selected.toString()

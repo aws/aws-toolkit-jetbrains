@@ -58,6 +58,5 @@ class DownloadObjectTest {
         val downloadRequestCapture = downloadCaptor.firstValue
         Assertions.assertThat(downloadRequestCapture.bucket()).isEqualTo("TestBucket")
         Assertions.assertThat(downloadRequestCapture.key()).contains("myfile")
-
     }
 }

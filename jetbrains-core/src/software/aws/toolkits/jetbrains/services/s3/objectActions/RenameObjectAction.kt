@@ -61,14 +61,11 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
                     e.notifyError("Rename Object Failed")
                 }
             }
-
         }
     }
 
-    override fun isEnabled(): Boolean = !( treeTable.isEmpty
-            || (treeTable.selectedRow < 0)
-            || (treeTable.getValueAt(treeTable.selectedRow, 1) == "")
-            || (treeTable.selectedRows.size > 1) )
+    override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
+            (treeTable.getValueAt(treeTable.selectedRow, 1) == "") || (treeTable.selectedRows.size > 1))
 
     override fun updateButton(e: AnActionEvent) {}
 
@@ -81,7 +78,7 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
         var copyDestination: String
         if (file.parent is S3VirtualDirectory) {
             copySource = "${file.parent.name}/${file.name}"
-            copyDestination = "${file.parent.name}/${response}"
+            copyDestination = "${file.parent.name}/$response"
         } else {
             copySource = file.name
             copyDestination = response

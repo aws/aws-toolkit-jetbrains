@@ -71,9 +71,8 @@ class DownloadObjectAction(
         }
     }
 
-    override fun isEnabled(): Boolean = !(treeTable.isEmpty
-            || (treeTable.selectedRow < 0)
-            || (treeTable.getValueAt(treeTable.selectedRow, 1) == ""))
+    override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
+            (treeTable.getValueAt(treeTable.selectedRow, 1) == ""))
 
     override fun updateButton(e: AnActionEvent) {}
 

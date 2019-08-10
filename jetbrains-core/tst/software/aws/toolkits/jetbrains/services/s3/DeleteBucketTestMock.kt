@@ -1,9 +1,13 @@
-//Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-//SPDX-License-Identifier: Apache-2.0
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3
 
 import com.intellij.testFramework.ProjectRule
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.stub
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.s3.S3Client

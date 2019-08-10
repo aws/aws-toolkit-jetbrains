@@ -230,7 +230,7 @@
             <action id="s3.delete.bucket"
                     class="software.aws.toolkits.jetbrains.services.s3.bucketActions.DeleteBucketAction"/>
             <action id="s3.copy.bucketname.check"
-                    class="software.aws.toolkits.jetbrains.services.s3.bucketActions.CopyBucketName"/>
+                    class="software.aws.toolkits.jetbrains.services.s3.bucketActions.CopyBucketAction"/>
         </group>
 
         <action class="software.aws.toolkits.jetbrains.core.SettingsSelectorAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>

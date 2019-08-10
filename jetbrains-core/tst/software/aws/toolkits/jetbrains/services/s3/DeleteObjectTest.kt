@@ -57,6 +57,5 @@ class DeleteObjectTest {
         val deleteRequest = deleteCaptor.firstValue
         Assertions.assertThat(deleteRequest.bucket()).isEqualTo("TestBucket")
         Assertions.assertThat(deleteRequest.delete().objects()[0].key()).isEqualTo("testKey")
-
     }
 }

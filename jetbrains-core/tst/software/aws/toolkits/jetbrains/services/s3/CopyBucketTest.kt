@@ -9,7 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.services.s3.bucketActions.CopyBucketName
+import software.aws.toolkits.jetbrains.services.s3.bucketActions.CopyBucketAction
 import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.awt.datatransfer.DataFlavor
 import java.time.Instant
@@ -30,7 +30,7 @@ class CopyBucketTest {
         mockClientManagerRule.manager().register(S3Client::class, s3Mock)
 
         val bucket = S3BucketNode(projectRule.project, S3Bucket("foo", s3Mock, Instant.parse("1995-10-23T10:12:35Z")), s3Mock)
-        val copy = CopyBucketName()
+        val copy = CopyBucketAction()
         copy.performCopy(bucket)
 
         val content = CopyPasteManager.getInstance().contents

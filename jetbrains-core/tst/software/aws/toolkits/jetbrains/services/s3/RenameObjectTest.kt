@@ -69,7 +69,6 @@ class RenameObjectTest {
         val deleteRequestCapture = deleteCaptor.firstValue
         Assertions.assertThat(deleteRequestCapture.bucket()).isEqualTo("TestBucket")
         Assertions.assertThat(deleteRequestCapture.key()).isEqualTo("testKey")
-
     }
 
     companion object {
