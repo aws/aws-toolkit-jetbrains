@@ -5,13 +5,17 @@ package software.aws.toolkits.jetbrains.services.s3
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import com.nhaarman.mockitokotlin2.doReturn
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.*
+import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
+import software.amazon.awssdk.services.s3.model.ObjectVersion
 import software.amazon.awssdk.services.s3.paginators.ListObjectVersionsIterable
 import software.aws.toolkits.core.s3.deleteBucketAndContents
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
@@ -75,7 +79,6 @@ class DeleteBucketTestMock {
         deleteBucketAction.performDelete(mockBucket)
         verify(s3Mock).deleteObjects(any<Consumer<DeleteObjectsRequest.Builder>>())
         verify(s3Mock).deleteBucket(any<Consumer<DeleteBucketRequest.Builder>>())
-
     }
 
     @Test(expected = NullPointerException::class)
