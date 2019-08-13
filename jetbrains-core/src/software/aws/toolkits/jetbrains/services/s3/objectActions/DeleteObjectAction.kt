@@ -7,13 +7,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.Messages
-import com.intellij.ui.AnActionButton
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Delete
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
-import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
@@ -25,12 +24,12 @@ import javax.swing.tree.DefaultMutableTreeNode
 class DeleteObjectAction(
     private var treeTable: S3TreeTable,
     val bucket: S3VirtualBucket
-) : AnActionButton(message("s3.delete.object.action"), null, AllIcons.Actions.Cancel) {
+) : ActionButtonWrapper(message("s3.delete.object.action"), null, AllIcons.Actions.Cancel) {
 
     @Suppress("unused")
-    override fun actionPerformed(e: AnActionEvent) {
+    override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
-        val client: S3Client = AwsClientManager.getInstance(project).getClient()
+        val client: S3Client = bucket.s3Bucket.client
         val rows = treeTable.selectedRows
         val objectsToDelete = mutableListOf<ObjectIdentifier>()
 
@@ -66,10 +65,6 @@ class DeleteObjectAction(
 
     override fun isEnabled(): Boolean = (!(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == "")))
-
-    override fun isDumbAware(): Boolean = true
-
-    override fun updateButton(e: AnActionEvent) { }
 
     @TestOnly
     fun deleteObjectAction(client: S3Client, objectsToDelete: MutableList<ObjectIdentifier>) {

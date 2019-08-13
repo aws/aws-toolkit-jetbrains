@@ -21,7 +21,6 @@ import software.amazon.awssdk.core.sync.ResponseTransformer
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
-import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -39,7 +38,7 @@ class DownloadObjectAction(
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
-        val client: S3Client = AwsClientManager.getInstance(project).getClient()
+        val client = bucket.s3Bucket.client
         val descriptor = FileSaverDescriptor(
             message("s3.download.object.action"), message("s3.download.object.description")
         )
@@ -66,10 +65,6 @@ class DownloadObjectAction(
 
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == ""))
-
-    override fun isDumbAware(): Boolean = true
-
-    override fun updateButton(e: AnActionEvent) { }
 
     @TestOnly
     fun downloadObjectAction(project: Project, client: S3Client, file: VirtualFile, fileWrapper: VirtualFileWrapper) {

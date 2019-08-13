@@ -100,5 +100,9 @@ abstract class ActionButtonWrapper(text: String? = null, description: String? = 
         }
     }
 
+    override fun isDumbAware(): Boolean = true
+
+    override fun updateButton(e: AnActionEvent) {}
+
     abstract fun doActionPerformed(e: AnActionEvent)
 }

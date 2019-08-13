@@ -14,7 +14,6 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
-import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
@@ -29,7 +28,7 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
-        val client: S3Client = AwsClientManager.getInstance(project).getClient()
+        val client: S3Client = bucket.s3Bucket.client
         val row = treeTable.selectedRow
         val path = treeTable.tree.getPathForRow(row)
         val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
@@ -60,10 +59,6 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
 
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == "") || (treeTable.selectedRows.size > 1))
-
-    override fun isDumbAware(): Boolean = true
-
-    override fun updateButton(e: AnActionEvent) {}
 
     @TestOnly
     fun renameObjectAction(response: String, file: VirtualFile, client: S3Client) {
