@@ -5,7 +5,11 @@ package software.aws.toolkits.jetbrains.services.s3
 
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.doThrow
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.stub
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
