@@ -45,7 +45,7 @@ class S3BucketNode(project: Project, val bucket: S3Bucket, val client: S3Client)
     override fun isAlwaysShowPlus(): Boolean = false
 
     override fun onDoubleClick() {
-        if(!DumbService.getInstance(nodeProject).isDumb) {
+        if (!DumbService.getInstance(nodeProject).isDumb) {
             val editorManager = FileEditorManager.getInstance(nodeProject)
             val virtualBucket = S3VirtualBucket(S3VirtualFileSystem(client), bucket)
             editorManager.openTextEditor(OpenFileDescriptor(nodeProject, virtualBucket), true)
