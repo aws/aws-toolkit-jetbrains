@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.s3.S3Client
@@ -19,7 +20,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s3.open.viewer.bucket.action"), icon = AwsIcons.Actions.LAMBDA_FUNCTION_NEW),
-        DumbAware {
+    DumbAware {
 
     override fun actionPerformed(selected: S3BucketNode, e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
@@ -32,6 +33,11 @@ class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s
     }
 
     override fun isDumbAware(): Boolean = true
+
+    override fun update(selected: S3BucketNode, e: AnActionEvent) {
+        val project = e.getRequiredData(LangDataKeys.PROJECT)
+        e.presentation.isEnabled = !DumbService.getInstance(project).isDumb
+    }
 
     private fun openEditor(selected: S3BucketNode, client: S3Client, project: Project) {
         val editorManager = FileEditorManager.getInstance(project)
