@@ -5,11 +5,7 @@ package software.aws.toolkits.jetbrains.services.s3
 
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.doThrow
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
+import com.nhaarman.mockitokotlin2.*
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
@@ -20,7 +16,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.CreateBucketResponse
 import software.aws.toolkits.jetbrains.utils.DelegateSdkConsumers
 
-class CreateS3BucketDialogTest {
+class CreateBucketActionDialogTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()

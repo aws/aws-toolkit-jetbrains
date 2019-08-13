@@ -13,13 +13,11 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Delete
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
-import software.aws.toolkits.core.telemetry.TelemetryNamespace
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import javax.swing.tree.DefaultMutableTreeNode
@@ -27,8 +25,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 class DeleteObjectAction(
     private var treeTable: S3TreeTable,
     val bucket: S3VirtualBucket
-
-) : AnActionButton("Delete Object", null, AllIcons.Actions.Cancel), TelemetryNamespace {
+) : AnActionButton(message("s3.delete.object.action"), null, AllIcons.Actions.Cancel) {
 
     @Suppress("unused")
     override fun actionPerformed(e: AnActionEvent) {
@@ -50,23 +47,18 @@ class DeleteObjectAction(
 
         val response = Messages.showOkCancelDialog(
             project,
-            "Are you sure you want to delete ${rows.size} objects?",
-            message("delete_resource.title", "Object", ""),
-            "Delete",
-            "Cancel", Messages.getWarningIcon()
+            message("s3.delete.object.description" ,rows.size),
+            message("s3.delete.object.action"),
+            message("s3.delete.object.delete"),
+            message("s3.delete.object.cancel"), Messages.getWarningIcon()
         )
         if (response == 0) {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     deleteObjectAction(client, objectsToDelete)
-                    TelemetryService.getInstance().record(e.project, "s3") {
-                        datum("deleteobject") {
-                            count()
-                        }
-                    }
                     treeTable.refresh()
                 } catch (e: Exception) {
-                    notifyInfo("Delete Successful")
+                    notifyInfo(message("s3.delete.object.failed"))
                 }
             }
         }
@@ -75,9 +67,9 @@ class DeleteObjectAction(
     override fun isEnabled(): Boolean = (!(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == "")))
 
-    override fun updateButton(e: AnActionEvent) {}
-
     override fun isDumbAware(): Boolean = true
+
+    override fun updateButton(e: AnActionEvent) { }
 
     @TestOnly
     fun deleteObjectAction(client: S3Client, objectsToDelete: MutableList<ObjectIdentifier>) {

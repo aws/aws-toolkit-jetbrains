@@ -41,7 +41,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.event.ActionEvent;
 
 @SuppressWarnings("unchecked")
-
 public class S3ViewerPanel {
     private JPanel content;
     private JPanel bucketName;
@@ -59,7 +58,6 @@ public class S3ViewerPanel {
     private AnActionButton downloadObjectButton;
 
     public S3ViewerPanel(S3VirtualBucket bucketVirtual) {
-
         TitledBorder border = new TitledBorder("Bucket Details");
         border.setTitleJustification(TitledBorder.CENTER);
         border.setTitlePosition(TitledBorder.TOP);

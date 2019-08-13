@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ex.ComboBoxAction
+import com.intellij.ui.AnActionButton
 import software.aws.toolkits.core.telemetry.TelemetryNamespace
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import javax.swing.Icon
@@ -82,4 +83,22 @@ abstract class ToogleActionWrapper(text: String? = null, description: String? = 
     abstract fun doIsSelected(e: AnActionEvent): Boolean
 
     abstract fun doSetSelected(e: AnActionEvent, state: Boolean)
+}
+
+abstract class ActionButtonWrapper(text: String? = null, description: String? = null, icon: Icon? = null) :
+    TelemetryNamespace,
+    AnActionButton(text, description, icon) {
+    /**
+     * Consumers should use doActionPerformed(e: AnActionEvent)
+     */
+    final override fun actionPerformed(e: AnActionEvent) {
+        doActionPerformed(e)
+        TelemetryService.getInstance().record(e.project, getNamespace()) {
+            datum(e.place) {
+                count()
+            }
+        }
+    }
+
+    abstract fun doActionPerformed(e: AnActionEvent)
 }

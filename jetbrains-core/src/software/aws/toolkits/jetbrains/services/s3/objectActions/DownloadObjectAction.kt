@@ -15,35 +15,33 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
-import com.intellij.ui.AnActionButton
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.core.sync.ResponseTransformer
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.aws.toolkits.core.telemetry.TelemetryNamespace
+import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 import javax.swing.tree.DefaultMutableTreeNode
 
 class DownloadObjectAction(
     private val treeTable: TreeTable,
     val bucket: S3VirtualBucket,
     private val fileChooser: FileChooserFactory
-) : AnActionButton("Download Object", null, AllIcons.Actions.Download), TelemetryNamespace {
+) : ActionButtonWrapper(message("s3.download.object.action"), null, AllIcons.Actions.Download) {
 
     constructor(treeTable: TreeTable, bucket: S3VirtualBucket) : this(treeTable, bucket, FileChooserFactory.getInstance())
 
     @Suppress("unused")
-
-    override fun actionPerformed(e: AnActionEvent) {
+    override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: S3Client = AwsClientManager.getInstance(project).getClient()
         val descriptor = FileSaverDescriptor(
-            "Download Object", "Download"
+            message("s3.download.object.action"), message("s3.download.object.description")
         )
         val saveFileDialog = fileChooser.createSaveFileDialog(descriptor, project)
         val baseDir = VfsUtil.getUserHomeDir()
@@ -58,13 +56,8 @@ class DownloadObjectAction(
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         downloadObjectAction(project, client, fileSelected, fileWrapper)
-                        TelemetryService.getInstance().record(e.project, "s3") {
-                            datum("downloadobject") {
-                                count()
-                            }
-                        }
                     } catch (e: Exception) {
-                        notifyError("Download failed")
+                        notifyError(message("s3.download.object.failed"))
                     }
                 }
             }
@@ -74,9 +67,9 @@ class DownloadObjectAction(
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == ""))
 
-    override fun updateButton(e: AnActionEvent) {}
-
     override fun isDumbAware(): Boolean = true
+
+    override fun updateButton(e: AnActionEvent) { }
 
     @TestOnly
     fun downloadObjectAction(project: Project, client: S3Client, file: VirtualFile, fileWrapper: VirtualFileWrapper) {
@@ -85,7 +78,7 @@ class DownloadObjectAction(
             .bucket(bucketName)
             .key(file.name)
             .build()
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Downloading \"${file.name}\"", true) {
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, message("s3.download.object.progress", file.name), true) {
             override fun run(indicator: ProgressIndicator) {
                 val fileOutputStream = fileWrapper.file.outputStream()
                 val progressStream = ProgressOutputStream(

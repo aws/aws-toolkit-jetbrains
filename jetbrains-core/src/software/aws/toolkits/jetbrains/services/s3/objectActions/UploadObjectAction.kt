@@ -13,26 +13,25 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.AnActionButton
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.aws.toolkits.core.telemetry.TelemetryNamespace
+import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 import javax.swing.tree.DefaultMutableTreeNode
 
 class UploadObjectAction(
     val bucket: S3VirtualBucket,
     val treeTable: S3TreeTable,
     private val fileChooserFactory: FileChooserFactory
-) : AnActionButton("Upload Object", null, AllIcons.Actions.Upload), TelemetryNamespace {
+) : ActionButtonWrapper(message("s3.upload.object.action"), null, AllIcons.Actions.Upload) {
 
     constructor(bucket: S3VirtualBucket, treeTable: S3TreeTable) : this(
         bucket,
@@ -41,14 +40,13 @@ class UploadObjectAction(
     )
 
     @Suppress("unused")
-    override fun actionPerformed(e: AnActionEvent) {
+    override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: S3Client = AwsClientManager.getInstance(project).getClient()
         val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
-            .withDescription("Upload object")
+            .withDescription(message("s3.upload.object.action"))
 
         val row = treeTable.selectedRow
-        println(row)
         var nodeFile: VirtualFile? = null
         if (row > 0) {
             val path = treeTable.tree.getPathForRow(row)
@@ -61,14 +59,9 @@ class UploadObjectAction(
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     uploadObjectAction(client, project, fileChosen, nodeFile)
-                    TelemetryService.getInstance().record(e.project, "s3") {
-                        datum("uploadobject") {
-                            count()
-                        }
-                    }
                     treeTable.refresh()
                 } catch (e: Exception) {
-                    notifyError("Upload failed")
+                    notifyError(message("s3.upload.object.failed"))
                 }
             }
         }
@@ -76,9 +69,9 @@ class UploadObjectAction(
 
     override fun isEnabled(): Boolean = treeTable.isEmpty || !(treeTable.selectedRows.size > 1)
 
-    override fun updateButton(e: AnActionEvent) {}
-
     override fun isDumbAware(): Boolean = true
+
+    override fun updateButton(e: AnActionEvent) { }
 
     @TestOnly
     fun uploadObjectAction(
@@ -104,7 +97,7 @@ class UploadObjectAction(
         val fileChosenSize = fileChosen.inputStream.readBytes().size
 
         ProgressManager.getInstance()
-            .run(object : Task.Modal(project, "Uploading \"${fileChosen.name}\"", false) {
+            .run(object : Task.Backgroundable(project, message("s3.upload.object.progress", fileChosen.name), false) {
                 override fun run(indicator: ProgressIndicator) {
                     val pStream = ProgressInputStream(fileChosen.inputStream, fileChosenSize, indicator)
                     client.putObject(request, RequestBody.fromInputStream(pStream, fileChosen.length))

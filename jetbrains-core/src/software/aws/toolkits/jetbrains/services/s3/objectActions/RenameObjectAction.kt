@@ -9,26 +9,25 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.InputValidator
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.AnActionButton
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
-import software.aws.toolkits.core.telemetry.TelemetryNamespace
+import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 import javax.swing.tree.DefaultMutableTreeNode
 
 class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3VirtualBucket) :
-    AnActionButton("Rename Object", null, AllIcons.Actions.Refresh), TelemetryNamespace {
+    ActionButtonWrapper(message("s3.rename.object.action"), null, AllIcons.Actions.Refresh) {
 
     @Suppress("unused")
-    override fun actionPerformed(e: AnActionEvent) {
+    override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: S3Client = AwsClientManager.getInstance(project).getClient()
         val row = treeTable.selectedRow
@@ -37,8 +36,8 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
         val file = node.virtualFile
 
         val response = Messages.showInputDialog(project,
-            "Rename Object :${file.name} to",
-            "Rename Object",
+            message("s3.rename.object.title", file.name),
+            message("s3.rename.object.action"),
             null,
             file.name,
             object : InputValidator {
@@ -51,14 +50,9 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     renameObjectAction(response, file, client)
-                    TelemetryService.getInstance().record(e.project, "s3") {
-                        datum("renameobject") {
-                            count()
-                        }
-                    }
                     treeTable.refresh()
                 } catch (e: Exception) {
-                    e.notifyError("Rename Object Failed")
+                    e.notifyError(message("s3.rename.object.failed"))
                 }
             }
         }
@@ -67,9 +61,9 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == "") || (treeTable.selectedRows.size > 1))
 
-    override fun updateButton(e: AnActionEvent) {}
-
     override fun isDumbAware(): Boolean = true
+
+    override fun updateButton(e: AnActionEvent) {}
 
     @TestOnly
     fun renameObjectAction(response: String, file: VirtualFile, client: S3Client) {
