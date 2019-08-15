@@ -307,13 +307,11 @@ class DefaultProjectAccountSettingsManagerTest {
             </AccountState>
         """.toElement()
 
-        mockCredentialManager.addCredentials(
-            "Mock",
-            AwsBasicCredentials.create("Access", "Secret"),
-            false
-        )
+        mockCredentialManager.addCredentials("Mock", AwsBasicCredentials.create("Access", "Secret"), false)
 
         deserializeAndLoadState(manager, element)
+
+        waitForEvents(2)
 
         assertThat(manager.hasActiveCredentials()).isFalse()
     }
