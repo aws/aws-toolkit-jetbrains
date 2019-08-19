@@ -186,7 +186,7 @@ class DefaultAwsResourceCache(private val project: Project, private val clock: C
     }
 
     private val cache = CacheBuilder.newBuilder().maximumSize(maximumCacheEntries).build<CacheKey, Entry<*>>().asMap()
-    private val accountSettings = ProjectAccountSettingsManager.getInstance(project)
+    private val accountSettings by lazy { ProjectAccountSettingsManager.getInstance(project) }
 
     override fun <T> getResource(resource: Resource<T>, useStale: Boolean, forceFetch: Boolean) =
         getResource(resource, accountSettings.activeRegion, accountSettings.activeCredentialProvider, useStale, forceFetch)
