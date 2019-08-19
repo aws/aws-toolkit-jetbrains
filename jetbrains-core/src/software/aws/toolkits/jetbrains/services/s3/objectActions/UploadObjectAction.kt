@@ -92,7 +92,7 @@ class UploadObjectAction(
         val fileChosenSize = fileChosen.inputStream.readBytes().size
 
         ProgressManager.getInstance()
-            .run(object : Task.Backgroundable(project, message("s3.upload.object.progress", fileChosen.name), false) {
+            .run(object : Task.Modal(project, message("s3.upload.object.progress", fileChosen.name), false) {
                 override fun run(indicator: ProgressIndicator) {
                     val pStream = ProgressInputStream(fileChosen.inputStream, fileChosenSize, indicator)
                     client.putObject(request, RequestBody.fromInputStream(pStream, fileChosen.length))
