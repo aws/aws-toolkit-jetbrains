@@ -55,10 +55,7 @@ class SamRunningState(
 
         samOptions.additionalLocalArgs?.let {
             if (it.isNotBlank()) {
-                val argParts = it.split(" ")
-                for (arg in argParts) {
-                    commandLine.withParameters(arg.trim())
-                }
+                commandLine.withParameters(*it.split(" ").toTypedArray())
             }
         }
 
