@@ -12,6 +12,6 @@ public class SamSettingsEditorPanel {
     JTextField dockerNetwork;
     JCheckBox skipPullImage;
     JPanel panel;
-    JTextField additionalBuildArgs;
+    com.intellij.ui.components.fields.ExpandableTextField additionalBuildArgs;
     com.intellij.ui.components.fields.ExpandableTextField additionalLocalArgs;
 }
