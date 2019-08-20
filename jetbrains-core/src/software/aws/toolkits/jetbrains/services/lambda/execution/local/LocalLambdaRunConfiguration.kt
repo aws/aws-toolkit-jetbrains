@@ -220,10 +220,16 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         lambdaOptions.samOptions.buildInContainer = useContainer
     }
 
-    fun additionalArgs(): String? = lambdaOptions.samOptions.additionalArgs
+    fun additionalBuildArgs(): String? = lambdaOptions.samOptions.additionalBuildArgs
 
-    fun additionalArgs(args: String?) {
-        lambdaOptions.samOptions.additionalArgs = args
+    fun additionalBuildArgs(args: String?) {
+        lambdaOptions.samOptions.additionalBuildArgs = args
+    }
+
+    fun additionalLocalArgs(): String? = lambdaOptions.samOptions.additionalLocalArgs
+
+    fun additionalLocalArgs(args: String?) {
+        lambdaOptions.samOptions.additionalLocalArgs = args
     }
 
     override fun suggestedName(): String? {

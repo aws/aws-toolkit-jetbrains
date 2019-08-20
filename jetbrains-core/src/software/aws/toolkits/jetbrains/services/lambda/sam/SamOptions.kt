@@ -10,5 +10,6 @@ data class SamOptions(
     var dockerNetwork: String? = null,
     var buildInContainer: Boolean = false,
     var skipImagePull: Boolean = false,
-    var additionalArgs: String? = null
+    var additionalBuildArgs: String? = null,
+    var additionalLocalArgs: String? = null
 )

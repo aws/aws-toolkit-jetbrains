@@ -117,9 +117,12 @@ abstract class LambdaBuilder {
                 }
             }
 
-            samOptions.additionalArgs?.let {
+            samOptions.additionalBuildArgs?.let {
                 if (it.isNotBlank()) {
-                    commandLine.withParameters(it.trim())
+                    val argParts = it.split(" ")
+                    for (arg in argParts) {
+                        commandLine.withParameters(arg.trim())
+                    }
                 }
             }
 
