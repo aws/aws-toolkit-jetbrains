@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.services.s3.S3VirtualFileSystem
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
-class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s3.open.viewer.bucket.action"), icon = AwsIcons.Actions.LAMBDA_FUNCTION_NEW),
+class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s3.open.viewer.bucket.action"), icon = AwsIcons.Resources.S3_BUCKET),
     DumbAware {
 
     override fun actionPerformed(selected: S3BucketNode, e: AnActionEvent) {
