@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.local;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import com.intellij.ui.components.fields.ExpandableTextField
+import com.intellij.ui.components.fields.ExpandableTextField;
 
 public class SamSettingsEditorPanel {
     JCheckBox buildInContainer;
