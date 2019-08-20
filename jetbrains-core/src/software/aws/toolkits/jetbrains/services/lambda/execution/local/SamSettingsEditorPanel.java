@@ -13,5 +13,5 @@ public class SamSettingsEditorPanel {
     JCheckBox skipPullImage;
     JPanel panel;
     JTextField additionalBuildArgs;
-    JTextField additionalLocalArgs;
+    com.intellij.ui.components.fields.ExpandableTextField additionalLocalArgs;
 }
