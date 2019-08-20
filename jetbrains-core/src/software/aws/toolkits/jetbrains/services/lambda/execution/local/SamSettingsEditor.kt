@@ -15,11 +15,13 @@ class SamSettingsEditor : SettingsEditor<LocalLambdaRunConfiguration>() {
         view.dockerNetwork.text = configuration.dockerNetwork()
         view.skipPullImage.isSelected = configuration.skipPullImage()
         view.buildInContainer.isSelected = configuration.buildInContainer()
+        view.additionalArgs.text = configuration.additionalArgs()
     }
 
     override fun applyEditorTo(configuration: LocalLambdaRunConfiguration) {
         configuration.dockerNetwork(view.dockerNetwork.text.trim())
         configuration.skipPullImage(view.skipPullImage.isSelected)
         configuration.buildInContainer(view.buildInContainer.isSelected)
+        configuration.additionalArgs(view.additionalArgs.text.trim())
     }
 }

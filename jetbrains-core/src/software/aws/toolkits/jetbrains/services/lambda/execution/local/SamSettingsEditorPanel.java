@@ -12,4 +12,5 @@ public class SamSettingsEditorPanel {
     JTextField dockerNetwork;
     JCheckBox skipPullImage;
     JPanel panel;
+    JTextField additionalArgs;
 }
