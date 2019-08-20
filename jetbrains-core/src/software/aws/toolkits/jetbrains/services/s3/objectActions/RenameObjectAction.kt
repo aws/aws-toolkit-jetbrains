@@ -9,7 +9,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.InputValidator
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
@@ -60,7 +59,6 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == "") || (treeTable.selectedRows.size > 1))
 
-    @TestOnly
     fun renameObjectAction(response: String, file: VirtualFile, client: S3Client) {
         val bucketName = bucket.getVirtualBucketName()
         var copySource: String

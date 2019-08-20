@@ -16,7 +16,6 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.treeStructure.treetable.TreeTable
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.core.sync.ResponseTransformer
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -66,7 +65,6 @@ class DownloadObjectAction(
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == ""))
 
-    @TestOnly
     fun downloadObjectAction(project: Project, client: S3Client, file: VirtualFile, fileWrapper: VirtualFileWrapper) {
         val bucketName = bucket.getVirtualBucketName()
         val request = GetObjectRequest.builder()

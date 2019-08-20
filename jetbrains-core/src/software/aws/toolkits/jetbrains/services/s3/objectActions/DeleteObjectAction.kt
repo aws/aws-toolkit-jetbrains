@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.Messages
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Delete
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
@@ -66,7 +65,6 @@ class DeleteObjectAction(
     override fun isEnabled(): Boolean = (!(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
             (treeTable.getValueAt(treeTable.selectedRow, 1) == "")))
 
-    @TestOnly
     fun deleteObjectAction(client: S3Client, objectsToDelete: MutableList<ObjectIdentifier>) {
         val bucketName = bucket.getVirtualBucketName()
         val deleteObjectsRequest = DeleteObjectsRequest.builder()

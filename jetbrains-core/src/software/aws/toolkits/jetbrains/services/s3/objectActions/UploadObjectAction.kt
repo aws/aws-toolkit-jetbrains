@@ -13,7 +13,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -68,7 +67,6 @@ class UploadObjectAction(
 
     override fun isEnabled(): Boolean = treeTable.isEmpty || !(treeTable.selectedRows.size > 1)
 
-    @TestOnly
     fun uploadObjectAction(
         client: S3Client,
         project: Project,
