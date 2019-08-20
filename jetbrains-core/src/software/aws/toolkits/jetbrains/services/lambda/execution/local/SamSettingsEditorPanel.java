@@ -6,12 +6,13 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.local;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import com.intellij.ui.components.fields.ExpandableTextField
 
 public class SamSettingsEditorPanel {
     JCheckBox buildInContainer;
     JTextField dockerNetwork;
     JCheckBox skipPullImage;
     JPanel panel;
-    com.intellij.ui.components.fields.ExpandableTextField additionalBuildArgs;
-    com.intellij.ui.components.fields.ExpandableTextField additionalLocalArgs;
+    ExpandableTextField additionalBuildArgs;
+    ExpandableTextField additionalLocalArgs;
 }
