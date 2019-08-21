@@ -270,7 +270,7 @@ public class S3ViewerPanel {
     }
 
     /**
-     * Search and sort TreeTable based on text in TextField
+     * Search and sort TreeTable(top-level) rows based on text in TextField
      */
     private void searchAndSortTable() {
         TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(treeTable.getModel());
