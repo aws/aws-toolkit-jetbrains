@@ -26,31 +26,11 @@ namespace ReSharper.AWS.RunMarkers
     {
         private ILogger myLogger = Logger.GetLogger<LambdaRunMarkerProvider>();
 
-        private static readonly IClrTypeName LambdaContextTypeName =
-            new ClrTypeName("Amazon.Lambda.Core.ILambdaContext");
-
-        private static readonly List<string> AmazonLambdaEventNamespaces =
-            new List<string>
-            {
-                "Amazon.Lambda.APIGatewayEvents",
-                "Amazon.Lambda.ApplicationLoadBalancerEvents",
-                "Amazon.Lambda.CloudWatchLogsEvents",
-                "Amazon.Lambda.CognitoEvents",
-                "Amazon.Lambda.ConfigEvents",
-                "Amazon.Lambda.DynamoDBEvents",
-                "Amazon.Lambda.LexEvents",
-                "Amazon.Lambda.KinesisAnalyticsEvents",
-                "Amazon.Lambda.KinesisEvents",
-                "Amazon.Lambda.KinesisFirehoseEvents",
-                "Amazon.Lambda.S3Events",
-                "Amazon.Lambda.SimpleEmailEvents",
-                "Amazon.Lambda.SNSEvents",
-                "Amazon.Lambda.SQSEvents"
-            };
-
+        private static readonly IClrTypeName LambdaContextTypeName = new ClrTypeName("Amazon.Lambda.Core.ILambdaContext");
+        private static readonly IClrTypeName AmazonLambdaNamespaceTypeName = new ClrTypeName("Amazon.Lambda");
         private static readonly IClrTypeName StreamTypeName = new ClrTypeName("System.IO.Stream");
-        private static readonly IClrTypeName AmazonSerializerType = new ClrTypeName("Amazon.Lambda.Core.ILambdaSerializer");
-        private static readonly IClrTypeName AmazonAttributeType = new ClrTypeName("Amazon.Lambda.Core.LambdaSerializerAttribute");
+        private static readonly IClrTypeName AmazonSerializerTypeName = new ClrTypeName("Amazon.Lambda.Core.ILambdaSerializer");
+        private static readonly IClrTypeName AmazonAttributeTypeName = new ClrTypeName("Amazon.Lambda.Core.LambdaSerializerAttribute");
 
         public double Priority => RunMarkerProviderPriority.DEFAULT;
 
@@ -275,21 +255,27 @@ namespace ReSharper.AWS.RunMarkers
             var clrName = (type as IDeclaredType)?.GetClrName();
             if (clrName == null) return false;
 
+            var typeElement = type.GetTypeElement();
+            if (typeElement == null) return false;
+
             var symbolCache = type.GetPsiServices().Symbols;
             var symbolScope = symbolCache.GetSymbolScope(type.Module, true, true);
 
-            foreach (var amazonEventNamespaceName in AmazonLambdaEventNamespaces)
+            var amazonLambdaNamespace = symbolScope.GetNamespace(AmazonLambdaNamespaceTypeName.FullName);
+            if (amazonLambdaNamespace == null) return false;
+
+            var amazonLambdaEventNamespaces = amazonLambdaNamespace.GetNestedNamespaces(symbolScope)
+                .Where(@namespace => @namespace.QualifiedName.EndsWith("Events"))
+                .Select(@namespace => @namespace.QualifiedName);
+
+            foreach (var amazonEventNamespaceName in amazonLambdaEventNamespaces)
             {
                 var namespaceElement = symbolScope.GetNamespace(amazonEventNamespaceName);
                 var amazonEventClasses = namespaceElement?.GetNestedTypeElements(symbolScope).Where(element => element is IClass);
 
                 if (amazonEventClasses == null) continue;
 
-                if (amazonEventClasses.Any(eventClass =>
-                {
-                    var eventClassType = TypeFactory.CreateType(eventClass);
-                    return type.IsSubtypeOf(eventClassType);
-                }))
+                if (amazonEventClasses.Any(eventClass => typeElement.IsDescendantOf(eventClass)))
                 {
                     return true;
                 }
@@ -315,9 +301,9 @@ namespace ReSharper.AWS.RunMarkers
             var psiModule = method.Module;
 
             var amazonSerializerType =
-                TypeFactory.CreateTypeByCLRName(AmazonSerializerType, NullableAnnotation.Unknown, psiModule);
+                TypeFactory.CreateTypeByCLRName(AmazonSerializerTypeName, NullableAnnotation.Unknown, psiModule);
 
-            var methodAttributes = method.GetAttributeInstances(AmazonAttributeType, true);
+            var methodAttributes = method.GetAttributeInstances(AmazonAttributeTypeName, true);
             if (!methodAttributes.IsEmpty())
             {
                 if (methodAttributes.Any(attribute =>
@@ -329,7 +315,7 @@ namespace ReSharper.AWS.RunMarkers
             }
 
             var symbolCache = psiModule.GetPsiServices().Symbols;
-            var assemblyAttributes = symbolCache.GetModuleAttributes(psiModule).GetAttributeInstances(AmazonAttributeType, true);
+            var assemblyAttributes = symbolCache.GetModuleAttributes(psiModule).GetAttributeInstances(AmazonAttributeTypeName, true);
 
             return !assemblyAttributes.IsEmpty() && assemblyAttributes.Any(attribute =>
                        attribute.PositionParameters().Any(parameter =>

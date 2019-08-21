@@ -61,7 +61,7 @@ class RiderSamProjectGenerator(
         title.labels = arrayOf(group, categoryName)
 
         initProjectTextField()
-//        initSamPanel()
+        initSamPanel()
 
         projectStructurePanel = JBTabbedPane()
         val structureScroll = JBScrollPane(structurePane).apply {
@@ -181,10 +181,9 @@ class RiderSamProjectGenerator(
     }
 
     private fun initSamPanel() {
-        // TODO: Maybe can be removed. Check
         samPanel.runtime.selectedItem = RuntimeUtil.getCurrentDotNetCoreRuntime()
     }
 
     private fun htmlText(baseDir: String, relativePath: String) =
-        "<font color=#${ColorUtil.toHex(UIUtil.getLabelDisabledForeground())} >...$baseDir</font>$relativePath<br>"
+        "<font color=#${ColorUtil.toHex(UIUtil.getLabelDisabledForeground())}>...$baseDir</font>$relativePath<br>"
 }

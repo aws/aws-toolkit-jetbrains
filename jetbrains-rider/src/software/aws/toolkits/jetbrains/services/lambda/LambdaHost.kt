@@ -24,7 +24,7 @@ import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandle
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.element.RiderLambdaHandlerFakePsiElement
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
-import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationFactory
+import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer
 import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction
 import software.aws.toolkits.jetbrains.utils.RuntimeUtil
 
@@ -43,19 +43,19 @@ class LambdaHost(project: Project) : LifetimedProjectComponent(project) {
     }
 
     private fun initRunLambdaHandler() =
-        model.runLambda.advise(componentLifetime) { runLambdaRequest ->
+        model.runLambda.advise(componentLifetime) { lambdaRequest ->
             runConfiguration(
-                methodName = runLambdaRequest.methodName,
-                handler = runLambdaRequest.handler,
+                methodName = lambdaRequest.methodName,
+                handler = lambdaRequest.handler,
                 executor = DefaultRunExecutor.getRunExecutorInstance()
             )
         }
 
     private fun initDebugLambdaHandler() =
-        model.debugLambda.advise(componentLifetime) { debugLambdaRequest ->
+        model.debugLambda.advise(componentLifetime) { lambdaRequest ->
             runConfiguration(
-                methodName = debugLambdaRequest.methodName,
-                handler = debugLambdaRequest.handler,
+                methodName = lambdaRequest.methodName,
+                handler = lambdaRequest.handler,
                 executor = DefaultDebugExecutor.getDebugExecutorInstance()
             )
         }
@@ -103,7 +103,7 @@ class LambdaHost(project: Project) : LifetimedProjectComponent(project) {
 
         // Or generate a new one if configuration is missing
         if (settings == null) {
-            val factory = LocalLambdaRunConfigurationFactory(configurationType)
+            val factory = LocalLambdaRunConfigurationProducer.getFactory()
             val template = runManager.getConfigurationTemplate(factory)
 
             val templateConfiguration = template.configuration as LocalLambdaRunConfiguration

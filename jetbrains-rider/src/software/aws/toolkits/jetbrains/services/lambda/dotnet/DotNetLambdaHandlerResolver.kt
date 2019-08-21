@@ -80,12 +80,6 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
         return isMethodExists
     }
 
-    /**
-     * Disable frontend line markers since Rider get them from backend.
-     * Please see [software.aws.toolkits.jetbrains.services.lambda.LambdaHost]
-     */
-    override fun shouldShowLineMarker(handler: String): Boolean = false
-
     fun getFieldIdByHandlerName(project: Project, handler: String): Int {
         val handlerParts = handler.split("::")
         if (handlerParts.size != 3) return -1

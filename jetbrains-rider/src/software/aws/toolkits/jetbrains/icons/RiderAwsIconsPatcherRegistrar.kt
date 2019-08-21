@@ -3,17 +3,12 @@
 
 package software.aws.toolkits.jetbrains.icons
 
-import com.intellij.openapi.components.BaseComponent
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.startup.StartupActivity
 
-internal class RiderAwsIconsPatcherRegistrar : BaseComponent {
+internal class RiderAwsIconsPatcherRegistrar : StartupActivity {
 
-    companion object {
-        private const val NAME = "RiderAwsIconsPatcherRegistrar"
-    }
-
-    override fun initComponent() {
+    override fun runActivity(project: Project) {
         RiderAwsIconsPatcher.install()
     }
-
-    override fun getComponentName(): String = NAME
 }

@@ -18,10 +18,9 @@ ext.resharperPluginPath = new File(projectDir, "ReSharper.AWS")
 
 def buildConfiguration = ext.properties["BuildConfiguration"] ?: "Debug"
 def pluginFiles = [
-        "AWS.Daemon/bin/$buildConfiguration/net461/AWS.Daemon.dll",
-        "AWS.Daemon/bin/$buildConfiguration/net461/AWS.Daemon.pdb",
-        "AWS.Psi/bin/$buildConfiguration/net461/AWS.Psi.dll",
-        "AWS.Psi/bin/$buildConfiguration/net461/AWS.Psi.pdb"
+        "AWS.Localization/bin/$buildConfiguration/net461/AWS.Localization",
+        "AWS.Daemon/bin/$buildConfiguration/net461/AWS.Daemon",
+        "AWS.Psi/bin/$buildConfiguration/net461/AWS.Psi"
 ]
 
 apply plugin: 'org.jetbrains.intellij'
@@ -60,7 +59,8 @@ intellij {
 tasks.withType(prepareSandbox.class).all {
     dependsOn buildReSharperPlugin
 
-    def files = pluginFiles.collect { "$resharperPluginPath/src/$it" }
+    def files = pluginFiles.collect { "$resharperPluginPath/src/${it}.dll" } +
+                pluginFiles.collect { "$resharperPluginPath/src/${it}.pdb" }
 
     files.each {
         from(it, { into("${intellij.pluginName}/dotnet") })

@@ -7,6 +7,7 @@ import com.jetbrains.rdclient.daemon.util.attributeId
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.daemon.util.isBackendGutterMark
 import com.jetbrains.rider.test.base.BaseTestWithMarkup
+import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 
 class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
@@ -32,8 +33,27 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     @Test
     fun testParameters_NoParameters_NotDetected() = verifyLambdaGutterMark()
 
-    @Test
-    fun testParameters_SingleParameterAmazonEvent_Detected() = verifyLambdaGutterMark()
+    @DataProvider(name = "singleParameterAmazonEventType")
+    fun amazonEventTypesData() = arrayOf(
+        arrayOf("APIGatewayEvents"),
+        arrayOf("ApplicationLoadBalancerEvents"),
+        arrayOf("CloudWatchEvents"),
+        arrayOf("CloudWatchLogsEvents"),
+        arrayOf("CognitoEvents"),
+        arrayOf("ConfigEvents"),
+        arrayOf("DynamoDBEvents"),
+        arrayOf("LexEvents"),
+        arrayOf("KinesisAnalyticsEvents"),
+        arrayOf("KinesisEvents"),
+        arrayOf("KinesisFirehoseEvents"),
+        arrayOf("S3Events"),
+        arrayOf("SimpleEmailEvents"),
+        arrayOf("SNSEvents"),
+        arrayOf("SQSEvents")
+    )
+
+    @Test(dataProvider = "singleParameterAmazonEventType")
+    fun testParameters_SingleParameterAmazonEvent_Detected(name: String) = verifyLambdaGutterMark()
 
     @Test
     fun testParameters_SingleParameterTypeInheritedFromAmazonEvent_Detected() = verifyLambdaGutterMark()

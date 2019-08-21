@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AWS.Localization;
 using JetBrains.Annotations;
 using JetBrains.Application.UI.Controls.BulbMenu.Anchors;
 using JetBrains.Application.UI.Controls.BulbMenu.Items;
@@ -47,6 +48,7 @@ namespace ReSharper.AWS.RunMarkers
             [NotNull] RunMarkerHighlighting runMarker)
         {
             var lambdaHost = solution.GetComponent<LambdaHost>();
+            var javaPropertiesLoader = solution.GetComponent<JavaPropertiesLoader>();
 
             var methodName = runMarker.Method.ShortName;
             if (methodName.IsEmpty())
@@ -69,7 +71,7 @@ namespace ReSharper.AWS.RunMarkers
 
             yield return new BulbMenuItem(
                 new ExecutableItem(() => { lambdaHost.CreateNewLambda(methodName, handlerString); }),
-                new RichText("Create new AWS Lambda..."),
+                new RichText(javaPropertiesLoader.GetLocalizedString("lambda.create_new")),
                 CompositeIconId.Compose(LambdaRunMarkersThemedIcons.Lambda.Id,
                     LambdaRunMarkersThemedIcons.CreateNew.Id), BulbMenuAnchors.PermanentBackgroundItems);
         }

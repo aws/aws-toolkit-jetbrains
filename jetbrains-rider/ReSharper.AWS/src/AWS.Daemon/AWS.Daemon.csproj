@@ -9,4 +9,8 @@
       <PackageReference Include="JetBrains.Rider.SDK" Version="$(RiderSDKVersion)" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\AWS.Localization\AWS.Localization.csproj" />
+    </ItemGroup>
+
 </Project>
