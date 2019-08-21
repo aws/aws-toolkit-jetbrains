@@ -29,7 +29,7 @@ class UploadObjectAction(
     val bucket: S3VirtualBucket,
     val treeTable: S3TreeTable,
     private val fileChooserFactory: FileChooserFactory
-) : ActionButtonWrapper(message("s3.upload.object.action"), null, AllIcons.Actions.Upload) {
+) : ActionButtonWrapper(message("s3.upload.object.action", bucket.s3Bucket.bucket), null, AllIcons.Actions.Upload) {
 
     constructor(bucket: S3VirtualBucket, treeTable: S3TreeTable) : this(
         bucket,
@@ -42,7 +42,7 @@ class UploadObjectAction(
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: S3Client = bucket.s3Bucket.client
         val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
-            .withDescription(message("s3.upload.object.action"))
+            .withDescription(message("s3.upload.object.action", bucket.s3Bucket.bucket))
 
         val row = treeTable.selectedRow
         var nodeFile: VirtualFile? = null

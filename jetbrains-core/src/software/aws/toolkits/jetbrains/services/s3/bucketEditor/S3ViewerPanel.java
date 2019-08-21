@@ -4,6 +4,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.util.Disposer;
@@ -196,10 +197,12 @@ public class S3ViewerPanel {
                 renameObjectButton = new RenameObjectAction(treeTable, bucketVirtual);
                 uploadObjectButton = new UploadObjectAction(bucketVirtual, treeTable);
 
-                actionGroup.add(deleteObjectButton);
                 actionGroup.add(downloadObjectButton);
+                actionGroup.add(new Separator());
                 actionGroup.add(renameObjectButton);
                 actionGroup.add(uploadObjectButton);
+                actionGroup.add(new Separator());
+                actionGroup.add(deleteObjectButton);
                 PopupHandler.installPopupHandler(treeTable, actionGroup, ActionPlaces.EDITOR_POPUP, ActionManager.getInstance());
                 treeTable.setRowSelectionAllowed(true);
 
