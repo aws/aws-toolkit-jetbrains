@@ -164,6 +164,7 @@
         <toolWindow id="aws.explorer" anchor="left" secondary="true"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
                     icon="AwsIcons.Logos.AWS"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory$ProjectService"/>
 
         <projectConfigurable id="aws" groupId="tools" bundle="software.aws.toolkits.resources.localized_messages"
                              key="aws.settings.title"
@@ -228,11 +229,10 @@
         </group>
 
         <group id="aws.toolkit.explorer.s3.bucket" popup="true" compact="false">
-            <action id="s3.delete.bucket"
-                    class="software.aws.toolkits.jetbrains.services.s3.bucketActions.DeleteBucketAction"/>
-            <separator/>
             <action id="s3.open.bucket.viewer"
                     class="software.aws.toolkits.jetbrains.services.s3.bucketActions.OpenBucketViewerAction"/>
+            <action id="s3.delete.bucket"
+                    class="software.aws.toolkits.jetbrains.services.s3.bucketActions.DeleteBucketAction"/>
             <action id="s3.copy.bucketname.check"
                     class="software.aws.toolkits.jetbrains.services.s3.bucketActions.CopyBucketNameAction"/>
         </group>

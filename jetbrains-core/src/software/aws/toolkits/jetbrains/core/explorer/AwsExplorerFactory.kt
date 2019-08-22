@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
@@ -23,6 +24,9 @@ import software.aws.toolkits.resources.message
 class AwsExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val explorer = ExplorerToolWindow(project)
+        val projectService = ServiceManager.getService(project, ProjectService::class.java)
+        projectService.explorer = explorer
+
         toolWindow.component.parent.add(explorer)
         toolWindow.helpId = HelpIds.EXPLORER_WINDOW.id
         if (toolWindow is ToolWindowEx) {
@@ -63,6 +67,10 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
 
     override fun init(toolWindow: ToolWindow) {
         toolWindow.stripeTitle = message("explorer.label")
+    }
+
+    class ProjectService {
+        var explorer: ExplorerToolWindow? = null
     }
 }
 

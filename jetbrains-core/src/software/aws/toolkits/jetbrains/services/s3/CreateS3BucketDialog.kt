@@ -5,11 +5,14 @@ package software.aws.toolkits.jetbrains.services.s3
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ValidationInfo
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.components.telemetry.LoggingDialogWrapper
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent
@@ -45,6 +48,7 @@ class CreateS3BucketDialog(
                     createBucket()
                     ApplicationManager.getApplication().invokeLater({
                         close(OK_EXIT_CODE)
+                        refresh()
                     }, ModalityState.stateForComponent(view.component))
                 } catch (e: Exception) {
                     setErrorText(e.message)
@@ -67,4 +71,10 @@ class CreateS3BucketDialog(
 
     @TestOnly
     fun getViewForTesting(): CreateBucketPanel = view
+
+    private fun refresh(){
+        val projectService = ServiceManager.getService(project, AwsExplorerFactory.ProjectService::class.java)
+        AwsResourceCache.getInstance(project).clear()
+        projectService.explorer?.invalidateTree()
+    }
 }

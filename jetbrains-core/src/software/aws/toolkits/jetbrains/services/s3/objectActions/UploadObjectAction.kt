@@ -23,16 +23,19 @@ import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import javax.swing.JButton
-import javax.swing.JTextField
 import javax.swing.tree.DefaultMutableTreeNode
 
 class UploadObjectAction(
     val bucket: S3VirtualBucket,
-    private val treeTable: S3TreeTable,
-    private val searchButton: JButton,
-    private val searchTextField: JTextField
+    val treeTable: S3TreeTable,
+    private val fileChooserFactory: FileChooserFactory
 ) : ActionButtonWrapper(message("s3.upload.object.action"), null, AllIcons.Actions.Upload) {
+
+    constructor(bucket: S3VirtualBucket, treeTable: S3TreeTable) : this(
+        bucket,
+        treeTable,
+        FileChooserFactory.getInstance()
+    )
 
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
@@ -44,21 +47,17 @@ class UploadObjectAction(
         val row = treeTable.selectedRow
         var nodeFile: VirtualFile? = null
         if (row > 0) {
-            val path = treeTable.tree.getPathForRow(treeTable.convertRowIndexToModel(row))
+            val path = treeTable.tree.getPathForRow(row)
             val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
             nodeFile = node.virtualFile
         }
-        val chooserDialog = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
+        val chooserDialog = fileChooserFactory.createFileChooser(descriptor, project, null)
         val filesChosen = chooserDialog.choose(project, null)
         for (fileChosen in filesChosen) {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     uploadObjectAction(client, project, fileChosen, nodeFile)
                     treeTable.refresh()
-                    if (searchTextField.text.isNotEmpty()) {
-                        searchButton.doClick()
-                        treeTable.refresh()
-                    }
                 } catch (e: Exception) {
                     notifyError(message("s3.upload.object.failed"))
                 }

@@ -3,7 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.explorer.nodes
 
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
 
 /**
@@ -16,4 +19,13 @@ abstract class AwsExplorerServiceRootNode(project: Project, private val service:
         get() = service.serviceId
 
     override fun isAlwaysShowPlus(): Boolean = true
+
+    fun refresh(){
+        val projectService = ServiceManager.getService(
+            nodeProject,
+            AwsExplorerFactory.ProjectService::class.java
+        )
+        AwsResourceCache.getInstance(nodeProject).clear()
+        projectService.explorer?.invalidateTree()
+    }
 }

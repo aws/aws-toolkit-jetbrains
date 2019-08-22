@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.resources.message
 
-class CreateBucketAction : AnActionWrapper(message("s3.create.bucket.title"), null, AwsIcons.Resources.S3_BUCKET) {
+class CreateBucketAction : AnActionWrapper(message("s3.create.bucket.title"), null, AwsIcons.Actions.LAMBDA_FUNCTION_NEW) {
 
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {

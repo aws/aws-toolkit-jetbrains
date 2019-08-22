@@ -10,8 +10,6 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.PopupHandler;
-import com.intellij.ui.SpeedSearchComparator;
-import com.intellij.ui.TreeTableSpeedSearch;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
@@ -38,11 +36,8 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
-import javax.swing.RowFilter;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -57,23 +52,15 @@ public class S3ViewerPanel {
     private JLabel name;
     private JLabel creationDate;
     private JTextField date;
-    private JPanel mainPanel;
+    private JPanel checkPanel;
     private JTextField arnText;
     private JLabel bucketArn;
-    private JPanel searchPanel;
-    private JPanel paginationPanel;
-    private JButton searchButton;
-    private JTextField searchTextField;
     private S3VirtualBucket bucketVirtual;
     private S3TreeTable treeTable;
     private AnActionButton uploadObjectButton;
     private AnActionButton deleteObjectButton;
     private AnActionButton renameObjectButton;
     private AnActionButton downloadObjectButton;
-    private S3KeyNode s3Node;
-    private S3TreeTableModel model;
-    private final int MIN_SIZE = 0;
-    private final int UPDATE_LIMIT = 10;
 
     public S3ViewerPanel(S3VirtualBucket bucketVirtual) {
         TitledBorder border = new TitledBorder("Bucket Details");
@@ -83,10 +70,6 @@ public class S3ViewerPanel {
         this.bucketVirtual = bucketVirtual;
         this.name.setText(bucketVirtual.getVirtualBucketName());
         this.date.setText(bucketVirtual.formatDate(bucketVirtual.getS3Bucket().getCreationDate()));
-
-        this.paginationPanel.setLayout(new FlowLayout((FlowLayout.RIGHT)));
-        this.searchButton.setText("Search");
-        this.searchTextField.setText("");
 
         this.arnText.setText("arn:aws:s3:::" + bucketVirtual.getVirtualBucketName());
         this.bucketArn.setText("Bucket Arn:");
@@ -106,12 +89,12 @@ public class S3ViewerPanel {
         arnText.setComponentPopupMenu(menu);
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            s3Node = new S3KeyNode(bucketVirtual);
+            S3KeyNode s3Node = new S3KeyNode(bucketVirtual);
             ColumnInfo key = new ColumnInfo<Object, Object>("Key") {
                 @Override
                 @Nullable
                 public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
+                    VirtualFile file = getVirtualFile(obj);
                     if (file instanceof S3VirtualFile)
                         return ((S3VirtualFile) file).getFile().getKey();
                     else if (file instanceof S3VirtualDirectory)
@@ -128,11 +111,24 @@ public class S3ViewerPanel {
                 }
             };
 
+            ColumnInfo eTag = new ColumnInfo<Object, Object>("Etag") {
+                @Override
+                @Nullable
+                public Object valueOf(Object obj) {
+                    VirtualFile file = getVirtualFile(obj);
+                    return (file instanceof S3VirtualFile) ? ((S3VirtualFile) file).getFile().getETag() : "";
+                }
+
+                public boolean isCellEditable(Object o) {
+                    return true;
+                }
+            };
+
             ColumnInfo size = new ColumnInfo<Object, Object>("Size") {
                 @Override
                 @Nullable
                 public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
+                    VirtualFile file = getVirtualFile(obj);
                     return (file instanceof S3VirtualFile) ?
                             ((S3VirtualFile) file).formatSize() : "";
                 }
@@ -140,15 +136,13 @@ public class S3ViewerPanel {
                 public boolean isCellEditable(Object o) {
                     return true;
                 }
-
-
             };
 
             ColumnInfo modified = new ColumnInfo<Object, Object>("Last-Modified") {
                 @Override
                 @Nullable
                 public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
+                    VirtualFile file = getVirtualFile(obj);
                     return (file instanceof S3VirtualFile) ? ((S3VirtualFile) file).formatDate(
                             ((S3VirtualFile) file).getFile().getLastModified()) : "";
                 }
@@ -158,83 +152,66 @@ public class S3ViewerPanel {
                 }
             };
 
-            ColumnInfo eTag = new ColumnInfo<Object, Object>("Etag") {
-                @Override
-                @Nullable
-                public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
-                    return (file instanceof S3VirtualFile) ? ((S3VirtualFile) file).getFile().getETag().replace("\"", "") : "";
-                }
+            final ColumnInfo[] COLUMNS = new ColumnInfo[]{key, eTag, size, modified};
 
-                public boolean isCellEditable(Object o) {
-                    return true;
-                }
-            };
+            Disposable myTreeModelDisposable = Disposer.newDisposable();
+            SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3Node);
+            StructureTreeModel<SimpleTreeStructure> myTreeModel = new StructureTreeModel(treeStructure, myTreeModelDisposable);
+            S3TreeTableModel model = new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true
+                    , myTreeModelDisposable), COLUMNS, myTreeModel);
 
-            final ColumnInfo[] COLUMNS = new ColumnInfo[]{key, size, modified, eTag};
-            createTreeTable(COLUMNS);
-
-            DefaultActionGroup actionGroup = new DefaultActionGroup();
-            S3TreeCellRenderer treeRenderer = new S3TreeCellRenderer();
+            S3TreeCellRenderer renderer = new S3TreeCellRenderer();
             DefaultTableCellRenderer tableRenderer = new DefaultTableCellRenderer();
-            tableRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
-            /**
-             *  Navigation buttons for pages
-             */
-            JButton next = new JButton(">");
-            JButton previous = new JButton("<");
-            ActionListener listener = new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    next.setEnabled(true);
-                    previous.setEnabled(true);
-
-                    if (e.getSource() == next) {
-                        s3Node.updateLimitsOnButtonClick(true);
-                        if (s3Node.getNext() == s3Node.getCurrSize()) next.setEnabled(false);
-
-                    } else if (e.getSource() == previous) {
-                        s3Node.updateLimitsOnButtonClick(false);
-                        if (s3Node.getPrev() == 0) previous.setEnabled(false);
-                    }
-                    treeTable.refresh();
-                }
-            };
+            tableRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+            DefaultActionGroup actionGroup = new DefaultActionGroup();
 
             ApplicationManager.getApplication().invokeLater(() -> {
+                JPanel navigation = new JPanel(new FlowLayout(FlowLayout.CENTER));
+                JButton next = new JButton(">");
+                JButton previous = new JButton("<");
+                ActionListener listener = new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (e.getSource() == next) {
+                            s3Node.updateLimitsOnButtonClick(true);
+                        } else if (e.getSource() == previous) {
+                            s3Node.updateLimitsOnButtonClick(false);
+                        }
+                        treeTable.refresh();
+                    }
+                };
+
                 next.addActionListener(listener);
                 previous.addActionListener(listener);
-                paginationPanel.add(previous);
-                paginationPanel.add(next);
+                navigation.add(previous);
+                navigation.add(next);
 
                 treeTable = new S3TreeTable(model);
-                new TreeTableSpeedSearch(treeTable).setComparator(new SpeedSearchComparator(false));
                 treeTable.setRootVisible(false);
                 treeTable.setDefaultRenderer(Object.class, tableRenderer);
-                treeTable.setTreeCellRenderer(treeRenderer);
+                treeTable.setTreeCellRenderer(renderer);
 
-                JBScrollPane scrollPane = new JBScrollPane(treeTable, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                        JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-
-                treeTable.setRowSelectionAllowed(true);
-                int width = treeTable.getPreferredSize().width;
-                final int scrollPaneSize = 11;
-                scrollPane.setPreferredSize(new Dimension(width, treeTable.getRowHeight() * scrollPaneSize));
-
-                treeTable.setAutoCreateRowSorter(true);
-                searchAndSortTable();
-
-                deleteObjectButton = new DeleteObjectAction(treeTable, bucketVirtual, searchButton, searchTextField);
+                deleteObjectButton = new DeleteObjectAction(treeTable, bucketVirtual);
                 downloadObjectButton = new DownloadObjectAction(treeTable, bucketVirtual);
                 renameObjectButton = new RenameObjectAction(treeTable, bucketVirtual);
-                uploadObjectButton = new UploadObjectAction(bucketVirtual, treeTable, searchButton, searchTextField);
+                uploadObjectButton = new UploadObjectAction(bucketVirtual, treeTable);
+
                 actionGroup.add(deleteObjectButton);
                 actionGroup.add(downloadObjectButton);
                 actionGroup.add(renameObjectButton);
                 actionGroup.add(uploadObjectButton);
                 PopupHandler.installPopupHandler(treeTable, actionGroup, ActionPlaces.EDITOR_POPUP, ActionManager.getInstance());
-                treeTable.getColumnModel().getColumn(1).setMaxWidth(120);
-                mainPanel.add(scrollPane, BorderLayout.CENTER);
+                treeTable.setRowSelectionAllowed(true);
+
+                JBScrollPane scrollPane = new JBScrollPane(treeTable,
+                        JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                        JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                int width = treeTable.getPreferredSize().width;
+                final int scrollPaneSize = 11;
+                scrollPane.setPreferredSize(new Dimension(width, treeTable.getRowHeight() * scrollPaneSize));
+                treeTable.setAutoCreateRowSorter(true);
+                checkPanel.add(scrollPane, BorderLayout.CENTER);
+                checkPanel.add(navigation, BorderLayout.SOUTH);
             }, ModalityState.defaultModalityState());
         });
     }
@@ -250,7 +227,7 @@ public class S3ViewerPanel {
         return name;
     }
 
-    private VirtualFile getVirtualFileFromNode(Object obj) {
+    private VirtualFile getVirtualFile(Object obj) {
         if (obj instanceof DefaultMutableTreeNode) {
             final Object userObject = ((DefaultMutableTreeNode) obj).getUserObject();
             if (userObject instanceof S3KeyNode) {
@@ -259,38 +236,5 @@ public class S3ViewerPanel {
             }
         }
         return null;
-    }
-
-    private void createTreeTable(ColumnInfo[] columns) {
-        Disposable myTreeModelDisposable = Disposer.newDisposable();
-        SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3Node);
-        StructureTreeModel<SimpleTreeStructure> myTreeModel = new StructureTreeModel(treeStructure, myTreeModelDisposable);
-        model = new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true
-                , myTreeModelDisposable), columns, myTreeModel);
-    }
-
-    /**
-     * Search and sort TreeTable(top-level) rows based on text in TextField
-     */
-    private void searchAndSortTable() {
-        TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(treeTable.getModel());
-        treeTable.setRowSorter(sorter);
-        searchButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String text = searchTextField.getText();
-                if (text.isEmpty()) {
-                    s3Node.setPrev(MIN_SIZE);
-                    s3Node.setNext(Math.min(UPDATE_LIMIT, s3Node.getCurrSize()));
-                    sorter.setRowFilter(null);
-                } else {
-                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                        s3Node.resetLimitsForSearch();
-                    });
-                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
-                }
-                sorter.setSortKeys(null);
-                treeTable.refresh();
-            }
-        });
     }
 }

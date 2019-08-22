@@ -11,6 +11,7 @@ import com.intellij.openapi.ui.InputValidator
 import com.intellij.openapi.ui.Messages
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.SingleResourceNodeAction
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.Operation
@@ -41,6 +42,7 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: Str
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         performDelete(selected)
+                        (selected.parent as AwsExplorerServiceRootNode).refresh()
                         notifyInfo(message("delete_resource.deleted", resourceType, resourceName))
                     } catch (e: Exception) {
                         e.notifyError(message("delete_resource.delete_failed", resourceType, resourceName), selected.project)

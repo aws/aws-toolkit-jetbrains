@@ -18,15 +18,11 @@ import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
-import javax.swing.JButton
-import javax.swing.JTextField
 import javax.swing.tree.DefaultMutableTreeNode
 
 class DeleteObjectAction(
     private var treeTable: S3TreeTable,
-    val bucket: S3VirtualBucket,
-    private val searchButton: JButton,
-    private val searchTextField: JTextField
+    val bucket: S3VirtualBucket
 ) : ActionButtonWrapper(message("s3.delete.object.action"), null, AllIcons.Actions.Cancel) {
 
     @Suppress("unused")
@@ -37,7 +33,7 @@ class DeleteObjectAction(
         val objectsToDelete = mutableListOf<ObjectIdentifier>()
 
         for (row in rows) {
-            val path = treeTable.tree.getPathForRow(treeTable.convertRowIndexToModel(row))
+            val path = treeTable.tree.getPathForRow(row)
             val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
             val file = node.virtualFile
             val key = when (file.parent is S3VirtualDirectory) {
@@ -59,10 +55,6 @@ class DeleteObjectAction(
                 try {
                     deleteObjectAction(client, objectsToDelete)
                     treeTable.refresh()
-                    if (searchTextField.text.isNotEmpty()) {
-                        searchButton.doClick()
-                        treeTable.refresh()
-                    }
                 } catch (e: Exception) {
                     notifyInfo(message("s3.delete.object.failed"))
                 }
