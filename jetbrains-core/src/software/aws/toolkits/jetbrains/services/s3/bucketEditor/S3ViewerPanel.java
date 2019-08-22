@@ -10,8 +10,6 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.PopupHandler;
-import com.intellij.ui.SpeedSearchComparator;
-import com.intellij.ui.TreeTableSpeedSearch;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
@@ -43,12 +41,12 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 @SuppressWarnings("unchecked")
 public class S3ViewerPanel {
@@ -72,8 +70,7 @@ public class S3ViewerPanel {
     private AnActionButton downloadObjectButton;
     private S3KeyNode s3Node;
     private S3TreeTableModel model;
-    private final int MIN_SIZE = 0;
-    private final int UPDATE_LIMIT = 10;
+    private final int SCROLLPANE_SIZE = 11;
 
     public S3ViewerPanel(S3VirtualBucket bucketVirtual) {
         TitledBorder border = new TitledBorder("Bucket Details");
@@ -84,7 +81,6 @@ public class S3ViewerPanel {
         this.name.setText(bucketVirtual.getVirtualBucketName());
         this.date.setText(bucketVirtual.formatDate(bucketVirtual.getS3Bucket().getCreationDate()));
 
-        this.paginationPanel.setLayout(new FlowLayout((FlowLayout.RIGHT)));
         this.searchButton.setText("Search");
         this.searchTextField.setText("");
 
@@ -107,69 +103,17 @@ public class S3ViewerPanel {
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             s3Node = new S3KeyNode(bucketVirtual);
-            ColumnInfo key = new ColumnInfo<Object, Object>("Key") {
-                @Override
-                @Nullable
-                public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
-                    if (file instanceof S3VirtualFile)
-                        return ((S3VirtualFile) file).getFile().getKey();
-                    else if (file instanceof S3VirtualDirectory)
-                        return file.getName();
-                    else return null;
-                }
 
-                public Class getColumnClass() {
-                    return TreeTableModel.class;
-                }
+            ColumnInfo key = new S3KeyColumnInfo("Key", virtualFile -> virtualFile.getFile().getKey());
 
-                public boolean isCellEditable(Object o) {
-                    return true;
-                }
-            };
+            ColumnInfo size = new S3ColumnInfo("Size", virtualFile -> virtualFile.formatSize());
 
-            ColumnInfo size = new ColumnInfo<Object, Object>("Size") {
-                @Override
-                @Nullable
-                public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
-                    return (file instanceof S3VirtualFile) ?
-                            ((S3VirtualFile) file).formatSize() : "";
-                }
+            ColumnInfo modified = new S3ColumnInfo("Last-Modified",
+                    virtualFile -> virtualFile.formatDate(virtualFile.getFile().getLastModified()));
 
-                public boolean isCellEditable(Object o) {
-                    return true;
-                }
+            ColumnInfo eTag = new S3ColumnInfo("Etag",
+                    virtualFile -> virtualFile.getFile().getETag().replace("\"", ""));
 
-
-            };
-
-            ColumnInfo modified = new ColumnInfo<Object, Object>("Last-Modified") {
-                @Override
-                @Nullable
-                public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
-                    return (file instanceof S3VirtualFile) ? ((S3VirtualFile) file).formatDate(
-                            ((S3VirtualFile) file).getFile().getLastModified()) : "";
-                }
-
-                public boolean isCellEditable(Object o) {
-                    return true;
-                }
-            };
-
-            ColumnInfo eTag = new ColumnInfo<Object, Object>("Etag") {
-                @Override
-                @Nullable
-                public Object valueOf(Object obj) {
-                    VirtualFile file = getVirtualFileFromNode(obj);
-                    return (file instanceof S3VirtualFile) ? ((S3VirtualFile) file).getFile().getETag().replace("\"", "") : "";
-                }
-
-                public boolean isCellEditable(Object o) {
-                    return true;
-                }
-            };
 
             final ColumnInfo[] COLUMNS = new ColumnInfo[]{key, size, modified, eTag};
             createTreeTable(COLUMNS);
@@ -208,18 +152,16 @@ public class S3ViewerPanel {
                 paginationPanel.add(next);
 
                 treeTable = new S3TreeTable(model);
-                new TreeTableSpeedSearch(treeTable).setComparator(new SpeedSearchComparator(false));
                 treeTable.setRootVisible(false);
                 treeTable.setDefaultRenderer(Object.class, tableRenderer);
                 treeTable.setTreeCellRenderer(treeRenderer);
-
+                treeTable.setCellSelectionEnabled(false);
                 JBScrollPane scrollPane = new JBScrollPane(treeTable, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                         JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
                 treeTable.setRowSelectionAllowed(true);
                 int width = treeTable.getPreferredSize().width;
-                final int scrollPaneSize = 11;
-                scrollPane.setPreferredSize(new Dimension(width, treeTable.getRowHeight() * scrollPaneSize));
+                scrollPane.setPreferredSize(new Dimension(width, treeTable.getRowHeight() * SCROLLPANE_SIZE));
 
                 treeTable.setAutoCreateRowSorter(true);
                 searchAndSortTable();
@@ -234,7 +176,10 @@ public class S3ViewerPanel {
                 actionGroup.add(uploadObjectButton);
                 PopupHandler.installPopupHandler(treeTable, actionGroup, ActionPlaces.EDITOR_POPUP, ActionManager.getInstance());
                 treeTable.getColumnModel().getColumn(1).setMaxWidth(120);
+
                 mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+                clearSelectionOnWhiteSpace();
             }, ModalityState.defaultModalityState());
         });
     }
@@ -248,17 +193,6 @@ public class S3ViewerPanel {
 
     public JLabel getName() {
         return name;
-    }
-
-    private VirtualFile getVirtualFileFromNode(Object obj) {
-        if (obj instanceof DefaultMutableTreeNode) {
-            final Object userObject = ((DefaultMutableTreeNode) obj).getUserObject();
-            if (userObject instanceof S3KeyNode) {
-                VirtualFile file = ((S3KeyNode) userObject).getVirtualFile();
-                return file;
-            }
-        }
-        return null;
     }
 
     private void createTreeTable(ColumnInfo[] columns) {
@@ -279,8 +213,8 @@ public class S3ViewerPanel {
             public void actionPerformed(ActionEvent e) {
                 String text = searchTextField.getText();
                 if (text.isEmpty()) {
-                    s3Node.setPrev(MIN_SIZE);
-                    s3Node.setNext(Math.min(UPDATE_LIMIT, s3Node.getCurrSize()));
+                    s3Node.setPrev(s3Node.MIN_SIZE);
+                    s3Node.setNext(Math.min(s3Node.UPDATE_LIMIT, s3Node.getCurrSize()));
                     sorter.setRowFilter(null);
                 } else {
                     ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -290,6 +224,17 @@ public class S3ViewerPanel {
                 }
                 sorter.setSortKeys(null);
                 treeTable.refresh();
+            }
+        });
+    }
+
+    private void clearSelectionOnWhiteSpace(){
+        mainPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if(!treeTable.contains(e.getPoint())) {
+                    treeTable.clearSelection();
+                }
             }
         });
     }

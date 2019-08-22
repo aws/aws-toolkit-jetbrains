@@ -53,7 +53,7 @@ class DownloadObjectAction(
              * A single file saver dialog appears for first selection. All other objects
              * are saved in the same root location selected with the dialog.
              */
-            if (row == rows[0]) {
+            if (row == rows.first()) {
                 fileWrapper = saveFileDialog.save(baseDir, fileSelected.name)
                 baseFilePath = fileWrapper?.file?.toString()?.substringBefore(fileSelected.name)
             } else {

@@ -62,16 +62,16 @@ class S3KeyNode(val virtualFile: VirtualFile) : SimpleNode() {
         }
     }
 
-    fun resetLimitsForSearch(){
+    fun resetLimitsForSearch() {
         updateLimitsOnSizeChange()
         prev = MIN_SIZE
         next = currSize
     }
 
-    /**
-     * Page Limits
-     */
     companion object {
+        /**
+         * Page Limits
+         */
         const val UPDATE_LIMIT = 10
         const val MIN_SIZE = 0
     }
