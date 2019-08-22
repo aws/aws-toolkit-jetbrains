@@ -8,9 +8,9 @@ import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile
 import javax.swing.tree.DefaultMutableTreeNode
 
 open class S3ColumnInfo(columnTitle: String, private val valueGetter: (S3VirtualFile) -> String?) :
-    ColumnInfo<Object, String>(columnTitle) {
+    ColumnInfo<Any, String>(columnTitle) {
 
-    override fun valueOf(obj: Object): String? {
+    override fun valueOf(obj: Any): String? {
         val file = getVirtualFileFromNode(obj)
         return when (file) {
             is S3VirtualFile -> valueGetter.invoke(file)
@@ -18,9 +18,9 @@ open class S3ColumnInfo(columnTitle: String, private val valueGetter: (S3Virtual
         }
     }
 
-    override fun isCellEditable(item: Object?): Boolean = true
+    override fun isCellEditable(item: Any?): Boolean = true
 
-    fun getVirtualFileFromNode(obj: Object): VirtualFile? {
+    fun getVirtualFileFromNode(obj: Any): VirtualFile? {
         val userObject = (obj as? DefaultMutableTreeNode)?.userObject
         return (userObject as? S3KeyNode)?.virtualFile
     }
@@ -29,7 +29,7 @@ open class S3ColumnInfo(columnTitle: String, private val valueGetter: (S3Virtual
 class S3KeyColumnInfo(columnTitle: String, private val valueGetter: (S3VirtualFile) -> String?) :
     S3ColumnInfo(columnTitle, valueGetter) {
 
-    override fun valueOf(obj: Object): String? {
+    override fun valueOf(obj: Any): String? {
         val file = super.getVirtualFileFromNode(obj)
         return when (file) {
             is S3VirtualFile -> valueGetter.invoke(file)
