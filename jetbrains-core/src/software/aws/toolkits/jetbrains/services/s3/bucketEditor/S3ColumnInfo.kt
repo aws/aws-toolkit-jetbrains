@@ -1,3 +1,5 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3.bucketEditor
 
 import com.intellij.openapi.vfs.VirtualFile
