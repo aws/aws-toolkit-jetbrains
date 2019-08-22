@@ -72,7 +72,7 @@ class CreateS3BucketDialog(
     @TestOnly
     fun getViewForTesting(): CreateBucketPanel = view
 
-    private fun refresh(){
+    private fun refresh() {
         val projectService = ServiceManager.getService(project, AwsExplorerFactory.ProjectService::class.java)
         AwsResourceCache.getInstance(project).clear()
         projectService.explorer?.invalidateTree()

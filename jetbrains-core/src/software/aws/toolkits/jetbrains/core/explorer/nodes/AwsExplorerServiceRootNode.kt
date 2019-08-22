@@ -20,7 +20,7 @@ abstract class AwsExplorerServiceRootNode(project: Project, private val service:
 
     override fun isAlwaysShowPlus(): Boolean = true
 
-    fun refresh(){
+    fun refresh() {
         val projectService = ServiceManager.getService(
             nodeProject,
             AwsExplorerFactory.ProjectService::class.java
