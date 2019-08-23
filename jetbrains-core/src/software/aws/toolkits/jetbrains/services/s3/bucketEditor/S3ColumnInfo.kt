@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile
 import javax.swing.tree.DefaultMutableTreeNode
 
-open class S3ColumnInfo(columnTitle: String, private val valueGetter: (S3VirtualFile) -> String?) :
+open class S3ColumnInfo(columnTitle: String, val valueGetter: (S3VirtualFile) -> String?) :
     ColumnInfo<Any, String>(columnTitle) {
 
     override fun valueOf(obj: Any): String? {
@@ -28,8 +28,8 @@ open class S3ColumnInfo(columnTitle: String, private val valueGetter: (S3Virtual
     }
 }
 
-class S3KeyColumnInfo(columnTitle: String, private val valueGetter: (S3VirtualFile) -> String?) :
-    S3ColumnInfo(columnTitle, valueGetter) {
+class S3KeyColumnInfo(valueGetter: (S3VirtualFile) -> String?) :
+    S3ColumnInfo("Key", valueGetter) {
 
     override fun valueOf(obj: Any): String? {
         val file = super.getVirtualFileFromNode(obj)

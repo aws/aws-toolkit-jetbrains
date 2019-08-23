@@ -7,18 +7,13 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
-import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.util.ui.ColumnInfo;
-import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory;
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction;
@@ -104,7 +99,7 @@ public class S3ViewerPanel {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             s3Node = new S3KeyNode(bucketVirtual);
 
-            ColumnInfo key = new S3KeyColumnInfo("Key", virtualFile -> virtualFile.getFile().getKey());
+            ColumnInfo key = new S3KeyColumnInfo(virtualFile -> virtualFile.getFile().getKey());
 
             ColumnInfo size = new S3ColumnInfo("Size", virtualFile -> virtualFile.formatSize());
 
@@ -213,7 +208,7 @@ public class S3ViewerPanel {
             public void actionPerformed(ActionEvent e) {
                 String text = searchTextField.getText();
                 if (text.isEmpty()) {
-                    s3Node.setPrev(s3Node.MIN_SIZE);
+                    s3Node.setPrev(s3Node.START_SIZE);
                     s3Node.setNext(Math.min(s3Node.UPDATE_LIMIT, s3Node.getCurrSize()));
                     sorter.setRowFilter(null);
                 } else {
