@@ -11,5 +11,6 @@
         <builder runtimeGroup="JAVA" implementation="software.aws.toolkits.jetbrains.services.lambda.java.JavaLambdaBuilder"/>
         <sam.debugSupport runtimeGroup="JAVA" implementation="software.aws.toolkits.jetbrains.services.lambda.java.JavaSamDebugSupport"/>
         <handlerResolver runtimeGroup="JAVA" implementation="software.aws.toolkits.jetbrains.services.lambda.java.JavaLambdaHandlerResolver"/>
+        <handlerCompletion runtimeGroup="JAVA" implementation="software.aws.toolkits.jetbrains.services.lambda.completion.DefaultHandlerCompletion"/>
     </extensions>
 </idea-plugin>

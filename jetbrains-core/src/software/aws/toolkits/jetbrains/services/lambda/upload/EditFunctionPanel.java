@@ -12,7 +12,7 @@ import com.intellij.util.textCompletion.TextFieldWithCompletion;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.iam.IamRole;
-import software.aws.toolkits.jetbrains.services.lambda.HandlerCompletionProvider;
+import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider;
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField;
 import software.aws.toolkits.jetbrains.ui.ResourceSelector;
 

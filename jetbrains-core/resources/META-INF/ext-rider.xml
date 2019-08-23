@@ -18,6 +18,7 @@
         <runtimeGroup runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetRuntimeGroup"/>
         <builder runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaBuilder"/>
         <handlerResolver runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandlerResolver"/>
+        <handlerCompletion runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.completion.DotNetHandlerCompletion"/>
         <sam.debugSupport runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamDebugSupport"/>
     </extensions>
 
