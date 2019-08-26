@@ -69,6 +69,28 @@ namespace ReSharper.AWS.RunMarkers
                     project.ProjectFileLocation.Parent.Combine("aws-lambda-tools-defaults.json")).Any();
         }
 
+        /// <summary>
+        /// Check whether method can be defined as Amazon Lambda function.
+        ///
+        /// Please see info about Amazon Lambda handler in C# here -
+        ///     https://docs.aws.amazon.com/lambda/latest/dg/dotnet-programming-model-handler-types.html
+        ///
+        /// The logic perform the following checks:
+        /// 1. Public static or instance method.
+        /// 2. Function class should have not be inherited from other class.
+        /// 3. Should be a public class with default constructor.
+        /// 4. Check for method parameters:
+        ///    a) Parameter of <see cref="System.IO.Stream"/> type can be used without Serializer. Any class derived from Stream is a match.
+        ///    b) Check for Amazon Event type (set of pre-defined Amazon types used in Amazon Lambda functions)
+        ///       and for default Amazon serializer.
+        ///    c) Check for any Custom Data type that could be serialized using <see cref="Amazon.Lambda.Core.ILambdaSerializer"/> serializer.
+        /// 5. Check for method return type:
+        ///    a) If method is async - return type should be <see cref="System.Void"/> or <see cref="System.Threading.Tasks.Task"/> are allowed.
+        ///    b) If method is sync - return type could be <see cref="System.IO.Stream"/>,
+        ///       or Amazon Event type or Custom Data type with defined <see cref="Amazon.Lambda.Core.ILambdaSerializer"/> serializer.
+        /// </summary>
+        /// <param name="method">Method to check if it matches Amazon Lambda definition.</param>
+        /// <returns>The <see cref="bool"/> value if a method matches Amazon Lambda definition.</returns>
         private bool IsSuitableLambdaMethod(IMethod method)
         {
             return method != null &&
@@ -130,8 +152,6 @@ namespace ReSharper.AWS.RunMarkers
 
         /// <summary>
         /// Check for custom data type for input and output parameters specified for Lambda function.
-        /// Set of input/output types available in Amazon Lambda is available here -
-        ///     https://docs.aws.amazon.com/lambda/latest/dg/dotnet-programming-model-handler-types.html
         /// </summary>
         /// <param name="type">The <see cref="T:JetBrains.ReSharper.Psi.IType" /> to verify against custom user type</param>
         /// <returns>Whether type is a custom data type</returns>

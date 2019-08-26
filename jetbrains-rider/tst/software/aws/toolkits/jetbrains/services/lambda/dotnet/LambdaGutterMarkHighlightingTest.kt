@@ -52,6 +52,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
         arrayOf("SQSEvents")
     )
 
+    @Suppress("UNUSED_PARAMETER")
     @Test(dataProvider = "singleParameterAmazonEventType")
     fun testParameters_SingleParameterAmazonEvent_Detected(name: String) = verifyLambdaGutterMark()
 

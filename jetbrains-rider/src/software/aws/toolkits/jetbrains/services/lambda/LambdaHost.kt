@@ -19,19 +19,19 @@ import com.intellij.psi.SmartPointerManager
 import com.jetbrains.rdclient.util.idea.LifetimedProjectComponent
 import com.jetbrains.rider.model.lambdaModel
 import com.jetbrains.rider.projectView.solution
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.element.RiderLambdaHandlerFakePsiElement
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer
 import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction
-import software.aws.toolkits.jetbrains.utils.RuntimeUtil
+import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 
 /**
  * Lambda Host class is used for communication with ReSharper backend through protocol
  * for all operation related to AWS Lambda.
  */
+@Suppress("ComponentNotRegistered")
 class LambdaHost(project: Project) : LifetimedProjectComponent(project) {
 
     val model = project.solution.lambdaModel
@@ -106,13 +106,13 @@ class LambdaHost(project: Project) : LifetimedProjectComponent(project) {
             val factory = LocalLambdaRunConfigurationProducer.getFactory()
             val template = runManager.getConfigurationTemplate(factory)
 
-            val templateConfiguration = template.configuration as LocalLambdaRunConfiguration
-            templateConfiguration.useHandler(RuntimeUtil.getCurrentDotNetCoreRuntime(), handler)
+            val configuration = template.configuration as LocalLambdaRunConfiguration
+            val runtime = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
 
-            val credentialProviderId = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider.id
-            templateConfiguration.credentialProviderId(credentialProviderId)
+            LocalLambdaRunConfigurationProducer.setAccountOptions(configuration)
+            configuration.useHandler(runtime, handler)
 
-            val configurationToAdd = factory.createConfiguration("[Local] $methodName", templateConfiguration)
+            val configurationToAdd = factory.createConfiguration("[Local] $methodName", configuration)
             settings = runManager.createConfiguration(configurationToAdd, factory)
 
             runManager.addConfiguration(settings)

@@ -9,9 +9,9 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import java.io.IOException
 
-object RuntimeUtil {
+object DotNetRuntimeUtils {
 
-    private val logger = getLogger<RuntimeUtil>()
+    private val logger = getLogger<DotNetRuntimeUtils>()
 
     val DEFAULT_DOTNET_CORE_RUNTIME: Runtime = Runtime.DOTNETCORE2_1
 

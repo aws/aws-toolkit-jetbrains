@@ -6,14 +6,14 @@ package software.aws.toolkits.jetbrains.icons
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.IconPathPatcher
-import com.intellij.ui.LayeredIcon
-import com.intellij.util.ReflectionUtil
 import icons.AwsIcons
 import javax.swing.Icon
 
 /**
- * Icons Patcher for backend icons. Rider backend do not have access to fronted icons (e.g. LambdaFunction.svg, new.svg).
- * Use this class to set frontend icons for gutter mark popup menu that is come from backend in Rider.
+ * Icons Patcher for icons set from Rider backend (R#).
+ * Rider backend do not have access to fronted icons (e.g. LambdaFunction.svg, new.svg). To share an existing frontend icons
+ * and reuse them instead of creating a duplicate set on a backend, we can replace a fake backend icon with any frontend icon by path.
+ * This class is used to set frontend icons for gutter mark popup menu that is fully composed on Rider backend.
  */
 internal class RiderAwsIconsPatcher : IconPathPatcher() {
 
@@ -25,27 +25,20 @@ internal class RiderAwsIconsPatcher : IconPathPatcher() {
         }
 
         private fun path(icon: Icon): String {
-            val iconToProcess = (icon as? LayeredIcon)?.getIcon(0) ?: icon
+            val iconToProcess = icon as? IconLoader.CachedImageIcon
+                ?: throw RuntimeException("${icon.javaClass.simpleName} should be CachedImageIcon")
 
-            if (iconToProcess is IconLoader.CachedImageIcon) {
-                return iconToProcess.originalPath
-                    ?: throw RuntimeException("Unable to get original path for icon: ${iconToProcess::class.java.canonicalName}")
-            }
-
-            return ReflectionUtil.getField(iconToProcess::class.java, iconToProcess, String::class.java, "myOriginalPath")
-                ?: throw RuntimeException("myOriginal path wasn't found in ${iconToProcess.javaClass.simpleName}")
+            return iconToProcess.originalPath
+                ?: throw RuntimeException("Unable to get original path for icon: ${iconToProcess.javaClass.simpleName}")
         }
     }
 
     override fun patchPath(path: String?, classLoader: ClassLoader?): String? =
         if (path != null) myIconsOverrideMap[path] else null
 
-    override fun getContextClassLoader(path: String?, originalClassLoader: ClassLoader?): ClassLoader? {
-        if (path != null && myIconsOverrideMap.containsKey(path))
-            return javaClass.classLoader
-
-        return originalClassLoader
-    }
+    override fun getContextClassLoader(path: String?, originalClassLoader: ClassLoader?): ClassLoader? =
+        if (path != null && myIconsOverrideMap.containsKey(path)) javaClass.classLoader
+        else originalClassLoader
 
     private val myIconsOverrideMap = mapOf(
         "/resharper/LambdaRunMarkers/Lambda.svg" to path(AwsIcons.Resources.LAMBDA_FUNCTION),

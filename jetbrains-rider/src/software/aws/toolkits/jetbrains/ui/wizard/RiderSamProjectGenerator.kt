@@ -21,7 +21,7 @@ import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTem
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
 import com.jetbrains.rider.ui.themes.RiderTheme
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.utils.RuntimeUtil
+import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
 import java.io.File
@@ -181,7 +181,7 @@ class RiderSamProjectGenerator(
     }
 
     private fun initSamPanel() {
-        samPanel.runtime.selectedItem = RuntimeUtil.getCurrentDotNetCoreRuntime()
+        samPanel.runtime.selectedItem = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
     }
 
     private fun htmlText(baseDir: String, relativePath: String) =
