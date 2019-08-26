@@ -18,7 +18,6 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.assertj.core.api.CompletableFutureAssert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -26,14 +25,16 @@ import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.utils.hasException
+import software.aws.toolkits.jetbrains.utils.hasValue
+import software.aws.toolkits.jetbrains.utils.value
+import software.aws.toolkits.jetbrains.utils.wait
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -422,24 +423,7 @@ class AwsResourceCacheTest {
         private val US_WEST_1 = AwsRegion("us-west-1", "USW1")
         private val US_WEST_2 = AwsRegion("us-west-2", "USW2")
 
-        private val TIMEOUT = Duration.ofSeconds(1)
         private val DEFAULT_EXPIRY = Duration.ofMinutes(10)
-        private fun <T> CompletableFutureAssert<T>.wait(): CompletableFutureAssert<T> {
-            try {
-                matches { it.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS) != null }
-            } catch (e: Exception) {
-                // suppress
-            }
-            return this
-        }
-
-        private fun <T> CompletableFutureAssert<T>.hasValue(value: T) {
-            wait().isCompletedWithValue(value)
-        }
-
-        private val <T> CompletionStage<T>.value get() = toCompletableFuture().get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-
-        private val <T> CompletableFutureAssert<T>.hasException get() = this.wait().isCompletedExceptionally
 
         private class DummyToolkitCredentialsProvider(override val id: String) : ToolkitCredentialsProvider() {
             override val displayName: String get() = id
