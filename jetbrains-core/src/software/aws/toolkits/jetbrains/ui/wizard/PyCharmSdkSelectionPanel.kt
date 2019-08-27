@@ -80,6 +80,8 @@ class PyCharmSdkSelectionPanel(val step: SamProjectRuntimeSelectionStep) : SdkSe
         sdkSelectionPanel.addChangeListener(Runnable {
             step.checkValid()
         })
+
+        sdkSelectionPanel.newProjectPath = step.getLocationField().text.trim()
     }
 
     override fun getSdkSettings(): SdkSettings =
