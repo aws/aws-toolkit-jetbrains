@@ -54,7 +54,7 @@ namespace ReSharper.AWS.RunMarkers
             }
         }
 
-        private static bool IsLambdaProjectType([CanBeNull] IProject project)
+        private bool IsLambdaProjectType([CanBeNull] IProject project)
         {
             if (project == null) return false;
             if (!project.IsDotNetCoreProject()) return false;
@@ -130,7 +130,7 @@ namespace ReSharper.AWS.RunMarkers
                 {
                     var firstParameterType = parameters[0].Type;
                     return IsStreamType(firstParameterType) ||
-                           (IsAmazonEventType(firstParameterType) || IsCustomDataType(firstParameterType)) && IsSerializerDefined(method);
+                           (IsAmazonEventType(firstParameterType) || IsCustomDataType(firstParameterType, new HashSet<IType>())) && IsSerializerDefined(method);
                 }
 
                 case 2:
@@ -139,7 +139,7 @@ namespace ReSharper.AWS.RunMarkers
                     var secondParameterType = parameters[1].Type;
 
                     return IsStreamType(firstParameterType) ||
-                           (IsAmazonEventType(firstParameterType) || IsCustomDataType(firstParameterType)) && IsSerializerDefined(method) &&
+                           (IsAmazonEventType(firstParameterType) || IsCustomDataType(firstParameterType, new HashSet<IType>())) && IsSerializerDefined(method) &&
                            IsLambdaContextType(secondParameterType);
                 }
 
@@ -154,16 +154,21 @@ namespace ReSharper.AWS.RunMarkers
         /// Check for custom data type for input and output parameters specified for Lambda function.
         /// </summary>
         /// <param name="type">The <see cref="T:JetBrains.ReSharper.Psi.IType" /> to verify against custom user type</param>
+        /// <param name="typesUnderProcess">The hash set to store all types that are processing right now. Is used to avoid falling into infinitive recursion</param>
         /// <returns>Whether type is a custom data type</returns>
-        private static bool IsCustomDataType(IType type)
+        private bool IsCustomDataType(IType type, HashSet<IType> typesUnderProcess)
         {
+            if (!typesUnderProcess.Add(type)) return true;
+            myLogger.Trace("Check is Custom Data for a type: {0}", type.GetPresentableName(CSharpLanguage.Instance));
+
             if (type.IsVoid()) return false;
 
-            if (type.IsSimplePredefined()) return true;
+            // Skip any primitive types, DateTime, and DateTimeOffset according to Newtonsoft.Json.Serialization logic.
+            if (type.IsSimplePredefined() || type.IsDateTime() || type.IsDateTimeOffset()) return true;
 
             if (type is IArrayType arrayType)
             {
-                return IsCustomDataType(arrayType.ElementType);
+                return IsCustomDataType(arrayType.ElementType, typesUnderProcess);
             }
 
             if (type is IDeclaredType declaredType)
@@ -171,6 +176,7 @@ namespace ReSharper.AWS.RunMarkers
                 var predefinedType = declaredType.Module.GetPredefinedType();
 
                 var typeElement = declaredType.GetTypeElement();
+                myLogger.Trace("Check type element: {0}", typeElement?.GetClrName());
                 if (typeElement == null) return false;
 
                 // Define a substitution to verify generic types.
@@ -190,10 +196,10 @@ namespace ReSharper.AWS.RunMarkers
                         var effectiveSubstitution = ancestorSubstitution.Apply(substitution);
 
                         var keyType = effectiveSubstitution.Apply(keyTypeParameter);
-                        if (!IsCustomDataType(keyType)) return false;
+                        if (!IsCustomDataType(keyType, typesUnderProcess)) return false;
 
                         var valueType = effectiveSubstitution.Apply(valueTypeParameter);
-                        if (!IsCustomDataType(valueType)) return false;
+                        if (!IsCustomDataType(valueType, typesUnderProcess)) return false;
                     }
 
                     return true;
@@ -208,7 +214,7 @@ namespace ReSharper.AWS.RunMarkers
 
                 if (elementTypes != null)
                 {
-                    return elementTypes.All(IsCustomDataType);
+                    return elementTypes.All(elementType => IsCustomDataType(elementType, typesUnderProcess));
                 }
 
                 // Check non-generic collection and map types
@@ -242,20 +248,22 @@ namespace ReSharper.AWS.RunMarkers
             // Check all fields and properties inside a class or struct for a custom data type
             bool CheckMemberTypes(IEnumerable<ITypeMember> members, ISubstitution substitution)
             {
-                foreach (var typeMember in members)
+                var typeMembers = members.AsArray();
+                myLogger.Trace("Verify members: {0}", string.Join(", ", typeMembers.Select(member => member.ShortName)));
+                foreach (var typeMember in typeMembers)
                 {
                     switch (typeMember)
                     {
                         case IField field when field.IsField:
                         {
                             var fieldType = substitution.Apply(field.Type);
-                            if (!IsCustomDataType(fieldType)) return false;
+                            if (!IsCustomDataType(fieldType, typesUnderProcess)) return false;
                             break;
                         }
                         case IProperty property when !property.IsDefault:
                         {
                             var propertyType = substitution.Apply(property.Type);
-                            if (!IsCustomDataType(propertyType)) return false;
+                            if (!IsCustomDataType(propertyType, typesUnderProcess)) return false;
                             break;
                         }
                     }
@@ -335,7 +343,8 @@ namespace ReSharper.AWS.RunMarkers
             }
 
             var symbolCache = psiModule.GetPsiServices().Symbols;
-            var assemblyAttributes = symbolCache.GetModuleAttributes(psiModule).GetAttributeInstances(AmazonAttributeTypeName, true);
+            var assemblyAttributes = symbolCache.GetModuleAttributes(psiModule)
+                .GetAttributeInstances(AmazonAttributeTypeName, true);
 
             return !assemblyAttributes.IsEmpty() && assemblyAttributes.Any(attribute =>
                        attribute.PositionParameters().Any(parameter =>
@@ -365,13 +374,13 @@ namespace ReSharper.AWS.RunMarkers
                 if (returnType.IsGenericTask())
                 {
                     var underlyingType = returnType.GetGenericUnderlyingType(returnType.GetTypeElement());
-                    return (IsAmazonEventType(underlyingType) || IsCustomDataType(underlyingType)) && IsSerializerDefined(method);
+                    return (IsAmazonEventType(underlyingType) || IsCustomDataType(underlyingType, new HashSet<IType>())) && IsSerializerDefined(method);
                 }
 
                 return false;
             }
 
-            return IsStreamType(returnType) || (IsAmazonEventType(returnType) || IsCustomDataType(returnType)) && IsSerializerDefined(method);
+            return IsStreamType(returnType) || (IsAmazonEventType(returnType) || IsCustomDataType(returnType, new HashSet<IType>())) && IsSerializerDefined(method);
         }
     }
 }

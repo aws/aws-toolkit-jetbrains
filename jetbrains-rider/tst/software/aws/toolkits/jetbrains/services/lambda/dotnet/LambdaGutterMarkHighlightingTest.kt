@@ -96,6 +96,9 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     fun testParameters_SingleParameterCustomDataTypeSubstitution_Detected() = verifyLambdaGutterMark()
 
     @Test
+    fun testParameters_SingleParameterCustomDataDateTime_Detected() = verifyLambdaGutterMark()
+
+    @Test
     fun testParameters_TwoParametersCustomDataAndContext_Detected() = verifyLambdaGutterMark()
 
     @Test
