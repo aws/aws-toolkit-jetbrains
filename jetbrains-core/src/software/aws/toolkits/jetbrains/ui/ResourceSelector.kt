@@ -77,12 +77,11 @@ class ResourceSelector<T> @JvmOverloads constructor(
         }
     }
 
-    override fun getModel(): MutableCollectionComboBoxModel<T> {
+    override fun getModel(): MutableCollectionComboBoxModel<T> =
         // javax.swing.DefaultComboBoxModel.addAll(java.util.Collection<? extends E>) isn't in Java 8
         // The addElement method can lead to multiple selection events firing as elements are added
         // Use IntelliJ's to work around this short coming
-        return super.getModel() as MutableCollectionComboBoxModel<T>
-    }
+        super.getModel() as MutableCollectionComboBoxModel<T>
 
     @Suppress("UNCHECKED_CAST")
     fun selected(): T? = if (loadingStatus == Status.LOADED) this.selectedItem as? T else null
