@@ -10,6 +10,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.io.exists
 import com.intellij.util.io.lastModified
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.ExecutableWithPath
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
@@ -117,12 +119,13 @@ class DefaultExecutableManager : PersistentStateComponent<List<ExecutableState>>
         (type as? Validatable)?.validate(path)
         determineVersion(type, path, autoResolved)
     } catch (e: Exception) {
-        e.printStackTrace()
+        val message = message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
+        LOG.warn(e) { message }
 
         ExecutableInstance.InvalidExecutable(path,
             null,
             autoResolved,
-            message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
+            message
         )
     }.also { updateInternalState(type, it) }
 
@@ -137,6 +140,10 @@ class DefaultExecutableManager : PersistentStateComponent<List<ExecutableState>>
     private fun Path.isNewerThan(time: FileTime?): Boolean {
         if (time == null) return false
         return lastModifiedOrNull()?.let { it.toMillis() > time.toMillis() } == true
+    }
+
+    companion object {
+        val LOG = getLogger<DefaultExecutableManager>()
     }
 }
 

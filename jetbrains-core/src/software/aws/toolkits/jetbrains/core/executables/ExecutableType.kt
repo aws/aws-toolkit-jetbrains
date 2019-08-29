@@ -28,7 +28,7 @@ interface AutoResolvable {
      * Attempt to automatically resolve the path
      *
      * @return the resolved path or null if not found
-     * @throws ExecutableResolutionException if an exception occurred attempting to resolve the path
+     * @throws if an exception occurred attempting to resolve the path, when success was expected
      */
     fun resolve(): Path?
 }

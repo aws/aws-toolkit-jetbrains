@@ -40,10 +40,12 @@ interface ExecutableType<VersionScheme> {
 interface AutoResolvable {
 
     /**
-     * Attempt to automatically resolve the path or a
-     * complete exceptionally with [ExecutableResolutionException]
+     * Attempt to automatically resolve the path
+     *
+     * @return the resolved path or null if not found
+     * @throws if an exception occurred attempting to resolve the path, when success was expected
      */
-    fun resolve(): CompletionStage<Path>
+    fun resolve(): Path?
 }
 
 interface Validatable {
@@ -53,9 +55,9 @@ interface Validatable {
      * or any other validation required to ensure this executable is compatible with
      * the toolkit.
      *
-     * Complete exceptionally with [ExecutableValidationException]
+     * If validation fails throw exception, [Exception.message] is displayed to the user
      */
-    fun validate(path: Path): CompletionStage<Nothing>
+    fun validate(path: Path)
 }
 ```
 
@@ -101,7 +103,7 @@ The result will be cached (with a timestamp of the file) and future calls will n
 * **getExecutableIfPresent** a non-blocking call that will check if the `ExecutableType` has already been resolved and return it if it has; otherwise 
 `ExecutableInstance.UnresolvedExecutable` is returned. *nb: no validation occurs as part of this call*
 
-In addition the **setExecutable** method allows explicitly associating a `Path` with a given `type`. 
+In addition the **setExecutablePath** method allows explicitly associating a `Path` with a given `type`. 
 
 ### Usage Example
 
