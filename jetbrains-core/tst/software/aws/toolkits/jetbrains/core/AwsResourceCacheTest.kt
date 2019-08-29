@@ -27,6 +27,7 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
+import software.aws.toolkits.jetbrains.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.utils.value
 import software.aws.toolkits.jetbrains.utils.wait
 import java.time.Clock
@@ -224,8 +225,9 @@ class AwsResourceCacheTest {
         localSut.getResource(StringResource("5")).value
         localSut.getResource(StringResource("6")).value
 
-        Thread.sleep(100)
-        assertThat(localSut.getResourceIfPresent(StringResource("1"))).isNull()
+        retryableAssert {
+            assertThat(localSut.getResourceIfPresent(StringResource("1"))).isNull()
+        }
     }
 
     @Test
@@ -240,10 +242,11 @@ class AwsResourceCacheTest {
         localSut.getResource(StringResource("1")).value
         localSut.getResource(StringResource("2")).value
 
-        Thread.sleep(100)
-        assertThat(localSut.getResourceIfPresent(listResource)).isNull()
-        assertThat(localSut.getResourceIfPresent(StringResource("1"))).isNotEmpty()
-        assertThat(localSut.getResourceIfPresent(StringResource("2"))).isNotEmpty()
+        retryableAssert {
+            assertThat(localSut.getResourceIfPresent(listResource)).isNull()
+            assertThat(localSut.getResourceIfPresent(StringResource("1"))).isNotEmpty()
+            assertThat(localSut.getResourceIfPresent(StringResource("2"))).isNotEmpty()
+        }
     }
 
     @Test
