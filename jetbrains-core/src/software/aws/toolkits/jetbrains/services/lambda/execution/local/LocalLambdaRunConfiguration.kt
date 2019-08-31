@@ -109,6 +109,8 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
                 runtime,
                 handler,
                 resolveInput(),
+                timeout(),
+                memorySize(),
                 environmentVariables(),
                 resolveCredentials(),
                 resolveRegion(),
@@ -182,6 +184,18 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
 
     fun runtime(): Runtime? = Runtime.fromValue(lambdaOptions.functionOptions.runtime)?.validOrNull
 
+    fun timeout() = lambdaOptions.functionOptions.timeout
+
+    fun timeout(timeout: Int) {
+        lambdaOptions.functionOptions.timeout = timeout
+    }
+
+    fun memorySize() = lambdaOptions.functionOptions.memorySize
+
+    fun memorySize(memorySize: Int) {
+        lambdaOptions.functionOptions.memorySize = memorySize
+    }
+
     fun environmentVariables() = lambdaOptions.functionOptions.environmentVariables
 
     fun environmentVariables(envVars: Map<String, String>) {
@@ -204,6 +218,18 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
 
     fun buildInContainer(useContainer: Boolean) {
         lambdaOptions.samOptions.buildInContainer = useContainer
+    }
+
+    fun additionalBuildArgs(): String? = lambdaOptions.samOptions.additionalBuildArgs
+
+    fun additionalBuildArgs(args: String?) {
+        lambdaOptions.samOptions.additionalBuildArgs = args
+    }
+
+    fun additionalLocalArgs(): String? = lambdaOptions.samOptions.additionalLocalArgs
+
+    fun additionalLocalArgs(args: String?) {
+        lambdaOptions.samOptions.additionalLocalArgs = args
     }
 
     override fun suggestedName(): String? {
@@ -273,6 +299,8 @@ data class LocalLambdaRunSettings(
     val runtime: Runtime,
     val handler: String,
     val input: String,
+    val timeout: Int,
+    val memorySize: Int,
     val environmentVariables: Map<String, String>,
     val credentials: ToolkitCredentialsProvider,
     val region: AwsRegion,
