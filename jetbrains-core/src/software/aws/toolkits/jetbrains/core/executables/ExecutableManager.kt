@@ -126,12 +126,17 @@ class DefaultExecutableManager : PersistentStateComponent<List<ExecutableState>>
         val message = message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
         LOG.warn(e) { message }
 
-        ExecutableInstance.InvalidExecutable(path,
+        ExecutableInstance.InvalidExecutable(
+            path,
             null,
             autoResolved,
             message
         )
-    }.also { updateInternalState(type, it) }
+    }.also {
+        when (it) {
+            is ExecutableInstance.Executable -> updateInternalState(type, it)
+        }
+    }
 
     private fun determineVersion(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance = try {
         ExecutableInstance.Executable(path, type.version(path).toString(), autoResolved)
