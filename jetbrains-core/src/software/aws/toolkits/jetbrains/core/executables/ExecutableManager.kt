@@ -85,7 +85,6 @@ class DefaultExecutableManager : PersistentStateComponent<List<ExecutableState>>
         val future = CompletableFuture<ExecutableInstance>()
         ApplicationManager.getApplication().executeOnPooledThread {
             val executable = validate(type, path, false)
-            updateInternalState(type, executable)
             future.complete(executable)
         }
         return future
@@ -106,7 +105,12 @@ class DefaultExecutableManager : PersistentStateComponent<List<ExecutableState>>
             resolved?.executablePath?.toString(),
             resolved?.autoResolved,
             resolved?.executablePath?.lastModifiedOrNull()?.toMillis())
-        internalState[type.id] = Triple(newPersistedState, instance, resolved?.executablePath?.lastModified())
+        val lastModified = try {
+            resolved?.executablePath?.lastModified()
+        } catch (e: Exception) {
+            null
+        }
+        internalState[type.id] = Triple(newPersistedState, instance, lastModified)
     }
 
     private fun resolve(type: ExecutableType<*>): ExecutableInstance = try {
