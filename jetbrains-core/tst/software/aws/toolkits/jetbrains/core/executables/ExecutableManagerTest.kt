@@ -171,7 +171,7 @@ class ExecutableManagerTest {
                 throw RuntimeException("ow")
             }
         }
-        val executable = "/fake/path////////////        "
+        val executable = "/fake/path////////////"
 
         sut.setExecutablePath(type, Paths.get(executable)).value
 
