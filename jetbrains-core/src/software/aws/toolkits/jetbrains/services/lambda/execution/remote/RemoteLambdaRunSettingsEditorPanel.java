@@ -15,23 +15,18 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaInputPanel;
-import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector;
-import software.aws.toolkits.jetbrains.ui.RegionSelector;
 
 public class RemoteLambdaRunSettingsEditorPanel {
     private final Project project;
     private SortedComboBoxModel<String> functionNamesModel;
 
     JPanel panel;
-    CredentialProviderSelector credentialSelector;
-    RegionSelector regionSelector;
     ComboBox<String> functionNames;
     LambdaInputPanel lambdaInput;
     JPanel lambdaInputPanel;
 
     public RemoteLambdaRunSettingsEditorPanel(Project project) {
         this.project = project;
-
         lambdaInputPanel.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.input.label"),
                                                                        false,
                                                                        JBUI.emptyInsets()));
@@ -39,8 +34,7 @@ public class RemoteLambdaRunSettingsEditorPanel {
 
     private void createUIComponents() {
         lambdaInput = new LambdaInputPanel(project);
-
-        functionNamesModel = new SortedComboBoxModel<String>(String.CASE_INSENSITIVE_ORDER);
+        functionNamesModel = new SortedComboBoxModel<>(String.CASE_INSENSITIVE_ORDER);
         functionNames = new ComboBox<>(functionNamesModel);
     }
 

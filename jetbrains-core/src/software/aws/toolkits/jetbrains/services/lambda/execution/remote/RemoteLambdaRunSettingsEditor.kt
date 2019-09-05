@@ -8,37 +8,33 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
+import java.util.concurrent.atomic.AtomicReference
 import javax.swing.JPanel
 
 class RemoteLambdaRunSettingsEditor(project: Project) : SettingsEditor<RemoteLambdaRunConfiguration>() {
     private val view = RemoteLambdaRunSettingsEditorPanel(project)
     private val credentialManager = CredentialManager.getInstance()
-    private val regionProvider = AwsRegionProvider.getInstance()
     private val resourceCache = AwsResourceCache.getInstance(project)
+    private val settings = AtomicReference<Pair<AwsRegion?, String?>>(null to null)
+    private val functionName = AtomicReference<String?>()
 
-    init {
-        view.credentialSelector.setCredentialsProviders(credentialManager.getCredentialProviders())
-        view.regionSelector.setRegions(regionProvider.regions().values.toList())
-
-        view.credentialSelector.addActionListener { updateFunctions() }
-        view.regionSelector.addActionListener { updateFunctions() }
-    }
-
-    private fun updateFunctions() {
+    internal fun updateFunctions(region: AwsRegion?, credentialProvider: String?) {
+        val (oldRegion, oldCredentialProvider) = settings.getAndUpdate { (_, _) -> region to credentialProvider }
+        if (oldRegion == region && oldCredentialProvider == credentialProvider) return
         view.functionNames.selectedItem = null
         view.setFunctionNames(emptyList())
 
-        val credentialProviderId = view.credentialSelector.getSelectedCredentialsProvider() ?: return
-        val region = view.regionSelector.selectedRegion ?: return
+        credentialProvider ?: return
+        region ?: return
 
         val credProvider = try {
-            credentialManager.getCredentialProvider(credentialProviderId)
+            credentialManager.getCredentialProvider(credentialProvider)
         } catch (e: CredentialProviderNotFound) {
             return
         }
@@ -56,6 +52,12 @@ class RemoteLambdaRunSettingsEditor(project: Project) : SettingsEditor<RemoteLam
             runInEdt(ModalityState.any()) {
                 view.setFunctionNames(functionNames)
                 view.functionNames.isEnabled = true
+                val selected = functionName.get()
+                if (functionNames.contains(selected)) {
+                    view.functionNames.selectedItem = selected
+                } else {
+                    functionName.set(null)
+                }
             }
         }
     }
@@ -63,19 +65,7 @@ class RemoteLambdaRunSettingsEditor(project: Project) : SettingsEditor<RemoteLam
     override fun createEditor(): JPanel = view.panel
 
     override fun resetEditorFrom(configuration: RemoteLambdaRunConfiguration) {
-        configuration.credentialProviderId()?.let {
-            try {
-                view.credentialSelector.setSelectedCredentialsProvider(credentialManager.getCredentialProvider(it))
-            } catch (e: CredentialProviderNotFound) {
-                // Use the raw string here to not munge what the customer had, will also allow it to show the error
-                // that it could not be found
-                view.credentialSelector.setSelectedInvalidCredentialsProvider(it)
-            }
-        }
-
-        view.regionSelector.selectedRegion = regionProvider.regions()[configuration.regionId()]
-        view.functionNames.selectedItem = configuration.functionName()
-
+        functionName.set(configuration.functionName())
         if (configuration.isUsingInputFile()) {
             view.lambdaInput.inputFile = configuration.inputSource()
         } else {
@@ -84,8 +74,6 @@ class RemoteLambdaRunSettingsEditor(project: Project) : SettingsEditor<RemoteLam
     }
 
     override fun applyEditorTo(configuration: RemoteLambdaRunConfiguration) {
-        configuration.credentialProviderId(view.credentialSelector.getSelectedCredentialsProvider())
-        configuration.regionId(view.regionSelector.selectedRegion?.id)
         configuration.functionName(view.functionName)
         if (view.lambdaInput.isUsingFile) {
             configuration.useInputFile(view.lambdaInput.inputFile)
