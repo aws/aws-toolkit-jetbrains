@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.executables
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ObjectAssert
