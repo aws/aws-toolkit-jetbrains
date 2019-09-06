@@ -68,10 +68,11 @@ Multiple types of errors can be spawned from JetBrains forms:
 ## Guidelines
 
 * Stack traces displayed in the Event Log should not contain any AWS Toolkit- or IDE-specific stack traces as these are not user actionable. These errors should be logged to the `idea.log`.
-* Similarly, the Event Log should display stack traces for any user-actionable errors. These should also be logged to the `idea.log` file.
-    * We should strive to log errors where they're expected. General errors should display in the Event Log, build errors in the build panel, etc.
-    * Alternately, display errors in the event log and have error messages point to the larger stack trace in the Event Log (for instance, in the build panel)
-* We should consistently display errors in expected locations. We may want to modify some existing errors for consistency. For example, the following images show a `sam build` failure (as of August 2019), with the first one from running a SAM application locally vs. building and deploying the SAM app to create a Lambda function:
+* Similarly, the Event Log should display stack traces for any user-actionable errors. In addition, these should also be logged to the `idea.log` file.
+* Always log errors to their expected locations.
+    * Locations that offer more space (such as the Build Panel) should be able to fit stack trace information.
+    * For more constrained spaces (for instance, in a Jetbrains form), display brief error messages in their canonically-correct locations, which also point to the larger stack trace in the Event Log.
+    * Consistency is key! For example, the following images show a `sam build` failure (as of August 2019), with the first one from running a SAM application locally vs. building and deploying the SAM app to create a Lambda function; these should both be logged to the Build Panel:
 
 ![6]
 ![1]
