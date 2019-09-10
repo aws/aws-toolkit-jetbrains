@@ -17,8 +17,6 @@ class HandlerCompletionProvider(private val project: Project) : TextCompletionPr
 
     private val logger = getLogger<HandlerCompletionProvider>()
 
-    // Suppress since gradle compiler mismatch return types for property delegate and fail build step
-    @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
     private val handlerCompletion: HandlerCompletion by lazy {
         val runtimeGroup = RuntimeGroup.determineRuntime(
             project
@@ -29,14 +27,11 @@ class HandlerCompletionProvider(private val project: Project) : TextCompletionPr
             throw RuntimeException(message)
         }
 
-        val completion = HandlerCompletion.getInstance(runtimeGroup)
-        if (completion == null) {
+        return@lazy HandlerCompletion.getInstance(runtimeGroup) ?: let {
             val message = "Unable to get HandlerCompletion instance for Lambda handler completion provider"
             logger.error { message }
             throw RuntimeException(message)
         }
-
-        completion!!
     }
 
     override fun applyPrefixMatcher(result: CompletionResultSet, prefix: String): CompletionResultSet {
