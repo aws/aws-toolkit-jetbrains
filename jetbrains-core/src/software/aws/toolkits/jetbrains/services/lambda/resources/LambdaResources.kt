@@ -8,7 +8,7 @@ import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.find
 
 object LambdaResources {
-    @JvmStatic
+    @JvmField
     val LIST_FUNCTIONS = ClientBackedCachedResource(LambdaClient::class, "lambda.list_functions") {
         listFunctionsPaginator().functions().filterNotNull().toList()
     }
