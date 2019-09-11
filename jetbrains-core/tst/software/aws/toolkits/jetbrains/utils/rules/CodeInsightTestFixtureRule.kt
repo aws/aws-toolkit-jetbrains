@@ -27,6 +27,7 @@ import org.junit.runner.Description
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * JUnit test Rule that will create a Light [Project] and [CodeInsightTestFixture]. Projects are lazily created and are
@@ -94,29 +95,23 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
 
 class ClearableLazy<out T>(private val initializer: () -> T) {
     private var _value: T? = null
-    private var isSet = false
 
     val value: T
         get() {
             synchronized(this) {
-                if (!isSet) {
-                    _value = initializer()
-                    isSet = true
-                }
-                return _value!!
+                return (_value ?: initializer()).also { _value = it }
             }
         }
 
     fun clear() {
         synchronized(this) {
-            isSet = false
             _value = null
         }
     }
 
     fun ifSet(function: () -> Unit) {
         synchronized(this) {
-            if (isSet) function()
+            if (_value != null) function()
         }
     }
 }
@@ -127,9 +122,9 @@ internal fun <T> invokeAndWait(action: () -> T): T {
     return if (application.isDispatchThread) {
         action()
     } else {
-        var ref: T? = null
-        application.invokeAndWait({ ref = action() }, ModalityState.NON_MODAL)
-        ref!!
+        val ref = AtomicReference<T>()
+        application.invokeAndWait({ ref.set(action()) }, ModalityState.NON_MODAL)
+        ref.get()
     }
 }
 
@@ -157,6 +152,6 @@ fun CodeInsightTestFixture.addFileToModule(
     }
 
     runReadAction {
-        PsiManager.getInstance(project).findFile(file)!!
+        PsiManager.getInstance(project).findFile(file) ?: throw NullPointerException("File $file not found in $project")
     }
 }

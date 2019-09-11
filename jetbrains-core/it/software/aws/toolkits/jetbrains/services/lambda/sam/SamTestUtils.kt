@@ -19,6 +19,8 @@ import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugSessionListener
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.XDebuggerManagerListener
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -41,7 +43,7 @@ fun executeLambda(
 
                         super.onTextAvailable(event, baseType)
 
-                        println("SAM CLI [${if (baseType == ProcessOutputTypes.STDOUT) "stdout" else "stderr"}]: ${event.text}")
+                        LOG.info { "SAM CLI [${if (baseType == ProcessOutputTypes.STDOUT) "stdout" else "stderr"}]: ${event.text}" }
                     }
 
                     override fun processTerminated(event: ProcessEvent) {
@@ -58,19 +60,21 @@ fun executeLambda(
     return executionFuture.get(3, TimeUnit.MINUTES)
 }
 
+val LOG = getLogger<SamCommonTestUtils>()
+
 fun checkBreakPointHit(project: Project): Ref<Boolean> {
     val debuggerIsHit = Ref(false)
 
     val messageBusConnection = project.messageBus.connect()
     messageBusConnection.subscribe(XDebuggerManager.TOPIC, object : XDebuggerManagerListener {
         override fun processStarted(debugProcess: XDebugProcess) {
-            println("Debugger attached: $debugProcess")
+            LOG.info { "Debugger attached: $debugProcess" }
 
             debugProcess.session.addSessionListener(object : XDebugSessionListener {
                 override fun sessionPaused() {
                     runInEdt {
                         val suspendContext = debugProcess.session.suspendContext
-                        println("Resuming: $suspendContext")
+                        LOG.info { "Resuming: $suspendContext" }
                         debuggerIsHit.set(true)
                         debugProcess.resume(suspendContext)
                     }

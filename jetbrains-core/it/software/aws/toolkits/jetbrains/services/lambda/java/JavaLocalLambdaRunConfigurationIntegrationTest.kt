@@ -148,8 +148,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest {
         runInEdtAndWait {
             val document = projectRule.fixture.editor.document
             val lambdaClass = projectRule.fixture.file as PsiJavaFile
-            val lambdaBody = lambdaClass.classes[0].allMethods[0].body!!.statements[0]
-            val lineNumber = document.getLineNumber(lambdaBody.textOffset)
+            val lambdaBody = lambdaClass.classes.first().allMethods.first().body ?: throw NullPointerException("Body not found")
+            val lineNumber = document.getLineNumber(lambdaBody.statements.first().textOffset)
 
             XDebuggerUtil.getInstance().toggleLineBreakpoint(
                 projectRule.project,

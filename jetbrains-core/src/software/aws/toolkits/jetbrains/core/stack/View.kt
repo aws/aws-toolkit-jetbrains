@@ -76,7 +76,7 @@ internal val ResourceStatus.type: StatusType
 /**
  * [update] Function0<Unit> function to call to update icon
  */
-internal data class IconInfo(val icon: Icon, val update: () -> Unit)
+internal data class IconInfo(val icon: Icon?, val update: () -> Unit)
 
 internal interface ViewWithIcons {
     fun getIconsAndUpdaters(): Collection<IconInfo>

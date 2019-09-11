@@ -64,7 +64,7 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
             import os
 
             def lambda_handler(event, context):
-                print(os.environ)
+                print os.environ
                 return "Hello world"
 
             def env_print(event, context):

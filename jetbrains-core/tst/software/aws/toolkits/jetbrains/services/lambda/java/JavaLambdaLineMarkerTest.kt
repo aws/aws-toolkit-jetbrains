@@ -301,7 +301,7 @@ Resources:
                  public UsefulUtils() {}
 
                  public UsefulUtils(String abc) {
-                     System.out.println(abc);
+                     // do something with abc
                  }
 
                  private String upperCase(String input) {

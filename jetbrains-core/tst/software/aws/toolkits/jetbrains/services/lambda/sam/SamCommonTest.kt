@@ -148,8 +148,9 @@ class SamCommonTest {
 
     @Test(expected = java.lang.AssertionError::class)
     fun getTemplateFromDirectory_noYaml() {
-        val projectBase = LocalFileSystem.getInstance().findFileByPath(projectRule.project.basePath!!)
-        SamCommon.getTemplateFromDirectory(projectBase!!)
+        val projectBase = projectRule.project.basePath?.let { LocalFileSystem.getInstance().findFileByPath(it) }
+            ?: throw NullPointerException("project base not found")
+        SamCommon.getTemplateFromDirectory(projectBase)
     }
 
     @Test
@@ -176,7 +177,8 @@ class SamCommonTest {
 
     @Test
     fun getCodeUri_noUri() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     MyFunction:
@@ -185,7 +187,8 @@ Resources:
             Handler: helloworld.App::handleRequest
             Runtime: java8
             CodeUri: target/out.jar
-        """.trimIndent())
+        """.trimIndent()
+        )
         runInEdtAndWait {
             projectRule.fixture.addFileToProject("target/out.jar", "")
         }
@@ -200,7 +203,8 @@ Resources:
 
     @Test
     fun getCodeUri_singleUri() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     HelloWorldFunction:
@@ -209,7 +213,8 @@ Resources:
             CodeUri: hello_world/
             Handler: app.handle_request
             Runtime: java8
-        """.trimIndent())
+        """.trimIndent()
+        )
         createChildren("hello_world")
         runInEdtAndWait {
             projectRule.fixture.addFileToProject("target/out.jar", "")
@@ -226,7 +231,8 @@ Resources:
 
     @Test
     fun getCodeUri_samAndNotSam() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     HelloWorldFunction:
@@ -251,7 +257,8 @@ Resources:
             ProvisionedThroughput:
                 ReadCapacityUnits: 1
                 WriteCapacityUnits: 1
-        """.trimIndent())
+        """.trimIndent()
+        )
         createChildren("hello_world")
         runReadAction {
             val dir = file.containingDirectory.virtualFile
@@ -265,7 +272,8 @@ Resources:
 
     @Test
     fun getCodeUri_multipleUris() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     MyFunction:
@@ -286,7 +294,8 @@ Resources:
             CodeUri: hello_world_42/
             Handler: app.handle_request
             Runtime: java8
-        """.trimIndent())
+        """.trimIndent()
+        )
         createChildren("hello_world")
         createChildren("hello_world_42")
         createChildren("target", "out.jar")
@@ -311,7 +320,7 @@ Resources:
 
     private companion object {
         val TEST_TEMPLATE =
-                """
+            """
 Description: "Some description"
 Resources:
     MyFunction:

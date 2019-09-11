@@ -79,7 +79,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         }
 
         val errorMessage = try {
-            val semVer = promise.blockingGet(0)!!
+            val semVer = promise.blockingGet(0) ?: throw NullPointerException("SemVer not found")
             SamCommon.getInvalidVersionMessage(semVer)
         } catch (e: Exception) {
             ExceptionUtil.getRootCause(e).message ?: message("general.unknown_error")

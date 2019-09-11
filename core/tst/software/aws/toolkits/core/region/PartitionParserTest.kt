@@ -11,7 +11,7 @@ import software.aws.toolkits.resources.BundledResources
 class PartitionParserTest {
     @Test
     fun canLoadPartitionsFromEndpointsFile() {
-        val partitions = PartitionParser.parse(BundledResources.ENDPOINTS_FILE)!!
+        val partitions = PartitionParser.parse(BundledResources.ENDPOINTS_FILE) ?: throw RuntimeException("${BundledResources.ENDPOINTS_FILE} failed to parse")
         val awsPartition = partitions.getPartition("aws")
 
         val iam = awsPartition.services.getValue("iam")

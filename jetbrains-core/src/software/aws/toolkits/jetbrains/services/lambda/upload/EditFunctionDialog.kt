@@ -248,10 +248,10 @@ class EditFunctionDialog(
     }
 
     private fun viewToFunctionDetails(): FunctionUploadDetails = FunctionUploadDetails(
-        name = view.name.text!!,
-        handler = view.handler.text,
-        iamRole = view.iamRole.selected()!!,
-        runtime = view.runtime.selected()!!,
+        name = view.name.text.requiredField("name"),
+        handler = view.handler.text.requiredField("handler"),
+        iamRole = view.iamRole.selected().requiredField("iamRole"),
+        runtime = view.runtime.selected().requiredField("runtime"),
         description = view.description.text,
         envVars = view.envVars.envVars,
         timeout = view.timeoutSlider.value,
@@ -291,6 +291,10 @@ class EditFunctionDialog(
 
     @TestOnly
     fun getViewForTestAssertions() = view
+
+    private companion object {
+        fun <T : Any> T?.requiredField(name: String): T = this ?: throw NullPointerException("Required field $name is null")
+    }
 }
 
 class UploadToLambdaValidator {

@@ -188,7 +188,7 @@ class RemoteLambdaRunConfigurationTest {
 
         runInEdtAndWait {
             WriteAction.run<Throwable> {
-                PsiDocumentManager.getInstance(projectRule.project).getDocument(eventFile)!!.setText("UpdatedTestInputFile")
+                PsiDocumentManager.getInstance(projectRule.project).getDocument(eventFile)?.setText("UpdatedTestInputFile")
             }
 
             assertThat(VfsUtilCore.loadText(eventFile.virtualFile)).isEqualTo("TestInputFile")

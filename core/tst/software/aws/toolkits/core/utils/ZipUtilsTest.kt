@@ -20,10 +20,10 @@ class ZipUtilsTest {
     @Rule
     @JvmField
     val tmpFolder = TemporaryFolder()
-    var zipFile: Path? = null
+    lateinit var zipFile: Path
 
     @After fun cleanup() {
-        if (zipFile != null) {
+        if (::zipFile.isInitialized) {
             Files.delete(zipFile)
         }
     }
@@ -54,7 +54,7 @@ class ZipUtilsTest {
             it.putNextEntry("file.txt", "hello world".byteInputStream(StandardCharsets.UTF_8))
         }
 
-        assertZipContainsHelloWorldFile(zipFile!!)
+        assertZipContainsHelloWorldFile(zipFile)
     }
 
     private fun assertZipContainsHelloWorldFile(zipFile: Path) {

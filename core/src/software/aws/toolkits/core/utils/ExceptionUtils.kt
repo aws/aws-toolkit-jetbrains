@@ -9,6 +9,6 @@ package software.aws.toolkits.core.utils
  */
 fun <T> tryOrNull(block: () -> T): T? = try {
     block()
-} catch (_: Exception) {
+} catch (_: Throwable) {
     null
 }

@@ -99,8 +99,8 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
             .filterIsInstance<DefaultMutableTreeNode>()
             .map { resourceNode -> IconInfo(resourceNode.icon) { model.reload(resourceNode) } }
 
-    private val DefaultMutableTreeNode.icon: Icon
-        get() = (userObject as StackNodeDescriptor).icon!!
+    private val DefaultMutableTreeNode.icon: Icon?
+        get() = (userObject as StackNodeDescriptor).icon
 
     override fun fillResources(resources: Collection<StackResource>) {
         tree.setPaintBusy(false)
@@ -143,6 +143,6 @@ private class StackNodeDescriptor(
         return result
     }
 
-    override fun getElement() = myName!!
+    override fun getElement(): String = myName
     override fun toString() = "$myName [$status]"
 }

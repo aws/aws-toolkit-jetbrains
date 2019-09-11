@@ -139,7 +139,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
         val credentialsProvider = providerFactory.get("profile:bar")
         assertThat(credentialsProvider).isNotNull
-        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsCredentials::class.java)
+        assertThat(credentialsProvider?.resolveCredentials()).isInstanceOf(AwsCredentials::class.java)
     }
 
     @Test
@@ -149,7 +149,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         val providerFactory = createProviderFactory()
         val credentialsProvider = providerFactory.get("profile:foo")
         assertThat(credentialsProvider).isNotNull
-        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsCredentials::class.java)
+        assertThat(credentialsProvider?.resolveCredentials()).isInstanceOf(AwsCredentials::class.java)
     }
 
     @Test
@@ -208,7 +208,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
         val credentialsProvider = providerFactory.get("profile:role")
         assertThat(credentialsProvider).isNotNull
-        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
+        assertThat(credentialsProvider?.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
             .satisfies {
                 val sessionCredentials = it as AwsSessionCredentials
                 assertThat(sessionCredentials.accessKeyId()).isEqualTo("AccessKey")
@@ -252,7 +252,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
         val credentialsProvider = providerFactory.get("profile:role")
         assertThat(credentialsProvider).isNotNull
-        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
+        assertThat(credentialsProvider?.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
             .satisfies {
                 val sessionCredentials = it as AwsSessionCredentials
                 assertThat(sessionCredentials.accessKeyId()).isEqualTo("AccessKey")
@@ -306,7 +306,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
         val credentialsProvider = providerFactory.get("profile:role")
         assertThat(credentialsProvider).isNotNull
-        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
+        assertThat(credentialsProvider?.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
             .satisfies {
                 val sessionCredentials = it as AwsSessionCredentials
                 assertThat(sessionCredentials.accessKeyId()).isEqualTo("AccessKey")
@@ -386,9 +386,8 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
         val providerFactory = createProviderFactory()
 
-        val credentialsProvider = providerFactory.get("profile:foo")
-        assertThat(credentialsProvider).isNotNull
-        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
+        val credentialsProvider = providerFactory.get("profile:foo") ?: throw AssertionError("profile profile:foo not found")
+        assertThat(credentialsProvider.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
             .satisfies {
                 val sessionCredentials = it as AwsSessionCredentials
                 assertThat(sessionCredentials.accessKeyId()).isEqualTo("FooAccessKey")
@@ -440,7 +439,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         val providerFactory = createProviderFactory()
         val credentialsProvider = providerFactory.get("profile:foo")
         assertThat(credentialsProvider).isNotNull
-        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
+        assertThat(credentialsProvider?.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
             .satisfies {
                 val sessionCredentials = it as AwsSessionCredentials
                 assertThat(sessionCredentials.accessKeyId()).isEqualTo("FooAccessKey")
@@ -458,7 +457,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
             assertThatThrownBy {
                 // Old references should now throw exceptions
-                credentialsProvider.resolveCredentials()
+                credentialsProvider?.resolveCredentials()
             }
 
             verify(mockProviderManager).providerRemoved("profile:foo")
@@ -487,7 +486,8 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         )
 
         retryableAssert(maxAttempts = 5, interval = Duration.ofSeconds(5)) {
-            assertThat(providerFactory.get("profile:foo")?.resolveCredentials())
+            val profile = profileFactory?.get("profile:foo") ?: throw AssertionError("profile profile:foo not found")
+            assertThat(profile.resolveCredentials())
                 .isInstanceOf(AwsSessionCredentials::class.java)
                 .satisfies {
                     val sessionCredentials = it as AwsSessionCredentials
@@ -495,7 +495,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
                     assertThat(sessionCredentials.secretAccessKey()).isEqualTo("FooSecretKey")
                     assertThat(sessionCredentials.sessionToken()).isEqualTo("FooSessionToken")
                 }
-            verify(mockProviderManager).providerAdded(providerFactory.get("profile:foo")!!)
+            verify(mockProviderManager).providerAdded(profile)
         }
     }
 

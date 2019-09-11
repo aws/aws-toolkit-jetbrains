@@ -45,7 +45,7 @@ class PythonCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
 
         val module = newFixture.module
 
-        val projectRoot = newFixture.tempDirFixture.getFile(".")!!
+        val projectRoot = newFixture.tempDirFixture.getFile(".") ?: throw NullPointerException("Can't find temp fixture virtual file")
         PsiTestUtil.addContentRoot(module, projectRoot)
 
         ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.6.0"))

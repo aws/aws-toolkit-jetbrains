@@ -34,7 +34,7 @@ Resources:
         runAndAssertionMarks(projectRule.fixture) { marks ->
             assertThat(marks).hasSize(1)
             assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfies {
-                assertThat(it!!.text).isEqualTo("ServerlessFunction")
+                assertThat(it?.text).isEqualTo("ServerlessFunction")
             }
         }
     }
@@ -53,7 +53,7 @@ Resources:
         runAndAssertionMarks(projectRule.fixture) { marks ->
             assertThat(marks).hasSize(1)
             assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfies {
-                assertThat(it!!.text).isEqualTo("LambdaFunction")
+                assertThat(it?.text).isEqualTo("LambdaFunction")
             }
         }
     }

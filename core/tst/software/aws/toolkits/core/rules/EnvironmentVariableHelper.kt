@@ -4,6 +4,7 @@
 package software.aws.toolkits.core.rules
 
 import org.junit.rules.ExternalResource
+import software.aws.toolkits.core.utils.tryOrNull
 import java.security.AccessController
 import java.security.PrivilegedAction
 
@@ -27,22 +28,20 @@ class EnvironmentVariableHelper : ExternalResource() {
         modifiableMap[key] = value
     }
 
-    private fun getEnvMap(): MutableMap<String, String> = getField(System.getenv().javaClass, System.getenv(), "m")!!
+    private fun getEnvMap(): MutableMap<String, String> = getField(System.getenv().javaClass, System.getenv(), "m")
 
     private fun getProcessEnvMap(): MutableMap<String, String>? {
         val processEnvironment = Class.forName("java.lang.ProcessEnvironment")
-        return getField(processEnvironment, null, "theCaseInsensitiveEnvironment")
+        return tryOrNull { getField(processEnvironment, null, "theCaseInsensitiveEnvironment") }
     }
 
-    private fun getField(processEnvironment: Class<*>, obj: Any?, fieldName: String): MutableMap<String, String>? = try {
+    private fun getField(processEnvironment: Class<*>, obj: Any?, fieldName: String): MutableMap<String, String> {
         val declaredField = processEnvironment.getDeclaredField(fieldName)
         AccessController.doPrivileged(PrivilegedAction<Unit> {
             declaredField.isAccessible = true
         })
         @Suppress("UNCHECKED_CAST")
-        declaredField.get(obj) as MutableMap<String, String>
-    } catch (_: NoSuchFieldException) {
-        null
+        return declaredField.get(obj) as MutableMap<String, String>
     }
 
     private fun reset() {

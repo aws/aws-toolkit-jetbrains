@@ -192,7 +192,7 @@ class PythonLambdaBuilderTest : BaseLambdaBuilderTest() {
         ) as PyFile
 
         return runInEdtAndGet {
-            psiFile.findTopLevelFunction("handle")!!
+            psiFile.findTopLevelFunction("handle") ?: throw NullPointerException("top level function 'handle' not found")
         }
     }
 

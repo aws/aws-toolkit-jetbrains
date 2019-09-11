@@ -101,12 +101,12 @@ class ToolkitCredentialsProviderManagerTest {
         }
 
         fun remove(id: String) {
-            remove(get(id)!!)
+            remove(getRequired(id))
         }
 
         fun modify(id: String) {
             // Pretend it modifies it
-            credentialsProviderManager.providerModified(get(id)!!)
+            credentialsProviderManager.providerModified(getRequired(id))
         }
 
         override fun shutDown() {
@@ -121,5 +121,7 @@ class ToolkitCredentialsProviderManagerTest {
         }
 
         override fun hashCode(): Int = id.hashCode()
+
+        private fun getRequired(id: String) = get(id) ?: throw RuntimeException("$id not found in existing providers")
     }
 }

@@ -27,7 +27,7 @@ class AwsRegionProvider private constructor(remoteResourceResolverProvider: Remo
 
     override fun regions() = regions
 
-    override fun defaultRegion() = regions[DEFAULT_REGION]!!
+    override fun defaultRegion() = regions.getValue(DEFAULT_REGION)
 
     override fun isServiceSupported(region: AwsRegion, serviceName: String): Boolean {
         val currentPartition = partition ?: return false

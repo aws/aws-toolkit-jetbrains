@@ -136,7 +136,7 @@ Parameters:
         val updatedTemplate = runInEdtAndGet {
             val template = yamlTemplate()
             val resource = template.getResourceByName("MyFunction")
-            resource!!.setScalarProperty("CodeUri", "new/uri.jar")
+            resource?.setScalarProperty("CodeUri", "new/uri.jar")
             template.text()
         }
 
@@ -182,7 +182,7 @@ Resources:
         val updatedTemplate = runInEdtAndGet {
             val template = yamlTemplate(template = TEST_TEMPLATE_WITH_GLOBALS)
             val resource = template.getResourceByName("MyFunction")
-            resource!!.setScalarProperty("CodeUri", "new/uri.jar")
+            resource?.setScalarProperty("CodeUri", "new/uri.jar")
             template.text()
         }
 

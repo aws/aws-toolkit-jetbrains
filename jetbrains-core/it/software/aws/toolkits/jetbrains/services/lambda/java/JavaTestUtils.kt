@@ -33,7 +33,10 @@ import org.jetbrains.idea.maven.project.MavenProjectsManager
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.junit.Assert.fail
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.nio.file.Files
@@ -81,9 +84,10 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpGradleProject(): PsiClass 
 
     val jdkHome = IdeaTestUtil.requireRealJdkHome()
     VfsRootAccess.allowRootAccess(fixture.testRootDisposable, jdkHome)
-    val jdkHomeDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(jdkHome)!!
+    val jdkHomeDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(jdkHome) ?: throw NullPointerException("jdk home $jdkHome not found")
     val jdkName = "Gradle JDK"
-    val jdk = SdkConfigurationUtil.setupSdk(emptyArray(), jdkHomeDir, JavaSdk.getInstance(), false, null, jdkName)!!
+    val jdk = SdkConfigurationUtil.setupSdk(emptyArray(), jdkHomeDir, JavaSdk.getInstance(), false, null, jdkName)
+        ?: throw NullPointerException("sdk not found")
 
     WriteAction.runAndWait<Nothing> {
         ProjectJdkTable.getInstance().addJdk(jdk)
@@ -116,11 +120,11 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpGradleProject(): PsiClass 
     val refreshCallback = object : ExternalProjectRefreshCallback {
         override fun onSuccess(externalProject: DataNode<ProjectData>?) {
             if (externalProject == null) {
-                System.err.println("Got null External project after import")
+                LOG.error { "Got null External project after import" }
                 return
             }
             ServiceManager.getService(ProjectDataManager::class.java).importData(externalProject, project, true)
-            println("External project was successfully imported")
+            LOG.info { "External project was successfully imported" }
         }
 
         override fun onFailure(errorMessage: String, errorDetails: String?) {
@@ -141,6 +145,8 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpGradleProject(): PsiClass 
 
     return lambdaClass
 }
+
+private val LOG = getLogger<HeavyJavaCodeInsightTestFixtureRule>()
 
 private fun copyGradleFiles(fixtureRule: HeavyJavaCodeInsightTestFixtureRule) {
     val gradleRoot = findGradlew()

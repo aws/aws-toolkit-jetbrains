@@ -23,6 +23,9 @@ import software.amazon.awssdk.services.cloudformation.model.Parameter
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.rules.S3TemporaryBucketRule
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.runUnderRealCredentials
 import software.aws.toolkits.jetbrains.settings.SamSettings
@@ -32,14 +35,14 @@ import java.util.concurrent.TimeUnit
 
 class SamDeployTest {
     private val s3Client = S3Client.builder()
-            .httpClient(ApacheHttpClient.builder().build())
-            .region(Region.US_WEST_2)
-            .build()
+        .httpClient(ApacheHttpClient.builder().build())
+        .region(Region.US_WEST_2)
+        .build()
 
     private val cfnClient = CloudFormationClient.builder()
-            .httpClient(ApacheHttpClient.builder().build())
-            .region(Region.US_WEST_2)
-            .build()
+        .httpClient(ApacheHttpClient.builder().build())
+        .region(Region.US_WEST_2)
+        .build()
 
     @Rule
     @JvmField
@@ -53,7 +56,7 @@ class SamDeployTest {
     fun setUp() {
         SamSettings.getInstance().savedExecutablePath = System.getenv().getOrDefault("SAM_CLI_EXEC", "sam")
         MockProjectAccountSettingsManager.getInstance(projectRule.project).activeRegion =
-                AwsRegion(Region.US_WEST_2.id(), "us-west-2")
+            AwsRegion(Region.US_WEST_2.id(), "us-west-2")
     }
 
     @Test
@@ -160,7 +163,7 @@ class SamDeployTest {
                                 object : OutputListener() {
                                     override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                                         super.onTextAvailable(event, outputType)
-                                        println("SAM CLI: ${event.text}")
+                                        LOG.info { "SAM CLI: ${event.text}" }
                                     }
                                 })
                         }
@@ -182,8 +185,12 @@ class SamDeployTest {
                     it.stackName(stackName)
                 }
             } catch (e: Exception) {
-                println("Failed to delete stack $stackName: ${ExceptionUtil.getMessage(e)}")
+                LOG.warn { "Failed to delete stack $stackName: ${ExceptionUtil.getMessage(e)}" }
             }
         }
+    }
+
+    private companion object {
+        val LOG = getLogger<SamDeployTest>()
     }
 }
