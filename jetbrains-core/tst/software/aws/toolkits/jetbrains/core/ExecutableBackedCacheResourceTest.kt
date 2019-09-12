@@ -35,7 +35,7 @@ class ExecutableBackedCacheResourceTest {
 
     @Rule
     @JvmField
-    val testDisposableRue = TestDisposableRule()
+    val testDisposableRule = TestDisposableRule()
 
     private val mockCredentials: ToolkitCredentialsProvider
         get() = MockCredentialsManager.getInstance().addCredentials(
@@ -49,7 +49,7 @@ class ExecutableBackedCacheResourceTest {
         PlatformTestUtil.registerExtension(
             ExecutableType.EP_NAME,
             MockExecutable,
-            testDisposableRue.testDisposable
+            testDisposableRule.testDisposable
         )
     }
 
