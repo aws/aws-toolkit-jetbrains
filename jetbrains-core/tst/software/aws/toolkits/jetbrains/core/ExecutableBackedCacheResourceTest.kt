@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.core.executables.Validatable
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.utils.rules.TestDisposableRue
+import software.aws.toolkits.jetbrains.utils.rules.TestDisposableRule
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +35,7 @@ class ExecutableBackedCacheResourceTest {
 
     @Rule
     @JvmField
-    val testDisposableRue = TestDisposableRue()
+    val testDisposableRue = TestDisposableRule()
 
     private val mockCredentials: ToolkitCredentialsProvider
         get() = MockCredentialsManager.getInstance().addCredentials(

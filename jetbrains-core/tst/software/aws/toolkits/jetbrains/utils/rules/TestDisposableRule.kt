@@ -7,7 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import org.junit.rules.ExternalResource
 
-class TestDisposableRue : ExternalResource() {
+class TestDisposableRule : ExternalResource() {
     lateinit var testDisposable: Disposable
         private set
 

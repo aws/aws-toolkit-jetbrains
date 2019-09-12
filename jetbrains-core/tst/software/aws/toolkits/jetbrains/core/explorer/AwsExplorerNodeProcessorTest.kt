@@ -18,7 +18,7 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel
-import software.aws.toolkits.jetbrains.utils.rules.TestDisposableRue
+import software.aws.toolkits.jetbrains.utils.rules.TestDisposableRule
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import javax.swing.JTree
@@ -31,7 +31,7 @@ class AwsExplorerNodeProcessorTest {
 
     @Rule
     @JvmField
-    val testDisposableRule = TestDisposableRue()
+    val testDisposableRule = TestDisposableRule()
 
     @Test
     fun testNodePostProcessorIsInvoked() {
