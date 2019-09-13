@@ -19,6 +19,9 @@ import com.intellij.ui.SortedComboBoxModel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import com.jetbrains.rd.util.lifetime.Lifetime;
+import com.jetbrains.rd.util.reactive.Signal;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,6 +31,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+
+import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.yaml.YAMLFileType;
@@ -55,11 +61,15 @@ public final class LocalLambdaRunSettingsEditorPanel {
     public JPanel lambdaInputPanel;
     public SliderPanel timeoutSlider;
     public SliderPanel memorySlider;
+    public JCheckBox invalidator;
+
+    protected Signal<Unit> validityChanged;
 
     private final Project project;
 
-    public LocalLambdaRunSettingsEditorPanel(Project project) {
+    public LocalLambdaRunSettingsEditorPanel(Lifetime lifetime, Project project) {
         this.project = project;
+        this.validityChanged = new Signal<>();
 
         lambdaInputPanel.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.input.label"),
                                                                        false,
@@ -68,6 +78,11 @@ public final class LocalLambdaRunSettingsEditorPanel {
         useTemplate.addActionListener(e -> updateComponents());
         addQuickSelect(templateFile.getTextField(), useTemplate, this::updateComponents);
         templateFile.addActionListener(new TemplateFileBrowseListener());
+
+        validityChanged.advise(lifetime, unit -> {
+            invalidateConfiguration();
+            return Unit.INSTANCE;
+        });
 
         updateComponents();
     }
@@ -155,6 +170,10 @@ public final class LocalLambdaRunSettingsEditorPanel {
 
     public void setRuntimes(List<Runtime> runtimes) {
         runtimeModel.setAll(runtimes);
+    }
+
+    private void invalidateConfiguration() {
+        SwingUtilities.invokeLater(() -> invalidator.setSelected(!invalidator.isSelected()));
     }
 
     private class TemplateFileBrowseListener extends ComponentWithBrowseButton.BrowseFolderActionListener<JTextField> {

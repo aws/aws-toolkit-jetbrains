@@ -12,12 +12,12 @@ buildscript {
     repositories {
         mavenCentral()
         jcenter()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://www.myget.org/F/rd-snapshots/maven/" }
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "com.jetbrains.rd:rd-framework:$rdVersion"
     }
 }
 

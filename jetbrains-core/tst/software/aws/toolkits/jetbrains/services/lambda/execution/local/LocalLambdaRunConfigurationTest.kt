@@ -8,6 +8,7 @@ import com.intellij.execution.configurations.RuntimeConfigurationError
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiDocumentManager
@@ -26,7 +27,6 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamVersionCache
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
@@ -49,14 +49,14 @@ class LocalLambdaRunConfigurationTest {
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+    private val runtime = Runtime.JAVA8
+    private val defaultHandler = "com.example.LambdaHandler::handleRequest"
 
     @Before
     fun setUp() {
         val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
         SamSettings.getInstance().savedExecutablePath = validSam
-
-        // Pre-warm the SAM validation cache
-        SamVersionCache.evaluateBlocking(validSam, 2000)
+        preWarmSamVersionCache(validSam)
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
 
@@ -83,24 +83,38 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun samIsNotSet() {
-        val fakeSamPath = "NotValid"
-        SamSettings.getInstance().savedExecutablePath = fakeSamPath
-        // Pre-warm the SAM validation cache
-        try {
-            SamVersionCache.evaluateBlocking(fakeSamPath)
-        } catch (e: Exception) {
-            // Do nothing
+        val samCliPath = ""
+        SamSettings.getInstance().savedExecutablePath = samCliPath
+
+        runInEdtAndWait {
+            val project = projectRule.project
+            val runConfiguration = createHandlerBasedRunConfiguration(
+                project = project,
+                credentialsProviderId = mockId
+            )
+
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("sam.cli_not_configured"))
         }
+    }
+
+    @Test
+    fun samIsInvalid() {
+        val invalidSamCliPath = "sam/invalid/path"
+        SamSettings.getInstance().savedExecutablePath = invalidSamCliPath
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 project = projectRule.project,
                 credentialsProviderId = mockId
             )
+
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessageContaining("Invalid SAM CLI executable configured:")
+                .hasMessage(message("general.file_not_found", invalidSamCliPath))
         }
     }
 
@@ -136,16 +150,20 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun handlerDoesNotExist() {
+        val project = projectRule.project
+        val invalidHandler = "Fake"
+        preWarmLambdaHandlerValidation(project, handler = invalidHandler)
+
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
-                handler = "Fake",
+                project = project,
+                handler = invalidHandler,
                 credentialsProviderId = mockId
             )
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("lambda.run_configuration.handler_not_found", "Fake"))
+                .hasMessage(message("lambda.run_configuration.handler_not_found", invalidHandler))
         }
     }
 
@@ -212,7 +230,7 @@ class LocalLambdaRunConfigurationTest {
                       Timeout: 900
                 """.trimIndent()
                 )
-            }.absolutePath
+            }.canonicalPath
             val logicalName = "NotSomeFunction"
 
             val runConfiguration = createTemplateRunConfiguration(
@@ -243,7 +261,7 @@ class LocalLambdaRunConfigurationTest {
                       Timeout: 900
                 """.trimIndent()
                 )
-            }.absolutePath
+            }.canonicalPath
             val logicalName = "SomeFunction"
 
             val runConfiguration = createTemplateRunConfiguration(
@@ -275,7 +293,7 @@ class LocalLambdaRunConfigurationTest {
                       Timeout: 900
                 """.trimIndent()
                 )
-            }.absolutePath
+            }.canonicalPath
             val logicalName = "SomeFunction"
 
             val runConfiguration = createTemplateRunConfiguration(
@@ -306,7 +324,7 @@ class LocalLambdaRunConfigurationTest {
                       Timeout: 900
                 """.trimIndent()
                 )
-            }.absolutePath
+            }.canonicalPath
             val logicalName = "SomeFunction"
 
             val runConfiguration = createTemplateRunConfiguration(
@@ -324,9 +342,11 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun invalidRegion() {
+        val project = projectRule.project
+        preWarmLambdaHandlerValidation(project)
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
+                project = project,
                 region = null,
                 credentialsProviderId = mockId
             )
@@ -368,9 +388,11 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun inputIsSet() {
+        val project = projectRule.project
+        preWarmLambdaHandlerValidation(project)
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
+                project = project,
                 credentialsProviderId = mockId,
                 input = "{}"
             )
@@ -381,9 +403,14 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun inputTextIsNotSet() {
+        val project = projectRule.project
+
+        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
+        preWarmLambdaHandlerValidation(project)
+
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
+                project = project,
                 credentialsProviderId = mockId,
                 input = null
             )
@@ -396,9 +423,12 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun inputFileDoesNotExist() {
+        val project = projectRule.project
+        preWarmLambdaHandlerValidation(project)
+
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
+                project = project,
                 input = "DoesNotExist",
                 inputIsFile = true,
                 credentialsProviderId = mockId
@@ -412,11 +442,13 @@ class LocalLambdaRunConfigurationTest {
 
     @Test
     fun inputFileDoeExist() {
+        val project = projectRule.project
         val eventFile = projectRule.fixture.addFileToProject("event.json", "TestInputFile")
+        preWarmLambdaHandlerValidation(project)
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
+                project = project,
                 input = eventFile.virtualFile.path,
                 inputIsFile = true,
                 credentialsProviderId = mockId
@@ -681,6 +713,9 @@ class LocalLambdaRunConfigurationTest {
             assertThat(clonedConfiguration.inputSource()).isNotEqualTo(runConfiguration.inputSource())
         }
     }
+
+    private fun preWarmLambdaHandlerValidation(project: Project, handler: String = defaultHandler) =
+        preWarmLambdaHandlerValidation(project, runtime, handler)
 
     private fun getState(runConfiguration: LocalLambdaRunConfiguration): SamRunningState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
