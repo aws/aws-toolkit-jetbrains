@@ -7,10 +7,10 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.xdebugger.XDebuggerManager
-import software.aws.toolkits.jetbrains.utils.findDebugPort
+import com.intellij.util.net.NetUtils.findAvailableSocketPort
 
 internal class SamDebugger : SamRunner() {
-    private val debugPort = findDebugPort()
+    private val debugPort = findAvailableSocketPort()
 
     override fun patchCommandLine(state: SamRunningState, commandLine: GeneralCommandLine) {
         SamDebugSupport.getInstanceOrThrow(state.settings.runtimeGroup)
