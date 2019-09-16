@@ -7,21 +7,10 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.xdebugger.XDebuggerManager
-import java.net.ServerSocket
+import software.aws.toolkits.jetbrains.utils.findDebugPort
 
 internal class SamDebugger : SamRunner() {
     private val debugPort = findDebugPort()
-
-    private fun findDebugPort(): Int {
-        try {
-            ServerSocket(0).use {
-                it.reuseAddress = true
-                return it.localPort
-            }
-        } catch (e: Exception) {
-            throw IllegalStateException("Failed to find free port", e)
-        }
-    }
 
     override fun patchCommandLine(state: SamRunningState, commandLine: GeneralCommandLine) {
         SamDebugSupport.getInstanceOrThrow(state.settings.runtimeGroup)
