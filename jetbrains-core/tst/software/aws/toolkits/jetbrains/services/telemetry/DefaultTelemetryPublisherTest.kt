@@ -142,7 +142,8 @@ class DefaultTelemetryPublisherTest {
                     .key("awsRegion")
                     .value("us-west-2")
                     .build()
-            )        }
+            )
+        }
 
         postMetricsRequest.metricData()[1].let {
             assertThat(it.metricName()).isEqualTo("Bar")
