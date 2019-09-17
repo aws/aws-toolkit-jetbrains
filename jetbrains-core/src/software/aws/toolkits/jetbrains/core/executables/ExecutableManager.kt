@@ -37,7 +37,6 @@ interface ExecutableManager {
 inline fun <reified T : ExecutableType<*>> ExecutableManager.getExecutable() = getExecutable(ExecutableType.getInstance<T>())
 inline fun <reified T : ExecutableType<*>> ExecutableManager.getExecutableIfPresent() = getExecutableIfPresent(ExecutableType.getInstance<T>())
 
-
 @State(name = "executables", storages = [Storage("aws.xml")])
 class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, ExecutableManager {
     private val internalState = mutableMapOf<String, Triple<ExecutableState, ExecutableInstance?, FileTime?>>()
