@@ -220,6 +220,7 @@ sealed class ExecutableInstance {
     class UnresolvedExecutable(val resolutionError: String? = null) : ExecutableInstance()
 }
 
+// PersistentStateComponent requires a bean, so we wrap the List
 data class ExecutableStateList(
     var value: List<ExecutableState> = listOf()
 )
