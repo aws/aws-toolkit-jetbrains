@@ -3,10 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.upload
 
+import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.EdtRule
+import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
-import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.ui.MutableCollectionComboBoxModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -14,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.iam.IamRole
+import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openClass
 import javax.swing.DefaultComboBoxModel
@@ -31,8 +36,15 @@ class UploadToLambdaValidatorTest {
 
     @Before
     fun wireMocksTogetherWithValidOptions() {
-        view = runInEdtAndGet {
-            EditFunctionPanel(projectRule.project)
+        val project = projectRule.project
+
+        val sdk = IdeaTestUtil.getMockJdk18()
+        runInEdtAndWait {
+            runWriteAction {
+                ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
+                ProjectRootManager.getInstance(project).projectSdk = sdk
+            }
+            view = EditFunctionPanel(project, HandlerCompletionProvider(project))
         }
 
         view.name.text = "name"

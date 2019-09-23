@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.NEW
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CODE
@@ -81,7 +82,7 @@ class EditFunctionDialog(
                 role = lambdaFunction.role
             )
 
-    private val view = EditFunctionPanel(project)
+    private val view = EditFunctionPanel(project, HandlerCompletionProvider(project))
     private val validator = UploadToLambdaValidator()
     private val s3Client: S3Client = project.awsClient()
     private val iamClient: IamClient = project.awsClient()

@@ -14,9 +14,11 @@ import com.intellij.openapi.ui.ComponentWithBrowseButton;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.EditorTextField;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SortedComboBoxModel;
-import com.intellij.ui.components.JBTextField;
+import com.intellij.util.textCompletion.TextCompletionProvider;
+import com.intellij.util.textCompletion.TextFieldWithCompletion;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import java.io.File;
@@ -36,6 +38,7 @@ import software.aws.toolkits.core.utils.ExceptionUtils;
 import software.aws.toolkits.jetbrains.services.cloudformation.Function;
 import software.aws.toolkits.jetbrains.services.lambda.LambdaWidgets;
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupUtil;
+import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider;
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaInputPanel;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils;
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField;
@@ -43,7 +46,7 @@ import software.aws.toolkits.jetbrains.ui.SliderPanel;
 
 public final class LocalLambdaRunSettingsEditorPanel {
     public JPanel panel;
-    public JBTextField handler;
+    public EditorTextField handler;
     public EnvironmentVariablesTextField environmentVariables;
     private SortedComboBoxModel<Runtime> runtimeModel;
     public JComboBox<Runtime> runtime;
@@ -55,11 +58,13 @@ public final class LocalLambdaRunSettingsEditorPanel {
     public JPanel lambdaInputPanel;
     public SliderPanel timeoutSlider;
     public SliderPanel memorySlider;
+    private final HandlerCompletionProvider handlerCompletionProvider;
 
     private final Project project;
 
-    public LocalLambdaRunSettingsEditorPanel(Project project) {
+    public LocalLambdaRunSettingsEditorPanel(Project project, HandlerCompletionProvider completionProvider) {
         this.project = project;
+        this.handlerCompletionProvider = completionProvider;
 
         lambdaInputPanel.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.input.label"),
                                                                        false,
@@ -73,6 +78,11 @@ public final class LocalLambdaRunSettingsEditorPanel {
     }
 
     private void createUIComponents() {
+        if (handlerCompletionProvider.isCompletionSupported())
+            handler = new TextFieldWithCompletion(project, handlerCompletionProvider, "", true, true, true, true);
+        else
+            handler = new EditorTextField();
+
         lambdaInput = new LambdaInputPanel(project);
 
         functionModels = new DefaultComboBoxModel<>();

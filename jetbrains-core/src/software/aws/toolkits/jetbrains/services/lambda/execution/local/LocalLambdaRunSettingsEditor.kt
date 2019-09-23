@@ -7,11 +7,12 @@ import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import javax.swing.JComponent
 
 class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambdaRunConfiguration>() {
-    private val view = LocalLambdaRunSettingsEditorPanel(project)
+    private val view = LocalLambdaRunSettingsEditorPanel(project, HandlerCompletionProvider(project))
 
     init {
         val supported = LambdaBuilder.supportedRuntimeGroups.flatMap { it.runtimes }.sorted()
@@ -32,7 +33,7 @@ class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambd
         } else {
             view.setTemplateFile(null) // Also clears the functions selector
             view.runtime.model.selectedItem = configuration.runtime()
-            view.handler.text = configuration.handler()
+            view.handler.text = configuration.handler() ?: ""
         }
 
         view.timeoutSlider.value = configuration.timeout()

@@ -7,6 +7,7 @@ import static software.aws.toolkits.resources.Localization.message;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.ui.EditorTextField;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SortedComboBoxModel;
 import java.util.Collection;
@@ -17,11 +18,13 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import com.intellij.util.textCompletion.TextFieldWithCompletion;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.iam.IamResources;
 import software.aws.toolkits.jetbrains.services.iam.IamRole;
 import software.aws.toolkits.jetbrains.services.lambda.LambdaWidgets;
+import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider;
 import software.aws.toolkits.jetbrains.services.s3.S3Resources;
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField;
 import software.aws.toolkits.jetbrains.ui.ResourceSelector;
@@ -31,7 +34,7 @@ import software.aws.toolkits.jetbrains.ui.SliderPanel;
 public class EditFunctionPanel {
     @NotNull JTextField name;
     @NotNull JTextField description;
-    @NotNull JTextField handler;
+    @NotNull EditorTextField handler;
     @NotNull JButton createRole;
     @NotNull JButton createBucket;
     @NotNull JPanel content;
@@ -48,9 +51,11 @@ public class EditFunctionPanel {
 
     private SortedComboBoxModel<Runtime> runtimeModel;
     private final Project project;
+    private HandlerCompletionProvider handlerCompletionProvider;
 
-    EditFunctionPanel(Project project) {
+    EditFunctionPanel(Project project, HandlerCompletionProvider completionProvider) {
         this.project = project;
+        this.handlerCompletionProvider = completionProvider;
 
         deploySettings.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.upload.deployment_settings"), false));
         configurationSettings.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.upload.configuration_settings"), false));
@@ -65,6 +70,11 @@ public class EditFunctionPanel {
     }
 
     private void createUIComponents() {
+        if (handlerCompletionProvider.isCompletionSupported())
+            handler = new TextFieldWithCompletion(project, handlerCompletionProvider, "", true, true, true, true);
+        else
+            handler = new EditorTextField();
+
         runtimeModel = new SortedComboBoxModel<>(Comparator.comparing(Runtime::toString, Comparator.naturalOrder()));
         runtime = new ComboBox<>(runtimeModel);
         envVars = new EnvironmentVariablesTextField(project);
