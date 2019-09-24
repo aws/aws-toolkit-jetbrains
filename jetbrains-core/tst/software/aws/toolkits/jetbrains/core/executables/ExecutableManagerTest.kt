@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.executables
 
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ObjectAssert
@@ -14,6 +15,7 @@ import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.value
 import software.aws.toolkits.jetbrains.utils.wait
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
 
 class ExecutableManagerTest {
@@ -30,7 +32,7 @@ class ExecutableManagerTest {
     fun nonExistentExecutableIsNotResolved() {
         val type = DummyExecutableType("dummy")
 
-        sut.loadState(listOf(ExecutableState("dummy", "/foo/bar", true)))
+        sut.loadState(ExecutableStateList(listOf(ExecutableState("dummy", "/foo/bar", true))))
 
         assertThat(sut.getExecutable(type)).wait().isCompletedWithValueMatching { it is ExecutableInstance.UnresolvedExecutable }
     }
@@ -45,6 +47,27 @@ class ExecutableManagerTest {
         }
 
         assertThat(sut.getExecutable(type)).wait().isCompletedWithValueMatching { (it as ExecutableInstance.Executable).executablePath == executable.toPath() }
+    }
+
+    @Test
+    fun gettingCommandLineWhenExecutableIsFoundWorksAndModificationsAreApplied() {
+        val executable = tempFolder.newFile()
+        val type = object : DummyExecutableType("dummy"), AutoResolvable, Validatable {
+            override fun resolve(): Path = executable.toPath()
+
+            override fun validate(path: Path) {}
+        }
+
+        val instance = sut.getExecutable(type).toCompletableFuture().get()
+
+        assertThat(instance).isInstanceOf(ExecutableInstance.Executable::class.java)
+
+        val commandLine = (instance as ExecutableInstance.Executable).getCommandLine()
+        assertThat(commandLine.exePath).isEqualTo(instance.executablePath.toString())
+        assertThat(commandLine.environment.containsKey("AWS_ACCESS_KEY_ID")).isFalse()
+        assertThat(commandLine.environment.containsKey("AWS_SECRET_ACCESS_KEY")).isFalse()
+        assertThat(commandLine.environment.containsKey("AWS_SESSION_TOKEN")).isFalse()
+        assertThat(commandLine.parentEnvironmentType).isEqualTo(GeneralCommandLine.ParentEnvironmentType.NONE)
     }
 
     @Test
@@ -118,7 +141,7 @@ class ExecutableManagerTest {
             }
         }
 
-        sut.loadState(listOf(ExecutableState(type.id, executable.absolutePath)))
+        sut.loadState(ExecutableStateList(listOf(ExecutableState(type.id, executable.absolutePath))))
 
         assertThat(sut.getExecutable(type).value).isInstanceOfSatisfying(ExecutableInstance.InvalidExecutable::class.java) {
             assertThat(it.executablePath).isEqualTo(executable.toPath())
@@ -160,6 +183,21 @@ class ExecutableManagerTest {
         assertThat(sut.getExecutableIfPresent(type)).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
             assertThat(it.executablePath).isEqualTo(executable.toPath())
         }
+    }
+
+    @Test
+    fun setExecutablePathFailsWhenValidateFails() {
+        val type = object : DummyExecutableType("dummy"), AutoResolvable, Validatable {
+            override fun resolve(): Path? = null
+            override fun validate(path: Path) {
+                throw RuntimeException("ow")
+            }
+        }
+        val executable = "/fake/path////////////"
+
+        sut.setExecutablePath(type, Paths.get(executable)).value
+
+        assertThat(sut.getExecutable(type).value).isInstanceOf(ExecutableInstance.UnresolvedExecutable::class.java)
     }
 
     private fun modifyFile(executable: Path) {
