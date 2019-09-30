@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.textCompletion.TextCompletionProvider
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import java.lang.IllegalStateException
@@ -19,7 +20,7 @@ class HandlerCompletionProvider(private val project: Project) : TextCompletionPr
     private val logger = getLogger<HandlerCompletionProvider>()
 
     // Suppress since gradle compiler mismatch return types for property delegate and fail build step
-    private val handlerCompletion: HandlerCompletion by lazy {
+    private val handlerCompletion: HandlerCompletion? by lazy {
         val runtimeGroup = RuntimeGroup.determineRuntime(
             project
         )?.runtimeGroup
@@ -30,19 +31,19 @@ class HandlerCompletionProvider(private val project: Project) : TextCompletionPr
         }
 
         return@lazy HandlerCompletion.getInstance(runtimeGroup) ?: let {
-            val message = "Unable to get HandlerCompletion instance for Lambda handler completion provider"
-            logger.error { message }
-            throw IllegalStateException(message)
+            val message =
+                "Lambda handler completion provider is not registered for runtime: ${runtimeGroup.name}. Completion is not supported."
+            logger.info { message }
+            null
         }
     }
 
-    val isCompletionSupported
-        get() = handlerCompletion.isSupported()
+    val isCompletionSupported by lazy { handlerCompletion != null }
 
     override fun applyPrefixMatcher(result: CompletionResultSet, prefix: String): CompletionResultSet {
-        if (!handlerCompletion.isSupported()) return result
+        if (!isCompletionSupported) return result
 
-        val prefixMatcher = handlerCompletion.getPrefixMatcher(prefix)
+        val prefixMatcher = handlerCompletion!!.getPrefixMatcher(prefix)
         result.withPrefixMatcher(prefixMatcher)
         return result
     }
@@ -52,15 +53,15 @@ class HandlerCompletionProvider(private val project: Project) : TextCompletionPr
     override fun getPrefix(text: String, offset: Int): String? = text
 
     override fun fillCompletionVariants(parameters: CompletionParameters, prefix: String, result: CompletionResultSet) {
-        if (!handlerCompletion.isSupported()) return
+        if (!isCompletionSupported) return
 
-        val lookupElements = handlerCompletion.getLookupElements(project)
+        val lookupElements = handlerCompletion!!.getLookupElements(project)
         result.addAllElements(lookupElements)
         result.stopHere()
     }
 
     override fun acceptChar(c: Char): CharFilter.Result? {
-        if (!handlerCompletion.isSupported()) return CharFilter.Result.HIDE_LOOKUP
+        if (!isCompletionSupported) return CharFilter.Result.HIDE_LOOKUP
 
         return when {
             c.isWhitespace() -> CharFilter.Result.SELECT_ITEM_AND_FINISH_LOOKUP

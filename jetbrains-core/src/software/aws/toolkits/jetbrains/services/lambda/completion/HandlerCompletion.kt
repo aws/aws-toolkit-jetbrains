@@ -12,11 +12,6 @@ import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoin
 interface HandlerCompletion {
 
     /**
-     * Flag to set whether completion is supported for a specific language.
-     */
-    fun isSupported() = true
-
-    /**
      * Get a collection of lookup elements with a presentation to show in lookup popup
      *
      * @return [Collection] of [LookupElement]'s to show in a completion popup
