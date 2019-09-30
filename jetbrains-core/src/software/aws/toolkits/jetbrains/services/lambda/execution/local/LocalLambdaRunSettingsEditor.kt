@@ -8,7 +8,6 @@ import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.text.SemVer
-import com.jetbrains.rd.util.lifetime.Lifetime
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerEvaluationListener
@@ -19,8 +18,7 @@ import javax.swing.JComponent
 
 class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambdaRunConfiguration>() {
 
-    private val lifetimeDefinition = Lifetime.Eternal.createNested()
-    private val view = LocalLambdaRunSettingsEditorPanel(lifetimeDefinition, project)
+    private val view = LocalLambdaRunSettingsEditorPanel(project)
 
     init {
         // Invalidate Lambda handler caches before opening run configuration to clear all outdated
@@ -85,7 +83,7 @@ class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambd
             LambdaHandlerEvaluationListener.TOPIC,
             object : LambdaHandlerEvaluationListener {
                 override fun handlerValidationFinished(handlerName: String, isHandlerExists: Boolean) {
-                    view.validityChanged.fire(Unit)
+                    view.invalidateConfiguration()
                 }
             })
 
@@ -93,7 +91,7 @@ class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambd
             SamCliVersionEvaluationListener.TOPIC,
             object : SamCliVersionEvaluationListener {
                 override fun samVersionValidationFinished(path: String, version: SemVer) {
-                    view.validityChanged.fire(Unit)
+                    view.invalidateConfiguration()
                 }
             })
     }

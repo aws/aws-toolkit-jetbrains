@@ -82,28 +82,25 @@ class LocalLambdaRunConfigurationTest {
     }
 
     @Test
-    fun samIsNotSet() {
-        val samCliPath = ""
-        SamSettings.getInstance().savedExecutablePath = samCliPath
+    fun validConfiguration() {
+        val project = projectRule.project
+        preWarmLambdaHandlerValidation(project)
 
         runInEdtAndWait {
-            val project = projectRule.project
             val runConfiguration = createHandlerBasedRunConfiguration(
-                project = project,
+                project = projectRule.project,
                 credentialsProviderId = mockId
             )
 
             assertThat(runConfiguration).isNotNull
-            assertThatThrownBy { runConfiguration.checkConfiguration() }
-                .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("sam.cli_not_configured"))
+            runConfiguration.checkConfiguration()
         }
     }
 
     @Test
-    fun samIsInvalid() {
-        val invalidSamCliPath = "sam/invalid/path"
-        SamSettings.getInstance().savedExecutablePath = invalidSamCliPath
+    fun samIsNotSet() {
+        val fakeSamPath = "NotValid"
+        SamSettings.getInstance().savedExecutablePath = fakeSamPath
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
@@ -114,7 +111,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("general.file_not_found", invalidSamCliPath))
+                .hasMessage(message("general.file_not_found", fakeSamPath))
         }
     }
 

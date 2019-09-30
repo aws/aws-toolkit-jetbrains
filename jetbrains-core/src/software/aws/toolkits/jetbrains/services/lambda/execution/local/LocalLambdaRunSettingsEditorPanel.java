@@ -19,8 +19,6 @@ import com.intellij.ui.SortedComboBoxModel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
-import com.jetbrains.rd.util.lifetime.Lifetime;
-import com.jetbrains.rd.util.reactive.Signal;
 
 import java.io.File;
 import java.util.Collections;
@@ -33,7 +31,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.yaml.YAMLFileType;
@@ -63,13 +60,10 @@ public final class LocalLambdaRunSettingsEditorPanel {
     public SliderPanel memorySlider;
     public JCheckBox invalidator;
 
-    protected Signal<Unit> validityChanged;
-
     private final Project project;
 
-    public LocalLambdaRunSettingsEditorPanel(Lifetime lifetime, Project project) {
+    public LocalLambdaRunSettingsEditorPanel(Project project) {
         this.project = project;
-        this.validityChanged = new Signal<>();
 
         lambdaInputPanel.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.input.label"),
                                                                        false,
@@ -78,11 +72,6 @@ public final class LocalLambdaRunSettingsEditorPanel {
         useTemplate.addActionListener(e -> updateComponents());
         addQuickSelect(templateFile.getTextField(), useTemplate, this::updateComponents);
         templateFile.addActionListener(new TemplateFileBrowseListener());
-
-        validityChanged.advise(lifetime, unit -> {
-            invalidateConfiguration();
-            return Unit.INSTANCE;
-        });
 
         updateComponents();
     }
@@ -172,7 +161,7 @@ public final class LocalLambdaRunSettingsEditorPanel {
         runtimeModel.setAll(runtimes);
     }
 
-    private void invalidateConfiguration() {
+    public void invalidateConfiguration() {
         SwingUtilities.invokeLater(() -> invalidator.setSelected(!invalidator.isSelected()));
     }
 

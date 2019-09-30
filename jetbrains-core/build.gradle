@@ -1,10 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-repositories {
-    maven { url "https://www.myget.org/F/rd-snapshots/maven/" }
-}
-
 apply plugin: 'org.jetbrains.intellij'
 
 intellij {
@@ -69,7 +65,6 @@ dependencies {
     compile("software.amazon.awssdk:resourcegroupstaggingapi:$awsSdkVersion") {
         exclude group: 'org.slf4j'
     }
-    compile "com.jetbrains.rd:rd-framework:${rdVersion}"
     testCompile project(path: ":core", configuration: 'testArtifacts')
     integrationTestCompile('org.eclipse.jetty:jetty-servlet:9.4.15.v20190215')
     integrationTestCompile('org.eclipse.jetty:jetty-proxy:9.4.15.v20190215')

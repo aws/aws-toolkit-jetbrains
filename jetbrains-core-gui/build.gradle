@@ -4,10 +4,6 @@
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'jacoco'
 
-repositories {
-    maven { url "https://www.myget.org/F/rd-snapshots/maven/" }
-}
-
 dependencies {
     compile project(":jetbrains-core")
 }
