@@ -19,7 +19,6 @@ class HandlerCompletionProvider(private val project: Project) : TextCompletionPr
 
     private val logger = getLogger<HandlerCompletionProvider>()
 
-    // Suppress since gradle compiler mismatch return types for property delegate and fail build step
     private val handlerCompletion: HandlerCompletion? by lazy {
         val runtimeGroup = RuntimeGroup.determineRuntime(
             project
@@ -31,9 +30,7 @@ class HandlerCompletionProvider(private val project: Project) : TextCompletionPr
         }
 
         return@lazy HandlerCompletion.getInstance(runtimeGroup) ?: let {
-            val message =
-                "Lambda handler completion provider is not registered for runtime: ${runtimeGroup.name}. Completion is not supported."
-            logger.info { message }
+            logger.info { "Lambda handler completion provider is not registered for runtime: ${runtimeGroup.name}. Completion is not supported." }
             null
         }
     }
