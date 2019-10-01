@@ -1,3 +1,6 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.core.changenotification
 
 import com.intellij.openapi.application.ApplicationInfo
@@ -24,9 +27,7 @@ interface ChangeType {
 open class JetBrainsMinimumVersionChange : ChangeType {
     override val id: String = "JetBrainsMinimumVersion_192"
 
-    override fun getNotificationValue(): String {
-        return ApplicationInfo.getInstance().fullVersion
-    }
+    override fun getNotificationValue(): String = ApplicationInfo.getInstance().fullVersion
 
     override fun isNotificationSuppressed(previousNotificationValue: String?): Boolean {
         previousNotificationValue?.let {
@@ -49,11 +50,7 @@ open class JetBrainsMinimumVersionChange : ChangeType {
         return true
     }
 
-    override fun getNotificationTitle(): String {
-        return message("change.notification.title.jetbrains.minimum.version.2019.2")
-    }
+    override fun getNotificationTitle(): String = message("change.notification.title.jetbrains.minimum.version.2019.2")
 
-    override fun getNotificationMessage(): String {
-        return message("change.notification.message.jetbrains.minimum.version.2019.2")
-    }
+    override fun getNotificationMessage(): String = message("change.notification.message.jetbrains.minimum.version.2019.2")
 }

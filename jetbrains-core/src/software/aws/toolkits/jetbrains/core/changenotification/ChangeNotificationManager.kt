@@ -1,3 +1,6 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.core.changenotification
 
 import com.intellij.notification.NotificationDisplayType
@@ -56,7 +59,7 @@ class DefaultChangeNotificationManager : PersistentStateComponent<ChangeNotifica
             change.getNotificationTitle(),
             change.getNotificationMessage(),
             NotificationType.INFORMATION
-        ) { notification, event ->
+        ) { _, _ ->
             suppressNotification(change)
         }
 
