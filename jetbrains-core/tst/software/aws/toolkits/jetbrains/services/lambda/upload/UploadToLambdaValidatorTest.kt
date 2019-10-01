@@ -18,7 +18,6 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.iam.IamRole
-import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openClass
 import javax.swing.DefaultComboBoxModel
@@ -44,12 +43,12 @@ class UploadToLambdaValidatorTest {
                 ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
                 ProjectRootManager.getInstance(project).projectSdk = sdk
             }
-            view = EditFunctionPanel(project, HandlerCompletionProvider(project))
+            view = EditFunctionPanel(project)
         }
 
         view.name.text = "name"
         view.description.text = "description"
-        view.handler.text = "com.example.LambdaHandler::handleRequest"
+        view.handlerPanel.handler.text = "com.example.LambdaHandler::handleRequest"
         val role = IamRole("DummyArn")
         view.iamRole.model = MutableCollectionComboBoxModel(listOf(role)).also { it.selectedItem = role }
         view.iamRole.forceLoaded()
@@ -97,7 +96,7 @@ class UploadToLambdaValidatorTest {
 
     @Test
     fun handlerCannotBeBlank() {
-        view.handler.text = ""
+        view.handlerPanel.handler.text = ""
         assertThat(sut.validateConfigurationSettings(view)?.message).contains("Handler must be specified")
     }
 
@@ -175,7 +174,7 @@ class UploadToLambdaValidatorTest {
 
     @Test
     fun handlerMustBeInProjectToDeploy() {
-        view.handler.text = "Foo"
+        view.handlerPanel.handler.text = "Foo"
         assertThat(sut.validateCodeSettings(projectRule.project, view)?.message).contains("Must be able to locate the handler")
     }
 

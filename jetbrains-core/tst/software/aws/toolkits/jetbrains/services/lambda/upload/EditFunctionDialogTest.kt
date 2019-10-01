@@ -99,7 +99,7 @@ class EditFunctionDialogTest {
         }
 
         assertThat(dialog.getViewForTestAssertions().deploySettings.isVisible).isTrue()
-        assertThat(dialog.getViewForTestAssertions().handler.isVisible).isTrue()
+        assertThat(dialog.getViewForTestAssertions().handlerPanel.handler.isVisible).isTrue()
 
         assertThat(dialog.getViewForTestAssertions().name.isVisible).isFalse()
         assertThat(dialog.getViewForTestAssertions().description.isVisible).isFalse()

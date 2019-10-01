@@ -8,6 +8,7 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.CharFilter
 import com.intellij.openapi.project.Project
 import com.intellij.util.textCompletion.TextCompletionProvider
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -15,14 +16,13 @@ import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import java.lang.IllegalStateException
 
-class HandlerCompletionProvider(private val project: Project) : TextCompletionProvider {
+class HandlerCompletionProvider(private val project: Project, runtime: Runtime? = null) : TextCompletionProvider {
 
     private val logger = getLogger<HandlerCompletionProvider>()
 
     private val handlerCompletion: HandlerCompletion? by lazy {
-        val runtimeGroup = RuntimeGroup.determineRuntime(
-            project
-        )?.runtimeGroup
+        val runtimeGroup = runtime?.runtimeGroup ?: RuntimeGroup.determineRuntime(project)?.runtimeGroup
+
         if (runtimeGroup == null) {
             val message = "Unable to define Runtime Group for Lambda handler completion provider"
             logger.error { message }

@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
-import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.NEW
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CODE
@@ -82,7 +81,7 @@ class EditFunctionDialog(
                 role = lambdaFunction.role
             )
 
-    private val view = EditFunctionPanel(project, HandlerCompletionProvider(project))
+    private val view = EditFunctionPanel(project)
     private val validator = UploadToLambdaValidator()
     private val s3Client: S3Client = project.awsClient()
     private val iamClient: IamClient = project.awsClient()
@@ -103,7 +102,7 @@ class EditFunctionDialog(
 
         view.name.text = name
 
-        view.handler.text = handlerName
+        view.handlerPanel.handler.text = handlerName
         view.timeoutSlider.value = timeout
         view.memorySlider.value = memorySize
         view.description.text = description
@@ -130,7 +129,9 @@ class EditFunctionDialog(
         }
 
         if (mode == UPDATE_CODE) {
-            UIUtil.uiChildren(view.configurationSettings).filter { it !== view.handler && it !== view.handlerLabel }.forEach { it.isVisible = false }
+            UIUtil.uiChildren(view.configurationSettings)
+                .filter { it !== view.handlerPanel && it !== view.handlerLabel }
+                .forEach { it.isVisible = false }
         }
 
         view.setRuntimes(Runtime.knownValues())
@@ -164,7 +165,7 @@ class EditFunctionDialog(
     private fun configurationChanged(): Boolean = mode != NEW && !(name == view.name.text &&
         description == view.description.text &&
         runtime == view.runtime.selected() &&
-        handlerName == view.handler.text &&
+        handlerName == view.handlerPanel.handler.text &&
         envVariables.entries == view.envVars.envVars.entries &&
         timeout == view.timeoutSlider.value &&
         memorySize == view.memorySlider.value &&
@@ -250,7 +251,7 @@ class EditFunctionDialog(
 
     private fun viewToFunctionDetails(): FunctionUploadDetails = FunctionUploadDetails(
         name = view.name.text!!,
-        handler = view.handler.text,
+        handler = view.handlerPanel.handler.text,
         iamRole = view.iamRole.selected()!!,
         runtime = view.runtime.selected()!!,
         description = view.description.text,
@@ -301,9 +302,9 @@ class UploadToLambdaValidator {
             view.name
         )
         validateFunctionName(name)?.run { return@validateConfigurationSettings ValidationInfo(this, view.name) }
-        view.handler.text.nullize(true) ?: return ValidationInfo(
+        view.handlerPanel.handler.text.nullize(true) ?: return ValidationInfo(
             message("lambda.upload_validation.handler"),
-            view.handler
+            view.handlerPanel.handler
         )
         view.runtime.selected() ?: return ValidationInfo(message("lambda.upload_validation.runtime"), view.runtime)
         view.iamRole.selected() ?: return view.iamRole.validationInfo(message("lambda.upload_validation.iam_role"))
@@ -312,7 +313,7 @@ class UploadToLambdaValidator {
     }
 
     fun validateCodeSettings(project: Project, view: EditFunctionPanel): ValidationInfo? {
-        val handler = view.handler.text
+        val handler = view.handlerPanel.handler.text
         val runtime = view.runtime.selected()
                 ?: return ValidationInfo(message("lambda.upload_validation.runtime"), view.runtime)
 
@@ -323,7 +324,7 @@ class UploadToLambdaValidator {
 
         findPsiElementsForHandler(project, runtime, handler).firstOrNull() ?: return ValidationInfo(
             message("lambda.upload_validation.handler_not_found"),
-            view.handler
+            view.handlerPanel.handler
         )
 
         view.sourceBucket.selected() ?: return view.sourceBucket.validationInfo(message("lambda.upload_validation.source_bucket"))
