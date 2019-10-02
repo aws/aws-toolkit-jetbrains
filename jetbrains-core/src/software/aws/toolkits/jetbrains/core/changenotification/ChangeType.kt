@@ -24,7 +24,7 @@ interface ChangeType {
     }
 }
 
-open class JetBrainsMinimumVersionChange : ChangeType {
+class JetBrainsMinimumVersionChange : ChangeType {
     override val id: String = "JetBrainsMinimumVersion_192"
 
     override fun getNotificationValue(): String = ApplicationInfo.getInstance().fullVersion
