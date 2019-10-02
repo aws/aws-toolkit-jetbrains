@@ -5,9 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
+        maven { url "https://plugins.gradle.org/m2/" }
         mavenCentral()
         jcenter()
     }
@@ -138,9 +136,6 @@ subprojects {
         }
     }
 
-    project.tasks.findByName("buildSearchableOptions")?.enabled = false
-    project.tasks.findByName("publishPlugin")?.enabled = false
-
     task integrationTest(type: Test) {
         group = LifecycleBasePlugin.VERIFICATION_GROUP
         description = "Runs the integration tests."
@@ -168,6 +163,7 @@ subprojects {
     project.afterEvaluate {
         removeTask(tasks, 'publishPlugin')
         removeTask(tasks, 'verifyPlugin')
+        removeTask(tasks, 'buildSearchableOptions')
         if (!isReleaseVersion) {
             removeTask(tasks, "signArchives")
         }
