@@ -7,11 +7,14 @@ import com.intellij.notification.NotificationDisplayType
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.resources.message
 
 interface NoticeManager {
     fun getRequiredNotices(notices: List<NoticeType>, project: Project): List<NoticeType>
@@ -62,10 +65,18 @@ class DefaultNoticeManager : PersistentStateComponent<NoticeStateList>,
         val notification = notificationGroup.createNotification(
             notice.getNoticeContents().title,
             notice.getNoticeContents().message,
-            NotificationType.INFORMATION
-        ) { _, _ ->
-            suppressNotification(notice)
-        }
+            NotificationType.INFORMATION,
+            null
+        )
+
+        notification.addAction(
+            object : AnAction(message("notice.suppress")) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    suppressNotification(notice)
+                    notification.hideBalloon()
+                }
+            }
+        )
 
         Notifications.Bus.notify(notification, project)
     }
