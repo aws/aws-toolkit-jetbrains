@@ -1,7 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.changenotification
+package software.aws.toolkits.jetbrains.core.notification
 
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.mock
@@ -11,21 +11,21 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class ChangeNotificationManagerTest {
+class NoticeManagerTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
 
-    private lateinit var sut: DefaultChangeNotificationManager
+    private lateinit var sut: DefaultNoticeManager
 
     @Before
     fun setupTest() {
-        sut = DefaultChangeNotificationManager()
+        sut = DefaultNoticeManager()
     }
 
     @Test
     fun noticeDoesNotRequireNotification() {
-        val notice = mock<ChangeType>()
+        val notice = mock<NoticeType>()
         whenever(notice.isNotificationRequired()).thenReturn(false)
 
         val notices = sut.getRequiredNotices(listOf(notice), projectRule.project)
@@ -57,13 +57,13 @@ class ChangeNotificationManagerTest {
     fun suppressedNoticeDoesNotRequireNotification() {
         val notice = createSampleNotice(true, true)
 
-        sut.loadState(ChangeNotificationStateList(listOf(ChangeNotificationState(notice.id, notice.getNotificationValue()))))
+        sut.loadState(NoticeStateList(listOf(NoticeState(notice.id, notice.getNotificationValue()))))
         val notices = sut.getRequiredNotices(listOf(notice), projectRule.project)
 
         assertThat(notices).isEmpty()
     }
 
-    private fun createSampleNotice(requiresNotification: Boolean, isNotificationSuppressed: Boolean): ChangeType = object : ChangeType {
+    private fun createSampleNotice(requiresNotification: Boolean, isNotificationSuppressed: Boolean): NoticeType = object : NoticeType {
         override val id: String = "noticeId"
         override fun getNotificationValue(): String = "noticeValue"
         override fun isNotificationSuppressed(previousNotificationValue: String?): Boolean = isNotificationSuppressed
