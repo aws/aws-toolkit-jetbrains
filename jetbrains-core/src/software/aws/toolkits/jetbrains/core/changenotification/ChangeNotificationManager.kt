@@ -14,7 +14,8 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 
 interface ChangeNotificationManager {
-    fun checkAndNotify(project: Project)
+    fun getRequiredNotices(notices: List<ChangeType>, project: Project): List<ChangeType>
+    fun notify(notices: List<ChangeType>, project: Project)
 
     companion object {
         fun getInstance(): ChangeNotificationManager = ServiceManager.getService(ChangeNotificationManager::class.java)
@@ -24,7 +25,8 @@ interface ChangeNotificationManager {
 internal const val CHANGE_NOTIFICATION_GROUP_ID = "AWS Toolkit Change Notification"
 
 @State(name = "changenotifications", storages = [Storage("aws.xml")])
-class DefaultChangeNotificationManager : PersistentStateComponent<ChangeNotificationStateList>, ChangeNotificationManager {
+class DefaultChangeNotificationManager : PersistentStateComponent<ChangeNotificationStateList>,
+    ChangeNotificationManager {
     private val internalState = mutableMapOf<String, ChangeNotificationState>()
     private val notificationGroup = NotificationGroup(CHANGE_NOTIFICATION_GROUP_ID, NotificationDisplayType.STICKY_BALLOON, true)
 
@@ -38,26 +40,31 @@ class DefaultChangeNotificationManager : PersistentStateComponent<ChangeNotifica
         }
     }
 
-    override fun checkAndNotify(project: Project) {
-        ChangeType.changes().forEach {
-            if (it.isNotificationRequired()) {
+    /**
+     * Returns the notices that require notification
+     */
+    override fun getRequiredNotices(notices: List<ChangeType>, project: Project): List<ChangeType> {
+        return notices.filter { it.isNotificationRequired() }
+            .filter {
                 internalState[it.id]?.let { state ->
                     state.notificationValue?.let { notificationValue ->
-                        if (it.isNotificationSuppressed(notificationValue)) {
-                            return@forEach
-                        }
+                        return@filter !it.isNotificationSuppressed(notificationValue)
+
                     }
                 }
 
-                notify(it, project)
+                true
             }
-        }
     }
 
-    fun notify(change: ChangeType, project: Project) {
+    override fun notify(notices: List<ChangeType>, project: Project) {
+        notices.forEach { notify(it, project) }
+    }
+
+    private fun notify(change: ChangeType, project: Project) {
         val notification = notificationGroup.createNotification(
-            change.getNotificationTitle(),
-            change.getNotificationMessage(),
+            change.getNoticeContents().title,
+            change.getNoticeContents().message,
             NotificationType.INFORMATION
         ) { _, _ ->
             suppressNotification(change)
@@ -66,7 +73,7 @@ class DefaultChangeNotificationManager : PersistentStateComponent<ChangeNotifica
         Notifications.Bus.notify(notification, project)
     }
 
-    fun suppressNotification(change: ChangeType) {
+    private fun suppressNotification(change: ChangeType) {
         internalState[change.id] = ChangeNotificationState(change.id, change.getNotificationValue())
     }
 

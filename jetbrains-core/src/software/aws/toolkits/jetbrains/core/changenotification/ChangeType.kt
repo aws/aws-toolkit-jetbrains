@@ -14,8 +14,7 @@ interface ChangeType {
     fun isNotificationSuppressed(previousNotificationValue: String?): Boolean
     fun isNotificationRequired(): Boolean
 
-    fun getNotificationTitle(): String
-    fun getNotificationMessage(): String
+    fun getNoticeContents(): NoticeContents
 
     companion object {
         val EP_NAME = ExtensionPointName<ChangeType>("aws.toolkit.changenotifier")
@@ -26,6 +25,10 @@ interface ChangeType {
 
 class JetBrainsMinimumVersionChange : ChangeType {
     override val id: String = "JetBrainsMinimumVersion_192"
+    private val noticeContents = NoticeContents(
+        message("change.notification.title.jetbrains.minimum.version.2019.2"),
+        message("change.notification.message.jetbrains.minimum.version.2019.2")
+    )
 
     override fun getNotificationValue(): String = ApplicationInfo.getInstance().fullVersion
 
@@ -50,7 +53,7 @@ class JetBrainsMinimumVersionChange : ChangeType {
         return true
     }
 
-    override fun getNotificationTitle(): String = message("change.notification.title.jetbrains.minimum.version.2019.2")
-
-    override fun getNotificationMessage(): String = message("change.notification.message.jetbrains.minimum.version.2019.2")
+    override fun getNoticeContents(): NoticeContents = noticeContents
 }
+
+data class NoticeContents(var title: String, var message: String)

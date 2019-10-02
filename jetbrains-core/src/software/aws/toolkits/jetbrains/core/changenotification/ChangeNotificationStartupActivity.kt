@@ -12,6 +12,7 @@ class ChangeNotificationStartupActivity : StartupActivity {
         val changeNotificationManager =
             ServiceManager.getService(ChangeNotificationManager::class.java)
 
-        changeNotificationManager.checkAndNotify(project)
+        val notices = changeNotificationManager.getRequiredNotices(ChangeType.changes(), project)
+        changeNotificationManager.notify(notices, project)
     }
 }
