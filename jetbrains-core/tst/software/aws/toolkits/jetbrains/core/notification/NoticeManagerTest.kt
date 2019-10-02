@@ -57,7 +57,7 @@ class NoticeManagerTest {
     fun suppressedNoticeDoesNotRequireNotification() {
         val notice = createSampleNotice(true, true)
 
-        sut.loadState(NoticeStateList(listOf(NoticeState(notice.id, notice.getNotificationValue()))))
+        sut.loadState(NoticeStateList(listOf(NoticeState(notice.id, notice.getSuppressNotificationValue()))))
         val notices = sut.getRequiredNotices(listOf(notice), projectRule.project)
 
         assertThat(notices).isEmpty()
@@ -65,8 +65,8 @@ class NoticeManagerTest {
 
     private fun createSampleNotice(requiresNotification: Boolean, isNotificationSuppressed: Boolean): NoticeType = object : NoticeType {
         override val id: String = "noticeId"
-        override fun getNotificationValue(): String = "noticeValue"
-        override fun isNotificationSuppressed(previousNotificationValue: String?): Boolean = isNotificationSuppressed
+        override fun getSuppressNotificationValue(): String = "noticeValue"
+        override fun isNotificationSuppressed(previousSuppressNotificationValue: String?): Boolean = isNotificationSuppressed
         override fun isNotificationRequired(): Boolean = requiresNotification
         override fun getNoticeContents(): NoticeContents = NoticeContents("title", "message")
     }

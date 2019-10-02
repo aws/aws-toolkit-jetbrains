@@ -71,7 +71,7 @@ class DefaultNoticeManager : PersistentStateComponent<NoticeStateList>,
     }
 
     fun suppressNotification(notice: NoticeType) {
-        internalState[notice.id] = NoticeState(notice.id, notice.getNotificationValue())
+        internalState[notice.id] = NoticeState(notice.id, notice.getSuppressNotificationValue())
     }
 
     fun resetAllNotifications() {

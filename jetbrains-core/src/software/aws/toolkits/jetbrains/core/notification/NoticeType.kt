@@ -9,11 +9,15 @@ import software.aws.toolkits.resources.message
 
 interface NoticeType {
     val id: String
-    fun getNotificationValue(): String
 
-    fun isNotificationSuppressed(previousNotificationValue: String?): Boolean
+    // The value persisted to represent that this notice has been suppressed
+    fun getSuppressNotificationValue(): String
+
+    // Indicates whether or not a suppressed notice should remain suppressed
+    fun isNotificationSuppressed(previousSuppressNotificationValue: String?): Boolean
     fun isNotificationRequired(): Boolean
 
+    // Notification Title/Message
     fun getNoticeContents(): NoticeContents
 
     companion object {
@@ -30,11 +34,11 @@ class JetBrainsMinimumVersionChange : NoticeType {
         message("notice.message.jetbrains.minimum.version.2019.2")
     )
 
-    override fun getNotificationValue(): String = ApplicationInfo.getInstance().fullVersion
+    override fun getSuppressNotificationValue(): String = ApplicationInfo.getInstance().fullVersion
 
-    override fun isNotificationSuppressed(previousNotificationValue: String?): Boolean {
-        previousNotificationValue?.let {
-            return previousNotificationValue == getNotificationValue()
+    override fun isNotificationSuppressed(previousSuppressNotificationValue: String?): Boolean {
+        previousSuppressNotificationValue?.let {
+            return previousSuppressNotificationValue == getSuppressNotificationValue()
         }
         return false
     }
