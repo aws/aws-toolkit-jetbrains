@@ -138,6 +138,9 @@ subprojects {
         }
     }
 
+    project.tasks.findByName("buildSearchableOptions")?.enabled = false
+    project.tasks.findByName("publishPlugin")?.enabled = false
+
     task integrationTest(type: Test) {
         group = LifecycleBasePlugin.VERIFICATION_GROUP
         description = "Runs the integration tests."
@@ -263,7 +266,7 @@ task guiTest(type: Test) {
 }
 
 dependencies {
-    compile project(':jetbrains-core')
+    compile project.findProject(':jetbrains-ultimate') ?: project(':jetbrains-core')
 
     ktlint "com.pinterest:ktlint:$ktlintVersion"
     ktlint project(":ktlint-rules")
