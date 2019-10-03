@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.notification
 
 import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.extensions.ExtensionPointName
 import software.aws.toolkits.resources.message
 
@@ -15,6 +16,7 @@ interface NoticeType {
 
     // Indicates whether or not a suppressed notice should remain suppressed
     fun isNotificationSuppressed(previousSuppressNotificationValue: String?): Boolean
+
     fun isNotificationRequired(): Boolean
 
     // Notification Title/Message
@@ -31,7 +33,7 @@ class JetBrainsMinimumVersionChange : NoticeType {
     override val id: String = "JetBrainsMinimumVersion_192"
     private val noticeContents = NoticeContents(
         message("notice.title.jetbrains.minimum.version.2019.2"),
-        message("notice.message.jetbrains.minimum.version.2019.2")
+        message("notice.message.jetbrains.minimum.version.2019.2", ApplicationNamesInfo.getInstance().fullProductName)
     )
 
     override fun getSuppressNotificationValue(): String = ApplicationInfo.getInstance().fullVersion
