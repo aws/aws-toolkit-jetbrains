@@ -62,4 +62,4 @@ class JetBrainsMinimumVersionChange : NoticeType {
     override fun getNoticeContents(): NoticeContents = noticeContents
 }
 
-data class NoticeContents(var title: String, var message: String)
+data class NoticeContents(val title: String, val message: String)
