@@ -3,14 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
+import base.AwsBaseTestWithMarkup
 import com.jetbrains.rdclient.daemon.util.attributeId
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.daemon.util.isBackendGutterMark
-import com.jetbrains.rider.test.base.BaseTestWithMarkup
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 
-class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
+class LambdaGutterMarkHighlightingTest : AwsBaseTestWithMarkup() {
 
     companion object {
         private const val LAMBDA_RUN_MARKER_ATTRIBUTE_ID = "AWS Lambda Run Method Gutter Mark"
