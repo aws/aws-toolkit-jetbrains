@@ -41,7 +41,7 @@ task guiTest(type: Test) {
     include '**/*TestSuite*'
 }
 
-// TODO: DISABLED_UI_TEST_ON_2019.3 re-enable when we get compatible guiTestFramework from JB
+// TODO: DISABLED_UI_TEST_ON_193 re-enable when we get compatible guiTestFramework from JB
 guiTest.onlyIf { System.getenv("ALTERNATIVE_IDE_PROFILE_NAME") != "2019.3" }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
