@@ -5,9 +5,11 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.local
 
 import com.intellij.execution.configurations.RuntimeConfigurationError
 import com.intellij.testFramework.runInEdtAndWait
-import com.jetbrains.rider.test.asserts.shouldNotBeNull
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.settings.SamSettings
+import software.aws.toolkits.resources.message
 
 class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
 
@@ -22,14 +24,12 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 handler = defaultHandler
             )
-            runConfiguration.shouldNotBeNull()
+            assertThat(runConfiguration).isNotNull
             runConfiguration.checkConfiguration()
         }
     }
 
-    @Test(
-        expectedExceptions = [ RuntimeConfigurationError::class ],
-        expectedExceptionsMessageRegExp = "Cannot find handler 'HelloWorld::HelloWorld.Function::HandlerDoesNoteExist' in project.")
+    @Test
     fun testHandler_NonExistingMethodName() {
         val nonExistingHandler = "HelloWorld::HelloWorld.Function::HandlerDoesNoteExist"
         preWarmSamVersionCache(SamSettings.getInstance().executablePath)
@@ -39,14 +39,14 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 handler = nonExistingHandler
             )
-            runConfiguration.shouldNotBeNull()
-            runConfiguration.checkConfiguration()
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.run_configuration.handler_not_found", nonExistingHandler))
         }
     }
 
-    @Test(
-        expectedExceptions = [ RuntimeConfigurationError::class ],
-        expectedExceptionsMessageRegExp = "Cannot find handler 'HelloWorld::HelloWorld.UnknownFunction::FunctionHandler' in project.")
+    @Test
     fun testHandler_NonExistingTypeName() {
         val nonExistingHandler = "HelloWorld::HelloWorld.UnknownFunction::FunctionHandler"
         preWarmSamVersionCache(SamSettings.getInstance().executablePath)
@@ -56,14 +56,14 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 handler = nonExistingHandler
             )
-            runConfiguration.shouldNotBeNull()
-            runConfiguration.checkConfiguration()
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.run_configuration.handler_not_found", nonExistingHandler))
         }
     }
 
-    @Test(
-        expectedExceptions = [ RuntimeConfigurationError::class ],
-        expectedExceptionsMessageRegExp = "Cannot find handler 'Fake' in project.")
+    @Test
     fun testHandler_InvalidHandlerString() {
         val invalidHandler = "Fake"
         preWarmSamVersionCache(SamSettings.getInstance().executablePath)
@@ -73,14 +73,14 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 handler = invalidHandler
             )
-            runConfiguration.shouldNotBeNull()
-            runConfiguration.checkConfiguration()
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.run_configuration.handler_not_found", invalidHandler))
         }
     }
 
-    @Test(
-        expectedExceptions = [ RuntimeConfigurationError::class ],
-        expectedExceptionsMessageRegExp = "Must specify a handler.")
+    @Test
     fun testHandler_HandlerNotSet() {
         preWarmSamVersionCache(SamSettings.getInstance().executablePath)
         preWarmLambdaHandlerValidation()
@@ -89,8 +89,10 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 handler = null
             )
-            runConfiguration.shouldNotBeNull()
-            runConfiguration.checkConfiguration()
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.run_configuration.no_handler_specified"))
         }
     }
 }
