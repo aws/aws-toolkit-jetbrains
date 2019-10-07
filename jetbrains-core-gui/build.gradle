@@ -6,6 +6,7 @@ apply plugin: 'jacoco'
 
 dependencies {
     compile project(":jetbrains-core")
+    compile project(path: ":core", configuration: 'testArtifacts')
 }
 
 intellij {
