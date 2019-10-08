@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.completion
 
+import com.intellij.openapi.util.IconLoader
 import com.jetbrains.rd.framework.impl.RpcTimeouts
-import com.jetbrains.rider.model.ImageSourceIconModel
+import com.jetbrains.rdclient.icons.toIdeaIcon
+import com.jetbrains.rider.model.IconModel
 import com.jetbrains.rider.model.lambdaModel
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.test.annotations.TestEnvironment
@@ -33,7 +35,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
 
         assertThat(handlers.size).isEqualTo(1)
         assertThat(handlers.first().handler).isEqualTo("HelloWorld::HelloWorld.Function::FunctionHandler")
-        assertThat(handlers.first().iconId).isEqualTo(ImageSourceIconModel(iconPackStringId = 20, iconNameStringId = 31))
+        assertIconPath(handlers.first().iconId, "/resharper/PsiSymbols/Method.svg")
     }
 
     @Test
@@ -44,9 +46,17 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
         assertThat(handlers.size).isEqualTo(2)
 
         assertThat(handlers[0].handler).isEqualTo("HelloWorld::HelloWorld.Function::FunctionHandler")
-        assertThat(handlers[0].iconId).isEqualTo(ImageSourceIconModel(iconPackStringId = 20, iconNameStringId = 31))
+        assertIconPath(handlers[0].iconId, "/resharper/PsiSymbols/Method.svg")
 
         assertThat(handlers[1].handler).isEqualTo("HelloWorld::HelloWorld.Function2::FunctionHandler2")
-        assertThat(handlers[1].iconId).isEqualTo(ImageSourceIconModel(iconPackStringId = 20, iconNameStringId = 31))
+        assertIconPath(handlers[1].iconId, "/resharper/PsiSymbols/Method.svg")
+    }
+
+    @Suppress("SameParameterValue")
+    private fun assertIconPath(iconModel: IconModel?, expectedPath: String) {
+        assertThat(iconModel).isNotNull
+        val ideaIconSecond = iconModel?.toIdeaIcon(project) as? IconLoader.CachedImageIcon
+        assertThat(ideaIconSecond).isNotNull
+        assertThat(ideaIconSecond?.originalPath).isEqualTo(expectedPath)
     }
 }
