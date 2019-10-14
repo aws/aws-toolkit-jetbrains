@@ -123,12 +123,7 @@ abstract class LambdaBuilder {
                 }
             }
 
-            // TODO: FIX_WHEN_SAM_MIN_IS_0.16
-            SemVer.parseFromText(SamCommon.getVersionString())?.let {
-                if (it.isGreaterOrEqualThan(0, 16, 0)) {
-                    commandLine.withParameters(logicalId)
-                }
-            }
+            commandLine.withParameters(logicalId)
 
             val pathMappings = listOf(
                 PathMapping(templateLocation.parent.resolve(codeLocation).toString(), "/"),
