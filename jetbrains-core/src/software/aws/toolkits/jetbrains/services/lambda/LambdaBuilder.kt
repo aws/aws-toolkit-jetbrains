@@ -17,7 +17,6 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
 import com.intellij.util.io.Compressor
-import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
