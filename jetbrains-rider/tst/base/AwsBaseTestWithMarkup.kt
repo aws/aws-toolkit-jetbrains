@@ -14,7 +14,7 @@ import org.testng.annotations.BeforeClass
 // an empty solution and adds project under test to this solution.
 //
 // When running with LOCAL_ENV_RUN flag set to true (for running tests outside of internal IntelliJ networks),
-// Rider auto-detect and use Rider's bundled MSBuild that might is not compatible with full .NET framework installed
+// Rider will auto-detect and use Rider's bundled MSBuild that might be incompatible with full .NET framework installed
 // on Windows agent to open an empty solution. This cause the MSBuild error when loading a test project.
 //
 // To avoid such errors we need to explicitly set toolset and MSBuild to be selected on an instance.
