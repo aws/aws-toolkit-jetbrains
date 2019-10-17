@@ -7,6 +7,8 @@ import base.AwsBaseTestWithMarkup
 import com.jetbrains.rdclient.daemon.util.attributeId
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.daemon.util.isBackendGutterMark
+import com.jetbrains.rider.model.awsSettingModel
+import com.jetbrains.rider.projectView.solution
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 
@@ -162,6 +164,7 @@ class LambdaGutterMarkHighlightingTest : AwsBaseTestWithMarkup() {
     fun testSerializer_NoSerializer_NotDetected() = verifyLambdaGutterMark()
 
     private fun verifyLambdaGutterMark() {
+        project.solution.awsSettingModel.showLambdaGutterMarks.fire(true)
         doTestWithMarkupModel(
             testFilePath = "src/HelloWorld/Function.cs",
             sourceFileName = "Function.cs",
