@@ -87,24 +87,6 @@ test {
     }
 }
 
-private static int compareVersions(String version, String withVersion) {
-    List versionList = version.tokenize('.')
-    List withVersionList = withVersion.tokenize('.')
-
-    def minIndices = Math.min(versionList.size(), withVersionList.size())
-
-    for (int i = 0; i < minIndices; i++) {
-        def partInt = versionList[i].toInteger()
-        def withPartInt = withVersionList[i].toInteger()
-
-        if (partInt != withPartInt) {
-            return partInt <=> withPartInt
-        }
-    }
-
-    return 0
-}
-
 runIde {
     systemProperty("aws.toolkits.enableTelemetry", false)
 }
