@@ -20,7 +20,7 @@ import java.nio.file.Path
  */
 object CompatibilityUtils {
     /**
-     * Can be removed when min-version is 19.1 FIX_WHEN_MIN_IS_193
+     * Can be removed when min-version is 19.3 FIX_WHEN_MIN_IS_193
      */
     @TestOnly
     fun <T> registerExtension(name: ExtensionPointName<T>, extension: T, disposable: Disposable) {
