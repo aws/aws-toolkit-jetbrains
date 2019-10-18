@@ -57,7 +57,6 @@ class NodeJsLightProjectDescriptor : LightProjectDescriptor() {
     override fun createModule(project: Project, moduleFilePath: String): Module? = WriteAction.compute<Module?, Throwable> {
         val imlFile = File(moduleFilePath)
         if (imlFile.exists()) {
-            //temporary workaround for IDEA-147530: otherwise if someone saved module with this name before the created module will get its settings
             FileUtil.delete(imlFile)
         }
         ModuleManager.getInstance(project).newModule(moduleFilePath, WebModuleTypeBase.getInstance().id)
