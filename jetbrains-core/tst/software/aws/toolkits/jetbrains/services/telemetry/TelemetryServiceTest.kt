@@ -55,9 +55,10 @@ class TelemetryServiceTest {
         }
 
         DefaultTelemetryService(
-                MockAwsSettings(true, true, UUID.randomUUID()),
-                batcher
-        )
+            MockAwsSettings(true, true, UUID.randomUUID())
+        ).also {
+            it.batcher = batcher
+        }
 
         changeCountDown.await(5, TimeUnit.SECONDS)
         verify(batcher).onTelemetryEnabledChanged(true)
@@ -77,9 +78,10 @@ class TelemetryServiceTest {
         }
 
         DefaultTelemetryService(
-                MockAwsSettings(true, true, UUID.randomUUID()),
-                batcher
-        )
+            MockAwsSettings(true, true, UUID.randomUUID())
+        ).also {
+            it.batcher = batcher
+        }
 
         TelemetryService.syncPublisher().notify(false)
 
@@ -99,9 +101,10 @@ class TelemetryServiceTest {
 
         val eventCaptor = argumentCaptor<MetricEvent>()
         val telemetryService = DefaultTelemetryService(
-            MockAwsSettings(true, true, UUID.randomUUID()),
-            batcher
-        )
+            MockAwsSettings(true, true, UUID.randomUUID())
+        ).also {
+            it.batcher = batcher
+        }
 
         telemetryService.record(projectRule.project, "Foo").join()
         telemetryService.dispose()
@@ -130,9 +133,10 @@ class TelemetryServiceTest {
 
         val eventCaptor = argumentCaptor<MetricEvent>()
         val telemetryService = DefaultTelemetryService(
-            MockAwsSettings(true, true, UUID.randomUUID()),
-            batcher
-        )
+            MockAwsSettings(true, true, UUID.randomUUID())
+        ).also {
+            it.batcher = batcher
+        }
 
         telemetryService.record(projectRule.project, "Foo").join()
         telemetryService.dispose()
@@ -156,9 +160,10 @@ class TelemetryServiceTest {
 
         val eventCaptor = argumentCaptor<MetricEvent>()
         val telemetryService = DefaultTelemetryService(
-            MockAwsSettings(true, true, UUID.randomUUID()),
-            batcher
-        )
+            MockAwsSettings(true, true, UUID.randomUUID())
+        ).also {
+            it.batcher = batcher
+        }
 
         telemetryService.record("Foo", TelemetryService.MetricEventMetadata(
             awsAccount = "222222222222",
