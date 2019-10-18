@@ -10,3 +10,11 @@ include 'jetbrains-core'
 include 'jetbrains-core-gui'
 include 'jetbrains-ultimate'
 include 'jetbrains-rider'
+
+if (System.getenv("GRADLE_CACHE_LOCATION") != null) {
+    buildCache {
+        local {
+            directory = System.getenv("GRADLE_CACHE_LOCATION")
+        }
+    }
+}

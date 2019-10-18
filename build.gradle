@@ -184,11 +184,6 @@ def removeTask(tasks, taskName) {
     }
 }
 
-wrapper {
-    distributionType = Wrapper.DistributionType.ALL
-    gradleVersion '5.4.1'
-}
-
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: ChangeLogPlugin
 
