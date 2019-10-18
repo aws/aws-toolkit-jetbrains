@@ -253,22 +253,20 @@ check.dependsOn coverageReport
 // community edition
 if (gradle.startParameter.taskNames.contains("runIde")) {
     // Only disable this if running from root project
-    if (gradle.startParameter.projectDir != project.rootProject.rootDir) {
-        return
-    }
-
-    println("Top level runIde selected, excluding sub-projects' runIde")
-    gradle.taskGraph.whenReady { graph ->
-        graph.allTasks.forEach {
-            if (gradle.startParameter.systemPropertiesArgs.getOrDefault("exec.args", "").contains("guitest")) {
-                if (it.name == "runIde" && it.project != project(':jetbrains-core-gui')) {
-                    it.enabled = false
-                }
-            } else {
-                if (it.name == "runIde" &&
+    if (gradle.startParameter.projectDir == project.rootProject.rootDir) {
+        println("Top level runIde selected, excluding sub-projects' runIde")
+        gradle.taskGraph.whenReady { graph ->
+            graph.allTasks.forEach {
+                if (gradle.startParameter.systemPropertiesArgs.getOrDefault("exec.args", "").contains("guitest")) {
+                    if (it.name == "runIde" && it.project != project(':jetbrains-core-gui')) {
+                        it.enabled = false
+                    }
+                } else {
+                    if (it.name == "runIde" &&
                         it.project != project(':jetbrains-core') &&
                         it.project != project(':jetbrains-rider')) {
-                    it.enabled = false
+                        it.enabled = false
+                    }
                 }
             }
         }
