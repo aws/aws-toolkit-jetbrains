@@ -81,6 +81,29 @@ You will also need to have SAM CLI available in your path.
 
   ```./gradlew integrationTest```
 
+
+### Debugging
+
+- The project can be run/debugged from IntelliJ or gradle via the `runIde` task:
+  ```
+  ./gradlew jetbrains-core:runIde --info
+  ```
+  The `runIde` task starts a _new_ instance of IntelliJ with the compiled
+  version of the toolkit from your workspace (i.e. including any changes you
+  have made).
+- Log messages (`LOG.info`, `LOG.error()`, …) by default are written to:
+  ```
+  jetbrains-core/build/idea-sandbox/system/log/idea.log
+  ```
+- DEBUG-level log messages are skipped by default. To enable them, add the
+  following line to the _Help_ \> _Debug Log Settings_ dialog in the IDE
+  instance started by the `runIde` task:
+  ```
+  software.aws.toolkits
+  ```
+
+
+
 ## Finding contributions to work on
 
 Looking at the existing issues is a great way to find something to contribute on. Looking at any ['help wanted'](https://github.com/aws/aws-toolkit-jetbrains/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) issues is a great place to start. 
