@@ -9,15 +9,17 @@ env:
   variables:
     CI: true
     RECORD_UI: true
+    LOCAL_ENV_RUN: true
 
 phases:
   install:
     runtime-versions:
       java: openjdk8
+      dotnet: 2.2
 
     commands:
       - apt-get update
-      - apt-get install -y xvfb icewm procps ffmpeg libswt-gtk-3-java
+      - apt-get install -y xvfb icewm procps ffmpeg libswt-gtk-3-java msbuild
       - pip install --user aws-sam-cli
 
   build:
