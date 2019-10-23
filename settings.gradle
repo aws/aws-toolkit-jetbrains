@@ -14,7 +14,7 @@ include 'jetbrains-rider'
 if (System.getenv("GRADLE_CACHE_LOCATION") != null) {
     buildCache {
         local {
-            directory = System.getenv("GRADLE_CACHE_LOCATION")
+            directory = file(System.getenv("GRADLE_CACHE_LOCATION"))
         }
     }
 }
