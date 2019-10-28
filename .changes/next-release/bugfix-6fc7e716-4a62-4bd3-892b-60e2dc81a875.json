@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix editor text field being requested at the wrong scope level"
+}
