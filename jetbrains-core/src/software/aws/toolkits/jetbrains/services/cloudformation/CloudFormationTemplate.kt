@@ -132,7 +132,7 @@ fun Project.validateSamTemplateLambdaRuntimes(virtualFile: VirtualFile): String?
     val path = virtualFile.path
     CloudFormationTemplateIndex
         .listResources(this, { true }, virtualFile)
-        .ifEmpty { return message("serverless.application.deploy.error.no_resources") }
+        .ifEmpty { return message("serverless.application.deploy.error.no_resources", path) }
 
     CloudFormationTemplateIndex
         .listFunctions(this, virtualFile)
