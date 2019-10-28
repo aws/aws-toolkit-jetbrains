@@ -123,6 +123,20 @@ fun List<Parameter>.mergeRemoteParameters(remoteParameters: List<software.amazon
     }.toList()
 
 /**
+ * Validate if the cloudformation template has any valid resources at all
+ *
+ * @param virtualFile SAM template file
+ * @return null if there are any valid resources, or an error message otherwise.
+ */
+fun Project.validateSamTemplateHasResources(virtualFile: VirtualFile): String? {
+    val path = virtualFile.path
+    CloudFormationTemplateIndex
+        .listResources(this, { true }, virtualFile)
+        .ifEmpty { return message("serverless.application.deploy.error.no_resources", path) }
+    return null
+}
+
+/**
  * Validate whether the Lambda function runtimes in the specified template are supported to build before deployment to AWS.
  *
  * @param virtualFile SAM template file
@@ -130,9 +144,6 @@ fun List<Parameter>.mergeRemoteParameters(remoteParameters: List<software.amazon
  */
 fun Project.validateSamTemplateLambdaRuntimes(virtualFile: VirtualFile): String? {
     val path = virtualFile.path
-    CloudFormationTemplateIndex
-        .listResources(this, { true }, virtualFile)
-        .ifEmpty { return message("serverless.application.deploy.error.no_resources", path) }
 
     CloudFormationTemplateIndex
         .listFunctions(this, virtualFile)
