@@ -42,7 +42,7 @@ interface CloudFormationTemplate {
         }
 
         private fun isYaml(templateFile: VirtualFile): Boolean = templateFile.fileType == YAMLFileType.YML ||
-                templateFile.extension?.toLowerCase() in YAML_EXTENSIONS
+            templateFile.extension?.toLowerCase() in YAML_EXTENSIONS
 
         private val YAML_EXTENSIONS = setOf("yaml", "yml")
     }
@@ -130,6 +130,10 @@ fun List<Parameter>.mergeRemoteParameters(remoteParameters: List<software.amazon
  */
 fun Project.validateSamTemplateLambdaRuntimes(virtualFile: VirtualFile): String? {
     val path = virtualFile.path
+    CloudFormationTemplateIndex
+        .listResources(this, { true }, virtualFile)
+        .ifEmpty { return message("serverless.application.deploy.error.no_resources") }
+
     CloudFormationTemplateIndex
         .listFunctions(this, virtualFile)
         .forEach { indexedFunction ->
