@@ -1,49 +1,5 @@
 static def ideProfiles() {
     return [
-            "2018.3": [
-                    "IC": [
-                            version: "IC-2018.3.5",
-                            plugins: [
-                                    "yaml",
-                                    "PythonCore:2018.3.183.4284.148",
-                                    "gradle",
-                                    "maven",
-                                    "properties" // Used by Maven
-                            ]
-                    ],
-                    "IU": [
-                            version: "IU-2018.3.5",
-                            plugins: [
-                                    "yaml",
-                                    "JavaScriptLanguage",
-                                    "JavaScriptDebugger",
-                                    "CSS",
-                                    "PythonCore:2018.3.183.4284.148"
-                            ]
-                    ]
-            ],
-            "2019.1": [ // TODO: Marker comment: FIX_WHEN_MIN_IS_192
-                    "IC": [
-                            version: "IC-2019.1",
-                            plugins: [
-                                    "yaml",
-                                    "PythonCore:2019.1.191.6183.53",
-                                    "gradle",
-                                    "maven",
-                                    "properties" // Used by Maven
-                            ]
-                    ],
-                    "IU": [
-                            version: "IU-2019.1.3",
-                            plugins: [
-                                    "yaml",
-                                    "JavaScriptLanguage",
-                                    "JavaScriptDebugger",
-                                    "CSS",
-                                    "PythonCore:2019.1.191.6183.53"
-                            ]
-                    ]
-            ],
             "2019.2": [
                     "IC": [
                             version: "IC-2019.2",
@@ -65,14 +21,20 @@ static def ideProfiles() {
                                     "CSS",
                                     "PythonCore:2019.2.192.5728.98"
                             ]
+                    ],
+                    "RD": [
+                        version: "RD-2019.2",
+                        plugins: [
+                            "yaml"
+                        ]
                     ]
             ],
             "2019.3": [
                 "IC": [
-                    version: "IC-193.4099-EAP-CANDIDATE-SNAPSHOT", // Update to actual version when it gets released
+                    version: "IC-193.4386-EAP-CANDIDATE-SNAPSHOT", // Update to actual version when it gets released
                     plugins: [
                         "yaml",
-                        "PythonCore:193.4099.13",
+                        "PythonCore:193.4386.10",
                         "java",
                         "gradle",
                         "maven",
@@ -80,13 +42,19 @@ static def ideProfiles() {
                     ]
                 ],
                 "IU": [
-                    version: "IU-193.4099-EAP-CANDIDATE-SNAPSHOT",
+                    version: "IU-193.4386-EAP-CANDIDATE-SNAPSHOT",
                     plugins: [
-                        "PythonCore:193.4099.13",
+                        "PythonCore:193.4386.10",
                         "yaml",
                         "JavaScriptLanguage",
                         "JavaScriptDebugger",
                         "CSS",
+                    ]
+                ],
+                "RD": [
+                    version: "RD-2019.3-SNAPSHOT",
+                    plugins: [
+                        "yaml"
                     ]
                 ]
             ]
@@ -94,7 +62,7 @@ static def ideProfiles() {
 }
 
 def idePlugins(String productCode) {
-    def product = ideProfile().getAt(productCode)
+    def product = ideProfile()[productCode]
     if (product == null) {
         throw IllegalArgumentException("Unknown IDE product `$productCode` for ${resolveIdeProfileName()}")
     }
@@ -134,4 +102,3 @@ ext {
     ideProfile = this.&ideProfile
     resolveIdeProfileName = this.&resolveIdeProfileName
 }
-

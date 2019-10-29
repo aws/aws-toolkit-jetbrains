@@ -8,11 +8,17 @@ cache:
 env:
   variables:
     CI: true
+    LOCAL_ENV_RUN: true
 
 phases:
   install:
     runtime-versions:
       java: openjdk8
+      dotnet: 2.2
+
+    commands:
+      - apt update
+      - apt install -y msbuild
 
   build:
     commands:
