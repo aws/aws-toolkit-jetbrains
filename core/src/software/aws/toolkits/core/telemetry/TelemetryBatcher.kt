@@ -21,7 +21,7 @@ interface TelemetryBatcher {
     /**
      * Immediately shutdown the current batcher and delegate remaining events to a new batcher
      */
-    fun shutdownAndFlush(batcher: TelemetryBatcher)
+    fun setBatcher(batcher: TelemetryBatcher)
 
     fun onTelemetryEnabledChanged(newValue: Boolean)
 
@@ -82,7 +82,7 @@ open class DefaultTelemetryBatcher(
     }
 
     @Synchronized
-    override fun shutdownAndFlush(batcher: TelemetryBatcher) {
+    override fun setBatcher(batcher: TelemetryBatcher) {
         executor.shutdown()
         batcher.onTelemetryEnabledChanged(isTelemetryEnabled.get())
         batcher.enqueue(eventQueue.toList())

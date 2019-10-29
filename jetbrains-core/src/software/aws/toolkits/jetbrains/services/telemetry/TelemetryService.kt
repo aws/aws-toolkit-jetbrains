@@ -80,7 +80,7 @@ class DefaultTelemetryService(settings: AwsSettings) :
     TelemetryService, TelemetryEnabledChangedNotifier {
     var batcher: TelemetryBatcher = DefaultTelemetryBatcher(DefaultTelemetryPublisher())
         set(value) {
-            batcher.shutdownAndFlush(value)
+            batcher.setBatcher(value)
             field = value
         }
 
