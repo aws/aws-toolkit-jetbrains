@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.execution.local
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.progress.ProgressIndicator
