@@ -246,8 +246,6 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
-            <!-- This one is for Rider project view -->
-            <add-to-group group-id="SolutionExplorerPopupMenu" anchor="last"/>
 
             <separator/>
             <action id="serverless.application.deploy"
