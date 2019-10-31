@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_MEMORY
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_TIMEOUT
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.ui.SliderPanel
-import java.lang.StringBuilder
 import java.util.concurrent.TimeUnit
 
 object Lambda {
@@ -69,15 +68,11 @@ object Lambda {
                 VfsUtil.collectChildrenRecursively(it)
             }
 
-    private fun logHandlerPsiElements(handler: String, elements: Array<NavigatablePsiElement>) {
-        val sb = StringBuilder()
-        sb.appendln("Found ${elements.size} PsiElements for Handler: $handler")
-
-        elements.forEach {
-            sb.appendln(it.containingFile.virtualFile.path)
-        }
-
-        LOG.debug { sb.toString() }
+    private fun logHandlerPsiElements(handler: String, elements: Array<NavigatablePsiElement>) = LOG.debug {
+        elements.joinToString(
+            prefix = "Found ${elements.size} PsiElements for Handler: $handler\n",
+            separator = "\n"
+        ) { it.containingFile.virtualFile.path }
     }
 }
 
