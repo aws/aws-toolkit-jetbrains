@@ -22,6 +22,7 @@ import com.jetbrains.rider.projectView.actions.projectTemplating.backend.ReSharp
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateDialogContext
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
 import com.jetbrains.rider.ui.themes.RiderTheme
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.SdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectTemplate
@@ -57,7 +58,7 @@ class DotNetSamProjectGenerator(
     )
 
     private val generator = SamProjectGenerator()
-    private val samPanel = SamInitSelectionPanel(generator) { it.toLowerCase().startsWith("dotnetcore") }
+    private val samPanel = SamInitSelectionPanel(generator) { RuntimeGroup.DOTNET.runtimes.contains(it) }
 
     private val projectStructurePanel: JTabbedPane
 

@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.ui.wizard;
 
+import com.github.rjeschke.txtmark.Run;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.ColoredListCellRenderer;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.amazon.awssdk.services.lambda.model.Runtime;
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder;
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup;
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings;
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
@@ -43,13 +45,13 @@ public class SamInitSelectionPanel implements ValidatablePanel {
 
     private final SamProjectGenerator generator;
 
-    private static final Predicate<String> includeAllRuntimes = (s) -> true;
+    private static final Predicate<Runtime> includeAllRuntimes = (s) -> true;
 
     SamInitSelectionPanel(SamProjectGenerator generator) {
         this(generator, includeAllRuntimes);
     }
 
-    SamInitSelectionPanel(SamProjectGenerator generator, Predicate<String> runtimeFilter) {
+    SamInitSelectionPanel(SamProjectGenerator generator, Predicate<Runtime> runtimeFilter) {
         this.generator = generator;
         this.currentSdkSelectorLabel = null;
         this.currentSdkSelector = null;
@@ -58,7 +60,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
                                .stream()
                                .flatMap(x -> x.getRuntimes().stream())
                                .sorted()
-                               .filter(runtime -> runtimeFilter.test(runtime.name()))
+                               .filter(runtimeFilter)
                                .forEach(y -> runtimeComboBox.addItem(y));
 
         SamInitProjectBuilderCommon.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel);
