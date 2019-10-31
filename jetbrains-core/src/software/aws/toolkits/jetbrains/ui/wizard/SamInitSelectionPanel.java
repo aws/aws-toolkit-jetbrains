@@ -12,6 +12,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 import java.util.List;
+import java.util.function.Predicate;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -42,20 +43,13 @@ public class SamInitSelectionPanel implements ValidatablePanel {
 
     private final SamProjectGenerator generator;
 
-    /**
-     * Takes a runtime name and filters based on it.
-     */
-    private interface RuntimeFilter {
-        boolean filterExpression(String runtime);
-    }
-
-    private static final RuntimeFilter includeAllRuntimes = (s) -> true;
+    private static final Predicate<String> includeAllRuntimes = (s) -> true;
 
     SamInitSelectionPanel(SamProjectGenerator generator) {
         this(generator, includeAllRuntimes);
     }
 
-    SamInitSelectionPanel(SamProjectGenerator generator, RuntimeFilter runtimeFilter) {
+    SamInitSelectionPanel(SamProjectGenerator generator, Predicate<String> runtimeFilter) {
         this.generator = generator;
         this.currentSdkSelectorLabel = null;
         this.currentSdkSelector = null;
@@ -64,7 +58,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
                                .stream()
                                .flatMap(x -> x.getRuntimes().stream())
                                .sorted()
-                               .filter(runtime -> runtimeFilter.filterExpression(runtime.name()))
+                               .filter(runtime -> runtimeFilter.test(runtime.name()))
                                .forEach(y -> runtimeComboBox.addItem(y));
 
         SamInitProjectBuilderCommon.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel);
