@@ -19,6 +19,8 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
@@ -29,9 +31,12 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_MEMORY
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MIN_TIMEOUT
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.ui.SliderPanel
+import java.lang.StringBuilder
 import java.util.concurrent.TimeUnit
 
 object Lambda {
+    private val LOG = getLogger<Lambda>()
+
     fun findPsiElementsForHandler(project: Project, runtime: Runtime, handler: String): Array<NavigatablePsiElement> {
         val resolver = runtime.runtimeGroup?.let { LambdaHandlerResolver.getInstance(it) } ?: return emptyArray()
 
@@ -40,7 +45,11 @@ object Lambda {
         val excludeSamBuildFileScopes = GlobalSearchScope.notScope(samBuildFileScopes)
         val scope = GlobalSearchScope.allScope(project).intersectWith(excludeSamBuildFileScopes)
 
-        return resolver.findPsiElements(project, handler, scope)
+        val elements = resolver.findPsiElements(project, handler, scope)
+
+        logHandlerPsiElements(handler, elements)
+
+        return elements
     }
 
     fun isHandlerValid(project: Project, runtime: Runtime, handler: String): Boolean = ReadAction.compute<Boolean, Throwable> {
@@ -59,6 +68,17 @@ object Lambda {
             .flatMap {
                 VfsUtil.collectChildrenRecursively(it)
             }
+
+    private fun logHandlerPsiElements(handler: String, elements: Array<NavigatablePsiElement>) {
+        val sb = StringBuilder()
+        sb.appendln("Found ${elements.size} PsiElements for Handler: $handler")
+
+        elements.forEach {
+            sb.appendln(it.containingFile.virtualFile.path)
+        }
+
+        LOG.debug { sb.toString() }
+    }
 }
 
 // @see https://docs.aws.amazon.com/lambda/latest/dg/limits.html
