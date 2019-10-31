@@ -49,10 +49,10 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         boolean filterExpression(String runtime);
     }
 
-    private static final RuntimeFilter filterNoRuntimes = (s) -> true;
+    private static final RuntimeFilter includeAllRuntimes = (s) -> true;
 
     SamInitSelectionPanel(SamProjectGenerator generator) {
-        this(generator, filterNoRuntimes);
+        this(generator, includeAllRuntimes);
     }
 
     SamInitSelectionPanel(SamProjectGenerator generator, RuntimeFilter runtimeFilter) {
