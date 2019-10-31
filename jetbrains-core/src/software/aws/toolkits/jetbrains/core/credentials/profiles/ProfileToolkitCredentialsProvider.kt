@@ -141,7 +141,7 @@ class ProfileToolkitCredentialsProvider(
             propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> {
                 ProcessCredentialsProvider.builder()
                     .command(requiredProperty(ProfileProperty.CREDENTIAL_PROCESS))
-                    .processOutputLimit(2048) // permit credentials with long session tokens
+                    .processOutputLimit(65536) // permit credentials with long session tokens
                     .build()
             }
 
