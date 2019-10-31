@@ -57,10 +57,10 @@ object Lambda {
         }?.isHandlerValid(project, handler) == true
     }
 
-    fun findSamBuildContents(project: Project): Collection<VirtualFile> =
+    private fun findSamBuildContents(project: Project): Collection<VirtualFile> =
         ModuleManager.getInstance(project).modules.flatMap { findSamBuildContents(it) }
 
-    fun findSamBuildContents(module: Module): Collection<VirtualFile> =
+    private fun findSamBuildContents(module: Module): Collection<VirtualFile> =
         ModuleRootManager.getInstance(module).contentRoots.map {
             it.findChild(SamCommon.SAM_BUILD_DIR)
         }.filterNotNull()
