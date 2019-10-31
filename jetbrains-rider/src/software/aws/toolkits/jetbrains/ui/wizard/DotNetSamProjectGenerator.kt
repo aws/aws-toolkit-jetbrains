@@ -43,7 +43,8 @@ class DotNetSamProjectGenerator(
     model = model,
     createSolution = true,
     createProject = true,
-    item = context.item) {
+    item = context.item
+) {
 
     companion object {
         private const val SAM_HELLO_WORLD_PROJECT_NAME = "HelloWorld"
@@ -56,7 +57,7 @@ class DotNetSamProjectGenerator(
     )
 
     private val generator = SamProjectGenerator()
-    private val samPanel = SamInitSelectionPanel(generator)
+    private val samPanel = SamInitSelectionPanel(generator) { it.toLowerCase().contains("dotnet") }
 
     private val projectStructurePanel: JTabbedPane
 
@@ -112,9 +113,12 @@ class DotNetSamProjectGenerator(
 
         val vcsMarker = vcsPanel?.getVcsMarker()
         if (solutionDirectory != null && vcsMarker != null) {
-            builder.appendln(htmlText(
-                "$sep${solutionDirectory.parentFile.name}$sep",
-                "${solutionDirectory.name}$sep$vcsMarker"))
+            builder.appendln(
+                htmlText(
+                    "$sep${solutionDirectory.parentFile.name}$sep",
+                    "${solutionDirectory.name}$sep$vcsMarker"
+                )
+            )
         }
 
         if (solutionDirectory != null) {
