@@ -68,11 +68,13 @@ object Lambda {
                 VfsUtil.collectChildrenRecursively(it)
             }
 
-    private fun logHandlerPsiElements(handler: String, elements: Array<NavigatablePsiElement>) = LOG.debug {
-        elements.joinToString(
-            prefix = "Found ${elements.size} PsiElements for Handler: $handler\n",
-            separator = "\n"
-        ) { it.containingFile.virtualFile.path }
+    private fun logHandlerPsiElements(handler: String, elements: Array<NavigatablePsiElement>) {
+        LOG.debug {
+            elements.joinToString(
+                prefix = "Found ${elements.size} PsiElements for Handler: $handler\n",
+                separator = "\n"
+            ) { it.containingFile.virtualFile.path }
+        }
     }
 }
 
