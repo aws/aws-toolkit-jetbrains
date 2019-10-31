@@ -57,7 +57,7 @@ class DotNetSamProjectGenerator(
     )
 
     private val generator = SamProjectGenerator()
-    private val samPanel = SamInitSelectionPanel(generator) { it.toLowerCase().contains("dotnet") }
+    private val samPanel = SamInitSelectionPanel(generator) { it.toLowerCase().startsWith("dotnetcore") }
 
     private val projectStructurePanel: JTabbedPane
 

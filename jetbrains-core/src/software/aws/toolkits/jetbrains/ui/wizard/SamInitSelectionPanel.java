@@ -49,13 +49,13 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         boolean filterExpression(String runtime);
     }
 
-    private static final RuntimeFilter filterNothing = (s) -> true;
+    private static final RuntimeFilter filterNoRuntimes = (s) -> true;
 
     SamInitSelectionPanel(SamProjectGenerator generator) {
-        this(generator, filterNothing);
+        this(generator, filterNoRuntimes);
     }
 
-    SamInitSelectionPanel(SamProjectGenerator generator, RuntimeFilter filter) {
+    SamInitSelectionPanel(SamProjectGenerator generator, RuntimeFilter runtimeFilter) {
         this.generator = generator;
         this.currentSdkSelectorLabel = null;
         this.currentSdkSelector = null;
@@ -64,7 +64,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
                                .stream()
                                .flatMap(x -> x.getRuntimes().stream())
                                .sorted()
-                               .filter(runtime -> filter.filterExpression(runtime.name()))
+                               .filter(runtime -> runtimeFilter.filterExpression(runtime.name()))
                                .forEach(y -> runtimeComboBox.addItem(y));
 
         SamInitProjectBuilderCommon.setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel);
