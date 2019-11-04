@@ -21,7 +21,7 @@ import com.jetbrains.rider.projectView.solution
 
 class DotNetHandlerCompletion : HandlerCompletion {
 
-    companion object {
+    private companion object {
         val handlerRequestId = AtomicInteger(1)
         val handlerRequestTimeoutMs = RpcTimeouts.default.errorAwaitTime
     }
