@@ -31,7 +31,6 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project)
 
         assertThat(handlers.size).isEqualTo(1)
-        handlers.first()
         assertThat(handlers.first().handler).isEqualTo("HelloWorld::HelloWorld.Function::FunctionHandler")
         assertIconPath(handlers.first().iconId, "/resharper/PsiSymbols/Method.svg")
     }
