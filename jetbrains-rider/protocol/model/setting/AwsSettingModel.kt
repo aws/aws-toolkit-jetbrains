@@ -8,7 +8,6 @@ import com.jetbrains.rd.generator.nova.setting
 import com.jetbrains.rd.generator.nova.source
 import com.jetbrains.rd.generator.nova.Ext
 import com.jetbrains.rd.generator.nova.PredefinedType.bool
-import com.jetbrains.rider.model.nova.ide.IdeRoot
 import com.jetbrains.rider.model.nova.ide.SolutionModel
 
 @Suppress("unused")
