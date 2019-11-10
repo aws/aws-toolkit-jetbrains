@@ -13,7 +13,6 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.PlatformUtils
 import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
@@ -38,7 +37,7 @@ import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
 
-open class DeployServerlessApplicationAction : AnActionWrapper(
+class DeployServerlessApplicationAction : AnActionWrapper(
     message("serverless.application.deploy"),
     null,
     AwsIcons.Resources.SERVERLESS_APP
@@ -130,13 +129,14 @@ open class DeployServerlessApplicationAction : AnActionWrapper(
 
     override fun update(e: AnActionEvent) {
         super.update(e)
-        e.presentation.isVisible = getSamTemplateFile(e) != null && !PlatformUtils.isRider()
+
+        e.presentation.isVisible = getSamTemplateFile(e) != null
     }
 
     /**
      * Determines the relevant Sam Template, returns null if one can't be found.
      */
-    protected fun getSamTemplateFile(e: AnActionEvent): VirtualFile? {
+    private fun getSamTemplateFile(e: AnActionEvent): VirtualFile? {
         val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return null
         val virtualFile = virtualFiles.singleOrNull() ?: return null
 
