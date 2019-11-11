@@ -99,7 +99,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
         val useSeparatePorts = SemVer.parseFromText(SamCommon.getVersionString())
             ?.isGreaterOrEqualThan(0, 30, 0) ?: false
 
-        val numberOfPorts = if(useSeparatePorts) 2 else 1
+        val numberOfPorts = if (useSeparatePorts) 2 else 1
 
         return NetUtils.findAvailableSocketPorts(numberOfPorts).toList()
     }
@@ -137,9 +137,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
             .withParameters(debugArgs)
             .withParameters("--debug-port").withParameters(frontendPort.toString())
 
-        if(backendPort != frontendPort) {
-            commandLine.withParameters("--debug-port").withParameters(backendPort.toString())
-        }
+        super.patchCommandLine(debugPorts, commandLine)
     }
 
     override fun createDebugProcess(

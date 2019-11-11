@@ -18,7 +18,9 @@ interface SamDebugSupport {
         get() = 60000L
 
     fun patchCommandLine(debugPorts: List<Int>, commandLine: GeneralCommandLine) {
-        commandLine.withParameters("--debug-port").withParameters(debugPorts.first().toString())
+        debugPorts.forEach {
+            commandLine.withParameters("--debug-port").withParameters(it.toString())
+        }
     }
 
     fun createDebugProcessAsync(
