@@ -229,13 +229,12 @@ class ResourceSelector<T> private constructor(
             it.customRenderer = customRenderer
         }
 
-        fun resolveCustomRenderer(): ColoredListCellRenderer<T>? {
+        private fun resolveCustomRenderer(): ColoredListCellRenderer<T>? {
             if (customRenderer != null) {
                 return customRenderer
             }
 
-            val customRendererFunctionImmutable = customRendererFunction
-            return customRendererFunctionImmutable?.let {
+            return customRenderer ?: customRendererFunction?.let { renderer->
                 object : ColoredListCellRenderer<T>() {
                     override fun customizeCellRenderer(
                         list: JList<out T>,
@@ -245,7 +244,7 @@ class ResourceSelector<T> private constructor(
                         hasFocus: Boolean
                     ) {
                         value?.let {
-                            customRendererFunctionImmutable.invoke(value, this)
+                            renderer.invoke(it, this)
                         }
                     }
                 }
