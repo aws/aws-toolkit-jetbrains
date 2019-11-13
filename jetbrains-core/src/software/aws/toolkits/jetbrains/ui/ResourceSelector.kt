@@ -229,23 +229,17 @@ class ResourceSelector<T> private constructor(
             it.customRenderer = customRenderer
         }
 
-        private fun resolveCustomRenderer(): ColoredListCellRenderer<T>? {
-            if (customRenderer != null) {
-                return customRenderer
-            }
-
-            return customRenderer ?: customRendererFunction?.let { renderer->
-                object : ColoredListCellRenderer<T>() {
-                    override fun customizeCellRenderer(
-                        list: JList<out T>,
-                        value: T?,
-                        index: Int,
-                        selected: Boolean,
-                        hasFocus: Boolean
-                    ) {
-                        value?.let {
-                            renderer.invoke(it, this)
-                        }
+        private fun resolveCustomRenderer(): ColoredListCellRenderer<T>? = customRenderer ?: customRendererFunction?.let { renderer ->
+            object : ColoredListCellRenderer<T>() {
+                override fun customizeCellRenderer(
+                    list: JList<out T>,
+                    value: T?,
+                    index: Int,
+                    selected: Boolean,
+                    hasFocus: Boolean
+                ) {
+                    value?.let {
+                        renderer.invoke(it, this)
                     }
                 }
             }
