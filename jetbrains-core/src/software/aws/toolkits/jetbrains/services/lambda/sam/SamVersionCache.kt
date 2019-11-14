@@ -30,4 +30,6 @@ object SamVersionCache : FileInfoCache<SemVer>() {
                 ?: throw IllegalStateException(message("sam.executable.version_parse_error", version))
         }
     }
+
+    val DEFAULT_TIMEOUT_MS = 5000
 }
