@@ -16,7 +16,9 @@ import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.rd.defineNestedLifetime
+import com.intellij.openapi.util.BuildNumber
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.execution.ParametersListUtil
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -54,6 +56,7 @@ import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.Resou
 import software.aws.toolkits.jetbrains.services.ecs.execution.ImmutableContainerOptions
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamDebugSupport
 import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
+import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileNotFoundException
@@ -112,7 +115,8 @@ class DotNetDebuggerSupport : DebuggerSupport() {
         val applicationInfo = ApplicationInfo.getInstance()
         val dbgshimPath =
             // Run custom dbgshim detection logic on Rider 2019.2 only. Further versions has correct autodetection logic.
-            if (applicationInfo.majorVersion == "2019" && applicationInfo.minorVersionMainPart == "2") {
+            if (!isRider20193OrLater) {
+                logger.info { "Rider build is ${applicationInfo.build}. Using dbgdhim detecting tool." }
                 val dbgshimTool =
                     "${debuggerPath.getRemoteDebuggerPath()}/${DotNetDebuggerUtils.cloudDebuggerTempDirName}/${DotNetDebuggerUtils.cloudDebuggerToolsName}.exe"
 
@@ -124,6 +128,7 @@ class DotNetDebuggerSupport : DebuggerSupport() {
                     target = ResourceInstrumenter.getTargetForContainer(context, containerName)
                 )
             } else {
+                logger.info { "Rider build is ${applicationInfo.build}. DbgShim will be detected automatically by debugger."}
                 null
             }
 
