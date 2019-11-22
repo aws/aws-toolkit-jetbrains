@@ -128,7 +128,7 @@ class DotNetDebuggerSupport : DebuggerSupport() {
                     target = ResourceInstrumenter.getTargetForContainer(context, containerName)
                 )
             } else {
-                logger.info { "Rider build is ${applicationInfo.build}. DbgShim will be detected automatically by debugger."}
+                logger.info { "Rider build is ${applicationInfo.build}. DbgShim will be detected automatically by debugger." }
                 null
             }
 
@@ -483,16 +483,14 @@ class DotNetDebuggerSupport : DebuggerSupport() {
             // Copy mono
             val linuxMono = RiderEnvironment.getBundledFile(linuxSubdirectoryName, allowDir = true)
             FileUtil.copyDir(linuxMono, File(targetPath, linuxMono.name))
-        }
-        else {
+        } else {
             val linuxMonoSubdirectory = File(targetPath, linuxSubdirectoryName)
             if (linuxMonoSubdirectory.isDirectory) {
                 try {
                     // remove existing linux Mono distribution since we run debugger on container .net core
                     linuxMonoSubdirectory.deleteRecursively()
-                }
-                catch (e: Throwable) {
-                    logger.trace("Error while trying to delete unused linux Mono directory ${linuxMonoSubdirectory.absolutePath}", e)
+                } catch (e: Throwable) {
+                    logger.trace(e) { "Error while trying to delete unused linux Mono directory ${linuxMonoSubdirectory.absolutePath}" }
                 }
             }
         }
