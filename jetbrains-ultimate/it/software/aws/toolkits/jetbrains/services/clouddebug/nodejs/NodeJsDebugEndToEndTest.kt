@@ -10,7 +10,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.xdebugger.XDebuggerUtil
 import org.assertj.core.api.Assertions
 import org.junit.After
-import org.junit.Assume
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
