@@ -11,7 +11,6 @@ import com.jetbrains.rider.model.awsSettingModel
 import com.jetbrains.rider.projectView.solution
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
-import software.aws.toolkits.jetbrains.services.lambda.assume20192Version
 
 class LambdaGutterMarkHighlightingTest : AwsBaseTestWithMarkup() {
 
@@ -123,10 +122,7 @@ class LambdaGutterMarkHighlightingTest : AwsBaseTestWithMarkup() {
     fun testReturn_SyncAmazonEvent_Detected() = verifyLambdaGutterMark()
 
     @Test
-    fun testReturn_SyncVoid_NotDetected() {
-        assume20192Version()
-        verifyLambdaGutterMark()
-    }
+    fun testReturn_SyncVoid_NotDetected() = verifyLambdaGutterMark()
 
     @Test
     fun testReturn_AsyncVoid_Detected() = verifyLambdaGutterMark()
@@ -144,19 +140,13 @@ class LambdaGutterMarkHighlightingTest : AwsBaseTestWithMarkup() {
     fun testMethod_StaticMain_NotDetected() = verifyLambdaGutterMark()
 
     @Test
-    fun testMethod_StaticMainWithSerializer_Detected() {
-        assume20192Version()
-        verifyLambdaGutterMark()
-    }
+    fun testMethod_StaticMainWithSerializer_Detected() = verifyLambdaGutterMark()
 
     @Test
     fun testSerializer_MethodLevel_Detected() = verifyLambdaGutterMark()
 
     @Test
-    fun testSerializer_MethodLevelInherited_Detected() {
-        assume20192Version()
-        verifyLambdaGutterMark()
-    }
+    fun testSerializer_MethodLevelInherited_Detected() = verifyLambdaGutterMark()
 
     @Test
     fun testSerializer_MethodLevelNonInherited_NotDetected() = verifyLambdaGutterMark()
@@ -165,10 +155,7 @@ class LambdaGutterMarkHighlightingTest : AwsBaseTestWithMarkup() {
     fun testSerializer_AssemblyLevel_Detected() = verifyLambdaGutterMark()
 
     @Test
-    fun testSerializer_AssemblyLevelInherited_Detected() {
-        assume20192Version()
-        verifyLambdaGutterMark()
-    }
+    fun testSerializer_AssemblyLevelInherited_Detected() = verifyLambdaGutterMark()
 
     @Test
     fun testSerializer_AssemblyLevelNonInherited_NotDetected() = verifyLambdaGutterMark()
