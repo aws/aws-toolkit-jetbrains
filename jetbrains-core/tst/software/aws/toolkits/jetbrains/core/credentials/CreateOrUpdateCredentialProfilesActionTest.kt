@@ -3,9 +3,14 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.docker.dockerFile.DockerFileType
+import com.intellij.ide.plugins.PluginManager
+import com.intellij.lang.LanguageParserDefinitions
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileTypes.FileTypes
+import com.intellij.openapi.fileTypes.ex.FileTypeManagerEx
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.testFramework.ProjectRule
@@ -121,6 +126,12 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
     @Test
     fun emptyFileCanBeOpenedAsPlainText() {
+        LanguageParserDefinitions.INSTANCE
+        ApplicationManager.getApplication().runWriteAction {
+            FileTypeManagerEx.getInstanceEx().getAssociations(
+                DockerFileType.DOCKER_FILE_TYPE
+            ).forEach { println(it.presentableString) }
+        }
         val writer = mock<ConfigFileWriter>()
 
         val configFile = File(folderRule.newFolder(), "config")

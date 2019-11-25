@@ -58,7 +58,7 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
 
         localFileSystem.refreshFiles(virtualFiles, false, false) {
             virtualFiles.forEach {
-                if (it.fileType != FileTypes.PLAIN_TEXT) {
+                if (it.fileType == FileTypes.UNKNOWN) {
                     ApplicationManager.getApplication().runWriteAction {
                         FileTypeManagerEx.getInstanceEx().associatePattern(
                             FileTypes.PLAIN_TEXT,
