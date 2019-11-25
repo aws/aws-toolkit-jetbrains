@@ -54,7 +54,7 @@ class NodeJsDebuggerSupport : DebuggerSupport() {
 
     override fun automaticallyAugmentable(input: List<String>): Boolean {
         // If it does not use node to start, we can't know what we need to add
-        var exename = input.first().trim('"', '\'').substringAfterLast('/')
+        val exename = input.first().trim('"', '\'').substringAfterLast('/')
         if (!NODE_EXECUTABLES.contains(exename)) {
             return false
         }
