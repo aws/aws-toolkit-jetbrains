@@ -169,9 +169,8 @@ class DockerfileParserTest {
         }
     }
 
-    private fun dockerfile(contents: String): VirtualFile {
-        return runInEdtAndGet {
+    private fun dockerfile(contents: String): VirtualFile =
+        runInEdtAndGet {
             projectRule.fixture.configureByText(DockerFileType.DOCKER_FILE_TYPE, contents)
         }.virtualFile
-    }
 }
