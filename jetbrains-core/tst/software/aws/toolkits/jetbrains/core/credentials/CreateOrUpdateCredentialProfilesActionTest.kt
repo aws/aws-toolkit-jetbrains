@@ -133,11 +133,10 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
         verifyZeroInteractions(writer)
 
-        assertThat(fileEditorManager.openFiles).hasSize(1)
-            .allSatisfy() {
-                assertThat(it.name).isEqualTo("credentials")
-                assertThat(it.fileType).isEqualTo(FileTypes.PLAIN_TEXT)
-            }
+        assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying {
+            assertThat(it.name).isEqualTo("credentials")
+            assertThat(it.fileType).isEqualTo(FileTypes.PLAIN_TEXT)
+        }
     }
 
     @Test
