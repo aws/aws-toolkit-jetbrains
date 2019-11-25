@@ -3,9 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.docker.dockerFile.DockerFileType
-import com.intellij.ide.plugins.PluginManager
-import com.intellij.lang.LanguageParserDefinitions
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -13,6 +10,7 @@ import com.intellij.openapi.fileTypes.FileTypes
 import com.intellij.openapi.fileTypes.ex.FileTypeManagerEx
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.TestDialog
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.runInEdtAndWait
@@ -39,6 +37,7 @@ class CreateOrUpdateCredentialProfilesActionTest {
     val projectRule = ProjectRule()
 
     private val fileEditorManager = FileEditorManager.getInstance(projectRule.project)
+    private val localFileSystem = LocalFileSystem.getInstance()
 
     @After
     fun cleanUp() {
@@ -126,16 +125,23 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
     @Test
     fun emptyFileCanBeOpenedAsPlainText() {
-        LanguageParserDefinitions.INSTANCE
-        ApplicationManager.getApplication().runWriteAction {
-            FileTypeManagerEx.getInstanceEx().getAssociations(
-                DockerFileType.DOCKER_FILE_TYPE
-            ).forEach { println(it.presentableString) }
-        }
         val writer = mock<ConfigFileWriter>()
 
         val configFile = File(folderRule.newFolder(), "config")
         val credFile = folderRule.newFile("credentials")
+
+        // Mark the file as unknown for the purpose of the test. This is needed because some
+        // other extensions can have weird file type association patterns (like Docker having
+        // *. (?)) which makes this test fail because it is not file type unkown
+        val file = listOf(localFileSystem.refreshAndFindFileByIoFile(credFile))
+        localFileSystem.refreshFiles(file, false, false) {
+            ApplicationManager.getApplication().runWriteAction {
+                FileTypeManagerEx.getInstanceEx().associatePattern(
+                    FileTypes.UNKNOWN,
+                    "credentials"
+                )
+            }
+        }
 
         val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
         Messages.setTestDialog(TestDialog.OK)
