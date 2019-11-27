@@ -44,6 +44,7 @@ import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.OutputStream
+import java.net.InetAddress
 import java.util.Timer
 import kotlin.concurrent.schedule
 
@@ -128,6 +129,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
     override fun createDebugProcess(
         environment: ExecutionEnvironment,
         state: SamRunningState,
+        debugHost: String,
         debugPorts: List<Int>
     ): XDebugProcessStarter? {
         throw UnsupportedOperationException("Use 'createDebugProcessAsync' instead")
@@ -136,6 +138,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
     override fun createDebugProcessAsync(
         environment: ExecutionEnvironment,
         state: SamRunningState,
+        debugHost: String,
         debugPorts: List<Int>
     ): Promise<XDebugProcessStarter?> {
         // TODO: Switch to always use 2 ports FIX_WHEN_SAM_MIN_IS_0_30
@@ -156,7 +159,13 @@ class DotNetSamDebugSupport : SamDebugSupport {
             serializers = Serializers(),
             identity = Identities(IdKind.Client),
             scheduler = scheduler,
-            wire = SocketWire.Client(debuggerLifetime, scheduler, port = frontendPort, optId = "FrontendToDebugWorker"),
+            wire = SocketWire.Client(
+                debuggerLifetime,
+                scheduler,
+                port = frontendPort,
+                optId = "FrontendToDebugWorker",
+                hostAddress = InetAddress.getByName(debugHost)
+            ),
             lifetime = debuggerLifetime
         )
 

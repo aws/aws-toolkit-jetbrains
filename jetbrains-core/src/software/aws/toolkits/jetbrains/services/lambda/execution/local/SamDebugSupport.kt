@@ -11,6 +11,7 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import org.jetbrains.concurrency.Promise
 import org.jetbrains.concurrency.resolvedPromise
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
+import software.aws.toolkits.jetbrains.settings.LocalDebugSettings
 
 interface SamDebugSupport {
 
@@ -26,16 +27,28 @@ interface SamDebugSupport {
     fun createDebugProcessAsync(
         environment: ExecutionEnvironment,
         state: SamRunningState,
+        debugHost: String,
         debugPorts: List<Int>
-    ): Promise<XDebugProcessStarter?> = resolvedPromise(createDebugProcess(environment, state, debugPorts))
+    ): Promise<XDebugProcessStarter?> = resolvedPromise(createDebugProcess(environment, state, debugHost, debugPorts))
 
     fun createDebugProcess(
         environment: ExecutionEnvironment,
         state: SamRunningState,
+        debugHost: String,
         debugPorts: List<Int>
     ): XDebugProcessStarter?
 
     fun isSupported(): Boolean = true
+
+    fun getDebugHost(): String {
+
+        val localDebugHost = LocalDebugSettings.getInstance().localDebugHost
+
+        if (localDebugHost.isNullOrEmpty()) {
+            return "localhost"
+        }
+        return localDebugHost
+    }
 
     fun getDebugPorts(): List<Int> = listOf(NetUtils.tryToFindAvailableSocketPort())
 

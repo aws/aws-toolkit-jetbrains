@@ -45,6 +45,8 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @NotNull
     TextFieldWithBrowseButton samExecutablePath;
     @NotNull
+    JBTextField localDebugHost;
+    @NotNull
     TextFieldWithBrowseButton cloudDebugExecutablePath;
     private LinkLabel samHelp;
     private LinkLabel cloudDebugHelp;
@@ -52,6 +54,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @NotNull
     JBCheckBox enableTelemetry;
     private JPanel serverlessSettings;
+    private JPanel localDebugSettings;
     private JPanel remoteDebugSettings;
     private JPanel applicationLevelSettings;
 
@@ -62,11 +65,13 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         applicationLevelSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.global_label")));
         serverlessSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.serverless_label")));
+        localDebugSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.local_debug_label")));
         remoteDebugSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.remote_debug_label")));
 
         publisher = TelemetryService.syncPublisher();
 
         SwingHelper.setPreferredWidth(samExecutablePath, this.panel.getWidth());
+        SwingHelper.setPreferredWidth(localDebugHost, this.panel.getWidth());
         SwingHelper.setPreferredWidth(cloudDebugExecutablePath, this.panel.getWidth());
     }
 
@@ -115,8 +120,10 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         AwsSettings awsSettings = AwsSettings.getInstance();
         SamSettings samSettings = SamSettings.getInstance();
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
+        LocalDebugSettings localDebugSettings = LocalDebugSettings.getInstance();
 
         return !Objects.equals(getSamTextboxInput(), samSettings.getSavedExecutablePath()) ||
+               !Objects.equals(getLocalDebugHostTextboxInput(), localDebugSettings.getLocalDebugHost()) ||
                !Objects.equals(getCloudDebugTextboxInput(), getSavedExecutablePath(getCloudDebugExecutableInstance(), false)) ||
                isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons()) ||
                isModified(enableTelemetry, awsSettings.isTelemetryEnabled());
@@ -133,15 +140,18 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         saveTelemetrySettings();
         saveLambdaSettings();
+        saveLocalDebugSettings();
     }
 
     @Override
     public void reset() {
         AwsSettings awsSettings = AwsSettings.getInstance();
         SamSettings samSettings = SamSettings.getInstance();
+        LocalDebugSettings localDebugSettings = LocalDebugSettings.getInstance();
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
 
         samExecutablePath.setText(samSettings.getSavedExecutablePath());
+        localDebugHost.setText(localDebugSettings.getLocalDebugHost());
         cloudDebugExecutablePath.setText(getSavedExecutablePath(getCloudDebugExecutableInstance(), false));
         showAllHandlerGutterIcons.setSelected(lambdaSettings.getShowAllHandlerGutterIcons());
         enableTelemetry.setSelected(awsSettings.isTelemetryEnabled());
@@ -155,6 +165,11 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @Nullable
     private String getSamTextboxInput() {
         return StringUtil.nullize(samExecutablePath.getText().trim());
+    }
+
+    @Nullable
+    private String getLocalDebugHostTextboxInput() {
+        return StringUtil.nullize(localDebugHost.getText().trim());
     }
 
     @Nullable
@@ -293,5 +308,10 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private void saveLambdaSettings() {
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
         lambdaSettings.setShowAllHandlerGutterIcons(showAllHandlerGutterIcons.isSelected());
+    }
+
+    private void saveLocalDebugSettings() {
+        LocalDebugSettings localDebugSettings = LocalDebugSettings.getInstance();
+        localDebugSettings.setLocalDebugHost(localDebugHost.getText().trim());
     }
 }

@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Added global debugger host setting that defaults to 'localhost', this also resolves #642, #784"
+}

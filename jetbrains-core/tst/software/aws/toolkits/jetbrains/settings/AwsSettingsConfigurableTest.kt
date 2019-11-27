@@ -43,10 +43,20 @@ class AwsSettingsConfigurableTest : ExecutableDetectorTestBase() {
         val settings = AwsSettingsConfigurable(projectRule.project)
         // explicit call to suppress compiling error
         settings.samExecutablePath.setText(null)
+        settings.localDebugHost.setText(null)
         settings.cloudDebugExecutablePath.setText(null)
         settings.enableTelemetry.isSelected = true
         settings.apply()
         settings.enableTelemetry.isSelected = false
+        settings.apply()
+    }
+
+    @Test
+    fun validate_ok_setLocalDebuggerHost() {
+        val settings = AwsSettingsConfigurable(projectRule.project)
+        settings.localDebugHost.setText("")
+        settings.apply()
+        settings.localDebugHost.setText("127.0.0.1")
         settings.apply()
     }
 

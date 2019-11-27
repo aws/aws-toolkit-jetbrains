@@ -26,6 +26,8 @@ internal class SamDebugger(runtimeGroup: RuntimeGroup) : SamRunner() {
 
     private val debugExtension = SamDebugSupport.getInstanceOrThrow(runtimeGroup)
 
+    private val debugHost = debugExtension.getDebugHost()
+
     private val debugPorts = debugExtension.getDebugPorts()
 
     override fun patchCommandLine(commandLine: GeneralCommandLine) {
@@ -48,7 +50,7 @@ internal class SamDebugger(runtimeGroup: RuntimeGroup) : SamRunner() {
             }
         })
 
-        debugExtension.createDebugProcessAsync(environment, state, debugPorts)
+        debugExtension.createDebugProcessAsync(environment, state, debugHost, debugPorts)
             .onSuccess { debugProcessStarter ->
                 val debugManager = XDebuggerManager.getInstance(environment.project)
                 val runContentDescriptor = debugProcessStarter?.let {

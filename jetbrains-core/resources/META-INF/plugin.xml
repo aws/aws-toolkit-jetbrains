@@ -153,6 +153,8 @@
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
 
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.LocalDebugSettings"/>
+
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CloudDebugSettings"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
