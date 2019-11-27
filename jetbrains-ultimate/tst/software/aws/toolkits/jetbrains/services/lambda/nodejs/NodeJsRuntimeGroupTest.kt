@@ -51,6 +51,20 @@ class NodeJsRuntimeGroupTest {
     fun testRuntime11_12() {
         projectRule.project.setNodeJsInterpreterVersion(SemVer("v11.12.0", 11, 12, 0))
         val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isNull()
+        assertThat(runtime).isEqualTo(Runtime.NODEJS12_X)
+    }
+
+    @Test
+    fun testRuntime12_13() {
+        projectRule.project.setNodeJsInterpreterVersion(SemVer("v12.13.1", 12, 13, 1))
+        val runtime = sut.determineRuntime(projectRule.project)
+        assertThat(runtime).isEqualTo(Runtime.NODEJS12_X)
+    }
+
+    @Test
+    fun testRuntime13_00() {
+        projectRule.project.setNodeJsInterpreterVersion(SemVer("v13.0.0", 13, 0, 0))
+        val runtime = sut.determineRuntime(projectRule.project)
+        assertThat(runtime).isEqualTo(Runtime.NODEJS12_X)
     }
 }
