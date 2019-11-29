@@ -14,8 +14,10 @@ requests or any positive contribution. Please see the the [CONTRIBUTING](CONTRIB
 
 ## Requirements
 Supported IDEs:
-* IntelliJ Community/Ultimate 2018.3+
-* PyCharm Community/Professional 2018.3+
+* IntelliJ Community/Ultimate 2019.2+
+* PyCharm Community/Professional 2019.2+
+* Rider 2019.2+
+* WebStorm 2019.2+
 
 ## Installation
 
