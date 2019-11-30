@@ -63,7 +63,7 @@ Many of these features require the [AWS SAM CLI](https://github.com/awslabs/aws-
 Serverless Application Model ([SAM](https://aws.amazon.com/serverless/sam/)) website for more information on 
 installation of the SAM CLI.
 
-**SAM features are currently limited to Java, Python, Node.js, and .NET Core only**
+**SAM features support Java, Python, Node.js, and .NET Core**
 
 * **New Project Wizard** - Get started quickly by using one of the quickstart serverless application templates.
 [Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/new-project)
