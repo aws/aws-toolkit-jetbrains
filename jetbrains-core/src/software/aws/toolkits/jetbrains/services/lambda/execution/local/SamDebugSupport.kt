@@ -40,15 +40,7 @@ interface SamDebugSupport {
 
     fun isSupported(): Boolean = true
 
-    fun getDebugHost(): String {
-
-        val localDebugHost = LocalDebugSettings.getInstance().localDebugHost
-
-        if (localDebugHost.isNullOrEmpty()) {
-            return "localhost"
-        }
-        return localDebugHost
-    }
+    fun getDebugHost(): String = LocalDebugSettings.getInstance().localDebugHost ?: "localhost"
 
     fun getDebugPorts(): List<Int> = listOf(NetUtils.tryToFindAvailableSocketPort())
 
