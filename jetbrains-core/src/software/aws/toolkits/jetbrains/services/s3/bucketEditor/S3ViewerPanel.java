@@ -49,7 +49,6 @@ import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 public class S3ViewerPanel {
     private final int SCROLLPANE_SIZE = 11;
     private JPanel content;
-    private JPanel bucketName;
     private JLabel name;
     private JLabel creationDate;
     private JTextField date;
@@ -70,10 +69,6 @@ public class S3ViewerPanel {
     private S3TreeTableModel model;
 
     public S3ViewerPanel(S3VirtualBucket bucketVirtual) {
-        TitledBorder border = new TitledBorder("Bucket Details");
-        border.setTitleJustification(TitledBorder.CENTER);
-        border.setTitlePosition(TitledBorder.TOP);
-        this.content.setBorder(border);
         this.bucketVirtual = bucketVirtual;
         this.name.setText(bucketVirtual.getVirtualBucketName());
         this.date.setText(bucketVirtual.formatDate(bucketVirtual.getS3Bucket().creationDate()));
