@@ -8,7 +8,6 @@ import com.intellij.ui.treeStructure.treetable.TreeTable
 import javax.swing.tree.DefaultMutableTreeNode
 
 open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable(treeTableModel) {
-
     fun refresh() {
         runInEdt {
             clearSelection()
