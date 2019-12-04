@@ -37,6 +37,7 @@ import javax.swing.table.TableRowSorter;
 
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
+import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction;
@@ -100,9 +101,9 @@ public class S3ViewerPanel {
 
             ColumnInfo key = new S3KeyColumnInfo(virtualFile -> virtualFile.getFile().getKey());
 
-            ColumnInfo size = new S3ColumnInfo("Size", virtualFile -> virtualFile.formatSize());
+            ColumnInfo size = new S3ColumnInfo("Size", S3VirtualFile::formatSize);
 
-            ColumnInfo modified = new S3ColumnInfo("Last-Modified",
+            ColumnInfo modified = new S3ColumnInfo("Last modified",
                                                    virtualFile -> virtualFile.formatDate(virtualFile.getFile().getLastModified()));
 
             final ColumnInfo[] COLUMNS = new ColumnInfo[] {key, size, modified};
@@ -111,7 +112,7 @@ public class S3ViewerPanel {
             DefaultActionGroup actionGroup = new DefaultActionGroup();
             S3TreeCellRenderer treeRenderer = new S3TreeCellRenderer();
             DefaultTableCellRenderer tableRenderer = new DefaultTableCellRenderer();
-            tableRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
+            tableRenderer.setHorizontalAlignment(SwingConstants.LEFT);
             /**
              *  Navigation buttons for pages
              */
