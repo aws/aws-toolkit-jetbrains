@@ -38,12 +38,15 @@ import javax.swing.table.TableRowSorter;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile;
+import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyAsPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction;
 import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel;
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
+
+import static software.aws.toolkits.resources.Localization.message;
 
 @SuppressWarnings("unchecked")
 public class S3ViewerPanel {
@@ -62,10 +65,6 @@ public class S3ViewerPanel {
     private JLabel bucketName;
     private S3VirtualBucket bucketVirtual;
     private S3TreeTable treeTable;
-    private AnActionButton uploadObjectButton;
-    private AnActionButton deleteObjectButton;
-    private AnActionButton renameObjectButton;
-    private AnActionButton downloadObjectButton;
     private S3KeyNode s3Node;
     private S3TreeTableModel model;
 
@@ -101,9 +100,9 @@ public class S3ViewerPanel {
 
             ColumnInfo key = new S3KeyColumnInfo(virtualFile -> virtualFile.getFile().getKey());
 
-            ColumnInfo size = new S3ColumnInfo("Size", S3VirtualFile::formatSize);
+            ColumnInfo size = new S3ColumnInfo(message("s3.size"), S3VirtualFile::formatSize);
 
-            ColumnInfo modified = new S3ColumnInfo("Last modified",
+            ColumnInfo modified = new S3ColumnInfo(message("s3.last_modified"),
                                                    virtualFile -> virtualFile.formatDate(virtualFile.getFile().getLastModified()));
 
             final ColumnInfo[] COLUMNS = new ColumnInfo[] {key, size, modified};
@@ -161,16 +160,13 @@ public class S3ViewerPanel {
                 treeTable.setAutoCreateRowSorter(true);
                 searchAndSortTable();
 
-                deleteObjectButton = new DeleteObjectAction(treeTable, bucketVirtual, searchButton, searchTextField);
-                downloadObjectButton = new DownloadObjectAction(treeTable, bucketVirtual);
-                renameObjectButton = new RenameObjectAction(treeTable, bucketVirtual);
-                uploadObjectButton = new UploadObjectAction(bucketVirtual, treeTable, searchButton, searchTextField);
-                actionGroup.add(downloadObjectButton);
+                actionGroup.add(new DownloadObjectAction(treeTable, bucketVirtual));
+                actionGroup.add(new UploadObjectAction(bucketVirtual, treeTable, searchButton, searchTextField));
                 actionGroup.add(new Separator());
-                actionGroup.add(renameObjectButton);
-                actionGroup.add(uploadObjectButton);
+                actionGroup.add(new RenameObjectAction(treeTable, bucketVirtual));
+                actionGroup.add(new CopyAsPathAction(treeTable, bucketVirtual));
                 actionGroup.add(new Separator());
-                actionGroup.add(deleteObjectButton);
+                actionGroup.add(new DeleteObjectAction(treeTable, bucketVirtual, searchButton, searchTextField));
                 PopupHandler.installPopupHandler(treeTable, actionGroup, ActionPlaces.EDITOR_POPUP, ActionManager.getInstance());
                 treeTable.getColumnModel().getColumn(1).setMaxWidth(120);
 

@@ -3,7 +3,9 @@
 package software.aws.toolkits.jetbrains.services.s3.bucketEditor
 
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.treeStructure.treetable.TreeTable
+import javax.swing.tree.DefaultMutableTreeNode
 
 open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable(treeTableModel) {
 
@@ -14,4 +16,11 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
             structureTreeModel.invalidate()
         }
     }
+
+    fun getSelectedObjects(): List<VirtualFile> =
+        selectedRows.map {
+            val path = tree.getPathForRow(convertRowIndexToModel(it))
+            val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
+            node.virtualFile
+        }
 }
