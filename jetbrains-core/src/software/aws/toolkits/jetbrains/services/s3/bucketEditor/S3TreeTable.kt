@@ -17,7 +17,7 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
         }
     }
 
-    fun getSelectedObjects(): List<VirtualFile> =
+    fun getSelectedAsVirtualFiles(): List<VirtualFile> =
         selectedRows.map {
             val path = tree.getPathForRow(convertRowIndexToModel(it))
             val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode

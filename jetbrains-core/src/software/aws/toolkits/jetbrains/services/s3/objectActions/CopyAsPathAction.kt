@@ -16,7 +16,7 @@ class CopyAsPathAction(
     override fun isEnabled(): Boolean = treeTable.selectedRows.size == 1
 
     override fun doActionPerformed(e: AnActionEvent) {
-        treeTable.getSelectedObjects().firstOrNull()?.let {
+        treeTable.getSelectedAsVirtualFiles().firstOrNull()?.let {
             CopyPasteManager.getInstance().setContents(StringSelection(it.name))
         }
     }

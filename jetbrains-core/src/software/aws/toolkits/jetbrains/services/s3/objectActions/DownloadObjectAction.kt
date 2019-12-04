@@ -42,7 +42,7 @@ class DownloadObjectAction(
         var baseFilePath: String? = ""
 
         var fileWrapper: VirtualFileWrapper? = null
-        treeTable.getSelectedObjects().forEach {
+        treeTable.getSelectedAsVirtualFiles().forEach {
             if (fileWrapper == null) {
                 fileWrapper = saveFileDialog.save(baseDir, it.name)
                 baseFilePath = fileWrapper?.file?.toString()?.substringBefore(it.name)
