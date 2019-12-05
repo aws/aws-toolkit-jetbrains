@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.StringSelection
 
-class CopyAsPathAction(
+class CopyPathAction(
     private var treeTable: S3TreeTable,
     val bucket: S3VirtualBucket
 ) : ActionButtonWrapper(message("s3.copy.path"), null, AllIcons.Actions.Copy) {
@@ -20,7 +20,7 @@ class CopyAsPathAction(
 
     override fun doActionPerformed(e: AnActionEvent) {
         treeTable.getSelectedAsVirtualFiles().firstOrNull()?.let {
-            CopyPasteManager.getInstance().setContents(StringSelection(it.name))
+            CopyPasteManager.getInstance().setContents(StringSelection(it.path.substringAfter('/')))
         }
     }
 }
