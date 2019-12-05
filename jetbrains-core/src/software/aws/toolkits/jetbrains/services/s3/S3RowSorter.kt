@@ -10,9 +10,7 @@ import javax.swing.table.TableStringConverter
 class S3RowSorter(model: TableModel) : TableRowSorter<TableModel>(model) {
     init {
         stringConverter = object : TableStringConverter() {
-            override fun toString(model: TableModel?, row: Int, column: Int): String? {
-                return model?.getValueAt(row, column)?.toString()
-            }
+            override fun toString(model: TableModel?, row: Int, column: Int): String? = model?.getValueAt(row, column)?.toString()
         }
 
         setSortable(0, false)
