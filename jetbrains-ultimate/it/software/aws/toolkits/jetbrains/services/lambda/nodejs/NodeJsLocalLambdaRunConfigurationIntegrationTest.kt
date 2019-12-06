@@ -57,7 +57,8 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             "hello_world/app.js",
             """
             exports.lambdaHandler = async (event, context) => {
-                return 'Hello World'
+                var x = '23'
+                return 'Hello World' + x
             };
             """.trimIndent()
         )
@@ -186,7 +187,8 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             "hello_world/subfolder/app.js",
             """
             exports.lambdaHandler = async (event, context) => {
-                return 'Hello World'
+                var x = '23'
+                return 'Hello World' + x
             };
             """.trimIndent()
         )
