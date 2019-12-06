@@ -66,7 +66,6 @@ class NodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
     }
 }
 
-
 class NodeJsLightProjectDescriptor : LightProjectDescriptor() {
     override fun getSdk(): Sdk? = null
 
