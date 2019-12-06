@@ -25,7 +25,9 @@ import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.runInEdtAndGet
+import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.text.SemVer
+import com.intellij.xdebugger.XDebuggerUtil
 import software.amazon.awssdk.services.lambda.model.Runtime
 import java.io.File
 
@@ -48,7 +50,22 @@ class NodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
 
         return codeInsightFixture
     }
+
+    fun addBreakpoint() {
+        runInEdtAndWait {
+            val document = fixture.editor.document
+            val psiFile = fixture.file as JSFile
+            val lineNumber = document.getLineNumber(psiFile.statements.first().textOffset)
+
+            XDebuggerUtil.getInstance().toggleLineBreakpoint(
+                project,
+                fixture.file.virtualFile,
+                lineNumber
+            )
+        }
+    }
 }
+
 
 class NodeJsLightProjectDescriptor : LightProjectDescriptor() {
     override fun getSdk(): Sdk? = null
@@ -80,6 +97,20 @@ class HeavyNodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
         codeInsightFixture.testDataPath = testDataPath
 
         return codeInsightFixture
+    }
+
+    fun addBreakpoint() {
+        runInEdtAndWait {
+            val document = fixture.editor.document
+            val psiFile = fixture.file as JSFile
+            val lineNumber = document.getLineNumber(psiFile.statements.first().textOffset)
+
+            XDebuggerUtil.getInstance().toggleLineBreakpoint(
+                project,
+                fixture.file.virtualFile,
+                lineNumber
+            )
+        }
     }
 }
 
