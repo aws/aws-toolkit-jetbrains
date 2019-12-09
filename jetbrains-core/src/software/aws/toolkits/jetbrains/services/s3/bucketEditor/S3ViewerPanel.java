@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.components.JBScrollPane;
@@ -62,7 +63,7 @@ public class S3ViewerPanel {
     private S3KeyNode s3Node;
     private S3TreeTableModel model;
 
-    public S3ViewerPanel(S3VirtualBucket bucketVirtual) {
+    public S3ViewerPanel(Project project, S3VirtualBucket bucketVirtual) {
         this.bucketVirtual = bucketVirtual;
         this.name.setText(bucketVirtual.getVirtualBucketName());
         this.date.setText(bucketVirtual.formatDate(bucketVirtual.getS3Bucket().creationDate()));
@@ -87,7 +88,7 @@ public class S3ViewerPanel {
         arnText.setComponentPopupMenu(menu);
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            s3Node = new S3KeyNode(bucketVirtual);
+            s3Node = new S3KeyNode(project, bucketVirtual.getName(), null, "");
 
             ColumnInfo key = new S3KeyColumnInfo(virtualFile -> virtualFile.getFile().getKey());
 
@@ -190,7 +191,7 @@ public class S3ViewerPanel {
                 Object userObject = ((DefaultMutableTreeNode) item).getUserObject();
                 if (!(userObject instanceof S3KeyNode)) {
                     return;
-                }
+                }/*
                 if (!(((S3KeyNode) userObject).getVirtualFile() instanceof S3ContinuationVirtualObject)) {
                     return;
                 }
@@ -199,7 +200,7 @@ public class S3ViewerPanel {
                     return;
                 }
                 ((S3VirtualFile) parent).getChildren();
-                treeTable.refresh();
+                treeTable.refresh();*/
             }
         });
     }

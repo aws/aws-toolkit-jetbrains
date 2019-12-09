@@ -21,7 +21,7 @@ import javax.swing.JComponent
 class S3ViewerEditorProvider : FileEditorProvider, DumbAware {
     override fun accept(project: Project, file: VirtualFile) = file is S3VirtualBucket
 
-    override fun createEditor(project: Project, file: VirtualFile) = S3ViewerEditor(file as S3VirtualBucket)
+    override fun createEditor(project: Project, file: VirtualFile) = S3ViewerEditor(project, file as S3VirtualBucket)
 
     override fun getPolicy() = FileEditorPolicy.HIDE_DEFAULT_EDITOR
 
@@ -32,8 +32,8 @@ class S3ViewerEditorProvider : FileEditorProvider, DumbAware {
     }
 }
 
-class S3ViewerEditor(bucket: S3VirtualBucket) : FileEditor, UserDataHolderBase() {
-    private val s3Panel: S3ViewerPanel = S3ViewerPanel(bucket)
+class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : FileEditor, UserDataHolderBase() {
+    private val s3Panel: S3ViewerPanel = S3ViewerPanel(project, bucket)
 
     override fun getComponent(): JComponent = s3Panel.component
 

@@ -15,10 +15,10 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
         }
     }
 
-    fun getSelectedAsVirtualFiles(): List<VirtualFile> =
+    fun getSelectedAsVirtualFiles(): List<VirtualFile> = listOf()/*
         selectedRows.map {
             val path = tree.getPathForRow(convertRowIndexToModel(it))
             val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
             node.virtualFile
-        }
+        }*/
 }

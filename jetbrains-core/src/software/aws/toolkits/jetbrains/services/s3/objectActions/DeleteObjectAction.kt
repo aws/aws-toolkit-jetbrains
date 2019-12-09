@@ -36,12 +36,13 @@ class DeleteObjectAction(
         for (row in rows) {
             val path = treeTable.tree.getPathForRow(treeTable.convertRowIndexToModel(row))
             val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
+            /*
             val file = node.virtualFile
             val key = when (file.parent is S3VirtualDirectory) {
                 true -> "${file.parent.name}/${file.name}"
                 false -> file.name
             }
-            objectsToDelete.add(ObjectIdentifier.builder().key(key).build())
+            objectsToDelete.add(ObjectIdentifier.builder().key(key).build())*/
         }
 
         val response = Messages.showOkCancelDialog(

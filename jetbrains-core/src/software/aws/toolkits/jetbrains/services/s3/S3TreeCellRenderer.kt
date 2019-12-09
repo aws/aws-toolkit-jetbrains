@@ -23,9 +23,10 @@ class S3TreeCellRenderer : DefaultTreeCellRenderer() {
         val component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus) as JLabel
         val selected = value as? DefaultMutableTreeNode
         val node = selected?.userObject as? S3KeyNode
-        component.icon = when (node?.virtualFile) {
-            is S3VirtualDirectory -> if (expanded) openIcon else closedIcon
-            else -> leafIcon
+        component.icon = if (node?.name?.endsWith('/') == true) {
+            if (expanded) openIcon else closedIcon
+        } else {
+            leafIcon
         }
         return component
     }

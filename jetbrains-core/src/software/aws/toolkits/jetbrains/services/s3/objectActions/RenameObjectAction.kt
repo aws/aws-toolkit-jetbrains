@@ -30,6 +30,7 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
         val row = treeTable.selectedRow
         val path = treeTable.tree.getPathForRow(treeTable.convertRowIndexToModel(row))
         val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
+        /*
         val file = node.virtualFile
 
         val response = Messages.showInputDialog(project,
@@ -52,7 +53,7 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
                     e.notifyError(message("s3.rename.object.failed"))
                 }
             }
-        }
+        }*/
     }
 
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||

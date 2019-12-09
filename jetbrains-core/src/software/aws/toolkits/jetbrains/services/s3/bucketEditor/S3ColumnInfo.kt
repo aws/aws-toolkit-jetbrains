@@ -14,29 +14,29 @@ open class S3ColumnInfo(columnTitle: String, val valueGetter: (S3VirtualObject) 
     ColumnInfo<Any, String>(columnTitle) {
 
     override fun valueOf(obj: Any): String? =
+        "abc"
+    /*
         when (val file = getVirtualFileFromNode(obj)) {
             is S3VirtualObject -> valueGetter.invoke(file)
             else -> ""
-        }
+        }*/
 
     override fun isCellEditable(item: Any?): Boolean = true
 
-    fun getVirtualFileFromNode(obj: Any): VirtualFile? {
-        val userObject = (obj as? DefaultMutableTreeNode)?.userObject
-        return (userObject as? S3KeyNode)?.virtualFile
-    }
 }
 
 class S3KeyColumnInfo(valueGetter: (S3VirtualObject) -> String?) :
     S3ColumnInfo(message("s3.name"), valueGetter) {
 
     override fun valueOf(obj: Any): String? {
+        return "name"
+        /*
         val file = super.getVirtualFileFromNode(obj)
         return when (file) {
             is S3VirtualObject -> valueGetter.invoke(file)
             is S3VirtualDirectory -> file.name
             else -> ""
-        }
+        }*/
     }
 
     override fun getColumnClass(): Class<*> = TreeTableModel::class.java

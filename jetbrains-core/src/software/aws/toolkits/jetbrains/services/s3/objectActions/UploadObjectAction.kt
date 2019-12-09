@@ -37,6 +37,7 @@ class UploadObjectAction(
         val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
             .withDescription(message("s3.upload.object.action", bucket.s3Bucket.name()))
 
+        /*
         val row = treeTable.selectedRow
         var nodeFile: VirtualFile? = null
         if (row > 0) {
@@ -55,7 +56,7 @@ class UploadObjectAction(
                     notifyError(message("s3.upload.object.failed"))
                 }
             }
-        }
+        }*/
     }
 
     override fun isEnabled(): Boolean = treeTable.isEmpty || !(treeTable.selectedRows.size > 1)
