@@ -75,7 +75,13 @@ class S3VirtualObject(s3Vfs: S3VirtualFileSystem, val file: S3Object, parent: Vi
     fun formatSize(): String = StringUtil.formatFileSize(file.size)
 }
 
-open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket) :
+class S3ContinuationVirtualObject(s3Vfs: S3VirtualFileSystem, val file: S3ContinuationToken, parent: VirtualFile) : S3VirtualFile(s3Vfs, parent, file) {
+    override fun isDirectory(): Boolean = false
+
+    override fun getChildren(): Array<VirtualFile> = emptyArray()
+}
+
+class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket) :
     S3VirtualFile(fileSystem, parent = null, key = S3Directory(s3Bucket.name(), "", fileSystem.client)) {
 
     val client: S3Client = fileSystem.client
@@ -83,14 +89,20 @@ open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket
 
     fun getVirtualBucketName(): String = s3Bucket.name()
 
-    override fun getChildren(): Array<VirtualFile> =
-        S3Directory(s3Bucket.name(), "", fileSystem.client).children().sortedBy { it.key }
+    override fun getChildren(): Array<VirtualFile> {
+        var continuationToken: S3ContinuationVirtualObject? = null
+        return S3Directory(s3Bucket.name(), "", fileSystem.client).children().sortedBy { it.key }
             .map {
                 when (it) {
                     is S3Object -> S3VirtualObject(fileSystem, it, this)
                     is S3Directory -> S3VirtualDirectory(fileSystem, it, this)
+                    is S3ContinuationToken -> {
+                        continuationToken = S3ContinuationVirtualObject(fileSystem, it, this)
+                        null
+                    }
                 }
-            }.toTypedArray()
+            }.plus(continuationToken).filterNotNull().toTypedArray()
+    }
 
     override fun isDirectory(): Boolean = true
 
@@ -100,14 +112,20 @@ open class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket
 class S3VirtualDirectory(s3filesystem: S3VirtualFileSystem, private val directory: S3Directory, parent: VirtualFile) :
     S3VirtualFile(s3filesystem, parent, directory) {
 
-    override fun getChildren(): Array<VirtualFile> =
-        directory.children().sortedBy { it.key }.filterNot { it.key == directory.key }
+    override fun getChildren(): Array<VirtualFile> {
+        var continuationToken: S3ContinuationVirtualObject? = null
+        return directory.children().sortedBy { it.key }.filterNot { it.key == directory.key }
             .map {
                 when (it) {
                     is S3Object -> S3VirtualObject(fileSystem, it, this)
                     is S3Directory -> S3VirtualDirectory(fileSystem, it, this)
+                    is S3ContinuationToken -> {
+                        continuationToken = S3ContinuationVirtualObject(fileSystem, it, this)
+                        null
+                    }
                 }
-            }.toTypedArray()
+            }.plus(continuationToken).filterNotNull().toTypedArray()
+    }
 
     override fun isDirectory(): Boolean = true
 
