@@ -85,13 +85,15 @@ class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket) :
     S3VirtualFile(fileSystem, parent = null, key = S3Directory(s3Bucket.name(), "", fileSystem.client)) {
 
     val client: S3Client = fileSystem.client
+    val directory = S3Directory(s3Bucket.name(), "", fileSystem.client)
+
     override fun getTimeStamp(): Long = s3Bucket.creationDate().toEpochMilli()
 
     fun getVirtualBucketName(): String = s3Bucket.name()
 
     override fun getChildren(): Array<VirtualFile> {
         var continuationToken: S3ContinuationVirtualObject? = null
-        return S3Directory(s3Bucket.name(), "", fileSystem.client).children().sortedBy { it.key }
+        return directory.children().sortedBy { it.key }
             .map {
                 when (it) {
                     is S3Object -> S3VirtualObject(fileSystem, it, this)

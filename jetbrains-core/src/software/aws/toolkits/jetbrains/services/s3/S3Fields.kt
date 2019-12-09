@@ -18,13 +18,18 @@ class S3Object(key: String, val size: Long, val lastModified: Instant) : S3Item(
 class S3ContinuationToken(key: String, val continuationToken: String) : S3Item(key)
 
 class S3Directory(val bucket: String, key: String, private val client: S3Client) : S3Item(key) {
+    private var continuationToken: String? = null
+    private var internalChildren = listOf<S3Item>()
+
     fun children(): List<S3Item> {
         val response = client.listObjectsV2 {
             it.bucket(bucket).delimiter("/").prefix(key)
             it.maxKeys(S3KeyNode.UPDATE_LIMIT)
+            it.continuationToken(continuationToken)
         }
 
-        val continuation = listOfNotNull(response.nextContinuationToken()?.let {
+        continuationToken = response.nextContinuationToken()
+        val continuation = listOfNotNull(continuationToken?.let {
             S3ContinuationToken("next token", it)
         })
 
@@ -37,6 +42,7 @@ class S3Directory(val bucket: String, key: String, private val client: S3Client)
             ?.map { S3Object(it.key(), it.size(), it.lastModified()) }
             ?: emptyList()
 
-        return folders + s3Objects + continuation
+        internalChildren = internalChildren + folders + s3Objects
+        return internalChildren + continuation
     }
 }

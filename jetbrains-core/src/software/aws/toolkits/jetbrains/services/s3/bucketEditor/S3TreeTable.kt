@@ -11,8 +11,7 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
     fun refresh() {
         runInEdt {
             clearSelection()
-            val structureTreeModel = treeTableModel.structureTreeModel
-            structureTreeModel.invalidate()
+            treeTableModel.structureTreeModel.invalidate()
         }
     }
 

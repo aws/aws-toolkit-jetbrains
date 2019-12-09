@@ -18,12 +18,10 @@ import com.intellij.util.ui.ColumnInfo;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -32,10 +30,13 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.tree.DefaultMutableTreeNode;
 
+import software.aws.toolkits.jetbrains.services.s3.S3ContinuationVirtualObject;
 import software.aws.toolkits.jetbrains.services.s3.S3RowSorter;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
+import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualObject;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
@@ -104,31 +105,8 @@ public class S3ViewerPanel {
             /**
              *  Navigation buttons for pages
              */
-            JButton next = new JButton(">");
-            JButton previous = new JButton("<");
-            ActionListener listener = e -> {
-                next.setEnabled(true);
-                previous.setEnabled(true);
-
-                if (e.getSource() == next) {
-                    s3Node.updateLimitsOnButtonClick(true);
-                    if (s3Node.getNext() == s3Node.getCurrSize()) {
-                        next.setEnabled(false);
-                    }
-
-                } else if (e.getSource() == previous) {
-                    s3Node.updateLimitsOnButtonClick(false);
-                    if (s3Node.getPrev() == 0) {
-                        previous.setEnabled(false);
-                    }
-                }
-                treeTable.refresh();
-            };
 
             ApplicationManager.getApplication().invokeLater(() -> {
-                next.addActionListener(listener);
-                previous.addActionListener(listener);
-
                 treeTable = new S3TreeTable(model);
                 treeTable.setRootVisible(false);
                 treeTable.setDefaultRenderer(Object.class, tableRenderer);
@@ -150,6 +128,7 @@ public class S3ViewerPanel {
                 mainPanel.add(scrollPane, BorderLayout.CENTER);
 
                 clearSelectionOnWhiteSpace();
+                expandNextTokenOnClick();
             }, ModalityState.defaultModalityState());
         });
     }
@@ -192,6 +171,35 @@ public class S3ViewerPanel {
                 if (!treeTable.contains(e.getPoint())) {
                     treeTable.clearSelection();
                 }
+            }
+        });
+    }
+
+    private void expandNextTokenOnClick() {
+        treeTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = treeTable.rowAtPoint(e.getPoint());
+                if (row < 0) {
+                    return;
+                }
+                Object item = treeTable.getTree().getPathForRow(row).getLastPathComponent();
+                if (!(item instanceof DefaultMutableTreeNode)) {
+                    return;
+                }
+                Object userObject = ((DefaultMutableTreeNode) item).getUserObject();
+                if (!(userObject instanceof S3KeyNode)) {
+                    return;
+                }
+                if (!(((S3KeyNode) userObject).getVirtualFile() instanceof S3ContinuationVirtualObject)) {
+                    return;
+                }
+                Object parent = ((S3KeyNode) userObject).getVirtualFile().getParent();
+                if (!(parent instanceof S3VirtualFile)) {
+                    return;
+                }
+                ((S3VirtualFile) parent).getChildren();
+                treeTable.refresh();
             }
         });
     }
