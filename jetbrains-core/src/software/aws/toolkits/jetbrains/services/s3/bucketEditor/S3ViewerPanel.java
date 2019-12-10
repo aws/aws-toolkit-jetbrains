@@ -29,7 +29,6 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.tree.DefaultMutableTreeNode;
 
 import software.aws.toolkits.jetbrains.services.s3.S3RowSorter;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
@@ -120,7 +119,6 @@ public class S3ViewerPanel {
                 mainPanel.add(scrollPane, BorderLayout.CENTER);
 
                 clearSelectionOnWhiteSpace();
-                expandNextTokenOnClick();
             }, ModalityState.defaultModalityState());
         });
     }
@@ -163,34 +161,6 @@ public class S3ViewerPanel {
                 if (!treeTable.contains(e.getPoint())) {
                     treeTable.clearSelection();
                 }
-            }
-        });
-    }
-
-    private void expandNextTokenOnClick() {
-        treeTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int row = treeTable.rowAtPoint(e.getPoint());
-                if (row < 0) {
-                    return;
-                }
-                Object item = treeTable.getTree().getPathForRow(row).getLastPathComponent();
-                if (!(item instanceof DefaultMutableTreeNode)) {
-                    return;
-                }
-                Object userObject = ((DefaultMutableTreeNode) item).getUserObject();
-                if (!(userObject instanceof S3ContinuationNode)) {
-                    return;
-                }
-                S3ContinuationNode continuationNode = (S3ContinuationNode) userObject;
-                if (continuationNode.getParent() == null) {
-                    return;
-                }
-                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                    continuationNode.getParent().loadMore(continuationNode.getToken());
-                    treeTable.refresh();
-                });
             }
         });
     }
