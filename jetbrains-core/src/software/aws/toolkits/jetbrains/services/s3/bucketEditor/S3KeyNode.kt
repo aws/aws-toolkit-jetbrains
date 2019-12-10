@@ -21,7 +21,7 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
 
     override fun getName(): String = if (key.endsWith("/")) key.dropLast(1).substringAfterLast('/') + '/' else key.substringAfterLast('/')
 
-    fun loadMore(continuationToken: String?) {
+    fun loadMore(continuationToken: String) {
         cachedList = (children as Array<S3KeyNode>).dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
         cleanUpCache()
     }
@@ -30,10 +30,10 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         val response = client.listObjectsV2 {
             it.bucket(bucketName).delimiter("/").prefix(key)
             it.maxKeys(UPDATE_LIMIT)
-            it.continuationToken(continuationToken)
+            continuationToken?.apply { it.continuationToken(continuationToken) }
         }
 
-        val continuation = listOfNotNull(response.continuationToken()?.let {
+        val continuation = listOfNotNull(response.nextContinuationToken()?.let {
             S3ContinuationNode(project!!, bucketName, this, this.key + '/' + "load more", it)
         })
 

@@ -11,27 +11,21 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.swing.tree.DefaultMutableTreeNode
 
-class S3Column(private val type: S3ColumnType) : ColumnInfo<Any, String>(type.message) {
+class S3Column(private val type: S3ColumnType) : ColumnInfo<Any, String>(type.title) {
     override fun valueOf(item: Any?): String? {
         val userObject = (item as DefaultMutableTreeNode).userObject ?: return ""
-        return type.getValue(userObject)
+        return getValue(userObject)
     }
 
     override fun isCellEditable(item: Any?): Boolean = false
-    override fun getColumnClass(): Class<*> = TreeTableModel::class.java
-}
+    override fun getColumnClass(): Class<*> = if (type == S3ColumnType.NAME) TreeTableModel::class.java else super.getColumnClass()
 
-enum class S3ColumnType(val message: String) {
-    NAME(message("s3.name")),
-    SIZE(message("s3.size")),
-    LAST_MODIFIED(message("s3.last_modified"));
-
-    fun getValue(userObject: Any): String =
+    private fun getValue(userObject: Any): String =
         if (userObject is S3ObjectNode) {
-            when (this) {
-                NAME -> userObject.key
-                SIZE -> StringUtil.formatFileSize(userObject.size)
-                LAST_MODIFIED -> {
+            when (type) {
+                S3ColumnType.NAME -> userObject.key
+                S3ColumnType.SIZE -> StringUtil.formatFileSize(userObject.size)
+                S3ColumnType.LAST_MODIFIED -> {
                     val datetime = LocalDateTime.ofInstant(userObject.lastModified, ZoneId.systemDefault())
                     datetime.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
                 }
@@ -39,4 +33,10 @@ enum class S3ColumnType(val message: String) {
         } else {
             ""
         }
+}
+
+enum class S3ColumnType(val title: String) {
+    NAME(message("s3.name")),
+    SIZE(message("s3.size")),
+    LAST_MODIFIED(message("s3.last_modified"));
 }
