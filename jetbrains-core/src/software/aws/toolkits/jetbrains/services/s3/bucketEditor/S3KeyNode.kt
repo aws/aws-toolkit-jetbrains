@@ -14,10 +14,7 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
     private var cachedList: Array<S3KeyNode> = arrayOf()
 
     override fun buildChildren(): Array<S3KeyNode> = if (cachedList.isEmpty()) {
-        loadObjects().sortedBy { it.key }
-            .map {
-                S3KeyNode(project!!, bucketName, this, it.key)
-            }.toTypedArray()
+        loadObjects().toTypedArray()
     } else {
         cachedList
     }
@@ -25,7 +22,7 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
     override fun getName(): String = if (key.endsWith("/")) key.dropLast(1).substringAfterLast('/') + '/' else key.substringAfterLast('/')
 
     fun loadMore(continuationToken: String?) {
-        cachedList = children as Array<S3KeyNode> + loadObjects(continuationToken)
+        cachedList = (children as Array<S3KeyNode>).dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
         cleanUpCache()
     }
 
@@ -49,7 +46,7 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
             ?.map { S3ObjectNode(project!!, bucketName, this, it.key(), it.size(), it.lastModified()) as S3KeyNode }
             ?: emptyList()
 
-        return folders + s3Objects + continuation
+        return (folders + s3Objects).sortedBy { it.key } + continuation
     }
 
     companion object {
