@@ -4,26 +4,29 @@
 package software.aws.toolkits.jetbrains.services.s3.bucketEditor
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.treeStructure.SimpleNode
+import com.intellij.ui.treeStructure.CachingSimpleNode
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import java.time.Instant
 
-open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) : SimpleNode(project) {
+open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) : CachingSimpleNode(project, null) {
     private val client: S3Client = AwsClientManager.getInstance(project).getClient()
-    private val initialChildren: List<S3KeyNode> by lazy { loadObjects() }
-    private var additionalObjects: List<S3KeyNode> = listOf()
+    private var cachedList: Array<S3KeyNode> = arrayOf()
 
-    override fun getChildren(): Array<S3KeyNode> =
-        (initialChildren + additionalObjects).sortedBy { it.key }
+    override fun buildChildren(): Array<S3KeyNode> = if (cachedList.isEmpty()) {
+        loadObjects().sortedBy { it.key }
             .map {
                 S3KeyNode(project!!, bucketName, this, it.key)
             }.toTypedArray()
+    } else {
+        cachedList
+    }
 
-    override fun getName(): String = key
+    override fun getName(): String = if (key.endsWith("/")) key.dropLast(1).substringAfterLast('/') else key.substringAfterLast('/')
 
     fun loadMore(continuationToken: String?) {
-        additionalObjects = additionalObjects + loadObjects(continuationToken)
+        cachedList = children as Array<S3KeyNode> + loadObjects(continuationToken)
+        cleanUpCache()
     }
 
     private fun loadObjects(continuationToken: String? = null): List<S3KeyNode> {

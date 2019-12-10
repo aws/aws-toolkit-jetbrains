@@ -85,7 +85,6 @@ class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket) :
     S3VirtualFile(fileSystem, parent = null, key = S3Directory(s3Bucket.name(), "", fileSystem.client)) {
 
     val client: S3Client = fileSystem.client
-    val directory = S3Directory(s3Bucket.name(), "", fileSystem.client)
 
     override fun getTimeStamp(): Long = s3Bucket.creationDate().toEpochMilli()
 
