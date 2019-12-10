@@ -22,11 +22,11 @@ class UploadObjectAction(
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
+        /*
         val client: S3Client = bucket.client
         val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
             .withDescription(message("s3.upload.object.action", bucket.s3Bucket.name()))
 
-        /*
         val row = treeTable.selectedRow
         var nodeFile: VirtualFile? = null
         if (row > 0) {

@@ -33,6 +33,7 @@ class DownloadObjectAction(
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
+        /*
         val client = bucket.client
         val descriptor = FileSaverDescriptor(
             message("s3.download.object.action"), message("s3.download.object.description")
@@ -62,7 +63,7 @@ class DownloadObjectAction(
                     }
                 }
             }
-        }
+        }*/
     }
 
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) ||

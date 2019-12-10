@@ -42,9 +42,7 @@ class S3BucketNode(project: Project, val bucket: Bucket) :
     override fun onDoubleClick() {
         if (!DumbService.getInstance(nodeProject).isDumb) {
             val editorManager = FileEditorManager.getInstance(nodeProject)
-            val client: S3Client = AwsClientManager.getInstance(nodeProject).getClient()
-            val virtualBucket = S3VirtualBucket(S3VirtualFileSystem(client), bucket)
-            editorManager.openTextEditor(OpenFileDescriptor(nodeProject, virtualBucket), true)
+            editorManager.openTextEditor(OpenFileDescriptor(nodeProject, S3VirtualBucket(bucket)), true)
             TelemetryService.getInstance().record(nodeProject) {
                 datum("s3_openeditor") {
                     count()

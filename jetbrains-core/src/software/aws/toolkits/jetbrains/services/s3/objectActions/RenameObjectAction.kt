@@ -19,11 +19,11 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
+        /*
         val client: S3Client = bucket.client
         val row = treeTable.selectedRow
         val path = treeTable.tree.getPathForRow(treeTable.convertRowIndexToModel(row))
         val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
-        /*
         val file = node.virtualFile
 
         val response = Messages.showInputDialog(project,

@@ -28,6 +28,7 @@ class DeleteObjectAction(
     @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
+        /*
         val client: S3Client = bucket.client
         val rows = treeTable.selectedRows
         val objectsToDelete = mutableListOf<ObjectIdentifier>()
@@ -60,7 +61,7 @@ class DeleteObjectAction(
                     notifyInfo(message("s3.delete.object.failed"))
                 }
             }
-        }
+        }*/
     }
 
     override fun isEnabled(): Boolean = (!(treeTable.isEmpty || (treeTable.selectedRow < 0) ||
