@@ -9,17 +9,22 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import java.time.Instant
 
-open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) : CachingSimpleNode(project, null) {
+open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) :
+    CachingSimpleNode(project, null) {
+    open val isDirectory = true
+
     private val client: S3Client = AwsClientManager.getInstance(project).getClient()
     private var cachedList: Array<S3KeyNode> = arrayOf()
 
-    override fun buildChildren(): Array<S3KeyNode> = if (cachedList.isEmpty()) {
+    override fun buildChildren(): Array<S3KeyNode> = if (!isDirectory) {
+        arrayOf()
+    } else if (cachedList.isEmpty()) {
         loadObjects().toTypedArray()
     } else {
         cachedList
     }
 
-    override fun getName(): String = if (key.endsWith("/")) key.dropLast(1).substringAfterLast('/') + '/' else key.substringAfterLast('/')
+    override fun getName(): String = if (this.isDirectory) key.dropLast(1).substringAfterLast('/') + '/' else key.substringAfterLast('/')
 
     fun loadMore(continuationToken: String) {
         cachedList = (children as Array<S3KeyNode>).dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
@@ -56,7 +61,10 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
 
 class S3ObjectNode(project: Project, bucketName: String, parent: S3KeyNode?, key: String, val size: Long, val lastModified: Instant) :
     S3KeyNode(project, bucketName, parent, key) {
+    override val isDirectory: Boolean = false
 }
 
 class S3ContinuationNode(project: Project, bucketName: String, parent: S3KeyNode?, key: String, val token: String) :
-    S3KeyNode(project, bucketName, parent, key) {}
+    S3KeyNode(project, bucketName, parent, key) {
+    override val isDirectory: Boolean = false
+}
