@@ -13,6 +13,7 @@ import java.time.Instant
 open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) :
     CachingSimpleNode(project, null) {
     open val isDirectory = true
+    val loadedPages = mutableSetOf<String>()
 
     private val client: S3Client = AwsClientManager.getInstance(project).getClient()
     private var cachedList: Array<S3KeyNode> = arrayOf()
@@ -27,9 +28,15 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
 
     override fun getName(): String = if (this.isDirectory) key.dropLast(1).substringAfterLast('/') + '/' else key.substringAfterLast('/')
 
+    @Synchronized
     fun loadMore(continuationToken: String) {
+        // dedupe calls
+        if (loadedPages.contains(continuationToken)) {
+            return
+        }
         cachedList = (children as Array<S3KeyNode>).dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
         cleanUpCache()
+        loadedPages.add(continuationToken)
     }
 
     private fun loadObjects(continuationToken: String? = null): List<S3KeyNode> {
@@ -40,7 +47,8 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         }
 
         val continuation = listOfNotNull(response.nextContinuationToken()?.let {
-            S3ContinuationNode(project!!, bucketName, this, "${this.key}/${message("s3.load_more")}", it)
+            // Spaces are intentional
+            S3ContinuationNode(project!!, bucketName, this, "${this.key}/     ${message("s3.load_more")}", it)
         })
 
         val folders = response.commonPrefixes()?.map { S3KeyNode(project!!, bucketName, this, it.prefix()) } ?: emptyList()

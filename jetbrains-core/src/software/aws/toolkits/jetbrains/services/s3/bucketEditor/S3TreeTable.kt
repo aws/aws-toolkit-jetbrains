@@ -8,12 +8,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.util.concurrent.atomic.AtomicReference
 import javax.swing.tree.DefaultMutableTreeNode
 
 open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable(treeTableModel) {
-    private val loading: AtomicReference<Boolean> = AtomicReference(false)
-
     fun refresh() {
         runInEdt {
             clearSelection()
@@ -29,6 +26,7 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
             }
             val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3ContinuationNode ?: return
             val parent = continuationNode.parent ?: return
+
             ApplicationManager.getApplication().executeOnPooledThread {
                 parent.loadMore(continuationNode.token)
                 refresh()

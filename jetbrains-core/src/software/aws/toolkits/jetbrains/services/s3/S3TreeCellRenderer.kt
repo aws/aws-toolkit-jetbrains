@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3
 
+import com.intellij.ui.SimpleTextAttributes
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3ContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import java.awt.Component
 import javax.swing.JLabel
@@ -25,6 +27,9 @@ class S3TreeCellRenderer : DefaultTreeCellRenderer() {
         val node = selected?.userObject as? S3KeyNode
         component.icon = if (node?.name?.endsWith('/') == true) {
             if (expanded) openIcon else closedIcon
+        } else if (node is S3ContinuationNode) {
+            component.foreground = SimpleTextAttributes.LINK_ATTRIBUTES.fgColor
+            null
         } else {
             leafIcon
         }
