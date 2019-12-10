@@ -67,7 +67,7 @@ class DeleteObjectAction(
         (treeTable.getValueAt(treeTable.selectedRow, 1) == "")))
 
     fun deleteObjectAction(client: S3Client, objectsToDelete: MutableList<ObjectIdentifier>) {
-        val bucketName = bucket.getVirtualBucketName()
+        val bucketName = bucket.name
         val deleteObjectsRequest = DeleteObjectsRequest.builder()
             .bucket(bucketName)
             .delete(Delete.builder().objects(objectsToDelete).build())

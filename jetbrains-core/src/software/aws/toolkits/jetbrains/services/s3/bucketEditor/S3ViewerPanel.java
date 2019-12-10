@@ -59,10 +59,10 @@ public class S3ViewerPanel {
 
     public S3ViewerPanel(Project project, S3VirtualBucket bucketVirtual) {
         this.bucketVirtual = bucketVirtual;
-        this.name.setText(bucketVirtual.getVirtualBucketName());
+        this.name.setText(bucketVirtual.getName());
         this.date.setText(bucketVirtual.formatDate(bucketVirtual.getS3Bucket().creationDate()));
 
-        this.arnText.setText("arn:aws:s3:::" + bucketVirtual.getVirtualBucketName());
+        this.arnText.setText("arn:aws:s3:::" + bucketVirtual.getName());
         this.bucketArn.setText("Bucket ARN:");
         this.bucketName.setText("Bucket Name:");
         this.creationDate.setText("Creation Date:");

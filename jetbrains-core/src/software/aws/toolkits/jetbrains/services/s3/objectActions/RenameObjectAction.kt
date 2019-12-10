@@ -53,7 +53,7 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
         (treeTable.getValueAt(treeTable.selectedRow, 1) == "") || (treeTable.selectedRows.size > 1))
 
     fun renameObjectAction(response: String, file: VirtualFile, client: S3Client) {
-        val bucketName = bucket.getVirtualBucketName()
+        val bucketName = bucket.name
         var copySource: String
         var copyDestination: String
         /*

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3
 
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
 import software.amazon.awssdk.services.s3.S3Client
@@ -14,29 +13,24 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/**
- * BaseS3VirtualFile is a base class to represent a virtual file
- */
-abstract class S3VirtualFile(val fileSystem: S3VirtualFileSystem, private val parent: VirtualFile?, open val key: S3Item) :
-    VirtualFile() {
-
+class S3VirtualBucket(private val fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket) : VirtualFile() {
     fun formatDate(date: Instant): String {
         val datetime = LocalDateTime.ofInstant(date, ZoneId.systemDefault())
         return datetime.atZone(ZoneId.systemDefault())
             .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
     }
 
-    override fun getName(): String = key.name
+    override fun getName(): String = s3Bucket.name()
 
     override fun isWritable(): Boolean = false
 
-    override fun getPath(): String = key.key
+    override fun getPath(): String = s3Bucket.name()
 
     override fun isValid(): Boolean = true
 
-    override fun getParent(): VirtualFile? = parent
+    override fun getParent(): VirtualFile? = null
 
-    override fun toString(): String = "${key.key}"
+    override fun toString(): String = s3Bucket.name()
 
     override fun getFileSystem(): VirtualFileSystem = fileSystem
 
@@ -57,42 +51,10 @@ abstract class S3VirtualFile(val fileSystem: S3VirtualFileSystem, private val pa
     }
 
     override fun refresh(asynchronous: Boolean, recursive: Boolean, postRunnable: Runnable?) {}
-}
-
-class S3VirtualObject(s3Vfs: S3VirtualFileSystem, val file: S3Object, parent: VirtualFile) :
-    S3VirtualFile(s3Vfs, parent, file) {
-
-    override fun getName(): String = if (file.name.contains("/")) file.name.substringAfterLast("/") else file.name
-
-    override fun isDirectory(): Boolean = false
-
-    override fun getChildren(): Array<VirtualFile> = emptyArray()
-
-    override fun getLength(): Long = file.size
-
-    override fun getTimeStamp(): Long = file.lastModified.toEpochMilli()
-
-    fun formatSize(): String = StringUtil.formatFileSize(file.size)
-}
-
-class S3ContinuationVirtualObject(s3Vfs: S3VirtualFileSystem, val file: S3ContinuationToken, parent: VirtualFile) : S3VirtualFile(s3Vfs, parent, file) {
-    override fun isDirectory(): Boolean = false
-
-    override fun getChildren(): Array<VirtualFile> = emptyArray()
-}
-
-class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket) :
-    S3VirtualFile(fileSystem, parent = null, key = S3Directory(s3Bucket.name(), "", fileSystem.client)) {
 
     val client: S3Client = fileSystem.client
-
-    override fun getTimeStamp(): Long = s3Bucket.creationDate().toEpochMilli()
-
-    fun getVirtualBucketName(): String = s3Bucket.name()
 
     override fun getChildren(): Array<VirtualFile> = arrayOf()
 
     override fun isDirectory(): Boolean = true
-
-    override fun getName(): String = getVirtualBucketName()
 }

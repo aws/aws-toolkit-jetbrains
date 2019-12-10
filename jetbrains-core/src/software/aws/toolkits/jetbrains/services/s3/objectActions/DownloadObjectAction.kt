@@ -69,7 +69,7 @@ class DownloadObjectAction(
         (treeTable.getValueAt(treeTable.selectedRow, 1) == ""))
 
     fun downloadObjectAction(project: Project, client: S3Client, file: VirtualFile, fileWrapper: VirtualFileWrapper) {
-        val bucketName = bucket.getVirtualBucketName()
+        val bucketName = bucket.name
         val request = GetObjectRequest.builder()
             .bucket(bucketName)
             .key(file.name)
