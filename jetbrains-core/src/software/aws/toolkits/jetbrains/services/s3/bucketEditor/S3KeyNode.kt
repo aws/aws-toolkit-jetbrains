@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.s3.bucketEditor
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.treeStructure.CachingSimpleNode
+import com.jetbrains.rd.util.remove
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.resources.message
@@ -21,7 +22,8 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
     override fun buildChildren(): Array<S3KeyNode> = if (!isDirectory) {
         arrayOf()
     } else if (cachedList.isEmpty()) {
-        loadObjects().toTypedArray()
+        cachedList = loadObjects().toTypedArray()
+        cachedList
     } else {
         cachedList
     }
@@ -37,6 +39,11 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         cachedList = (children as Array<S3KeyNode>).dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
         cleanUpCache()
         loadedPages.add(continuationToken)
+    }
+
+    fun remove(node: S3KeyNode) {
+        cachedList = cachedList.filter { it != node }.toTypedArray()
+        cleanUpCache()
     }
 
     private fun loadObjects(continuationToken: String? = null): List<S3KeyNode> {

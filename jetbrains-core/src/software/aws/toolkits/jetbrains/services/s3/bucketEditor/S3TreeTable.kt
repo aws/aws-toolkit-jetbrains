@@ -20,7 +20,7 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
     private val mouseListener = object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent) {
             val row = rowAtPoint(e.point)
-            if (row < 0) {
+            if (row < 0 || e.clickCount != 2) {
                 return
             }
             val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3ContinuationNode ?: return
@@ -37,9 +37,21 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
         super.addMouseListener(mouseListener)
     }
 
-    fun getSelectedNodes(): List<S3KeyNode> =
-        selectedRows.map {
-            val path = tree.getPathForRow(convertRowIndexToModel(it))
-            (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
+    fun getNodeForRow(row: Int): S3KeyNode? {
+        val path = tree.getPathForRow(convertRowIndexToModel(row))
+        return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3KeyNode
+    }
+
+    fun getSelectedNodes(): List<S3KeyNode> = selectedRows.map { getNodeForRow(it) }.filterNotNull()
+
+    fun removeRows(rows: List<Int>) =
+        runInEdt {
+            rows.map {
+                val path = tree.getPathForRow(it)
+                path.lastPathComponent as DefaultMutableTreeNode
+            }.forEach {
+                val userNode = it.userObject as? S3KeyNode ?: return@forEach
+                ((it.parent as? DefaultMutableTreeNode)?.userObject as? S3KeyNode)?.remove(userNode)
+            }
         }
 }

@@ -8,10 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.resources.message
-import javax.swing.tree.DefaultMutableTreeNode
 
 class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3VirtualBucket) :
     ActionButtonWrapper(message("s3.rename.object.action"), null, null) {
