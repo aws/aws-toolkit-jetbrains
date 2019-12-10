@@ -5,25 +5,14 @@ package software.aws.toolkits.jetbrains.services.s3.objectActions
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
-import com.intellij.openapi.fileChooser.FileChooserFactory
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import javax.swing.tree.DefaultMutableTreeNode
 
 class UploadObjectAction(
     val bucket: S3VirtualBucket,
@@ -67,6 +56,7 @@ class UploadObjectAction(
         fileChosen: VirtualFile,
         nodeFile: VirtualFile?
     ) {
+        /*
         val bucketName = bucket.getVirtualBucketName()
         val key = if (nodeFile is S3VirtualDirectory) {
             "${nodeFile.name}/${fileChosen.name}"
@@ -89,6 +79,6 @@ class UploadObjectAction(
                     val pStream = ProgressInputStream(fileChosen.inputStream, fileChosenSize, indicator)
                     client.putObject(request, RequestBody.fromInputStream(pStream, fileChosen.length))
                 }
-            })
+            })*/
     }
 }

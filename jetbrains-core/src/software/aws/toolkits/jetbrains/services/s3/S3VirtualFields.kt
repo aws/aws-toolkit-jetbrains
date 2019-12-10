@@ -91,45 +91,9 @@ class S3VirtualBucket(fileSystem: S3VirtualFileSystem, val s3Bucket: Bucket) :
 
     fun getVirtualBucketName(): String = s3Bucket.name()
 
-    override fun getChildren(): Array<VirtualFile> {
-        var continuationToken: S3ContinuationVirtualObject? = null
-        return directory.children().sortedBy { it.key }
-            .map {
-                when (it) {
-                    is S3Object -> S3VirtualObject(fileSystem, it, this)
-                    is S3Directory -> S3VirtualDirectory(fileSystem, it, this)
-                    is S3ContinuationToken -> {
-                        continuationToken = S3ContinuationVirtualObject(fileSystem, it, this)
-                        null
-                    }
-                }
-            }.plus(continuationToken).filterNotNull().toTypedArray()
-    }
+    override fun getChildren(): Array<VirtualFile> = arrayOf()
 
     override fun isDirectory(): Boolean = true
 
     override fun getName(): String = getVirtualBucketName()
-}
-
-class S3VirtualDirectory(s3filesystem: S3VirtualFileSystem, private val directory: S3Directory, parent: VirtualFile) :
-    S3VirtualFile(s3filesystem, parent, directory) {
-
-    override fun getChildren(): Array<VirtualFile> {
-        var continuationToken: S3ContinuationVirtualObject? = null
-        return directory.children().sortedBy { it.key }.filterNot { it.key == directory.key }
-            .map {
-                when (it) {
-                    is S3Object -> S3VirtualObject(fileSystem, it, this)
-                    is S3Directory -> S3VirtualDirectory(fileSystem, it, this)
-                    is S3ContinuationToken -> {
-                        continuationToken = S3ContinuationVirtualObject(fileSystem, it, this)
-                        null
-                    }
-                }
-            }.plus(continuationToken).filterNotNull().toTypedArray()
-    }
-
-    override fun isDirectory(): Boolean = true
-
-    override fun getName(): String = directory.name
 }

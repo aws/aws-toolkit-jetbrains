@@ -4,19 +4,12 @@ package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.ui.InputValidator
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualDirectory
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import javax.swing.tree.DefaultMutableTreeNode
 
@@ -63,6 +56,7 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
         val bucketName = bucket.getVirtualBucketName()
         var copySource: String
         var copyDestination: String
+        /*
         if (file.parent is S3VirtualDirectory) {
             copySource = "${file.parent.name}/${file.name}"
             copyDestination = "${file.parent.name}/$response"
@@ -90,6 +84,6 @@ class RenameObjectAction(private var treeTable: S3TreeTable, val bucket: S3Virtu
             .bucket(bucketName)
             .key(copySource)
             .build()
-        client.deleteObject(deleteObjectRequest)
+        client.deleteObject(deleteObjectRequest)*/
     }
 }

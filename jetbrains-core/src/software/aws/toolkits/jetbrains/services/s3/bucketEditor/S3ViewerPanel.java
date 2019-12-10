@@ -33,11 +33,9 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import software.aws.toolkits.jetbrains.services.s3.S3ContinuationVirtualObject;
 import software.aws.toolkits.jetbrains.services.s3.S3RowSorter;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualFile;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualObject;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
@@ -60,7 +58,7 @@ public class S3ViewerPanel {
     private JLabel bucketName;
     private S3VirtualBucket bucketVirtual;
     private S3TreeTable treeTable;
-    private S3KeyNode s3Node;
+    private S3KeyNode s3KeyNode;
     private S3TreeTableModel model;
 
     public S3ViewerPanel(Project project, S3VirtualBucket bucketVirtual) {
@@ -88,7 +86,7 @@ public class S3ViewerPanel {
         arnText.setComponentPopupMenu(menu);
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            s3Node = new S3KeyNode(project, bucketVirtual.getName(), null, "");
+            s3KeyNode = new S3KeyNode(project, bucketVirtual.getName(), null, "");
 
             ColumnInfo key = new S3KeyColumnInfo(virtualFile -> virtualFile.getFile().getKey());
 
@@ -147,7 +145,7 @@ public class S3ViewerPanel {
 
     private void createTreeTable(ColumnInfo[] columns) {
         Disposable myTreeModelDisposable = Disposer.newDisposable();
-        SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3Node);
+        SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3KeyNode);
         StructureTreeModel<SimpleTreeStructure> myTreeModel = new StructureTreeModel(treeStructure, myTreeModelDisposable);
         model = new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true
             , myTreeModelDisposable), columns, myTreeModel);
