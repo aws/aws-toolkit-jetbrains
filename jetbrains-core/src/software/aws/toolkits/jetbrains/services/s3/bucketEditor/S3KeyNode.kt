@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.treeStructure.CachingSimpleNode
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.resources.message
 import java.time.Instant
 
 open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) :
@@ -39,7 +40,7 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         }
 
         val continuation = listOfNotNull(response.nextContinuationToken()?.let {
-            S3ContinuationNode(project!!, bucketName, this, this.key + '/' + "load more", it)
+            S3ContinuationNode(project!!, bucketName, this, "${this.key}/${message("s3.load_more")}", it)
         })
 
         val folders = response.commonPrefixes()?.map { S3KeyNode(project!!, bucketName, this, it.prefix()) } ?: emptyList()

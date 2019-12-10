@@ -180,18 +180,17 @@ public class S3ViewerPanel {
                     return;
                 }
                 Object userObject = ((DefaultMutableTreeNode) item).getUserObject();
-                if (!(userObject instanceof S3KeyNode)) {
-                    return;
-                }/*
-                if (!(((S3KeyNode) userObject).getVirtualFile() instanceof S3ContinuationVirtualObject)) {
+                if (!(userObject instanceof S3ContinuationNode)) {
                     return;
                 }
-                Object parent = ((S3KeyNode) userObject).getVirtualFile().getParent();
-                if (!(parent instanceof S3VirtualFile)) {
+                S3ContinuationNode continuationNode = (S3ContinuationNode) userObject;
+                if (continuationNode.getParent() == null) {
                     return;
                 }
-                ((S3VirtualFile) parent).getChildren();
-                treeTable.refresh();*/
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    continuationNode.getParent().loadMore(continuationNode.getToken());
+                    treeTable.refresh();
+                });
             }
         });
     }
