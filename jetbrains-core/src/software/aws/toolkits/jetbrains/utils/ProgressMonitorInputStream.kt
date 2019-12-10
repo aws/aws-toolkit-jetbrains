@@ -6,45 +6,38 @@ package software.aws.toolkits.jetbrains.utils
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.util.io.size
 import java.io.FileInputStream
+import java.io.FilterInputStream
 import java.io.InputStream
 import java.nio.file.Path
 
 class ProgressMonitorInputStream(
     private val indicator: ProgressIndicator,
-    private val delegate: InputStream,
+    delegate: InputStream,
     private val length: Long,
     private val noOpReset: Boolean = false, // required to support S3 until SDK fixes https://github.com/aws/aws-sdk-java-v2/issues/1544
     private val cancelable: Boolean = true
-) : InputStream() {
+) : FilterInputStream(delegate) {
 
     private var count: Long = 0
     private var marked: Long = 0
 
-    override fun read(): Int = delegate.read().also { updateProgress(if (it >= 0) 1 else 0) }
+    override fun read(): Int = super.read().also { updateProgress(if (it >= 0) 1 else 0) }
 
-    override fun read(b: ByteArray): Int = delegate.read(b).also { updateProgress(it.toLong()) }
+    override fun read(b: ByteArray, off: Int, len: Int): Int = super.read(b, off, len).also { updateProgress(it.toLong()) }
 
-    override fun read(b: ByteArray, off: Int, len: Int): Int = delegate.read(b, off, len).also { updateProgress(it.toLong()) }
-
-    override fun skip(n: Long): Long = delegate.skip(n).also { updateProgress(it) }
-
-    override fun close() = delegate.close()
-
-    override fun markSupported(): Boolean = delegate.markSupported()
+    override fun skip(n: Long): Long = super.skip(n).also { updateProgress(it) }
 
     override fun mark(readlimit: Int) {
-        delegate.mark(readlimit)
+        super.mark(readlimit)
         marked = count
     }
 
     override fun reset() {
         if (noOpReset) return
-        delegate.reset()
+        super.reset()
         count = marked
         updateProgress(0)
     }
-
-    override fun available(): Int = delegate.available()
 
     private fun updateProgress(increment: Long) {
         if (cancelable) {
