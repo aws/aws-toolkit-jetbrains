@@ -54,4 +54,8 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
                 ((it.parent as? DefaultMutableTreeNode)?.userObject as? S3KeyNode)?.remove(userNode)
             }
         }
+
+    fun invalidateLevel(node: S3ObjectNode) {
+        node.parent?.removeAllChildren()
+    }
 }

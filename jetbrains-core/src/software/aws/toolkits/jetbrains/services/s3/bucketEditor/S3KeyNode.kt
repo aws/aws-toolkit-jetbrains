@@ -4,27 +4,27 @@
 package software.aws.toolkits.jetbrains.services.s3.bucketEditor
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.treeStructure.CachingSimpleNode
-import com.jetbrains.rd.util.remove
+import com.intellij.ui.treeStructure.SimpleNode
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.resources.message
 import java.time.Instant
 
-open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) :
-    CachingSimpleNode(project, null) {
+open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) : SimpleNode(project, null) {
     open val isDirectory = true
-    val loadedPages = mutableSetOf<String>()
-
+    private val lock = Object()
+    private val loadedPages = mutableSetOf<String>()
     private val client: S3Client = AwsClientManager.getInstance(project).getClient()
     private var cachedList: Array<S3KeyNode> = arrayOf()
 
-    override fun buildChildren(): Array<S3KeyNode> = if (!isDirectory) {
+    override fun getChildren(): Array<S3KeyNode> = if (!isDirectory) {
         arrayOf()
-    } else if (cachedList.isEmpty()) {
-        cachedList = loadObjects().toTypedArray()
-        cachedList
     } else {
+        synchronized(lock) {
+            if (cachedList.isEmpty()) {
+                cachedList = loadObjects().toTypedArray()
+            }
+        }
         cachedList
     }
 
@@ -36,14 +36,16 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         if (loadedPages.contains(continuationToken)) {
             return
         }
-        cachedList = (children as Array<S3KeyNode>).dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
-        cleanUpCache()
+        cachedList = children.dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
         loadedPages.add(continuationToken)
     }
 
     fun remove(node: S3KeyNode) {
         cachedList = cachedList.filter { it != node }.toTypedArray()
-        cleanUpCache()
+    }
+
+    fun removeAllChildren() {
+        cachedList = arrayOf()
     }
 
     private fun loadObjects(continuationToken: String? = null): List<S3KeyNode> {
