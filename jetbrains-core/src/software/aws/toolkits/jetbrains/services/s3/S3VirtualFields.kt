@@ -21,6 +21,7 @@ abstract class S3VirtualFile(val fileSystem: S3VirtualFileSystem, private val pa
     VirtualFile() {
 
     fun formatDate(date: Instant): String {
+
         val datetime = LocalDateTime.ofInstant(date, ZoneId.systemDefault())
         return datetime.atZone(ZoneId.systemDefault())
             .format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))

@@ -1,7 +1,5 @@
 package software.aws.toolkits.jetbrains.services.s3.bucketEditor;
 
-import static software.aws.toolkits.resources.Localization.message;
-
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
@@ -36,7 +34,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import software.aws.toolkits.jetbrains.services.s3.S3RowSorter;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualObject;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
@@ -88,13 +85,9 @@ public class S3ViewerPanel {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             s3KeyNode = new S3KeyNode(project, bucketVirtual.getName(), null, "");
 
-            ColumnInfo key = new S3KeyColumnInfo(virtualFile -> virtualFile.getFile().getKey());
-
-            ColumnInfo size = new S3ColumnInfo(message("s3.size"), S3VirtualObject::formatSize);
-
-            ColumnInfo modified = new S3ColumnInfo(message("s3.last_modified"),
-                                                   virtualFile -> virtualFile.formatDate(virtualFile.getFile().getLastModified()));
-
+            ColumnInfo key = new S3Column(S3ColumnType.NAME);
+            ColumnInfo size = new S3Column(S3ColumnType.SIZE);
+            ColumnInfo modified = new S3Column(S3ColumnType.LAST_MODIFIED);
             final ColumnInfo[] COLUMNS = new ColumnInfo[] {key, size, modified};
             createTreeTable(COLUMNS);
 

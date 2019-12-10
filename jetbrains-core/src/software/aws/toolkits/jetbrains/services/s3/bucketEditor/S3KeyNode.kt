@@ -22,7 +22,7 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         cachedList
     }
 
-    override fun getName(): String = if (key.endsWith("/")) key.dropLast(1).substringAfterLast('/') else key.substringAfterLast('/')
+    override fun getName(): String = if (key.endsWith("/")) key.dropLast(1).substringAfterLast('/') + '/' else key.substringAfterLast('/')
 
     fun loadMore(continuationToken: String?) {
         cachedList = children as Array<S3KeyNode> + loadObjects(continuationToken)
