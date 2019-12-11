@@ -30,10 +30,8 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import software.amazon.awssdk.services.s3.S3Client;
-import software.aws.toolkits.jetbrains.services.s3.S3Resources;
-import software.aws.toolkits.jetbrains.services.s3.S3RowSorter;
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
