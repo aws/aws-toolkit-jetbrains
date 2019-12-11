@@ -17,6 +17,7 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.sts.StsResources
+import software.aws.toolkits.jetbrains.utils.Edt
 import software.aws.toolkits.jetbrains.utils.MRUList
 import java.util.concurrent.CancellationException
 import kotlin.properties.ObservableProperty
@@ -113,7 +114,7 @@ abstract class ProjectAccountSettingsManager2(private val project: Project) {
 
             validationJob?.cancel(CancellationException("Newer connection settings chosen"))
 
-            validationJob = GlobalScope.launch(Dispatchers.Main) {
+            validationJob = GlobalScope.launch(Dispatchers.Edt.immediate) {
                 try {
                     validate(credentialsProvider, region)
                     state = ConnectionState.VALID
