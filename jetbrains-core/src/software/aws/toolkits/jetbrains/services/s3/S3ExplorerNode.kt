@@ -41,12 +41,17 @@ class S3BucketNode(project: Project, val bucket: Bucket) :
     override fun onDoubleClick() {
         if (!DumbService.getInstance(nodeProject).isDumb) {
             val editorManager = FileEditorManager.getInstance(nodeProject)
-            editorManager.openTextEditor(OpenFileDescriptor(nodeProject, S3VirtualBucket(bucket)), true)
-            TelemetryService.getInstance().record(nodeProject) {
-                datum("s3_openeditor") {
-                    count()
-                }
-            }
+            // See if there is already an open editor, otherwise make a new one
+            val virtualFile =
+                editorManager.openFiles.firstOrNull { (it as? S3VirtualBucket)?.s3Bucket?.equals(bucket) == true } ?: S3VirtualBucket(bucket)
+            editorManager.openTextEditor(OpenFileDescriptor(nodeProject, virtualFile), true)
+            recordOpenTelemetry()
+        }
+    }
+
+    private fun recordOpenTelemetry() = TelemetryService.getInstance().record(nodeProject) {
+        datum("s3_openeditor") {
+            count()
         }
     }
 

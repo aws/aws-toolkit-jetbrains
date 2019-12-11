@@ -44,6 +44,7 @@ import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 
 @SuppressWarnings("unchecked")
 public class S3ViewerPanel {
+    public S3VirtualBucket bucketVirtual;
     private final int SCROLLPANE_SIZE = 11;
     private JPanel content;
     private JTextField name;
@@ -53,7 +54,6 @@ public class S3ViewerPanel {
     private JTextField arnText;
     private JLabel bucketArn;
     private JLabel bucketName;
-    private S3VirtualBucket bucketVirtual;
     private S3TreeTable treeTable;
     private S3KeyNode s3KeyNode;
     private S3TreeTableModel model;
