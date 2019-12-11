@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -49,7 +50,8 @@ class UploadObjectAction(
         }
     }
 
-    override fun isEnabled(): Boolean = treeTable.isEmpty || !(treeTable.selectedRows.size > 1)
+    override fun isEnabled(): Boolean =
+        (treeTable.isEmpty || treeTable.selectedRows.size <= 1) && !treeTable.getSelectedNodes().any { it is S3TreeContinuationNode }
 
     fun uploadObjectAction(
         client: S3Client,

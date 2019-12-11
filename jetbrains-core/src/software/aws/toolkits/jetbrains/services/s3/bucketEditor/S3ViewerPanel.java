@@ -139,8 +139,7 @@ public class S3ViewerPanel {
         Disposable myTreeModelDisposable = Disposer.newDisposable();
         SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3TreeNode);
         StructureTreeModel<SimpleTreeStructure> myTreeModel = new StructureTreeModel(treeStructure, myTreeModelDisposable);
-        model = new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true
-            , myTreeModelDisposable), columns, myTreeModel);
+        model = new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true, myTreeModelDisposable), columns, myTreeModel);
     }
 
     private void addTreeActions() {

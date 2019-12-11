@@ -10,13 +10,13 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.resources.message
 import java.time.Instant
 
-abstract class S3TreeNode(project: Project, val bucketName: String, val parent: S3TreeNode?, val key: String) : SimpleNode(project, null) {
+abstract class S3TreeNode(project: Project, val bucketName: String, val parent: S3TreeDirectoryNode?, val key: String) : SimpleNode(project, null) {
     open val isDirectory = false
     override fun getChildren(): Array<S3TreeNode> = arrayOf()
     override fun getName(): String = key.substringAfterLast('/')
 }
 
-class S3TreeDirectoryNode(project: Project, bucketName: String, parent: S3TreeNode?, key: String) : S3TreeNode(project, bucketName, parent, key) {
+class S3TreeDirectoryNode(project: Project, bucketName: String, parent: S3TreeDirectoryNode?, key: String) : S3TreeNode(project, bucketName, parent, key) {
     override val isDirectory = true
     private val lock = Object()
     private val loadedPages = mutableSetOf<String>()
@@ -80,10 +80,8 @@ class S3TreeDirectoryNode(project: Project, bucketName: String, parent: S3TreeNo
     }
 }
 
-class S3TreeObjectNode(project: Project, bucketName: String, parent: S3TreeNode?, key: String, val size: Long, val lastModified: Instant) :
-    S3TreeNode(project, bucketName, parent, key) {
-}
+class S3TreeObjectNode(project: Project, bucketName: String, parent: S3TreeDirectoryNode?, key: String, val size: Long, val lastModified: Instant) :
+    S3TreeNode(project, bucketName, parent, key)
 
-class S3TreeContinuationNode(project: Project, bucketName: String, parent: S3TreeNode?, key: String, val token: String) :
-    S3TreeNode(project, bucketName, parent, key) {
-}
+class S3TreeContinuationNode(project: Project, bucketName: String, parent: S3TreeDirectoryNode?, key: String, val token: String) :
+    S3TreeNode(project, bucketName, parent, key)
