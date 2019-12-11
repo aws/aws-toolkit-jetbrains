@@ -4,11 +4,12 @@ package software.aws.toolkits.jetbrains.services.s3.bucketEditor
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.treeStructure.treetable.TreeTable
-import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.awt.dnd.DnDConstants
@@ -20,7 +21,12 @@ import java.awt.event.MouseEvent
 import java.io.File
 import javax.swing.tree.DefaultMutableTreeNode
 
-class S3TreeTable(private val treeTableModel: S3TreeTableModel, private val bucketVirtual: S3VirtualBucket, private val s3Client: S3Client) :
+class S3TreeTable(
+    private val treeTableModel: S3TreeTableModel,
+    private val bucketVirtual: S3VirtualBucket,
+    private val project: Project,
+    private val s3Client: S3Client
+) :
     TreeTable(treeTableModel) {
     init {
         dropTarget = createDropTarget()
@@ -90,27 +96,23 @@ class S3TreeTable(private val treeTableModel: S3TreeTableModel, private val buck
                         val row = rowAtPoint(dropEvent.location).takeIf { it >= 0 } ?: return
                         val node = getNodeForRow(row) ?: return
 
+                        val lfs = LocalFileSystem.getInstance()
+                        val virtualFiles = data.mapNotNull {
+                            lfs.findFileByIoFile(it)
+                        }
+
                         ApplicationManager.getApplication().executeOnPooledThread {
-                            data.forEach {
+                            val action = UploadObjectAction(bucketVirtual, this@S3TreeTable)
+                            virtualFiles.forEach {
                                 try {
-                                    val key = if (node.isDirectory) {
-                                        node.key + it.name
-                                    } else {
-                                        val parentPath = node.parent?.key
-                                            ?: throw IllegalStateException("When uploading, ${node.key} claimed it was not a directory but has no parent!")
-                                        parentPath + it.name
-                                    }
-                                    val request = PutObjectRequest.builder()
-                                        .bucket(bucketVirtual.name)
-                                        .key(key)
-                                        .build()
-                                    s3Client.putObject(request, RequestBody.fromFile(it))
-                                    invalidateLevel(node)
-                                    refresh()
+                                    action.uploadObjectAction(s3Client, project, it, node)
                                 } catch (e: Exception) {
-                                    LOG.error("error when uploading files", e)
+                                    LOG.error("unable to upload to s3 from drag and drop", e)
                                 }
                             }
+
+                            invalidateLevel(node)
+                            refresh()
                         }
                     } catch (e: UnsupportedFlavorException) {
                         LOG.info("Unsupported flavor attempted to be dragged and dropped", e)

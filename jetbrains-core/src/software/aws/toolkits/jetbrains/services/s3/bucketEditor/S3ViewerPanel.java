@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.components.JBScrollPane;
@@ -57,7 +58,7 @@ public class S3ViewerPanel {
     private S3TreeNode s3TreeNode;
     private S3TreeTableModel model;
 
-    public S3ViewerPanel(S3Client s3client, S3VirtualBucket bucketVirtual) {
+    public S3ViewerPanel(Project project, S3Client s3client, S3VirtualBucket bucketVirtual) {
         this.bucketVirtual = bucketVirtual;
         this.name.setText(bucketVirtual.getName());
         this.date.setText(S3Resources.formatDate(bucketVirtual.getS3Bucket().creationDate()));
@@ -98,7 +99,7 @@ public class S3ViewerPanel {
              */
 
             ApplicationManager.getApplication().invokeLater(() -> {
-                treeTable = new S3TreeTable(model, bucketVirtual, s3client);
+                treeTable = new S3TreeTable(model, bucketVirtual, project, s3client);
                 treeTable.setRootVisible(false);
                 treeTable.setDefaultRenderer(Object.class, tableRenderer);
                 treeTable.setTreeCellRenderer(treeRenderer);
