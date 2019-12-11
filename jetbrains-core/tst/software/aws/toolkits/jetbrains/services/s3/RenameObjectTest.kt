@@ -16,7 +16,7 @@ import software.amazon.awssdk.services.s3.model.CopyObjectResponse
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3ObjectNode
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction
 import software.aws.toolkits.jetbrains.utils.delegateMock
@@ -60,7 +60,7 @@ class RenameObjectTest {
         }
         mockClientManagerRule.manager().register(S3Client::class, s3Client)
 
-        val testFile = S3ObjectNode(projectRule.project, "TestBucket", null, "key", 42, Instant.ofEpochSecond(0))
+        val testFile = S3TreeObjectNode(projectRule.project, "TestBucket", null, "key", 42, Instant.ofEpochSecond(0))
 
         renameObjectMock.renameObjectAction(TEST_RENAME_KEY, testFile, s3Client)
         val copyRequestCapture = copyCaptor.firstValue

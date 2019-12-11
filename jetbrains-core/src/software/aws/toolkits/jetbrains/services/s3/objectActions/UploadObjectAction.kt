@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -55,7 +55,7 @@ class UploadObjectAction(
         client: S3Client,
         project: Project,
         fileChosen: VirtualFile,
-        node: S3KeyNode
+        node: S3TreeNode
     ) {
         val bucketName = node.bucketName
         val key = if (node.isDirectory) {

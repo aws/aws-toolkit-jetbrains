@@ -3,8 +3,8 @@
 package software.aws.toolkits.jetbrains.services.s3
 
 import com.intellij.ui.SimpleTextAttributes
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3ContinuationNode
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeContinuationNode
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeNode
 import java.awt.Component
 import javax.swing.JLabel
 import javax.swing.JTree
@@ -24,10 +24,10 @@ class S3TreeCellRenderer : DefaultTreeCellRenderer() {
     ): Component {
         val component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus) as JLabel
         val selected = value as? DefaultMutableTreeNode
-        val node = selected?.userObject as? S3KeyNode
-        component.icon = if (node?.name?.endsWith('/') == true) {
+        val node = selected?.userObject as? S3TreeNode
+        component.icon = if (node?.isDirectory == true) {
             if (expanded) openIcon else closedIcon
-        } else if (node is S3ContinuationNode) {
+        } else if (node is S3TreeContinuationNode) {
             component.foreground = SimpleTextAttributes.LINK_ATTRIBUTES.fgColor
             null
         } else {

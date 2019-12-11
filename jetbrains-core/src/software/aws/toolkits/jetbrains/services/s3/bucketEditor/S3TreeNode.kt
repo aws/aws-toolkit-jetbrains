@@ -10,14 +10,14 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.resources.message
 import java.time.Instant
 
-open class S3KeyNode(project: Project, val bucketName: String, val parent: S3KeyNode?, val key: String) : SimpleNode(project, null) {
+open class S3TreeNode(project: Project, val bucketName: String, val parent: S3TreeNode?, val key: String) : SimpleNode(project, null) {
     open val isDirectory = true
     private val lock = Object()
     private val loadedPages = mutableSetOf<String>()
     private val client: S3Client = AwsClientManager.getInstance(project).getClient()
-    private var cachedList: Array<S3KeyNode> = arrayOf()
+    private var cachedList: Array<S3TreeNode> = arrayOf()
 
-    override fun getChildren(): Array<S3KeyNode> = if (!isDirectory) {
+    override fun getChildren(): Array<S3TreeNode> = if (!isDirectory) {
         arrayOf()
     } else {
         synchronized(lock) {
@@ -36,11 +36,11 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         if (loadedPages.contains(continuationToken)) {
             return
         }
-        cachedList = children.dropLastWhile { it is S3ContinuationNode }.toTypedArray() + loadObjects(continuationToken)
+        cachedList = children.dropLastWhile { it is S3TreeContinuationNode }.toTypedArray() + loadObjects(continuationToken)
         loadedPages.add(continuationToken)
     }
 
-    fun remove(node: S3KeyNode) {
+    fun remove(node: S3TreeNode) {
         cachedList = cachedList.filter { it != node }.toTypedArray()
     }
 
@@ -48,41 +48,41 @@ open class S3KeyNode(project: Project, val bucketName: String, val parent: S3Key
         cachedList = arrayOf()
     }
 
-    private fun loadObjects(continuationToken: String? = null): List<S3KeyNode> {
+    private fun loadObjects(continuationToken: String? = null): List<S3TreeNode> {
         val response = client.listObjectsV2 {
             it.bucket(bucketName).delimiter("/").prefix(key)
-            it.maxKeys(UPDATE_LIMIT)
+            it.maxKeys(MAX_ITEMS_TO_LOAD)
             continuationToken?.apply { it.continuationToken(continuationToken) }
         }
 
         val continuation = listOfNotNull(response.nextContinuationToken()?.let {
             // Spaces are intentional
-            S3ContinuationNode(project!!, bucketName, this, "${this.key}/     ${message("s3.load_more")}", it)
+            S3TreeContinuationNode(project!!, bucketName, this, "${this.key}/     ${message("s3.load_more")}", it)
         })
 
-        val folders = response.commonPrefixes()?.map { S3KeyNode(project!!, bucketName, this, it.prefix()) } ?: emptyList()
+        val folders = response.commonPrefixes()?.map { S3TreeNode(project!!, bucketName, this, it.prefix()) } ?: emptyList()
 
         val s3Objects = response
             .contents()
             ?.filterNotNull()
             ?.filterNot { it.key() == key }
-            ?.map { S3ObjectNode(project!!, bucketName, this, it.key(), it.size(), it.lastModified()) as S3KeyNode }
+            ?.map { S3TreeObjectNode(project!!, bucketName, this, it.key(), it.size(), it.lastModified()) as S3TreeNode }
             ?: emptyList()
 
         return (folders + s3Objects).sortedBy { it.key } + continuation
     }
 
     companion object {
-        const val UPDATE_LIMIT = 300
+        const val MAX_ITEMS_TO_LOAD = 300
     }
 }
 
-class S3ObjectNode(project: Project, bucketName: String, parent: S3KeyNode?, key: String, val size: Long, val lastModified: Instant) :
-    S3KeyNode(project, bucketName, parent, key) {
+class S3TreeObjectNode(project: Project, bucketName: String, parent: S3TreeNode?, key: String, val size: Long, val lastModified: Instant) :
+    S3TreeNode(project, bucketName, parent, key) {
     override val isDirectory: Boolean = false
 }
 
-class S3ContinuationNode(project: Project, bucketName: String, parent: S3KeyNode?, key: String, val token: String) :
-    S3KeyNode(project, bucketName, parent, key) {
+class S3TreeContinuationNode(project: Project, bucketName: String, parent: S3TreeNode?, key: String, val token: String) :
+    S3TreeNode(project, bucketName, parent, key) {
     override val isDirectory: Boolean = false
 }

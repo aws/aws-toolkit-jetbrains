@@ -21,7 +21,7 @@ class S3Column(private val type: S3ColumnType) : ColumnInfo<Any, String>(type.ti
     override fun getColumnClass(): Class<*> = if (type == S3ColumnType.NAME) TreeTableModel::class.java else super.getColumnClass()
 
     private fun getValue(userObject: Any): String =
-        if (userObject is S3ObjectNode) {
+        if (userObject is S3TreeObjectNode) {
             when (type) {
                 S3ColumnType.NAME -> userObject.key
                 S3ColumnType.SIZE -> StringUtil.formatFileSize(userObject.size)

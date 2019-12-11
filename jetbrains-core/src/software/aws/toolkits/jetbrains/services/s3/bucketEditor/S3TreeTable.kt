@@ -20,16 +20,23 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
     private val mouseListener = object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent) {
             val row = rowAtPoint(e.point)
-            if (row < 0 || e.clickCount != 2) {
+            if (row < 0) {
                 return
             }
-            val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3ContinuationNode ?: return
-            val parent = continuationNode.parent ?: return
+            handleLoadingMore(row, e)
+        }
+    }
 
-            ApplicationManager.getApplication().executeOnPooledThread {
-                parent.loadMore(continuationNode.token)
-                refresh()
-            }
+    private fun handleLoadingMore(row: Int, e: MouseEvent) {
+        if (e.clickCount != 2) {
+            return
+        }
+        val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeContinuationNode ?: return
+        val parent = continuationNode.parent ?: return
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            parent.loadMore(continuationNode.token)
+            refresh()
         }
     }
 
@@ -37,12 +44,12 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
         super.addMouseListener(mouseListener)
     }
 
-    fun getNodeForRow(row: Int): S3KeyNode? {
+    fun getNodeForRow(row: Int): S3TreeNode? {
         val path = tree.getPathForRow(convertRowIndexToModel(row))
-        return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3KeyNode
+        return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
 
-    fun getSelectedNodes(): List<S3KeyNode> = selectedRows.map { getNodeForRow(it) }.filterNotNull()
+    fun getSelectedNodes(): List<S3TreeNode> = selectedRows.map { getNodeForRow(it) }.filterNotNull()
 
     fun removeRows(rows: List<Int>) =
         runInEdt {
@@ -50,12 +57,12 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
                 val path = tree.getPathForRow(it)
                 path.lastPathComponent as DefaultMutableTreeNode
             }.forEach {
-                val userNode = it.userObject as? S3KeyNode ?: return@forEach
-                ((it.parent as? DefaultMutableTreeNode)?.userObject as? S3KeyNode)?.remove(userNode)
+                val userNode = it.userObject as? S3TreeNode ?: return@forEach
+                ((it.parent as? DefaultMutableTreeNode)?.userObject as? S3TreeNode)?.remove(userNode)
             }
         }
 
-    fun invalidateLevel(node: S3KeyNode) {
+    fun invalidateLevel(node: S3TreeNode) {
         node.parent?.removeAllChildren()
     }
 }

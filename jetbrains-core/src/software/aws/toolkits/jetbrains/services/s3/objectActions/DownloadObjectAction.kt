@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3ObjectNode
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -44,7 +44,7 @@ class DownloadObjectAction(
 
         var fileWrapper: VirtualFileWrapper? = null
         treeTable.getSelectedNodes().forEach {
-            if (it !is S3ObjectNode) {
+            if (it !is S3TreeObjectNode) {
                 return@forEach
             }
             if (fileWrapper == null) {
@@ -71,17 +71,17 @@ class DownloadObjectAction(
 
     override fun isEnabled(): Boolean = !(treeTable.isEmpty || (treeTable.selectedRow < 0) || (treeTable.getValueAt(treeTable.selectedRow, 1) == ""))
 
-    fun downloadObjectAction(project: Project, client: S3Client, s3object: S3ObjectNode, fileWrapper: VirtualFileWrapper) {
+    fun downloadObjectAction(project: Project, client: S3Client, s3TreeObject: S3TreeObjectNode, fileWrapper: VirtualFileWrapper) {
         val request = GetObjectRequest.builder()
-            .bucket(s3object.bucketName)
-            .key(s3object.key)
+            .bucket(s3TreeObject.bucketName)
+            .key(s3TreeObject.key)
             .build()
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, message("s3.download.object.progress", s3object.name), true) {
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, message("s3.download.object.progress", s3TreeObject.name), true) {
             override fun run(indicator: ProgressIndicator) {
                 val fileOutputStream = fileWrapper.file.outputStream()
                 val progressStream = ProgressOutputStream(
                     fileOutputStream,
-                    s3object.size,
+                    s3TreeObject.size,
                     indicator
                 )
                 client.getObject(request, ResponseTransformer.toOutputStream(progressStream))

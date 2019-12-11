@@ -55,7 +55,7 @@ public class S3ViewerPanel {
     private JLabel bucketArn;
     private JLabel bucketName;
     private S3TreeTable treeTable;
-    private S3KeyNode s3KeyNode;
+    private S3TreeNode s3TreeNode;
     private S3TreeTableModel model;
 
     public S3ViewerPanel(Project project, S3VirtualBucket bucketVirtual) {
@@ -83,7 +83,7 @@ public class S3ViewerPanel {
         arnText.setComponentPopupMenu(menu);
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            s3KeyNode = new S3KeyNode(project, bucketVirtual.getName(), null, "");
+            s3TreeNode = new S3TreeNode(project, bucketVirtual.getName(), null, "");
 
             ColumnInfo key = new S3Column(S3ColumnType.NAME);
             ColumnInfo size = new S3Column(S3ColumnType.SIZE);
@@ -137,7 +137,7 @@ public class S3ViewerPanel {
 
     private void createTreeTable(ColumnInfo[] columns) {
         Disposable myTreeModelDisposable = Disposer.newDisposable();
-        SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3KeyNode);
+        SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3TreeNode);
         StructureTreeModel<SimpleTreeStructure> myTreeModel = new StructureTreeModel(treeStructure, myTreeModelDisposable);
         model = new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true
             , myTreeModelDisposable), columns, myTreeModel);
