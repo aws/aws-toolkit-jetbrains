@@ -83,7 +83,7 @@ public class S3ViewerPanel {
         arnText.setComponentPopupMenu(menu);
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            s3TreeNode = new S3TreeNode(project, bucketVirtual.getName(), null, "");
+            s3TreeNode = new S3TreeDirectoryNode(project, bucketVirtual.getName(), null, "");
 
             ColumnInfo key = new S3Column(S3ColumnType.NAME);
             ColumnInfo size = new S3Column(S3ColumnType.SIZE);

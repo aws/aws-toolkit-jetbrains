@@ -32,7 +32,7 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
             return
         }
         val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeContinuationNode ?: return
-        val parent = continuationNode.parent ?: return
+        val parent = continuationNode.parent as? S3TreeDirectoryNode ?: return
 
         ApplicationManager.getApplication().executeOnPooledThread {
             parent.loadMore(continuationNode.token)
@@ -58,11 +58,11 @@ open class S3TreeTable(private val treeTableModel: S3TreeTableModel) : TreeTable
                 path.lastPathComponent as DefaultMutableTreeNode
             }.forEach {
                 val userNode = it.userObject as? S3TreeNode ?: return@forEach
-                ((it.parent as? DefaultMutableTreeNode)?.userObject as? S3TreeNode)?.remove(userNode)
+                ((it.parent as? DefaultMutableTreeNode)?.userObject as? S3TreeDirectoryNode)?.removeChild(userNode)
             }
         }
 
     fun invalidateLevel(node: S3TreeNode) {
-        node.parent?.removeAllChildren()
+        (node.parent as? S3TreeDirectoryNode)?.removeAllChildren()
     }
 }
