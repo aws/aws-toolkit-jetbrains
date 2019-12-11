@@ -43,10 +43,7 @@ class S3BucketNode(project: Project, val bucket: Bucket) :
         if (!DumbService.getInstance(nodeProject).isDumb) {
             val editorManager = FileEditorManager.getInstance(nodeProject)
             // See if there is already an open editor, otherwise make a new one
-            val virtualFile =
-                editorManager.openFiles.firstOrNull { (it as? S3VirtualBucket)?.s3Bucket?.equals(bucket) == true } ?: S3VirtualBucket(
-                    bucket
-                )
+            val virtualFile = editorManager.openFiles.firstOrNull { (it as? S3VirtualBucket)?.s3Bucket?.equals(bucket) == true } ?: S3VirtualBucket(bucket)
             editorManager.openTextEditor(OpenFileDescriptor(nodeProject, virtualFile), true)
             recordOpenTelemetry()
         }

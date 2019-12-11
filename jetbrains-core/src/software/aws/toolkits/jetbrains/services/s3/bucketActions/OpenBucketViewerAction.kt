@@ -37,8 +37,6 @@ class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s
 
     private fun openEditor(selected: S3BucketNode, project: Project) {
         val editorManager = FileEditorManager.getInstance(project)
-        editorManager.openTextEditor(OpenFileDescriptor(project,
-            S3VirtualBucket(selected.bucket)
-        ), true)
+        editorManager.openTextEditor(OpenFileDescriptor(project, S3VirtualBucket(selected.bucket)), true)
     }
 }
