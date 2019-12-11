@@ -31,9 +31,10 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import software.amazon.awssdk.services.s3.S3Client;
-import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources;
+import software.aws.toolkits.jetbrains.services.s3.S3Resources;
 import software.aws.toolkits.jetbrains.services.s3.S3RowSorter;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
+import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
@@ -89,7 +90,7 @@ public class S3ViewerPanel {
             ColumnInfo size = new S3Column(S3ColumnType.SIZE);
             ColumnInfo modified = new S3Column(S3ColumnType.LAST_MODIFIED);
             final ColumnInfo[] COLUMNS = new ColumnInfo[] {key, size, modified};
-            createTreeTableModel(COLUMNS);
+            model = createTreeTableModel(COLUMNS);
 
             S3TreeCellRenderer treeRenderer = new S3TreeCellRenderer();
             DefaultTableCellRenderer tableRenderer = new DefaultTableCellRenderer();
@@ -105,7 +106,7 @@ public class S3ViewerPanel {
                 treeTable.setTreeCellRenderer(treeRenderer);
                 treeTable.setCellSelectionEnabled(false);
                 JBScrollPane scrollPane = new JBScrollPane(treeTable, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                                    JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                                                           JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
                 treeTable.setRowSelectionAllowed(true);
                 int width = treeTable.getPreferredSize().width;
@@ -135,11 +136,11 @@ public class S3ViewerPanel {
         return name;
     }
 
-    private void createTreeTableModel(ColumnInfo[] columns) {
+    private S3TreeTableModel createTreeTableModel(ColumnInfo[] columns) {
         Disposable myTreeModelDisposable = Disposer.newDisposable();
         SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3TreeNode);
         StructureTreeModel<SimpleTreeStructure> myTreeModel = new StructureTreeModel(treeStructure, myTreeModelDisposable);
-        model = new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true, myTreeModelDisposable), columns, myTreeModel);
+        return new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true, myTreeModelDisposable), columns, myTreeModel);
     }
 
     private void addTreeActions() {

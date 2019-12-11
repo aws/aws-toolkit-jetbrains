@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.UnsupportedFlavorException
