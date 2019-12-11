@@ -30,9 +30,9 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import software.amazon.awssdk.services.s3.S3Client;
+import software.aws.toolkits.jetbrains.services.s3.S3Resources;
 import software.aws.toolkits.jetbrains.services.s3.S3RowSorter;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
-import software.aws.toolkits.jetbrains.services.s3.S3Utils;
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
@@ -61,7 +61,7 @@ public class S3ViewerPanel {
     public S3ViewerPanel(S3Client client, S3VirtualBucket bucketVirtual) {
         this.bucketVirtual = bucketVirtual;
         this.name.setText(bucketVirtual.getName());
-        this.date.setText(S3Utils.formatDate(bucketVirtual.getS3Bucket().creationDate()));
+        this.date.setText(S3Resources.formatDate(bucketVirtual.getS3Bucket().creationDate()));
 
         this.arnText.setText("arn:aws:s3:::" + bucketVirtual.getName());
         this.bucketArn.setText("Bucket ARN:");

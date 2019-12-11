@@ -5,10 +5,8 @@ package software.aws.toolkits.jetbrains.services.s3.bucketEditor
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.treeStructure.treetable.TreeTableModel
 import com.intellij.util.ui.ColumnInfo
+import software.aws.toolkits.jetbrains.services.s3.S3Resources
 import software.aws.toolkits.resources.message
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.swing.tree.DefaultMutableTreeNode
 
 class S3Column(private val type: S3ColumnType) : ColumnInfo<Any, String>(type.title) {
@@ -25,10 +23,7 @@ class S3Column(private val type: S3ColumnType) : ColumnInfo<Any, String>(type.ti
             when (type) {
                 S3ColumnType.NAME -> userObject.key
                 S3ColumnType.SIZE -> StringUtil.formatFileSize(userObject.size)
-                S3ColumnType.LAST_MODIFIED -> {
-                    val datetime = LocalDateTime.ofInstant(userObject.lastModified, ZoneId.systemDefault())
-                    datetime.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM d YYYY hh:mm:ss a z"))
-                }
+                S3ColumnType.LAST_MODIFIED -> S3Resources.formatDate(userObject.lastModified)
             }
         } else {
             ""
