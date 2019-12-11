@@ -27,13 +27,13 @@ import software.aws.toolkits.resources.message
 class UploadObjectAction(
     val bucket: S3VirtualBucket,
     private val treeTable: S3TreeTable
-) : ActionButtonWrapper(message("s3.upload.object.action", bucket.s3Bucket.name()), null, AllIcons.Actions.Upload) {
+) : ActionButtonWrapper(message("s3.upload.object.action", bucket.name), null, AllIcons.Actions.Upload) {
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: S3Client = AwsClientManager.getInstance(project).getClient()
 
         val node = treeTable.getSelectedNodes().firstOrNull() ?: return
-        val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().withDescription(message("s3.upload.object.action", node.bucketName))
+        val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().withDescription(message("s3.upload.object.action", bucket.name))
         val chooserDialog = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
         val filesChosen = chooserDialog.choose(project, null)
         for (fileChosen in filesChosen) {
