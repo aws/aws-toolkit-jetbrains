@@ -5,47 +5,48 @@ package software.aws.toolkits.jetbrains.services.s3.objectActions
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3KeyNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class UploadObjectAction(
     val bucket: S3VirtualBucket,
     private val treeTable: S3TreeTable
 ) : ActionButtonWrapper(message("s3.upload.object.action", bucket.s3Bucket.name()), null, AllIcons.Actions.Upload) {
-
-    @Suppress("unused")
     override fun doActionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
-        /*
-        val client: S3Client = bucket.client
-        val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor()
-            .withDescription(message("s3.upload.object.action", bucket.s3Bucket.name()))
+        val client: S3Client = AwsClientManager.getInstance(project).getClient()
 
-        val row = treeTable.selectedRow
-        var nodeFile: VirtualFile? = null
-        if (row > 0) {
-            val path = treeTable.tree.getPathForRow(treeTable.convertRowIndexToModel(row))
-            val node = (path.lastPathComponent as DefaultMutableTreeNode).userObject as S3KeyNode
-            nodeFile = node.virtualFile
-        }
+        val node = treeTable.getSelectedNodes().firstOrNull() ?: return
+        val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().withDescription(message("s3.upload.object.action", node.bucketName))
         val chooserDialog = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
         val filesChosen = chooserDialog.choose(project, null)
         for (fileChosen in filesChosen) {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
-                    uploadObjectAction(client, project, fileChosen, nodeFile)
+                    uploadObjectAction(client, project, fileChosen, node)
+                    treeTable.invalidateLevel(node)
                     treeTable.refresh()
                 } catch (e: Exception) {
                     notifyError(message("s3.upload.object.failed"))
                 }
             }
-        }*/
+        }
     }
 
     override fun isEnabled(): Boolean = treeTable.isEmpty || !(treeTable.selectedRows.size > 1)
@@ -54,16 +55,15 @@ class UploadObjectAction(
         client: S3Client,
         project: Project,
         fileChosen: VirtualFile,
-        nodeFile: VirtualFile?
+        node: S3KeyNode
     ) {
-        /*
-        val bucketName = bucket.getVirtualBucketName()
-        val key = if (nodeFile is S3VirtualDirectory) {
-            "${nodeFile.name}/${fileChosen.name}"
-        } else if (nodeFile?.parent is S3VirtualDirectory) {
-            "${nodeFile.parent.name}/${fileChosen.name}"
+        val bucketName = node.bucketName
+        val key = if (node.isDirectory) {
+            node.key + fileChosen.name
         } else {
-            fileChosen.name
+            val parentPath =
+                node.parent?.key ?: throw IllegalStateException("When uploading, ${node.key} claimed it was not a directory but has no parent!")
+            parentPath + fileChosen.name
         }
 
         val request = PutObjectRequest.builder()
@@ -79,6 +79,6 @@ class UploadObjectAction(
                     val pStream = ProgressInputStream(fileChosen.inputStream, fileChosenSize, indicator)
                     client.putObject(request, RequestBody.fromInputStream(pStream, fileChosen.length))
                 }
-            })*/
+            })
     }
 }
