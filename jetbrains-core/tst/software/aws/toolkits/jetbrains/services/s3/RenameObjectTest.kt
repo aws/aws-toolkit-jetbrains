@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction
 import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.time.Instant
@@ -39,7 +40,8 @@ class RenameObjectTest {
         val copyCaptor = argumentCaptor<CopyObjectRequest>()
 
         val treeTableMock = delegateMock<S3TreeTable>()
-        val virtualBucketMock = S3VirtualBucket(Bucket.builder().name("TestBucket").build())
+        val virtualBucketMock =
+            S3VirtualBucket(Bucket.builder().name("TestBucket").build())
         val renameObjectMock = RenameObjectAction(treeTableMock, virtualBucketMock)
 
         s3Client.stub {

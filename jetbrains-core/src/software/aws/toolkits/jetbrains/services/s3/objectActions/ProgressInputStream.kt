@@ -7,7 +7,7 @@ import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
 
-class ProgressInputStream(private val inputStream: InputStream, val size: Int, private val indicator: ProgressIndicator) :
+class ProgressInputStream(private val inputStream: InputStream, val size: Long, private val indicator: ProgressIndicator) :
     FilterInputStream(inputStream) {
     private var closed: Boolean = false
     var progress: Int = 0
@@ -36,7 +36,7 @@ class ProgressInputStream(private val inputStream: InputStream, val size: Int, p
         return count
     }
 
-    override fun available(): Int = size - progress
+    override fun available(): Int = (size - progress).toInt()
 
     override fun mark(readlimit: Int) {
         marked = readlimit
@@ -47,7 +47,7 @@ class ProgressInputStream(private val inputStream: InputStream, val size: Int, p
         progress = marked
     }
 
-    private fun updateDisplay(progress: Int, size: Int) {
+    private fun updateDisplay(progress: Int, size: Long) {
         indicator.fraction = progress * 1.0 / size
     }
 }

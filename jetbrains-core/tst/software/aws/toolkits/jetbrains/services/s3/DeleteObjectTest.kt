@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.s3.model.DeletedObject
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction
 import software.aws.toolkits.jetbrains.utils.delegateMock
 
@@ -37,7 +38,8 @@ class DeleteObjectTest {
         val s3Client = delegateMock<S3Client>()
         val deleteCaptor = argumentCaptor<DeleteObjectsRequest>()
         val mockTreeTable = delegateMock<S3TreeTable>()
-        val mockVirtualBucket = S3VirtualBucket(Bucket.builder().name("TestBucket").build())
+        val mockVirtualBucket =
+            S3VirtualBucket(Bucket.builder().name("TestBucket").build())
 
         val mockDeleteObject = DeleteObjectAction(mockTreeTable, mockVirtualBucket)
 

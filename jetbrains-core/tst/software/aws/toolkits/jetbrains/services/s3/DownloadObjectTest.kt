@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction
 import software.aws.toolkits.jetbrains.utils.delegateMock
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
@@ -47,7 +48,8 @@ class DownloadObjectTest {
         mockClientManagerRule.manager().register(S3Client::class, s3Client)
 
         val treeTableMock = delegateMock<S3TreeTable>()
-        val virtualBucketMock = S3VirtualBucket(Bucket.builder().name("TestBucket").build())
+        val virtualBucketMock =
+            S3VirtualBucket(Bucket.builder().name("TestBucket").build())
 
         val testFile = FileUtil.createTempFile("myfile", ".txt")
         val objectToDownload = S3TreeObjectNode("TestBucket", null, "key", 42, Instant.ofEpochSecond(0))

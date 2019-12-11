@@ -12,7 +12,7 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.s3.S3BucketNode
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
@@ -37,6 +37,8 @@ class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s
 
     private fun openEditor(selected: S3BucketNode, project: Project) {
         val editorManager = FileEditorManager.getInstance(project)
-        editorManager.openTextEditor(OpenFileDescriptor(project, S3VirtualBucket(selected.bucket)), true)
+        editorManager.openTextEditor(OpenFileDescriptor(project,
+            S3VirtualBucket(selected.bucket)
+        ), true)
     }
 }
