@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeNode
+import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeTable
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction
 import software.aws.toolkits.jetbrains.utils.delegateMock
@@ -54,7 +54,7 @@ class UploadObjectTest {
         testFile.stub { on { inputStream } doReturn ByteArrayInputStream("Hello".toByteArray()) }
 
         val uploadObjectMock = UploadObjectAction(virtualBucket, treeTableMock)
-        val folder = S3TreeNode(projectRule.project, "TestBucket", null, "")
+        val folder = S3TreeDirectoryNode(s3Client, "TestBucket", null, "")
 
         uploadObjectMock.uploadObjectAction(s3Client, projectRule.project, testFile, folder)
         verify(s3Client).putObject(any<PutObjectRequest>(), any<RequestBody>())

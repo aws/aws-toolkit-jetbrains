@@ -60,7 +60,7 @@ class RenameObjectTest {
         }
         mockClientManagerRule.manager().register(S3Client::class, s3Client)
 
-        val testFile = S3TreeObjectNode(projectRule.project, "TestBucket", null, "key", 42, Instant.ofEpochSecond(0))
+        val testFile = S3TreeObjectNode("TestBucket", null, "key", 42, Instant.ofEpochSecond(0))
 
         renameObjectMock.renameObjectAction(TEST_RENAME_KEY, testFile, s3Client)
         val copyRequestCapture = copyCaptor.firstValue
