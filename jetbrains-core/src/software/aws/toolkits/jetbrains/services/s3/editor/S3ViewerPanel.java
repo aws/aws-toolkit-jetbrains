@@ -1,4 +1,4 @@
-package software.aws.toolkits.jetbrains.services.s3.bucketEditor;
+package software.aws.toolkits.jetbrains.services.s3.editor;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
