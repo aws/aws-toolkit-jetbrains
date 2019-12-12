@@ -3,8 +3,8 @@
 package software.aws.toolkits.jetbrains.services.s3
 
 import com.intellij.ui.SimpleTextAttributes
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeContinuationNode
-import software.aws.toolkits.jetbrains.services.s3.bucketEditor.S3TreeNode
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import java.awt.Component
 import javax.swing.JLabel
 import javax.swing.JTree
@@ -31,7 +31,7 @@ class S3TreeCellRenderer : DefaultTreeCellRenderer() {
             component.foreground = SimpleTextAttributes.LINK_ATTRIBUTES.fgColor
             null
         } else {
-            leafIcon
+            node?.icon ?: leafIcon
         }
         return component
     }
