@@ -9,7 +9,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.s3.S3VirtualBucket
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -40,7 +40,7 @@ class S3TreeTable(
                 dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<File>
             } catch (e: UnsupportedFlavorException) {
                 // When the drag and drop data is not what we expect (like when it is text) this is thrown and can be safey ignored
-                LOG.info("Unsupported flavor attempted to be dragged and dropped", e)
+                LOG.info(e) { "Unsupported flavor attempted to be dragged and dropped" }
                 return
             }
 
