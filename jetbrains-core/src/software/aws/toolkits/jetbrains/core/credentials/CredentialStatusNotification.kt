@@ -11,7 +11,7 @@ import software.aws.toolkits.resources.message
 
 class CredentialStatusNotification : StartupActivity, DumbAware, ConnectionSettingsChangeNotifier {
     override fun runActivity(project: Project) {
-        project.messageBus.connect().subscribe(ProjectAccountSettingsManager2.ACCOUNT_SETTINGS_CHANGED, this)
+        project.messageBus.connect().subscribe(ProjectAccountSettingsManager2.CONNECTION_SETTINGS_CHANGED, this)
     }
 
     override fun settingsChanged(event: ConnectionSettingsChangeEvent) {

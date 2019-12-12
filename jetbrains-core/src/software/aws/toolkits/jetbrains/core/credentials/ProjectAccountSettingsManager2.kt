@@ -12,7 +12,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import software.aws.toolkits.core.credentials.CredentialProviderNotFound
+import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -29,38 +29,37 @@ abstract class ProjectAccountSettingsManager2(private val project: Project) {
     @Transient
     private var validationJob: Job? = null
     @Transient
-    private var state: ConnectionState = ConnectionState.INITIALIZING
+    protected var connectionState: ConnectionValidationState = ConnectionValidationState.INITIALIZING
 
-    private val recentlyUsedProfiles = MRUList<ToolkitCredentialsProvider>(MAX_HISTORY)
-    private val recentlyUsedRegions = MRUList<AwsRegion>(MAX_HISTORY)
+    protected val recentlyUsedProfiles = MRUList<ToolkitCredentialsProvider>(MAX_HISTORY)
+    protected val recentlyUsedRegions = MRUList<AwsRegion>(MAX_HISTORY)
 
-    /**
-     * Setting the active region will add to the recently used list, and evict the least recently used if at max size
-     */
-    private var activeRegionInternal: AwsRegion? by ValidateAndNotify(null, recentlyUsedRegions)
+    protected var connectionSettings: ConnectionSettings by ValidateAndNotify(ConnectionSettings(null, null))
+        private set
 
-    /**
-     * Setting the active provider will add to the recently used list, and evict the least recently used if at max size
-     */
-    private var activeCredentialProviderInternal: ToolkitCredentialsProvider? by ValidateAndNotify(null, recentlyUsedProfiles)
+    init {
+        ApplicationManager.getApplication().messageBus.connect(project)
+            .subscribe(CredentialManager.CREDENTIALS_CHANGED, object : ToolkitCredentialsChangeListener {
+                override fun providerRemoved(providerId: String) {
+                    if (connectionSettings.credentials?.id == providerId) {
+                        // TODO: Save setting and shortcut to invalid?
+                        changeCredentialProvider(null)
+                    }
+                }
+            })
+    }
 
-    var activeRegion: AwsRegion
-        get() = activeRegionInternal!! // TODO
-        set(value) {
-            activeRegionInternal = value
-        }
+    fun connectionSettings() = connectionSettings.copy()
 
-    /**
-     * Setting the active provider will add to the recently used list, and evict the least recently used if at max size
-     */
-    var activeCredentialProvider: ToolkitCredentialsProvider
-        @Throws(CredentialProviderNotFound::class)
-        get() = activeCredentialProviderInternal!! // TODO
-        set(value) {
-            activeCredentialProviderInternal = value
-        }
+    fun isValidConnectionSettings(): Boolean = connectionState == ConnectionValidationState.VALID
 
-    fun hasValidConnectionSettings(): Boolean = state == ConnectionState.VALID
+    fun changeCredentialProvider(credentialsProvider: ToolkitCredentialsProvider?) {
+        connectionSettings = connectionSettings.copy(credentials = credentialsProvider)
+    }
+
+    fun changeRegion(awsRegion: AwsRegion) {
+        connectionSettings = connectionSettings.copy(region = awsRegion)
+    }
 
     /**
      * Returns the list of recently used [AwsRegion]
@@ -85,43 +84,36 @@ abstract class ProjectAccountSettingsManager2(private val project: Project) {
     private fun broadcastChangeEvent(event: ConnectionSettingsChangeEvent) {
         ApplicationManager.getApplication().assertIsDispatchThread()
         if (!project.isDisposed) {
-            project.messageBus.syncPublisher(ACCOUNT_SETTINGS_CHANGED).settingsChanged(event)
+            project.messageBus.syncPublisher(CONNECTION_SETTINGS_CHANGED).settingsChanged(event)
         }
     }
 
-    private inner class ValidateAndNotify<T>(
-        initialValue: T?,
-        private val recentlyUsed: MRUList<T>
-    ) : ObservableProperty<T?>(initialValue) {
-        override fun beforeChange(property: KProperty<*>, oldValue: T?, newValue: T?): Boolean {
-            state = ConnectionState.VALIDATING
-            broadcastChangeEvent(ConnectionSettingsStateChange(state))
-
-            newValue?.let {
-                recentlyUsed.add(newValue)
-            }
+    private inner class ValidateAndNotify<T>(initialValue: T) : ObservableProperty<T>(initialValue) {
+        override fun beforeChange(property: KProperty<*>, oldValue: T, newValue: T): Boolean {
+            connectionState = ConnectionValidationState.VALIDATING
+            broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
 
             return true
         }
 
-        override fun afterChange(property: KProperty<*>, oldValue: T?, newValue: T?) {
+        override fun afterChange(property: KProperty<*>, oldValue: T, newValue: T) {
             if (oldValue == newValue) {
                 return
             }
 
-            val credentialsProvider = activeCredentialProviderInternal ?: return
-            val region = activeRegionInternal ?: return
+            val credentialsProvider = connectionSettings.credentials ?: return
+            val region = connectionSettings.region ?: return
 
             validationJob?.cancel(CancellationException("Newer connection settings chosen"))
 
             validationJob = GlobalScope.launch(Dispatchers.Edt.immediate) {
                 try {
                     validate(credentialsProvider, region)
-                    state = ConnectionState.VALID
-                    broadcastChangeEvent(ValidConnectionSettings(activeCredentialProvider, activeRegion, state))
+                    connectionState = ConnectionValidationState.VALID
+                    broadcastChangeEvent(ValidConnectionSettings(credentialsProvider, region, connectionState))
                 } catch (e: Exception) {
-                    state = ConnectionState.INVALID
-                    broadcastChangeEvent(InvalidConnectionSettings(activeCredentialProvider, activeRegion, e, state))
+                    connectionState = ConnectionValidationState.INVALID
+                    broadcastChangeEvent(InvalidConnectionSettings(credentialsProvider, region, e, connectionState))
                 }
             }
         }
@@ -131,10 +123,10 @@ abstract class ProjectAccountSettingsManager2(private val project: Project) {
         /***
          * MessageBus topic for when the active credential profile or region is changed
          */
-        val ACCOUNT_SETTINGS_CHANGED: Topic<ConnectionSettingsChangeNotifier> = Topic.create(
-                "AWS Account setting changed",
-                ConnectionSettingsChangeNotifier::class.java
-            )
+        val CONNECTION_SETTINGS_CHANGED: Topic<ConnectionSettingsChangeNotifier> = Topic.create(
+            "AWS Account setting changed",
+            ConnectionSettingsChangeNotifier::class.java
+        )
 
         fun getInstance(project: Project): ProjectAccountSettingsManager =
             ServiceManager.getService(project, ProjectAccountSettingsManager::class.java)
@@ -143,7 +135,7 @@ abstract class ProjectAccountSettingsManager2(private val project: Project) {
     }
 }
 
-enum class ConnectionState {
+enum class ConnectionValidationState {
     INITIALIZING,
     VALIDATING,
     INVALID,
@@ -154,15 +146,15 @@ interface ConnectionSettingsChangeNotifier {
     fun settingsChanged(event: ConnectionSettingsChangeEvent)
 }
 
-sealed class ConnectionSettingsChangeEvent(val state: ConnectionState) {}
-class ConnectionSettingsStateChange(state: ConnectionState) : ConnectionSettingsChangeEvent(state)
+sealed class ConnectionSettingsChangeEvent(val state: ConnectionValidationState) {}
+class ConnectionSettingsStateChange(state: ConnectionValidationState) : ConnectionSettingsChangeEvent(state)
 
 class InvalidConnectionSettings(
     val credentialsProvider: ToolkitCredentialsProvider,
     val region: AwsRegion,
     val cause: Exception,
-    state: ConnectionState
+    state: ConnectionValidationState
 ) : ConnectionSettingsChangeEvent(state)
 
-class ValidConnectionSettings(val credentialsProvider: ToolkitCredentialsProvider, val region: AwsRegion, state: ConnectionState) :
+class ValidConnectionSettings(val credentialsProvider: ToolkitCredentialsProvider, val region: AwsRegion, state: ConnectionValidationState) :
     ConnectionSettingsChangeEvent(state)
