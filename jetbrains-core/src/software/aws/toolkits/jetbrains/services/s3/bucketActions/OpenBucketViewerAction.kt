@@ -27,6 +27,5 @@ class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s
     private fun openEditor(project: Project, bucket: Bucket) {
         val virtualFile = getOrCreateS3VirtualBucketFile(project, bucket)
         FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, virtualFile), true)
-            ?: throw IllegalStateException("Failed to open bucket editor for ${bucket.name()} ")
     }
 }
