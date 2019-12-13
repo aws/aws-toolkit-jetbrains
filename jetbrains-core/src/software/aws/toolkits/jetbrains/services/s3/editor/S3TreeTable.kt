@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileTypes.ex.FileTypeChooser
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.treeStructure.treetable.TreeTable
@@ -82,10 +83,10 @@ class S3TreeTable(
         e.clickCount.takeUnless { it != 2 } ?: return
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return
         if (objectNode.size > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE) {
-            notifyError(message("s3.open.file_too_big", objectNode.key))
+            notifyError(message("s3.open.file_too_big", StringUtil.formatFileSize(S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE.toLong())))
             return
         }
-        val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key}"))
+        val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}"))
         // set isWritable so that S3Client can write to the file
         fileWrapper.virtualFile?.isWritable = true
         val getObjectRequest = GetObjectRequest.builder()
