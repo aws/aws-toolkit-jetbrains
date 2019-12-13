@@ -82,14 +82,17 @@ class S3TreeTable(
         e.clickCount.takeUnless { it != 2 } ?: return
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return
         if (objectNode.size > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE) {
-            notifyError("s3.open.file_too_big", objectNode.key)
+            notifyError(message("s3.open.file_too_big", objectNode.key))
             return
         }
         val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key}"))
+        // set isWritable so that S3Client can write to the file
+        fileWrapper.virtualFile?.isWritable = true
         val getObjectRequest = GetObjectRequest.builder()
             .bucket(objectNode.bucketName)
             .key(objectNode.key)
             .build()
+        // TODO refactor the download file action to remove the common parts
         ApplicationManager.getApplication().executeOnPooledThread {
             s3Client.getObject(getObjectRequest, ResponseTransformer.toOutputStream(fileWrapper.file.outputStream()))
             val editorManager = FileEditorManager.getInstance(project)
