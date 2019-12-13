@@ -87,7 +87,7 @@ class S3TreeTable(
             return
         }
         val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}"))
-        // set isWritable so that S3Client can write to the file
+        // set the file to not be read only so that the S3Client can write to the file
         fileWrapper.virtualFile?.isWritable = true
         val getObjectRequest = GetObjectRequest.builder()
             .bucket(objectNode.bucketName)
