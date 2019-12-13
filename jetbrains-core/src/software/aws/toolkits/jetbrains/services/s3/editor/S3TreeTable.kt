@@ -80,7 +80,9 @@ class S3TreeTable(
     }
 
     private fun handleOpeningFile(row: Int, e: MouseEvent) {
-        e.clickCount.takeUnless { it != 2 } ?: return
+        if (e.clickCount < 2) {
+            return
+        }
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return
         if (objectNode.size > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE) {
             notifyError(message("s3.open.file_too_big", StringUtil.formatFileSize(S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE.toLong())))
@@ -111,7 +113,7 @@ class S3TreeTable(
     }
 
     private fun handleLoadingMore(row: Int, e: MouseEvent) {
-        if (e.clickCount != 2) {
+        if (e.clickCount < 2) {
             return
         }
         val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeContinuationNode ?: return
