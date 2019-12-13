@@ -19,6 +19,7 @@ buildscript {
 apply from: 'intellijJVersions.gradle'
 
 group 'software.aws.toolkits'
+// please check changelog generation logic if this format is changed
 version toolkitVersion + "-" + shortenVersion(resolveIdeProfileName())
 
 repositories {
@@ -108,6 +109,7 @@ subprojects {
         compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
         compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
         testCompile "com.nhaarman.mockitokotlin2:mockito-kotlin:2.0.0"
+        testCompile "io.mockk:mockk:1.9.3"
         testCompile "org.assertj:assertj-core:$assertjVersion"
         testCompile "junit:junit:$junitVersion"
     }

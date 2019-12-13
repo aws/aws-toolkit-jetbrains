@@ -19,13 +19,20 @@ import software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.SdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.TemplateParameters
 import software.aws.toolkits.jetbrains.services.lambda.TemplateParameters.AppBasedTemplate
+import software.aws.toolkits.jetbrains.ui.wizard.NoOpSchemaSelectionPanel
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator
+import software.aws.toolkits.jetbrains.ui.wizard.SchemaSelectionPanel
 import software.aws.toolkits.jetbrains.ui.wizard.SdkSelectionPanel
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel
 
 class NodeJsSamProjectWizard : SamProjectWizard {
+    override fun createSchemaSelectionPanel(
+        generator: SamProjectGenerator
+    ): SchemaSelectionPanel =
+        NoOpSchemaSelectionPanel()
+
     override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
         NodeJsSdkSelectionPanel()
 
@@ -64,7 +71,7 @@ class NodeJsSdkSettings(
 ) : SdkSettings
 
 abstract class SamNodeJsProjectTemplate : SamProjectTemplate() {
-    override fun supportedRuntimes(): Set<Runtime> = setOf(Runtime.NODEJS8_10, Runtime.NODEJS10_X)
+    override fun supportedRuntimes(): Set<Runtime> = setOf(Runtime.NODEJS8_10, Runtime.NODEJS10_X, Runtime.NODEJS12_X)
 
     override fun setupSdk(rootModel: ModifiableRootModel, settings: SamNewProjectSettings) {
         val nodeJsSdkSettings = settings.sdkSettings as NodeJsSdkSettings
