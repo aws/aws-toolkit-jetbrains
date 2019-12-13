@@ -5,12 +5,13 @@ package software.aws.toolkits.jetbrains.services.s3.editor
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.fileTypes.ex.FileTypeChooser
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.treeStructure.treetable.TreeTable
+import software.amazon.awssdk.core.sync.ResponseTransformer
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.aws.toolkits.core.utils.getLogger
@@ -27,7 +28,6 @@ import java.awt.dnd.DropTargetDropEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
-import java.nio.file.Paths
 import javax.swing.tree.DefaultMutableTreeNode
 
 class S3TreeTable(
@@ -81,18 +81,28 @@ class S3TreeTable(
     private fun handleOpeningFile(row: Int, e: MouseEvent) {
         e.clickCount.takeUnless { it != 2 } ?: return
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return
-        objectNode.size.takeUnless { it > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE } ?: return // todo show error
-        val path = "${FileUtil.getTempDirectory()}${File.pathSeparator}${bucketVirtual.name}-${objectNode.path.replace('/', '_')}${objectNode.name}"
-        val request = GetObjectRequest.builder()
+        if (objectNode.size > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE) {
+            notifyError("s3.open.file_too_big", objectNode.key)
+            return
+        }
+        val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key}"))
+        val getObjectRequest = GetObjectRequest.builder()
             .bucket(objectNode.bucketName)
             .key(objectNode.key)
             .build()
         ApplicationManager.getApplication().executeOnPooledThread {
-            s3Client.getObject(request, Paths.get(path))
-            val fileWrapper = VirtualFileWrapper(File(path))
+            s3Client.getObject(getObjectRequest, ResponseTransformer.toOutputStream(fileWrapper.file.outputStream()))
             val editorManager = FileEditorManager.getInstance(project)
             runInEdt {
-                editorManager.openTextEditor(OpenFileDescriptor(project, fileWrapper.virtualFile!!), true)
+                fileWrapper.virtualFile?.let {
+                    // If the file type is not associated, prompt user to associate. Returns null on cancel
+                    FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@runInEdt
+                    // set virtual file to read only
+                    it.isWritable = false
+                    editorManager.openFile(it, true, true).ifEmpty {
+                        notifyError(message("s3.open.viewer.bucket.failed"))
+                    }
+                }
             }
         }
     }

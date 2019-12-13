@@ -85,8 +85,6 @@ class S3TreeObjectNode(bucketName: String, parent: S3TreeDirectoryNode?, key: St
     S3TreeNode(bucketName, parent, key) {
 
     private val fileType = fileTypeRegistry.getFileTypeByFileName(name)
-    val path = key.substringBeforeLast('/', "")
-    val extension = key.substringAfter('.', "")
 
     init {
         fileType.takeIf { it !is UnknownFileType }?.icon.let { icon = it }
