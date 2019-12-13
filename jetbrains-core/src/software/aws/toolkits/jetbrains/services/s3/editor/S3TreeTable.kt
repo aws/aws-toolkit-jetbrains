@@ -4,10 +4,15 @@ package software.aws.toolkits.jetbrains.services.s3.editor
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction
@@ -22,6 +27,7 @@ import java.awt.dnd.DropTargetDropEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
+import java.nio.file.Paths
 import javax.swing.tree.DefaultMutableTreeNode
 
 class S3TreeTable(
@@ -67,7 +73,27 @@ class S3TreeTable(
     private val mouseListener = object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent) {
             val row = rowAtPoint(e.point).takeIf { it >= 0 } ?: return
+            handleOpeningFile(row, e)
             handleLoadingMore(row, e)
+        }
+    }
+
+    private fun handleOpeningFile(row: Int, e: MouseEvent) {
+        e.clickCount.takeUnless { it != 2 } ?: return
+        val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return
+        objectNode.size.takeUnless { it > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE } ?: return // todo show error
+        val path = "${FileUtil.getTempDirectory()}${File.pathSeparator}${bucketVirtual.name}-${objectNode.path.replace('/', '_')}${objectNode.name}"
+        val request = GetObjectRequest.builder()
+            .bucket(objectNode.bucketName)
+            .key(objectNode.key)
+            .build()
+        ApplicationManager.getApplication().executeOnPooledThread {
+            s3Client.getObject(request, Paths.get(path))
+            val fileWrapper = VirtualFileWrapper(File(path))
+            val editorManager = FileEditorManager.getInstance(project)
+            runInEdt {
+                editorManager.openTextEditor(OpenFileDescriptor(project, fileWrapper.virtualFile!!), true)
+            }
         }
     }
 
