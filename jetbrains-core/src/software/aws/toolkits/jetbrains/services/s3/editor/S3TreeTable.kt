@@ -105,7 +105,7 @@ class S3TreeTable(
                     // set virtual file to read only
                     it.isWritable = false
                     FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
-                        notifyError(message("s3.open.viewer.bucket.failed"))
+                        notifyError(message("s3.open.viewer.failed"))
                     }
                 }
             }
