@@ -5,17 +5,21 @@ package software.aws.toolkits.jetbrains.services.s3
 import com.intellij.codeHighlighting.BackgroundEditorHighlighter
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorPolicy
 import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.PossiblyDumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
+import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.editor.S3ViewerPanel
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
@@ -65,4 +69,17 @@ class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : UserDataHolder
     override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
 
     override fun setState(state: FileEditorState) {}
+}
+
+fun openEditor(project: Project, bucket: Bucket) {
+    val virtualFile =
+        FileEditorManager.getInstance(project).openFiles.firstOrNull { (it as? S3VirtualBucket)?.s3Bucket?.equals(bucket) == true } ?: S3VirtualBucket(bucket)
+    FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, virtualFile), true)
+    recordOpenTelemetry(project)
+}
+
+private fun recordOpenTelemetry(project: Project) = TelemetryService.getInstance().record(project) {
+    datum("s3_openeditor") {
+        count()
+    }
 }

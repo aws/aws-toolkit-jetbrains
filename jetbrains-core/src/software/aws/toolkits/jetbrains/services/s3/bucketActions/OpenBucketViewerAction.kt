@@ -4,28 +4,18 @@ package software.aws.toolkits.jetbrains.services.s3.bucketActions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.DumbAware
-import com.intellij.openapi.project.Project
-import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.s3.S3BucketNode
-import software.aws.toolkits.jetbrains.services.s3.editor.getOrCreateS3VirtualBucketFile
+import software.aws.toolkits.jetbrains.services.s3.openEditor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s3.open.viewer.bucket.action")), DumbAware {
-
     override fun actionPerformed(selected: S3BucketNode, e: AnActionEvent) =
         try {
             openEditor(e.getRequiredData(LangDataKeys.PROJECT), selected.bucket)
         } catch (e: Exception) {
             e.notifyError(message("s3.open.viewer.bucket.failed"))
         }
-
-    private fun openEditor(project: Project, bucket: Bucket) {
-        val virtualFile = getOrCreateS3VirtualBucketFile(project, bucket)
-        FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, virtualFile), true)
-    }
 }

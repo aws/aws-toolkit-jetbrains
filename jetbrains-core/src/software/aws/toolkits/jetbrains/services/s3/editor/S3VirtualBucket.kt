@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.s3.editor
 
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
 import software.amazon.awssdk.services.s3.model.Bucket
@@ -18,7 +16,3 @@ class S3VirtualBucket(val s3Bucket: Bucket) : LightVirtualFile() {
     override fun toString(): String = s3Bucket.name()
     override fun isDirectory(): Boolean = true
 }
-
-// See if there is already an open editor, otherwise make a new one
-fun getOrCreateS3VirtualBucketFile(project: Project, bucket: Bucket): VirtualFile =
-    FileEditorManager.getInstance(project).openFiles.firstOrNull { (it as? S3VirtualBucket)?.s3Bucket?.equals(bucket) == true } ?: S3VirtualBucket(bucket)
