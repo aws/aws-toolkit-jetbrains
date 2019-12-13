@@ -4,13 +4,12 @@
 package software.aws.toolkits.jetbrains.services.s3.editor
 
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
 import software.amazon.awssdk.services.s3.model.Bucket
 
-class S3VirtualBucket(val s3Bucket: Bucket) : LightVirtualFile(), DumbAware {
+class S3VirtualBucket(val s3Bucket: Bucket) : LightVirtualFile() {
     override fun getName(): String = s3Bucket.name()
     override fun isWritable(): Boolean = false
     override fun getPath(): String = s3Bucket.name()

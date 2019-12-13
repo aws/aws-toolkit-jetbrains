@@ -7,14 +7,12 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.util.ui.ColumnInfo;
-
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -30,20 +28,19 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
-
 import software.amazon.awssdk.services.s3.S3Client;
-import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction;
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources;
 import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel;
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 
 @SuppressWarnings("unchecked")
-public class S3ViewerPanel implements DumbAware {
+public class S3ViewerPanel {
     public S3VirtualBucket bucketVirtual;
     private final int SCROLLPANE_SIZE = 11;
     private JPanel content;
