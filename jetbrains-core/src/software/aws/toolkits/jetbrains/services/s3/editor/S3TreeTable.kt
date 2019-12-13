@@ -93,17 +93,16 @@ class S3TreeTable(
             .bucket(objectNode.bucketName)
             .key(objectNode.key)
             .build()
-        // TODO refactor the download file action to remove the common parts
+        // TODO refactor the download file action to refactor out the common parts and add progress to this
         ApplicationManager.getApplication().executeOnPooledThread {
             s3Client.getObject(getObjectRequest, ResponseTransformer.toOutputStream(fileWrapper.file.outputStream()))
-            val editorManager = FileEditorManager.getInstance(project)
             runInEdt {
                 fileWrapper.virtualFile?.let {
                     // If the file type is not associated, prompt user to associate. Returns null on cancel
                     FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@runInEdt
                     // set virtual file to read only
                     it.isWritable = false
-                    editorManager.openFile(it, true, true).ifEmpty {
+                    FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
                         notifyError(message("s3.open.viewer.bucket.failed"))
                     }
                 }
