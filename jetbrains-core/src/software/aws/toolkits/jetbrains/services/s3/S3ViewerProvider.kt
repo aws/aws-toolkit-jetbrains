@@ -34,7 +34,7 @@ class S3ViewerEditorProvider : FileEditorProvider, DumbAware {
     }
 }
 
-class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : FileEditor, UserDataHolderBase() {
+class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : UserDataHolderBase(), FileEditor, DumbAware {
     private val s3Panel: S3ViewerPanel = S3ViewerPanel(project, AwsClientManager.getInstance(project).getClient(), bucket)
 
     override fun getComponent(): JComponent = s3Panel.component
