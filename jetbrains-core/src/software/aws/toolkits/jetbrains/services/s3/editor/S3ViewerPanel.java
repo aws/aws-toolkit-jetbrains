@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.PopupHandler;
@@ -42,7 +43,7 @@ import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel;
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 
 @SuppressWarnings("unchecked")
-public class S3ViewerPanel {
+public class S3ViewerPanel implements DumbAware {
     public S3VirtualBucket bucketVirtual;
     private final int SCROLLPANE_SIZE = 11;
     private JPanel content;
