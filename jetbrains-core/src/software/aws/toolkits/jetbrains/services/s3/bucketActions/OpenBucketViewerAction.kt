@@ -8,14 +8,20 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.s3.S3BucketNode
 import software.aws.toolkits.jetbrains.services.s3.openEditor
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s3.open.viewer.bucket.action")), DumbAware {
-    override fun actionPerformed(selected: S3BucketNode, e: AnActionEvent) =
+    override fun actionPerformed(selected: S3BucketNode, e: AnActionEvent) {
+        val project = e.getRequiredData(LangDataKeys.PROJECT)
         try {
-            openEditor(e.getRequiredData(LangDataKeys.PROJECT), selected.bucket)
+            openEditor(project, selected.bucket)
+            TelemetryService.recordBasicTelemetry(selected.nodeProject, "s3_openeditor", TelemetryConstants.TelemetryResult.Succeeded)
         } catch (e: Exception) {
             e.notifyError(message("s3.open.viewer.bucket.failed"))
+            TelemetryService.recordBasicTelemetry(selected.nodeProject, "s3_openeditor", TelemetryConstants.TelemetryResult.Failed)
         }
+    }
 }

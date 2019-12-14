@@ -10,6 +10,8 @@ import com.intellij.openapi.ui.ValidationInfo
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.components.telemetry.LoggingDialogWrapper
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent
@@ -35,6 +37,11 @@ class CreateS3BucketDialog(
 
     override fun doValidate(): ValidationInfo? = validateBucketName()?.let { ValidationInfo(it, view.bucketName) }
 
+    override fun doCancelAction() {
+        TelemetryService.recordBasicTelemetry(project, "s3_createbucket", TelemetryResult.Cancelled)
+        super.doCancelAction()
+    }
+
     override fun doOKAction() {
         if (okAction.isEnabled) {
             setOKButtonText(message("s3.create.bucket.in_progress"))
@@ -46,10 +53,12 @@ class CreateS3BucketDialog(
                     ApplicationManager.getApplication().invokeLater({
                         close(OK_EXIT_CODE)
                     }, ModalityState.stateForComponent(view.component))
+                    TelemetryService.recordBasicTelemetry(project, "s3_createbucket", TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     setErrorText(e.message)
                     setOKButtonText(message("s3.create.bucket.create"))
                     isOKActionEnabled = true
+                    TelemetryService.recordBasicTelemetry(project, "s3_createbucket", TelemetryResult.Failed)
                 }
             }
         }

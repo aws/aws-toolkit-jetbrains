@@ -15,6 +15,8 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
@@ -38,14 +40,18 @@ class RenameObjectAction(private val treeTable: S3TreeTable, val bucket: S3Virtu
                 override fun canClose(inputString: String?): Boolean = checkInput(inputString)
             }
         )
-        if (response != null) {
+        if (response == null) {
+            TelemetryService.recordBasicTelemetry(project, "s3_renameObject", TelemetryResult.Cancelled)
+        } else {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     renameObjectAction(response, node, client)
                     treeTable.invalidateLevel(node)
                     treeTable.refresh()
+                    TelemetryService.recordBasicTelemetry(project, "s3_renameObject", TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     e.notifyError(message("s3.rename.object.failed"))
+                    TelemetryService.recordBasicTelemetry(project, "s3_renameObject", TelemetryResult.Failed)
                 }
             }
         }

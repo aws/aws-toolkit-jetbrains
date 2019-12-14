@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.s3.editor.S3ViewerPanel
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
@@ -75,11 +74,4 @@ fun openEditor(project: Project, bucket: Bucket) {
     val virtualFile =
         FileEditorManager.getInstance(project).openFiles.firstOrNull { (it as? S3VirtualBucket)?.s3Bucket?.equals(bucket) == true } ?: S3VirtualBucket(bucket)
     FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, virtualFile), true)
-    recordOpenTelemetry(project)
-}
-
-private fun recordOpenTelemetry(project: Project) = TelemetryService.getInstance().record(project) {
-    datum("s3_openeditor") {
-        count()
-    }
 }
