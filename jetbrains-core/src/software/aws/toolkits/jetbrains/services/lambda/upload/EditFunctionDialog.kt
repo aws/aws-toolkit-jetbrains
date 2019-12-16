@@ -37,6 +37,9 @@ import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.U
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CONFIGURATION
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.RESULT
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
@@ -185,6 +188,11 @@ class EditFunctionDialog(
 
     override fun getOKAction(): Action = action
 
+    override fun doCancelAction() {
+        TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Cancelled)
+        super.doCancelAction()
+    }
+
     override fun doOKAction() {
         // Do nothing, close logic is handled separately
     }
@@ -220,8 +228,14 @@ class EditFunctionDialog(
 
             future.whenComplete { _, error ->
                 when (error) {
-                    null -> notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
-                    is Exception -> error.notifyError(title = NOTIFICATION_TITLE)
+                    null -> {
+                        notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
+                        recordTelemetry(succeeded = true, update = false)
+                    }
+                    is Exception -> {
+                        error.notifyError(title = NOTIFICATION_TITLE)
+                        recordTelemetry(succeeded = false, update = false)
+                    }
                 }
             }
             close(OK_EXIT_CODE)
@@ -242,8 +256,10 @@ class EditFunctionDialog(
                             content = message("lambda.function.configuration_updated.notification", functionDetails.name)
                         )
                         runInEdt(ModalityState.any()) { close(OK_EXIT_CODE) }
+                        recordTelemetry(succeeded = true, update = true)
                     }.exceptionally { error ->
                         setErrorText(ExceptionUtil.getNonEmptyMessage(error, error.toString()))
+                        recordTelemetry(succeeded = false, update = true)
                         null
                     }
             }
@@ -292,6 +308,19 @@ class EditFunctionDialog(
 
     @TestOnly
     fun getViewForTestAssertions() = view
+
+    private fun recordTelemetry(succeeded: Boolean, update: Boolean) {
+        TelemetryService.getInstance().record(project) {
+            datum(TELEMETRY_NAME) {
+                metadata("update", update)
+                metadata(RESULT, if (succeeded) TelemetryResult.Succeeded.name else TelemetryResult.Failed.name)
+            }
+        }
+    }
+
+    companion object {
+        private const val TELEMETRY_NAME = "lambda_editfunction"
+    }
 }
 
 class UploadToLambdaValidator {
