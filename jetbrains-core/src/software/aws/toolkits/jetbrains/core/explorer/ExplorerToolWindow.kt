@@ -27,8 +27,8 @@ import com.intellij.ui.treeStructure.Tree
 import software.aws.toolkits.jetbrains.components.telemetry.ToolkitActionPlaces
 import software.aws.toolkits.jetbrains.core.SettingsSelector
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier.AccountSettingsEvent
+// import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier
+// import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier.AccountSettingsEvent
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -48,7 +48,7 @@ import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
 
-class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true), AccountSettingsChangedNotifier {
+class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true) {
     private val actionManager = ActionManagerEx.getInstanceEx()
     private val projectAccountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
 
@@ -71,20 +71,20 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
         setContent(treePanelWrapper)
 
-        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.ACCOUNT_SETTINGS_CHANGED, this)
+//        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.ACCOUNT_SETTINGS_CHANGED, this)
 
         load()
     }
 
-    override fun settingsChanged(event: AccountSettingsEvent) {
-        if (!event.isLoading) {
-            load()
-        }
-    }
+//    override fun settingsChanged(event: AccountSettingsEventnt) {
+//        if (!event.isLoading) {
+//            load()
+//        }
+//    }
 
     private fun load() {
         runInEdt {
-            if (!projectAccountSettingsManager.hasActiveCredentials()) {
+            if (!projectAccountSettingsManager.isValidConnectionSettings()) {
                 treePanelWrapper.setContent(errorPanel)
             } else {
                 invalidateTree()

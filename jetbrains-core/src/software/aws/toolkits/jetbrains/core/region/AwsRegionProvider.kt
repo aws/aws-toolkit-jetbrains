@@ -54,7 +54,7 @@ class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResour
     }
 
     companion object {
-        private const val DEFAULT_REGION = "us-east-1"
+        const val DEFAULT_REGION = "us-east-1"
         private val LOG = getLogger<AwsRegionProvider>()
 
         @JvmStatic

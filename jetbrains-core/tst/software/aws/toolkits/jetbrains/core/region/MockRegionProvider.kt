@@ -10,8 +10,9 @@ import software.aws.toolkits.core.region.ToolkitRegionProvider
 class MockRegionProvider : ToolkitRegionProvider {
     private val overrideRegions: MutableMap<String, AwsRegion> = mutableMapOf("us-east-1" to US_EAST_1)
 
-    fun addRegion(region: AwsRegion) {
+    fun addRegion(region: AwsRegion): AwsRegion {
         overrideRegions[region.id] = region
+        return region
     }
 
     fun reset() {

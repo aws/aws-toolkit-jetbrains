@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.components.telemetry.ComboBoxActionWrappe
 import software.aws.toolkits.jetbrains.components.telemetry.ToggleActionWrapper
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
@@ -44,8 +43,7 @@ class AwsSettingsPanelInstaller : StatusBarWidgetProvider {
 }
 
 private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
-    StatusBarWidget.MultipleTextValuesPresentation,
-    AccountSettingsChangedNotifier {
+    StatusBarWidget.MultipleTextValuesPresentation {
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
     private val settingsSelector = SettingsSelector(project)
     private lateinit var statusBar: StatusBar
@@ -75,13 +73,13 @@ private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
 
     override fun install(statusBar: StatusBar) {
         this.statusBar = statusBar
-        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.ACCOUNT_SETTINGS_CHANGED, this)
+//        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.ACCOUNT_SETTINGS_CHANGED, this)
         updateWidget()
     }
 
-    override fun settingsChanged(event: AccountSettingsChangedNotifier.AccountSettingsEvent) {
-        updateWidget()
-    }
+//    override fun settingsChanged(event: AccountSettingsChangedNotifier.AccountSettingsEvent) {
+//        updateWidget()
+//    }
 
     private fun updateWidget() {
         statusBar.updateWidget(ID())

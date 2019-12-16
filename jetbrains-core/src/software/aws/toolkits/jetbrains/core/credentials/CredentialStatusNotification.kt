@@ -1,3 +1,6 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.actionSystem.ActionManager
@@ -11,7 +14,7 @@ import software.aws.toolkits.resources.message
 
 class CredentialStatusNotification : StartupActivity, DumbAware, ConnectionSettingsChangeNotifier {
     override fun runActivity(project: Project) {
-        project.messageBus.connect().subscribe(ProjectAccountSettingsManager2.CONNECTION_SETTINGS_CHANGED, this)
+        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, this)
     }
 
     override fun settingsChanged(event: ConnectionSettingsChangeEvent) {

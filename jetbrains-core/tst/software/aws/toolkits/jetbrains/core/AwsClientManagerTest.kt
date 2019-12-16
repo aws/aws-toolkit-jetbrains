@@ -5,12 +5,11 @@ package software.aws.toolkits.jetbrains.core
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.PlatformTestCase
+import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -46,12 +45,8 @@ class AwsClientManagerTest {
 
     @Before
     fun setUp() {
-        mockCredentialManager = MockCredentialsManager.getInstance()
-    }
-
-    @After
-    fun tearDown() {
         MockProjectAccountSettingsManager.getInstance(projectRule.project).reset()
+        mockCredentialManager = MockCredentialsManager.getInstance()
         mockCredentialManager.reset()
     }
 
@@ -100,11 +95,19 @@ class AwsClientManagerTest {
     @Test
     fun clientsAreClosedWhenProjectIsDisposed() {
         val project = createProject(temporaryDirectory.newFolder().toPath())
+        val projectManager = ProjectManagerEx.getInstanceEx()
+
+        runInEdtAndWait {
+            projectManager.openTestProject(project)
+        }
+
+        MockProjectAccountSettingsManager.getInstance(project).reset()
+
         val sut = getClientManager(project)
         val client = sut.getClient<DummyServiceClient>()
 
         runInEdtAndWait {
-            PlatformTestCase.closeAndDisposeProjectAndCheckThatNoOpenProjects(project)
+            projectManager.closeAndDispose(project)
         }
 
         assertThat(client.closed).isTrue()

@@ -1,3 +1,6 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.openapi.application.ApplicationManager
@@ -8,8 +11,8 @@ import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
-val Dispatchers.Edt : EdtDispatcher
-    get() =  software.aws.toolkits.jetbrains.utils.Edt
+val Dispatchers.Edt: EdtDispatcher
+    get() = software.aws.toolkits.jetbrains.utils.Edt
 
 /**
  * Same as Dispatchers.Swing, but uses IDE's EDT invoker instead and supports modality state

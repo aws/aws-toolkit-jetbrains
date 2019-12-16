@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.components.ServiceManager
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -21,7 +22,7 @@ class MockCredentialsManager : CredentialManager() {
         providers.clear()
     }
 
-    fun addCredentials(id: String, credentials: AwsCredentials): ToolkitCredentialsProvider =
+    fun addCredentials(id: String, credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret")): ToolkitCredentialsProvider =
         MockCredentialsProvider(id, id, credentials).also {
             incModificationCount()
             providers[id] = it

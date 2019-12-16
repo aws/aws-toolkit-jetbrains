@@ -5,50 +5,38 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager.Companion.createDummyProvider
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.utils.spinUntil
+import java.time.Duration
 
-class MockProjectAccountSettingsManager : ProjectAccountSettingsManager {
-    private var internalProvider: ToolkitCredentialsProvider? = DUMMY_PROVIDER
-    private val recentlyUsedRegions = mutableListOf<AwsRegion>()
-    private val recentlyUsedCredentials = mutableListOf<ToolkitCredentialsProvider>()
-
-    override var activeRegion = AwsRegionProvider.getInstance().defaultRegion()
-
-    override val activeCredentialProvider: ToolkitCredentialsProvider
-        get() = internalProvider ?: throw CredentialProviderNotFound("boom")
-
-    override fun recentlyUsedRegions(): List<AwsRegion> = recentlyUsedRegions
-
-    override fun recentlyUsedCredentials(): List<ToolkitCredentialsProvider> = recentlyUsedCredentials
-
-    override fun changeCredentialProvider(credentialsProvider: ToolkitCredentialsProvider?) {
-        internalProvider = credentialsProvider
-        credentialsProvider?.let {
-            recentlyUsedCredentials.add(credentialsProvider)
-        }
-    }
-
-    override fun changeRegion(region: AwsRegion) {
-        activeRegion = region
-        recentlyUsedRegions.add(region)
+class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettingsManager(project) {
+    init {
+        reset()
     }
 
     fun reset() {
-        internalProvider = DUMMY_PROVIDER
-        activeRegion = AwsRegionProvider.getInstance().defaultRegion()
         recentlyUsedRegions.clear()
-        recentlyUsedCredentials.clear()
+        recentlyUsedProfiles.clear()
+
+        connectionSettings = ConnectionSettings(DUMMY_PROVIDER, AwsRegionProvider.getInstance().defaultRegion())
+
+        spinUntil(Duration.ofSeconds(10)) { connectionState == ConnectionState.VALID || connectionState == ConnectionState.INVALID }
+    }
+
+    override suspend fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion) = withContext(Dispatchers.Default) {
+        true
     }
 
     companion object {
-        val MOCK_CREDENTIALS_NAME = "MockCredentials"
+        const val MOCK_CREDENTIALS_NAME = "MockCredentials"
         private val DUMMY_PROVIDER = createDummyProvider(
             MOCK_CREDENTIALS_NAME,
             AwsBasicCredentials.create("Foo", "Bar")
