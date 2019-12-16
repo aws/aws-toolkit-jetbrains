@@ -10,6 +10,8 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
+import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerService
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
@@ -22,7 +24,7 @@ class CreateS3BucketDialog(
     parent: Component? = null
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
 
-    private val view = CreateBucketPanel()
+    val view = CreateBucketPanel()
 
     init {
         title = message("s3.create.bucket.title")
@@ -53,6 +55,7 @@ class CreateS3BucketDialog(
                     ApplicationManager.getApplication().invokeLater({
                         close(OK_EXIT_CODE)
                     }, ModalityState.stateForComponent(view.component))
+                    AwsExplorerService.refreshAwsTree(project, S3Resources.LIST_BUCKETS)
                     TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     setErrorText(e.message)
@@ -73,9 +76,6 @@ class CreateS3BucketDialog(
 
     @TestOnly
     fun validateBucketName(): String? = if (bucketName().isEmpty()) message("s3.create.bucket.missing.bucket.name") else null
-
-    @TestOnly
-    fun getViewForTesting(): CreateBucketPanel = view
 
     companion object {
         const val TELEMETRY_NAME = "s3_createbucket"
