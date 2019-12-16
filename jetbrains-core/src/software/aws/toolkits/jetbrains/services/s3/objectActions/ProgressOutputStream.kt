@@ -19,9 +19,9 @@ class ProgressOutputStream(private val outputStream: OutputStream, val size: Lon
         closed = true
     }
 
-    override fun write(b: ByteArray?) {
-        b?.let { outputStream.write(b) }
-        progress += b?.size ?: 0
+    override fun write(b: ByteArray) {
+        outputStream.write(b)
+        progress += b.size
         updateProgress(progress)
     }
 
@@ -31,8 +31,8 @@ class ProgressOutputStream(private val outputStream: OutputStream, val size: Lon
         updateProgress(progress)
     }
 
-    override fun write(b: ByteArray?, off: Int, len: Int) {
-        b?.let { outputStream.write(b, off, len) }
+    override fun write(b: ByteArray, off: Int, len: Int) {
+        outputStream.write(b, off, len)
         progress += len
         updateProgress(progress)
     }

@@ -18,6 +18,7 @@ import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccount
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.time.Duration
 import java.time.Instant
@@ -66,7 +67,19 @@ interface TelemetryService : Disposable {
         }
 
         @JvmStatic
-        fun recordSimpleTelemetry(project: Project?, name: String, result: TelemetryConstants.TelemetryResult, count: Double = 1.0) =
+        fun recordSimpleTelemetry(project: Project?, name: String, success: Boolean, count: Double = 1.0) =
+            getInstance().record(project) {
+                datum(name) {
+                    count(count)
+                    metadata(
+                        TelemetryConstants.RESULT,
+                        if (success) TelemetryResult.Succeeded.name else TelemetryResult.Failed.name
+                    )
+                }
+            }
+
+        @JvmStatic
+        fun recordSimpleTelemetry(project: Project?, name: String, result: TelemetryResult, count: Double = 1.0) =
             getInstance().record(project) {
                 datum(name) {
                     count(count)
