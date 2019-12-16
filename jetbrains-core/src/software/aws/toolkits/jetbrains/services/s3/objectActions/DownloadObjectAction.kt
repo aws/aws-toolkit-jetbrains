@@ -64,7 +64,7 @@ class DownloadObjectAction(
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         downloadObjectAction(project, client, it, fileWrapper)
-                        TelemetryService.recordBasicTelemetry(project, "s3_downloadobject", TelemetryResult.Succeeded)
+                        TelemetryService.recordSimpleTelemetry(project, "s3_downloadobject", TelemetryResult.Succeeded)
                     } catch (e: Exception) {
                         notifyError(message("s3.download.object.failed"))
                         successful = false
@@ -72,7 +72,7 @@ class DownloadObjectAction(
                 }
             }
         }
-        TelemetryService.recordBasicTelemetry(
+        TelemetryService.recordSimpleTelemetry(
             project,
             "s3_downloadobject",
             if (successful) TelemetryResult.Succeeded else TelemetryResult.Failed,

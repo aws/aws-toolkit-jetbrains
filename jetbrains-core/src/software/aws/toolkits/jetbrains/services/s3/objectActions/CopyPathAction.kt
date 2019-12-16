@@ -25,7 +25,7 @@ class CopyPathAction(
     override fun doActionPerformed(e: AnActionEvent) {
         treeTable.getSelectedNodes().firstOrNull()?.let {
             CopyPasteManager.getInstance().setContents(StringSelection(it.key))
-            TelemetryService.recordBasicTelemetry(e.getRequiredData(LangDataKeys.PROJECT), "s3_copypath", TelemetryResult.Succeeded)
+            TelemetryService.recordSimpleTelemetry(e.getRequiredData(LangDataKeys.PROJECT), "s3_copypath", TelemetryResult.Succeeded)
         }
     }
 }

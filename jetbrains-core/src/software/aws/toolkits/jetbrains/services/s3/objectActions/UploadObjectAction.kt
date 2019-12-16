@@ -52,7 +52,7 @@ class UploadObjectAction(
                 }
             }
         }
-        TelemetryService.recordBasicTelemetry(
+        TelemetryService.recordSimpleTelemetry(
             project,
             "s3_uploadobject",
             if (successful) TelemetryConstants.TelemetryResult.Succeeded else TelemetryConstants.TelemetryResult.Failed,

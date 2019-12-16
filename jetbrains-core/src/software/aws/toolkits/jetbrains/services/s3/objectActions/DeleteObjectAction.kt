@@ -47,17 +47,17 @@ class DeleteObjectAction(
         )
 
         if (response != Messages.OK) {
-            TelemetryService.recordBasicTelemetry(project, "s3_deleteobject", TelemetryResult.Cancelled)
+            TelemetryService.recordSimpleTelemetry(project, "s3_deleteobject", TelemetryResult.Cancelled)
         } else {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     deleteObjectAction(client, objectsToDelete)
                     treeTable.removeRows(rows)
                     treeTable.refresh()
-                    TelemetryService.recordBasicTelemetry(project, "s3_deleteobject", TelemetryResult.Succeeded)
+                    TelemetryService.recordSimpleTelemetry(project, "s3_deleteobject", TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     notifyInfo(message("s3.delete.object.failed"))
-                    TelemetryService.recordBasicTelemetry(project, "s3_deleteobject", TelemetryResult.Failed)
+                    TelemetryService.recordSimpleTelemetry(project, "s3_deleteobject", TelemetryResult.Failed)
                 }
             }
         }

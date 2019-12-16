@@ -41,17 +41,17 @@ class RenameObjectAction(private val treeTable: S3TreeTable, val bucket: S3Virtu
             }
         )
         if (response == null) {
-            TelemetryService.recordBasicTelemetry(project, "s3_renameObject", TelemetryResult.Cancelled)
+            TelemetryService.recordSimpleTelemetry(project, "s3_renameObject", TelemetryResult.Cancelled)
         } else {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     renameObjectAction(response, node, client)
                     treeTable.invalidateLevel(node)
                     treeTable.refresh()
-                    TelemetryService.recordBasicTelemetry(project, "s3_renameObject", TelemetryResult.Succeeded)
+                    TelemetryService.recordSimpleTelemetry(project, "s3_renameObject", TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     e.notifyError(message("s3.rename.object.failed"))
-                    TelemetryService.recordBasicTelemetry(project, "s3_renameObject", TelemetryResult.Failed)
+                    TelemetryService.recordSimpleTelemetry(project, "s3_renameObject", TelemetryResult.Failed)
                 }
             }
         }

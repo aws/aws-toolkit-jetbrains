@@ -66,12 +66,13 @@ interface TelemetryService : Disposable {
         }
 
         @JvmStatic
-        fun recordBasicTelemetry(project: Project?, name: String, result: TelemetryConstants.TelemetryResult, count: Double = 1.0) = getInstance().record(project) {
-            datum(name) {
-                count(count)
-                metadata(TelemetryConstants.RESULT, result.name)
+        fun recordSimpleTelemetry(project: Project?, name: String, result: TelemetryConstants.TelemetryResult, count: Double = 1.0) =
+            getInstance().record(project) {
+                datum(name) {
+                    count(count)
+                    metadata(TelemetryConstants.RESULT, result.name)
+                }
             }
-        }
 
         private val TELEMETRY_TOPIC: Topic<TelemetryEnabledChangedNotifier> = Topic.create(
             "TELEMETRY_ENABLED_TOPIC",

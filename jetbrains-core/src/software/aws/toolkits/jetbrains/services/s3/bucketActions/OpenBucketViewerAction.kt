@@ -18,10 +18,10 @@ class OpenBucketViewerAction : SingleResourceNodeAction<S3BucketNode>(message("s
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         try {
             openEditor(project, selected.bucket)
-            TelemetryService.recordBasicTelemetry(selected.nodeProject, "s3_openeditor", TelemetryConstants.TelemetryResult.Succeeded)
+            TelemetryService.recordSimpleTelemetry(selected.nodeProject, "s3_openeditor", TelemetryConstants.TelemetryResult.Succeeded)
         } catch (e: Exception) {
             e.notifyError(message("s3.open.viewer.bucket.failed"))
-            TelemetryService.recordBasicTelemetry(selected.nodeProject, "s3_openeditor", TelemetryConstants.TelemetryResult.Failed)
+            TelemetryService.recordSimpleTelemetry(selected.nodeProject, "s3_openeditor", TelemetryConstants.TelemetryResult.Failed)
         }
     }
 }

@@ -6,10 +6,10 @@ package software.aws.toolkits.jetbrains.services.s3
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.jetbrains.components.telemetry.LoggingDialogWrapper
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
@@ -19,8 +19,8 @@ import javax.swing.JComponent
 class CreateS3BucketDialog(
     private val project: Project,
     private val s3Client: S3Client,
-    private val parent: Component? = null
-) : LoggingDialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
+    parent: Component? = null
+) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
 
     private val view = CreateBucketPanel()
 
@@ -38,7 +38,7 @@ class CreateS3BucketDialog(
     override fun doValidate(): ValidationInfo? = validateBucketName()?.let { ValidationInfo(it, view.bucketName) }
 
     override fun doCancelAction() {
-        TelemetryService.recordBasicTelemetry(project, "s3_createbucket", TelemetryResult.Cancelled)
+        TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Cancelled)
         super.doCancelAction()
     }
 
@@ -53,12 +53,12 @@ class CreateS3BucketDialog(
                     ApplicationManager.getApplication().invokeLater({
                         close(OK_EXIT_CODE)
                     }, ModalityState.stateForComponent(view.component))
-                    TelemetryService.recordBasicTelemetry(project, "s3_createbucket", TelemetryResult.Succeeded)
+                    TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     setErrorText(e.message)
                     setOKButtonText(message("s3.create.bucket.create"))
                     isOKActionEnabled = true
-                    TelemetryService.recordBasicTelemetry(project, "s3_createbucket", TelemetryResult.Failed)
+                    TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Failed)
                 }
             }
         }
@@ -76,4 +76,8 @@ class CreateS3BucketDialog(
 
     @TestOnly
     fun getViewForTesting(): CreateBucketPanel = view
+
+    companion object {
+        const val TELEMETRY_NAME = "s3_createbucket"
+    }
 }

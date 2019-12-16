@@ -18,6 +18,6 @@ class CopyBucketNameAction : SingleResourceNodeAction<S3BucketNode>(message("s3.
         val copyContent = selected.toString()
         val copyPasteManager = CopyPasteManager.getInstance()
         copyPasteManager.setContents(StringSelection(copyContent))
-        TelemetryService.recordBasicTelemetry(selected.nodeProject, "s3_copybucketname", TelemetryResult.Succeeded)
+        TelemetryService.recordSimpleTelemetry(selected.nodeProject, "s3_copybucketname", TelemetryResult.Succeeded)
     }
 }
