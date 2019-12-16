@@ -118,16 +118,10 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
             }.whenComplete { _, exception ->
                 AwsResourceCache.getInstance(state.environment.project)
                     .getResource(StsResources.ACCOUNT, lambdaSettings.region, lambdaSettings.credentials)
-                    .whenComplete { account, _ ->
-                        TelemetryService.getInstance().record(
-                            "SamInvoke",
-                            TelemetryService.MetricEventMetadata(
-                                awsAccount = account ?: METADATA_INVALID,
-                                awsRegion = lambdaSettings.region.id
-                            )
-                        ) {
+                    .whenComplete { _, _ ->
+                        TelemetryService.getInstance().record(state.environment.project) {
                             val type = if (environment.isDebug()) "Debug" else "Run"
-                            datum(type) {
+                            datum("SamInvoke_${type}") {
                                 count()
                                 // exception can be null but is not annotated as nullable
                                 metadata("hasException", exception != null)

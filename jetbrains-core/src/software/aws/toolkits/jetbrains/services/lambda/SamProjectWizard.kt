@@ -147,8 +147,8 @@ abstract class SamProjectTemplate {
             hasException = true
             throw e
         } finally {
-            TelemetryService.getInstance().record(project, "SAM") {
-                datum("Init") {
+            TelemetryService.getInstance().record(project) {
+                datum("sam_init") {
                     metadata("name", getName())
                     metadata("runtime", runtime.name)
                     metadata("samVersion", SamCommon.getVersionString())

@@ -9,6 +9,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.text.nullize
@@ -18,7 +19,6 @@ import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.jetbrains.components.telemetry.LoggingDialogWrapper
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
@@ -65,22 +65,22 @@ class EditFunctionDialog(
     private val memorySize: Int = DEFAULT_MEMORY_SIZE,
     private val xrayEnabled: Boolean = false,
     private val role: IamRole? = null
-) : LoggingDialogWrapper(project) {
+) : DialogWrapper(project, null, true, DialogWrapper.IdeModalityType.IDE) {
 
     constructor(project: Project, lambdaFunction: LambdaFunction, mode: EditFunctionMode = UPDATE_CONFIGURATION) :
-            this(
-                project = project,
-                mode = mode,
-                name = lambdaFunction.name,
-                description = lambdaFunction.description ?: "",
-                runtime = lambdaFunction.runtime,
-                handlerName = lambdaFunction.handler,
-                envVariables = lambdaFunction.envVariables ?: emptyMap(),
-                timeout = lambdaFunction.timeout,
-                memorySize = lambdaFunction.memorySize,
-                xrayEnabled = lambdaFunction.xrayEnabled,
-                role = lambdaFunction.role
-            )
+        this(
+            project = project,
+            mode = mode,
+            name = lambdaFunction.name,
+            description = lambdaFunction.description ?: "",
+            runtime = lambdaFunction.runtime,
+            handlerName = lambdaFunction.handler,
+            envVariables = lambdaFunction.envVariables ?: emptyMap(),
+            timeout = lambdaFunction.timeout,
+            memorySize = lambdaFunction.memorySize,
+            xrayEnabled = lambdaFunction.xrayEnabled,
+            role = lambdaFunction.role
+        )
 
     private val view = EditFunctionPanel(project)
     private val validator = UploadToLambdaValidator()
@@ -290,8 +290,6 @@ class EditFunctionDialog(
         }
     }
 
-    override fun getNamespace(): String = "${mode.name}FunctionDialog"
-
     @TestOnly
     fun getViewForTestAssertions() = view
 }
@@ -316,7 +314,7 @@ class UploadToLambdaValidator {
     fun validateCodeSettings(project: Project, view: EditFunctionPanel): ValidationInfo? {
         val handler = view.handlerPanel.handler.text
         val runtime = view.runtime.selected()
-                ?: return ValidationInfo(message("lambda.upload_validation.runtime"), view.runtime)
+            ?: return ValidationInfo(message("lambda.upload_validation.runtime"), view.runtime)
 
         runtime.runtimeGroup?.let { LambdaBuilder.getInstance(it) } ?: return ValidationInfo(
             message("lambda.upload_validation.unsupported_runtime", runtime),

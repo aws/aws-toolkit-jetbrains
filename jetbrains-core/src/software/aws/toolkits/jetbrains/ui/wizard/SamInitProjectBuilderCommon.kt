@@ -48,7 +48,6 @@ fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButto
     })
 }
 
-@JvmOverloads
 fun validateSamForSchemaSupport(samExecutableField: JTextField, editButton: JButton, label: JComponent) {
     val samExe = samExecutableField.text
 

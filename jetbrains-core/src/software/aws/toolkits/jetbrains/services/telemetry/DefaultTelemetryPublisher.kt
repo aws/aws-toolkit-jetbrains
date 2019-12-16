@@ -58,9 +58,7 @@ class DefaultTelemetryPublisher(
     private fun Collection<MetricEvent>.toMetricData(): Collection<MetricDatum> = this
         .flatMap { metricEvent ->
             metricEvent.data.map { datum ->
-                val metricName = metricEvent.namespace?.let {
-                    "$it.${datum.name}"
-                } ?: datum.name
+                val metricName = datum.name
                 MetricDatum.builder()
                     .epochTimestamp(metricEvent.createTime.toEpochMilli())
                     .metricName(metricName)
@@ -83,26 +81,6 @@ class DefaultTelemetryPublisher(
                                 .build()
                         ))
                     .build()
-            }.ifEmpty {
-                // built a metric event with no data
-                listOf(
-                    MetricDatum.builder()
-                        .epochTimestamp(metricEvent.createTime.toEpochMilli())
-                        .metricName(metricEvent.namespace)
-                        .unit(MetricUnit.NONE)
-                        .value(0.0)
-                        .metadata(
-                            MetadataEntry.builder()
-                                .key(METADATA_AWS_ACCOUNT)
-                                .value(metricEvent.awsAccount)
-                                .build(),
-                            MetadataEntry.builder()
-                                .key(METADATA_AWS_REGION)
-                                .value(metricEvent.awsRegion)
-                                .build()
-                        )
-                        .build()
-                )
             }
         }
 
