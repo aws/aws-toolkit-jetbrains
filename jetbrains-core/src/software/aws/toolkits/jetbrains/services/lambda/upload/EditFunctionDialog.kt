@@ -65,7 +65,7 @@ class EditFunctionDialog(
     private val memorySize: Int = DEFAULT_MEMORY_SIZE,
     private val xrayEnabled: Boolean = false,
     private val role: IamRole? = null
-) : DialogWrapper(project, null, true, DialogWrapper.IdeModalityType.IDE) {
+) : DialogWrapper(project) {
 
     constructor(project: Project, lambdaFunction: LambdaFunction, mode: EditFunctionMode = UPDATE_CONFIGURATION) :
         this(
