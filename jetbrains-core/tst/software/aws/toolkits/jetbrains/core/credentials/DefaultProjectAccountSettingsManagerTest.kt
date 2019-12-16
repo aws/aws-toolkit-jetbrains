@@ -73,15 +73,15 @@ class DefaultProjectAccountSettingsManagerTest {
 
     @Test
     fun testMakingCredentialActive() {
-        manager.changeRegion(MockRegionProvider.US_EAST_1)
+        manager.changeRegion(MockRegionProvider.getInstance().defaultRegion())
 
         assertThat(manager.recentlyUsedCredentials()).isEmpty()
 
         val credentials = mockCredentialManager.addCredentials("Mock1")
         val credentials2 = mockCredentialManager.addCredentials("Mock2")
 
-        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.US_EAST_1))
-        markConnectionSettingsAsValid(ConnectionSettings(credentials2, MockRegionProvider.US_EAST_1))
+        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsValid(ConnectionSettings(credentials2, MockRegionProvider.getInstance().defaultRegion()))
 
         changeCredentialProvider(credentials)
 
@@ -207,7 +207,7 @@ class DefaultProjectAccountSettingsManagerTest {
         """.toElement()
 
         val credentials = mockCredentialManager.addCredentials("Mock")
-        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.US_EAST_1))
+        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.getInstance().defaultRegion()))
 
         deserializeAndLoadState(manager, element)
 
@@ -221,10 +221,10 @@ class DefaultProjectAccountSettingsManagerTest {
     fun testLoadingActiveRegion() {
         val element = """
             <AccountState>
-                <option name="activeRegion" value="${MockRegionProvider.US_EAST_1.id}" />
+                <option name="activeRegion" value="${MockRegionProvider.getInstance().defaultRegion().id}" />
                 <option name="recentlyUsedRegions">
                     <list>
-                        <option value="${MockRegionProvider.US_EAST_1.id}" />
+                        <option value="${MockRegionProvider.getInstance().defaultRegion().id}" />
                     </list>
                 </option>
             </AccountState>
@@ -234,7 +234,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        val region = mockRegionManager.lookupRegionById(MockRegionProvider.US_EAST_1.id)
+        val region = mockRegionManager.lookupRegionById(MockRegionProvider.getInstance().defaultRegion().id)
         assertThat(manager.connectionSettings().region).isEqualTo(region)
         assertThat(manager.recentlyUsedRegions()).element(0).isEqualTo(region)
     }
@@ -285,7 +285,7 @@ class DefaultProjectAccountSettingsManagerTest {
     fun testLoadingInvalidActiveCredentialNotSelected() {
         val mockCredentials = mockCredentialManager.addCredentials("Mock")
 
-        markConnectionSettingsAsInvalid(ConnectionSettings(mockCredentials, MockRegionProvider.US_EAST_1))
+        markConnectionSettingsAsInvalid(ConnectionSettings(mockCredentials, MockRegionProvider.getInstance().defaultRegion()))
 
         val element = """
             <AccountState>
@@ -308,7 +308,7 @@ class DefaultProjectAccountSettingsManagerTest {
     @Test
     fun testLoadingDefaultProfileIfNoPrevious() {
         val credentials = mockCredentialManager.addCredentials("profile:default")
-        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.US_EAST_1))
+        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.getInstance().defaultRegion()))
 
         val element = """
             <AccountState/>

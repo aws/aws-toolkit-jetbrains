@@ -26,9 +26,9 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
         recentlyUsedRegions.clear()
         recentlyUsedProfiles.clear()
 
-        connectionSettings = ConnectionSettings(DUMMY_PROVIDER, AwsRegionProvider.getInstance().defaultRegion())
+        connectionSettings = ConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER, AwsRegionProvider.getInstance().defaultRegion())
 
-        spinUntil(Duration.ofSeconds(10)) { connectionState == ConnectionState.VALID || connectionState == ConnectionState.INVALID }
+        spinUntil(Duration.ofSeconds(10)) { connectionState == ConnectionState.VALID }
     }
 
     override suspend fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion) = withContext(Dispatchers.Default) {
@@ -36,19 +36,6 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
     }
 
     companion object {
-        const val MOCK_CREDENTIALS_NAME = "MockCredentials"
-        private val DUMMY_PROVIDER = createDummyProvider(
-            MOCK_CREDENTIALS_NAME,
-            AwsBasicCredentials.create("Foo", "Bar")
-        )
-
-        fun createDummyProvider(id: String, awsCredentials: AwsCredentials) = object : ToolkitCredentialsProvider() {
-            override val id = id
-            override val displayName = id
-
-            override fun resolveCredentials(): AwsCredentials = awsCredentials
-        }
-
         fun getInstance(project: Project): MockProjectAccountSettingsManager =
             ServiceManager.getService(
                 project,

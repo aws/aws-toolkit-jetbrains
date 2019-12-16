@@ -34,8 +34,10 @@ import software.amazon.awssdk.services.schemas.model.NotFoundException
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingRequest
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingResponse
 import software.aws.toolkits.core.utils.WaiterTimeoutException
+import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCache
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.services.schemas.SchemaSummary
@@ -78,7 +80,7 @@ class SchemaCodeDownloaderTest {
 
     private var errorNotification: Notification? = null
 
-    private val CREDENTIAL_IDENTIFIER = MockProjectAccountSettingsManager.MOCK_CREDENTIALS_NAME
+    private val CREDENTIAL_IDENTIFIER = MockCredentialsManager.DUMMY_PROVIDER_ID
     private val REGION = MockProjectAccountSettingsManager.getInstance(projectRule.project).activeRegion.id
     private val REGISTRY = "registry"
     private val SCHEMA = "schema"
