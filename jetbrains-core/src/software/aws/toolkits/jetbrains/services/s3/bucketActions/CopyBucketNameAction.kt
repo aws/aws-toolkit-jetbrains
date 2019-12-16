@@ -15,9 +15,8 @@ import java.awt.datatransfer.StringSelection
 
 class CopyBucketNameAction : SingleResourceNodeAction<S3BucketNode>(message("s3.copy.bucket.action"), icon = AllIcons.Actions.Copy), DumbAware {
     override fun actionPerformed(selected: S3BucketNode, e: AnActionEvent) {
-        val copyContent = selected.toString()
         val copyPasteManager = CopyPasteManager.getInstance()
-        copyPasteManager.setContents(StringSelection(copyContent))
+        copyPasteManager.setContents(StringSelection(selected.toString()))
         TelemetryService.recordSimpleTelemetry(selected.nodeProject, "s3_copybucketname", TelemetryResult.Succeeded)
     }
 }

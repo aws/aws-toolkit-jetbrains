@@ -45,7 +45,7 @@ class DownloadObjectAction(
         var baseFilePath: String? = ""
 
         var fileWrapper: VirtualFileWrapper? = null
-        var successful = true
+        var allSucceeded = true
         treeTable.getSelectedNodes().forEach {
             if (it !is S3TreeObjectNode) {
                 return@forEach
@@ -67,7 +67,7 @@ class DownloadObjectAction(
                         TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Succeeded)
                     } catch (e: Exception) {
                         notifyError(message("s3.download.object.failed"))
-                        successful = false
+                        allSucceeded = false
                     }
                 }
             }
@@ -75,7 +75,7 @@ class DownloadObjectAction(
         TelemetryService.recordSimpleTelemetry(
             project,
             TELEMETRY_NAME,
-            if (successful) TelemetryResult.Succeeded else TelemetryResult.Failed,
+            if (allSucceeded) TelemetryResult.Succeeded else TelemetryResult.Failed,
             treeTable.selectedRows.size.toDouble()
         )
     }
