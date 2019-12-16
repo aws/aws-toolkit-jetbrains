@@ -64,7 +64,7 @@ class DefaultTelemetryPublisherTest {
         assertThat(postMetricsRequest.metricData()).hasSize(2)
 
         postMetricsRequest.metricData()[0].let {
-            assertThat(it.metricName()).isEqualTo("Foo.foobar")
+            assertThat(it.metricName()).isEqualTo("foobar")
             assertThat(it.metadata()).contains(
                 MetadataEntry.builder()
                     .key("awsAccount")
@@ -78,7 +78,7 @@ class DefaultTelemetryPublisherTest {
         }
 
         postMetricsRequest.metricData()[1].let {
-            assertThat(it.metricName()).isEqualTo("Bar.spam")
+            assertThat(it.metricName()).isEqualTo("spam")
             assertThat(it.metadata()).contains(
                 MetadataEntry.builder()
                     .key("awsAccount")

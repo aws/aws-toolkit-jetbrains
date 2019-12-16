@@ -17,7 +17,6 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import org.apache.commons.lang.exception.ExceptionUtils
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.schemas.SchemasClient
 import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
 import software.aws.toolkits.jetbrains.core.AwsClientManager

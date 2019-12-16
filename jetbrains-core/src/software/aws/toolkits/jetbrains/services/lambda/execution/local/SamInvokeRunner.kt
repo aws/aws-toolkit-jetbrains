@@ -20,7 +20,6 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import org.slf4j.event.Level
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
@@ -66,7 +65,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
             val runtimeGroup = runtimeValue?.runtimeGroup ?: return false
 
             return SamDebugSupport.supportedRuntimeGroups.contains(runtimeGroup) &&
-                    SamDebugSupport.getInstance(runtimeGroup)?.isSupported() ?: false
+                SamDebugSupport.getInstance(runtimeGroup)?.isSupported() ?: false
         }
 
         return false
@@ -121,7 +120,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                     .whenComplete { _, _ ->
                         TelemetryService.getInstance().record(state.environment.project) {
                             val type = if (environment.isDebug()) "Debug" else "Run"
-                            datum("SamInvoke_${type}") {
+                            datum("SamInvoke_$type") {
                                 count()
                                 // exception can be null but is not annotated as nullable
                                 metadata("hasException", exception != null)
@@ -129,15 +128,15 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                                 metadata("samVersion", SamCommon.getVersionString())
                                 metadata("templateBased", buildRequest is BuildLambdaFromTemplate)
                             }
+                        }
                     }
             }
-        }
 
         return buildingPromise
     }
 
     private fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)
-            ?: throw java.lang.IllegalStateException("Failed to locate module for $psiFile")
+        ?: throw java.lang.IllegalStateException("Failed to locate module for $psiFile")
 
     private fun ExecutionEnvironment.isDebug(): Boolean = (executor.id == DefaultDebugExecutor.EXECUTOR_ID)
 

@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import kotlin.streams.toList
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 
 class DefaultTelemetryPublisher(
     private val productName: AWSProduct = AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
@@ -79,7 +78,8 @@ class DefaultTelemetryPublisher(
                                 .key(METADATA_AWS_REGION)
                                 .value(metricEvent.awsRegion)
                                 .build()
-                        ))
+                        )
+                    )
                     .build()
             }
         }
@@ -102,7 +102,8 @@ class DefaultTelemetryPublisher(
                         .credentialsProvider(AnonymousCredentialsProvider.create())
                         .region(Region.US_EAST_1)
                         .httpClient(sdkClient.sdkHttpClient)
-                        .build()),
+                        .build()
+                ),
                 AwsClientManager.userAgent,
                 "https://client-telemetry.us-east-1.amazonaws.com"
             )

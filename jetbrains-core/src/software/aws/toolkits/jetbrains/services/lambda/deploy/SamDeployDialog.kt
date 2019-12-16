@@ -141,7 +141,7 @@ class SamDeployDialog(
 
         return runCommand(message("serverless.application.deploy.step_name.create_change_set"), command) { output ->
             changeSetRegex.find(output.stdout)?.value
-                    ?: throw RuntimeException(message("serverless.application.deploy.change_set_not_found"))
+                ?: throw RuntimeException(message("serverless.application.deploy.change_set_not_found"))
         }
     }
 
@@ -215,7 +215,7 @@ class SamDeployDialog(
 
         return future.whenComplete { _, exception ->
             TelemetryService.getInstance().record(project) {
-                datum("sam_${title}") {
+                datum("sam_$title") {
                     count()
                     // exception can be null but is not annotated as nullable
                     metadata("hasException", exception != null)

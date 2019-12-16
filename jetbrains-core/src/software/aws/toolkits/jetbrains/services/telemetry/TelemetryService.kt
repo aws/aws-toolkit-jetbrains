@@ -124,7 +124,7 @@ class DefaultTelemetryService(settings: AwsSettings) :
         val endTime = Instant.now()
         record {
             createTime(endTime)
-            datum("session_start") {
+            datum("ToolkitEnd") {
                 value(Duration.between(startTime, endTime).toMillis().toDouble())
                 unit(Unit.MILLISECONDS)
             }
