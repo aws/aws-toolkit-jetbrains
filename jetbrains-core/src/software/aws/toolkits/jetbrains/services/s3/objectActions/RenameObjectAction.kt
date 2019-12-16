@@ -29,7 +29,8 @@ class RenameObjectAction(private val treeTable: S3TreeTable, val bucket: S3Virtu
         val client: S3Client = AwsClientManager.getInstance(project).getClient()
         val node = treeTable.getSelectedNodes().firstOrNull() as? S3TreeObjectNode ?: return
 
-        val response = Messages.showInputDialog(project,
+        val response = Messages.showInputDialog(
+            project,
             message("s3.rename.object.title", node.name),
             message("s3.rename.object.action"),
             null,
@@ -41,17 +42,17 @@ class RenameObjectAction(private val treeTable: S3TreeTable, val bucket: S3Virtu
             }
         )
         if (response == null) {
-            TelemetryService.recordSimpleTelemetry(project, "s3_renameObject", TelemetryResult.Cancelled)
+            TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Cancelled)
         } else {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     renameObjectAction(response, node, client)
                     treeTable.invalidateLevel(node)
                     treeTable.refresh()
-                    TelemetryService.recordSimpleTelemetry(project, "s3_renameObject", TelemetryResult.Succeeded)
+                    TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     e.notifyError(message("s3.rename.object.failed"))
-                    TelemetryService.recordSimpleTelemetry(project, "s3_renameObject", TelemetryResult.Failed)
+                    TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Failed)
                 }
             }
         }
@@ -76,5 +77,9 @@ class RenameObjectAction(private val treeTable: S3TreeTable, val bucket: S3Virtu
             .key(file.key)
             .build()
         client.deleteObject(deleteObjectRequest)
+    }
+
+    companion object {
+        const val TELEMETRY_NAME = "s3_renameObject"
     }
 }

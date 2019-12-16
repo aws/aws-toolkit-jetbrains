@@ -47,17 +47,17 @@ class DeleteObjectAction(
         )
 
         if (response != Messages.OK) {
-            TelemetryService.recordSimpleTelemetry(project, "s3_deleteobject", TelemetryResult.Cancelled)
+            TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Cancelled)
         } else {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     deleteObjectAction(client, objectsToDelete)
                     treeTable.removeRows(rows)
                     treeTable.refresh()
-                    TelemetryService.recordSimpleTelemetry(project, "s3_deleteobject", TelemetryResult.Succeeded)
+                    TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Succeeded)
                 } catch (e: Exception) {
                     notifyInfo(message("s3.delete.object.failed"))
-                    TelemetryService.recordSimpleTelemetry(project, "s3_deleteobject", TelemetryResult.Failed)
+                    TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Failed)
                 }
             }
         }
@@ -72,5 +72,9 @@ class DeleteObjectAction(
             .delete(Delete.builder().objects(objectsToDelete).build())
             .build()
         client.deleteObjects(deleteObjectsRequest)
+    }
+
+    companion object {
+        const val TELEMETRY_NAME = "s3_deleteobject"
     }
 }

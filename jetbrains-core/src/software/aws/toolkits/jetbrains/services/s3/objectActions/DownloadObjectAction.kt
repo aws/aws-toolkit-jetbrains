@@ -64,7 +64,7 @@ class DownloadObjectAction(
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         downloadObjectAction(project, client, it, fileWrapper)
-                        TelemetryService.recordSimpleTelemetry(project, "s3_downloadobject", TelemetryResult.Succeeded)
+                        TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Succeeded)
                     } catch (e: Exception) {
                         notifyError(message("s3.download.object.failed"))
                         successful = false
@@ -74,7 +74,7 @@ class DownloadObjectAction(
         }
         TelemetryService.recordSimpleTelemetry(
             project,
-            "s3_downloadobject",
+            TELEMETRY_NAME,
             if (successful) TelemetryResult.Succeeded else TelemetryResult.Failed,
             treeTable.selectedRows.size.toDouble()
         )
@@ -98,5 +98,9 @@ class DownloadObjectAction(
                 client.getObject(request, ResponseTransformer.toOutputStream(progressStream))
             }
         })
+    }
+
+    companion object {
+        const val TELEMETRY_NAME = "s3_downloadobject"
     }
 }

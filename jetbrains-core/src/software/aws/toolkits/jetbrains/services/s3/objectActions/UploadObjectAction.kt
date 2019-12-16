@@ -39,7 +39,7 @@ class UploadObjectAction(
         val descriptor = FileChooserDescriptorFactory.createMultipleFilesNoJarsDescriptor().withDescription(message("s3.upload.object.action", bucket.name))
         val chooserDialog = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
         val filesChosen = chooserDialog.choose(project, null)
-        var successful = true
+        var allSucceeded = true
         for (fileChosen in filesChosen) {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
@@ -47,15 +47,15 @@ class UploadObjectAction(
                     treeTable.invalidateLevel(node)
                     treeTable.refresh()
                 } catch (e: Exception) {
-                    notifyError(message("s3.upload.object.failed"))
-                    successful = false
+                    notifyError(message("s3.upload.object.failed", fileChosen.path))
+                    allSucceeded = false
                 }
             }
         }
         TelemetryService.recordSimpleTelemetry(
             project,
             "s3_uploadobject",
-            if (successful) TelemetryConstants.TelemetryResult.Succeeded else TelemetryConstants.TelemetryResult.Failed,
+            if (allSucceeded) TelemetryConstants.TelemetryResult.Succeeded else TelemetryConstants.TelemetryResult.Failed,
             filesChosen.size.toDouble()
         )
     }
