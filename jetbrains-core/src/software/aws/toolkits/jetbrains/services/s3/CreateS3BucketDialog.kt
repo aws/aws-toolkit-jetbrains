@@ -20,7 +20,7 @@ class CreateS3BucketDialog(
     private val parent: Component? = null
 ) : LoggingDialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
 
-    private val view = CreateBucketPanel()
+    val view = CreateBucketPanel()
 
     init {
         title = message("s3.create.bucket.title")
@@ -64,7 +64,4 @@ class CreateS3BucketDialog(
 
     @TestOnly
     fun validateBucketName(): String? = if (bucketName().isEmpty()) message("s3.create.bucket.missing.bucket.name") else null
-
-    @TestOnly
-    fun getViewForTesting(): CreateBucketPanel = view
 }
