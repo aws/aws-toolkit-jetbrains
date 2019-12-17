@@ -13,7 +13,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
@@ -26,9 +25,10 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.treeStructure.Tree
 import software.aws.toolkits.jetbrains.components.telemetry.ToolkitActionPlaces
 import software.aws.toolkits.jetbrains.core.SettingsSelector
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeNotifier
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-// import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier
-// import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager.AccountSettingsChangedNotifier.AccountSettingsEvent
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -48,10 +48,8 @@ import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
 
-class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true) {
+class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true), ConnectionSettingsChangeNotifier {
     private val actionManager = ActionManagerEx.getInstanceEx()
-    private val projectAccountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
-
     private val treePanelWrapper: Wrapper = Wrapper()
     private val errorPanel: JPanel
     private val awsTreeModel = AwsExplorerTreeStructure(project)
@@ -71,24 +69,17 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
         setContent(treePanelWrapper)
 
-//        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.ACCOUNT_SETTINGS_CHANGED, this)
-
-        load()
+        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, this)
     }
 
-//    override fun settingsChanged(event: AccountSettingsEventnt) {
-//        if (!event.isLoading) {
-//            load()
-//        }
-//    }
-
-    private fun load() {
-        runInEdt {
-            if (!projectAccountSettingsManager.isValidConnectionSettings()) {
-                treePanelWrapper.setContent(errorPanel)
-            } else {
+    override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
+        when(event.state) {
+            ConnectionState.VALID -> {
                 invalidateTree()
                 treePanelWrapper.setContent(awsTreePanel)
+            }
+            else -> {
+                treePanelWrapper.setContent(errorPanel)
             }
         }
     }

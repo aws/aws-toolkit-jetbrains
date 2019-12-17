@@ -19,6 +19,8 @@ import com.intellij.util.Consumer
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
 import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsActionGroup
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.resources.message
 import java.awt.Component
@@ -29,7 +31,8 @@ class AwsSettingsPanelInstaller : StatusBarWidgetProvider {
 }
 
 private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
-    StatusBarWidget.MultipleTextValuesPresentation {
+    StatusBarWidget.MultipleTextValuesPresentation,
+    ConnectionSettingsChangeNotifier {
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
     private val settingsSelector = SettingsSelector(project)
     private lateinit var statusBar: StatusBar
@@ -59,13 +62,13 @@ private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
 
     override fun install(statusBar: StatusBar) {
         this.statusBar = statusBar
-//        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.ACCOUNT_SETTINGS_CHANGED, this)
+        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, this)
         updateWidget()
     }
 
-//    override fun settingsChanged(event: AccountSettingsChangedNotifier.AccountSettingsEvent) {
-//        updateWidget()
-//    }
+    override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
+        updateWidget()
+    }
 
     private fun updateWidget() {
         statusBar.updateWidget(ID())
