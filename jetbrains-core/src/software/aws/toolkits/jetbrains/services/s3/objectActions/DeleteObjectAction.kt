@@ -75,6 +75,6 @@ class DeleteObjectAction(
     }
 
     companion object {
-        const val TELEMETRY_NAME = "s3_deleteobject"
+        private const val TELEMETRY_NAME = "s3_deleteobject"
     }
 }

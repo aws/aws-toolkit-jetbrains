@@ -23,10 +23,14 @@ class DeleteBucketAction : DeleteResourceAction<S3BucketNode>(message("s3.delete
             val client: S3Client = AwsClientManager.getInstance(selected.nodeProject).getClient()
             client.deleteBucketAndContents(selected.toString())
             AwsExplorerService.refreshAwsTree(selected.nodeProject, S3Resources.LIST_BUCKETS)
-            TelemetryService.recordSimpleTelemetry(selected.nodeProject, "s3_deletebucket", TelemetryResult.Succeeded)
+            TelemetryService.recordSimpleTelemetry(selected.nodeProject, TELEMETRY_NAME, TelemetryResult.Succeeded)
         } catch (e: Exception) {
             notifyError(message("s3.delete.bucket_failed", selected.bucket.name()))
-            TelemetryService.recordSimpleTelemetry(selected.nodeProject, "s3_deletebucket", TelemetryResult.Failed)
+            TelemetryService.recordSimpleTelemetry(selected.nodeProject, TELEMETRY_NAME, TelemetryResult.Failed)
         }
+    }
+
+    companion object {
+        private const val TELEMETRY_NAME = "s3_deletebucket"
     }
 }

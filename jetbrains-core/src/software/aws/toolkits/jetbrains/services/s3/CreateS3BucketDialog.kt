@@ -78,6 +78,6 @@ class CreateS3BucketDialog(
     fun validateBucketName(): String? = if (bucketName().isEmpty()) message("s3.create.bucket.missing.bucket.name") else null
 
     companion object {
-        const val TELEMETRY_NAME = "s3_createbucket"
+        private const val TELEMETRY_NAME = "s3_createbucket"
     }
 }

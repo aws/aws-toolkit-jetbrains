@@ -54,7 +54,7 @@ class UploadObjectAction(
         }
         TelemetryService.recordSimpleTelemetry(
             project,
-            "s3_uploadobject",
+            TELEMETRY_NAME,
             if (allSucceeded) TelemetryConstants.TelemetryResult.Succeeded else TelemetryConstants.TelemetryResult.Failed,
             filesChosen.size.toDouble()
         )
@@ -90,5 +90,9 @@ class UploadObjectAction(
                     client.putObject(request, RequestBody.fromInputStream(pStream, fileChosen.length))
                 }
             })
+    }
+
+    companion object {
+        private const val TELEMETRY_NAME = "s3_uploadobject"
     }
 }

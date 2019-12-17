@@ -74,14 +74,14 @@ class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : UserDataHolder
     override fun setState(state: FileEditorState) {}
 }
 
+private const val TELEMETRY_NAME = "s3_openeditor"
+
 fun openEditor(project: Project, bucket: Bucket) {
     try {
-        val openS3ViewerFile = FileEditorManager.getInstance(project).openFiles.firstOrNull { (it as? S3VirtualBucket)?.s3Bucket?.equals(bucket) == true }
-        val s3ViewerFile = openS3ViewerFile ?: S3VirtualBucket(bucket)
-        FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, s3ViewerFile), true)
-        TelemetryService.recordSimpleTelemetry(project, "s3_openeditor", TelemetryConstants.TelemetryResult.Succeeded)
+        FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, S3VirtualBucket(bucket)), true)
+        TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryConstants.TelemetryResult.Succeeded)
     } catch (e: Exception) {
         e.notifyError(message("s3.open.viewer.bucket.failed"))
-        TelemetryService.recordSimpleTelemetry(project, "s3_openeditor", TelemetryConstants.TelemetryResult.Failed)
+        TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryConstants.TelemetryResult.Failed)
     }
 }

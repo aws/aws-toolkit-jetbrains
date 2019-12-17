@@ -25,7 +25,11 @@ class CopyPathAction(
     override fun doActionPerformed(e: AnActionEvent) {
         treeTable.getSelectedNodes().firstOrNull()?.let {
             CopyPasteManager.getInstance().setContents(StringSelection(it.key))
-            TelemetryService.recordSimpleTelemetry(e.getRequiredData(LangDataKeys.PROJECT), "s3_copypath", TelemetryResult.Succeeded)
+            TelemetryService.recordSimpleTelemetry(e.getRequiredData(LangDataKeys.PROJECT), TELEMETRY_NAME, TelemetryResult.Succeeded)
         }
+    }
+
+    companion object {
+        private const val TELEMETRY_NAME = "s3_copypath"
     }
 }

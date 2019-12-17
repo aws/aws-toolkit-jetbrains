@@ -80,6 +80,6 @@ class RenameObjectAction(private val treeTable: S3TreeTable, val bucket: S3Virtu
     }
 
     companion object {
-        const val TELEMETRY_NAME = "s3_renameObject"
+        private const val TELEMETRY_NAME = "s3_renameObject"
     }
 }

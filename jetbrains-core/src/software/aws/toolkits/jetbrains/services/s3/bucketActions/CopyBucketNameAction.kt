@@ -17,6 +17,10 @@ class CopyBucketNameAction : SingleResourceNodeAction<S3BucketNode>(message("s3.
     override fun actionPerformed(selected: S3BucketNode, e: AnActionEvent) {
         val copyPasteManager = CopyPasteManager.getInstance()
         copyPasteManager.setContents(StringSelection(selected.toString()))
-        TelemetryService.recordSimpleTelemetry(selected.nodeProject, "s3_copybucketname", TelemetryResult.Succeeded)
+        TelemetryService.recordSimpleTelemetry(selected.nodeProject, TELEMETRY_NAME, TelemetryResult.Succeeded)
+    }
+
+    companion object {
+        private const val TELEMETRY_NAME = "s3_copybucketname"
     }
 }

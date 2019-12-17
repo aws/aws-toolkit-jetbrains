@@ -101,6 +101,6 @@ class DownloadObjectAction(
     }
 
     companion object {
-        const val TELEMETRY_NAME = "s3_downloadobject"
+        private const val TELEMETRY_NAME = "s3_downloadobject"
     }
 }
