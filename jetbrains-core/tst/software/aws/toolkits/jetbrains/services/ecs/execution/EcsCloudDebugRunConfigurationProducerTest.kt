@@ -17,6 +17,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.core.MockResourceCache
+import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager
 
 class EcsCloudDebugRunConfigurationProducerTest {
     @Rule
@@ -26,6 +27,7 @@ class EcsCloudDebugRunConfigurationProducerTest {
     @Before
     fun setUp() {
         resourceCache().clear()
+        MockProjectAccountSettingsManager.getInstance(projectRule.project).reset()
     }
 
     @Test

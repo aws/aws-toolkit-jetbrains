@@ -24,7 +24,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.sts.StsResources
-import software.aws.toolkits.jetbrains.utils.Edt
 import software.aws.toolkits.jetbrains.utils.MRUList
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CancellationException
@@ -32,9 +31,9 @@ import java.util.concurrent.CancellationException
 abstract class ProjectAccountSettingsManager(private val project: Project) : SimpleModificationTracker() {
     private val resourceCache = AwsResourceCache.getInstance(project)
 
-    @Transient
+    @Volatile
     private var validationJob: Job? = null
-    @Transient
+    @Volatile
     var connectionState: ConnectionState = ConnectionState.INITIALIZING
         @TestOnly get
         protected set
@@ -59,7 +58,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
 
             field = value
 
-            validationJob = GlobalScope.launch(Dispatchers.Edt.immediate) {
+            validationJob = GlobalScope.launch(Dispatchers.Default) {
                 broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
 
                 val credentials = value.credentials
@@ -152,7 +151,6 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     }
 
     private fun broadcastChangeEvent(event: ConnectionSettingsChangeEvent) {
-        ApplicationManager.getApplication().assertIsDispatchThread()
         if (!project.isDisposed) {
             project.messageBus.syncPublisher(CONNECTION_SETTINGS_CHANGED).settingsChanged(event)
         }

@@ -13,6 +13,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
@@ -73,13 +74,15 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     }
 
     override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
-        when (event.state) {
-            ConnectionState.VALID -> {
-                invalidateTree()
-                treePanelWrapper.setContent(awsTreePanel)
-            }
-            else -> {
-                treePanelWrapper.setContent(errorPanel)
+        runInEdt {
+            when (event.state) {
+                ConnectionState.VALID -> {
+                    invalidateTree()
+                    treePanelWrapper.setContent(awsTreePanel)
+                }
+                else -> {
+                    treePanelWrapper.setContent(errorPanel)
+                }
             }
         }
     }

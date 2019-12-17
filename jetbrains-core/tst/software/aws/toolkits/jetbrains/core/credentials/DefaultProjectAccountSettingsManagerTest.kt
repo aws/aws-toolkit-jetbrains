@@ -87,11 +87,14 @@ class DefaultProjectAccountSettingsManagerTest {
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
         assertThat(manager.connectionSettings().credentials).isEqualTo(credentials)
+
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials)
 
         changeCredentialProvider(credentials2)
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
+        assertThat(manager.connectionSettings().credentials).isEqualTo(credentials2)
+
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials2)
         assertThat(manager.recentlyUsedCredentials()).element(1).isEqualTo(credentials)
     }

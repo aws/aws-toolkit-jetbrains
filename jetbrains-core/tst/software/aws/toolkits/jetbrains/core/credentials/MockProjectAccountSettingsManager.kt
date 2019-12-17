@@ -34,10 +34,7 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
 
     companion object {
         fun getInstance(project: Project): MockProjectAccountSettingsManager =
-            ServiceManager.getService(
-                project,
-                ProjectAccountSettingsManager::class.java
-            ) as MockProjectAccountSettingsManager
+            ServiceManager.getService(project, ProjectAccountSettingsManager::class.java) as MockProjectAccountSettingsManager
     }
 }
 
