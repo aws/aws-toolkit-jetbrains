@@ -27,8 +27,8 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroupInformation() {
     }
 
     private fun determineRuntimeForSdk(sdk: JavaSdkVersion) = when {
-        sdk.isAtLeast(JavaSdkVersion.JDK_11) -> Runtime.JAVA11
-        sdk.isAtLeast(JavaSdkVersion.JDK_1_8) -> Runtime.JAVA8
+        sdk <= JavaSdkVersion.JDK_1_8 -> Runtime.JAVA8
+        sdk <= JavaSdkVersion.JDK_11 -> Runtime.JAVA11
         else -> null
     }
 
