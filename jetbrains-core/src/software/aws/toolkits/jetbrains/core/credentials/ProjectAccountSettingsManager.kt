@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.messages.Topic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -28,7 +29,7 @@ import software.aws.toolkits.jetbrains.utils.MRUList
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CancellationException
 
-abstract class ProjectAccountSettingsManager(private val project: Project) {
+abstract class ProjectAccountSettingsManager(private val project: Project) : SimpleModificationTracker() {
     private val resourceCache = AwsResourceCache.getInstance(project)
 
     @Transient
@@ -43,6 +44,8 @@ abstract class ProjectAccountSettingsManager(private val project: Project) {
 
     protected var connectionSettings: ConnectionSettings = ConnectionSettings(null, null)
         protected set(value) {
+            incModificationCount()
+
             connectionState = ConnectionState.VALIDATING
             validationJob?.cancel(CancellationException("Newer connection settings chosen"))
 
@@ -64,6 +67,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) {
                 if (credentials == null || region == null) {
                     connectionState = ConnectionState.INVALID
                     broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
+                    incModificationCount()
                     return@launch
                 }
 
@@ -74,6 +78,8 @@ abstract class ProjectAccountSettingsManager(private val project: Project) {
                 } catch (e: Exception) {
                     connectionState = ConnectionState.INVALID
                     broadcastChangeEvent(InvalidConnectionSettings(credentials, region, e, connectionState))
+                } finally {
+                    incModificationCount()
                 }
             }
         }

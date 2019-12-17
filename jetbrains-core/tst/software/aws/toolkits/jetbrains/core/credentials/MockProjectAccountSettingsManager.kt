@@ -7,12 +7,9 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager.Companion.createDummyProvider
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.spinUntil
 import java.time.Duration
@@ -46,13 +43,20 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
 
 fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
     val credentials = DefaultCredentialsProvider.create().resolveCredentials()
+
+    val realCredentials = object : ToolkitCredentialsProvider() {
+        override val id = "RealCredentials"
+        override val displayName = "RealCredentials"
+        override fun resolveCredentials() = credentials
+    }
+
     val manager = MockProjectAccountSettingsManager.getInstance(project)
     val credentialsManager = MockCredentialsManager.getInstance()
-    val oldActive = manager.activeCredentialProvider
+    val oldActive = manager.connectionSettings().credentials
     try {
         println("Running using real credentials")
-        manager.changeCredentialProvider(createDummyProvider("RealCreds", credentials))
-        credentialsManager.addCredentials(oldActive.id, credentials)
+        manager.changeCredentialProvider(realCredentials)
+        credentialsManager.addCredentials("RealCredentials", credentials)
         return block.invoke()
     } finally {
         credentialsManager.reset()
