@@ -16,7 +16,6 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetProvider
 import com.intellij.util.Consumer
-import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
 import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsActionGroup
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
@@ -43,14 +42,12 @@ private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
     override fun getTooltipText() = SettingsSelector.tooltipText
 
     override fun getSelectedValue(): String {
-        val statusLine = try {
-            val displayName = accountSettingsManager.activeCredentialProvider.displayName
-            "$displayName@${accountSettingsManager.activeRegion.name}"
-        } catch (_: CredentialProviderNotFound) {
-            // TODO: Need to better handle the case where they have no valid profile selected
-            message("settings.credentials.none_selected")
+        val connectionSettings = accountSettingsManager.connectionSettings()
+        val statusLine = when {
+            connectionSettings.credentials == null -> message("settings.credentials.none_selected")
+            connectionSettings.region == null -> message("settings.regions.none_selected")
+            else -> "${connectionSettings.credentials.displayName}@${connectionSettings.region.name}"
         }
-
         return "AWS: $statusLine"
     }
 
