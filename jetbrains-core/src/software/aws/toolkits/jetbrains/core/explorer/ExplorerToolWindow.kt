@@ -73,7 +73,7 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     }
 
     override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
-        when(event.state) {
+        when (event.state) {
             ConnectionState.VALID -> {
                 invalidateTree()
                 treePanelWrapper.setContent(awsTreePanel)

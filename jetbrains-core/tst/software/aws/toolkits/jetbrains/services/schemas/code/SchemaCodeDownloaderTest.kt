@@ -34,7 +34,6 @@ import software.amazon.awssdk.services.schemas.model.NotFoundException
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingRequest
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingResponse
 import software.aws.toolkits.core.utils.WaiterTimeoutException
-import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
