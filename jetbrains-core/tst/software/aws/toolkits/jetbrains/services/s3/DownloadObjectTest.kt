@@ -7,9 +7,8 @@ import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
 import io.mockk.mockk
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.core.sync.ResponseTransformer
@@ -59,7 +58,7 @@ class DownloadObjectTest {
 
         downloadObjectMock.downloadObjectAction(projectRule.project, s3Client, objectToDownload, VirtualFileWrapper(testFile))
         val downloadRequestCapture = downloadCaptor.firstValue
-        Assertions.assertThat(downloadRequestCapture.bucket()).isEqualTo("TestBucket")
-        Assertions.assertThat(downloadRequestCapture.key()).contains("key")
+        assertThat(downloadRequestCapture.bucket()).isEqualTo("TestBucket")
+        assertThat(downloadRequestCapture.key()).contains("key")
     }
 }
