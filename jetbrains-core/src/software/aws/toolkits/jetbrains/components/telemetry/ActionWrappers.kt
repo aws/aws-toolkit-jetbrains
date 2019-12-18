@@ -14,7 +14,7 @@ object ToolkitActionPlaces {
     val EXPLORER_WINDOW = "ExplorerToolWindow"
 }
 
-interface TelemetryNamespace {
+private interface TelemetryNamespace {
     fun getNamespace(): String = javaClass.simpleName
 }
 
