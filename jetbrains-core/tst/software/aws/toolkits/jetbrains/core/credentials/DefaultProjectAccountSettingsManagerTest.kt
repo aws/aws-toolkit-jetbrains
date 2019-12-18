@@ -12,6 +12,7 @@ import org.jdom.Element
 import org.jdom.output.XMLOutputter
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -26,6 +27,7 @@ import software.aws.toolkits.jetbrains.utils.toElement
 import java.nio.file.Files
 import java.time.Duration
 
+@Ignore
 class DefaultProjectAccountSettingsManagerTest {
     @Rule
     @JvmField

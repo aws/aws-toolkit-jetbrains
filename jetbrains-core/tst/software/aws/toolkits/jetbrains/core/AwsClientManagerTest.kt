@@ -10,6 +10,7 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -47,6 +48,12 @@ class AwsClientManagerTest {
     fun setUp() {
         MockProjectAccountSettingsManager.getInstance(projectRule.project).reset()
         mockCredentialManager = MockCredentialsManager.getInstance()
+        mockCredentialManager.reset()
+    }
+
+    @After
+    fun tearDown() {
+        MockProjectAccountSettingsManager.getInstance(projectRule.project).reset()
         mockCredentialManager.reset()
     }
 
