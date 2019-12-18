@@ -49,7 +49,7 @@ fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
 
     val manager = MockProjectAccountSettingsManager.getInstance(project)
     val credentialsManager = MockCredentialsManager.getInstance()
-    val oldActive = manager.connectionSettings().credentials
+    val oldActive = manager.connectionSettings.credentials
     try {
         println("Running using real credentials")
         manager.changeCredentialProvider(realCredentials)

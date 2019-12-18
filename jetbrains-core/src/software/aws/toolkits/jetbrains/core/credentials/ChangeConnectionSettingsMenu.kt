@@ -98,7 +98,7 @@ private class ChangeRegionActionGroup : DefaultActionGroup(), DumbAware {
 }
 
 private class ChangeRegionAction(private val region: AwsRegion) : ToggleActionWrapper(region.displayName), DumbAware {
-    override fun doIsSelected(e: AnActionEvent): Boolean = getAccountSetting(e).connectionSettings().region == region
+    override fun doIsSelected(e: AnActionEvent): Boolean = getAccountSetting(e).connectionSettings.region == region
 
     override fun doSetSelected(e: AnActionEvent, state: Boolean) {
         if (state) {
@@ -109,7 +109,7 @@ private class ChangeRegionAction(private val region: AwsRegion) : ToggleActionWr
 
 private class ChangeCredentialsAction(private val credentialsProvider: ToolkitCredentialsProvider) : ToggleActionWrapper(credentialsProvider.displayName),
     DumbAware {
-    override fun doIsSelected(e: AnActionEvent): Boolean = getAccountSetting(e).connectionSettings().credentials == credentialsProvider
+    override fun doIsSelected(e: AnActionEvent): Boolean = getAccountSetting(e).connectionSettings.credentials == credentialsProvider
 
     override fun doSetSelected(e: AnActionEvent, state: Boolean) {
         if (state) {

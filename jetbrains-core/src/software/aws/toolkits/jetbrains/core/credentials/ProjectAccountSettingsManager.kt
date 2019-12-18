@@ -42,7 +42,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     protected val recentlyUsedRegions = MRUList<String>(MAX_HISTORY)
 
     @Volatile
-    protected var connectionSettings: ConnectionSettings = ConnectionSettings(null, null)
+    var connectionSettings: ConnectionSettings = ConnectionSettings(null, null)
         protected set(value) {
             incModificationCount()
 
@@ -96,18 +96,16 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             })
     }
 
-    fun connectionSettings() = connectionSettings
-
-    @Deprecated("Use connectionSettings()", replaceWith = ReplaceWith("connectionSettings().region"))
     val activeRegion: AwsRegion
         get() = connectionSettings.region ?: AwsRegionProvider.getInstance().defaultRegion().also {
             LOGGER.warn(IllegalStateException()) { "Using activeRegion when region is null, calling code needs to be migrated to handle null" }
         }
 
-    @Deprecated("Use connectionSettings()", replaceWith = ReplaceWith("connectionSettings().credentials"))
     val activeCredentialProvider: ToolkitCredentialsProvider
         @Throws(CredentialProviderNotFound::class)
-        get() = connectionSettings.credentials ?: throw CredentialProviderNotFound(message("credentials.profile.not_configured"))
+        get() = connectionSettings.credentials ?: throw CredentialProviderNotFound(message("credentials.profile.not_configured")).also {
+            LOGGER.warn(IllegalStateException()) { "Using activeCredentialProvider when credentials is null, calling code needs to be migrated to handle null" }
+        }
 
     fun isValidConnectionSettings(): Boolean = connectionState == ConnectionState.VALID
 
