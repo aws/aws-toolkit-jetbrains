@@ -7,6 +7,8 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import com.intellij.util.io.inputStream
+import com.intellij.util.io.outputStream
 import com.intellij.util.io.size
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
@@ -18,8 +20,6 @@ import software.amazon.awssdk.utils.IoUtils
 import software.aws.toolkits.jetbrains.utils.ProgressMonitorInputStream
 import software.aws.toolkits.jetbrains.utils.ProgressMonitorOutputStream
 import software.aws.toolkits.resources.message
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -36,7 +36,7 @@ fun S3Client.upload(
     key: String,
     message: String = message("s3.upload.object.progress", key),
     startInBackground: Boolean = true
-): CompletionStage<PutObjectResponse> = upload(project, FileInputStream(source.toFile()), source.size(), bucket, key, message, startInBackground)
+): CompletionStage<PutObjectResponse> = upload(project, source.inputStream(), source.size(), bucket, key, message, startInBackground)
 
 fun S3Client.upload(
     project: Project,
@@ -86,7 +86,7 @@ fun S3Client.download(
                 this@download.getObject(request) { response, inputStream ->
                     indicator.isIndeterminate = false
                     inputStream.use { input ->
-                        ProgressMonitorOutputStream(indicator, FileOutputStream(destination.toFile()), response.contentLength()).use { output ->
+                        ProgressMonitorOutputStream(indicator, destination.outputStream(), response.contentLength()).use { output ->
                             IoUtils.copy(input, output)
                         }
                     }
