@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -46,13 +45,11 @@ class DefaultProjectAccountSettingsManager(private val project: Project) : Proje
         // Load all the initial state on BG thread, so e don't block the UI or loading of other components
         GlobalScope.launch(Dispatchers.Default) {
             val credentialId = state.activeProfile ?: ProfileToolkitCredentialsProviderFactory.DEFAULT_PROFILE_DISPLAY_NAME
-
             val credentials = tryOrNull {
                 CredentialManager.getInstance().getCredentialProvider(credentialId)
             }
 
-            val regionId = state.activeRegion ?: tryOrNull { DefaultAwsRegionProviderChain().region.id() } ?: AwsRegionProvider.DEFAULT_REGION
-
+            val regionId = state.activeRegion ?: AwsRegionProvider.getInstance().defaultRegion()
             val region = AwsRegionProvider.getInstance().regions()[regionId]
 
             connectionSettings = ConnectionSettings(credentials, region)

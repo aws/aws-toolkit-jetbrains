@@ -108,8 +108,6 @@ class AwsClientManagerTest {
             projectManager.openTestProject(project)
         }
 
-        MockProjectAccountSettingsManager.getInstance(project).reset()
-
         val sut = getClientManager(project)
         val client = sut.getClient<DummyServiceClient>()
 

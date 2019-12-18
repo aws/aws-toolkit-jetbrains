@@ -3,10 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
@@ -16,9 +14,8 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.spinUntil
 import java.time.Duration
 
-class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettingsManager(project), Disposable {
+class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettingsManager(project) {
     init {
-        Disposer.register(project, this)
         reset()
     }
 
@@ -38,10 +35,6 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
     companion object {
         fun getInstance(project: Project): MockProjectAccountSettingsManager =
             ServiceManager.getService(project, ProjectAccountSettingsManager::class.java) as MockProjectAccountSettingsManager
-    }
-
-    override fun dispose() {
-        println("DISPOSE")
     }
 }
 
