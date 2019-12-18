@@ -208,7 +208,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project) : Proje
                 when (exception) {
                     null -> {
                         activeProfileInternal = credentialsProvider
-                        TelemetryService.recordSimpleTelemetry(project, "aws_credentialsvalidate", true)
+                        TelemetryService.recordSimpleTelemetry(project, "aws_credentials_validate", true)
                     }
                     else -> {
                         val title = message("credentials.invalid.title")
@@ -227,7 +227,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project) : Proje
                                 createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
                             )
                         )
-                        TelemetryService.recordSimpleTelemetry(project, "aws_credentialsvalidate", false)
+                        TelemetryService.recordSimpleTelemetry(project, "aws_credentials_validate", false)
                     }
                 }
                 runInEdt(ModalityState.any()) {
