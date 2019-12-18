@@ -109,9 +109,6 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
         @Throws(CredentialProviderNotFound::class)
         get() = connectionSettings.credentials ?: throw CredentialProviderNotFound(message("credentials.profile.not_configured"))
 
-    @Deprecated("Use isValidConnectionSettings()", replaceWith = ReplaceWith("isValidConnectionSettings()"))
-    fun hasActiveCredentials(): Boolean = isValidConnectionSettings()
-
     fun isValidConnectionSettings(): Boolean = connectionState == ConnectionState.VALID
 
     // TODO: Make this not null, few tests need to be fixed
