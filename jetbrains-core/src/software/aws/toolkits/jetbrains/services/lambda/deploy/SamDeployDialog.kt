@@ -215,7 +215,7 @@ class SamDeployDialog(
 
         return future.whenComplete { _, exception ->
             TelemetryService.getInstance().record(project) {
-                datum("SamDeploy_$title") {
+                datum("SamDeploy.$title") {
                     count()
                     // exception can be null but is not annotated as nullable
                     metadata("hasException", exception != null)

@@ -126,7 +126,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                             )
                         ) {
                             val type = if (environment.isDebug()) "Debug" else "Run"
-                            datum("SamInvoke_$type") {
+                            datum("SamInvoke.$type") {
                                 count()
                                 // exception can be null but is not annotated as nullable
                                 metadata("hasException", exception != null)

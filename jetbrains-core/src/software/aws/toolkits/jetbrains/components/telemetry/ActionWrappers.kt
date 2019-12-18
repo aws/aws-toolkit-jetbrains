@@ -7,10 +7,15 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ex.ComboBoxAction
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import javax.swing.Icon
 
 object ToolkitActionPlaces {
     val EXPLORER_WINDOW = "ExplorerToolWindow"
+}
+
+interface TelemetryNamespace {
+    fun getNamespace(): String = javaClass.simpleName
 }
 
 // Constructor signatures:
@@ -25,29 +30,41 @@ object ToolkitActionPlaces {
 //  public AnAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
 //    <logic>
 //  }
-abstract class AnActionWrapper(text: String? = null, description: String? = null, icon: Icon? = null) : AnAction(text, description, icon) {
+abstract class AnActionWrapper(text: String? = null, description: String? = null, icon: Icon? = null) : AnAction(text, description, icon), TelemetryNamespace {
     /**
      * Consumers should use doActionPerformed(e: AnActionEvent)
      */
     final override fun actionPerformed(e: AnActionEvent) {
         doActionPerformed(e)
+        TelemetryService.getInstance().record(e.project) {
+            datum("${getNamespace()}.${e.place}") {
+                count()
+            }
+        }
     }
 
     abstract fun doActionPerformed(e: AnActionEvent)
 }
 
-abstract class ComboBoxActionWrapper : ComboBoxAction() {
+abstract class ComboBoxActionWrapper : ComboBoxAction(), TelemetryNamespace {
     /**
      * Consumers should use doActionPerformed(e: AnActionEvent)
      */
     final override fun actionPerformed(e: AnActionEvent) {
         doActionPerformed(e)
+        TelemetryService.getInstance().record(e.project) {
+            datum("${getNamespace()}.${e.place}") {
+                count()
+            }
+        }
     }
 
     open fun doActionPerformed(e: AnActionEvent) = super.actionPerformed(e)
 }
 
-abstract class ToggleActionWrapper(text: String? = null, description: String? = null, icon: Icon? = null) : ToggleAction(text, description, icon) {
+abstract class ToggleActionWrapper(text: String? = null, description: String? = null, icon: Icon? = null) :
+    ToggleAction(text, description, icon),
+    TelemetryNamespace {
 
     init {
         // Disable mnemonic check to avoid filtering '_'
@@ -60,6 +77,11 @@ abstract class ToggleActionWrapper(text: String? = null, description: String? = 
 
     final override fun setSelected(e: AnActionEvent, state: Boolean) {
         doSetSelected(e, state)
+        TelemetryService.getInstance().record(e.project) {
+            datum("${getNamespace()}.${e.place}") {
+                count()
+            }
+        }
     }
 
     abstract fun doIsSelected(e: AnActionEvent): Boolean
