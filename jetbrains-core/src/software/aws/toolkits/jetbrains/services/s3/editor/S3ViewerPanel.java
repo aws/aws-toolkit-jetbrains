@@ -33,7 +33,6 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
@@ -61,7 +60,7 @@ public class S3ViewerPanel {
     private S3TreeNode s3TreeNode;
     private S3TreeTableModel model;
 
-    public S3ViewerPanel(Project project, S3Client s3client, S3VirtualBucket bucketVirtual) {
+    public S3ViewerPanel(Project project, S3VirtualBucket bucketVirtual) {
         this.bucketVirtual = bucketVirtual;
         this.name.setText(bucketVirtual.getName());
         this.date.setText(S3Resources.formatDate(bucketVirtual.getS3Bucket().creationDate()));
@@ -86,21 +85,21 @@ public class S3ViewerPanel {
         arnText.setComponentPopupMenu(menu);
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            s3TreeNode = new S3TreeDirectoryNode(s3client, bucketVirtual.getName(), null, "");
+            s3TreeNode = new S3TreeDirectoryNode(bucketVirtual, null, "");
 
-            ColumnInfo key = new S3Column(S3ColumnType.NAME);
-            ColumnInfo size = new S3Column(S3ColumnType.SIZE);
-            ColumnInfo modified = new S3Column(S3ColumnType.LAST_MODIFIED);
+            ColumnInfo<Object, String> key = new S3Column(S3ColumnType.NAME);
+            ColumnInfo<Object, String> size = new S3Column(S3ColumnType.SIZE);
+            ColumnInfo<Object, String> modified = new S3Column(S3ColumnType.LAST_MODIFIED);
             final ColumnInfo[] COLUMNS = new ColumnInfo[] {key, size, modified};
             model = createTreeTableModel(COLUMNS);
 
             S3TreeCellRenderer treeRenderer = new S3TreeCellRenderer();
             DefaultTableCellRenderer tableRenderer = new DefaultTableCellRenderer();
             tableRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-            /**
+
+            /*
              *  Navigation buttons for pages
              */
-
             ApplicationManager.getApplication().invokeLater(() -> {
                 treeTable = new S3TreeTable(model, bucketVirtual, project);
                 treeTable.setRootVisible(false);

@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.aws.toolkits.jetbrains.services.s3.download
 import software.aws.toolkits.jetbrains.services.s3.upload
@@ -42,6 +43,12 @@ class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtual
         }
     }
 
+    suspend fun listObjects(prefix: String, continuationToken: String?): ListObjectsV2Response = withContext(Dispatchers.IO) {
+        client.listObjectsV2 {
+            it.bucket(s3Bucket.name()).delimiter("/").prefix(prefix).maxKeys(MAX_ITEMS_TO_LOAD).continuationToken(continuationToken)
+        }
+    }
+
     suspend fun deleteObjects(keys: List<String>) {
         withContext(Dispatchers.IO) {
             val keysToDelete = keys.map { ObjectIdentifier.builder().key(it).build() }
@@ -66,5 +73,9 @@ class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtual
         withContext(Dispatchers.IO) {
             client.download(project, s3Bucket.name(), key, output).await()
         }
+    }
+
+    private companion object {
+        const val MAX_ITEMS_TO_LOAD = 300
     }
 }

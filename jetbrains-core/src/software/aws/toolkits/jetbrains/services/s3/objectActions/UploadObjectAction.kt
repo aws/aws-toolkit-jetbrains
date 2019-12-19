@@ -7,23 +7,16 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.aws.toolkits.jetbrains.components.telemetry.ActionButtonWrapper
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
-import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import software.aws.toolkits.jetbrains.services.s3.editor.getDirectoryKey
-import software.aws.toolkits.jetbrains.services.s3.upload
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import java.util.concurrent.CompletionStage
 
 class UploadObjectAction(
     private val treeTable: S3TreeTable
@@ -64,20 +57,6 @@ class UploadObjectAction(
 
     override fun isEnabled(): Boolean =
         (treeTable.isEmpty || treeTable.selectedRows.size <= 1) && !treeTable.getSelectedNodes().any { it is S3TreeContinuationNode }
-
-    fun uploadObjectAction(client: S3Client, project: Project, fileChosen: VirtualFile, node: S3TreeNode): CompletionStage<PutObjectResponse> {
-        val bucketName = node.bucketName
-        val directoryKey = node.getDirectoryKey()
-
-        return client.upload(
-            project,
-            fileChosen.inputStream,
-            fileChosen.length,
-            bucketName,
-            directoryKey + fileChosen.name,
-            startInBackground = false
-        )
-    }
 
     companion object {
         private const val SINGLE_OBJECT = "s3_uploadobject"
