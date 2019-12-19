@@ -7,6 +7,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.stub
@@ -18,6 +19,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.core.sync.ResponseTransformer
+import software.amazon.awssdk.http.AbortableInputStream
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest
@@ -29,11 +31,12 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse
 import software.amazon.awssdk.services.s3.model.DeletedObject
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.io.ByteArrayInputStream
@@ -50,6 +53,7 @@ class S3VirtualBucketTest {
     val mockClientManagerRule = MockClientManagerRule(projectRule)
 
     private val s3Client = delegateMock<S3Client>()
+    private val sut = S3VirtualBucket(Bucket.builder().name("TestBucket").build(), s3Client)
 
     @Before
     fun setup() {
@@ -60,7 +64,6 @@ class S3VirtualBucketTest {
     @Test
     fun deleteObjects() {
         val deleteCaptor = argumentCaptor<DeleteObjectsRequest>()
-        val sut = S3VirtualBucket(Bucket.builder().name("TestBucket").build(), s3Client)
 
         val objectsToDelete = mutableListOf<ObjectIdentifier>()
         objectsToDelete.add(ObjectIdentifier.builder().key("testKey").build())
@@ -85,8 +88,6 @@ class S3VirtualBucketTest {
     fun renameObject() {
         val deleteCaptor = argumentCaptor<DeleteObjectRequest>()
         val copyCaptor = argumentCaptor<CopyObjectRequest>()
-
-        val sut = S3VirtualBucket(Bucket.builder().name("TestBucket").build(), s3Client)
 
         s3Client.stub {
             on {
@@ -129,8 +130,6 @@ class S3VirtualBucketTest {
                 .build()
         }
 
-        val sut = S3VirtualBucket(Bucket.builder().name("TestBucket").build(), s3Client)
-
         val testFile = delegateMock<VirtualFile> { on { name } doReturn "TestFile" }
         testFile.stub { on { length } doReturn 341 }
         testFile.stub { on { inputStream } doReturn ByteArrayInputStream("Hello".toByteArray()) }
@@ -152,13 +151,19 @@ class S3VirtualBucketTest {
         s3Client.stub {
             on {
                 getObject(downloadCaptor.capture(), any<ResponseTransformer<GetObjectResponse, GetObjectResponse>>())
-            } doReturn GetObjectResponse.builder()
-                .eTag("1111")
-                .lastModified(Instant.parse("1995-10-23T10:12:35Z"))
-                .build()
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                val transformer = it.arguments[1] as ResponseTransformer<GetObjectResponse, GetObjectResponse>
+                val data = "hello".toByteArray()
+                transformer.transform(
+                    GetObjectResponse.builder()
+                        .eTag("1111")
+                        .lastModified(Instant.parse("1995-10-23T10:12:35Z"))
+                        .contentLength(data.size.toLong())
+                        .build(), AbortableInputStream.create(data.inputStream())
+                )
+            }
         }
-
-        val sut = S3VirtualBucket(Bucket.builder().name("TestBucket").build(), s3Client)
 
         val testFile = FileUtil.createTempFile("myfile", ".txt")
 
@@ -169,5 +174,22 @@ class S3VirtualBucketTest {
         val downloadRequestCapture = downloadCaptor.firstValue
         assertThat(downloadRequestCapture.bucket()).isEqualTo("TestBucket")
         assertThat(downloadRequestCapture.key()).contains("key")
+    }
+
+    @Test
+    fun listObjects() {
+        val requestCaptor = argumentCaptor<ListObjectsV2Request>()
+        s3Client.stub {
+            on { listObjectsV2(requestCaptor.capture()) } doReturn ListObjectsV2Response.builder().build()
+        }
+
+        runBlocking {
+            sut.listObjects("prefix/", "continuation")
+        }
+
+        val request = requestCaptor.firstValue
+        assertThat(request.bucket()).isEqualTo("TestBucket")
+        assertThat(request.prefix()).isEqualTo("prefix/")
+        assertThat(request.delimiter()).isEqualTo("/")
     }
 }
