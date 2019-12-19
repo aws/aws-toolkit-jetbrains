@@ -68,7 +68,7 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
                     }
                 }
 
-                if(fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) == null) {
+                if (fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) == null) {
                     TelemetryService.recordSimpleTelemetry(project, "aws_config_edit", false)
                     throw RuntimeException(message("credentials.could_not_open", it))
                 }
