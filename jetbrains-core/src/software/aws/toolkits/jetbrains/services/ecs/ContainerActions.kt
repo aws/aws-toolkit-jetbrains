@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
 import software.amazon.awssdk.services.ecs.model.Service
+import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
@@ -58,7 +59,7 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
 class ContainerLogsAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnActionWrapper(message("ecs.service.logs.action_label")) {
+) : AnAction(message("ecs.service.logs.action_label")) {
 
     private val logConfiguration: Pair<String, String>? by lazy {
         container.containerDefinition.logConfiguration().takeIf { it.logDriver() == LogDriver.AWSLOGS }?.options()?.let {
@@ -74,7 +75,7 @@ class ContainerLogsAction(
         }
     }
 
-    override fun doActionPerformed(e: AnActionEvent) {
+    override fun actionPerformed(e: AnActionEvent) {
         val (logGroup, logPrefix) = logConfiguration ?: return
 
         val window = CloudWatchLogWindow.getInstance(project)
