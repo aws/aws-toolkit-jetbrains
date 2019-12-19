@@ -122,10 +122,10 @@ fun createNotificationExpiringAction(action: AnAction): NotificationAction = Not
 }
 
 fun createShowMoreInfoDialogAction(actionName: String?, title: String?, message: String?, moreInfo: String?) =
-    object : AnActionWrapper(actionName) {
+    object : AnAction(actionName) {
         override fun isDumbAware() = true
 
-        override fun doActionPerformed(e: AnActionEvent) {
+        override fun actionPerformed(e: AnActionEvent) {
             val dialogTitle = title ?: ""
 
             val textArea = JTextArea(moreInfo).apply {
