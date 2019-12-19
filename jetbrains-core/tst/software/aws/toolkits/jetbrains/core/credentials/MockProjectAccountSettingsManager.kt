@@ -23,7 +23,7 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
         recentlyUsedRegions.clear()
         recentlyUsedProfiles.clear()
 
-        connectionSettings = ConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER, AwsRegionProvider.getInstance().defaultRegion())
+        changeConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER, AwsRegionProvider.getInstance().defaultRegion())
 
         spinUntil(Duration.ofSeconds(10)) { connectionState == ConnectionState.VALID }
     }
@@ -49,7 +49,7 @@ fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
 
     val manager = MockProjectAccountSettingsManager.getInstance(project)
     val credentialsManager = MockCredentialsManager.getInstance()
-    val oldActive = manager.connectionSettings.credentials
+    val oldActive = manager.connectionSettings()?.credentials
     try {
         println("Running using real credentials")
         manager.changeCredentialProvider(realCredentials)
@@ -57,6 +57,8 @@ fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
         return block.invoke()
     } finally {
         credentialsManager.reset()
-        manager.changeCredentialProvider(oldActive)
+        oldActive?.let {
+            manager.changeCredentialProvider(it)
+        }
     }
 }

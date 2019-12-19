@@ -11,7 +11,6 @@ import org.jdom.Element
 import org.jdom.output.XMLOutputter
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -72,27 +71,27 @@ class DefaultProjectAccountSettingsManagerTest {
 
     @Test
     fun testMakingCredentialActive() {
-        manager.changeRegion(MockRegionProvider.getInstance().defaultRegion())
+        changeRegion(AwsRegionProvider.getInstance().defaultRegion())
 
         assertThat(manager.recentlyUsedCredentials()).isEmpty()
 
         val credentials = mockCredentialManager.addCredentials("Mock1")
         val credentials2 = mockCredentialManager.addCredentials("Mock2")
 
-        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.getInstance().defaultRegion()))
-        markConnectionSettingsAsValid(ConnectionSettings(credentials2, MockRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsValid(ConnectionSettings(credentials, AwsRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsValid(ConnectionSettings(credentials2, AwsRegionProvider.getInstance().defaultRegion()))
 
         changeCredentialProvider(credentials)
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
-        assertThat(manager.connectionSettings.credentials).isEqualTo(credentials)
+        assertThat(manager.connectionSettings()?.credentials).isEqualTo(credentials)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials)
 
         changeCredentialProvider(credentials2)
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
-        assertThat(manager.connectionSettings.credentials).isEqualTo(credentials2)
+        assertThat(manager.connectionSettings()?.credentials).isEqualTo(credentials2)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials2)
         assertThat(manager.recentlyUsedCredentials()).element(1).isEqualTo(credentials)
@@ -108,12 +107,12 @@ class DefaultProjectAccountSettingsManagerTest {
 
         changeRegion(mockRegion1)
 
-        assertThat(manager.connectionSettings.region).isEqualTo(mockRegion1)
+        assertThat(manager.selectedRegion).isEqualTo(mockRegion1)
         assertThat(manager.recentlyUsedRegions()).element(0).isEqualTo(mockRegion1)
 
         changeRegion(mockRegion2)
 
-        assertThat(manager.connectionSettings.region).isEqualTo(mockRegion2)
+        assertThat(manager.selectedRegion).isEqualTo(mockRegion2)
         assertThat(manager.recentlyUsedRegions()).element(0).isEqualTo(mockRegion2)
         assertThat(manager.recentlyUsedRegions()).element(1).isEqualTo(mockRegion1)
     }
@@ -215,7 +214,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.connectionSettings.credentials).isEqualTo(credentials)
+        assertThat(manager.selectedCredentials).isEqualTo(credentials)
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials)
     }
 
@@ -237,7 +236,7 @@ class DefaultProjectAccountSettingsManagerTest {
         waitForTerminalConnectionState()
 
         val region = mockRegionManager.lookupRegionById(MockRegionProvider.getInstance().defaultRegion().id)
-        assertThat(manager.connectionSettings.region).isEqualTo(region)
+        assertThat(manager.selectedRegion).isEqualTo(region)
         assertThat(manager.recentlyUsedRegions()).element(0).isEqualTo(region)
     }
 
@@ -257,7 +256,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.connectionSettings.region).isNull()
+        assertThat(manager.connectionSettings()?.region).isNull()
         assertThat(manager.recentlyUsedRegions()).isEmpty()
     }
 
@@ -280,7 +279,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         assertThat(manager.isValidConnectionSettings()).isFalse()
         assertThat(manager.recentlyUsedCredentials()).isEmpty()
-        assertThat(manager.connectionSettings.credentials).isNull()
+        assertThat(manager.connectionSettings()).isNull()
     }
 
     @Test
@@ -321,7 +320,7 @@ class DefaultProjectAccountSettingsManagerTest {
         waitForTerminalConnectionState()
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
-        assertThat(manager.connectionSettings.credentials?.id).isEqualTo("profile:default")
+        assertThat(manager.connectionSettings()?.credentials?.id).isEqualTo("profile:default")
 
         assertThat(manager.recentlyUsedCredentials()).hasSize(1)
         assertThat(manager.recentlyUsedCredentials().first().id).isEqualTo("profile:default")
@@ -335,30 +334,26 @@ class DefaultProjectAccountSettingsManagerTest {
         markConnectionSettingsAsValid(ConnectionSettings(defaultCredentials, AwsRegionProvider.getInstance().defaultRegion()))
         markConnectionSettingsAsValid(ConnectionSettings(adminCredentials, AwsRegionProvider.getInstance().defaultRegion()))
 
+        changeRegion(AwsRegionProvider.getInstance().defaultRegion())
         changeCredentialProvider(adminCredentials)
 
-        assertThat(manager.connectionSettings.credentials?.id).isEqualTo("profile:admin")
+        assertThat(manager.isValidConnectionSettings()).isTrue()
+
+        assertThat(manager.selectedCredentials?.id).isEqualTo("profile:admin")
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved("profile:admin")
 
         assertThat(manager.isValidConnectionSettings()).isFalse()
-        assertThat(manager.connectionSettings.credentials).isNull()
+        assertThat(manager.selectedCredentials).isNull()
+        assertThat(manager.connectionSettings()).isNull()
     }
 
     private fun markConnectionSettingsAsValid(connectionSettings: ConnectionSettings) {
-        connectionSettings.credentials?.let { credentials ->
-            connectionSettings.region?.let { region ->
-                mockResourceCache.addValidAwsCredential(region.id, credentials.id, "1111222233333")
-            }
-        }
+        mockResourceCache.addValidAwsCredential(connectionSettings.region.id, connectionSettings.credentials.id, "1111222233333")
     }
 
     private fun markConnectionSettingsAsInvalid(connectionSettings: ConnectionSettings) {
-        connectionSettings.credentials?.let { credentials ->
-            connectionSettings.region?.let { region ->
-                mockResourceCache.addInvalidAwsCredential(region.id, credentials.id)
-            }
-        }
+        mockResourceCache.addInvalidAwsCredential(connectionSettings.region.id, connectionSettings.credentials.id)
     }
 
     private fun changeCredentialProvider(credentialsProvider: ToolkitCredentialsProvider) {

@@ -25,8 +25,8 @@ data class ConnectionSettingsState(
 class DefaultProjectAccountSettingsManager(private val project: Project) : ProjectAccountSettingsManager(project),
     PersistentStateComponent<ConnectionSettingsState> {
     override fun getState(): ConnectionSettingsState = ConnectionSettingsState(
-        activeProfile = connectionSettings.credentials?.id,
-        activeRegion = connectionSettings.region?.id,
+        activeProfile = selectedCredentials?.id,
+        activeRegion = selectedRegion?.id,
         recentlyUsedProfiles = recentlyUsedProfiles.elements(),
         recentlyUsedRegions = recentlyUsedRegions.elements()
     )
@@ -49,10 +49,10 @@ class DefaultProjectAccountSettingsManager(private val project: Project) : Proje
                 CredentialManager.getInstance().getCredentialProvider(credentialId)
             }
 
-            val regionId = state.activeRegion ?: AwsRegionProvider.getInstance().defaultRegion()
+            val regionId = state.activeRegion ?: AwsRegionProvider.getInstance().defaultRegion().id
             val region = AwsRegionProvider.getInstance().regions()[regionId]
 
-            connectionSettings = ConnectionSettings(credentials, region)
+            changeConnectionSettings(credentials, region)
         }
     }
 }

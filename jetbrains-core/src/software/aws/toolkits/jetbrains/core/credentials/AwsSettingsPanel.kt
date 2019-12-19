@@ -1,7 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core
+package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -17,10 +17,6 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetProvider
 import com.intellij.util.Consumer
 import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
-import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsActionGroup
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeNotifier
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import java.awt.event.MouseEvent
@@ -42,11 +38,12 @@ private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
     override fun getTooltipText() = SettingsSelector.tooltipText
 
     override fun getSelectedValue(): String {
-        val connectionSettings = accountSettingsManager.connectionSettings
+        val credentials = accountSettingsManager.selectedCredentials
+        val region = accountSettingsManager.selectedRegion
         val statusLine = when {
-            connectionSettings.credentials == null -> message("settings.credentials.none_selected")
-            connectionSettings.region == null -> message("settings.regions.none_selected")
-            else -> "${connectionSettings.credentials.displayName}@${connectionSettings.region.name}"
+            credentials == null -> message("settings.credentials.none_selected")
+            region == null -> message("settings.regions.none_selected")
+            else -> "${credentials.displayName}@${region.name}"
         }
         return "AWS: $statusLine"
     }

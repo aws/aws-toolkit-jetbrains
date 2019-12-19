@@ -9,12 +9,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValueProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.components.telemetry.ToggleActionWrapper
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
@@ -97,21 +97,21 @@ private class ChangeRegionActionGroup : DefaultActionGroup(), DumbAware {
     }
 }
 
-private class ChangeRegionAction(private val region: AwsRegion) : ToggleActionWrapper(region.displayName), DumbAware {
-    override fun doIsSelected(e: AnActionEvent): Boolean = getAccountSetting(e).connectionSettings.region == region
+private class ChangeRegionAction(private val region: AwsRegion) : ToggleAction(region.displayName), DumbAware {
+    override fun isSelected(e: AnActionEvent): Boolean = getAccountSetting(e).selectedRegion == region
 
-    override fun doSetSelected(e: AnActionEvent, state: Boolean) {
+    override fun setSelected(e: AnActionEvent, state: Boolean) {
         if (state) {
             getAccountSetting(e).changeRegion(region)
         }
     }
 }
 
-private class ChangeCredentialsAction(private val credentialsProvider: ToolkitCredentialsProvider) : ToggleActionWrapper(credentialsProvider.displayName),
+private class ChangeCredentialsAction(private val credentialsProvider: ToolkitCredentialsProvider) : ToggleAction(credentialsProvider.displayName),
     DumbAware {
-    override fun doIsSelected(e: AnActionEvent): Boolean = getAccountSetting(e).connectionSettings.credentials == credentialsProvider
+    override fun isSelected(e: AnActionEvent): Boolean = getAccountSetting(e).selectedCredentials == credentialsProvider
 
-    override fun doSetSelected(e: AnActionEvent, state: Boolean) {
+    override fun setSelected(e: AnActionEvent, state: Boolean) {
         if (state) {
             getAccountSetting(e).changeCredentialProvider(credentialsProvider)
         }

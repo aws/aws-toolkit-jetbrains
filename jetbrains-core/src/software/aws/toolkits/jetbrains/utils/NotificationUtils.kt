@@ -18,7 +18,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
-import software.aws.toolkits.jetbrains.core.SettingsSelectorAction
+import software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorAction
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
 import software.aws.toolkits.resources.message

@@ -34,89 +34,129 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     @Volatile
     private var validationJob: Job? = null
     @Volatile
-    var connectionState: ConnectionState = ConnectionState.INITIALIZING
+    internal var connectionState: ConnectionState = ConnectionState.INITIALIZING
         @TestOnly get
-        protected set
 
     protected val recentlyUsedProfiles = MRUList<String>(MAX_HISTORY)
     protected val recentlyUsedRegions = MRUList<String>(MAX_HISTORY)
 
-    @Volatile
-    var connectionSettings: ConnectionSettings = ConnectionSettings(null, null)
-        protected set(value) {
-            incModificationCount()
-
-            connectionState = ConnectionState.VALIDATING
-            validationJob?.cancel(CancellationException("Newer connection settings chosen"))
-
-            value.credentials?.let {
-                recentlyUsedProfiles.add(it.id)
-            }
-
-            value.region?.let {
-                recentlyUsedRegions.add(it.id)
-            }
-
-            field = value
-
-            validationJob = GlobalScope.launch(Dispatchers.Default) {
-                broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
-
-                val credentials = value.credentials
-                val region = value.region
-                if (credentials == null || region == null) {
-                    connectionState = ConnectionState.INVALID
-                    broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
-                    incModificationCount()
-                    return@launch
-                }
-
-                try {
-                    validate(value.credentials, value.region)
-                    connectionState = ConnectionState.VALID
-                    broadcastChangeEvent(ValidConnectionSettings(credentials, region, connectionState))
-                } catch (e: Exception) {
-                    connectionState = ConnectionState.INVALID
-                    broadcastChangeEvent(InvalidConnectionSettings(credentials, region, e, connectionState))
-                } finally {
-                    incModificationCount()
-                }
-            }
-        }
+    // Internal state is visible for AwsSettingsPanel and ChangeAccountSettingsActionGroup
+    internal var selectedCredentials: ToolkitCredentialsProvider? = null
+    internal var selectedRegion: AwsRegion? = null
 
     init {
         ApplicationManager.getApplication().messageBus.connect(project)
             .subscribe(CredentialManager.CREDENTIALS_CHANGED, object : ToolkitCredentialsChangeListener {
                 override fun providerRemoved(providerId: String) {
-                    if (connectionSettings.credentials?.id == providerId) {
-                        // Bypass changing MRU list
-                        connectionSettings = connectionSettings.copy(credentials = null)
+                    if (selectedCredentials?.id == providerId) {
+                        changeConnectionSettings(null, selectedRegion)
                     }
                 }
             })
     }
 
+    fun isValidConnectionSettings(): Boolean = connectionState == ConnectionState.VALID
+
+    fun connectionSettings(): ConnectionSettings? = selectedCredentials?.let { creds ->
+        selectedRegion?.let { region ->
+            ConnectionSettings(creds, region)
+        }
+    }
+
+    /**
+     * Internal setter that allows for null values and is intended to set the internal state and still notify
+     */
+    protected fun changeConnectionSettings(credentials: ToolkitCredentialsProvider?, region: AwsRegion?) {
+        changeFieldsAndNotify {
+            credentials?.let {
+                recentlyUsedProfiles.add(it.id)
+            }
+
+            region?.let {
+                recentlyUsedRegions.add(it.id)
+            }
+
+            selectedCredentials = credentials
+            selectedRegion = region
+        }
+    }
+
+    // TODO: Make this not null, few tests need to be fixed
+    /**
+     * Changes the credentials and then validates them. Notifies listeners of results
+     */
+    fun changeCredentialProvider(value: ToolkitCredentialsProvider?) {
+        changeFieldsAndNotify {
+            value?.let {
+                recentlyUsedProfiles.add(value.id)
+            }
+
+            selectedCredentials = value
+        }
+    }
+
+    /**
+     * Changes the region and then validates them. Notifies listeners of results
+     */
+    fun changeRegion(value: AwsRegion) {
+        changeFieldsAndNotify {
+            value.let {
+                recentlyUsedRegions.add(value.id)
+            }
+
+            selectedRegion = value
+        }
+    }
+
+    private fun changeFieldsAndNotify(fieldUpdateBlock: () -> Unit) {
+        incModificationCount()
+
+        connectionState = ConnectionState.VALIDATING
+        validationJob?.cancel(CancellationException("Newer connection settings chosen"))
+
+        fieldUpdateBlock()
+
+        validationJob = GlobalScope.launch(Dispatchers.Default) {
+            broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
+
+            val credentials = selectedCredentials
+            val region = selectedRegion
+            if (credentials == null || region == null) {
+                connectionState = ConnectionState.INVALID
+                broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
+                incModificationCount()
+                return@launch
+            }
+
+            try {
+                validate(credentials, region)
+                connectionState = ConnectionState.VALID
+                broadcastChangeEvent(ValidConnectionSettings(credentials, region, connectionState))
+            } catch (e: Exception) {
+                connectionState = ConnectionState.INVALID
+                broadcastChangeEvent(InvalidConnectionSettings(credentials, region, e, connectionState))
+            } finally {
+                incModificationCount()
+            }
+        }
+    }
+
+    /**
+     * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
+     */
     val activeRegion: AwsRegion
-        get() = connectionSettings.region ?: AwsRegionProvider.getInstance().defaultRegion().also {
+        get() = selectedRegion ?: AwsRegionProvider.getInstance().defaultRegion().also {
             LOGGER.warn(IllegalStateException()) { "Using activeRegion when region is null, calling code needs to be migrated to handle null" }
         }
 
+    /**
+     * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
+     */
     val activeCredentialProvider: ToolkitCredentialsProvider
         @Throws(CredentialProviderNotFound::class)
-        get() = connectionSettings.credentials ?: throw CredentialProviderNotFound(message("credentials.profile.not_configured")).also {
+        get() = selectedCredentials ?: throw CredentialProviderNotFound(message("credentials.profile.not_configured")).also {
             LOGGER.warn(IllegalStateException()) { "Using activeCredentialProvider when credentials is null, calling code needs to be migrated to handle null" }
         }
-
-    fun isValidConnectionSettings(): Boolean = connectionState == ConnectionState.VALID
-
-    // TODO: Make this not null, few tests need to be fixed
-    fun changeCredentialProvider(credentialsProvider: ToolkitCredentialsProvider?) {
-        connectionSettings = connectionSettings.copy(credentials = credentialsProvider)
-    }
-
-    fun changeRegion(awsRegion: AwsRegion) {
-        connectionSettings = connectionSettings.copy(region = awsRegion)
-    }
 
     /**
      * Returns the list of recently used [AwsRegion]
@@ -134,7 +174,10 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
         return recentlyUsedProfiles.elements().mapNotNull { tryOrNull { credentialsProvider.getCredentialProvider(it) } }
     }
 
-    protected open suspend fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion) = withContext(Dispatchers.Default) {
+    /**
+     * Internal method that executes the actual validation of credentials
+     */
+    protected open suspend fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion) = withContext(Dispatchers.IO) {
         // TODO: Convert the cache over to suspend methods
         resourceCache.getResourceNow(
             StsResources.ACCOUNT,
@@ -192,7 +235,13 @@ class InvalidConnectionSettings(
 class ValidConnectionSettings(val credentialsProvider: ToolkitCredentialsProvider, val region: AwsRegion, state: ConnectionState) :
     ConnectionSettingsChangeEvent(state)
 
+/**
+ * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
+ */
 fun Project.activeRegion(): AwsRegion = ProjectAccountSettingsManager.getInstance(this).activeRegion
+/**
+ * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
+ */
 fun Project.activeCredentialProvider(): ToolkitCredentialsProvider = ProjectAccountSettingsManager.getInstance(this).activeCredentialProvider
 /**
  * The underlying AWS account for current active credential provider of the project. Return null if credential provider is not set.
