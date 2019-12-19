@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.configurationStore.deserializeAndLoadState
 import com.intellij.configurationStore.serializeStateInto
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.util.messages.MessageBusConnection
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.Element
 import org.jdom.output.XMLOutputter
@@ -27,7 +26,6 @@ import software.aws.toolkits.jetbrains.utils.toElement
 import java.nio.file.Files
 import java.time.Duration
 
-@Ignore
 class DefaultProjectAccountSettingsManagerTest {
     @Rule
     @JvmField
@@ -40,7 +38,6 @@ class DefaultProjectAccountSettingsManagerTest {
     private lateinit var mockRegionManager: MockRegionProvider
     private lateinit var mockCredentialManager: MockCredentialsManager
     private lateinit var manager: DefaultProjectAccountSettingsManager
-    private lateinit var messageBusConnection: MessageBusConnection
     private lateinit var mockResourceCache: MockResourceCache
     private lateinit var queue: MutableList<Any>
 
@@ -69,7 +66,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
     @Test
     fun testNoActiveCredentials() {
-        assertThat(manager.isValidconnectionSettings()).isFalse()
+        assertThat(manager.isValidConnectionSettings()).isFalse()
         assertThat(manager.recentlyUsedCredentials()).isEmpty()
     }
 
@@ -87,14 +84,14 @@ class DefaultProjectAccountSettingsManagerTest {
 
         changeCredentialProvider(credentials)
 
-        assertThat(manager.isValidconnectionSettings()).isTrue()
+        assertThat(manager.isValidConnectionSettings()).isTrue()
         assertThat(manager.connectionSettings.credentials).isEqualTo(credentials)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials)
 
         changeCredentialProvider(credentials2)
 
-        assertThat(manager.isValidconnectionSettings()).isTrue()
+        assertThat(manager.isValidConnectionSettings()).isTrue()
         assertThat(manager.connectionSettings.credentials).isEqualTo(credentials2)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials2)
@@ -281,7 +278,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.isValidconnectionSettings()).isFalse()
+        assertThat(manager.isValidConnectionSettings()).isFalse()
         assertThat(manager.recentlyUsedCredentials()).isEmpty()
         assertThat(manager.connectionSettings.credentials).isNull()
     }
@@ -307,7 +304,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.isValidconnectionSettings()).isFalse()
+        assertThat(manager.isValidConnectionSettings()).isFalse()
     }
 
     @Test
@@ -323,7 +320,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.isValidconnectionSettings()).isTrue()
+        assertThat(manager.isValidConnectionSettings()).isTrue()
         assertThat(manager.connectionSettings.credentials?.id).isEqualTo("profile:default")
 
         assertThat(manager.recentlyUsedCredentials()).hasSize(1)
@@ -344,7 +341,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved("profile:admin")
 
-        assertThat(manager.isValidconnectionSettings()).isFalse()
+        assertThat(manager.isValidConnectionSettings()).isFalse()
         assertThat(manager.connectionSettings.credentials).isNull()
     }
 
