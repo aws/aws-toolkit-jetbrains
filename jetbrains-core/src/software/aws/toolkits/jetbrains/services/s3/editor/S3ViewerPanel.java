@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.s3.editor;
 
+import static software.aws.toolkits.resources.Localization.message;
+
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
@@ -72,7 +74,7 @@ public class S3ViewerPanel {
         this.arnText.setEditable(false);
         this.name.setEditable(false);
         JPopupMenu menu = new JPopupMenu();
-        Action copyAction = new AbstractAction("Copy") {
+        Action copyAction = new AbstractAction(message("explorer.copy_arn")) {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 arnText.selectAll();
@@ -100,7 +102,7 @@ public class S3ViewerPanel {
              */
 
             ApplicationManager.getApplication().invokeLater(() -> {
-                treeTable = new S3TreeTable(model, bucketVirtual, project, s3client);
+                treeTable = new S3TreeTable(model, bucketVirtual, project);
                 treeTable.setRootVisible(false);
                 treeTable.setDefaultRenderer(Object.class, tableRenderer);
                 treeTable.setTreeCellRenderer(treeRenderer);
@@ -145,14 +147,14 @@ public class S3ViewerPanel {
 
     private void addTreeActions() {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(new DownloadObjectAction(treeTable, bucketVirtual));
-        actionGroup.add(new UploadObjectAction(treeTable, bucketVirtual));
+        actionGroup.add(new DownloadObjectAction(treeTable));
+        actionGroup.add(new UploadObjectAction(treeTable));
         actionGroup.add(new Separator());
-        actionGroup.add(new NewFolderAction(treeTable, bucketVirtual));
-        actionGroup.add(new RenameObjectAction(treeTable, bucketVirtual));
-        actionGroup.add(new CopyPathAction(treeTable, bucketVirtual));
+        actionGroup.add(new NewFolderAction(treeTable));
+        actionGroup.add(new RenameObjectAction(treeTable));
+        actionGroup.add(new CopyPathAction(treeTable));
         actionGroup.add(new Separator());
-        actionGroup.add(new DeleteObjectAction(treeTable, bucketVirtual));
+        actionGroup.add(new DeleteObjectAction(treeTable));
         PopupHandler.installPopupHandler(treeTable, actionGroup, ActionPlaces.EDITOR_POPUP, ActionManager.getInstance());
     }
 
