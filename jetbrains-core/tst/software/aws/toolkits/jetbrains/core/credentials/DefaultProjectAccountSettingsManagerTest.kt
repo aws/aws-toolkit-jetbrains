@@ -69,7 +69,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
     @Test
     fun testNoActiveCredentials() {
-        assertThat(manager.isValidconnectionSettings).isFalse()
+        assertThat(manager.isValidconnectionSettings()).isFalse()
         assertThat(manager.recentlyUsedCredentials()).isEmpty()
     }
 
@@ -87,14 +87,14 @@ class DefaultProjectAccountSettingsManagerTest {
 
         changeCredentialProvider(credentials)
 
-        assertThat(manager.isValidconnectionSettings).isTrue()
+        assertThat(manager.isValidconnectionSettings()).isTrue()
         assertThat(manager.connectionSettings.credentials).isEqualTo(credentials)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials)
 
         changeCredentialProvider(credentials2)
 
-        assertThat(manager.isValidconnectionSettings).isTrue()
+        assertThat(manager.isValidconnectionSettings()).isTrue()
         assertThat(manager.connectionSettings.credentials).isEqualTo(credentials2)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials2)
@@ -281,7 +281,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.isValidconnectionSettings).isFalse()
+        assertThat(manager.isValidconnectionSettings()).isFalse()
         assertThat(manager.recentlyUsedCredentials()).isEmpty()
         assertThat(manager.connectionSettings.credentials).isNull()
     }
@@ -307,7 +307,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.isValidconnectionSettings).isFalse()
+        assertThat(manager.isValidconnectionSettings()).isFalse()
     }
 
     @Test
@@ -323,7 +323,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.isValidconnectionSettings).isTrue()
+        assertThat(manager.isValidconnectionSettings()).isTrue()
         assertThat(manager.connectionSettings.credentials?.id).isEqualTo("profile:default")
 
         assertThat(manager.recentlyUsedCredentials()).hasSize(1)
@@ -344,7 +344,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved("profile:admin")
 
-        assertThat(manager.isValidconnectionSettings).isFalse()
+        assertThat(manager.isValidconnectionSettings()).isFalse()
         assertThat(manager.connectionSettings.credentials).isNull()
     }
 
