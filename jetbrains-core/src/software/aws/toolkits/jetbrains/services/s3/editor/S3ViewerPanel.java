@@ -96,10 +96,7 @@ public class S3ViewerPanel {
             S3TreeCellRenderer treeRenderer = new S3TreeCellRenderer();
             DefaultTableCellRenderer tableRenderer = new DefaultTableCellRenderer();
             tableRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-
-            /*
-             *  Navigation buttons for pages
-             */
+            
             ApplicationManager.getApplication().invokeLater(() -> {
                 treeTable = new S3TreeTable(model, bucketVirtual, project);
                 treeTable.setRootVisible(false);
