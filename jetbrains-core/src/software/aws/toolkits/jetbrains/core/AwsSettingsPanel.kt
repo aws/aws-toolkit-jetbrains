@@ -13,6 +13,7 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.actionSystem.ex.ComboBoxAction
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -27,7 +28,6 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.components.telemetry.AnActionWrapper
-import software.aws.toolkits.jetbrains.components.telemetry.ComboBoxActionWrapper
 import software.aws.toolkits.jetbrains.components.telemetry.ToggleActionWrapper
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
@@ -123,7 +123,7 @@ class SettingsSelector(project: Project) {
 class ChangeAccountSettingsAction(
     private val accountSettingsManager: ProjectAccountSettingsManager,
     private val showRegions: Boolean
-) : ComboBoxActionWrapper(), DumbAware {
+) : ComboBoxAction(), DumbAware {
 
     fun createPopupActionGroup(): DefaultActionGroup = createPopupActionGroup(null)
 
