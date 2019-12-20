@@ -44,7 +44,6 @@ abstract class ToolkitRegionProvider {
     }
 
     companion object {
-        private const val DEFAULT_REGION = "us-east-1"
         private const val DEFAULT_PARTITION = "aws"
     }
 }
