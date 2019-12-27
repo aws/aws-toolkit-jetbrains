@@ -37,7 +37,7 @@ abstract class ToolkitRegionProvider {
     @Deprecated("This loads the default region if specified region doesn't exist which does not make sense")
     fun lookupRegionById(regionId: String?): AwsRegion = regions()[regionId] ?: defaultRegion()
 
-    fun isServiceSupported(region: AwsRegion, serviceName: String): Boolean {
+    open fun isServiceSupported(region: AwsRegion, serviceName: String): Boolean {
         val currentPartition = partitionData()[region.partitionId] ?: return false
         val service = currentPartition.services[serviceName] ?: return false
         return service.isGlobal || service.endpoints.containsKey(region.id)

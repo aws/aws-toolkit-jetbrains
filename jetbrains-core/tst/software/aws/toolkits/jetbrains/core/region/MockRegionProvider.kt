@@ -31,6 +31,8 @@ class MockRegionProvider : ToolkitRegionProvider() {
             }
     }
 
+    override fun isServiceSupported(region: AwsRegion, serviceName: String): Boolean = true
+
     override fun defaultRegion(): AwsRegion = US_EAST_1
 
     companion object {
