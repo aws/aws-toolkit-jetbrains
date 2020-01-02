@@ -12,7 +12,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 class CopyrightHeaderRuleTest {
-    private val rule = CopyrightHeaderRule(Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+    private val rule = CopyrightHeaderRule()
 
     @Test
     fun noHeaderPresent() {
