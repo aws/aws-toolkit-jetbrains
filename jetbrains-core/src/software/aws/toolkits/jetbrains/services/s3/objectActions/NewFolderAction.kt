@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.services.s3.editor.getDirectoryKey
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
-class NewFolderAction(private val treeTable: S3TreeTable) : DumbAwareAction(message("s3.new.folder"), null, null) {
+class NewFolderAction(private val treeTable: S3TreeTable) : DumbAwareAction(message("s3.new.folder")) {
     override fun actionPerformed(e: AnActionEvent) {
         val node = treeTable.selectedRows.firstOrNull()?.let { treeTable.getNodeForRow(it) } ?: treeTable.getRootNode()
 
