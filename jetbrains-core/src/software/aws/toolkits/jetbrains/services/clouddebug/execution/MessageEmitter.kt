@@ -79,7 +79,6 @@ class DefaultMessageEmitter private constructor(
     }
 
     override fun emitMessage(message: String, isError: Boolean) {
-        println(message)
         parent?.emitMessage(message, isError)
         if (hidden) return
         buildListener.onEvent(
