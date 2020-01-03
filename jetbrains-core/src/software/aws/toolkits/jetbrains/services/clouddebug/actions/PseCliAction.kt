@@ -115,6 +115,7 @@ abstract class PseCliAction(val project: Project, val actionName: String, privat
                     val cmd = clouddebug.getCommandLine()
 
                     cmd
+                        .withEnvironment("HTTP_PROXY", "http://localhost:8080")
                         .withEnvironment(region)
                         .withEnvironment(credentials)
 
