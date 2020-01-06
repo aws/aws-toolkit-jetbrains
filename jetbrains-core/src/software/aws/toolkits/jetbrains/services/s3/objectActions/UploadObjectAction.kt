@@ -32,9 +32,4 @@ class UploadObjectAction(
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabled = (treeTable.isEmpty || treeTable.selectedRows.size <= 1) && !treeTable.getSelectedNodes().any { it is S3TreeContinuationNode }
     }
-
-    companion object {
-        private const val SINGLE_OBJECT = "s3_uploadobject"
-        private const val ALL_OBJECTS = "s3_uploadobjects"
-    }
 }

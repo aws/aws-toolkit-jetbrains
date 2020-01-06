@@ -18,6 +18,8 @@ import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.s3.objectActions.deleteSelectedObjects
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.DataFlavor
@@ -126,25 +128,39 @@ class S3TreeTable(
         DropTarget(this, dropTargetListener)
     }
 
-    fun uploadAndRefresh(virtualFiles: List<VirtualFile>, node: S3TreeNode) {
+    fun uploadAndRefresh(selectedFiles: List<VirtualFile>, node: S3TreeNode) {
         GlobalScope.launch {
-            virtualFiles.forEach {
-                if (it.isDirectory) {
-                    notifyError(
-                        title = message("s3.upload.object.failed", it.name),
-                        content = message("s3.upload.directory.impossible", it.name),
-                        project = project
-                    )
-                    return@forEach
-                }
+            try {
+                selectedFiles.forEach {
+                    if (it.isDirectory) {
+                        notifyError(
+                            title = message("s3.upload.object.failed", it.name),
+                            content = message("s3.upload.directory.impossible", it.name),
+                            project = project
+                        )
+                        TelemetryService.recordSimpleTelemetry(project, SINGLE_OBJECT, TelemetryConstants.TelemetryResult.Failed)
+                        return@forEach
+                    }
 
-                try {
-                    bucket.upload(project, it.inputStream, it.length, node.getDirectoryKey() + it.name)
-                    invalidateLevel(node)
-                    refresh()
-                } catch (e: Exception) {
-                    e.notifyError(message("s3.upload.object.failed", it.name))
+                    try {
+                        bucket.upload(project, it.inputStream, it.length, node.getDirectoryKey() + it.name)
+                        invalidateLevel(node)
+                        refresh()
+                        TelemetryService.recordSimpleTelemetry(
+                            project,
+                            ALL_OBJECTS,
+                            TelemetryConstants.TelemetryResult.Succeeded,
+                            selectedFiles.size.toDouble()
+                        )
+                    } catch (e: Exception) {
+                        e.notifyError(message("s3.upload.object.failed", it.path), project)
+                        TelemetryService.recordSimpleTelemetry(project, SINGLE_OBJECT, TelemetryConstants.TelemetryResult.Failed)
+                        throw e
+                    }
                 }
+                TelemetryService.recordSimpleTelemetry(project, ALL_OBJECTS, TelemetryConstants.TelemetryResult.Succeeded, selectedFiles.size.toDouble())
+            } catch (e: Exception) {
+                TelemetryService.recordSimpleTelemetry(project, ALL_OBJECTS, TelemetryConstants.TelemetryResult.Failed, selectedFiles.size.toDouble())
             }
         }
     }
@@ -189,5 +205,7 @@ class S3TreeTable(
 
     companion object {
         private val LOG = getLogger<S3TreeTable>()
+        private const val SINGLE_OBJECT = "s3_uploadobject"
+        private const val ALL_OBJECTS = "s3_uploadobjects"
     }
 }
