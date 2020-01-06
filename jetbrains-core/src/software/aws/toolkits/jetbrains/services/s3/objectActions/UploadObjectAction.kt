@@ -37,6 +37,11 @@ class UploadObjectAction(
         GlobalScope.launch {
             try {
                 filesChosen.forEach { file ->
+                    if (file.isDirectory) {
+                        notifyError(message("s3.upload.directory.impossible", file.name))
+                        return@forEach
+                    }
+
                     try {
                         bucket.upload(project, file.inputStream, file.length, directoryKey + file.name)
                         treeTable.invalidateLevel(node)
