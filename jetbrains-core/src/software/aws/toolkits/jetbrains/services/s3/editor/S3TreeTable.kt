@@ -77,7 +77,6 @@ class S3TreeTable(
 
     private val keyListener = object : KeyAdapter() {
         override fun keyTyped(e: KeyEvent) = doProcessKeyEvent(e)
-        override fun keyPressed(e: KeyEvent) = doProcessKeyEvent(e)
     }
 
     private fun doProcessKeyEvent(e: KeyEvent) {
