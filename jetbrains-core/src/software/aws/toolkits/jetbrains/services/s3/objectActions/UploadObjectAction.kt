@@ -38,7 +38,11 @@ class UploadObjectAction(
             try {
                 filesChosen.forEach { file ->
                     if (file.isDirectory) {
-                        notifyError(message("s3.upload.directory.impossible", file.name))
+                        notifyError(
+                            title = message("s3.upload.object.failed", file.name),
+                            content = message("s3.upload.directory.impossible", file.name),
+                            project = project
+                        )
                         return@forEach
                     }
 

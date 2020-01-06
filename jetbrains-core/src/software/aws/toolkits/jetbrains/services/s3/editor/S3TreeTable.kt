@@ -59,7 +59,11 @@ class S3TreeTable(
             GlobalScope.launch {
                 virtualFiles.forEach {
                     if (it.isDirectory) {
-                        notifyError(message("s3.upload.directory.impossible", it.name))
+                        notifyError(
+                            title = message("s3.upload.object.failed", it.name),
+                            content = message("s3.upload.directory.impossible", it.name),
+                            project = project
+                        )
                         return@forEach
                     }
 
