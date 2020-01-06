@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import kotlinx.coroutines.GlobalScope
@@ -54,28 +55,7 @@ class S3TreeTable(
                 lfs.findFileByIoFile(it)
             }
 
-            val directoryKey = node.getDirectoryKey()
-
-            GlobalScope.launch {
-                virtualFiles.forEach {
-                    if (it.isDirectory) {
-                        notifyError(
-                            title = message("s3.upload.object.failed", it.name),
-                            content = message("s3.upload.directory.impossible", it.name),
-                            project = project
-                        )
-                        return@forEach
-                    }
-
-                    try {
-                        bucket.upload(project, it.inputStream, it.length, directoryKey + it.name)
-                        invalidateLevel(node)
-                        refresh()
-                    } catch (e: Exception) {
-                        e.notifyError(message("s3.upload.object.failed", it.name))
-                    }
-                }
-            }
+            uploadAndRefresh(virtualFiles, node)
         }
     }
 
@@ -144,6 +124,29 @@ class S3TreeTable(
     init {
         // Associate the drop target listener with this instance which will allow uploading by drag and drop
         DropTarget(this, dropTargetListener)
+    }
+
+    fun uploadAndRefresh(virtualFiles: List<VirtualFile>, node: S3TreeNode) {
+        GlobalScope.launch {
+            virtualFiles.forEach {
+                if (it.isDirectory) {
+                    notifyError(
+                        title = message("s3.upload.object.failed", it.name),
+                        content = message("s3.upload.directory.impossible", it.name),
+                        project = project
+                    )
+                    return@forEach
+                }
+
+                try {
+                    bucket.upload(project, it.inputStream, it.length, node.getDirectoryKey() + it.name)
+                    invalidateLevel(node)
+                    refresh()
+                } catch (e: Exception) {
+                    e.notifyError(message("s3.upload.object.failed", it.name))
+                }
+            }
+        }
     }
 
     fun refresh() {
