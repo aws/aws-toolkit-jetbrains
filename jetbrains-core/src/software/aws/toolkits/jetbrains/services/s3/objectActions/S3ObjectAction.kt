@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import javax.swing.Icon
 
-abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: String, icon: Icon? = null): DumbAwareAction(title, null, icon)  {
+abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: String, icon: Icon? = null) : DumbAwareAction(title, null, icon) {
     protected abstract fun performAction(nodes: List<S3TreeNode>)
 
     protected open fun enabled(nodes: List<S3TreeNode>): Boolean = true
@@ -25,7 +25,7 @@ abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: Strin
     private fun selected() = treeTable.getSelectedNodes().takeIf { it.isNotEmpty() } ?: listOf(treeTable.getRootNode())
 }
 
-abstract class SingleS3ObjectAction(treeTable: S3TreeTable, title: String, icon: Icon? = null): S3ObjectAction(treeTable, title, icon) {
+abstract class SingleS3ObjectAction(treeTable: S3TreeTable, title: String, icon: Icon? = null) : S3ObjectAction(treeTable, title, icon) {
 
     final override fun performAction(nodes: List<S3TreeNode>) {
         if (nodes.size != 1) {

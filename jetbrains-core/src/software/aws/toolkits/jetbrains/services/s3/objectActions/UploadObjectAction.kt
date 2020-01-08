@@ -11,7 +11,8 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import software.aws.toolkits.resources.message
 
-class UploadObjectAction(private val project: Project, treeTable: S3TreeTable) : SingleS3ObjectAction(treeTable, message("s3.upload.object.action"), AllIcons.Actions.Upload) {
+class UploadObjectAction(private val project: Project, treeTable: S3TreeTable) :
+    SingleS3ObjectAction(treeTable, message("s3.upload.object.action"), AllIcons.Actions.Upload) {
     override fun performAction(node: S3TreeNode) {
         val descriptor =
             FileChooserDescriptorFactory.createAllButJarContentsDescriptor().withDescription(message("s3.upload.object.action", treeTable.bucket.name))
