@@ -189,6 +189,7 @@ class S3TreeTable(
     }
 
     fun getNodeForRow(row: Int): S3TreeNode? {
+
         val path = tree.getPathForRow(convertRowIndexToModel(row))
         return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
@@ -196,17 +197,6 @@ class S3TreeTable(
     fun getRootNode(): S3TreeDirectoryNode = (tableModel.root as DefaultMutableTreeNode).userObject as S3TreeDirectoryNode
 
     fun getSelectedNodes(): List<S3TreeNode> = selectedRows.map { getNodeForRow(it) }.filterNotNull()
-
-    fun removeRows(rows: List<Int>) =
-        runInEdt {
-            rows.map {
-                val path = tree.getPathForRow(it)
-                path.lastPathComponent as DefaultMutableTreeNode
-            }.forEach {
-                val userNode = it.userObject as? S3TreeNode ?: return@forEach
-                ((it.parent as? DefaultMutableTreeNode)?.userObject as? S3TreeDirectoryNode)?.removeChild(userNode)
-            }
-        }
 
     fun invalidateLevel(node: S3TreeNode) {
         when (node) {
