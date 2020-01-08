@@ -4,12 +4,23 @@
 package software.aws.toolkits.core.utils
 
 import java.io.InputStream
+import java.io.OutputStream
 import java.nio.charset.Charset
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 
 fun Path.inputStream(): InputStream = Files.newInputStream(this)
+fun Path.inputStreamIfExists(): InputStream? = try {
+    inputStream()
+} catch (e: NoSuchFileException) {
+    null
+}
+fun Path.outputStream(): OutputStream {
+    Files.createDirectories(this.parent)
+    return Files.newOutputStream(this)
+}
 fun Path.exists() = Files.exists(this)
 fun Path.deleteIfExists() = Files.deleteIfExists(this)
 fun Path.lastModified(): FileTime = Files.getLastModifiedTime(this)
