@@ -189,7 +189,6 @@ class S3TreeTable(
     }
 
     fun getNodeForRow(row: Int): S3TreeNode? {
-
         val path = tree.getPathForRow(convertRowIndexToModel(row))
         return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
