@@ -26,6 +26,7 @@ runIde {
         server = true
         suspend = true
     }
+    systemProperty("testDataPath", project.rootDir.toPath().resolve("testdata").toString())
 
     /* Need to split the space-delimited value in the exec.args */
     args System.getProperty("exec.args", "").split(",")
