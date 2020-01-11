@@ -5,12 +5,15 @@ package software.aws.toolkits.jetbrains
 
 import com.intellij.testGuiFramework.impl.GuiTestCase
 import org.junit.Before
+import java.nio.file.Path
 import java.nio.file.Paths
 
-abstract class EmptyProjectTestCase(): GuiTestCase() {
+abstract class EmptyProjectTestCase() : GuiTestCase() {
+
+    protected val testDataPath: Path = Paths.get(System.getProperty("testDataPath"))
 
     @Before
     fun openEmptyProject() {
-        guiTestRule.importProject(Paths.get(System.getProperty("testDataPath"), "empty-project").toFile())
+        guiTestRule.importProject(testDataPath.resolve("empty-project").toFile())
     }
 }
