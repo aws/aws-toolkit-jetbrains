@@ -21,8 +21,7 @@ class DiskCacheTest {
     @JvmField
     val tempFolder = TemporaryFolder()
 
-    private val now = Instant.now()
-    private val clock = Clock.fixed(now, ZoneOffset.UTC)
+    private val clock = Clock.fixed(Instant.now(), ZoneOffset.UTC)
 
     private val ssoUrl = "https://123456.awsapps.com/start"
     private val ssoRegion = "us-west-2"
@@ -55,7 +54,7 @@ class DiskCacheTest {
             {
                 "clientId": "DummyId", 
                 "clientSecret": "DummySecret", 
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(now.minusSeconds(100))}"
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(clock.instant().minusSeconds(100))}"
             }
             """.trimIndent()
         )
@@ -65,7 +64,7 @@ class DiskCacheTest {
 
     @Test
     fun validClientRegistrationReturnsCorrectly() {
-        val expiationTime = now.plusSeconds(100)
+        val expiationTime = clock.instant().plusSeconds(100)
         cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText(
             """
             {
@@ -127,10 +126,11 @@ class DiskCacheTest {
     fun expiredAccessTokenReturnsNull() {
         cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
             """
-                "clientId": "$ssoUrl", 
-                "clientSecret": "$ssoRegion",
-                "clientSecret": "DummyAccessToken",
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(now.minusSeconds(100))}"
+            {
+                "startUrl": "$ssoUrl", 
+                "region": "$ssoRegion",
+                "accessToken": "DummyAccessToken",
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(clock.instant().minusSeconds(100))}"
             }
             """.trimIndent()
         )
@@ -140,7 +140,7 @@ class DiskCacheTest {
 
     @Test
     fun validAccessTokenReturnsCorrectly() {
-        val expiationTime = now.plusSeconds(100)
+        val expiationTime = clock.instant().plusSeconds(100)
         cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
             """
             {

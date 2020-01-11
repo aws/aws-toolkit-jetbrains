@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import java.time.Instant
 
-internal data class Authorization(
+data class Authorization internal constructor(
     val deviceCode: String,
     val userCode: String,
     val verificationUri: String,

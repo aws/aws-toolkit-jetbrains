@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
@@ -16,14 +14,10 @@ class SsoAccessTokenProvider(
     private val ssoUrl: String,
     private val ssoRegion: String,
     private val onPendingToken: NotifyTokenPending,
+    private val ssoOidcClient: SsoOidcClient,
     private val cache: DiskCache = DiskCache(),
     private val clock: Clock = Clock.systemUTC()
 ) {
-    private val client = SsoOidcClient.builder()
-        .credentialsProvider(AnonymousCredentialsProvider.create())
-        .region(Region.of(ssoRegion))
-        .build()
-
     internal fun accessToken(): AccessToken {
         cache.loadAccessToken(ssoUrl)?.let {
             return it
@@ -42,7 +36,7 @@ class SsoAccessTokenProvider(
         }
 
         // Based on botocore: https://github.com/boto/botocore/blob/v2/botocore/utils.py#L1782
-        val registerResponse = client.registerClient {
+        val registerResponse = ssoOidcClient.registerClient {
             it.clientType(CLIENT_REGISTRATION_TYPE)
             it.clientName("aws-toolkit-jetbrains-${Instant.now(clock)}")
         }
@@ -50,7 +44,7 @@ class SsoAccessTokenProvider(
         val registeredClient = ClientRegistration(
             registerResponse.clientId(),
             registerResponse.clientSecret(),
-            Instant.ofEpochSecond(registerResponse.clientSecretExpiresAt())
+            Instant.ofEpochMilli(registerResponse.clientSecretExpiresAt())
         )
 
         cache.saveClientRegistration(ssoRegion, registeredClient)
@@ -60,7 +54,7 @@ class SsoAccessTokenProvider(
 
     private fun authorizeClient(clientId: ClientRegistration): Authorization {
         // Should not be cached, only good for 1 token and short lived
-        val authorizationResponse = client.startDeviceAuthorization {
+        val authorizationResponse = ssoOidcClient.startDeviceAuthorization {
             it.startUrl(ssoUrl)
             it.clientId(clientId.clientId)
             it.clientSecret(clientId.clientSecret)
@@ -86,7 +80,7 @@ class SsoAccessTokenProvider(
 
         while (true) {
             try {
-                val tokenResponse = client.createToken {
+                val tokenResponse = ssoOidcClient.createToken {
                     it.clientId(registration.clientId)
                     it.clientSecret(registration.clientSecret)
                     it.grantType(GRANT_TYPE)
