@@ -261,7 +261,7 @@ class SsoAccessTokenProviderTest {
                 )
             )
 
-        assertThat(callDuration.toSeconds()).isGreaterThanOrEqualTo(1).isLessThan(2)
+        assertThat(callDuration.seconds).isGreaterThanOrEqualTo(1).isLessThan(2)
 
         verify(diskCache).saveAccessToken(ssoUrl, accessToken)
     }
@@ -379,7 +379,7 @@ class SsoAccessTokenProviderTest {
                 )
             )
 
-        assertThat(callDuration.toSeconds()).isGreaterThanOrEqualTo(6).isLessThan(7)
+        assertThat(callDuration.seconds).isGreaterThanOrEqualTo(6).isLessThan(7)
 
         verify(diskCache).saveAccessToken(ssoUrl, accessToken)
     }
