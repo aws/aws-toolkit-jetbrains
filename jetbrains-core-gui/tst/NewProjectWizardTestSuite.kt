@@ -12,5 +12,5 @@ import software.aws.toolkits.jetbrains.ui.wizard.SamInitProjectBuilderIntelliJTe
 
 @RunWith(Suite::class)
 @RunWithIde(CommunityIde::class)
-@Suite.SuiteClasses(SetSamCli::class, SamInitProjectBuilderIntelliJTest::class, S3BrowserTest::class)
+@Suite.SuiteClasses(S3BrowserTest::class, SetSamCli::class, SamInitProjectBuilderIntelliJTest::class)
 class NewProjectWizardTestSuite : GuiTestSuite()
