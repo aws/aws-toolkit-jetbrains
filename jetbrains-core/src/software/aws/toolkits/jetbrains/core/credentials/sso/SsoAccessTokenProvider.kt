@@ -44,7 +44,7 @@ class SsoAccessTokenProvider(
         val registeredClient = ClientRegistration(
             registerResponse.clientId(),
             registerResponse.clientSecret(),
-            Instant.ofEpochMilli(registerResponse.clientSecretExpiresAt())
+            Instant.ofEpochSecond(registerResponse.clientSecretExpiresAt())
         )
 
         cache.saveClientRegistration(ssoRegion, registeredClient)

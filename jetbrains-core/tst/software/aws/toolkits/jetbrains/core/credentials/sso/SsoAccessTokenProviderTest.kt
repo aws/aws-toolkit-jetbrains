@@ -4,8 +4,10 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -30,8 +32,7 @@ import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 
 class SsoAccessTokenProviderTest {
-    private val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-    private val clock = Clock.fixed(now, ZoneOffset.UTC)
+    private val clock = Clock.fixed(Instant.now().truncatedTo(ChronoUnit.MILLIS), ZoneOffset.UTC)
 
     private val ssoUrl = "https://123456.awsapps.com/start"
     private val ssoRegion = "us-west-2"
@@ -58,17 +59,27 @@ class SsoAccessTokenProviderTest {
         diskCache.stub {
             on(
                 diskCache.loadAccessToken(ssoUrl)
-            ).thenReturn(accessToken)
+            ).thenReturn(
+                accessToken
+            )
         }
 
         assertThat(accessTokenProvider.accessToken()).usingRecursiveComparison()
             .isEqualTo(accessToken)
+
+        verify(diskCache).loadAccessToken(ssoUrl)
     }
 
     @Test
     fun getAccessTokenWithClientRegistrationCache() {
         val expirationClientRegistration = clock.instant().plusSeconds(120)
         diskCache.stub {
+            on(
+                diskCache.loadAccessToken(ssoUrl)
+            ).thenReturn(
+                null
+            )
+
             on(
                 diskCache.loadClientRegistration(ssoRegion)
             ).thenReturn(
@@ -123,12 +134,30 @@ class SsoAccessTokenProviderTest {
                 )
             )
 
+        verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
+        verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
+        verify(diskCache).loadAccessToken(ssoUrl)
+        verify(diskCache).loadClientRegistration(ssoRegion)
         verify(diskCache).saveAccessToken(ssoUrl, accessToken)
     }
 
     @Test
     fun getAccessTokenWithoutCaches() {
         val expirationClientRegistration = clock.instant().plusSeconds(120)
+
+        diskCache.stub {
+            on(
+                diskCache.loadAccessToken(ssoUrl)
+            ).thenReturn(
+                null
+            )
+
+            on(
+                diskCache.loadClientRegistration(ssoRegion)
+            ).thenReturn(
+                null
+            )
+        }
 
         ssoOidcClient.stub {
             on(
@@ -192,7 +221,12 @@ class SsoAccessTokenProviderTest {
                 )
             )
 
-        verify(diskCache).saveClientRegistration(ssoRegion, ClientRegistration(clientId, clientSecret, expirationClientRegistration))
+        verify(ssoOidcClient).registerClient(any<RegisterClientRequest>())
+        verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
+        verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
+        verify(diskCache).loadAccessToken(ssoUrl)
+        verify(diskCache).loadClientRegistration(ssoRegion)
+        verify(diskCache).saveClientRegistration(eq(ssoRegion), any())
         verify(diskCache).saveAccessToken(ssoUrl, accessToken)
     }
 
@@ -201,6 +235,12 @@ class SsoAccessTokenProviderTest {
         val expirationClientRegistration = clock.instant().plusSeconds(120)
 
         diskCache.stub {
+            on(
+                diskCache.loadAccessToken(ssoUrl)
+            ).thenReturn(
+                null
+            )
+
             on(
                 diskCache.loadClientRegistration(ssoRegion)
             ).thenReturn(
@@ -263,6 +303,10 @@ class SsoAccessTokenProviderTest {
 
         assertThat(callDuration.seconds).isGreaterThanOrEqualTo(1).isLessThan(2)
 
+        verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
+        verify(ssoOidcClient, times(2)).createToken(any<CreateTokenRequest>())
+        verify(diskCache).loadAccessToken(ssoUrl)
+        verify(diskCache).loadClientRegistration(ssoRegion)
         verify(diskCache).saveAccessToken(ssoUrl, accessToken)
     }
 
@@ -272,6 +316,12 @@ class SsoAccessTokenProviderTest {
 
         ssoOidcClient.stub {
             diskCache.stub {
+                on(
+                    diskCache.loadAccessToken(ssoUrl)
+                ).thenReturn(
+                    null
+                )
+
                 on(
                     diskCache.loadClientRegistration(ssoRegion)
                 ).thenReturn(
@@ -312,6 +362,11 @@ class SsoAccessTokenProviderTest {
         }
 
         assertThatThrownBy { accessTokenProvider.accessToken() }.isInstanceOf(InvalidRequestException::class.java)
+
+        verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
+        verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
+        verify(diskCache).loadAccessToken(ssoUrl)
+        verify(diskCache).loadClientRegistration(ssoRegion)
     }
 
     @Test
@@ -320,6 +375,12 @@ class SsoAccessTokenProviderTest {
 
         ssoOidcClient.stub {
             diskCache.stub {
+                on(
+                    diskCache.loadAccessToken(ssoUrl)
+                ).thenReturn(
+                    null
+                )
+
                 on(
                     diskCache.loadClientRegistration(ssoRegion)
                 ).thenReturn(
@@ -382,16 +443,40 @@ class SsoAccessTokenProviderTest {
         assertThat(callDuration.seconds).isGreaterThanOrEqualTo(6).isLessThan(7)
 
         verify(diskCache).saveAccessToken(ssoUrl, accessToken)
+
+        verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
+        verify(ssoOidcClient, times(2)).createToken(any<CreateTokenRequest>())
+        verify(diskCache).loadAccessToken(ssoUrl)
+        verify(diskCache).loadClientRegistration(ssoRegion)
+        verify(diskCache).saveAccessToken(ssoUrl, accessToken)
     }
 
     @Test
     fun failToGetClientRegistrationLeadsToError() {
         ssoOidcClient.stub {
             on(
+                diskCache.loadAccessToken(ssoUrl)
+            ).thenReturn(
+                null
+            )
+
+            on(
+                diskCache.loadClientRegistration(ssoRegion)
+            ).thenReturn(
+                null
+            )
+
+            on(
                 ssoOidcClient.registerClient(any<RegisterClientRequest>())
-            ).thenThrow(SsoOidcException.builder().build())
+            ).thenThrow(
+                SsoOidcException.builder().build()
+            )
         }
 
         assertThatThrownBy { accessTokenProvider.accessToken() }.isInstanceOf(SsoOidcException::class.java)
+
+        verify(ssoOidcClient).registerClient(any<RegisterClientRequest>())
+        verify(diskCache).loadAccessToken(ssoUrl)
+        verify(diskCache).loadClientRegistration(ssoRegion)
     }
 }

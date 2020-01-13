@@ -35,8 +35,7 @@ class SsoCredentialProvider(
             roleCredentials.roleCredentials().sessionToken()
         )
 
-        val expirationTime = Instant.ofEpochSecond(roleCredentials.roleCredentials().expiration())
-
+        val expirationTime = Instant.ofEpochMilli(roleCredentials.roleCredentials().expiration())
         val ssoCredentials = SsoCredentialsHolder(awsCredentials, expirationTime)
 
         return RefreshResult.builder<SsoCredentialsHolder>(ssoCredentials)
