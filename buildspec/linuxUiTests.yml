@@ -23,10 +23,11 @@ phases:
       - apt-get install -y xvfb icewm procps ffmpeg libswt-gtk-3-java msbuild
       - mkdir -p /tmp/.aws
       - aws sts assume-role --role-arn $ASSUME_ROLE_ARN --role-session-name ui-test > /tmp/.aws/creds.json
-      - export KEY_ID=`jq -r '.Credentials.AccessKeyId' /tmp/.aws/creds.json`
-      - export SECRET=`jq -r '.Credentials.SecretAccessKey' /tmp/.aws/creds.json`
-      - export TOKEN=`jq -r '.Credentials.SessionToken' /tmp/.aws/creds.json`
-      - echo -e "[default]\naws_access_key_id=$KEY_ID\naws_secret_access_key=$SECRET\naws_session_token=$TOKEN" > /tmp/.aws/credentials
+      - |
+        >/tmp/.aws/credentials echo "[default]
+        aws_access_key_id=$(jq -r '.Credentials.AccessKeyId' /tmp/.aws/creds.json)
+        aws_secret_access_key=$(jq -r '.Credentials.SecretAccessKey' /tmp/.aws/creds.json)
+        aws_session_token=$(jq -r '.Credentials.SessionToken' /tmp/.aws/creds.json)"
       - pip install --user aws-sam-cli
 
   build:
