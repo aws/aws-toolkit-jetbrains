@@ -18,7 +18,9 @@ fun IdeFrameFixture.clickMenuItem(predicate: (ActionMenuItem) -> Boolean) {
 fun IdeFrameFixture.configureConnection(profile: String, region: String) {
     step("Configure connection to profile: $profile, region $region") {
         val component =
-            findComponentWithTimeout<SimpleColoredComponent, IdeFrameImpl> { it.javaClass.name.contains("IdeStatusBarImpl") && it.toolTipText == "AWS Connection Settings" }
+            findComponentWithTimeout<SimpleColoredComponent, IdeFrameImpl> {
+                it.javaClass.name.contains("IdeStatusBarImpl") && it.toolTipText == "AWS Connection Settings"
+            }
 
         robot().click(component)
         jList(region).clickItem(region)

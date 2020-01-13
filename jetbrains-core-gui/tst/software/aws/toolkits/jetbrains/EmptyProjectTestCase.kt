@@ -4,16 +4,21 @@
 package software.aws.toolkits.jetbrains
 
 import com.intellij.testGuiFramework.impl.GuiTestCase
+import com.intellij.testGuiFramework.util.scenarios.newProjectDialogModel
 import org.junit.Before
+import software.aws.toolkits.jetbrains.fixtures.createEmptyProject
 import java.nio.file.Path
 import java.nio.file.Paths
 
-abstract class EmptyProjectTestCase() : GuiTestCase() {
+abstract class EmptyProjectTestCase : GuiTestCase() {
 
     protected val testDataPath: Path = Paths.get(System.getProperty("testDataPath"))
 
     @Before
-    fun openEmptyProject() {
-        guiTestRule.importProject(testDataPath.resolve("empty-project").toFile())
+    fun createEmptyProject() {
+        welcomeFrame {
+            createNewProject()
+            newProjectDialogModel.createEmptyProject(projectFolder)
+        }
     }
 }

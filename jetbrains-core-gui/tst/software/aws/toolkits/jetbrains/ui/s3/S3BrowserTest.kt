@@ -29,6 +29,7 @@ import java.awt.Point
 import java.awt.Rectangle
 import java.util.UUID
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class S3BrowserTest : EmptyProjectTestCase() {
 
@@ -118,6 +119,17 @@ class S3BrowserTest : EmptyProjectTestCase() {
                     assertNotNull(findPath(FOLDER, NEW_JSON_FILE_NAME))
                 }
 
+                step("Delete a file") {
+                    rightClick(0, FOLDER, NEW_JSON_FILE_NAME)
+                    clickMenuItem { it.text.contains(DELETE_ACTION) }
+
+                    findMessageDialog(DELETE_ACTION).click(DELETE_PREFIX)
+
+                    waitAMoment()
+
+                    assertNull(findPath(FOLDER, NEW_JSON_FILE_NAME))
+                }
+
                 step("Open known file-types") {
                     doubleClick(0, JSON_FILE)
 
@@ -140,8 +152,8 @@ class S3BrowserTest : EmptyProjectTestCase() {
                         path(S3_NAME, bucket).rightClickPath()
                     }
 
-                    clickMenuItem { it.text.contains("Delete") }
-                    dialog("Delete", predicate = Predicate.startWith) {
+                    clickMenuItem { it.text.contains(DELETE_PREFIX) }
+                    dialog(DELETE_PREFIX, predicate = Predicate.startWith) {
                         textfield(null).setText(bucket)
                         button(OK_BUTTON).clickWhenEnabled()
                     }
@@ -152,7 +164,11 @@ class S3BrowserTest : EmptyProjectTestCase() {
         }
     }
 
-    private fun TreeTableFixture.findPath(vararg paths: String) = ExtendedJTreePathFinder(target().tree).findMatchingPath(paths.toList())
+    private fun TreeTableFixture.findPath(vararg paths: String) = try {
+        ExtendedJTreePathFinder(target().tree).findMatchingPath(paths.toList())
+    } catch (_: Exception) {
+        null
+    }
 
     private fun IdeFrameFixture.treeTable(block: TreeTableFixture.() -> Unit) {
         block(TreeTableFixture(robot(), findComponentWithTimeout(this.target(), TreeTable::class.java)))
@@ -205,7 +221,9 @@ class S3BrowserTest : EmptyProjectTestCase() {
         const val UPLOAD_ACTION = "Upload..."
         const val NEW_FOLDER_ACTION = "New folder..."
         const val OK_BUTTON = "OK"
+        const val DELETE_PREFIX = "Delete"
         const val RENAME_ACTION = "Rename..."
+        const val DELETE_ACTION = "$DELETE_PREFIX..."
         const val NEW_JSON_FILE_NAME = "new-name.json"
     }
 }
