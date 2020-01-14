@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.utils.delegateMock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-
 class SsoCredentialProviderTest {
     private val accessTokenId = "access123"
     private val accountId = "111222333444"

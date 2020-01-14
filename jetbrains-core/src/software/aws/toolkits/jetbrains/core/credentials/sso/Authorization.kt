@@ -11,5 +11,5 @@ data class Authorization internal constructor(
     val verificationUri: String,
     val verificationUriComplete: String,
     val expiresAt: Instant,
-    val pollInterval: Long
+    val pollIntervalSeconds: Long
 )

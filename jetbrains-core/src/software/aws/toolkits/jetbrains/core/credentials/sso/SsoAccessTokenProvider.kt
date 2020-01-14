@@ -76,7 +76,7 @@ class SsoAccessTokenProvider(
 
         onPendingToken.tokenPending(authorization)
 
-        var backOffTime = Duration.ofSeconds(authorization.pollInterval)
+        var backOffTime = Duration.ofSeconds(authorization.pollIntervalSeconds)
 
         while (true) {
             try {
