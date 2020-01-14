@@ -90,8 +90,7 @@ class ProfileWatcher : Disposable {
             var invokeListeners = false
             key.pollEvents().forEach {
                 try {
-                    val kind = it.kind()
-                    when (kind) {
+                    when (it.kind()) {
                         StandardWatchEventKinds.OVERFLOW -> {
                             LOG.debug { "ProfileWatcher got an OVERFLOW" }
                         }
@@ -99,11 +98,12 @@ class ProfileWatcher : Disposable {
                             // Context path is relative to base registered to WatchKey
                             val context = it.context()
                             if (context is Path) {
-                                val fullPath = watchKeys[key]?.resolve(context)
-                                LOG.debug { "$fullPath was changed" }
-                                if (watchLocations.contains(fullPath)) {
-                                    // In case of back to back events, de-dupe them
-                                    invokeListeners = true
+                                watchKeys[key]?.resolve(context)?.let { fullPath ->
+                                    LOG.debug { "$fullPath was changed" }
+                                    if (watchLocations.contains(fullPath)) {
+                                        // In case of back to back events, de-dupe them
+                                        invokeListeners = true
+                                    }
                                 }
                             }
                         }

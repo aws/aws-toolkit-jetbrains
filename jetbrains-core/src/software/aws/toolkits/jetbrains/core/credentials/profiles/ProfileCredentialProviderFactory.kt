@@ -5,23 +5,21 @@ package software.aws.toolkits.jetbrains.core.credentials.profiles
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProviderManager
-import software.aws.toolkits.jetbrains.core.AwsSdkClient
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
 class ProfileCredentialProviderFactory : CredentialProviderFactory {
-    override fun createToolkitCredentialProviderFactory(manager: ToolkitCredentialsProviderManager) = ProfileToolkitCredentialsProviderFactory(
-        AwsSdkClient.getInstance().sdkHttpClient,
-        AwsRegionProvider.getInstance(),
-        manager,
-        profileWatcher
-    )
+    val profileWatcher = ProfileWatcher().also {
+        Disposer.register(ApplicationManager.getApplication(), it)
+    }
 
-    companion object {
-        val profileWatcher = ProfileWatcher().also {
-            it.start()
-            Disposer.register(ApplicationManager.getApplication(), it)
-        }
+    override fun setupToolkitCredentialProviderFactory(manager: CredentialManager) {
+        profileWatcher.start()
+    }
+
+    override fun createAwsCredentialProvider(region: AwsRegion): AwsCredentialsProvider {
+        TODO("not implemented")
     }
 }

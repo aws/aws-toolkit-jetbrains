@@ -96,7 +96,7 @@
     </application-components>
 
     <extensionPoints>
-        <extensionPoint name="credentialProviderFactory" beanClass="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactoryEP">
+        <extensionPoint name="credentialProviderFactory" beanClass="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactoryExtensionPoint">
             <with attribute="implementation" implements="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory"/>
         </extensionPoint>
 

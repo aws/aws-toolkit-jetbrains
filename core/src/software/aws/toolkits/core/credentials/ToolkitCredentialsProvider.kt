@@ -4,8 +4,23 @@
 package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.aws.toolkits.core.region.AwsRegion
 
-abstract class ToolkitCredentialsProvider : AwsCredentialsProvider {
+data class ToolkitCredentialsIdentifier(
+    /**
+     * The ID should be unique across all [ToolkitCredentialsProvider].
+     * It is recommended to concatenate the factory type and the display name.
+     */
+    val id: String,
+
+    /**
+     * A user friendly display name shown in the UI.
+     */
+    val displayName: String
+)
+
+// TODO: Delete this
+abstract class ToolkitCredentialsProvider {
     /**
      * The ID should be unique across all [ToolkitCredentialsProvider].
      * It is recommended to concatenate the factory type and the display name.
@@ -56,6 +71,8 @@ abstract class ToolkitCredentialsProviderFactory<T : ToolkitCredentialsProvider>
     fun listCredentialProviders() = providers.values
 
     fun get(id: String) = providers[id]
+
+    abstract fun createAwsCredentialProvider(region: AwsRegion): AwsCredentialsProvider
 
     /**
      * Called when the [ToolkitCredentialsProviderManager] is shutting down to allow for resource clean up
