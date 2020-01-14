@@ -177,7 +177,7 @@ class S3BrowserTest : EmptyProjectTestCase() {
         block(TreeTableFixture(robot(), findComponentWithTimeout(this.target(), TreeTable::class.java)))
     }
 
-    /** Copied from [com.intellij.testGuiFramework.fixtures.TreeTableFixture] **/
+    /** Copied from [com.intellij.testGuiFramework.fixtures.TreeTableFixture] and added support for right-click / double-click **/
     private fun TreeTableFixture.rightClick(column: Int, vararg pathStrings: String) {
 
         step("right-click at column #$column with path ${pathStrings.joinToString(prefix = "[", postfix = "]")}") {
