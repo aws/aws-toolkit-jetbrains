@@ -27,6 +27,8 @@ import software.aws.toolkits.jetbrains.fixtures.configureConnection
 import java.awt.Dimension
 import java.awt.Point
 import java.awt.Rectangle
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -34,7 +36,8 @@ import kotlin.test.assertNull
 class S3BrowserTest : EmptyProjectTestCase() {
 
     private val profile = "Profile:default"
-    private val bucket = "uitest-${UUID.randomUUID()}"
+    private val date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+    private val bucket = "uitest-$date-${UUID.randomUUID()}"
 
     @Test
     fun s3MainFunctionality() {
