@@ -19,6 +19,7 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import java.util.concurrent.ConcurrentHashMap
 import javax.security.auth.login.CredentialNotFoundException
 
@@ -82,7 +83,8 @@ class DefaultCredentialManager : CredentialManager(), Disposable {
         val providerFactory = toolkitCredentialProviders[providerId]
             ?: throw CredentialNotFoundException("No provider found with ID ${providerId.id}")
 
-        val awsCredentialProvider = providerFactory.createAwsCredentialProvider(region)
+        val sdkClient = AwsSdkClient.getInstance()
+        val awsCredentialProvider = providerFactory.createAwsCredentialProvider(providerId, region, sdkClient)
 
         partitionCache[region.partitionId] = awsCredentialProvider
 

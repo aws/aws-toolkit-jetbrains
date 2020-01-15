@@ -7,7 +7,9 @@ import com.intellij.openapi.extensions.AbstractExtensionPointBean
 import com.intellij.openapi.util.LazyInstance
 import com.intellij.util.xmlb.annotations.Attribute
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.AwsSdkClient
 
 /**
  * Extension point for adding new credential providers to the internal registry
@@ -15,7 +17,11 @@ import software.aws.toolkits.core.region.AwsRegion
 interface CredentialProviderFactory {
     fun setupToolkitCredentialProviderFactory(manager: CredentialManager)
 
-    fun createAwsCredentialProvider(region: AwsRegion): AwsCredentialsProvider
+    fun createAwsCredentialProvider(
+        providerId: ToolkitCredentialsIdentifier,
+        region: AwsRegion,
+        sdkClient: AwsSdkClient
+    ): AwsCredentialsProvider
 }
 
 class CredentialProviderFactoryExtensionPoint : AbstractExtensionPointBean() {

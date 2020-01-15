@@ -4,26 +4,10 @@
 package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.aws.toolkits.core.region.AwsRegion
 
-data class ToolkitCredentialsIdentifier(
+abstract class ToolkitCredentialsIdentifier {
     /**
-     * The ID should be unique across all [ToolkitCredentialsProvider].
-     * It is recommended to concatenate the factory type and the display name.
-     */
-    val id: String,
-
-    /**
-     * A user friendly display name shown in the UI.
-     */
-    val displayName: String
-)
-
-// TODO: Delete this
-abstract class ToolkitCredentialsProvider {
-    /**
-     * The ID should be unique across all [ToolkitCredentialsProvider].
-     * It is recommended to concatenate the factory type and the display name.
+     * The ID must be unique across all [ToolkitCredentialsIdentifier].
      */
     abstract val id: String
 
@@ -48,34 +32,22 @@ abstract class ToolkitCredentialsProvider {
     override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
-/**
- * The class for managing [ToolkitCredentialsProvider] of the same type.
- * @property type The internal ID for this type of [ToolkitCredentialsProvider], eg 'profile' for AWS account whose credentials is stored in the profile file.
- */
-abstract class ToolkitCredentialsProviderFactory<T : ToolkitCredentialsProvider>(
-    val type: String,
-    protected val credentialsProviderManager: ToolkitCredentialsProviderManager
-) {
-    private val providers = mutableMapOf<String, T>()
+class ToolkitCredentialsProvider(id: ToolkitCredentialsIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
+    val id: String = id.id
+    val displayName = id.displayName
 
-    protected fun add(provider: T) {
-        providers[provider.id] = provider
-        credentialsProviderManager.providerAdded(provider)
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ToolkitCredentialsProvider
+
+        if (id != other.id) return false
+
+        return true
     }
 
-    protected fun remove(provider: T) {
-        providers.remove(provider.id)
-        credentialsProviderManager.providerRemoved(provider.id)
-    }
+    override fun hashCode(): Int = id.hashCode()
 
-    fun listCredentialProviders() = providers.values
-
-    fun get(id: String) = providers[id]
-
-    abstract fun createAwsCredentialProvider(region: AwsRegion): AwsCredentialsProvider
-
-    /**
-     * Called when the [ToolkitCredentialsProviderManager] is shutting down to allow for resource clean up
-     */
-    open fun shutDown() {}
+    override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }

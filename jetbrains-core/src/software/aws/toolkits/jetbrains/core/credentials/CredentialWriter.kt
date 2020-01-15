@@ -34,9 +34,9 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
         ProfileFileLocation.credentialsFilePath().toFile()
     )
 
-    private val localFileSystem = LocalFileSystem.getInstance()
-
     override fun actionPerformed(e: AnActionEvent) {
+        val localFileSystem = LocalFileSystem.getInstance()
+
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
         // if both config and credential files do not exist, create a new config file
