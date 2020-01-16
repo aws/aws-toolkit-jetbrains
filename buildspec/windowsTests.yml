@@ -15,8 +15,8 @@ phases:
   install:
     commands:
       - choco install -y --no-progress codecov
-      - choco install -y --no-progress dotnetcore-sdk --version 2.2.104
-      - choco install -y --no-progress netfx-4.6.1-devpack
+    runtime-versions:
+      dotnet: 2.2
 
   build:
     commands:
