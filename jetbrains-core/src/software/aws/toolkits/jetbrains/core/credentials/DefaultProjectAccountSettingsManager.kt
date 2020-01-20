@@ -25,7 +25,7 @@ data class ConnectionSettingsState(
 class DefaultProjectAccountSettingsManager(private val project: Project) : ProjectAccountSettingsManager(project),
     PersistentStateComponent<ConnectionSettingsState> {
     override fun getState(): ConnectionSettingsState = ConnectionSettingsState(
-        activeProfile = selectedCredentials?.id,
+        activeProfile = selectedCredentialIdentifier?.id,
         activeRegion = selectedRegion?.id,
         recentlyUsedProfiles = recentlyUsedProfiles.elements(),
         recentlyUsedRegions = recentlyUsedRegions.elements()

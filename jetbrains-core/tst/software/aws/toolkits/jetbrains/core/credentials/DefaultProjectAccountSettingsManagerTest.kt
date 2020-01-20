@@ -214,7 +214,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         waitForTerminalConnectionState()
 
-        assertThat(manager.selectedCredentials).isEqualTo(credentials)
+        assertThat(manager.selectedCredentialIdentifier).isEqualTo(credentials)
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials)
     }
 
@@ -339,12 +339,12 @@ class DefaultProjectAccountSettingsManagerTest {
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
 
-        assertThat(manager.selectedCredentials?.id).isEqualTo("profile:admin")
+        assertThat(manager.selectedCredentialIdentifier?.id).isEqualTo("profile:admin")
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved("profile:admin")
 
         assertThat(manager.isValidConnectionSettings()).isFalse()
-        assertThat(manager.selectedCredentials).isNull()
+        assertThat(manager.selectedCredentialIdentifier).isNull()
         assertThat(manager.connectionSettings()).isNull()
     }
 
