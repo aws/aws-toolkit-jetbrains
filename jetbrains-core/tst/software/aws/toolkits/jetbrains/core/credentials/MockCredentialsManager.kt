@@ -6,44 +6,43 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.components.ServiceManager
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
-import software.aws.toolkits.core.credentials.CredentialProviderNotFound
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 
 class MockCredentialsManager : CredentialManager() {
-    private val providers = mutableMapOf<String, ToolkitCredentialsProvider>()
-
-    override fun getCredentialProviders(): List<ToolkitCredentialsProvider> = providers.values.toList()
-
-    override fun getCredentialProvider(providerId: String): ToolkitCredentialsProvider = providers[providerId]
-        ?: throw CredentialProviderNotFound("$providerId not found")
-
     fun reset() {
-        incModificationCount()
-        providers.clear()
-        providers[DUMMY_PROVIDER_ID] = DUMMY_PROVIDER
+        toolkitCredentialFactories.clear()
+        awsCredentialProviderCache.clear()
+
+        providerAdded(DUMMY_PROVIDER)
     }
 
-    fun addCredentials(id: String, credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret")): ToolkitCredentialsProvider =
-        MockCredentialsProvider(id, id, credentials).also {
-            incModificationCount()
-            providers[id] = it
+    fun addCredentials(
+        id: String,
+        credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret")
+    ): ToolkitCredentialsProvider {
+        return ToolkitCredentialsProvider(
+            MockCredentialIdentifier(id),
+            StaticCredentialsProvider.create(credentials)
+        ).also {
+            providerAdded(it)
         }
+    }
 
     companion object {
         fun getInstance(): MockCredentialsManager = ServiceManager.getService(CredentialManager::class.java) as MockCredentialsManager
-        const val DUMMY_PROVIDER_ID = "DUMMY_CREDENTIALS"
-        val DUMMY_PROVIDER: ToolkitCredentialsProvider = MockCredentialsProvider(
-            DUMMY_PROVIDER_ID,
-            DUMMY_PROVIDER_ID,
-            AwsBasicCredentials.create("Access", "Secret")
+
+        val DUMMY_PROVIDER_IDENTIFIER = MockCredentialIdentifier("DUMMY_CREDENTIALS")
+        val DUMMY_PROVIDER_ID = DUMMY_PROVIDER_IDENTIFIER.id
+
+        private val DUMMY_PROVIDER = ToolkitCredentialsProvider(
+            DUMMY_PROVIDER_IDENTIFIER,
+            StaticCredentialsProvider.create(AwsBasicCredentials.create("DummyAccess", "DummySecret"))
         )
     }
 
-    private class MockCredentialsProvider(
-        override val id: String,
-        override val displayName: String,
-        private val credentials: AwsCredentials
-    ) : ToolkitCredentialsProvider() {
-        override fun resolveCredentials(): AwsCredentials = credentials
+    class MockCredentialIdentifier(override val displayName: String) : ToolkitCredentialsIdentifier() {
+        override val id: String = "mock:$displayName"
     }
 }

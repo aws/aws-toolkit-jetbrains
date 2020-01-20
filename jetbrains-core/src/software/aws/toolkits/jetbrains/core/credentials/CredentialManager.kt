@@ -12,7 +12,6 @@ import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.Topic
 import software.amazon.awssdk.auth.credentials.AwsCredentials
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
@@ -24,39 +23,27 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.security.auth.login.CredentialNotFoundException
 
 abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentialsChangeListener {
+    protected val toolkitCredentialFactories = ConcurrentHashMap<ToolkitCredentialsIdentifier, CredentialProviderFactory>()
+    protected val awsCredentialProviderCache = ConcurrentHashMap<ToolkitCredentialsIdentifier, ConcurrentHashMap<String, ToolkitCredentialsProvider>>()
+
     @Throws(CredentialProviderNotFound::class)
-    abstract fun getAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): AwsCredentialsProvider
+    fun getAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): ToolkitCredentialsProvider {
+        val partitionCache = awsCredentialProviderCache.computeIfAbsent(providerId) { _ -> ConcurrentHashMap() }
 
-    abstract fun getCredentialProviders(): List<ToolkitCredentialsIdentifier>
+        partitionCache[region.partitionId]?.let { return it }
 
-    companion object {
-        fun getInstance(): CredentialManager = ServiceManager.getService(CredentialManager::class.java)
+        val providerFactory = toolkitCredentialFactories[providerId]
+            ?: throw CredentialNotFoundException("No provider found with ID ${providerId.id}")
 
-        /***
-         * [MessageBus] topic for when credential providers get added/changed/deleted
-         */
-        val CREDENTIALS_CHANGED: Topic<ToolkitCredentialsChangeListener> = Topic.create(
-            "AWS toolkit credential providers changed",
-            ToolkitCredentialsChangeListener::class.java
-        )
+        val sdkClient = AwsSdkClient.getInstance()
+        val awsCredentialProvider = providerFactory.createAwsCredentialProvider(providerId, region, sdkClient)
+
+        partitionCache[region.partitionId] = awsCredentialProvider
+
+        return awsCredentialProvider
     }
-}
 
-class DefaultCredentialManager : CredentialManager(), Disposable {
-    private val toolkitCredentialProviders = ConcurrentHashMap<ToolkitCredentialsIdentifier, CredentialProviderFactory>()
-    private val awsCredentialProviderCache = ConcurrentHashMap<ToolkitCredentialsIdentifier, ConcurrentHashMap<String, AwsCredentialsProvider>>()
-
-    init {
-        Disposer.register(ApplicationManager.getApplication(), this)
-
-        for (providerFactory in EP_NAME.extensionList) {
-            val instance = providerFactory.getInstance()
-            instance.setupToolkitCredentialProviderFactory(this)
-            if (instance is Disposable) {
-                Disposer.register(this, instance)
-            }
-        }
-    }
+    fun getCredentialProviders() = toolkitCredentialFactories.keys.toList()
 
     // TODO: Convert these to bulk listeners so we only send N messages where N is # of extensions vs # of providers
     override fun providerAdded(provider: ToolkitCredentialsProvider) {
@@ -74,24 +61,31 @@ class DefaultCredentialManager : CredentialManager(), Disposable {
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerRemoved(providerId)
     }
 
-    @Throws(CredentialProviderNotFound::class)
-    override fun getAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): AwsCredentialsProvider {
-        val partitionCache = awsCredentialProviderCache.computeIfAbsent(providerId) { _ -> ConcurrentHashMap() }
+    companion object {
+        fun getInstance(): CredentialManager = ServiceManager.getService(CredentialManager::class.java)
 
-        partitionCache[region.partitionId]?.let { return it }
-
-        val providerFactory = toolkitCredentialProviders[providerId]
-            ?: throw CredentialNotFoundException("No provider found with ID ${providerId.id}")
-
-        val sdkClient = AwsSdkClient.getInstance()
-        val awsCredentialProvider = providerFactory.createAwsCredentialProvider(providerId, region, sdkClient)
-
-        partitionCache[region.partitionId] = awsCredentialProvider
-
-        return awsCredentialProvider
+        /***
+         * [MessageBus] topic for when credential providers get added/changed/deleted
+         */
+        val CREDENTIALS_CHANGED: Topic<ToolkitCredentialsChangeListener> = Topic.create(
+            "AWS toolkit credential providers changed",
+            ToolkitCredentialsChangeListener::class.java
+        )
     }
+}
 
-    override fun getCredentialProviders() = toolkitCredentialProviders.keys.toList()
+class DefaultCredentialManager : CredentialManager(), Disposable {
+    init {
+        Disposer.register(ApplicationManager.getApplication(), this)
+
+        for (providerFactory in EP_NAME.extensionList) {
+            val instance = providerFactory.getInstance()
+            instance.setupToolkitCredentialProviderFactory(this)
+            if (instance is Disposable) {
+                Disposer.register(this, instance)
+            }
+        }
+    }
 
     override fun dispose() {}
 
