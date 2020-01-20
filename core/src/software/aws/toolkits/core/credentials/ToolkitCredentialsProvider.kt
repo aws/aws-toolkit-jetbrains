@@ -20,7 +20,7 @@ abstract class ToolkitCredentialsIdentifier {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ToolkitCredentialsProvider
+        other as ToolkitCredentialsIdentifier
 
         if (id != other.id) return false
 
@@ -32,22 +32,21 @@ abstract class ToolkitCredentialsIdentifier {
     override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
-class ToolkitCredentialsProvider(id: ToolkitCredentialsIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
-    val id: String = id.id
-    val displayName = id.displayName
-
+class ToolkitCredentialsProvider(val identifier: ToolkitCredentialsIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
         other as ToolkitCredentialsProvider
 
-        if (id != other.id) return false
+        if (identifier != other.identifier) return false
 
         return true
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int {
+        return identifier.hashCode()
+    }
 
-    override fun toString(): String = "${this::class.simpleName}(id='$id')"
+    override fun toString(): String = "${this::class.simpleName}(identifier='$identifier')"
 }
