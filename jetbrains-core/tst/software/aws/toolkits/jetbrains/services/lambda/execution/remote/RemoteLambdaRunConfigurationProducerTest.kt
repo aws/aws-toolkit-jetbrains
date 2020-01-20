@@ -50,7 +50,7 @@ class RemoteLambdaRunConfigurationProducerTest {
             assertThat(runConfiguration).isNotNull
             val configuration = runConfiguration?.configuration as RemoteLambdaRunConfiguration
             assertThat(configuration.functionName()).isEqualTo(functionName)
-            assertThat(configuration.credentialProviderId()).isEqualTo(credentialProviderId?.id)
+            assertThat(configuration.credentialProviderId()).isEqualTo(credentialProviderId?.identifier?.id)
             assertThat(configuration.regionId()).isEqualTo(region.id)
             assertThat(configuration.name).isEqualTo("[Remote] $functionName")
         }

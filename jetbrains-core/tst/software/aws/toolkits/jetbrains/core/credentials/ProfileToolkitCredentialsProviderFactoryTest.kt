@@ -29,6 +29,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
 import software.amazon.awssdk.http.AbortableInputStream
 import software.amazon.awssdk.http.ExecutableHttpRequest
 import software.amazon.awssdk.http.HttpExecuteRequest
@@ -42,13 +43,11 @@ import software.amazon.awssdk.profiles.ProfileProperty.AWS_SECRET_ACCESS_KEY
 import software.amazon.awssdk.profiles.ProfileProperty.AWS_SESSION_TOKEN
 import software.amazon.awssdk.profiles.ProfileProperty.CREDENTIAL_PROCESS
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProviderManager
 import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.rules.SystemPropertyHelper
 import software.aws.toolkits.core.utils.test.retryableAssert
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileHolder
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProvider
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import java.io.File
 import java.time.Duration
@@ -75,8 +74,8 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
     private val mockSdkHttpClient: SdkHttpClient = mock()
     private val mockRegionProvider: ToolkitRegionProvider = mock()
-    private val mockProviderManager: ToolkitCredentialsProviderManager = mock()
-    private var profileFactory: ProfileToolkitCredentialsProviderFactory? = null
+    private val mockProviderManager: CredentialManager = mock()
+    private var profileFactory: ProfileCredentialProviderFactory? = null
     private var profileWatcher: ProfileWatcher? = null
 
     @Before
@@ -96,7 +95,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     @After
     fun tearDown() {
         Messages.setTestInputDialog(TestInputDialog.DEFAULT)
-        profileFactory?.shutDown()
+        profileWatcher?.dispose()
     }
 
     @Test
@@ -581,25 +580,16 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     private fun correctProfile(expectedProfile: Profile): Condition<Iterable<ToolkitCredentialsProvider>> =
         object : Condition<Iterable<ToolkitCredentialsProvider>>(expectedProfile.toString()) {
             override fun matches(value: Iterable<ToolkitCredentialsProvider>): Boolean =
-                value.filterIsInstance<ProfileToolkitCredentialsProvider>().any {
+                value.filterIsInstance<ProfileCredentialsProvider>().any {
                     it.profileName == expectedProfile.name()
                 }
         }
 
-    private fun createProviderFactory(): ProfileToolkitCredentialsProviderFactory {
-        val watcher = ProfileWatcher()
-        watcher.start()
+    private fun createProviderFactory() {
+        val factory = ProfileCredentialProviderFactory()
+        factory.setupToolkitCredentialProviderFactory(mockProviderManager)
 
-        val factory = ProfileToolkitCredentialsProviderFactory(
-            mockSdkHttpClient,
-            mockRegionProvider,
-            mockProviderManager,
-            watcher
-        )
-
-        profileWatcher = watcher
         profileFactory = factory
-        return factory
     }
 
     private fun createAssumeRoleResponse(

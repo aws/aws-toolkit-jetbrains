@@ -390,7 +390,7 @@ class EcsCloudDebugRunConfigurationTest {
         val future = CompletableFuture<Service>()
         future.completeExceptionally(ServiceNotFoundException.builder().message("Service doesn't exist").build())
         MockResourceCache.getInstance(projectRule.project)
-            .addEntry(EcsResources.describeService("arn", "notarealservice"), defaultRegion, mockCredentials.id, future)
+            .addEntry(EcsResources.describeService("arn", "notarealservice"), defaultRegion, mockCredentials.identifier.id, future)
 
         assertThatThrownBy {
             config.checkConfiguration()
@@ -427,7 +427,7 @@ class EcsCloudDebugRunConfigurationTest {
         configuration.clusterArn(defaultClusterArn)
         configuration.serviceArn(defaultServiceArn)
         configuration.regionId(defaultRegion)
-        configuration.credentialProviderId(mockCredentials.id)
+        configuration.credentialProviderId(mockCredentials.identifier.id)
         configuration.containerOptions(mapOf(containerOptionsKey to makeFakeContainerOptions()))
 
         // also mock out the resource cache since we check that services might exist
@@ -465,8 +465,8 @@ class EcsCloudDebugRunConfigurationTest {
                 ContainerDefinition.builder().name(it).build()
             })
             .build()
-        resourceCache.addEntry(EcsResources.describeService(clusterArn, serviceArn), regionId, credentialProvider.id, fakeService)
-        resourceCache.addEntry(EcsResources.describeTaskDefinition(taskDefinitionName), regionId, credentialProvider.id, fakeTaskDefinition)
+        resourceCache.addEntry(EcsResources.describeService(clusterArn, serviceArn), regionId, credentialProvider.identifier.id, fakeService)
+        resourceCache.addEntry(EcsResources.describeTaskDefinition(taskDefinitionName), regionId, credentialProvider.identifier.id, fakeTaskDefinition)
     }
 
     private val mockCredentials: ToolkitCredentialsProvider

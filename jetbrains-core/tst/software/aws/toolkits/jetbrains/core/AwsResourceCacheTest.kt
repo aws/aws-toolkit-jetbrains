@@ -21,11 +21,11 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
 import software.aws.toolkits.jetbrains.utils.value
@@ -40,7 +40,6 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
 class AwsResourceCacheTest {
-
     @Rule
     @JvmField
     val projectRule = ProjectRule()
@@ -49,8 +48,15 @@ class AwsResourceCacheTest {
     private val mockResource = mock<Resource.Cached<String>>()
     private val sut = DefaultAwsResourceCache(projectRule.project, mockClock, 1000, Duration.ofMinutes(1))
 
+    private lateinit var cred1: ToolkitCredentialsProvider
+    private lateinit var cred2: ToolkitCredentialsProvider
+
     @Before
     fun setup() {
+        val credentialsManager = MockCredentialsManager.getInstance()
+        cred1 = credentialsManager.addCredentials("Cred1")
+        cred2 = credentialsManager.addCredentials("Cred2")
+
         sut.clear()
         reset(mockClock, mockResource)
         whenever(mockResource.expiry()).thenReturn(DEFAULT_EXPIRY)
@@ -60,6 +66,8 @@ class AwsResourceCacheTest {
 
     @Test
     fun basicCachingWorks() {
+        MockCredentialsManager.getInstance().reset()
+
         whenever(mockResource.fetch(any(), any(), any())).thenReturn("hello")
 
         assertThat(sut.getResource(mockResource)).hasValue("hello")
@@ -106,14 +114,14 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenAnswer {
             val region = it.getArgument<AwsRegion>(1)
             val cred = it.getArgument<ToolkitCredentialsProvider>(2)
-            "${region.id}-${cred.id}"
+            "${region.id}-${cred.identifier.id}"
         }
 
-        assertThat(sut.getResource(mockResource, region = US_WEST_1, credentialProvider = CRED1)).hasValue("us-west-1-cred1")
-        assertThat(sut.getResource(mockResource, region = US_WEST_2, credentialProvider = CRED1)).hasValue("us-west-2-cred1")
-        assertThat(sut.getResource(mockResource, region = US_WEST_1, credentialProvider = CRED2)).hasValue("us-west-1-cred2")
-        assertThat(sut.getResource(mockResource, region = US_WEST_2, credentialProvider = CRED2)).hasValue("us-west-2-cred2")
-        assertThat(sut.getResource(mockResource, region = US_WEST_2, credentialProvider = CRED2)).hasValue("us-west-2-cred2")
+        assertThat(sut.getResource(mockResource, region = US_WEST_1, credentialProvider = cred1)).hasValue("us-west-1-cred1")
+        assertThat(sut.getResource(mockResource, region = US_WEST_2, credentialProvider = cred1)).hasValue("us-west-2-cred1")
+        assertThat(sut.getResource(mockResource, region = US_WEST_1, credentialProvider = cred2)).hasValue("us-west-1-cred2")
+        assertThat(sut.getResource(mockResource, region = US_WEST_2, credentialProvider = cred2)).hasValue("us-west-2-cred2")
+        assertThat(sut.getResource(mockResource, region = US_WEST_2, credentialProvider = cred2)).hasValue("us-west-2-cred2")
 
         verifyResourceCalled(times = 4)
     }
@@ -145,20 +153,20 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenAnswer {
             val region = it.getArgument<AwsRegion>(1)
             val cred = it.getArgument<ToolkitCredentialsProvider>(2)
-            "${region.id}-${cred.id}-${incrementer.getAndIncrement()}"
+            "${region.id}-${cred.identifier.id}-${incrementer.getAndIncrement()}"
         }
 
-        val usw1Cred1 = sut.getResource(mockResource, US_WEST_1, CRED1).value
-        val usw1Cred2 = sut.getResource(mockResource, US_WEST_1, CRED2).value
-        val usw2Cred1 = sut.getResource(mockResource, US_WEST_2, CRED1).value
-        val usw2Cred2 = sut.getResource(mockResource, US_WEST_2, CRED2).value
+        val usw1Cred1 = sut.getResource(mockResource, US_WEST_1, cred1).value
+        val usw1Cred2 = sut.getResource(mockResource, US_WEST_1, cred2).value
+        val usw2Cred1 = sut.getResource(mockResource, US_WEST_2, cred1).value
+        val usw2Cred2 = sut.getResource(mockResource, US_WEST_2, cred2).value
 
-        sut.clear(mockResource, region = US_WEST_1, credentialProvider = CRED1)
+        sut.clear(mockResource, region = US_WEST_1, credentialProvider = cred1)
 
-        assertThat(sut.getResource(mockResource, US_WEST_1, CRED1)).wait().isCompletedWithValueMatching { it != usw1Cred1 }
-        assertThat(sut.getResource(mockResource, US_WEST_1, CRED2)).hasValue(usw1Cred2)
-        assertThat(sut.getResource(mockResource, US_WEST_2, CRED1)).hasValue(usw2Cred1)
-        assertThat(sut.getResource(mockResource, US_WEST_2, CRED2)).hasValue(usw2Cred2)
+        assertThat(sut.getResource(mockResource, US_WEST_1, cred1)).wait().isCompletedWithValueMatching { it != usw1Cred1 }
+        assertThat(sut.getResource(mockResource, US_WEST_1, cred2)).hasValue(usw1Cred2)
+        assertThat(sut.getResource(mockResource, US_WEST_2, cred1)).hasValue(usw2Cred1)
+        assertThat(sut.getResource(mockResource, US_WEST_2, cred2)).hasValue(usw2Cred2)
         verifyResourceCalled(times = 5)
     }
 
@@ -295,14 +303,14 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenReturn("hello")
         getAllRegionAndCredPermutations()
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(CRED1.id)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(cred1.identifier.id)
 
         getAllRegionAndCredPermutations()
 
-        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_1, CRED1)
-        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_2, CRED1)
-        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_1, CRED2)
-        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_2, CRED2)
+        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_1, cred1)
+        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_2, cred1)
+        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_1, cred2)
+        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_2, cred2)
     }
 
     @Test
@@ -310,14 +318,14 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenReturn("hello")
         getAllRegionAndCredPermutations()
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerModified(CRED1)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerModified(cred1)
 
         getAllRegionAndCredPermutations()
 
-        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_1, CRED1)
-        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_2, CRED1)
-        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_1, CRED2)
-        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_2, CRED2)
+        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_1, cred1)
+        verify(mockResource, times(2)).fetch(projectRule.project, US_WEST_2, cred1)
+        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_1, cred2)
+        verify(mockResource, times(1)).fetch(projectRule.project, US_WEST_2, cred2)
     }
 
     @Test
@@ -329,8 +337,8 @@ class AwsResourceCacheTest {
     @Test
     fun cacheExposesBlockingApiWithRegionAndCred() {
         whenever(mockResource.fetch(any(), any(), any())).thenReturn("hello")
-        assertThat(sut.getResourceNow(mockResource, US_WEST_1, CRED1)).isEqualTo("hello")
-        verify(mockResource).fetch(projectRule.project, US_WEST_1, CRED1)
+        assertThat(sut.getResourceNow(mockResource, US_WEST_1, cred1)).isEqualTo("hello")
+        verify(mockResource).fetch(projectRule.project, US_WEST_1, cred1)
     }
 
     @Test
@@ -354,9 +362,9 @@ class AwsResourceCacheTest {
     fun canConditionallyFetchOnlyIfAvailableInCache() {
         whenever(mockResource.fetch(any(), any(), any())).thenReturn("hello")
 
-        assertThat(sut.getResourceIfPresent(mockResource, US_WEST_1, CRED1)).isNull()
-        sut.getResource(mockResource, US_WEST_1, CRED1).value
-        assertThat(sut.getResourceIfPresent(mockResource, US_WEST_1, CRED1)).isEqualTo("hello")
+        assertThat(sut.getResourceIfPresent(mockResource, US_WEST_1, cred1)).isNull()
+        sut.getResource(mockResource, US_WEST_1, cred1).value
+        assertThat(sut.getResourceIfPresent(mockResource, US_WEST_1, cred1)).isEqualTo("hello")
     }
 
     @Test
@@ -365,10 +373,10 @@ class AwsResourceCacheTest {
 
         val now = Instant.now()
         whenever(mockClock.instant()).thenReturn(now)
-        sut.getResource(mockResource, US_WEST_1, CRED1).value
+        sut.getResource(mockResource, US_WEST_1, cred1).value
 
         whenever(mockClock.instant()).thenReturn(now.plus(DEFAULT_EXPIRY).plusMillis(1))
-        assertThat(sut.getResourceIfPresent(mockResource, US_WEST_1, CRED1, useStale = false)).isNull()
+        assertThat(sut.getResourceIfPresent(mockResource, US_WEST_1, cred1, useStale = false)).isNull()
     }
 
     @Test
@@ -376,9 +384,9 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenReturn("hello")
         val viewResource = Resource.View(mockResource) { reversed() }
 
-        assertThat(sut.getResourceIfPresent(viewResource, US_WEST_1, CRED1)).isNull()
-        sut.getResource(viewResource, US_WEST_1, CRED1).value
-        assertThat(sut.getResourceIfPresent(viewResource, US_WEST_1, CRED1)).isEqualTo("olleh")
+        assertThat(sut.getResourceIfPresent(viewResource, US_WEST_1, cred1)).isNull()
+        sut.getResource(viewResource, US_WEST_1, cred1).value
+        assertThat(sut.getResourceIfPresent(viewResource, US_WEST_1, cred1)).isEqualTo("olleh")
     }
 
     @Test
@@ -390,10 +398,10 @@ class AwsResourceCacheTest {
     }
 
     private fun getAllRegionAndCredPermutations() {
-        sut.getResource(mockResource, US_WEST_1, CRED1).value
-        sut.getResource(mockResource, US_WEST_2, CRED1).value
-        sut.getResource(mockResource, US_WEST_1, CRED2).value
-        sut.getResource(mockResource, US_WEST_2, CRED2).value
+        sut.getResource(mockResource, US_WEST_1, cred1).value
+        sut.getResource(mockResource, US_WEST_2, cred1).value
+        sut.getResource(mockResource, US_WEST_1, cred2).value
+        sut.getResource(mockResource, US_WEST_2, cred2).value
     }
 
     private fun assertExpectedExpiryFunctions(expiryFunction: Instant.() -> Instant, shouldExpire: Boolean) {
@@ -421,20 +429,10 @@ class AwsResourceCacheTest {
     }
 
     companion object {
-        private val CRED1 = DummyToolkitCredentialsProvider("cred1")
-        private val CRED2 = DummyToolkitCredentialsProvider("cred2")
         private val US_WEST_1 = AwsRegion("us-west-1", "USW1", "aws")
         private val US_WEST_2 = AwsRegion("us-west-2", "USW2", "aws")
 
         private val DEFAULT_EXPIRY = Duration.ofMinutes(10)
-
-        private class DummyToolkitCredentialsProvider(override val id: String) : ToolkitCredentialsProvider() {
-            override val displayName: String get() = id
-
-            override fun resolveCredentials(): AwsCredentials {
-                throw NotImplementedError()
-            }
-        }
 
         private open class DummyResource<T>(override val id: String, private val value: T) : Resource.Cached<T>() {
             val callCount = AtomicInteger(0)

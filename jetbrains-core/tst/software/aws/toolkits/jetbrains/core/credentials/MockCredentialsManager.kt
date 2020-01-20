@@ -21,13 +21,11 @@ class MockCredentialsManager : CredentialManager() {
     fun addCredentials(
         id: String,
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret")
-    ): ToolkitCredentialsProvider {
-        return ToolkitCredentialsProvider(
-            MockCredentialIdentifier(id),
-            StaticCredentialsProvider.create(credentials)
-        ).also {
-            providerAdded(it)
-        }
+    ): ToolkitCredentialsProvider = ToolkitCredentialsProvider(
+        MockCredentialIdentifier(id),
+        StaticCredentialsProvider.create(credentials)
+    ).also {
+        providerAdded(it)
     }
 
     companion object {

@@ -44,9 +44,7 @@ class ToolkitCredentialsProvider(val identifier: ToolkitCredentialsIdentifier, d
         return true
     }
 
-    override fun hashCode(): Int {
-        return identifier.hashCode()
-    }
+    override fun hashCode(): Int = identifier.hashCode()
 
     override fun toString(): String = "${this::class.simpleName}(identifier='$identifier')"
 }

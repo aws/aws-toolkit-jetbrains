@@ -82,7 +82,7 @@ class AwsClientManagerTest {
             mockCredentialManager.addCredentials(
                 "profile:admin",
                 AwsBasicCredentials.create("Access", "Secret")
-            )
+            ).identifier
         )
 
         sut.getClient<DummyServiceClient>()
