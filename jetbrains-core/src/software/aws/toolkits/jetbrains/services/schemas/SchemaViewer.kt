@@ -75,8 +75,7 @@ class SchemaDownloader() {
         return AwsResourceCache.getInstance(project).getResource(resource)
     }
 
-    fun getSchemaContentAsJson(schemaContent: DescribeSchemaResponse): JsonNode =
-        mapper.readTree(schemaContent.content())
+    fun getSchemaContentAsJson(schemaContent: DescribeSchemaResponse): JsonNode = mapper.readTree(schemaContent.content())
 
     companion object {
         val mapper = ObjectMapper()
@@ -112,7 +111,7 @@ class SchemaPreviewer() {
         version: String,
         project: Project
     ): CompletionStage<Void> {
-        val credentialIdentifier = project.activeCredentialProvider().displayName
+        val credentialIdentifier = project.activeCredentialProvider().identifier.displayName
         val region = project.activeRegion().id
 
         val fileName = "${credentialIdentifier}_${region}_${registryName}_${schemaName}_$version"

@@ -20,12 +20,12 @@ class AwsConnectionSettingsSelector(
 
     init {
         view.region.setRegions(regionProvider.regions().values.toMutableList())
-        view.credentialProvider.setCredentialsProviders(credentialManager.getCredentialProviders())
+        view.credentialProvider.setCredentialsProviders(credentialManager.getCredentialIdentifiers())
 
         val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
         view.region.selectedRegion = accountSettingsManager.activeRegion
         if (accountSettingsManager.isValidConnectionSettings()) {
-            view.credentialProvider.setSelectedCredentialsProvider(accountSettingsManager.activeCredentialProvider)
+            view.credentialProvider.setSelectedCredentialsProvider(accountSettingsManager.activeCredentialProvider.identifier)
         }
         view.region.addActionListener {
             fireChange()
@@ -46,7 +46,9 @@ class AwsConnectionSettingsSelector(
 
         credentialProviderId?.let { providerId ->
             try {
-                view.credentialProvider.setSelectedCredentialsProvider(credentialManager.getCredentialProvider(providerId))
+                credentialManager.getCredentialIdentifier(providerId)?.let {
+                    view.credentialProvider.setSelectedCredentialsProvider(it)
+                }
             } catch (_: Exception) {
                 view.credentialProvider.setSelectedInvalidCredentialsProvider(providerId)
             }

@@ -112,7 +112,7 @@ class LocalLambdaRunConfigurationProducer : RunConfigurationProducer<LocalLambda
             }
 
             val credentialProviderId = try {
-                settingsManager.activeCredentialProvider.id
+                settingsManager.activeCredentialProvider.identifier.id
             } catch (_: Exception) {
                 null
             }

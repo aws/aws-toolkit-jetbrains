@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
+import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
@@ -30,6 +31,8 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.resources.message
 import java.util.function.Supplier
+
+const val DEFAULT_PROFILE_ID = "profile:default"
 
 internal class ProfileCredentialsIdentifier(internal val profileName: String) : ToolkitCredentialsIdentifier() {
     override val id = "profile:$profileName"
@@ -51,7 +54,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
         providerId: ToolkitCredentialsIdentifier,
         region: AwsRegion,
         sdkClient: AwsSdkClient
-    ): AwsCredentialsProvider {
+    ): ToolkitCredentialsProvider {
         val profileProviderId = providerId as? ProfileCredentialsIdentifier
             ?: throw IllegalStateException("ProfileCredentialProviderFactory can only handle ProfileCredentialsIdentifier, but got ${providerId::class}")
 
@@ -59,7 +62,10 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
         val rootProfile = validProfiles[profileProviderId.profileName]
             ?: throw IllegalStateException(message("credentials.profile.not_valid", profileProviderId.displayName))
 
-        return createAwsCredentialProvider(validProfiles, rootProfile, region, sdkClient)
+        return ToolkitCredentialsProvider(
+            profileProviderId,
+            createAwsCredentialProvider(validProfiles, rootProfile, region, sdkClient)
+        )
     }
 
     private fun createAwsCredentialProvider(

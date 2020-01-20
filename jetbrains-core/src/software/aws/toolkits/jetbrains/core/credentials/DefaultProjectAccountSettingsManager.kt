@@ -11,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileToolkitCredentialsProviderFactory
+import software.aws.toolkits.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
 data class ConnectionSettingsState(
@@ -44,9 +44,9 @@ class DefaultProjectAccountSettingsManager(private val project: Project) : Proje
 
         // Load all the initial state on BG thread, so e don't block the UI or loading of other components
         GlobalScope.launch(Dispatchers.Default) {
-            val credentialId = state.activeProfile ?: ProfileToolkitCredentialsProviderFactory.DEFAULT_PROFILE_DISPLAY_NAME
+            val credentialId = state.activeProfile ?: DEFAULT_PROFILE_ID
             val credentials = tryOrNull {
-                CredentialManager.getInstance().getCredentialProvider(credentialId)
+                CredentialManager.getInstance().getCredentialIdentifier(credentialId)
             }
 
             val regionId = state.activeRegion ?: AwsRegionProvider.getInstance().defaultRegion().id

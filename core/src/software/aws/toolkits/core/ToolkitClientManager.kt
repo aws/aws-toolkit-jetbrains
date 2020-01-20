@@ -53,7 +53,7 @@ abstract class ToolkitClientManager(private val sdkHttpClient: SdkHttpClient) {
         val region = regionOverride ?: getRegion()
 
         val key = AwsClientKey(
-            credentialProviderId = credProvider.id,
+            credentialProviderId = credProvider.identifier.id,
             region = region,
             serviceClass = clz
         )

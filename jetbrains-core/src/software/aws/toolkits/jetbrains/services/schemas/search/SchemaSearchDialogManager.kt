@@ -14,7 +14,7 @@ class SchemaSearchDialogManager {
     private val allRegistriesSearchDialogStateCache: MutableMap<AllRegistriesDialogStateCacheKey, SchemaSearchAllRegistriesDialogState> = mutableMapOf()
 
     fun searchRegistryDialog(registry: String, project: Project): DialogWrapper {
-        val credentialId = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider.id
+        val credentialId = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider.identifier.id
         val region = ProjectAccountSettingsManager.getInstance(project).activeRegion.id
 
         val dialog = SchemaSearchSingleRegistryDialog(
@@ -35,7 +35,7 @@ class SchemaSearchDialogManager {
     }
 
     fun searchAllRegistriesDialog(project: Project): DialogWrapper {
-        val credentialId = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider.id
+        val credentialId = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider.identifier.id
         val region = ProjectAccountSettingsManager.getInstance(project).activeRegion.id
 
         val dialog = SchemaSearchAllRegistriesDialog(

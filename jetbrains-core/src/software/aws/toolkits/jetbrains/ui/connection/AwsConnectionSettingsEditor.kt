@@ -64,7 +64,9 @@ abstract class AwsConnectionsRunConfigurationBase<T : BaseAwsConnectionOptions>(
 
     protected fun resolveCredentials() = credentialProviderId()?.let {
         try {
-            CredentialManager.getInstance().getCredentialProvider(it)
+            val credentialManager = CredentialManager.getInstance()
+            val credentialsIdentifier = credentialManager.getCredentialIdentifier(it) ?: throw CredentialProviderNotFound("No provider with id '$it'")
+            credentialManager.getAwsCredentialProvider(credentialsIdentifier, resolveRegion())
         } catch (e: CredentialProviderNotFound) {
             throw RuntimeConfigurationError(message("lambda.run_configuration.credential_not_found_error", it))
         } catch (e: Exception) {

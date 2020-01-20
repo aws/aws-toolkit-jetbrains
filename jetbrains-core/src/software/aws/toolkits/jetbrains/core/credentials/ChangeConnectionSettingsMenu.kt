@@ -71,7 +71,7 @@ private class ChangeCredentialsActionGroup(popup: Boolean) : ComputableActionGro
         val credentialManager = CredentialManager.getInstance()
 
         val actions = mutableListOf<AnAction>()
-        credentialManager.getCredentialProviders().forEach {
+        credentialManager.getCredentialIdentifiers().forEach {
             actions.add(ChangeCredentialsAction(it))
         }
         actions.add(Separator.create())

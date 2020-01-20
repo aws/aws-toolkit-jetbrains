@@ -43,7 +43,9 @@ abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentia
         return awsCredentialProvider
     }
 
-    fun getCredentialProviders() = toolkitCredentialFactories.keys.toList()
+    fun getCredentialIdentifiers() = toolkitCredentialFactories.keys.toList()
+
+    fun getCredentialIdentifier(id: String) = toolkitCredentialFactories.keys.find { it.id == id }
 
     // TODO: Convert these to bulk listeners so we only send N messages where N is # of extensions vs # of providers
     override fun providerAdded(provider: ToolkitCredentialsProvider) {
@@ -62,6 +64,7 @@ abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentia
     }
 
     companion object {
+        @JvmStatic
         fun getInstance(): CredentialManager = ServiceManager.getService(CredentialManager::class.java)
 
         /***

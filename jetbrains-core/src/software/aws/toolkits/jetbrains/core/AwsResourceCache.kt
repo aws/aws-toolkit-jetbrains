@@ -289,7 +289,7 @@ class DefaultAwsResourceCache(
     override fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider, useStale: Boolean): T? =
         when (resource) {
             is Resource.Cached<T> -> {
-                val entry = cache.getTyped<T>(CacheKey(resource.id, region.id, credentialProvider.id))
+                val entry = cache.getTyped<T>(CacheKey(resource.id, region.id, credentialProvider.identifier.id))
                 when {
                     entry != null && (useStale || entry.notExpired) -> entry.value
                     else -> null
@@ -304,7 +304,7 @@ class DefaultAwsResourceCache(
 
     override fun clear(resource: Resource<*>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider) {
         when (resource) {
-            is Resource.Cached<*> -> cache.remove(CacheKey(resource.id, region.id, credentialProvider.id))
+            is Resource.Cached<*> -> cache.remove(CacheKey(resource.id, region.id, credentialProvider.identifier.id))
             is Resource.View<*, *> -> clear(resource.underlying, region, credentialProvider)
         }
     }
@@ -315,7 +315,7 @@ class DefaultAwsResourceCache(
 
     override fun providerRemoved(providerId: String) = clearByCredential(providerId)
 
-    override fun providerModified(provider: ToolkitCredentialsProvider) = clearByCredential(provider.id)
+    override fun providerModified(provider: ToolkitCredentialsProvider) = clearByCredential(provider.identifier.id)
 
     private fun clearByCredential(providerId: String) {
         cache.keys.removeIf { it.credentialsId == providerId }
@@ -356,7 +356,7 @@ class DefaultAwsResourceCache(
             val useStale: Boolean,
             val forceFetch: Boolean
         ) {
-            val cacheKey = CacheKey(resource.id, region.id, credentials.id)
+            val cacheKey = CacheKey(resource.id, region.id, credentials.identifier.id)
             val future = CompletableFuture<T>()
         }
 

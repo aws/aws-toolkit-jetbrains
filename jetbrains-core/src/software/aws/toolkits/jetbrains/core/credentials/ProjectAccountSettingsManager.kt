@@ -184,7 +184,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
      */
     fun recentlyUsedCredentials(): List<ToolkitCredentialsIdentifier> {
         val credentialsProvider = CredentialManager.getInstance()
-        val providerIds = credentialsProvider.getCredentialProviders().map { it.id to it }.toMap()
+        val providerIds = credentialsProvider.getCredentialIdentifiers().map { it.id to it }.toMap()
         return recentlyUsedProfiles.elements().mapNotNull { providerIds[it] }
     }
 
@@ -218,6 +218,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             ConnectionSettingsChangeNotifier::class.java
         )
 
+        @JvmStatic
         fun getInstance(project: Project): ProjectAccountSettingsManager = ServiceManager.getService(project, ProjectAccountSettingsManager::class.java)
 
         private val LOGGER = getLogger<DefaultProjectAccountSettingsManager>()
