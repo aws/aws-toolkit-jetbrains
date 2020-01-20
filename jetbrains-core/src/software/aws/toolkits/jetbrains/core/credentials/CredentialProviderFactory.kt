@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.extensions.AbstractExtensionPointBean
 import com.intellij.openapi.util.LazyInstance
 import com.intellij.util.xmlb.annotations.Attribute
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
+import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 
@@ -21,7 +21,7 @@ interface CredentialProviderFactory {
         providerId: ToolkitCredentialsIdentifier,
         region: AwsRegion,
         sdkClient: AwsSdkClient
-    ): AwsCredentialsProvider
+    ): ToolkitCredentialsProvider
 }
 
 class CredentialProviderFactoryExtensionPoint : AbstractExtensionPointBean() {
