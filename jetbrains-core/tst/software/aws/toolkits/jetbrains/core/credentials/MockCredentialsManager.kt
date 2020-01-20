@@ -33,7 +33,7 @@ class MockCredentialsManager : CredentialManager() {
     companion object {
         fun getInstance(): MockCredentialsManager = ServiceManager.getService(CredentialManager::class.java) as MockCredentialsManager
 
-        val DUMMY_PROVIDER_IDENTIFIER = MockCredentialIdentifier("DUMMY_CREDENTIALS")
+        val DUMMY_PROVIDER_IDENTIFIER: ToolkitCredentialsIdentifier = MockCredentialIdentifier("DUMMY_CREDENTIALS")
         val DUMMY_PROVIDER_ID = DUMMY_PROVIDER_IDENTIFIER.id
 
         private val DUMMY_PROVIDER = ToolkitCredentialsProvider(
@@ -42,7 +42,7 @@ class MockCredentialsManager : CredentialManager() {
         )
     }
 
-    class MockCredentialIdentifier(override val displayName: String) : ToolkitCredentialsIdentifier() {
+    private class MockCredentialIdentifier(override val displayName: String) : ToolkitCredentialsIdentifier() {
         override val id: String = "mock:$displayName"
     }
 }
