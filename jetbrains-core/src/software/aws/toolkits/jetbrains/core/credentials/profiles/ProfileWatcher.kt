@@ -25,11 +25,9 @@ class ProfileWatcher : AsyncFileListener, Disposable {
     )
 
     override fun prepareChange(events: MutableList<out VFileEvent>): AsyncFileListener.ChangeApplier? {
-        val relevantChanges = events.filter { VfsUtilCore.isUnder(it.path, watchLocationsStrings) }.toList()
+        val isRelevant = events.any { VfsUtilCore.isUnder(it.path, watchLocationsStrings) }
 
-        return if (relevantChanges.isEmpty()) {
-            null
-        } else {
+        return if (isRelevant) {
             object : AsyncFileListener.ChangeApplier {
                 override fun afterVfsChange() {
                     listeners.forEach {
@@ -39,6 +37,8 @@ class ProfileWatcher : AsyncFileListener, Disposable {
                     }
                 }
             }
+        } else {
+            null
         }
     }
 
