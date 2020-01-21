@@ -129,7 +129,6 @@ abstract class SchemasSearchDialogBase<T : SchemaSearchResultBase, U : SchemaSea
 
                 searchTextAlarm.addRequest({
                     val searchText = searchTextField.text
-                    println("searching $searchText ...")
 
                     if (searchText.isNullOrEmpty()) {
                         clearState()
