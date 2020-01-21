@@ -47,12 +47,12 @@ class SchemaSelectionListCellRenderer : ColoredListCellRenderer<SchemaSelectionI
         selected: Boolean,
         hasFocus: Boolean
     ): Component {
-        when (value) {
+        return when (value) {
             is SchemaSelectionItem.SchemaItem -> {
-                return super.getListCellRendererComponent(list, value, index, selected, hasFocus)
+                super.getListCellRendererComponent(list, value, index, selected, hasFocus)
             }
             else -> {
-                return super.getListCellRendererComponent(list, value, index, false, hasFocus)
+                super.getListCellRendererComponent(list, value, index, false, hasFocus)
             }
         }
     }
@@ -66,7 +66,7 @@ class SchemaSelectionListCellRenderer : ColoredListCellRenderer<SchemaSelectionI
     ) {
         if (value == null) return
 
-        var textAttributes = SimpleTextAttributes.REGULAR_ATTRIBUTES
+        val textAttributes = SimpleTextAttributes.REGULAR_ATTRIBUTES
         var icon = AwsIcons.Logos.EVENT_BRIDGE
         var insets = Insets(0, 0, 0, 0)
 

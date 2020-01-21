@@ -8,9 +8,9 @@ import com.intellij.openapi.ui.DialogWrapper
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 
 class SchemaSearchDialogManager {
-    private val searchDialogStateCache: MutableMap<DialogStateCacheKey.SingleRegistryDialogStateCacheKey, SchemaSearchSingleRegistyDialogState> = HashMap()
+    private val searchDialogStateCache: MutableMap<DialogStateCacheKey.SingleRegistryDialogStateCacheKey, SchemaSearchSingleRegistyDialogState> = mutableMapOf()
     private val allRegistriesSearchDialogStateCache:
-        MutableMap<DialogStateCacheKey.AllRegistriesDialogStateCacheKey, SchemaSearchAllRegistriesDialogState> = HashMap()
+        MutableMap<DialogStateCacheKey.AllRegistriesDialogStateCacheKey, SchemaSearchAllRegistriesDialogState> = mutableMapOf()
 
     fun searchRegistryDialog(registry: String, project: Project): DialogWrapper {
         val credentialId = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider.id
@@ -54,17 +54,17 @@ class SchemaSearchDialogManager {
     }
 
     private fun cacheSingleRegistryDialogStateOnCancel(registry: String, credentialId: String, region: String, state: SchemaSearchSingleRegistyDialogState) {
-        searchDialogStateCache.put(DialogStateCacheKey.SingleRegistryDialogStateCacheKey(registry, credentialId, region), state)
+        searchDialogStateCache[DialogStateCacheKey.SingleRegistryDialogStateCacheKey(registry, credentialId, region)] = state
     }
 
     private fun cacheAllRegistriesDialogStateOnCancel(credentialId: String, region: String, state: SchemaSearchAllRegistriesDialogState) {
-        allRegistriesSearchDialogStateCache.put(DialogStateCacheKey.AllRegistriesDialogStateCacheKey(credentialId, region), state)
+        allRegistriesSearchDialogStateCache[DialogStateCacheKey.AllRegistriesDialogStateCacheKey(credentialId, region)] = state
     }
 
-    private sealed class DialogStateCacheKey(private val credentialId: String, private val region: String) {
+    private sealed class DialogStateCacheKey {
         data class SingleRegistryDialogStateCacheKey(private val registry: String, private val credentialId: String, private val region: String) :
-            DialogStateCacheKey(credentialId, region)
-        data class AllRegistriesDialogStateCacheKey(private val credentialId: String, private val region: String) : DialogStateCacheKey(credentialId, region)
+            DialogStateCacheKey()
+        data class AllRegistriesDialogStateCacheKey(private val credentialId: String, private val region: String) : DialogStateCacheKey()
     }
 
     companion object {

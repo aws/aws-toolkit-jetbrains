@@ -395,7 +395,7 @@ class SchemaSearchDialogTest {
         assertThat(dialog.previewText.caretPosition).isGreaterThan(0)
     }
 
-    fun <T> completableFutureOf(obj: T): CompletableFuture<T> {
+    private fun <T> completableFutureOf(obj: T): CompletableFuture<T> {
         val future = CompletableFuture<T>()
         future.complete(obj)
         return future
