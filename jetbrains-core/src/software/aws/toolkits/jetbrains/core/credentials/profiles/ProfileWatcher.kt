@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.AsyncFileListener
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -20,8 +21,8 @@ class ProfileWatcher : AsyncFileListener, Disposable {
     private val watchRoots = mutableSetOf<LocalFileSystem.WatchRequest>()
 
     private val watchLocationsStrings = setOf(
-        ProfileFileLocation.configurationFilePath().toAbsolutePath().toString(),
-        ProfileFileLocation.credentialsFilePath().toAbsolutePath().toString()
+        FileUtil.normalize(ProfileFileLocation.configurationFilePath().toAbsolutePath().toString()),
+        FileUtil.normalize(ProfileFileLocation.credentialsFilePath().toAbsolutePath().toString())
     )
 
     override fun prepareChange(events: MutableList<out VFileEvent>): AsyncFileListener.ChangeApplier? {
