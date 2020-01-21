@@ -12,78 +12,77 @@ import software.aws.toolkits.resources.message
 typealias ProfileName = String
 typealias InvalidCause = String
 
-class ProfileReader {
-    data class Profiles(val validProfiles: Map<ProfileName, Profile>, val invalidProfiles: Map<String, String>)
+data class Profiles(val validProfiles: Map<ProfileName, Profile>, val invalidProfiles: Map<String, String>)
 
-    private val profiles = ProfileFile.defaultProfileFile().profiles()
+/**
+ * Reads the AWS shared credentials files and produces what profiles are valid and if not why it is not
+ */
+fun validateAndGetProfiles(): Profiles {
+    val allProfiles: Map<String, Profile> = ProfileFile.defaultProfileFile().profiles()
 
-    /**
-     * Reads the AWS shared credentials files and produces what profiles are valid and if not why it is not
-     */
-    fun validateAndGetProfiles(): Profiles {
-        val validProfiles = mutableMapOf<ProfileName, Profile>()
-        val invalidProfiles = mutableMapOf<ProfileName, InvalidCause>()
+    val validProfiles = mutableMapOf<ProfileName, Profile>()
+    val invalidProfiles = mutableMapOf<ProfileName, InvalidCause>()
 
-        profiles.values.forEach {
-            try {
-                validateProfile(it)
-                validProfiles[it.name()] = it
-            } catch (e: Exception) {
-                invalidProfiles[it.name()] = e.message ?: e::class.java.name
-            }
-        }
-
-        return Profiles(validProfiles, invalidProfiles)
-    }
-
-    private fun validateProfile(profile: Profile) {
-        when {
-            profile.propertyExists(ProfileProperty.ROLE_ARN) -> validateAssumeRoleProfile(profile)
-            profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> validateStaticSessionProfile(profile)
-            profile.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> validateBasicProfile(profile)
-            profile.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> {
-            } // Always valid
-            else -> {
-                throw IllegalArgumentException(message("credentials.profile.unsupported", profile.name()))
-            }
+    allProfiles.values.forEach {
+        try {
+            validateProfile(it, allProfiles)
+            validProfiles[it.name()] = it
+        } catch (e: Exception) {
+            invalidProfiles[it.name()] = e.message ?: e::class.java.name
         }
     }
 
-    private fun validateAssumeRoleProfile(profile: Profile) {
-        val profileChain = LinkedHashSet<String>()
-        var currentProfile = profile
+    return Profiles(validProfiles, invalidProfiles)
+}
 
-        while (profile.propertyExists(ProfileProperty.SOURCE_PROFILE)) {
-            val currentProfileName = currentProfile.name()
-            if (!profileChain.add(currentProfileName)) {
-                val chain = profileChain.joinToString("->", postfix = "->$currentProfileName")
-                throw IllegalArgumentException(message("credentials.profile.circular_profiles", chain))
-            }
+private fun validateProfile(profile: Profile, allProfiles: Map<String, Profile>) {
+    when {
+        profile.propertyExists(ProfileProperty.ROLE_ARN) -> validateAssumeRoleProfile(profile, allProfiles)
+        profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> validateStaticSessionProfile(profile)
+        profile.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> validateBasicProfile(profile)
+        profile.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> {
+            // NO-OP Always valid
+        }
+        else -> {
+            throw IllegalArgumentException(message("credentials.profile.unsupported", profile.name()))
+        }
+    }
+}
 
-            val sourceProfile = profile.requiredProperty(ProfileProperty.SOURCE_PROFILE)
-            currentProfile = profiles.getValue(sourceProfile)
-                ?: throw IllegalArgumentException(
-                    message(
-                        "credentials.profile.source_profile_not_found",
-                        currentProfileName,
-                        sourceProfile
-                    )
+private fun validateAssumeRoleProfile(profile: Profile, allProfiles: Map<String, Profile>) {
+    val profileChain = LinkedHashSet<String>()
+    var currentProfile = profile
+
+    while (profile.propertyExists(ProfileProperty.SOURCE_PROFILE)) {
+        val currentProfileName = currentProfile.name()
+        if (!profileChain.add(currentProfileName)) {
+            val chain = profileChain.joinToString("->", postfix = "->$currentProfileName")
+            throw IllegalArgumentException(message("credentials.profile.circular_profiles", chain))
+        }
+
+        val sourceProfile = profile.requiredProperty(ProfileProperty.SOURCE_PROFILE)
+        currentProfile = allProfiles[sourceProfile]
+            ?: throw IllegalArgumentException(
+                message(
+                    "credentials.profile.source_profile_not_found",
+                    currentProfileName,
+                    sourceProfile
                 )
-        }
-
-        validateProfile(currentProfile)
+            )
     }
 
-    private fun validateStaticSessionProfile(profile: Profile) {
-        profile.requiredProperty(ProfileProperty.AWS_ACCESS_KEY_ID)
-        profile.requiredProperty(ProfileProperty.AWS_SECRET_ACCESS_KEY)
-        profile.requiredProperty(ProfileProperty.AWS_SESSION_TOKEN)
-    }
+    validateProfile(currentProfile, allProfiles)
+}
 
-    private fun validateBasicProfile(profile: Profile) {
-        profile.requiredProperty(ProfileProperty.AWS_ACCESS_KEY_ID)
-        profile.requiredProperty(ProfileProperty.AWS_SECRET_ACCESS_KEY)
-    }
+private fun validateStaticSessionProfile(profile: Profile) {
+    profile.requiredProperty(ProfileProperty.AWS_ACCESS_KEY_ID)
+    profile.requiredProperty(ProfileProperty.AWS_SECRET_ACCESS_KEY)
+    profile.requiredProperty(ProfileProperty.AWS_SESSION_TOKEN)
+}
+
+private fun validateBasicProfile(profile: Profile) {
+    profile.requiredProperty(ProfileProperty.AWS_ACCESS_KEY_ID)
+    profile.requiredProperty(ProfileProperty.AWS_SECRET_ACCESS_KEY)
 }
 
 fun Profile.propertyExists(propertyName: String): Boolean = this.property(propertyName).isPresent

@@ -18,9 +18,13 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import java.util.concurrent.ConcurrentHashMap
 import javax.security.auth.login.CredentialNotFoundException
+
+typealias CredentialsChangeListener = (added: List<ToolkitCredentialsIdentifier>, modified: List<ToolkitCredentialsIdentifier>, removed: List<ToolkitCredentialsIdentifier>) -> Unit
 
 abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentialsChangeListener {
     protected val toolkitCredentialFactories = ConcurrentHashMap<ToolkitCredentialsIdentifier, CredentialProviderFactory>()
@@ -77,23 +81,43 @@ abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentia
     }
 }
 
-class DefaultCredentialManager : CredentialManager(), Disposable {
+class DefaultCredentialManager : CredentialManager() {
+    private val rootDisposable = Disposer.newDisposable()
+
     init {
-        Disposer.register(ApplicationManager.getApplication(), this)
+        Disposer.register(ApplicationManager.getApplication(), rootDisposable)
 
         for (providerFactory in EP_NAME.extensionList) {
             val instance = providerFactory.getInstance()
-            instance.setupToolkitCredentialProviderFactory(this)
             if (instance is Disposable) {
-                Disposer.register(this, instance)
+                Disposer.register(rootDisposable, instance)
+            }
+
+            LOG.tryOrNull("Failed to setup $instance") {
+                instance.setUp { added, modified, removed ->
+                    added.forEach {
+                        toolkitCredentialFactories[it] = instance
+                    }
+
+                    modified.forEach {
+                        toolkitCredentialFactories[it] = instance
+                        awsCredentialProviderCache.remove(it)
+                    }
+
+                    removed.forEach {
+                        toolkitCredentialFactories.remove(it)
+                        awsCredentialProviderCache.remove(it)
+                    }
+
+                    incModificationCount()
+                }
             }
         }
     }
 
-    override fun dispose() {}
-
     companion object {
         val EP_NAME = ExtensionPointName.create<CredentialProviderFactoryExtensionPoint>("aws.toolkit.credentialProviderFactory")
+        val LOG = getLogger<DefaultCredentialManager>()
     }
 }
 

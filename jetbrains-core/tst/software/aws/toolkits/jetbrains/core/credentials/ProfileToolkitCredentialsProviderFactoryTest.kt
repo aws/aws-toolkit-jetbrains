@@ -6,9 +6,11 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.TestInputDialog
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.VfsTestUtil
 import com.nhaarman.mockitokotlin2.any
@@ -37,7 +39,6 @@ import software.amazon.awssdk.http.HttpExecuteResponse
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.http.SdkHttpFullResponse
 import software.amazon.awssdk.profiles.Profile
-import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID
 import software.amazon.awssdk.profiles.ProfileProperty.AWS_SECRET_ACCESS_KEY
 import software.amazon.awssdk.profiles.ProfileProperty.AWS_SESSION_TOKEN
@@ -47,8 +48,6 @@ import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.rules.SystemPropertyHelper
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileHolder
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import java.io.File
 import java.time.Duration
 import java.time.ZonedDateTime
@@ -69,14 +68,16 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     @JvmField
     val systemPropertyHelper = SystemPropertyHelper()
 
+    @Rule
+    @JvmField
+    val disposableRule = DisposableRule()
+
     private lateinit var profileFile: File
     private lateinit var credentialsFile: File
 
     private val mockSdkHttpClient: SdkHttpClient = mock()
     private val mockRegionProvider: ToolkitRegionProvider = mock()
     private val mockProviderManager: CredentialManager = mock()
-    private var profileFactory: ProfileCredentialProviderFactory? = null
-    private var profileWatcher: ProfileWatcher? = null
 
     @Before
     fun setUp() {
@@ -95,7 +96,6 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     @After
     fun tearDown() {
         Messages.setTestInputDialog(TestInputDialog.DEFAULT)
-        profileWatcher?.dispose()
     }
 
     @Test
@@ -561,22 +561,6 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         }
     }
 
-    private fun profiles(): ProfileHolder {
-        val profileHolder = ProfileHolder()
-
-        ProfileFile.builder()
-            .content(profileFile.toPath())
-            .type(ProfileFile.Type.CONFIGURATION)
-            .build()
-            .profiles()
-            .values
-            .forEach {
-                profileHolder.putProfile(it)
-            }
-
-        return profileHolder
-    }
-
     private fun correctProfile(expectedProfile: Profile): Condition<Iterable<ToolkitCredentialsProvider>> =
         object : Condition<Iterable<ToolkitCredentialsProvider>>(expectedProfile.toString()) {
             override fun matches(value: Iterable<ToolkitCredentialsProvider>): Boolean =
@@ -585,11 +569,13 @@ class ProfileToolkitCredentialsProviderFactoryTest {
                 }
         }
 
-    private fun createProviderFactory() {
+    private fun createProviderFactory(): ProfileCredentialProviderFactory {
         val factory = ProfileCredentialProviderFactory()
-        factory.setupToolkitCredentialProviderFactory(mockProviderManager)
+        factory.setUp(mockProviderManager)
 
-        profileFactory = factory
+        Disposer.register(disposableRule.disposable, factory)
+
+        return factory
     }
 
     private fun createAssumeRoleResponse(

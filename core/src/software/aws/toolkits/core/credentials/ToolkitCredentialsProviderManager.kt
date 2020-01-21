@@ -7,6 +7,13 @@ interface ToolkitCredentialsChangeListener {
     fun providerAdded(provider: ToolkitCredentialsProvider) {}
     fun providerModified(provider: ToolkitCredentialsProvider) {}
     fun providerRemoved(providerId: String) {}
+
+    fun updateCredentialProviderIdentifiers(
+        added: List<ToolkitCredentialsIdentifier>,
+        modified: List<ToolkitCredentialsIdentifier>,
+        removed: List<ToolkitCredentialsIdentifier>
+    ) {
+    }
 }
 
 class CredentialProviderNotFound(msg: String) : RuntimeException(msg)

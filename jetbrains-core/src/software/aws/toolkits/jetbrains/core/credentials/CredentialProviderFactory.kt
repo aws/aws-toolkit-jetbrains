@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.core.AwsSdkClient
  * Extension point for adding new credential providers to the internal registry
  */
 interface CredentialProviderFactory {
-    fun setupToolkitCredentialProviderFactory(manager: CredentialManager)
+    fun setUp(credentialLoadCallback: CredentialsChangeListener)
 
     fun createAwsCredentialProvider(
         providerId: ToolkitCredentialsIdentifier,

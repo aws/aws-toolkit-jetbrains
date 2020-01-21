@@ -3,10 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import icons.AwsIcons
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -27,28 +27,62 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory
+import software.aws.toolkits.jetbrains.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.resources.message
 import java.util.function.Supplier
 
 const val DEFAULT_PROFILE_ID = "profile:default"
 
-internal class ProfileCredentialsIdentifier(internal val profileName: String) : ToolkitCredentialsIdentifier() {
+private class ProfileCredentialsIdentifier(internal val profileName: String) : ToolkitCredentialsIdentifier() {
     override val id = "profile:$profileName"
     override val displayName get() = message("credentials.profile.name", profileName)
 }
 
-class ProfileCredentialProviderFactory : CredentialProviderFactory {
-    private val profileWatcher = ProfileWatcher().also {
-        // TODO: Scope this better in the cred manager refactorDisposer.register(ApplicationManager.getApplication(), it)
+class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
+    private val profileWatcher = ProfileWatcher(this)
+    private val profileHolder = ProfileHolder()
+
+    override fun setUp(credentialLoadCallback: CredentialsChangeListener) {
+        // Load the initial data, then start the background watcher
+        loadProfiles(credentialLoadCallback)
+
+        profileWatcher.start {
+            loadProfiles(credentialLoadCallback)
+        }
     }
 
-    override fun setupToolkitCredentialProviderFactory(manager: CredentialManager) {
-        val profiles = ProfileReader().validateAndGetProfiles()
+    private fun loadProfiles(credentialLoadCallback: CredentialsChangeListener) {
+        val profilesAdded = mutableListOf<ProfileCredentialsIdentifier>()
+        val profilesModified = mutableListOf<ProfileCredentialsIdentifier>()
+        val profilesRemoved = mutableListOf<ProfileCredentialsIdentifier>()
 
-        profileWatcher.start()
+        val previousProfilesSnapshot = profileHolder.snapshot()
+        val newProfiles = validateAndGetProfiles()
+
+        newProfiles.validProfiles.forEach {
+            val previousProfile = previousProfilesSnapshot.remove(it.key)
+            if(previousProfile == null) {
+                // It was not in the snapshot, so it must be new
+                profilesAdded.add(ProfileCredentialsIdentifier(it.key))
+            } else {
+                // If the profile was modified, notify people, else do nothing
+                if (previousProfile != it.value) {
+                    profilesModified.add(ProfileCredentialsIdentifier(it.key))
+                }
+            }
+        }
+
+        // Any remaining profiles must have either become invalid or removed from the cred/config files
+        previousProfilesSnapshot.keys.asSequence().map { ProfileCredentialsIdentifier(it) }.toCollection(profilesRemoved)
+
+        profileHolder.update(newProfiles.validProfiles)
+        credentialLoadCallback(profilesAdded, profilesModified, profilesRemoved)
+
+        // TODO: Notify invalid profiles
     }
+
+    override fun dispose() {}
 
     override fun createAwsCredentialProvider(
         providerId: ToolkitCredentialsIdentifier,
@@ -58,23 +92,18 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
         val profileProviderId = providerId as? ProfileCredentialsIdentifier
             ?: throw IllegalStateException("ProfileCredentialProviderFactory can only handle ProfileCredentialsIdentifier, but got ${providerId::class}")
 
-        val validProfiles = ProfileReader().validateAndGetProfiles().validProfiles
-        val rootProfile = validProfiles[profileProviderId.profileName]
-            ?: throw IllegalStateException(message("credentials.profile.not_valid", profileProviderId.displayName))
-
         return ToolkitCredentialsProvider(
             profileProviderId,
-            createAwsCredentialProvider(validProfiles, rootProfile, region, sdkClient)
+            createAwsCredentialProvider(profileHolder.getProfile(profileProviderId.profileName), region, sdkClient)
         )
     }
 
     private fun createAwsCredentialProvider(
-        validProfiles: Map<ProfileName, Profile>,
         profile: Profile,
         region: AwsRegion,
         sdkClient: AwsSdkClient
     ) = when {
-        profile.propertyExists(ProfileProperty.ROLE_ARN) -> createAssumeRoleProvider(validProfiles, profile, region, sdkClient)
+        profile.propertyExists(ProfileProperty.ROLE_ARN) -> createAssumeRoleProvider(profile, region, sdkClient)
         profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> createStaticSessionProvider(profile)
         profile.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> createBasicProvider(profile)
         profile.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> createCredentialProcessProvider(profile)
@@ -84,14 +113,12 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
     }
 
     private fun createAssumeRoleProvider(
-        validProfiles: Map<ProfileName, Profile>,
         profile: Profile,
         region: AwsRegion,
         sdkClient: AwsSdkClient
     ): AwsCredentialsProvider {
         val sourceProfileName = profile.requiredProperty(ProfileProperty.SOURCE_PROFILE)
-        val sourceProfile = validProfiles[sourceProfileName]
-            ?: throw IllegalStateException(message("credentials.profile.not_valid", sourceProfileName))
+        val sourceProfile = profileHolder.getProfile(sourceProfileName)
 
         // Override the default SPI for getting the active credentials since we are making an internal
         // to this provider client
@@ -99,7 +126,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
             StsClient::class,
             sdkClient.sdkHttpClient,
             Region.of(region.id),
-            createAwsCredentialProvider(validProfiles, sourceProfile, region, sdkClient),
+            createAwsCredentialProvider(sourceProfile, region, sdkClient),
             AwsClientManager.userAgent
         )
 
@@ -177,4 +204,17 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
     private fun createCredentialProcessProvider(profile: Profile) = ProcessCredentialsProvider.builder()
         .command(profile.requiredProperty(ProfileProperty.CREDENTIAL_PROCESS))
         .build()
+}
+
+private class ProfileHolder {
+    private val profiles = mutableMapOf<String, Profile>()
+
+    fun snapshot() = profiles.toMutableMap()
+
+    fun update(validProfiles: Map<ProfileName, Profile>) {
+        profiles.clear()
+        profiles.putAll(validProfiles)
+    }
+
+    fun getProfile(profileName: String): Profile = profiles.getValue(profileName)
 }
