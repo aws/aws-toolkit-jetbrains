@@ -78,10 +78,9 @@ class SchemaCodeGenUtils {
 
             private const val UNDERSCORE = "_"
 
-            fun toValidIdentifier(name: String): String =
-                name
-                    .replace(NOT_VALID_IDENTIFIER_REGEX, UNDERSCORE)
-                    .replace(POTENTIAL_PACKAGE_SEPARATOR, PACKAGE_SEPARATOR)
+            fun toValidIdentifier(name: String): String = name
+                .replace(NOT_VALID_IDENTIFIER_REGEX, UNDERSCORE)
+                .replace(POTENTIAL_PACKAGE_SEPARATOR, PACKAGE_SEPARATOR)
         }
     }
 }
