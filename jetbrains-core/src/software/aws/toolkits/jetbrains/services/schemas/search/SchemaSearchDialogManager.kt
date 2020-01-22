@@ -6,11 +6,12 @@ package software.aws.toolkits.jetbrains.services.schemas.search
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.services.schemas.search.SchemaSearchDialogManager.DialogStateCacheKey.AllRegistriesDialogStateCacheKey
+import software.aws.toolkits.jetbrains.services.schemas.search.SchemaSearchDialogManager.DialogStateCacheKey.SingleRegistryDialogStateCacheKey
 
 class SchemaSearchDialogManager {
-    private val searchDialogStateCache: MutableMap<DialogStateCacheKey.SingleRegistryDialogStateCacheKey, SchemaSearchSingleRegistyDialogState> = mutableMapOf()
-    private val allRegistriesSearchDialogStateCache:
-        MutableMap<DialogStateCacheKey.AllRegistriesDialogStateCacheKey, SchemaSearchAllRegistriesDialogState> = mutableMapOf()
+    private val searchDialogStateCache: MutableMap<SingleRegistryDialogStateCacheKey, SchemaSearchSingleRegistryDialogState> = mutableMapOf()
+    private val allRegistriesSearchDialogStateCache: MutableMap<AllRegistriesDialogStateCacheKey, SchemaSearchAllRegistriesDialogState> = mutableMapOf()
 
     fun searchRegistryDialog(registry: String, project: Project): DialogWrapper {
         val credentialId = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider.id
@@ -22,7 +23,7 @@ class SchemaSearchDialogManager {
             { state -> cacheSingleRegistryDialogStateOnCancel(registry, credentialId, region, state) }
         )
 
-        val key = DialogStateCacheKey.SingleRegistryDialogStateCacheKey(registry, credentialId, region)
+        val key = SingleRegistryDialogStateCacheKey(registry, credentialId, region)
         val dialogState = searchDialogStateCache.getOrDefault(key, null)
         if (dialogState == null) {
             dialog.initializeNew()
@@ -42,7 +43,7 @@ class SchemaSearchDialogManager {
             { state -> cacheAllRegistriesDialogStateOnCancel(credentialId, region, state) }
         )
 
-        val key = DialogStateCacheKey.AllRegistriesDialogStateCacheKey(credentialId, region)
+        val key = AllRegistriesDialogStateCacheKey(credentialId, region)
         val dialogState = allRegistriesSearchDialogStateCache.getOrDefault(key, null)
         if (dialogState == null) {
             dialog.initializeNew()
@@ -53,12 +54,12 @@ class SchemaSearchDialogManager {
         return dialog
     }
 
-    private fun cacheSingleRegistryDialogStateOnCancel(registry: String, credentialId: String, region: String, state: SchemaSearchSingleRegistyDialogState) {
-        searchDialogStateCache[DialogStateCacheKey.SingleRegistryDialogStateCacheKey(registry, credentialId, region)] = state
+    private fun cacheSingleRegistryDialogStateOnCancel(registry: String, credentialId: String, region: String, state: SchemaSearchSingleRegistryDialogState) {
+        searchDialogStateCache[SingleRegistryDialogStateCacheKey(registry, credentialId, region)] = state
     }
 
     private fun cacheAllRegistriesDialogStateOnCancel(credentialId: String, region: String, state: SchemaSearchAllRegistriesDialogState) {
-        allRegistriesSearchDialogStateCache[DialogStateCacheKey.AllRegistriesDialogStateCacheKey(credentialId, region)] = state
+        allRegistriesSearchDialogStateCache[AllRegistriesDialogStateCacheKey(credentialId, region)] = state
     }
 
     private sealed class DialogStateCacheKey {
