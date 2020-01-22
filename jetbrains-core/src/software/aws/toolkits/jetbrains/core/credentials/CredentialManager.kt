@@ -87,7 +87,7 @@ class DefaultCredentialManager : CredentialManager() {
     init {
         Disposer.register(ApplicationManager.getApplication(), rootDisposable)
 
-        for (providerFactory in EP_NAME.extensionList) {
+        EP_NAME.extensionList.forEach { providerFactory ->
             val instance = providerFactory.getInstance()
             if (instance is Disposable) {
                 Disposer.register(rootDisposable, instance)
@@ -116,8 +116,8 @@ class DefaultCredentialManager : CredentialManager() {
     }
 
     companion object {
-        val EP_NAME = ExtensionPointName.create<CredentialProviderFactoryExtensionPoint>("aws.toolkit.credentialProviderFactory")
-        val LOG = getLogger<DefaultCredentialManager>()
+        private val EP_NAME = ExtensionPointName.create<CredentialProviderFactoryExtensionPoint>("aws.toolkit.credentialProviderFactory")
+        private val LOG = getLogger<DefaultCredentialManager>()
     }
 }
 
