@@ -46,14 +46,12 @@ class SchemaSelectionListCellRenderer : ColoredListCellRenderer<SchemaSelectionI
         index: Int,
         selected: Boolean,
         hasFocus: Boolean
-    ): Component {
-        return when (value) {
-            is SchemaSelectionItem.SchemaItem -> {
-                super.getListCellRendererComponent(list, value, index, selected, hasFocus)
-            }
-            else -> {
-                super.getListCellRendererComponent(list, value, index, false, hasFocus)
-            }
+    ): Component = when (value) {
+        is SchemaSelectionItem.SchemaItem -> {
+            super.getListCellRendererComponent(list, value, index, selected, hasFocus)
+        }
+        else -> {
+            super.getListCellRendererComponent(list, value, index, false, hasFocus)
         }
     }
 
