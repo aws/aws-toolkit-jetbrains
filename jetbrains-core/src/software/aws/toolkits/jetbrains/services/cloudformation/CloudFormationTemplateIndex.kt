@@ -54,9 +54,9 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
         val indexedResources = mutableMapOf<String, MutableList<IndexedResource>>()
 
         fileContent.psiFile.acceptNode(object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement?) {
+            override fun visitElement(element: PsiElement) {
                 super.visitElement(element)
-                element?.run {
+                element.run {
                     val parent = element.parent as? YAMLKeyValue ?: return
                     if (parent.value != this) return
 
