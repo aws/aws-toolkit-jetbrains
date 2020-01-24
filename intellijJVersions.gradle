@@ -74,6 +74,37 @@ static def ideProfiles() {
                     ]
                 ]
             ]
+        ],
+        "2020.1": [
+            "sinceVersion": "201",
+            "untilVersion": "201.*",
+            "products": [
+                "IC": [
+                    sdkVersion: "IC-201.3803.71-EAP-SNAPSHOT",
+                    plugins: [
+                        "terminal",
+                        "yaml",
+                        "PythonCore:201.3803.32",
+                        "java",
+                        "gradle",
+                        "maven",
+                        "properties", // Used by Maven
+                        "Docker:201.3803.32"
+                    ]
+                ],
+                "IU": [
+                    sdkVersion: "IU-201.3803.71-EAP-SNAPSHOT",
+                    plugins: [
+                        "terminal",
+                        "Pythonid:201.3803.32",
+                        "yaml",
+                        "stats-collector", // Transitive, used by JavaScriptLanguage
+                        "JavaScriptLanguage",
+                        "JavaScriptDebugger",
+                        "CSS",
+                    ]
+                ]
+            ]
         ]
     ]
 }
