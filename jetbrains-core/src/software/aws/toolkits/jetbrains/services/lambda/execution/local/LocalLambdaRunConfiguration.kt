@@ -98,9 +98,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
 
         if (promise.isPending) {
             promise.then { isValid ->
-                messageBus.syncPublisher(
-                    LambdaHandlerEvaluationListener.TOPIC
-                ).handlerValidationFinished(handler, isValid)
+                messageBus.syncPublisher(LambdaHandlerEvaluationListener.TOPIC).handlerValidationFinished(handler, isValid)
             }
             logger.info { "Validation will proceed asynchronously for SAM CLI version" }
             throw RuntimeConfigurationError(message("lambda.run_configuration.handler.validation.in_progress"))

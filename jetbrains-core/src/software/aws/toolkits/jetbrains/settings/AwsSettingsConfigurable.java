@@ -103,7 +103,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         SamSettings samSettings = SamSettings.getInstance();
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
 
-        return !Objects.equals(getSamTextboxInput(), samSettings.getSavedExecutablePath()) ||
+        return !Objects.equals(getSamTextboxInput(), getSavedExecutablePath(getSamExecutableInstance(), false)) ||
                !Objects.equals(getCloudDebugTextboxInput(), getSavedExecutablePath(getCloudDebugExecutableInstance(), false)) ||
                isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons()) ||
                isModified(enableTelemetry, awsSettings.isTelemetryEnabled());
@@ -115,12 +115,12 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
                                    "sam",
                                    getSamExecutableInstance(),
                                    getSavedExecutablePath(getSamExecutableInstance(), false),
-                                   getCloudDebugTextboxInput());
+                                   getSamTextboxInput());
         validateAndSaveCliSettings((JBTextField) cloudDebugExecutablePath.getTextField(),
                                    "cloud-debug",
                                    getCloudDebugExecutableInstance(),
-                                   getSavedExecutablePath(getSamExecutableInstance(), false),
-                                   getSamTextboxInput());
+                                   getSavedExecutablePath(getCloudDebugExecutableInstance(), false),
+                                   getCloudDebugTextboxInput());
 
         saveTelemetrySettings();
         saveLambdaSettings();
