@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.runInEdtAndGet
@@ -12,15 +11,12 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.io.exists
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.getVersionAsJson
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.makeATestSam
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.resources.message
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.test.assertNotNull
@@ -85,7 +81,8 @@ class SamCommonTest {
 
     @Test
     fun getCodeUri_noUri() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     MyFunction:
@@ -94,7 +91,8 @@ Resources:
             Handler: helloworld.App::handleRequest
             Runtime: java8
             CodeUri: target/out.jar
-        """.trimIndent())
+        """.trimIndent()
+        )
         runInEdtAndWait {
             projectRule.fixture.addFileToProject("target/out.jar", "")
         }
@@ -109,7 +107,8 @@ Resources:
 
     @Test
     fun getCodeUri_singleUri() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     HelloWorldFunction:
@@ -118,7 +117,8 @@ Resources:
             CodeUri: hello_world/
             Handler: app.handle_request
             Runtime: java8
-        """.trimIndent())
+        """.trimIndent()
+        )
         createChildren("hello_world")
         runInEdtAndWait {
             projectRule.fixture.addFileToProject("target/out.jar", "")
@@ -135,7 +135,8 @@ Resources:
 
     @Test
     fun getCodeUri_samAndNotSam() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     HelloWorldFunction:
@@ -160,7 +161,8 @@ Resources:
             ProvisionedThroughput:
                 ReadCapacityUnits: 1
                 WriteCapacityUnits: 1
-        """.trimIndent())
+        """.trimIndent()
+        )
         createChildren("hello_world")
         runReadAction {
             val dir = file.containingDirectory.virtualFile
@@ -174,7 +176,8 @@ Resources:
 
     @Test
     fun getCodeUri_multipleUris() {
-        val file = yamlTemplate("""
+        val file = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     MyFunction:
@@ -195,7 +198,8 @@ Resources:
             CodeUri: hello_world_42/
             Handler: app.handle_request
             Runtime: java8
-        """.trimIndent())
+        """.trimIndent()
+        )
         createChildren("hello_world")
         createChildren("hello_world_42")
         createChildren("target", "out.jar")
@@ -220,7 +224,7 @@ Resources:
 
     private companion object {
         val TEST_TEMPLATE =
-                """
+            """
 Description: "Some description"
 Resources:
     MyFunction:

@@ -29,7 +29,7 @@ class SamSettings : PersistentStateComponent<SamConfiguration> {
     val executablePath: String?
         get() = if (state.savedExecutablePath.isNullOrEmpty()) {
             ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-                when(it) {
+                when (it) {
                     is ExecutableInstance.Executable -> it.executablePath.toAbsolutePath().toString()
                     else -> null
                 }

@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
@@ -99,7 +98,7 @@ abstract class LambdaBuilder {
             val buildDir = getOrCreateBuildDirectory(module).toPath()
 
             val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-                when(it) {
+                when (it) {
                     is ExecutableInstance.Executable -> it
                     else -> throw RuntimeException(message("sam.cli_not_configured"))
                 }

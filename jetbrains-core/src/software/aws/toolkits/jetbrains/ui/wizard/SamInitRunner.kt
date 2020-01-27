@@ -11,16 +11,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.ExecutableType
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.TemplateParameters
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 
 object SamInitRunner {
     private val LOG = getLogger<SamInitRunner>()
@@ -37,7 +34,7 @@ object SamInitRunner {
         val tempDir = createTempDir()
 
         val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-            when(it) {
+            when (it) {
                 is ExecutableInstance.Executable -> it
                 else -> throw RuntimeException(message("sam.cli_not_configured"))
             }

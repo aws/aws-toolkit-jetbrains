@@ -4,16 +4,12 @@
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModifiableRootModel
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.EnvironmentUtil
-import com.intellij.util.text.SemVer
 import com.intellij.util.text.nullize
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -91,9 +87,14 @@ class SamCommon {
         fun excludeSamDirectory(projectRoot: VirtualFile, modifiableModel: ModifiableRootModel) {
             modifiableModel.contentEntries.forEach { contentEntry ->
                 if (contentEntry.file == projectRoot) {
-                    contentEntry.addExcludeFolder(VfsUtilCore.pathToUrl(Paths.get(projectRoot.path,
-                        SAM_BUILD_DIR
-                    ).toString()))
+                    contentEntry.addExcludeFolder(
+                        VfsUtilCore.pathToUrl(
+                            Paths.get(
+                                projectRoot.path,
+                                SAM_BUILD_DIR
+                            ).toString()
+                        )
+                    )
                 }
             }
         }
