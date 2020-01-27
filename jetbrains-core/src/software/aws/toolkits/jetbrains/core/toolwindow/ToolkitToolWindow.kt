@@ -35,11 +35,9 @@ class ToolkitToolWindowManager(private val project: Project) {
 
         override fun addTab(title: String, component: JComponent, activate: Boolean, id: String): ToolkitToolWindowTab {
             val content = ContentImpl(component, title, true)
-            val toolWindow = windowManager.getToolWindow(type.id)
-                ?: windowManager.registerToolWindow(type.id, true, type.anchor, project, true).also {
-                    //it.icon = type.icon
-                    it.stripeTitle = type.title
-                }
+            val toolWindow = windowManager.getToolWindow(type.id) ?: windowManager.registerToolWindow(type.id, true, type.anchor, project, true)
+            toolWindow.setIcon(type.icon)
+            toolWindow.stripeTitle = type.title
             Disposer.register(content, Disposable { closeWindowIfEmpty(toolWindow, type.id) })
             toolWindow.contentManager.addContent(content)
             return ManagedToolkitToolWindowTab(toolWindow, content).also {
