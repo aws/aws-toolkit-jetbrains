@@ -21,10 +21,14 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.resources.message
@@ -94,7 +98,13 @@ abstract class LambdaBuilder {
         ApplicationManager.getApplication().executeOnPooledThread {
             val buildDir = getOrCreateBuildDirectory(module).toPath()
 
-            val commandLine = SamCommon.getSamCommandLine()
+            val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
+                when(it) {
+                    is ExecutableInstance.Executable -> it
+                    else -> throw RuntimeException(message("sam.cli_not_configured"))
+                }
+            }
+            val commandLine = samExecutable.getCommandLine()
                 .withParameters("build")
                 .withParameters("--template")
                 .withParameters(templateLocation.toString())

@@ -40,37 +40,6 @@ class SamCommon {
         // Exclusive
         val expectedSamMaxVersion = SemVer("0.50.0", 0, 50, 0)
 
-        fun getSamCommandLine(path: String? = SamSettings.getInstance().executablePath): GeneralCommandLine {
-            val sanitizedPath = path.nullize(true)
-                ?: throw RuntimeException(message("sam.cli_not_configured"))
-
-            // we have some env-hacks that we want to do, so we're building our own environment using the same util as GeneralCommandLine
-            // GeneralCommandLine will apply some more env patches prior to process launch (see startProcess()) so this should be fine
-            val effectiveEnvironment = EnvironmentUtil.getEnvironmentMap().toMutableMap()
-            // apply hacks
-            effectiveEnvironment.apply {
-                // GitHub issue: https://github.com/aws/aws-toolkit-jetbrains/issues/645
-                // strip out any AWS credentials in the parent environment
-                remove("AWS_ACCESS_KEY_ID")
-                remove("AWS_SECRET_ACCESS_KEY")
-                remove("AWS_SESSION_TOKEN")
-                // GitHub issue: https://github.com/aws/aws-toolkit-jetbrains/issues/577
-                // coerce the locale to UTF-8 as specified in PEP 538
-                // this is needed for Python 3.0 up to Python 3.7.0 (inclusive)
-                // we can remove this once our IDE minimum version has a fix for https://youtrack.jetbrains.com/issue/PY-30780
-                // currently only seeing this on OS X, so only scoping to that
-                if (SystemInfo.isMac) {
-                    // on other platforms this could be C.UTF-8 or C.UTF8
-                    this["LC_CTYPE"] = "UTF-8"
-                    // we're not setting PYTHONIOENCODING because we might break SAM on py2.7
-                }
-            }
-
-            return GeneralCommandLine(sanitizedPath)
-                .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.NONE)
-                .withEnvironment(effectiveEnvironment)
-        }
-
         /**
          * Check SAM CLI version and return an invalid message if version is not valid or <code>null</code> otherwise
          */
@@ -85,26 +54,6 @@ class SamCommon {
                 return "$samVersionOutOfRangeMessage ${message("executableCommon.version_too_low", SAM_NAME)}"
             }
             return null
-        }
-
-        /**
-         * @return The error message to display, else null if it is valid
-         */
-        @JvmOverloads
-        fun validate(path: String? = SamSettings.getInstance().executablePath): String? {
-            val sanitizedPath = path.nullize(true)
-                ?: return message("sam.cli_not_configured")
-
-            return try {
-                getInvalidVersionMessage(
-                    SamVersionCache.evaluateBlocking(
-                        sanitizedPath,
-                        SamVersionCache.DEFAULT_TIMEOUT_MS
-                    ).result
-                )
-            } catch (e: Exception) {
-                return e.message
-            }
         }
 
         /**

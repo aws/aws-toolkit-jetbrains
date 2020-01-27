@@ -16,6 +16,7 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
+import com.intellij.util.ui.SwingHelper;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,22 +24,21 @@ import java.util.Objects;
 import java.util.concurrent.CompletionException;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import com.intellij.util.ui.SwingHelper;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType;
-import software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable;
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryEnabledChangedNotifier;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService;
 
 @SuppressWarnings("NullableProblems")
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String CLOUDDEBUG = "clouddebug";
-    private static final String SAM_HELP_LINK = message("lambda.sam.cli.install_url");
+    private static final String SAM = "sam";
 
     private final Project project;
     private JPanel panel;
@@ -77,25 +77,12 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     }
 
     private void createUIComponents() {
-        // TODO when SAM moves to ExecutableManager, use createCliConfigurationElement instead
-        samHelp = LinkLabel.create(message("aws.settings.learn_more"), () -> BrowserUtil.browse(SAM_HELP_LINK));
-
-        String autoDetectPath = new SamExecutableDetector().find();
-        JBTextField samExecutableTextField = new JBTextField();
-        if (autoDetectPath != null) {
-            samExecutableTextField.getEmptyText().setText(message("aws.settings.auto_detect", autoDetectPath));
-        }
-        samExecutablePath = new TextFieldWithBrowseButton(samExecutableTextField);
-        samExecutablePath.addBrowseFolderListener(
-            message("aws.settings.sam.find.title"),
-            message("aws.settings.sam.find.description"),
-            project,
-            FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
-        );
-
-        cloudDebugHelp = createHelpLink(CLOUDDEBUG);
+        cloudDebugHelp = createHelpLink("aws.settings.clouddebug.help_url");
         cloudDebugHelp.setEnabled(false);
         cloudDebugExecutablePath = createCliConfigurationElement(getCloudDebugExecutableInstance(), CLOUDDEBUG);
+        samHelp = createHelpLink("lambda.sam.cli.install_url");
+        samHelp.setEnabled(false);
+        samExecutablePath = createCliConfigurationElement(getSamExecutableInstance(), SAM);
     }
 
     @NotNull
@@ -124,12 +111,16 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     @Override
     public void apply() throws ConfigurationException {
-        validateAndSaveSamSettings();
+        validateAndSaveCliSettings((JBTextField) samExecutablePath.getTextField(),
+                                   "sam",
+                                   getSamExecutableInstance(),
+                                   getSavedExecutablePath(getSamExecutableInstance(), false),
+                                   getCloudDebugTextboxInput());
         validateAndSaveCliSettings((JBTextField) cloudDebugExecutablePath.getTextField(),
                                    "cloud-debug",
                                    getCloudDebugExecutableInstance(),
-                                   getSavedExecutablePath(getCloudDebugExecutableInstance(), false),
-                                   getCloudDebugTextboxInput());
+                                   getSavedExecutablePath(getSamExecutableInstance(), false),
+                                   getSamTextboxInput());
 
         saveTelemetrySettings();
         saveLambdaSettings();
@@ -138,10 +129,9 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @Override
     public void reset() {
         AwsSettings awsSettings = AwsSettings.getInstance();
-        SamSettings samSettings = SamSettings.getInstance();
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
 
-        samExecutablePath.setText(samSettings.getSavedExecutablePath());
+        samExecutablePath.setText(getSavedExecutablePath(getSamExecutableInstance(), false));
         cloudDebugExecutablePath.setText(getSavedExecutablePath(getCloudDebugExecutableInstance(), false));
         showAllHandlerGutterIcons.setSelected(lambdaSettings.getShowAllHandlerGutterIcons());
         enableTelemetry.setSelected(awsSettings.isTelemetryEnabled());
@@ -150,6 +140,11 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @NotNull
     private CloudDebugExecutable getCloudDebugExecutableInstance() {
         return ExecutableType.getExecutable(CloudDebugExecutable.class);
+    }
+
+    @NotNull
+    private SamExecutable getSamExecutableInstance() {
+        return ExecutableType.getExecutable(SamExecutable.class);
     }
 
     @Nullable
@@ -163,8 +158,8 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     }
 
     @NotNull
-    private LinkLabel createHelpLink(String cliName) {
-        return LinkLabel.create(message("aws.settings.learn_more"), () -> BrowserUtil.browse(message("aws.settings." + cliName + ".help_url")));
+    private LinkLabel createHelpLink(String helpMessageKey) {
+        return LinkLabel.create(message("aws.settings.learn_more"), () -> BrowserUtil.browse(message(helpMessageKey)));
     }
 
     @NotNull
@@ -182,24 +177,6 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
             FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
         );
         return field;
-    }
-
-    private void validateAndSaveSamSettings() throws ConfigurationException {
-        SamSettings samSettings = SamSettings.getInstance();
-
-        String path = getSamTextboxInput();
-        // only validate if path is not empty and has changed since last save
-        boolean changed = (path != null && !path.equals(samSettings.getSavedExecutablePath()));
-        if (changed) {
-            // if path is set and it is a bad executable
-            String error;
-            if ((error = SamCommon.Companion.validate(path)) != null) {
-                throw new ConfigurationException(message("lambda.run_configuration.sam.invalid_executable", error));
-            }
-        }
-
-        // preserve user's null input if we autodetected the path
-        samSettings.setSavedExecutablePath(getSamTextboxInput());
     }
 
     @Nullable
@@ -228,7 +205,6 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         }
     }
 
-    // TODO when the SAM implementation moves to executable manager, make it use this function as well
     private void validateAndSaveCliSettings(
         JBTextField textField,
         String executableName,
