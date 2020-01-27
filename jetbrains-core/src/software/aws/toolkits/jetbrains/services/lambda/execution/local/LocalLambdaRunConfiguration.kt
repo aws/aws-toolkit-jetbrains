@@ -31,6 +31,9 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
@@ -38,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfig
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamVersionCache
@@ -86,33 +90,11 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     private fun checkSamVersion() {
-        val executablePath = SamSettings.getInstance().executablePath
-            ?: throw RuntimeConfigurationError(message("sam.cli_not_configured"))
-
-        if (!FileUtil.exists(executablePath))
-            throw RuntimeConfigurationError(message("general.file_not_found", executablePath))
-
-        val promise = SamVersionCache.evaluate(executablePath)
-        if (promise.isPending) {
-            promise.then { version ->
-                messageBus.syncPublisher(
-                    SamCliVersionEvaluationListener.TOPIC).samVersionValidationFinished(executablePath, version.result)
-            }
-
-            logger.info { "Validation will proceed asynchronously for SAM CLI version" }
-            throw RuntimeConfigurationError(message("lambda.run_configuration.sam.validation.in_progress"))
-        }
-
-        val errorMessage = try {
-            val semVer = promise.blockingGet(0)!!.result
-            SamCommon.getInvalidVersionMessage(semVer)
-        } catch (e: Exception) {
-            ExceptionUtil.getRootCause(e).message ?: message("general.unknown_error")
-        }
-
-        errorMessage?.let {
-            throw RuntimeConfigurationError(message("lambda.run_configuration.sam.invalid_executable", it)) {
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
+        ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
+            when (it) {
+                is ExecutableInstance.Executable -> it
+                is ExecutableInstance.InvalidExecutable -> throw RuntimeConfigurationError(it.validationError)
+                is ExecutableInstance.UnresolvedExecutable -> throw RuntimeConfigurationError(it.resolutionError)
             }
         }
     }

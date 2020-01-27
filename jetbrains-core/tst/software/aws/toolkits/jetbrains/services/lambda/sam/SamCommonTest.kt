@@ -31,89 +31,6 @@ class SamCommonTest {
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
 
     @Test
-    fun testValidate_noPath() {
-        val result = SamCommon.validate(null)
-        assertEquals(message("sam.cli_not_configured"), result)
-    }
-
-    @Test
-    fun testValidate_pathNotExists() {
-        val result = SamCommon.validate("dasfasdfjlkakjsdf_not_a_real_path")
-        assertThat(result).contains("File not found: \"dasfasdfjlkakjsdf_not_a_real_path\"")
-    }
-
-    @Test
-    fun testValidate_exception() {
-        Assume.assumeTrue(SystemInfo.isUnix)
-        val path = projectRule.fixture.addFileToProject("badexe", "").virtualFile.path
-        val result = SamCommon.validate(path)
-        assertThat(result).contains("Permission denied")
-    }
-
-    @Test
-    fun testValidate_exitNonZero() {
-        val samPath = makeATestSam("stderr", exitCode = 100)
-        val result = SamCommon.validate(samPath.toString())
-        assertThat(result).contains("stderr")
-    }
-
-    @Test
-    fun testValidate_ok() {
-        val samPath = makeATestSam(SamCommonTestUtils.getMinVersionAsJson())
-        val result = SamCommon.validate(samPath.toString())
-        assertNull(result)
-    }
-
-    @Test
-    fun validateBothParametersAreEqualOnSemVer() {
-        assertThat(SamCommon.expectedSamMinVersion.rawVersion).isEqualTo(SamCommon.expectedSamMinVersion.parsedVersion)
-        assertThat(SamCommon.expectedSamMaxVersion.rawVersion).isEqualTo(SamCommon.expectedSamMaxVersion.parsedVersion)
-    }
-
-    @Test
-    fun compatibleSamVersion() {
-        val versions = arrayOf(
-            "0.${SamCommon.expectedSamMinVersion.minor}.${SamCommon.expectedSamMinVersion.patch}",
-            "0.${SamCommon.expectedSamMinVersion.minor}.123",
-            "0.${SamCommon.expectedSamMinVersion.minor}.999999999",
-            "0.${SamCommon.expectedSamMinVersion.minor}.${SamCommon.expectedSamMinVersion.patch + 1}-beta",
-            "0.${SamCommon.expectedSamMinVersion.minor}.${SamCommon.expectedSamMinVersion.patch + 1}-beta+build",
-            "0.${SamCommon.expectedSamMaxVersion.minor - 1}.${SamCommon.expectedSamMinVersion.patch}"
-        )
-        for (version in versions) {
-            assertNull(SamCommon.validate(makeATestSam(getVersionAsJson(version)).toString()))
-        }
-    }
-
-    @Test
-    fun unparsableVersion() {
-        val versions = arrayOf(
-            "GNU bash, version 3.2.57(1)-release (x86_64-apple-darwin16)",
-            "GNU bash, version 3.2.57(1)-release",
-            "12312312.123123131221"
-        )
-        for (version in versions) {
-            val message = SamCommon.validate(makeATestSam(getVersionAsJson(version)).toString())
-            assertThat(message).contains("Could not parse %s executable version from".format(SamCommon.SAM_NAME))
-        }
-    }
-
-    @Test
-    fun incompatableSamVersion_tooLow() {
-        val versions = arrayOf(
-            "0.5.9",
-            "0.0.1",
-            "0.5.9-dev",
-            "0.6.2"
-        )
-        for (version in versions) {
-            val message = SamCommon.validate(makeATestSam(getVersionAsJson(version)).toString())
-            assertThat(message).contains("Bad SAM CLI executable version. Expected")
-            assertThat(message).contains("Upgrade your SAM CLI")
-        }
-    }
-
-    @Test
     fun getVersion_Valid() {
         val version = "0.5.9-dev"
         val actualVersion = SamCommon.getVersionString(makeATestSam(getVersionAsJson(version)).toString())
@@ -131,22 +48,6 @@ class SamCommonTest {
         val samPath = makeATestSam("stderr", exitCode = 100)
         val actualVersion = SamCommon.getVersionString(samPath.toString())
         assertThat(actualVersion).isEqualTo("UNKNOWN")
-    }
-
-    @Test
-    fun incompatableSamVersion_tooHigh() {
-        val versions = arrayOf(
-            SamCommon.expectedSamMaxVersion.rawVersion,
-            SamCommon.expectedSamMaxVersion.parsedVersion,
-            "1.0.0",
-            "1.5.9",
-            "1.5.9-dev"
-        )
-        for (version in versions) {
-            val message = SamCommon.validate(makeATestSam(getVersionAsJson(version)).toString())
-            assertThat(message).contains("Bad SAM CLI executable version. Expected")
-            assertThat(message).contains("Upgrade your AWS Toolkit")
-        }
     }
 
     @Test(expected = java.lang.AssertionError::class)

@@ -34,28 +34,6 @@ class SamCommon {
         const val SAM_INVALID_OPTION_SUBSTRING = "no such option"
         const val SAM_NAME = "SAM CLI"
 
-        // Inclusive
-        val expectedSamMinVersion = SemVer("0.38.0", 0, 38, 0)
-
-        // Exclusive
-        val expectedSamMaxVersion = SemVer("0.50.0", 0, 50, 0)
-
-        /**
-         * Check SAM CLI version and return an invalid message if version is not valid or <code>null</code> otherwise
-         */
-        fun getInvalidVersionMessage(semVer: SemVer): String? {
-            val samVersionOutOfRangeMessage = message("executableCommon.version_wrong",
-                SAM_NAME,
-                expectedSamMinVersion,
-                expectedSamMaxVersion, semVer)
-            if (semVer >= expectedSamMaxVersion) {
-                return "$samVersionOutOfRangeMessage ${message("executableCommon.version_too_high")}"
-            } else if (semVer < expectedSamMinVersion) {
-                return "$samVersionOutOfRangeMessage ${message("executableCommon.version_too_low", SAM_NAME)}"
-            }
-            return null
-        }
-
         /**
          * @return The string representation of the SAM version else "UNKNOWN"
          */
