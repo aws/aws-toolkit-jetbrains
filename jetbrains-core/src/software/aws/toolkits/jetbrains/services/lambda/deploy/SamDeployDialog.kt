@@ -22,7 +22,11 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 import java.nio.file.Files
@@ -179,7 +183,14 @@ class SamDeployDialog(
         envVars.putAll(region.toEnvironmentVariables())
         envVars.putAll(credentialsProvider.resolveCredentials().toEnvironmentVariables())
 
-        return SamCommon.getSamCommandLine()
+        val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
+            when (it) {
+                is ExecutableInstance.Executable -> it
+                else -> throw RuntimeException(message("sam.cli_not_configured"))
+            }
+        }
+        return samExecutable
+            .getCommandLine()
             .withWorkDirectory(template.parent.path)
             .withEnvironment(envVars)
     }

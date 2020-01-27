@@ -18,6 +18,9 @@ import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.core.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
@@ -25,7 +28,7 @@ import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTempla
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateLambdaRuntimes
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.DeploySettings
@@ -54,9 +57,18 @@ class DeployServerlessApplicationAction : AnAction(
             return
         }
 
-        SamCommon.validate()?.let {
-            notifySamCliNotValidError(project = project, content = it)
-            return
+        ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
+            when (it) {
+                is ExecutableInstance.Executable -> it
+                is ExecutableInstance.UnresolvedExecutable -> {
+                    notifySamCliNotValidError(project = project, content = it.resolutionError ?: "")
+                    return
+                }
+                is ExecutableInstance.InvalidExecutable -> {
+                    notifySamCliNotValidError(project = project, content = it.validationError)
+                    return
+                }
+            }
         }
 
         val templateFile = getSamTemplateFile(e)

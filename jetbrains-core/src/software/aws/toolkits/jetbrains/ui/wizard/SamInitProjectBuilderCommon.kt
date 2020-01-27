@@ -12,7 +12,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.text.StringUtil
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamVersionCache
 import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.resources.message
@@ -38,7 +38,12 @@ fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButto
 
     ProgressManager.getInstance().run(object : Task.Backgroundable(null, message("lambda.run_configuration.sam.validating"), false) {
         override fun run(indicator: ProgressIndicator) {
-            val validSamPath = (SamCommon.validate(StringUtil.nullize(samExe)) == null)
+            val validSamPath = try {
+                SamVersionCache.evaluateBlocking(StringUtil.nullize(samExe) ?: "")
+                true
+            } catch (e: Throwable) {
+                false
+            }
             runInEdt {
                 samExecutableField.isVisible = !validSamPath
                 editButton.isVisible = !validSamPath
