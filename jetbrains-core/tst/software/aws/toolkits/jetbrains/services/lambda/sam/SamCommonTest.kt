@@ -14,11 +14,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.jetbrains.core.ExecutableBackedCacheResourceTest
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.getVersionAsJson
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.makeATestSam
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotNull
 
 class SamCommonTest {
@@ -29,20 +32,24 @@ class SamCommonTest {
     @Test
     fun getVersion_Valid() {
         val version = "0.5.9-dev"
-        val actualVersion = SamCommon.getVersionString(makeATestSam(getVersionAsJson(version)).toString())
+        val samPath = makeATestSam(getVersionAsJson(version))
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), samPath).toCompletableFuture().get(1, TimeUnit.SECONDS)
+        val actualVersion = SamCommon.getVersionString()
         assertThat(actualVersion).isEqualTo(version)
     }
 
     @Test
     fun getVersion_badPath() {
-        val actualVersion = SamCommon.getVersionString(path = null)
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get("/bad/path/that/will/not/work")).toCompletableFuture().get(1, TimeUnit.SECONDS)
+        val actualVersion = SamCommon.getVersionString()
         assertThat(actualVersion).isEqualTo("UNKNOWN")
     }
 
     @Test
     fun getVersion_Valid_exitNonZero() {
         val samPath = makeATestSam("stderr", exitCode = 100)
-        val actualVersion = SamCommon.getVersionString(samPath.toString())
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), samPath).toCompletableFuture().get(1, TimeUnit.SECONDS)
+        val actualVersion = SamCommon.getVersionString()
         assertThat(actualVersion).isEqualTo("UNKNOWN")
     }
 

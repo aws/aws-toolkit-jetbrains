@@ -76,6 +76,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
         } ?: return ExecutableInstance.UnresolvedExecutable()
         // Check if the file was modified. If it was, kick off an update in the background. Overlapping
         // Versions of this should be eventually consistent so we do not have to keep track of the future
+        // getExecutableIfPresent is called very often so it is OK to return the old path first
         val lastModified = (instance as ExecutableWithPath).executablePath.lastModifiedOrNull()
         if (lastModified != internalState[type.id]?.third) {
             getExecutable(type).exceptionally {
@@ -197,9 +198,10 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
 }
 
 sealed class ExecutableInstance {
+    abstract val version: String?
+
     interface ExecutableWithPath {
         val executablePath: Path
-        val version: String?
         val autoResolved: Boolean
     }
 
@@ -220,7 +222,9 @@ sealed class ExecutableInstance {
         val validationError: String
     ) : ExecutableInstance(), ExecutableWithPath
 
-    class UnresolvedExecutable(val resolutionError: String? = null) : ExecutableInstance()
+    class UnresolvedExecutable(val resolutionError: String? = null) : ExecutableInstance() {
+        override val version: String? = null
+    }
 }
 
 // PersistentStateComponent requires a bean, so we wrap the List

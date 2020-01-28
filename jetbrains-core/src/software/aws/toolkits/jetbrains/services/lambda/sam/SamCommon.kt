@@ -10,12 +10,11 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.text.nullize
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.SERVERLESS_FUNCTION_TYPE
-import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.resources.message
 import java.io.FileFilter
 import java.nio.file.Paths
@@ -33,16 +32,7 @@ class SamCommon {
         /**
          * @return The string representation of the SAM version else "UNKNOWN"
          */
-        fun getVersionString(path: String? = SamSettings.getInstance().executablePath): String {
-            val sanitizedPath = path.nullize(true) ?: return "UNKNOWN"
-
-            return try {
-                SamVersionCache.evaluateBlocking(sanitizedPath, SamVersionCache.DEFAULT_TIMEOUT_MS).result.rawVersion
-            } catch (e: Exception) {
-                logger.error(e) { "Error while getting SAM executable version." }
-                return "UNKNOWN"
-            }
-        }
+        fun getVersionString(): String = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().version ?: "UNKNOWN"
 
         fun getTemplateFromDirectory(projectRoot: VirtualFile): VirtualFile? {
             // Use Java File so we don't need to do a full VFS refresh
