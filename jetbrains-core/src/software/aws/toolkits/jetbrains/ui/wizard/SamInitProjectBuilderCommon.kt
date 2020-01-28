@@ -56,7 +56,7 @@ fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButto
         }
         updateUi(validSamPath)
     }.exceptionally {
-        updateUi(false)
+        updateUi(validSamPath = false)
         null
     }
 }

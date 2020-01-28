@@ -102,7 +102,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
             future.complete(
                 when {
                     instance is ExecutableWithPath && persisted.autoResolved == true && instance.executablePath.isNewerThan(lastKnownFileTime) ->
-                        validate(type, instance.executablePath, false)
+                        validate(type, instance.executablePath, autoResolved = false)
                     instance is ExecutableWithPath && instance.executablePath.lastModifiedOrNull() == lastValidated ->
                         instance
                     else ->
@@ -152,26 +152,37 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
     }
 
     private fun resolve(type: ExecutableType<*>): ExecutableInstance = try {
-        (type as? AutoResolvable)?.resolve()?.let { validate(type, it, true) } ?: ExecutableInstance.UnresolvedExecutable()
+        (type as? AutoResolvable)?.resolve()?.let { validate(type, it, autoResolved = true) } ?: ExecutableInstance.UnresolvedExecutable()
     } catch (e: Exception) {
         ExecutableInstance.UnresolvedExecutable(message("aws.settings.executables.resolution_exception", type.displayName, e.asString))
     }
 
-    private fun validate(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance = try {
-        (type as? Validatable)?.validate(path)
-        determineVersion(type, path, autoResolved)
-    } catch (e: Exception) {
-        val message = message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
-        LOG.warn(e) { message }
+    private fun validate(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance {
+        val oldValue = internalState[type.id]?.second
+        val previouslyValid = oldValue is ExecutableInstance.Executable
 
-        ExecutableInstance.InvalidExecutable(
-            path,
-            null,
-            autoResolved,
-            message
-        )
-    }.also {
-        updateInternalState(type, it)
+        try {
+            (type as? Validatable)?.validate(path)
+            val instance = determineVersion(type, path, autoResolved)
+            updateInternalState(type, instance)
+            return instance
+        } catch (e: Exception) {
+            val message = message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
+            LOG.warn(e) { message }
+
+            val instance = ExecutableInstance.InvalidExecutable(
+                path,
+                null,
+                autoResolved,
+                message
+            )
+            return if (previouslyValid) {
+                oldValue as ExecutableInstance.Executable
+            } else {
+                updateInternalState(type, instance)
+                instance
+            }
+        }
     }
 
     private fun determineVersion(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance = try {
