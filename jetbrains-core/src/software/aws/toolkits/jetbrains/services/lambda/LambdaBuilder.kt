@@ -100,7 +100,10 @@ abstract class LambdaBuilder {
             val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
                 when (it) {
                     is ExecutableInstance.Executable -> it
-                    else -> throw RuntimeException(message("sam.cli_not_configured"))
+                    else -> {
+                        future.completeExceptionally(RuntimeException(message("sam.cli_not_configured")))
+                        return@executeOnPooledThread
+                    }
                 }
             }
             val commandLine = samExecutable.getCommandLine()
