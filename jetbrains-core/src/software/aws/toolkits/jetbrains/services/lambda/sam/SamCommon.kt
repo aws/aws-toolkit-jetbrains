@@ -34,8 +34,7 @@ class SamCommon {
          * @return The string representation of the SAM version else "UNKNOWN"
          */
         fun getVersionString(path: String? = SamSettings.getInstance().executablePath): String {
-            val sanitizedPath = path.nullize(true)
-                ?: return "UNKNOWN"
+            val sanitizedPath = path.nullize(true) ?: return "UNKNOWN"
 
             return try {
                 SamVersionCache.evaluateBlocking(sanitizedPath, SamVersionCache.DEFAULT_TIMEOUT_MS).result.rawVersion

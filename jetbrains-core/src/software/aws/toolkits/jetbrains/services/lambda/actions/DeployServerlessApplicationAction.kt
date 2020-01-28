@@ -61,7 +61,7 @@ class DeployServerlessApplicationAction : AnAction(
             when (it) {
                 is ExecutableInstance.Executable -> it
                 is ExecutableInstance.UnresolvedExecutable -> {
-                    notifySamCliNotValidError(project = project, content = it.resolutionError ?: "")
+                    notifySamCliNotValidError(project = project, content = it.resolutionError)
                     return
                 }
                 is ExecutableInstance.InvalidExecutable -> {

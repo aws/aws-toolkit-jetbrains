@@ -84,7 +84,7 @@ These states are conveyed as a `sealed class`:
 sealed class ExecutableInstance {
     class Executable(val executablePath: Path) : ExecutableInstance()
     class InvalidExecutable(val executablePath: Path, val validationError: String) : ExecutableInstance()
-    class UnresolvedExecutable(val resolutionError: String? = null) : ExecutableInstance()
+    class UnresolvedExecutable(val resolutionError: String = "") : ExecutableInstance()
 }
 ```
 
