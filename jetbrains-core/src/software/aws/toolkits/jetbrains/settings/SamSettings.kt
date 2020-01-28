@@ -7,6 +7,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
@@ -49,6 +50,7 @@ class SamSettings : PersistentStateComponent<SamConfiguration> {
 
     companion object {
         @JvmStatic
+        @TestOnly
         fun getInstance(): SamSettings = ServiceManager.getService(SamSettings::class.java)
     }
 }

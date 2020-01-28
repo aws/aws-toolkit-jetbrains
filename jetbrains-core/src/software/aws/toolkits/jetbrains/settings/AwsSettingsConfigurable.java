@@ -100,7 +100,6 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @Override
     public boolean isModified() {
         AwsSettings awsSettings = AwsSettings.getInstance();
-        SamSettings samSettings = SamSettings.getInstance();
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
 
         return !Objects.equals(getSamTextboxInput(), getSavedExecutablePath(getSamExecutableInstance(), false)) ||

@@ -6,16 +6,14 @@ package software.aws.toolkits.jetbrains.ui.wizard
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.ShowSettingsUtil
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.openapi.util.text.StringUtil
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamVersionCache
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.getExecutable
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
-import software.aws.toolkits.jetbrains.settings.SamSettings
-import software.aws.toolkits.resources.message
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -26,29 +24,39 @@ interface ValidatablePanel {
 
 @JvmOverloads
 fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButton, label: JComponent, postEditCallback: Runnable? = null) {
-    samExecutableField.text = SamSettings.getInstance().executablePath
+    fun getSamExecutable(): ExecutableInstance.ExecutableWithPath? =
+        ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
+            if (it is ExecutableInstance.ExecutableWithPath) {
+                it
+            } else {
+                null
+            }
+        }
+
+    fun updateUi(validSamPath: Boolean) {
+        runInEdt {
+            samExecutableField.isVisible = !validSamPath
+            editButton.isVisible = !validSamPath
+            label.isVisible = !validSamPath
+        }
+    }
+
+    samExecutableField.text = getSamExecutable()?.executablePath?.toString()
 
     editButton.addActionListener {
         ShowSettingsUtil.getInstance().showSettingsDialog(DefaultProjectFactory.getInstance().defaultProject, AwsSettingsConfigurable::class.java)
-        samExecutableField.text = SamSettings.getInstance().executablePath
+        samExecutableField.text = getSamExecutable()?.executablePath?.toString()
         postEditCallback?.run()
     }
 
-    val samExe = samExecutableField.text
-
-    ProgressManager.getInstance().run(object : Task.Backgroundable(null, message("lambda.run_configuration.sam.validating"), false) {
-        override fun run(indicator: ProgressIndicator) {
-            val validSamPath = try {
-                SamVersionCache.evaluateBlocking(StringUtil.nullize(samExe) ?: "")
-                true
-            } catch (e: Throwable) {
-                false
-            }
-            runInEdt {
-                samExecutableField.isVisible = !validSamPath
-                editButton.isVisible = !validSamPath
-                label.isVisible = !validSamPath
-            }
+    ExecutableManager.getInstance().getExecutable<SamExecutable>().thenAccept {
+        val validSamPath = when (it) {
+            is ExecutableInstance.Executable -> true
+            else -> false
         }
-    })
+        updateUi(validSamPath)
+    }.exceptionally {
+        updateUi(false)
+        null
+    }
 }
