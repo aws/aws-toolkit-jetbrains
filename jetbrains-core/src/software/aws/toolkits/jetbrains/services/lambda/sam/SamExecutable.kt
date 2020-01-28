@@ -14,8 +14,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 class SamExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
-    override val id: String = "samCli"
     override val displayName: String = "sam"
+    override val id: String = "samCli"
 
     val samMinVersion = SemVer("0.38.0", 0, 38, 0)
     val samMaxVersion = SemVer("0.50.0", 0, 50, 0)

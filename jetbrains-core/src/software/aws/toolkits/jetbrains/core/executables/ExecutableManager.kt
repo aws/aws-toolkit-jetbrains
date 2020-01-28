@@ -210,7 +210,7 @@ sealed class ExecutableInstance {
         val validationError: String
     ) : ExecutableInstance(), ExecutableWithPath
 
-    class UnresolvedExecutable(val resolutionError: String = "") : ExecutableInstance()
+    class UnresolvedExecutable(val resolutionError: String? = null) : ExecutableInstance()
 }
 
 // PersistentStateComponent requires a bean, so we wrap the List
