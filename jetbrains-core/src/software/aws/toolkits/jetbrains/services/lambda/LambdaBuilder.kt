@@ -8,7 +8,6 @@ import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessHandlerFactory
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
@@ -23,7 +22,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
+import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
@@ -94,18 +93,17 @@ abstract class LambdaBuilder {
                 )
         }
 
-        ApplicationManager.getApplication().executeOnPooledThread {
+        ExecutableManager.getInstance().getExecutable<SamExecutable>().thenApply {
             val buildDir = getOrCreateBuildDirectory(module).toPath()
 
-            val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-                when (it) {
-                    is ExecutableInstance.Executable -> it
-                    else -> {
-                        future.completeExceptionally(RuntimeException(message("sam.cli_not_configured")))
-                        return@executeOnPooledThread
-                    }
+            val samExecutable = when (it) {
+                is ExecutableInstance.Executable -> it
+                else -> {
+                    future.completeExceptionally(RuntimeException(message("sam.cli_not_configured")))
+                    return@thenApply
                 }
             }
+
             val commandLine = samExecutable.getCommandLine()
                 .withParameters("build")
                 .withParameters("--template")
