@@ -67,12 +67,24 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
         }
     }
 
-    override fun getExecutableIfPresent(type: ExecutableType<*>): ExecutableInstance = internalState[type.id]?.second?.takeIf {
-        when (it) {
-            is ExecutableWithPath -> it.executablePath.exists()
-            else -> true
+    override fun getExecutableIfPresent(type: ExecutableType<*>): ExecutableInstance {
+        val instance = internalState[type.id]?.second?.takeIf {
+            when (it) {
+                is ExecutableWithPath -> it.executablePath.exists()
+                else -> true
+            }
+        } ?: return ExecutableInstance.UnresolvedExecutable()
+        // Check if the file was modified. If it was, kick off an update in the background. Overlapping
+        // Versions of this should be eventually consistent so we do not have to keep track of the future
+        val lastModified = (instance as ExecutableWithPath).executablePath.lastModifiedOrNull()
+        if (lastModified != internalState[type.id]?.third) {
+            getExecutable(type).exceptionally {
+                LOG.warn(it) { "Error thrown while updating executable cache" }
+                null
+            }
         }
-    } ?: ExecutableInstance.UnresolvedExecutable()
+        return instance
+    }
 
     override fun getExecutable(type: ExecutableType<*>): CompletionStage<ExecutableInstance> {
         val future = CompletableFuture<ExecutableInstance>()
@@ -158,9 +170,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
             message
         )
     }.also {
-        when (it) {
-            is ExecutableInstance.Executable -> updateInternalState(type, it)
-        }
+        updateInternalState(type, it)
     }
 
     private fun determineVersion(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance = try {
