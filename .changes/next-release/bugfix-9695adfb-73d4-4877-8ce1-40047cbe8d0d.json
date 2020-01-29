@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Port SAM cli management to our executable manager which will provide consistent messanging and a better experience"
+}
