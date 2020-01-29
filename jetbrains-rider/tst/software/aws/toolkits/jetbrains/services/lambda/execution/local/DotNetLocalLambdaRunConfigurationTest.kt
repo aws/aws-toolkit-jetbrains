@@ -8,7 +8,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.testng.annotations.Test
-import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.resources.message
 
 class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {

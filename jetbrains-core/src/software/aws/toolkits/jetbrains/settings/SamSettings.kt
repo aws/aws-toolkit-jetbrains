@@ -8,10 +8,6 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import org.jetbrains.annotations.TestOnly
-import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 
 @State(name = "sam", storages = [Storage("aws.xml")])
 class SamSettings : PersistentStateComponent<SamConfiguration> {

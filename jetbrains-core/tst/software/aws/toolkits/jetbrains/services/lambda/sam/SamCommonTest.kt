@@ -14,9 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.ExecutableBackedCacheResourceTest
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.getVersionAsJson
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.makeATestSam
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import java.nio.file.Files
@@ -31,7 +29,8 @@ class SamCommonTest {
 
     @Test
     fun getVersion_badPath() {
-        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get("/bad/path/that/will/not/work")).toCompletableFuture().get(1, TimeUnit.SECONDS)
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get("/bad/path/that/will/not/work")).toCompletableFuture()
+            .get(1, TimeUnit.SECONDS)
         val actualVersion = SamCommon.getVersionString()
         assertThat(actualVersion).isEqualTo("UNKNOWN")
     }
