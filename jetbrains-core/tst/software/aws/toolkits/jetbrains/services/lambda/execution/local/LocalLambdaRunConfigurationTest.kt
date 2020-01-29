@@ -57,8 +57,9 @@ class LocalLambdaRunConfigurationTest {
 
     @Before
     fun setUp() {
-        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
-        preWarmSamVersionCache(validSam)
+        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson())
+        preWarmSamVersionCache(validSam.toString())
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam)
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
 
@@ -81,6 +82,7 @@ class LocalLambdaRunConfigurationTest {
     @After
     fun tearDown() {
         MockCredentialsManager.getInstance().reset()
+        ExecutableManager.getInstance().removeExecutable(SamExecutable())
     }
 
     @Test
@@ -102,7 +104,9 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun samIsNotSet() {
         val fakeSamPath = "NotValid"
+        ExecutableManager.getInstance().removeExecutable(SamExecutable())
         ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get(fakeSamPath))
+        Thread.sleep(1000)
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
@@ -113,9 +117,8 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("general.file_not_found", fakeSamPath))
+                .hasMessage(message("executableCommon.invalid_executable", "sam"))
         }
-        ExecutableManager.getInstance().removeExecutable(SamExecutable())
     }
 
     @Test

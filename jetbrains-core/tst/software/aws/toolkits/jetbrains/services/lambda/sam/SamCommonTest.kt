@@ -30,15 +30,6 @@ class SamCommonTest {
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
 
     @Test
-    fun getVersion_Valid() {
-        val version = "0.5.9-dev"
-        val samPath = makeATestSam(getVersionAsJson(version))
-        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), samPath).toCompletableFuture().get(1, TimeUnit.SECONDS)
-        val actualVersion = SamCommon.getVersionString()
-        assertThat(actualVersion).isEqualTo(version)
-    }
-
-    @Test
     fun getVersion_badPath() {
         ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get("/bad/path/that/will/not/work")).toCompletableFuture().get(1, TimeUnit.SECONDS)
         val actualVersion = SamCommon.getVersionString()
