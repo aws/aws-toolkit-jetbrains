@@ -23,11 +23,14 @@ import com.jetbrains.rider.projectView.actions.projectTemplating.backend.ReSharp
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateDialogContext
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
 import com.jetbrains.rider.ui.themes.RiderTheme
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.SdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectTemplate
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
@@ -102,7 +105,13 @@ class DotNetSamProjectGenerator(
 
     override fun validateData() {
         super.validateData()
-        SamCommon.validate()?.let { validationError.set(it) }
+        ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
+            if (it is ExecutableInstance.InvalidExecutable) {
+                validationError.set(it.validationError)
+            } else if (it is ExecutableInstance.UnresolvedExecutable) {
+                validationError.set(it.resolutionError)
+            }
+        }
     }
 
     override fun updateInfo() {

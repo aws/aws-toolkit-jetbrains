@@ -26,13 +26,16 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.settings.SamSettings
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.toElement
 import software.aws.toolkits.resources.message
+import java.nio.file.Paths
 
 class LocalLambdaRunConfigurationTest {
     @Rule
@@ -55,7 +58,6 @@ class LocalLambdaRunConfigurationTest {
     @Before
     fun setUp() {
         val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
-        SamSettings.getInstance().savedExecutablePath = validSam
         preWarmSamVersionCache(validSam)
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
@@ -100,7 +102,7 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun samIsNotSet() {
         val fakeSamPath = "NotValid"
-        SamSettings.getInstance().savedExecutablePath = fakeSamPath
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get(fakeSamPath))
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
@@ -113,6 +115,7 @@ class LocalLambdaRunConfigurationTest {
                 .isInstanceOf(RuntimeConfigurationError::class.java)
                 .hasMessage(message("general.file_not_found", fakeSamPath))
         }
+        ExecutableManager.getInstance().removeExecutable(SamExecutable())
     }
 
     @Test
@@ -402,7 +405,6 @@ class LocalLambdaRunConfigurationTest {
     fun inputTextIsNotSet() {
         val project = projectRule.project
 
-        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
         preWarmLambdaHandlerValidation(project)
 
         runInEdtAndWait {

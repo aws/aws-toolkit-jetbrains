@@ -23,31 +23,6 @@ class SamSettings : PersistentStateComponent<SamConfiguration> {
         this.state = state
     }
 
-    /**
-     * Returns the path to the SAM CLI executable by first using the manual value,
-     * if it is not set attempts to auto-detect it
-     */
-    val executablePath: String?
-        get() = if (state.savedExecutablePath.isNullOrEmpty()) {
-            ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-                when (it) {
-                    is ExecutableInstance.Executable -> it.executablePath.toAbsolutePath().toString()
-                    else -> null
-                }
-            }
-        } else {
-            state.savedExecutablePath
-        }
-
-    /**
-     * Exposes the saved (aka manually set) path to SAM CLI executable
-     */
-    var savedExecutablePath: String?
-        get() = state.savedExecutablePath
-        set(value) {
-            state.savedExecutablePath = value
-        }
-
     companion object {
         @JvmStatic
         @TestOnly

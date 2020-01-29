@@ -13,13 +13,16 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.zipEntries
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.BuiltLambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
-import software.aws.toolkits.jetbrains.settings.SamSettings
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.streams.toList
 
 abstract class BaseLambdaBuilderTest {
@@ -27,7 +30,8 @@ abstract class BaseLambdaBuilderTest {
 
     @Before
     open fun setUp() {
-        SamSettings.getInstance().savedExecutablePath = System.getenv()["SAM_CLI_EXEC"]
+        ExecutableManager.getInstance()
+            .setExecutablePath(ExecutableType.getInstance<SamExecutable>(), Paths.get(System.getenv().getOrDefault("SAM_CLI_EXEC", "sam")))
     }
 
     protected fun buildLambda(

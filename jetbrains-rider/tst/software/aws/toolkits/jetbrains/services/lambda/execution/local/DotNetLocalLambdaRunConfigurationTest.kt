@@ -19,7 +19,7 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
 
     @Test
     fun testHandler_ValidHandler() {
-        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
+        preWarmSamVersionCache(validSam)
         preWarmLambdaHandlerValidation(handler = defaultHandler)
 
         runInEdtAndWait {
@@ -34,7 +34,7 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
     @Test
     fun testHandler_NonExistingMethodName() {
         val nonExistingHandler = "HelloWorld::HelloWorld.Function::HandlerDoesNoteExist"
-        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
+        preWarmSamVersionCache(validSam)
         preWarmLambdaHandlerValidation(handler = nonExistingHandler)
 
         runInEdtAndWait {
@@ -51,7 +51,7 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
     @Test
     fun testHandler_NonExistingTypeName() {
         val nonExistingHandler = "HelloWorld::HelloWorld.UnknownFunction::FunctionHandler"
-        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
+        preWarmSamVersionCache(validSam)
         preWarmLambdaHandlerValidation(handler = nonExistingHandler)
 
         runInEdtAndWait {
@@ -68,7 +68,7 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
     @Test
     fun testHandler_InvalidHandlerString() {
         val invalidHandler = "Fake"
-        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
+        preWarmSamVersionCache(validSam)
         preWarmLambdaHandlerValidation(handler = invalidHandler)
 
         runInEdtAndWait {
@@ -84,7 +84,7 @@ class DotNetLocalLambdaRunConfigurationTest : LambdaRunConfigurationTestBase() {
 
     @Test
     fun testHandler_HandlerNotSet() {
-        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
+        preWarmSamVersionCache(validSam)
         preWarmLambdaHandlerValidation()
 
         runInEdtAndWait {

@@ -25,10 +25,11 @@ abstract class LambdaRunConfigurationTestBase : BaseTestWithSolution() {
     protected val defaultHandler = "HelloWorld::HelloWorld.Function::FunctionHandler"
     protected val defaultInput = "inputText"
 
+    protected var validSam: String = ""
+
     @BeforeMethod
     fun setUpCredentialsManager() {
-        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
-        SamSettings.getInstance().savedExecutablePath = validSam
+        validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
     }
