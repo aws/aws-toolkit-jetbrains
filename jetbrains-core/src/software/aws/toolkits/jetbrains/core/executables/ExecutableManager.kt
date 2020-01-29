@@ -73,10 +73,21 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
                 is ExecutableWithPath -> it.executablePath.exists()
                 else -> true
             }
-        } ?: return ExecutableInstance.UnresolvedExecutable()
+        }
+
+        // If the executable is compleatly unresolved, either the path does not exist, or there is no
+        // entry in the cache. In this case, always try to get the executable out of the cache.
+        if (instance == null) {
+            getExecutable(type).exceptionally {
+                LOG.warn(it) { "Error thrown while updating executable cache" }
+                null
+            }
+            return ExecutableInstance.UnresolvedExecutable()
+        }
+
         // Check if the file was modified. If it was, kick off an update in the background. Overlapping
         // Versions of this should be eventually consistent so we do not have to keep track of the future
-        // getExecutableIfPresent is called very often so it is OK to return the old path first
+        // getExecutableIfPresent is called very often by validate run configuration is OK to return the old path first
         val lastModified = (instance as ExecutableWithPath).executablePath.lastModifiedOrNull()
         if (lastModified != internalState[type.id]?.third) {
             getExecutable(type).exceptionally {
