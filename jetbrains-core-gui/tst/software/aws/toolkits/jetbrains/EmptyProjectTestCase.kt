@@ -19,7 +19,7 @@ abstract class EmptyProjectTestCase : GuiTestCase() {
     fun createEmptyProject() {
         // TODO fix tests on 2019.3
         val info = ApplicationInfo.getInstance()
-        if (info.majorVersion == "2019" && info.minorVersionMainPart == "2") {
+        if (info.majorVersion == "2019" && info.minorVersionMainPart == "3") {
             return
         }
 
