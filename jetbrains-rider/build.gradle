@@ -7,8 +7,7 @@ buildscript {
     } else if (resolveIdeProfileName() == "2019.3") {
         ext.rd_version = "0.193.51"
     } else if (resolveIdeProfileName() == "2020.1") {
-        // TODO add 2020.1 rider support
-        return
+        ext.rd_version = "0.201.48"
     } else {
         throw new IllegalStateException("rdgen version not set for $resolveIdeProfileName()")
     }
@@ -26,11 +25,6 @@ buildscript {
 }
 
 ext.resharperPluginPath = new File(projectDir, "ReSharper.AWS")
-
-// TODO add 2020.1 rider support
-if (resolveIdeProfileName() == "2020.1") {
-    return
-}
 
 try {
     InetAddress.getByName("repo.labs.intellij.net")
