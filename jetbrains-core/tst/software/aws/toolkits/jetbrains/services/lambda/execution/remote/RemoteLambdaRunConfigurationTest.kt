@@ -222,10 +222,11 @@ class RemoteLambdaRunConfigurationTest {
 
     private fun getState(runConfiguration: RemoteLambdaRunConfiguration): RemoteLambdaState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
+        assertThat(executor).isNotNull
         val environmentMock = mock<ExecutionEnvironment> {
             on { project } doReturn projectRule.project
-            on { getExecutor() } doReturn executor
+            on { getExecutor() } doReturn executor!!
         }
-        return runConfiguration.getState(executor, environmentMock)
+        return runConfiguration.getState(executor!!, environmentMock)
     }
 }

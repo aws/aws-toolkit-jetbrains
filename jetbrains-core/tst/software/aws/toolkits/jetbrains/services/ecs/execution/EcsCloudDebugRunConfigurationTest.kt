@@ -409,12 +409,13 @@ class EcsCloudDebugRunConfigurationTest {
 
     private fun getCloudDebugRunningState(configuration: EcsCloudDebugRunConfiguration): CloudDebugRunState? {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
+        assertThat(executor).isNotNull
         val environment = ExecutionEnvironmentBuilder.create(
             DefaultDebugExecutor.getDebugExecutorInstance(),
             configuration
         ).build()
 
-        return configuration.getState(executor, environment)
+        return configuration.getState(executor!!, environment)
     }
 
     private fun buildDefaultConfiguration(): EcsCloudDebugRunConfiguration {

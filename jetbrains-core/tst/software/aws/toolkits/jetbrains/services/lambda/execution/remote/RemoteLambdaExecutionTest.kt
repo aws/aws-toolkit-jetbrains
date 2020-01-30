@@ -131,7 +131,8 @@ class RemoteLambdaExecutionTest {
         )
 
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
+        assertThat(executor).isNotNull
+        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor!!, runConfiguration).build()
         val executionFuture = CompletableFuture<Output>()
         runInEdt {
             executionEnvironment.runner.execute(executionEnvironment) {
