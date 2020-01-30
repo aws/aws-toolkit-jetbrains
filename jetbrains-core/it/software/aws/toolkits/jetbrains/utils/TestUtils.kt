@@ -20,6 +20,7 @@ import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugSessionListener
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.XDebuggerManagerListener
+import org.assertj.core.api.Assertions.assertThat
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
@@ -28,9 +29,10 @@ fun executeRunConfiguration(
     executorId: String = DefaultRunExecutor.EXECUTOR_ID
 ): Output {
     val executor = ExecutorRegistry.getInstance().getExecutorById(executorId)
+    assertThat(executor).isNotNull
     val executionFuture = CompletableFuture<Output>()
     runInEdt {
-        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
+        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor!!, runConfiguration).build()
         try {
             executionEnvironment.runner.execute(executionEnvironment) {
                 it.processHandler?.addProcessListener(object : OutputListener() {
