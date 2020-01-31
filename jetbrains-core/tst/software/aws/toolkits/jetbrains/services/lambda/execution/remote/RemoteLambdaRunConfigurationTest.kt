@@ -24,6 +24,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
+import kotlin.test.assertNotNull
 
 class RemoteLambdaRunConfigurationTest {
     @Rule
@@ -222,11 +223,11 @@ class RemoteLambdaRunConfigurationTest {
 
     private fun getState(runConfiguration: RemoteLambdaRunConfiguration): RemoteLambdaState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        assertThat(executor).isNotNull
+        assertNotNull(executor)
         val environmentMock = mock<ExecutionEnvironment> {
             on { project } doReturn projectRule.project
-            on { getExecutor() } doReturn executor!!
+            on { getExecutor() } doReturn executor
         }
-        return runConfiguration.getState(executor!!, environmentMock)
+        return runConfiguration.getState(executor, environmentMock)
     }
 }
