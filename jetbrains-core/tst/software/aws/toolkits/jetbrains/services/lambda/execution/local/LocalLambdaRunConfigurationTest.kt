@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.toElement
 import software.aws.toolkits.resources.message
+import kotlin.test.assertNotNull
 
 class LocalLambdaRunConfigurationTest {
     @Rule
@@ -716,10 +717,10 @@ class LocalLambdaRunConfigurationTest {
 
     private fun getState(runConfiguration: LocalLambdaRunConfiguration): SamRunningState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        assertThat(executor).isNotNull
+        assertNotNull(executor)
         val environmentMock = mock<ExecutionEnvironment> {
             on { project } doReturn projectRule.project
-            on { getExecutor() } doReturn executor!!
+            on { getExecutor() } doReturn executor
         }
         return runConfiguration.getState(executor!!, environmentMock)
     }
