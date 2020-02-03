@@ -18,18 +18,15 @@ import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addBreakpoint
-import java.nio.file.Paths
+import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 
 @RunWith(Parameterized::class)
 class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runtime) {
@@ -53,8 +50,7 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
 
     @Before
     fun setUp() {
-        ExecutableManager.getInstance()
-            .setExecutablePath(ExecutableType.getInstance<SamExecutable>(), Paths.get(System.getenv().getOrDefault("SAM_CLI_EXEC", "sam")))
+        setSamExecutableFromEnvironment()
 
         val fixture = projectRule.fixture
         fixture.addFileToProject(

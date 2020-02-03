@@ -20,11 +20,8 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.rules.S3TemporaryBucketRule
 import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.runUnderRealCredentials
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.ExecutableType
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import java.nio.file.Paths
+import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -50,8 +47,7 @@ class SamDeployTest {
 
     @Before
     fun setUp() {
-        ExecutableManager.getInstance()
-            .setExecutablePath(ExecutableType.getInstance<SamExecutable>(), Paths.get(System.getenv().getOrDefault("SAM_CLI_EXEC", "sam")))
+        setSamExecutableFromEnvironment()
 
         MockProjectAccountSettingsManager.getInstance(projectRule.project).changeRegion(AwsRegion(Region.US_WEST_2.id(), "us-west-2", "aws"))
     }
