@@ -13,7 +13,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
+import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.MockResourceCache
@@ -78,8 +78,8 @@ class DefaultProjectAccountSettingsManagerTest {
         val credentials = mockCredentialManager.addCredentials("Mock1")
         val credentials2 = mockCredentialManager.addCredentials("Mock2")
 
-        markConnectionSettingsAsValid(ConnectionSettings(credentials, AwsRegionProvider.getInstance().defaultRegion()))
-        markConnectionSettingsAsValid(ConnectionSettings(credentials2, AwsRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsValid(credentials, AwsRegionProvider.getInstance().defaultRegion())
+        markConnectionSettingsAsValid(credentials2, AwsRegionProvider.getInstance().defaultRegion())
 
         changeCredentialProvider(credentials)
 
@@ -208,7 +208,7 @@ class DefaultProjectAccountSettingsManagerTest {
         """.toElement()
 
         val credentials = mockCredentialManager.addCredentials("Mock")
-        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsValid(credentials, MockRegionProvider.getInstance().defaultRegion())
 
         deserializeAndLoadState(manager, element)
 
@@ -286,7 +286,7 @@ class DefaultProjectAccountSettingsManagerTest {
     fun testLoadingInvalidActiveCredentialNotSelected() {
         val mockCredentials = mockCredentialManager.addCredentials("Mock")
 
-        markConnectionSettingsAsInvalid(ConnectionSettings(mockCredentials, MockRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsInvalid(mockCredentials, MockRegionProvider.getInstance().defaultRegion())
 
         val element = """
             <AccountState>
@@ -309,7 +309,7 @@ class DefaultProjectAccountSettingsManagerTest {
     @Test
     fun testLoadingDefaultProfileIfNoPrevious() {
         val credentials = mockCredentialManager.addCredentials("profile:default")
-        markConnectionSettingsAsValid(ConnectionSettings(credentials, MockRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsValid(credentials, MockRegionProvider.getInstance().defaultRegion())
 
         val element = """
             <AccountState/>
@@ -331,8 +331,8 @@ class DefaultProjectAccountSettingsManagerTest {
         val defaultCredentials = mockCredentialManager.addCredentials("profile:default")
         val adminCredentials = mockCredentialManager.addCredentials("profile:admin")
 
-        markConnectionSettingsAsValid(ConnectionSettings(defaultCredentials, AwsRegionProvider.getInstance().defaultRegion()))
-        markConnectionSettingsAsValid(ConnectionSettings(adminCredentials, AwsRegionProvider.getInstance().defaultRegion()))
+        markConnectionSettingsAsValid(defaultCredentials, AwsRegionProvider.getInstance().defaultRegion())
+        markConnectionSettingsAsValid(adminCredentials, AwsRegionProvider.getInstance().defaultRegion())
 
         changeRegion(AwsRegionProvider.getInstance().defaultRegion())
         changeCredentialProvider(adminCredentials)
@@ -348,15 +348,15 @@ class DefaultProjectAccountSettingsManagerTest {
         assertThat(manager.connectionSettings()).isNull()
     }
 
-    private fun markConnectionSettingsAsValid(connectionSettings: ConnectionSettings) {
-        mockResourceCache.addValidAwsCredential(connectionSettings.region.id, connectionSettings.credentials.id, "1111222233333")
+    private fun markConnectionSettingsAsValid(credentialsIdentifier: ToolkitCredentialsIdentifier, region: AwsRegion) {
+        mockResourceCache.addValidAwsCredential(region.id, credentialsIdentifier.id, "1111222233333")
     }
 
-    private fun markConnectionSettingsAsInvalid(connectionSettings: ConnectionSettings) {
-        mockResourceCache.addInvalidAwsCredential(connectionSettings.region.id, connectionSettings.credentials.id)
+    private fun markConnectionSettingsAsInvalid(credentialsIdentifier: ToolkitCredentialsIdentifier, region: AwsRegion) {
+        mockResourceCache.addInvalidAwsCredential(region.id, credentialsIdentifier.id)
     }
 
-    private fun changeCredentialProvider(credentialsProvider: ToolkitCredentialsProvider) {
+    private fun changeCredentialProvider(credentialsProvider: ToolkitCredentialsIdentifier) {
         manager.changeCredentialProvider(credentialsProvider)
 
         waitForTerminalConnectionState()

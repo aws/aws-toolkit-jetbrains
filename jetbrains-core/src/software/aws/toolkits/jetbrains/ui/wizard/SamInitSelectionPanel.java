@@ -154,7 +154,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
 
         ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.Companion.getInstance(generator.getDefaultSourceCreatingProject());
         if (accountSettingsManager.isValidConnectionSettings()) {
-            awsCredentialsUpdated(accountSettingsManager.getActiveRegion(), accountSettingsManager.getActiveCredentialProvider().getIdentifier());
+            awsCredentialsUpdated(accountSettingsManager.getActiveRegion(), accountSettingsManager.getActiveCredentialProvider().getId());
         } else {
             mainPanel.revalidate();
         }
@@ -178,7 +178,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
     private Unit awsCredentialsUpdated(@NotNull AwsRegion awsRegion, @NotNull ToolkitCredentialsIdentifier credentialIdentifier) {
         ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.getInstance(generator.getDefaultSourceCreatingProject());
         if (!accountSettingsManager.isValidConnectionSettings() ||
-            !accountSettingsManager.getActiveCredentialProvider().getIdentifier().equals(credentialIdentifier)) {
+            !accountSettingsManager.getActiveCredentialProvider().getId().equals(credentialIdentifier.getId())) {
             accountSettingsManager.changeCredentialProvider(credentialIdentifier);
         }
         if (accountSettingsManager.getActiveRegion() != awsRegion) {

@@ -32,7 +32,10 @@ abstract class ToolkitCredentialsIdentifier {
     override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
-class ToolkitCredentialsProvider(val identifier: ToolkitCredentialsIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
+class ToolkitCredentialsProvider(private val identifier: ToolkitCredentialsIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
+    val id: String = identifier.id
+    val displayName = identifier.displayName
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

@@ -32,7 +32,7 @@ class CredentialProviderSelector : ComboBox<Any>() {
     fun getSelectedCredentialsProvider(): String? {
         selected().let {
             return when (it) {
-                is ToolkitCredentialsProvider -> it.identifier.id
+                is ToolkitCredentialsProvider -> it.id
                 is String -> it
                 else -> null
             }

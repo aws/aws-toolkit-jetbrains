@@ -317,7 +317,7 @@ class EcsCloudDebugSettingsEditorPanel(private val project: Project) : Disposabl
     fun applyTo(configuration: EcsCloudDebugRunConfiguration) {
         val (region, credentialsProvider) = credentialSettings.get() ?: return
         configuration.regionId(region.id)
-        configuration.credentialProviderId(credentialsProvider.identifier.id)
+        configuration.credentialProviderId(credentialsProvider.id)
         configuration.clusterArn(selectedCluster)
         configuration.serviceArn(selectedService)
 

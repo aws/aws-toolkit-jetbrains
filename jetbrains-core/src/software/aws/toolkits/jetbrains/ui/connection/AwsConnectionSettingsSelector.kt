@@ -25,7 +25,9 @@ class AwsConnectionSettingsSelector(
         val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
         view.region.selectedRegion = accountSettingsManager.activeRegion
         if (accountSettingsManager.isValidConnectionSettings()) {
-            view.credentialProvider.setSelectedCredentialsProvider(accountSettingsManager.activeCredentialProvider.identifier)
+            accountSettingsManager.selectedCredentialIdentifier?.let {
+                view.credentialProvider.setSelectedCredentialsProvider(it)
+            }
         }
         view.region.addActionListener {
             fireChange()

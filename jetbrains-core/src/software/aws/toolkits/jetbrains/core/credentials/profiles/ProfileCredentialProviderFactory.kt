@@ -62,7 +62,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
 
         newProfiles.validProfiles.forEach {
             val previousProfile = previousProfilesSnapshot.remove(it.key)
-            if(previousProfile == null) {
+            if (previousProfile == null) {
                 // It was not in the snapshot, so it must be new
                 profilesAdded.add(ProfileCredentialsIdentifier(it.key))
             } else {

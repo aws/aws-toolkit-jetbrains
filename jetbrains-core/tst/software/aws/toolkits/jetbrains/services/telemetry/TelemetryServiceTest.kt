@@ -129,7 +129,7 @@ class TelemetryServiceTest {
         MockResourceCache.getInstance(projectRule.project).addValidAwsCredential(accountSettings.activeRegion.id, "profile:admin", "111111111111")
 
         accountSettings.changeCredentialProvider(
-            MockCredentialsManager.getInstance().addCredentials("profile:admin").identifier
+            MockCredentialsManager.getInstance().addCredentials("profile:admin")
         )
 
         val mockRegion = AwsRegion("foo-region", "foo-region", "aws")
@@ -160,7 +160,7 @@ class TelemetryServiceTest {
         MockResourceCache.getInstance(projectRule.project).addValidAwsCredential(accountSettings.activeRegion.id, "profile:admin", "111111111111")
 
         accountSettings.changeCredentialProvider(
-            MockCredentialsManager.getInstance().addCredentials("profile:admin").identifier
+            MockCredentialsManager.getInstance().addCredentials("profile:admin")
         )
 
         val mockRegion = AwsRegion("foo-region", "foo-region", "aws")

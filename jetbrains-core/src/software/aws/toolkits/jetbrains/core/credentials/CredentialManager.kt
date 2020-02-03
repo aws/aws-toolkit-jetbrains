@@ -24,7 +24,11 @@ import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import java.util.concurrent.ConcurrentHashMap
 import javax.security.auth.login.CredentialNotFoundException
 
-typealias CredentialsChangeListener = (added: List<ToolkitCredentialsIdentifier>, modified: List<ToolkitCredentialsIdentifier>, removed: List<ToolkitCredentialsIdentifier>) -> Unit
+typealias CredentialsChangeListener = (
+    added: List<ToolkitCredentialsIdentifier>,
+    modified: List<ToolkitCredentialsIdentifier>,
+    removed: List<ToolkitCredentialsIdentifier>
+) -> Unit
 
 abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentialsChangeListener {
     protected val toolkitCredentialFactories = ConcurrentHashMap<ToolkitCredentialsIdentifier, CredentialProviderFactory>()

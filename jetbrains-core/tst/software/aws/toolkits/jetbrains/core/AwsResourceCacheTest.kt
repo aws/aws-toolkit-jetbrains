@@ -26,6 +26,7 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
 import software.aws.toolkits.jetbrains.utils.value
@@ -54,8 +55,9 @@ class AwsResourceCacheTest {
     @Before
     fun setup() {
         val credentialsManager = MockCredentialsManager.getInstance()
-        cred1 = credentialsManager.addCredentials("Cred1")
-        cred2 = credentialsManager.addCredentials("Cred2")
+
+        cred1 = credentialsManager.getAwsCredentialProvider(credentialsManager.addCredentials("Cred1"), MockRegionProvider.getInstance().defaultRegion())
+        cred2 = credentialsManager.getAwsCredentialProvider(credentialsManager.addCredentials("Cred2"), MockRegionProvider.getInstance().defaultRegion())
 
         sut.clear()
         reset(mockClock, mockResource)
@@ -114,7 +116,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenAnswer {
             val region = it.getArgument<AwsRegion>(1)
             val cred = it.getArgument<ToolkitCredentialsProvider>(2)
-            "${region.id}-${cred.identifier.id}"
+            "${region.id}-${cred.id}"
         }
 
         assertThat(sut.getResource(mockResource, region = US_WEST_1, credentialProvider = cred1)).hasValue("us-west-1-cred1")
@@ -153,7 +155,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenAnswer {
             val region = it.getArgument<AwsRegion>(1)
             val cred = it.getArgument<ToolkitCredentialsProvider>(2)
-            "${region.id}-${cred.identifier.id}-${incrementer.getAndIncrement()}"
+            "${region.id}-${cred.id}-${incrementer.getAndIncrement()}"
         }
 
         val usw1Cred1 = sut.getResource(mockResource, US_WEST_1, cred1).value
@@ -303,7 +305,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any(), any())).thenReturn("hello")
         getAllRegionAndCredPermutations()
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(cred1.identifier.id)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(cred1.id)
 
         getAllRegionAndCredPermutations()
 

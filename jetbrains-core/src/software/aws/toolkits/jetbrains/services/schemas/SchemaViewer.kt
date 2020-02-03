@@ -111,7 +111,7 @@ class SchemaPreviewer() {
         version: String,
         project: Project
     ): CompletionStage<Void> {
-        val credentialIdentifier = project.activeCredentialProvider().identifier.displayName
+        val credentialIdentifier = project.activeCredentialProvider().displayName
         val region = project.activeRegion().id
 
         val fileName = "${credentialIdentifier}_${region}_${registryName}_${schemaName}_$version"

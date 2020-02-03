@@ -32,7 +32,7 @@ class RemoteLambdaRunConfigurationProducer : LazyRunConfigurationProducer<Remote
 
         val accountSettings = ProjectAccountSettingsManager.getInstance(context.project)
         accountSettings.connectionSettings()?.let {
-            configuration.credentialProviderId(it.credentials.identifier.id)
+            configuration.credentialProviderId(it.credentials.id)
             configuration.regionId(it.region.id)
         }
 
@@ -52,7 +52,7 @@ class RemoteLambdaRunConfigurationProducer : LazyRunConfigurationProducer<Remote
         val accountSettings = ProjectAccountSettingsManager.getInstance(context.project)
         return accountSettings.connectionSettings()?.let {
             configuration.functionName() == function.name &&
-                configuration.credentialProviderId() == it.credentials.identifier.id &&
+                configuration.credentialProviderId() == it.credentials.id &&
                 configuration.regionId() == it.region.id
         } ?: false
     }

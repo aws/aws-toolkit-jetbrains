@@ -25,7 +25,7 @@ class EcsCloudDebugRunConfigurationProducer : RunConfigurationProducer<EcsCloudD
         return configuration.clusterArn() == service.clusterArn() &&
             configuration.serviceArn() == service.serviceArn() &&
             configuration.regionId() == project.activeRegion().id &&
-            configuration.credentialProviderId() == project.activeCredentialProvider().identifier.id
+            configuration.credentialProviderId() == project.activeCredentialProvider().id
     }
 
     override fun setupConfigurationFromContext(
@@ -44,7 +44,7 @@ class EcsCloudDebugRunConfigurationProducer : RunConfigurationProducer<EcsCloudD
         configuration.clusterArn(service.clusterArn())
         configuration.serviceArn(service.serviceArn())
         configuration.regionId(context.project.activeRegion().id)
-        configuration.credentialProviderId(project.activeCredentialProvider().identifier.id)
+        configuration.credentialProviderId(project.activeCredentialProvider().id)
         configuration.setGeneratedName()
 
         return true

@@ -58,7 +58,7 @@ class SamSchemaDownloadPostCreationAction {
             return
         }
 
-        newApplicationProjectSettings.changeCredentialProvider(sourceCreatingProjectSettings.activeCredentialProvider.identifier)
+        newApplicationProjectSettings.changeCredentialProvider(sourceCreatingProjectSettings.selectedCredentialIdentifier)
         newApplicationProjectSettings.changeRegion(sourceCreatingProjectSettings.activeRegion)
     }
 

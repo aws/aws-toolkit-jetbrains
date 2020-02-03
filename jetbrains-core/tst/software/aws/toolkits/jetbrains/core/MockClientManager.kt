@@ -26,7 +26,7 @@ class MockClientManager(project: Project) : AwsClientManager(project, AwsSdkClie
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : SdkClient> createNewClient(key: AwsClientKey, region: AwsRegion, credProvider: ToolkitCredentialsProvider): T =
-        mockClients[Key(key.serviceClass, region, credProvider.identifier.id)] as? T
+        mockClients[Key(key.serviceClass, region, credProvider.id)] as? T
             ?: mockClients[Key(key.serviceClass)] as? T
             ?: throw IllegalStateException("No mock registered for $key")
 
@@ -40,7 +40,7 @@ class MockClientManager(project: Project) : AwsClientManager(project, AwsSdkClie
     }
 
     fun <T : SdkClient> register(clazz: KClass<out SdkClient>, sdkClient: T, region: AwsRegion, credProvider: ToolkitCredentialsProvider) {
-        mockClients[Key(clazz, region, credProvider.identifier.id)] = sdkClient
+        mockClients[Key(clazz, region, credProvider.id)] = sdkClient
     }
 
     fun reset() {
