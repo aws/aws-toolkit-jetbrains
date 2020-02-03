@@ -13,23 +13,23 @@ import com.intellij.testGuiFramework.impl.textfield
 import com.intellij.testGuiFramework.util.step
 import com.intellij.ui.SearchTextField
 import org.junit.Test
+import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutable
+import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.fixtures.openSettingsDialog
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 
 class SetSamCli : GuiTestCase() {
     @Test
     fun setSamCli() {
-        val instance = ExecutableManager.getInstance().getExecutable<SamExecutable>().thenApply {
-            if (it is ExecutableInstance.Executable) {
-                it
-            } else {
-                null
+        setSamExecutableFromEnvironment()
+        val samPath = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
+            when (it) {
+                is ExecutableInstance.Executable -> it.executablePath.toString()
+                else -> throw java.lang.IllegalStateException("SAM executable is not set in environment or path")
             }
-        }.toCompletableFuture().join()
-        val samPath = System.getenv("SAM_CLI_EXEC") ?: instance?.executablePath.toString() ?: "sam"
+        }
         welcomeFrame {
             step("Open preferences page") {
                 openSettingsDialog()
