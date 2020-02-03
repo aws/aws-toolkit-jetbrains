@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Port SAM cli management to our executable manager which will provide consistent messanging and a better experience"
+  "description" : "Fix several issues with updating the SAM cli while the IDE is open"
 }
