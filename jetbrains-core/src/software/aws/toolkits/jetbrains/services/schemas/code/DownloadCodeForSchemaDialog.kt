@@ -28,11 +28,13 @@ import software.aws.toolkits.jetbrains.services.schemas.Schema
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.services.schemas.SchemaSummary
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SchemaLanguage
+import software.aws.toolkits.telemetry.SchemasTelemetry
 import java.awt.event.ActionEvent
 import java.io.File
 import java.util.ArrayList
@@ -141,12 +143,7 @@ class DownloadCodeForSchemaDialog(
         val schemaCodeDownloadDetails = viewToSchemaCodeDownloadDetails()
 
         // Telemetry for download code language
-        TelemetryService.getInstance().record(project) {
-            datum("schemas_download") {
-                count()
-                metadata("language", schemaCodeDownloadDetails.language.apiValue)
-            }
-        }
+        SchemasTelemetry.recordDownload(project, Result.SUCCEEDED, SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue))
 
         val schemaName = schemaCodeDownloadDetails.schema.name
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, message("schemas.schema.download_code_bindings.title", schemaName), false) {
@@ -191,7 +188,7 @@ class DownloadCodeForSchemaDialog(
     ) {
         val message = message("schemas.schema.download_code_bindings.notification.finished", schemaName)
         notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
-        TelemetryService.recordSimpleTelemetry(project, "schemas_download", true)
+        SchemasTelemetry.recordDownload(project, Result.SUCCEEDED)
     }
 
     private fun showDownloadCompletionErrorNotification(
@@ -203,7 +200,7 @@ class DownloadCodeForSchemaDialog(
             is SchemaCodeDownloadFileCollisionException -> notifyError(title = NOTIFICATION_TITLE, content = rootError.message ?: "", project = project)
             is Exception -> rootError.notifyError(title = NOTIFICATION_TITLE, project = project)
         }
-        TelemetryService.recordSimpleTelemetry(project, "schemas_download", false)
+        SchemasTelemetry.recordDownload(project, Result.FAILED)
     }
 
     private fun openSchemaCoreCodeFileInEditor(

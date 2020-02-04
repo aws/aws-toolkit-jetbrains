@@ -8,11 +8,10 @@ apply plugin: 'org.jetbrains.intellij'
 buildscript {
     repositories {
         mavenCentral()
-        maven { url "https://aws.oss.sonatype.org/content/groups/staging/" }
         maven { setUrl("https://jitpack.io") }
     }
     dependencies {
-        classpath("software.aws.toolkits:telemetry-generator:0.0.1-SNAPSHOT")
+        classpath("software.aws.toolkits:telemetry-generator:0.0.12")
     }
 }
 
