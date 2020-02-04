@@ -15,7 +15,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.awscore.client.builder.AwsDefaultClientBuilder
 import software.amazon.awssdk.core.SdkClient
@@ -28,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.utils.CompatibilityUtils.createProject
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible
@@ -46,9 +46,9 @@ class AwsClientManagerTest {
 
     @Before
     fun setUp() {
-        MockProjectAccountSettingsManager.getInstance(projectRule.project).reset()
         mockCredentialManager = MockCredentialsManager.getInstance()
         mockCredentialManager.reset()
+        MockProjectAccountSettingsManager.getInstance(projectRule.project).reset()
     }
 
     @After
@@ -77,22 +77,17 @@ class AwsClientManagerTest {
     fun oldClientsAreRemovedWhenProfilesAreRemoved() {
         val sut = getClientManager()
         val testSettings = MockProjectAccountSettingsManager.getInstance(projectRule.project)
-        MockResourceCache.getInstance(projectRule.project).addValidAwsCredential(testSettings.activeRegion.id, "profile:admin", "111111111111")
-        testSettings.changeCredentialProvider(
-            mockCredentialManager.addCredentials(
-                "profile:admin",
-                AwsBasicCredentials.create("Access", "Secret")
-            )
-        )
 
-        sut.getClient<DummyServiceClient>()
+        val credentialsIdentifier = mockCredentialManager.addCredentials("profile:admin")
+        val credentialProvider = mockCredentialManager.getAwsCredentialProvider(credentialsIdentifier, MockRegionProvider.getInstance().defaultRegion())
+
+        sut.getClient<DummyServiceClient>(credentialProvider)
 
         assertThat(sut.cachedClients().keys).anySatisfy {
             it.credentialProviderId == "profile:admin"
         }
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED)
-            .providerRemoved("profile:admin")
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(credentialsIdentifier)
 
         assertThat(sut.cachedClients().keys).noneSatisfy {
             it.credentialProviderId == "profile:admin"

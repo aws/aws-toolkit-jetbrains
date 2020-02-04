@@ -84,14 +84,14 @@ class DefaultProjectAccountSettingsManagerTest {
         changeCredentialProvider(credentials)
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
-        assertThat(manager.connectionSettings()?.credentials).isEqualTo(credentials)
+        assertThat(manager.connectionSettings()?.credentials?.id).isEqualTo(credentials.id)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials)
 
         changeCredentialProvider(credentials2)
 
         assertThat(manager.isValidConnectionSettings()).isTrue()
-        assertThat(manager.connectionSettings()?.credentials).isEqualTo(credentials2)
+        assertThat(manager.connectionSettings()?.credentials?.id).isEqualTo(credentials2.id)
 
         assertThat(manager.recentlyUsedCredentials()).element(0).isEqualTo(credentials2)
         assertThat(manager.recentlyUsedCredentials()).element(1).isEqualTo(credentials)
@@ -341,7 +341,7 @@ class DefaultProjectAccountSettingsManagerTest {
 
         assertThat(manager.selectedCredentialIdentifier?.id).isEqualTo("profile:admin")
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved("profile:admin")
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(adminCredentials)
 
         assertThat(manager.isValidConnectionSettings()).isFalse()
         assertThat(manager.selectedCredentialIdentifier).isNull()

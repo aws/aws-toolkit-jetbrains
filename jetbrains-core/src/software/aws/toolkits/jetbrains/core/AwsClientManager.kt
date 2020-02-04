@@ -15,6 +15,7 @@ import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.CredentialProviderNotFound
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
+import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.tryOrNull
@@ -32,8 +33,8 @@ open class AwsClientManager(project: Project, sdkClient: AwsSdkClient) :
 
         val busConnection = ApplicationManager.getApplication().messageBus.connect(project)
         busConnection.subscribe(CredentialManager.CREDENTIALS_CHANGED, object : ToolkitCredentialsChangeListener {
-            override fun providerRemoved(providerId: String) {
-                invalidateSdks(providerId)
+            override fun providerRemoved(identifier: ToolkitCredentialsIdentifier) {
+                invalidateSdks(identifier.id)
             }
         })
     }

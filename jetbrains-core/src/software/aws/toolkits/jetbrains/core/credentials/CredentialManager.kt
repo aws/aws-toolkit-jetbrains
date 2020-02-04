@@ -24,15 +24,17 @@ import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import java.util.concurrent.ConcurrentHashMap
 import javax.security.auth.login.CredentialNotFoundException
 
-typealias CredentialsChangeListener = (
-    added: List<ToolkitCredentialsIdentifier>,
-    modified: List<ToolkitCredentialsIdentifier>,
-    removed: List<ToolkitCredentialsIdentifier>
-) -> Unit
+data class CredentialIdentifierChange(
+    val added: List<ToolkitCredentialsIdentifier>,
+    val modified: List<ToolkitCredentialsIdentifier>,
+    val removed: List<ToolkitCredentialsIdentifier>
+)
 
-abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentialsChangeListener {
-    protected val toolkitCredentialFactories = ConcurrentHashMap<ToolkitCredentialsIdentifier, CredentialProviderFactory>()
-    protected val awsCredentialProviderCache = ConcurrentHashMap<ToolkitCredentialsIdentifier, ConcurrentHashMap<String, ToolkitCredentialsProvider>>()
+typealias CredentialsChangeListener = (change: CredentialIdentifierChange) -> Unit
+
+abstract class CredentialManager : SimpleModificationTracker() {
+    private val toolkitCredentialFactories = ConcurrentHashMap<ToolkitCredentialsIdentifier, CredentialProviderFactory>()
+    private val awsCredentialProviderCache = ConcurrentHashMap<ToolkitCredentialsIdentifier, ConcurrentHashMap<String, ToolkitCredentialsProvider>>()
 
     @Throws(CredentialProviderNotFound::class)
     fun getAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): ToolkitCredentialsProvider {
@@ -44,7 +46,7 @@ abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentia
             ?: throw CredentialNotFoundException("No provider found with ID ${providerId.id}")
 
         val sdkClient = AwsSdkClient.getInstance()
-        val awsCredentialProvider = providerFactory.createAwsCredentialProvider(providerId, region, sdkClient)
+        val awsCredentialProvider = providerFactory.createAwsCredentialProvider(providerId, region, sdkClient.sdkHttpClient)
 
         partitionCache[region.partitionId] = awsCredentialProvider
 
@@ -56,19 +58,24 @@ abstract class CredentialManager : SimpleModificationTracker(), ToolkitCredentia
     fun getCredentialIdentifier(id: String) = toolkitCredentialFactories.keys.find { it.id == id }
 
     // TODO: Convert these to bulk listeners so we only send N messages where N is # of extensions vs # of providers
-    override fun providerAdded(provider: ToolkitCredentialsProvider) {
+    protected fun addProvider(identifier: ToolkitCredentialsIdentifier, credentialProviderFactory: CredentialProviderFactory) {
+        toolkitCredentialFactories[identifier] = credentialProviderFactory
+
         incModificationCount()
-        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerAdded(provider)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerAdded(identifier)
     }
 
-    override fun providerModified(provider: ToolkitCredentialsProvider) {
+    protected fun modifyProvider(identifier: ToolkitCredentialsIdentifier) {
         incModificationCount()
-        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerModified(provider)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerModified(identifier)
     }
 
-    override fun providerRemoved(providerId: String) {
+    protected fun removeProvider(identifier: ToolkitCredentialsIdentifier) {
+        toolkitCredentialFactories.remove(identifier)
+        awsCredentialProviderCache.remove(identifier)
+
         incModificationCount()
-        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerRemoved(providerId)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerRemoved(identifier)
     }
 
     companion object {
@@ -97,20 +104,18 @@ class DefaultCredentialManager : CredentialManager() {
                 Disposer.register(rootDisposable, instance)
             }
 
-            LOG.tryOrNull("Failed to setup $instance") {
-                instance.setUp { added, modified, removed ->
-                    added.forEach {
-                        toolkitCredentialFactories[it] = instance
+            LOG.tryOrNull("Failed to set up $instance") {
+                instance.setUp { change ->
+                    change.added.forEach {
+                        addProvider(it, instance)
                     }
 
-                    modified.forEach {
-                        toolkitCredentialFactories[it] = instance
-                        awsCredentialProviderCache.remove(it)
+                    change.modified.forEach {
+                        modifyProvider(it)
                     }
 
-                    removed.forEach {
-                        toolkitCredentialFactories.remove(it)
-                        awsCredentialProviderCache.remove(it)
+                    change.removed.forEach {
+                        removeProvider(it)
                     }
 
                     incModificationCount()

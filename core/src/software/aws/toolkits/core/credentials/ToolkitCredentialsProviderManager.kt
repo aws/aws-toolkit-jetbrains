@@ -4,16 +4,9 @@
 package software.aws.toolkits.core.credentials
 
 interface ToolkitCredentialsChangeListener {
-    fun providerAdded(provider: ToolkitCredentialsProvider) {}
-    fun providerModified(provider: ToolkitCredentialsProvider) {}
-    fun providerRemoved(providerId: String) {}
-
-    fun updateCredentialProviderIdentifiers(
-        added: List<ToolkitCredentialsIdentifier>,
-        modified: List<ToolkitCredentialsIdentifier>,
-        removed: List<ToolkitCredentialsIdentifier>
-    ) {
-    }
+    fun providerAdded(identifier: ToolkitCredentialsIdentifier) {}
+    fun providerModified(identifier: ToolkitCredentialsIdentifier) {}
+    fun providerRemoved(identifier: ToolkitCredentialsIdentifier) {}
 }
 
 class CredentialProviderNotFound(msg: String) : RuntimeException(msg)

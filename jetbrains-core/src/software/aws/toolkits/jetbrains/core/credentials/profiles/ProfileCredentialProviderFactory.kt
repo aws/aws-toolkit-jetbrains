@@ -14,6 +14,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.auth.credentials.ProcessCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileProperty
 import software.amazon.awssdk.regions.Region
@@ -25,10 +26,11 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
+import software.aws.toolkits.jetbrains.core.credentials.CredentialIdentifierChange
 import software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.jetbrains.core.credentials.CredentialsChangeListener
+import software.aws.toolkits.jetbrains.utils.tryNotify
 import software.aws.toolkits.resources.message
 import java.util.function.Supplier
 
@@ -58,7 +60,9 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         val profilesRemoved = mutableListOf<ProfileCredentialsIdentifier>()
 
         val previousProfilesSnapshot = profileHolder.snapshot()
-        val newProfiles = validateAndGetProfiles()
+        val newProfiles = tryNotify("Failed to load credential file(s)") {
+            validateAndGetProfiles()
+        } ?: return
 
         newProfiles.validProfiles.forEach {
             val previousProfile = previousProfilesSnapshot.remove(it.key)
@@ -77,8 +81,9 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         previousProfilesSnapshot.keys.asSequence().map { ProfileCredentialsIdentifier(it) }.toCollection(profilesRemoved)
 
         profileHolder.update(newProfiles.validProfiles)
-        credentialLoadCallback(profilesAdded, profilesModified, profilesRemoved)
+        credentialLoadCallback(CredentialIdentifierChange(profilesAdded, profilesModified, profilesRemoved))
 
+        println(newProfiles.invalidProfiles)
         // TODO: Notify invalid profiles
     }
 
@@ -87,21 +92,24 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
     override fun createAwsCredentialProvider(
         providerId: ToolkitCredentialsIdentifier,
         region: AwsRegion,
-        sdkClient: AwsSdkClient
+        sdkClient: SdkHttpClient
     ): ToolkitCredentialsProvider {
         val profileProviderId = providerId as? ProfileCredentialsIdentifier
             ?: throw IllegalStateException("ProfileCredentialProviderFactory can only handle ProfileCredentialsIdentifier, but got ${providerId::class}")
 
+        val profile = profileHolder.getProfile(profileProviderId.profileName)
+            ?: throw IllegalStateException("Profile ${profileProviderId.profileName} looks to have been removed")
+
         return ToolkitCredentialsProvider(
             profileProviderId,
-            createAwsCredentialProvider(profileHolder.getProfile(profileProviderId.profileName), region, sdkClient)
+            createAwsCredentialProvider(profile, region, sdkClient)
         )
     }
 
     private fun createAwsCredentialProvider(
         profile: Profile,
         region: AwsRegion,
-        sdkClient: AwsSdkClient
+        sdkClient: SdkHttpClient
     ) = when {
         profile.propertyExists(ProfileProperty.ROLE_ARN) -> createAssumeRoleProvider(profile, region, sdkClient)
         profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> createStaticSessionProvider(profile)
@@ -115,16 +123,17 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
     private fun createAssumeRoleProvider(
         profile: Profile,
         region: AwsRegion,
-        sdkClient: AwsSdkClient
+        sdkClient: SdkHttpClient
     ): AwsCredentialsProvider {
         val sourceProfileName = profile.requiredProperty(ProfileProperty.SOURCE_PROFILE)
         val sourceProfile = profileHolder.getProfile(sourceProfileName)
+            ?: throw IllegalStateException("Profile $sourceProfileName looks to have been removed")
 
         // Override the default SPI for getting the active credentials since we are making an internal
         // to this provider client
         val stsClient = ToolkitClientManager.createNewClient(
             StsClient::class,
-            sdkClient.sdkHttpClient,
+            sdkClient,
             Region.of(region.id),
             createAwsCredentialProvider(sourceProfile, region, sdkClient),
             AwsClientManager.userAgent
@@ -216,5 +225,5 @@ private class ProfileHolder {
         profiles.putAll(validProfiles)
     }
 
-    fun getProfile(profileName: String): Profile = profiles.getValue(profileName)
+    fun getProfile(profileName: String): Profile? = profiles[profileName]
 }

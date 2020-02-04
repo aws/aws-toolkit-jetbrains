@@ -51,8 +51,8 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     init {
         ApplicationManager.getApplication().messageBus.connect(project)
             .subscribe(CredentialManager.CREDENTIALS_CHANGED, object : ToolkitCredentialsChangeListener {
-                override fun providerRemoved(providerId: String) {
-                    if (selectedCredentialIdentifier?.id == providerId) {
+                override fun providerRemoved(identifier: ToolkitCredentialsIdentifier) {
+                    if (selectedCredentialIdentifier == identifier) {
                         changeConnectionSettings(null, selectedRegion)
                     }
                 }
