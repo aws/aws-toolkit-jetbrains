@@ -83,7 +83,6 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         profileHolder.update(newProfiles.validProfiles)
         credentialLoadCallback(CredentialIdentifierChange(profilesAdded, profilesModified, profilesRemoved))
 
-        println(newProfiles.invalidProfiles)
         // TODO: Notify invalid profiles
     }
 

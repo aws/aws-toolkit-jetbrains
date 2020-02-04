@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.VfsTestUtil
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
@@ -38,11 +39,6 @@ import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.HttpExecuteResponse
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.http.SdkHttpFullResponse
-import software.amazon.awssdk.profiles.Profile
-import software.amazon.awssdk.profiles.ProfileProperty.AWS_ACCESS_KEY_ID
-import software.amazon.awssdk.profiles.ProfileProperty.AWS_SECRET_ACCESS_KEY
-import software.amazon.awssdk.profiles.ProfileProperty.AWS_SESSION_TOKEN
-import software.amazon.awssdk.profiles.ProfileProperty.CREDENTIAL_PROCESS
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.rules.SystemPropertyHelper
@@ -123,9 +119,9 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         verify(profileLoadCallback).invoke(
             check {
                 assertThat(it.added).hasSize(3)
-                    .has(profileName(FOO_PROFILE.name()))
-                    .has(profileName(BAR_PROFILE.name()))
-                    .has(profileName(BAZ_PROFILE.name()))
+                    .has(profileName(FOO_PROFILE_NAME))
+                    .has(profileName(BAR_PROFILE_NAME))
+                    .has(profileName(BAZ_PROFILE_NAME))
 
                 assertThat(it.modified).isEmpty()
                 assertThat(it.removed).isEmpty()
@@ -183,7 +179,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         profileFile.writeToFile(TEST_PROFILE_FILE_CONTENTS)
 
         val providerFactory = createProviderFactory()
-        val validProfile = findCredentialIdentifier(BAR_PROFILE.name())
+        val validProfile = findCredentialIdentifier(BAR_PROFILE_NAME)
         val credentialsProvider = providerFactory.createAwsCredentialProvider(
             validProfile,
             MockRegionProvider.getInstance().defaultRegion(),
@@ -201,7 +197,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         profileFile.writeToFile(TEST_PROFILE_FILE_CONTENTS)
 
         val providerFactory = createProviderFactory()
-        val validProfile = findCredentialIdentifier(FOO_PROFILE.name())
+        val validProfile = findCredentialIdentifier(FOO_PROFILE_NAME)
         val credentialsProvider = providerFactory.createAwsCredentialProvider(
             validProfile,
             MockRegionProvider.getInstance().defaultRegion(),
@@ -363,62 +359,6 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         verify(mockSdkHttpClient, times(2)).prepareRequest(any())
     }
 
-    //    @Test
-//    fun testSourceProfileDoesNotExist() {
-//        profileFile.writeToFile(
-//            """
-//            [profile role]
-//            role_arn=arn1
-//            role_session_name=testSession
-//            source_profile=source_profile
-//            external_id=externalId
-//            """.trimIndent()
-//        )
-//
-//        assertThatThrownBy {
-//            ProfileToolkitCredentialsProvider(
-//                profiles(),
-//                "role",
-//                mockSdkHttpClient,
-//                mockRegionProvider
-//            )
-//        }.isInstanceOf(IllegalArgumentException::class.java)
-//            .hasMessage("Profile 'role' references source profile 'source_profile' which does not exist")
-//    }
-//
-//    @Test
-//    fun testCircularChainProfiles() {
-//        profileFile.writeToFile(
-//            """
-//            [profile role]
-//            role_arn=arn1
-//            source_profile=source_profile
-//
-//            [profile source_profile]
-//            role_arn=arn2
-//            source_profile=source_profile2
-//
-//            [profile source_profile2]
-//            role_arn=arn3
-//            source_profile=source_profile3
-//
-//            [profile source_profile3]
-//            role_arn=arn4
-//            source_profile=source_profile
-//            """.trimIndent()
-//        )
-//
-//        assertThatThrownBy {
-//            ProfileToolkitCredentialsProvider(
-//                profiles(),
-//                "role",
-//                mockSdkHttpClient,
-//                mockRegionProvider
-//            )
-//        }.isInstanceOf(IllegalArgumentException::class.java)
-//            .hasMessage("A circular profile dependency was found between role->source_profile->source_profile2->source_profile3->source_profile")
-//    }
-//
     @Test
     fun testRefreshExistingProfiles() {
         profileFile.writeToFile(
@@ -461,13 +401,6 @@ class ProfileToolkitCredentialsProviderFactoryTest {
             """.trimIndent()
         )
 
-        // Existing CredentialProviders should see the new credentials
-        assertThat(credentialsProvider.resolveCredentials()).isInstanceOfSatisfying(AwsSessionCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("FooAccessKey2")
-            assertThat(it.secretAccessKey()).isEqualTo("FooSecretKey2")
-            assertThat(it.sessionToken()).isEqualTo("FooSessionToken2")
-        }
-
         verify(profileLoadCallback).invoke(
             check {
                 assertThat(it.added).isEmpty()
@@ -506,11 +439,6 @@ class ProfileToolkitCredentialsProviderFactoryTest {
 
         assertThatThrownBy {
             providerFactory.createAwsCredentialProvider(validProfile, MockRegionProvider.getInstance().defaultRegion(), mockSdkHttpClient)
-        }.isInstanceOf(IllegalStateException::class.java)
-
-        assertThatThrownBy {
-            // Old references should now throw exceptions
-            credentialsProvider.resolveCredentials()
         }.isInstanceOf(IllegalStateException::class.java)
 
         verify(profileLoadCallback).invoke(
@@ -567,70 +495,90 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         )
     }
 
-//    @Test
-//    fun testProfileFileIsDeleted() {
-//        assertThat(profileFile).doesNotExist()
-//
-//        val providerFactory = createProviderFactory()
-//
-//        val credentialsProvider = providerFactory.get("profile:foo")
-//        assertThat(credentialsProvider).isNull()
-//
-//        profileFile.writeToFile(
-//            """
-//            [profile foo]
-//            aws_access_key_id=FooAccessKey
-//            aws_secret_access_key=FooSecretKey
-//            aws_session_token=FooSessionToken
-//            """.trimIndent()
-//        )
-//
-//        retryableAssert(maxAttempts = 5, interval = Duration.ofSeconds(5)) {
-//            assertThat(providerFactory.get("profile:foo")?.resolveCredentials())
-//                .isInstanceOf(AwsSessionCredentials::class.java)
-//                .satisfies {
-//                    val sessionCredentials = it as AwsSessionCredentials
-//                    assertThat(sessionCredentials.accessKeyId()).isEqualTo("FooAccessKey")
-//                    assertThat(sessionCredentials.secretAccessKey()).isEqualTo("FooSecretKey")
-//                    assertThat(sessionCredentials.sessionToken()).isEqualTo("FooSessionToken")
-//                }
-//            verify(mockProviderManager).providerAdded(providerFactory.get("profile:foo")!!)
-//        }
-//    }
-//
-//    @Test
-//    fun testRefreshDeleteProfileFile() {
-//        profileFile.writeToFile(
-//            """
-//            [profile foo]
-//            aws_access_key_id=FooAccessKey
-//            aws_secret_access_key=FooSecretKey
-//            aws_session_token=FooSessionToken
-//            """.trimIndent()
-//        )
-//
-//        val providerFactory = createProviderFactory()
-//        val credentialsProvider = providerFactory.get("profile:foo")
-//        assertThat(credentialsProvider).isNotNull
-//        assertThat(credentialsProvider!!.resolveCredentials()).isInstanceOf(AwsSessionCredentials::class.java)
-//            .satisfies {
-//                val sessionCredentials = it as AwsSessionCredentials
-//                assertThat(sessionCredentials.accessKeyId()).isEqualTo("FooAccessKey")
-//                assertThat(sessionCredentials.secretAccessKey()).isEqualTo("FooSecretKey")
-//                assertThat(sessionCredentials.sessionToken()).isEqualTo("FooSessionToken")
-//            }
-//
-//        VfsTestUtil.deleteFile(LocalFileSystem.getInstance().findFileByIoFile(profileFile)!!)
-//
-//        assertThat(providerFactory.get("profile:foo")).isNull()
-//
-//        assertThatThrownBy {
-//            // Old references should now throw exceptions
-//            credentialsProvider.resolveCredentials()
-//        }.isInstanceOf(IllegalStateException::class.java)
-//
-//        verify(mockProviderManager).providerRemoved("profile:foo")
-//    }
+    @Test
+    fun testProfileFileIsCreated() {
+        assertThat(profileFile).doesNotExist()
+
+        val providerFactory = createProviderFactory()
+
+        verify(profileLoadCallback).invoke(
+            check {
+                assertThat(it.added).isEmpty()
+                assertThat(it.modified).isEmpty()
+                assertThat(it.removed).isEmpty()
+            }
+        )
+
+        profileFile.writeToFile(
+            """
+            [profile foo]
+            aws_access_key_id=FooAccessKey
+            aws_secret_access_key=FooSecretKey
+            aws_session_token=FooSessionToken
+            """.trimIndent()
+        )
+
+        verify(profileLoadCallback).invoke(
+            check {
+                assertThat(it.added).hasSize(1).has(profileName("foo"))
+                assertThat(it.modified).isEmpty()
+                assertThat(it.removed).isEmpty()
+            }
+        )
+
+        val validProfile = findCredentialIdentifier("foo")
+        val credentialsProvider = providerFactory.createAwsCredentialProvider(
+            validProfile,
+            MockRegionProvider.getInstance().defaultRegion(),
+            mockSdkHttpClient
+        )
+
+        assertThat(credentialsProvider.resolveCredentials()).isInstanceOfSatisfying(AwsSessionCredentials::class.java) {
+            assertThat(it.accessKeyId()).isEqualTo("FooAccessKey")
+            assertThat(it.secretAccessKey()).isEqualTo("FooSecretKey")
+            assertThat(it.sessionToken()).isEqualTo("FooSessionToken")
+        }
+    }
+
+    @Test
+    fun testRefreshDeleteProfileFile() {
+        profileFile.writeToFile(
+            """
+            [profile foo]
+            aws_access_key_id=FooAccessKey
+            aws_secret_access_key=FooSecretKey
+            aws_session_token=FooSessionToken
+            """.trimIndent()
+        )
+
+        val providerFactory = createProviderFactory()
+        val validProfile = findCredentialIdentifier("foo")
+        val credentialsProvider = providerFactory.createAwsCredentialProvider(
+            validProfile,
+            MockRegionProvider.getInstance().defaultRegion(),
+            mockSdkHttpClient
+        )
+
+        assertThat(credentialsProvider.resolveCredentials()).isInstanceOfSatisfying(AwsSessionCredentials::class.java) {
+            assertThat(it.accessKeyId()).isEqualTo("FooAccessKey")
+            assertThat(it.secretAccessKey()).isEqualTo("FooSecretKey")
+            assertThat(it.sessionToken()).isEqualTo("FooSessionToken")
+        }
+
+        VfsTestUtil.deleteFile(LocalFileSystem.getInstance().findFileByIoFile(profileFile)!!)
+
+        assertThatThrownBy {
+            providerFactory.createAwsCredentialProvider(validProfile, MockRegionProvider.getInstance().defaultRegion(), mockSdkHttpClient)
+        }.isInstanceOf(IllegalStateException::class.java)
+
+        verify(profileLoadCallback).invoke(
+            check {
+                assertThat(it.added).isEmpty()
+                assertThat(it.modified).isEmpty()
+                assertThat(it.removed).hasSize(1).has(profileName("foo"))
+            }
+        )
+    }
 
     private fun File.writeToFile(content: String) {
         WriteCommandAction.runWriteCommandAction(projectRule.project) {
@@ -693,7 +641,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
         }
     }
 
-    companion object {
+    private companion object {
         val TEST_PROFILE_FILE_CONTENTS = """
             [profile bar]
             aws_access_key_id=BarAccessKey
@@ -708,48 +656,9 @@ class ProfileToolkitCredentialsProviderFactoryTest {
             credential_process = /path/to/credential/process
         """.trimIndent()
 
-        private const val FOO_PROFILE_NAME = "foo"
-        private const val FOO_ACCESS_KEY = "FooAccessKey"
-        private const val FOO_SECRET_KEY = "FooSecretKey"
-        private const val FOO_SESSION_TOKEN = "FooSessionToken"
-
-        private const val BAR_PROFILE_NAME = "bar"
-        private const val BAR_ACCESS_KEY = "BarAccessKey"
-        private const val BAR_SECRET_KEY = "BarSecretKey"
-
-        private const val BAZ_PROFILE_NAME = "baz"
-        private const val BAZ_CREDENTIAL_PROCESS = "/path/to/credential/process"
-
-        private const val MFA_TOKEN = "MfaToken"
-
-        private val FOO_PROFILE: Profile = Profile.builder()
-            .name(FOO_PROFILE_NAME)
-            .properties(
-                mapOf(
-                    AWS_ACCESS_KEY_ID to FOO_ACCESS_KEY,
-                    AWS_SECRET_ACCESS_KEY to FOO_SECRET_KEY,
-                    AWS_SESSION_TOKEN to FOO_SESSION_TOKEN
-                )
-            )
-            .build()
-
-        private val BAR_PROFILE: Profile = Profile.builder()
-            .name(BAR_PROFILE_NAME)
-            .properties(
-                mapOf(
-                    AWS_ACCESS_KEY_ID to BAR_ACCESS_KEY,
-                    AWS_SECRET_ACCESS_KEY to BAR_SECRET_KEY
-                )
-            )
-            .build()
-
-        private val BAZ_PROFILE: Profile = Profile.builder()
-            .name(BAZ_PROFILE_NAME)
-            .properties(
-                mapOf(
-                    CREDENTIAL_PROCESS to BAZ_CREDENTIAL_PROCESS
-                )
-            )
-            .build()
+        const val FOO_PROFILE_NAME = "foo"
+        const val BAR_PROFILE_NAME = "bar"
+        const val BAZ_PROFILE_NAME = "baz"
+        const val MFA_TOKEN = "MfaToken"
     }
 }

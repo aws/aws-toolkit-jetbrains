@@ -171,7 +171,6 @@ public class SamInitSelectionPanel implements ValidatablePanel {
             throw new IllegalArgumentException("Unknown credential provider selected");
         }
 
-
         return awsCredentialsUpdated(awsRegion, credentialIdentifier);
     }
 
