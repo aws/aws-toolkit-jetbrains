@@ -29,7 +29,7 @@ class SetSamCli : GuiTestCase() {
                 null
             }
         }.toCompletableFuture().join()
-        val samPath = System.getenv("SAM_CLI_EXEC") ?: instance?.executablePath.toString() ?: "sam"
+        val samPath = System.getenv("SAM_CLI_EXEC") ?: instance?.executablePath?.toString() ?: "sam"
         welcomeFrame {
             step("Open preferences page") {
                 openSettingsDialog()
