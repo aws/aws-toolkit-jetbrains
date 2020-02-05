@@ -8,4 +8,3 @@ build/
 Build/
 venv/
 guitest.log
-jetbrains-core/src/software/aws/toolkits/telemetry/TelemetryDefinitions.kt

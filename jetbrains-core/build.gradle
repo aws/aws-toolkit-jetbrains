@@ -33,11 +33,17 @@ configurations {
     testArtifacts
 }
 
+// make sure the output folder is created
+file("${project.buildDir}/generated-src").mkdirs()
 task generateTelemetry(type: GenerateTelemetry) {
     inputFiles = []
-    outputDirectory = file("src")
+    outputDirectory = file("${project.buildDir}/generated-src")
 }
-compileJava.dependsOn(generateTelemetry)
+compileKotlin.dependsOn(generateTelemetry)
+
+sourceSets {
+    main.kotlin.srcDirs += "${project.buildDir}/generated-src"
+}
 
 test {
     systemProperty("log.dir", "${org.jetbrains.intellij.Utils.systemDir(intellij.sandboxDirectory, true)}/logs")
