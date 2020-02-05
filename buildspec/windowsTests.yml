@@ -26,7 +26,7 @@ phases:
     commands:
       - |
         $script:TEST_ARTIFACTS=Join-Path $env:TEMP testArtifacts
-        $script:TEST_REPORTS=Join-Path $env:TEST_ARTIFACTS test-reports
+        $script:TEST_REPORTS=Join-Path $script:TEST_ARTIFACTS test-reports
 
         function copyFolder($basedir, $subdir, $destdir) {
           $src = Join-Path "." -ChildPath $basedir | Join-Path -ChildPath $subdir
