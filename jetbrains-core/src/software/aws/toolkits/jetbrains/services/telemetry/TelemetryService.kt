@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit.MILLISECONDS
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NA
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
@@ -18,7 +19,6 @@ import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccount
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.telemetry.SessionTelemetry
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
@@ -113,8 +113,11 @@ class DefaultTelemetryService(settings: AwsSettings) :
         TelemetryService.subscribe(this)
         TelemetryService.syncPublisher().notify(settings.isTelemetryEnabled)
 
-        startTime = Instant.now()
-        SessionTelemetry.recordStart()
+        // The auto generated telemetry cannot be used here. It tries to get the instance while
+        // constructing it which causes a circular dependency issue.
+        record("session_start").also {
+            startTime = it.createTime
+        }
     }
 
     override fun notify(isTelemetryEnabled: Boolean) {
@@ -126,7 +129,15 @@ class DefaultTelemetryService(settings: AwsSettings) :
             return
         }
 
-        SessionTelemetry.recordEnd(value = Duration.between(startTime, Instant.now()).toMillis().toDouble())
+        // Here we cannot use the auto generated telemetry because we would get the while we are are disposing the instance.
+        val endTime = Instant.now()
+        record {
+            createTime(endTime)
+            datum("session_end") {
+                value(Duration.between(startTime, endTime).toMillis().toDouble())
+                unit(MILLISECONDS)
+            }
+        }
 
         batcher.shutdown()
     }
