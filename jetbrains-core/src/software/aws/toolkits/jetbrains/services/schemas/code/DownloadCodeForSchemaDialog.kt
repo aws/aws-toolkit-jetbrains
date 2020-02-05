@@ -17,11 +17,9 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import org.apache.commons.lang.exception.ExceptionUtils
-import software.amazon.awssdk.services.schemas.SchemasClient
 import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.schemas.Schema
@@ -66,7 +64,6 @@ class DownloadCodeForSchemaDialog(
 
     val view = DownloadCodeForSchemaPanel(project, this)
     val validator = DownloadCodeForSchemaValidator()
-    private val schemasClient: SchemasClient = project.awsClient()
 
     private val action: OkAction = DownloadCodeForSchemaOkAction()
 

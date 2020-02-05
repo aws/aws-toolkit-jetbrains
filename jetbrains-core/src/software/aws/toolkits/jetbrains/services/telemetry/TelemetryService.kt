@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NA
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
@@ -19,6 +18,7 @@ import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccount
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.telemetry.SessionTelemetry
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
@@ -30,9 +30,9 @@ interface TelemetryService : Disposable {
         val awsRegion: String = METADATA_NA
     )
 
-    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): MetricEvent
+    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit = {}): MetricEvent
 
-    fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> kotlin.Unit = {}): CompletableFuture<MetricEvent> {
+    fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit = {}): CompletableFuture<MetricEvent> {
         val metricEvent = CompletableFuture<MetricEvent>()
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
@@ -113,9 +113,8 @@ class DefaultTelemetryService(settings: AwsSettings) :
         TelemetryService.subscribe(this)
         TelemetryService.syncPublisher().notify(settings.isTelemetryEnabled)
 
-        record("ToolkitStart").also {
-            startTime = it.createTime
-        }
+        startTime = Instant.now()
+        SessionTelemetry.recordStart()
     }
 
     override fun notify(isTelemetryEnabled: Boolean) {
@@ -127,21 +126,14 @@ class DefaultTelemetryService(settings: AwsSettings) :
             return
         }
 
-        val endTime = Instant.now()
-        record {
-            createTime(endTime)
-            datum("ToolkitEnd") {
-                value(Duration.between(startTime, endTime).toMillis().toDouble())
-                unit(Unit.MILLISECONDS)
-            }
-        }
+        SessionTelemetry.recordEnd(value = Duration.between(startTime, Instant.now()).toMillis().toDouble())
 
         batcher.shutdown()
     }
 
     override fun record(
         metricEventMetadata: TelemetryService.MetricEventMetadata,
-        buildEvent: MetricEvent.Builder.() -> kotlin.Unit
+        buildEvent: MetricEvent.Builder.() -> Unit
     ): MetricEvent {
         val builder = DefaultMetricEvent.builder()
         buildEvent(builder)
@@ -152,7 +144,7 @@ class DefaultTelemetryService(settings: AwsSettings) :
         return event
     }
 
-    private fun record(event: MetricEvent.Builder.() -> kotlin.Unit): MetricEvent = record(TelemetryService.MetricEventMetadata(), event)
+    private fun record(event: MetricEvent.Builder.() -> Unit): MetricEvent = record(TelemetryService.MetricEventMetadata(), event)
 
     private fun record(metricName: String): MetricEvent = record(TelemetryService.MetricEventMetadata()) {
         this.datum(metricName)
