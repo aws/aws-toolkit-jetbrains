@@ -282,7 +282,7 @@ class EcsCloudDebugSettingsEditorPanel(private val project: Project) : Disposabl
         val containerSettings = configuration.containerOptions()
         val credentialProviderId = configuration.credentialProviderId() ?: return
         val region = AwsRegionProvider.getInstance().lookupRegionById(configuration.regionId())
-        val credentialIdentifier = credentialManager.getCredentialIdentifier(credentialProviderId) ?: return
+        val credentialIdentifier = credentialManager.getCredentialIdentifierById(credentialProviderId) ?: return
         val credentialProvider = credentialManager.getAwsCredentialProvider(credentialIdentifier, region)
 
         // Set initial state before telling UI to update
@@ -390,7 +390,7 @@ class EcsCloudDebugSettingsEditorPanel(private val project: Project) : Disposabl
         region ?: return
         credentialProviderId ?: return
 
-        val credentialIdentifier = credentialManager.getCredentialIdentifier(credentialProviderId) ?: return
+        val credentialIdentifier = credentialManager.getCredentialIdentifierById(credentialProviderId) ?: return
         val credentialProvider = tryOrNull { credentialManager.getAwsCredentialProvider(credentialIdentifier, region) } ?: return
 
         val oldSettings = credentialSettings.getAndUpdate { region to credentialProvider }

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.ui.Messages
@@ -30,39 +31,55 @@ import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentials
 import software.aws.toolkits.jetbrains.core.credentials.CredentialIdentifierChange
 import software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.jetbrains.core.credentials.CredentialsChangeListener
-import software.aws.toolkits.jetbrains.utils.tryNotify
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
+import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.util.function.Supplier
 
 const val DEFAULT_PROFILE_ID = "profile:default"
 
+private const val PROFILE_FACTORY_ID = "profileCredentialProviderFactory"
+
 private class ProfileCredentialsIdentifier(internal val profileName: String) : ToolkitCredentialsIdentifier() {
     override val id = "profile:$profileName"
-    override val displayName get() = message("credentials.profile.name", profileName)
+    override val displayName = message("credentials.profile.name", profileName)
+    override val factoryId = PROFILE_FACTORY_ID
 }
 
 class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
+
     private val profileWatcher = ProfileWatcher(this)
     private val profileHolder = ProfileHolder()
 
+    override val id = PROFILE_FACTORY_ID
+
     override fun setUp(credentialLoadCallback: CredentialsChangeListener) {
         // Load the initial data, then start the background watcher
-        loadProfiles(credentialLoadCallback)
+        loadProfiles(credentialLoadCallback, true)
 
         profileWatcher.start {
-            loadProfiles(credentialLoadCallback)
+            loadProfiles(credentialLoadCallback, false)
         }
     }
 
-    private fun loadProfiles(credentialLoadCallback: CredentialsChangeListener) {
+    private fun loadProfiles(credentialLoadCallback: CredentialsChangeListener, initialLoad: Boolean) {
         val profilesAdded = mutableListOf<ProfileCredentialsIdentifier>()
         val profilesModified = mutableListOf<ProfileCredentialsIdentifier>()
         val profilesRemoved = mutableListOf<ProfileCredentialsIdentifier>()
 
         val previousProfilesSnapshot = profileHolder.snapshot()
-        val newProfiles = tryNotify("Failed to load credential file(s)") {
+        val newProfiles = try {
             validateAndGetProfiles()
-        } ?: return
+        } catch (e: Exception) {
+            notifyUserOfLoadFailure(e)
+
+            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", false)
+
+            return
+        }
 
         newProfiles.validProfiles.forEach {
             val previousProfile = previousProfilesSnapshot.remove(it.key)
@@ -83,7 +100,61 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         profileHolder.update(newProfiles.validProfiles)
         credentialLoadCallback(CredentialIdentifierChange(profilesAdded, profilesModified, profilesRemoved))
 
-        // TODO: Notify invalid profiles
+        notifyUserOfResult(newProfiles, initialLoad)
+    }
+
+    private fun notifyUserOfLoadFailure(e: Exception) {
+        val loadingFailureMessage = message("credentials.profile.failed_load")
+
+        val detail = e.message?.let {
+            ": $it"
+        } ?: ""
+
+        notifyError(
+            title = message("credentials.profile.refresh_ok_title"),
+            content = "$loadingFailureMessage$detail",
+            action = createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+        )
+    }
+
+    private fun notifyUserOfResult(newProfiles: Profiles, initialLoad: Boolean) {
+        val refreshTitle = message("credentials.profile.refresh_ok_title")
+        val totalProfiles = newProfiles.validProfiles.size + newProfiles.invalidProfiles.size
+        val refreshBaseMessage = message("credentials.profile.refresh_ok_message", totalProfiles)
+
+        // All provides were valid
+        if (newProfiles.invalidProfiles.isEmpty()) {
+            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", true)
+
+            // Don't report we load creds on start to avoid spam
+            if (!initialLoad) {
+                notifyInfo(
+                    title = message("credentials.profile.refresh_ok_title"),
+                    content = refreshBaseMessage
+                )
+
+                return
+            }
+        }
+
+        // Some profiles failed to load
+        if (newProfiles.invalidProfiles.isNotEmpty()) {
+            val message = newProfiles.invalidProfiles.values.joinToString("\n")
+
+            val errorDialogTitle = message("credentials.invalid.title")
+            val numErrorMessage = message("credentials.profile.refresh_errors", newProfiles.invalidProfiles.size)
+
+            notifyInfo(
+                title = refreshTitle,
+                content = "$refreshBaseMessage $numErrorMessage",
+                notificationActions = listOf(
+                    createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message),
+                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+                )
+            )
+
+            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", false)
+        }
     }
 
     override fun dispose() {}

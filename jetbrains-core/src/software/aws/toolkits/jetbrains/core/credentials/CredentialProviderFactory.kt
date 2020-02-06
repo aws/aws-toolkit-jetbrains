@@ -15,6 +15,9 @@ import software.aws.toolkits.core.region.AwsRegion
  * Extension point for adding new credential providers to the internal registry
  */
 interface CredentialProviderFactory {
+    /** ID used to uniquely identify this factory */
+    val id: String
+
     fun setUp(credentialLoadCallback: CredentialsChangeListener)
 
     fun createAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion, sdkClient: SdkHttpClient): ToolkitCredentialsProvider

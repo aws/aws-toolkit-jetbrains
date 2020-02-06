@@ -31,7 +31,7 @@ class RemoteLambdaRunSettingsEditor(project: Project) : SettingsEditor<RemoteLam
         region ?: return
         credentialProviderId ?: return
 
-        val credentialIdentifier = credentialManager.getCredentialIdentifier(credentialProviderId) ?: return
+        val credentialIdentifier = credentialManager.getCredentialIdentifierById(credentialProviderId) ?: return
         val credentialProvider = tryOrNull { credentialManager.getAwsCredentialProvider(credentialIdentifier, region) } ?: return
 
         val oldSettings = settings.getAndUpdate { region to credentialProvider }

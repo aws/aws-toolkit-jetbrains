@@ -21,7 +21,7 @@ class MockCredentialsManager : CredentialManager() {
     fun reset() {
         getCredentialIdentifiers().filterNot { it.id == DUMMY_PROVIDER_IDENTIFIER.id }.forEach { removeProvider(it) }
 
-        addProvider(DUMMY_PROVIDER_IDENTIFIER, MockCredentialProviderFactory)
+        addProvider(DUMMY_PROVIDER_IDENTIFIER)
     }
 
     fun addCredentials(
@@ -30,10 +30,12 @@ class MockCredentialsManager : CredentialManager() {
     ): ToolkitCredentialsIdentifier {
         val credentialIdentifier = MockCredentialIdentifier(id, StaticCredentialsProvider.create(credentials))
 
-        addProvider(credentialIdentifier, MockCredentialProviderFactory)
+        addProvider(credentialIdentifier)
 
         return credentialIdentifier
     }
+
+    override fun factoryMapping(): Map<String, CredentialProviderFactory> = mapOf(MockCredentialProviderFactory.id to MockCredentialProviderFactory)
 
     companion object {
         fun getInstance(): MockCredentialsManager = ServiceManager.getService(CredentialManager::class.java) as MockCredentialsManager
@@ -47,9 +49,12 @@ class MockCredentialsManager : CredentialManager() {
     private class MockCredentialIdentifier(override val displayName: String, val credentials: AwsCredentialsProvider) :
         ToolkitCredentialsIdentifier() {
         override val id: String = displayName
+        override val factoryId: String = "mockCredentialProviderFactory"
     }
 
     private object MockCredentialProviderFactory : CredentialProviderFactory {
+        override val id: String = "mockCredentialProviderFactory"
+
         override fun setUp(credentialLoadCallback: CredentialsChangeListener) {}
 
         override fun createAwsCredentialProvider(

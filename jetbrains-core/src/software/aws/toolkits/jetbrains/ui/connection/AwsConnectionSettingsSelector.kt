@@ -48,7 +48,7 @@ class AwsConnectionSettingsSelector(
 
         credentialProviderId?.let { providerId ->
             try {
-                credentialManager.getCredentialIdentifier(providerId)?.let {
+                credentialManager.getCredentialIdentifierById(providerId)?.let {
                     view.credentialProvider.setSelectedCredentialsProvider(it)
                 }
             } catch (_: Exception) {

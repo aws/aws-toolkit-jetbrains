@@ -235,6 +235,7 @@ class ResourceSelectorTest {
             object : ToolkitCredentialsIdentifier() {
                 override val id: String = id
                 override val displayName: String = id
+                override val factoryId: String = "mockFactory"
             },
             AnonymousCredentialsProvider.create()
         )

@@ -33,16 +33,19 @@ data class CredentialIdentifierChange(
 typealias CredentialsChangeListener = (change: CredentialIdentifierChange) -> Unit
 
 abstract class CredentialManager : SimpleModificationTracker() {
-    private val toolkitCredentialFactories = ConcurrentHashMap<ToolkitCredentialsIdentifier, CredentialProviderFactory>()
+    private val providerIds = ConcurrentHashMap<String, ToolkitCredentialsIdentifier>()
     private val awsCredentialProviderCache = ConcurrentHashMap<ToolkitCredentialsIdentifier, ConcurrentHashMap<String, ToolkitCredentialsProvider>>()
+
+    protected abstract fun factoryMapping(): Map<String, CredentialProviderFactory>
 
     @Throws(CredentialProviderNotFound::class)
     fun getAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): ToolkitCredentialsProvider {
         val partitionCache = awsCredentialProviderCache.computeIfAbsent(providerId) { _ -> ConcurrentHashMap() }
 
+        // If we already resolved creds for this partition and provider ID, just return it
         partitionCache[region.partitionId]?.let { return it }
 
-        val providerFactory = toolkitCredentialFactories[providerId]
+        val providerFactory = factoryMapping()[providerId.factoryId]
             ?: throw CredentialNotFoundException("No provider found with ID ${providerId.id}")
 
         val sdkClient = AwsSdkClient.getInstance()
@@ -53,13 +56,13 @@ abstract class CredentialManager : SimpleModificationTracker() {
         return awsCredentialProvider
     }
 
-    fun getCredentialIdentifiers() = toolkitCredentialFactories.keys.toList()
+    fun getCredentialIdentifiers(): List<ToolkitCredentialsIdentifier> = providerIds.values.toList()
 
-    fun getCredentialIdentifier(id: String) = toolkitCredentialFactories.keys.find { it.id == id }
+    fun getCredentialIdentifierById(id: String): ToolkitCredentialsIdentifier? = providerIds[id]
 
     // TODO: Convert these to bulk listeners so we only send N messages where N is # of extensions vs # of providers
-    protected fun addProvider(identifier: ToolkitCredentialsIdentifier, credentialProviderFactory: CredentialProviderFactory) {
-        toolkitCredentialFactories[identifier] = credentialProviderFactory
+    protected fun addProvider(identifier: ToolkitCredentialsIdentifier) {
+        providerIds[identifier.id] = identifier
 
         incModificationCount()
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerAdded(identifier)
@@ -71,7 +74,7 @@ abstract class CredentialManager : SimpleModificationTracker() {
     }
 
     protected fun removeProvider(identifier: ToolkitCredentialsIdentifier) {
-        toolkitCredentialFactories.remove(identifier)
+        providerIds.remove(identifier.id)
         awsCredentialProviderCache.remove(identifier)
 
         incModificationCount()
@@ -95,19 +98,25 @@ abstract class CredentialManager : SimpleModificationTracker() {
 class DefaultCredentialManager : CredentialManager() {
     private val rootDisposable = Disposer.newDisposable()
 
+    private val extensionMap: Map<String, CredentialProviderFactory> by lazy {
+        EP_NAME.extensionList.associate {
+            val providerFactory = it.getInstance()
+            if (providerFactory is Disposable) {
+                Disposer.register(rootDisposable, providerFactory)
+            }
+
+            providerFactory.id to providerFactory
+        }
+    }
+
     init {
         Disposer.register(ApplicationManager.getApplication(), rootDisposable)
 
-        EP_NAME.extensionList.forEach { providerFactory ->
-            val instance = providerFactory.getInstance()
-            if (instance is Disposable) {
-                Disposer.register(rootDisposable, instance)
-            }
-
-            LOG.tryOrNull("Failed to set up $instance") {
-                instance.setUp { change ->
+        extensionMap.values.forEach { providerFactory ->
+            LOG.tryOrNull("Failed to set up $providerFactory") {
+                providerFactory.setUp { change ->
                     change.added.forEach {
-                        addProvider(it, instance)
+                        addProvider(it)
                     }
 
                     change.modified.forEach {
@@ -117,16 +126,16 @@ class DefaultCredentialManager : CredentialManager() {
                     change.removed.forEach {
                         removeProvider(it)
                     }
-
-                    incModificationCount()
                 }
             }
         }
     }
 
-    companion object {
-        private val EP_NAME = ExtensionPointName.create<CredentialProviderFactoryExtensionPoint>("aws.toolkit.credentialProviderFactory")
-        private val LOG = getLogger<DefaultCredentialManager>()
+    override fun factoryMapping(): Map<String, CredentialProviderFactory> = extensionMap
+
+    private companion object {
+        val EP_NAME = ExtensionPointName.create<CredentialProviderFactoryExtensionPoint>("aws.toolkit.credentialProviderFactory")
+        val LOG = getLogger<DefaultCredentialManager>()
     }
 }
 

@@ -46,7 +46,7 @@ class DefaultProjectAccountSettingsManager(private val project: Project) : Proje
         GlobalScope.launch(Dispatchers.Default) {
             val credentialId = state.activeProfile ?: DEFAULT_PROFILE_ID
             val credentials = tryOrNull {
-                CredentialManager.getInstance().getCredentialIdentifier(credentialId)
+                CredentialManager.getInstance().getCredentialIdentifierById(credentialId)
             }
 
             val regionId = state.activeRegion ?: AwsRegionProvider.getInstance().defaultRegion().id

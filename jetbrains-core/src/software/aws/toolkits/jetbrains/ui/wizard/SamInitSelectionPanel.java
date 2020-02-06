@@ -166,7 +166,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         }
 
         CredentialManager credentialManager = CredentialManager.getInstance();
-        ToolkitCredentialsIdentifier credentialIdentifier = credentialManager.getCredentialIdentifier(credentialProviderId);
+        ToolkitCredentialsIdentifier credentialIdentifier = credentialManager.getCredentialIdentifierById(credentialProviderId);
         if (credentialIdentifier == null) {
             throw new IllegalArgumentException("Unknown credential provider selected");
         }

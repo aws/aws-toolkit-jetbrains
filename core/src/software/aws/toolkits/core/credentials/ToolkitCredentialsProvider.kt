@@ -16,6 +16,8 @@ abstract class ToolkitCredentialsIdentifier {
      */
     abstract val displayName: String
 
+    abstract val factoryId: String
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

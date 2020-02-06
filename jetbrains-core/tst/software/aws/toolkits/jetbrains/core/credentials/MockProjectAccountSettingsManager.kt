@@ -54,7 +54,7 @@ fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
     } finally {
         credentialsManager.reset()
         oldActive?.let {
-            manager.changeCredentialProvider(credentialsManager.getCredentialIdentifier(oldActive.id))
+            manager.changeCredentialProvider(credentialsManager.getCredentialIdentifierById(oldActive.id))
         }
     }
 }
