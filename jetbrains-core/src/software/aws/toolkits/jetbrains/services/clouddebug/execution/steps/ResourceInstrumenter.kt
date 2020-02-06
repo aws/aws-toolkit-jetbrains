@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.ecs.execution.EcsServiceCloudDeb
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.ClouddebugTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.time.Duration
 import java.time.Instant
 
 class ResourceInstrumenter(private val settings: EcsServiceCloudDebuggingRunSettings) : CliBasedStep() {
@@ -42,7 +43,12 @@ class ResourceInstrumenter(private val settings: EcsServiceCloudDebuggingRunSett
     }
 
     override fun recordTelemetry(context: Context, startTime: Instant, result: Result) {
-        ClouddebugTelemetry.instrument(project, result = result, value = )
+        ClouddebugTelemetry.instrument(
+            context.project,
+            result = result,
+            workflowtoken = context.workflowToken,
+            value = Duration.between(startTime, Instant.now()).toMillis().toDouble()
+        )
     }
 
     override fun handleSuccessResult(output: String, messageEmitter: MessageEmitter, context: Context) {
