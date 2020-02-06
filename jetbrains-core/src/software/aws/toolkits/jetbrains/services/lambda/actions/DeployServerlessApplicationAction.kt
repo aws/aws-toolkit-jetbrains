@@ -77,7 +77,7 @@ class DeployServerlessApplicationAction : AnAction(
         val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
         stackDialog.show()
         if (!stackDialog.isOK) {
-            SamTelemetry.recordDeploy(project, Result.CANCELLED)
+            SamTelemetry.deploy(project, Result.CANCELLED)
             return
         }
 
@@ -126,10 +126,10 @@ class DeployServerlessApplicationAction : AnAction(
                     message("cloudformation.execute_change_set.success", stackName),
                     project
                 )
-                SamTelemetry.recordDeploy(project, Result.SUCCEEDED)
+                SamTelemetry.deploy(project, Result.SUCCEEDED)
             } catch (e: Exception) {
                 e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
-                SamTelemetry.recordDeploy(project, Result.FAILED)
+                SamTelemetry.deploy(project, Result.FAILED)
             }
         }
     }

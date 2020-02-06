@@ -140,7 +140,7 @@ class DownloadCodeForSchemaDialog(
         val schemaCodeDownloadDetails = viewToSchemaCodeDownloadDetails()
 
         // Telemetry for download code language
-        SchemasTelemetry.recordDownload(project, Result.SUCCEEDED, SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue))
+        SchemasTelemetry.download(project, Result.SUCCEEDED, SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue))
 
         val schemaName = schemaCodeDownloadDetails.schema.name
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, message("schemas.schema.download_code_bindings.title", schemaName), false) {
@@ -185,7 +185,7 @@ class DownloadCodeForSchemaDialog(
     ) {
         val message = message("schemas.schema.download_code_bindings.notification.finished", schemaName)
         notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
-        SchemasTelemetry.recordDownload(project, Result.SUCCEEDED)
+        SchemasTelemetry.download(project, Result.SUCCEEDED)
     }
 
     private fun showDownloadCompletionErrorNotification(
@@ -197,7 +197,7 @@ class DownloadCodeForSchemaDialog(
             is SchemaCodeDownloadFileCollisionException -> notifyError(title = NOTIFICATION_TITLE, content = rootError.message ?: "", project = project)
             is Exception -> rootError.notifyError(title = NOTIFICATION_TITLE, project = project)
         }
-        SchemasTelemetry.recordDownload(project, Result.FAILED)
+        SchemasTelemetry.download(project, Result.FAILED)
     }
 
     private fun openSchemaCoreCodeFileInEditor(
