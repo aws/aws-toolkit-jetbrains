@@ -24,9 +24,10 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.sts.StsResources
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.MRUList
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.util.concurrent.CancellationException
 
 abstract class ProjectAccountSettingsManager(private val project: Project) : SimpleModificationTracker() {
@@ -139,7 +140,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
                 broadcastChangeEvent(InvalidConnectionSettings(credentials, region, e, connectionState))
             } finally {
                 incModificationCount()
-                TelemetryService.recordSimpleTelemetry(project, "aws_credentials_validate", isValidConnectionSettings())
+                AwsTelemetry.validateCredentials(project, if (isValidConnectionSettings()) Result.SUCCEEDED else Result.FAILED)
             }
         }
     }

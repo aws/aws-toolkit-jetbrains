@@ -103,8 +103,6 @@ class ProfileToolkitCredentialsProviderFactory(
                 content = "$loadingFailureMessage$detail",
                 action = createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
             )
-
-            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", false)
         } else if (errors.isNotEmpty()) {
             val message = errors.mapNotNull { it.exceptionOrNull()?.message }.reduce { acc, message ->
                 "$acc\n$message"
@@ -121,15 +119,11 @@ class ProfileToolkitCredentialsProviderFactory(
                     createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
                 )
             )
-
-            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", false)
         } else {
             notifyInfo(
                 title = refreshTitle,
                 content = refreshBaseMessage
             )
-
-            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", true)
         }
 
         // Profiles are not longer in the updated file, remove them from the toolkit
