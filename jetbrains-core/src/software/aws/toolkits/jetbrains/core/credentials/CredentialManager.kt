@@ -40,9 +40,8 @@ abstract class CredentialManager : SimpleModificationTracker() {
     protected abstract fun factoryMapping(): Map<String, CredentialProviderFactory>
 
     @Throws(CredentialProviderNotFound::class)
-    fun getAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): ToolkitCredentialsProvider {
-        return ToolkitCredentialsProvider(providerId, AwsCredentialProviderProxy(providerId, region))
-    }
+    fun getAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): ToolkitCredentialsProvider =
+        ToolkitCredentialsProvider(providerId, AwsCredentialProviderProxy(providerId, region))
 
     fun getCredentialIdentifiers(): List<ToolkitCredentialsIdentifier> = providerIds.values.toList()
 
@@ -81,14 +80,18 @@ abstract class CredentialManager : SimpleModificationTracker() {
         override fun resolveCredentials(): AwsCredentials = getOrCreateAwsCredentialsProvider(providerId, region).resolveCredentials()
 
         private fun getOrCreateAwsCredentialsProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion): AwsCredentialsProvider {
-            val partitionCache = awsCredentialProviderCache.computeIfAbsent(providerId) { _ -> ConcurrentHashMap() }
+            val partitionCache = awsCredentialProviderCache.computeIfAbsent(providerId) { ConcurrentHashMap() }
 
             // If we already resolved creds for this partition and provider ID, just return it
             return partitionCache.computeIfAbsent(region.partitionId) {
                 val providerFactory = factoryMapping()[providerId.factoryId]
                     ?: throw CredentialNotFoundException("No provider found with ID ${providerId.id}")
 
-                providerFactory.createAwsCredentialProvider(providerId, region, AwsSdkClient.getInstance().sdkHttpClient)
+                try {
+                    providerFactory.createAwsCredentialProvider(providerId, region, AwsSdkClient.getInstance().sdkHttpClient)
+                } catch (e: Exception) {
+                    throw CredentialProviderNotFound("Failed to create underlying AwsCredentialProvider", e)
+                }
             }
         }
     }

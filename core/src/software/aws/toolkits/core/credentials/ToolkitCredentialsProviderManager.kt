@@ -9,4 +9,7 @@ interface ToolkitCredentialsChangeListener {
     fun providerRemoved(identifier: ToolkitCredentialsIdentifier) {}
 }
 
-class CredentialProviderNotFound(msg: String) : RuntimeException(msg)
+class CredentialProviderNotFound : RuntimeException {
+    constructor(msg: String) : super(msg)
+    constructor(msg: String, exception: Exception) : super(msg, exception)
+}
