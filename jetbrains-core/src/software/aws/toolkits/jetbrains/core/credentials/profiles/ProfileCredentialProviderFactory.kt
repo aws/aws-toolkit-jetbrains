@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
@@ -163,17 +162,14 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         providerId: ToolkitCredentialsIdentifier,
         region: AwsRegion,
         sdkClient: SdkHttpClient
-    ): ToolkitCredentialsProvider {
+    ): AwsCredentialsProvider {
         val profileProviderId = providerId as? ProfileCredentialsIdentifier
             ?: throw IllegalStateException("ProfileCredentialProviderFactory can only handle ProfileCredentialsIdentifier, but got ${providerId::class}")
 
         val profile = profileHolder.getProfile(profileProviderId.profileName)
             ?: throw IllegalStateException("Profile ${profileProviderId.profileName} looks to have been removed")
 
-        return ToolkitCredentialsProvider(
-            profileProviderId,
-            createAwsCredentialProvider(profile, region, sdkClient)
-        )
+        return createAwsCredentialProvider(profile, region, sdkClient)
     }
 
     private fun createAwsCredentialProvider(
