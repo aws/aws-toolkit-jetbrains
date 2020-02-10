@@ -14,7 +14,6 @@ import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.tryOrThrow
 import software.aws.toolkits.core.utils.tryOrThrowNullable
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher.ProfileChangeListener
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
 import software.aws.toolkits.jetbrains.utils.notifyError
