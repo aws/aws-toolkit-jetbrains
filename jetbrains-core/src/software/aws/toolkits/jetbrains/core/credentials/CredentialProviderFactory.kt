@@ -3,9 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.extensions.AbstractExtensionPointBean
-import com.intellij.openapi.util.LazyInstance
-import com.intellij.util.xmlb.annotations.Attribute
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
@@ -21,15 +18,4 @@ interface CredentialProviderFactory {
     fun setUp(credentialLoadCallback: CredentialsChangeListener)
 
     fun createAwsCredentialProvider(providerId: ToolkitCredentialsIdentifier, region: AwsRegion, sdkClient: SdkHttpClient): AwsCredentialsProvider
-}
-
-class CredentialProviderFactoryExtensionPoint : AbstractExtensionPointBean() {
-    @Attribute("implementation")
-    lateinit var implementation: String
-
-    private val instance = object : LazyInstance<CredentialProviderFactory>() {
-        override fun getInstanceClass(): Class<CredentialProviderFactory> = findClass(implementation)
-    }
-
-    fun getInstance(): CredentialProviderFactory = instance.value
 }

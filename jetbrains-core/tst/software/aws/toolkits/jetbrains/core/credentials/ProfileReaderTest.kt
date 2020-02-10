@@ -47,7 +47,7 @@ class ProfileReaderTest {
 
         val (validProfiles, invalidProfiles) = validateAndGetProfiles()
         assertThat(validProfiles).isEmpty()
-        assertThat(invalidProfiles)
+        assertThat(invalidProfiles.mapValues { it.value.message })
             .containsKey("role")
             .containsValue("Profile 'role' references source profile 'source_profile' which does not exist")
     }
@@ -76,7 +76,7 @@ class ProfileReaderTest {
 
         val (validProfiles, invalidProfiles) = validateAndGetProfiles()
         assertThat(validProfiles).isEmpty()
-        assertThat(invalidProfiles)
+        assertThat(invalidProfiles.mapValues { it.value.message })
             .containsKey("role")
             .containsValue("A circular profile dependency was found between role->source_profile->source_profile2->source_profile3->source_profile")
     }

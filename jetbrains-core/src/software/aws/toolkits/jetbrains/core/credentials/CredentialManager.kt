@@ -111,14 +111,14 @@ class DefaultCredentialManager : CredentialManager() {
     private val rootDisposable = Disposer.newDisposable()
 
     private val extensionMap: Map<String, CredentialProviderFactory> by lazy {
-        EP_NAME.extensionList.associate {
-            val providerFactory = it.getInstance()
-            if (providerFactory is Disposable) {
-                Disposer.register(rootDisposable, providerFactory)
+        EP_NAME.extensionList
+            .onEach {
+                if (it is Disposable) {
+                    Disposer.register(rootDisposable, it)
+                }
+            }.associateBy {
+                it.id
             }
-
-            providerFactory.id to providerFactory
-        }
     }
 
     init {
@@ -145,9 +145,9 @@ class DefaultCredentialManager : CredentialManager() {
 
     override fun factoryMapping(): Map<String, CredentialProviderFactory> = extensionMap
 
-    private companion object {
-        val EP_NAME = ExtensionPointName.create<CredentialProviderFactoryExtensionPoint>("aws.toolkit.credentialProviderFactory")
-        val LOG = getLogger<DefaultCredentialManager>()
+    companion object {
+        val EP_NAME = ExtensionPointName.create<CredentialProviderFactory>("aws.toolkit.credentialProviderFactory")
+        private val LOG = getLogger<DefaultCredentialManager>()
     }
 }
 

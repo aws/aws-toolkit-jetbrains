@@ -9,10 +9,7 @@ import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileProperty
 import software.aws.toolkits.resources.message
 
-typealias ProfileName = String
-typealias InvalidCause = String
-
-data class Profiles(val validProfiles: Map<ProfileName, Profile>, val invalidProfiles: Map<String, String>)
+data class Profiles(val validProfiles: Map<String, Profile>, val invalidProfiles: Map<String, Exception>)
 
 /**
  * Reads the AWS shared credentials files and produces what profiles are valid and if not why it is not
@@ -20,15 +17,15 @@ data class Profiles(val validProfiles: Map<ProfileName, Profile>, val invalidPro
 fun validateAndGetProfiles(): Profiles {
     val allProfiles: Map<String, Profile> = ProfileFile.defaultProfileFile().profiles()
 
-    val validProfiles = mutableMapOf<ProfileName, Profile>()
-    val invalidProfiles = mutableMapOf<ProfileName, InvalidCause>()
+    val validProfiles = mutableMapOf<String, Profile>()
+    val invalidProfiles = mutableMapOf<String, Exception>()
 
     allProfiles.values.forEach {
         try {
             validateProfile(it, allProfiles)
             validProfiles[it.name()] = it
         } catch (e: Exception) {
-            invalidProfiles[it.name()] = e.message ?: e::class.java.name
+            invalidProfiles[it.name()] = e
         }
     }
 

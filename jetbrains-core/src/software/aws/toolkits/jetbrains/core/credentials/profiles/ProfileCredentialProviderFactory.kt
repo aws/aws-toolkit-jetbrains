@@ -138,7 +138,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
 
         // Some profiles failed to load
         if (newProfiles.invalidProfiles.isNotEmpty()) {
-            val message = newProfiles.invalidProfiles.values.joinToString("\n")
+            val message = newProfiles.invalidProfiles.values.joinToString("\n") { it.message ?: it::class.java.name }
 
             val errorDialogTitle = message("credentials.invalid.title")
             val numErrorMessage = message("credentials.profile.refresh_errors", newProfiles.invalidProfiles.size)
@@ -286,7 +286,7 @@ private class ProfileHolder {
 
     fun snapshot() = profiles.toMutableMap()
 
-    fun update(validProfiles: Map<ProfileName, Profile>) {
+    fun update(validProfiles: Map<String, Profile>) {
         profiles.clear()
         profiles.putAll(validProfiles)
     }
