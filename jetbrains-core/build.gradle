@@ -33,8 +33,6 @@ configurations {
     testArtifacts
 }
 
-// make sure the output folder is created
-file("${project.buildDir}/generated-src").mkdirs()
 task generateTelemetry(type: GenerateTelemetry) {
     inputFiles = []
     outputDirectory = file("${project.buildDir}/generated-src")
