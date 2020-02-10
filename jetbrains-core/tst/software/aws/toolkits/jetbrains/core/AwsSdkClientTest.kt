@@ -32,7 +32,7 @@ class AwsSdkClientTest {
 
     @Before
     fun setUp() {
-        stubFor(any(urlPathEqualTo("/")).willReturn(aResponse().withStatus(200)));
+        stubFor(any(urlPathEqualTo("/")).willReturn(aResponse().withStatus(200)))
     }
 
     @After
