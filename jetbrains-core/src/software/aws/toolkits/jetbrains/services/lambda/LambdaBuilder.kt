@@ -94,8 +94,6 @@ abstract class LambdaBuilder {
         }
 
         ExecutableManager.getInstance().getExecutable<SamExecutable>().thenApply {
-            val buildDir = getOrCreateBuildDirectory(module).toPath()
-
             val samExecutable = when (it) {
                 is ExecutableInstance.Executable -> it
                 else -> {
@@ -103,6 +101,8 @@ abstract class LambdaBuilder {
                     return@thenApply
                 }
             }
+
+            val buildDir = getOrCreateBuildDirectory(module).toPath()
 
             val commandLine = samExecutable.getCommandLine()
                 .withParameters("build")

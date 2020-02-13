@@ -85,9 +85,8 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
             return ExecutableInstance.UnresolvedExecutable()
         }
 
-        // Check if the file was modified. If it was, kick off an update in the background. Overlapping
-        // Versions of this should be eventually consistent so we do not have to keep track of the future
-        // getExecutableIfPresent is called very often by validate run configuration is OK to return the old path first
+        // Check if the set executable was modified. If it was, start an update in the background. Overlapping
+        // runs of update are eventually consistent, and called often, so we do not have to keep track of the future
         val lastModified = (instance as ExecutableWithPath).executablePath.lastModifiedOrNull()
         if (lastModified != internalState[type.id]?.third) {
             getExecutable(type).exceptionally {
