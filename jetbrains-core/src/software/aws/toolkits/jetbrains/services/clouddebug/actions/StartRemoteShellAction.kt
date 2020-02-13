@@ -126,6 +126,7 @@ class StartRemoteShellAction(private val project: Project, private val container
                 private fun recordTelemetry(result: Result) {
                     ClouddebugTelemetry.shell(
                         project,
+                        // TODO clean up with executable manager changes
                         version = (cloudDebugExecutable as? ExecutableInstance.Executable)?.version,
                         result = result,
                         value = Duration.between(startTime, Instant.now()).toMillis().toDouble(),

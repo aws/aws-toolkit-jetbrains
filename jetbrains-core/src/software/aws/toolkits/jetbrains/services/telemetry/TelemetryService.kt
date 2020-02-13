@@ -85,6 +85,7 @@ class DefaultTelemetryService(settings: AwsSettings) :
         TelemetryService.subscribe(this)
         TelemetryService.syncPublisher().notify(settings.isTelemetryEnabled)
 
+        // TODO this startup stuff should be moved to a global startup task instead of in the constructor FIX_WHEN_MIN_IS_193
         // The auto generated telemetry cannot be used here. It tries to get the instance while
         // constructing it which causes a circular dependency issue.
         record("session_start").also {

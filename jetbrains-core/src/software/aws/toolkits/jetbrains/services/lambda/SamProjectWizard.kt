@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.ui.wizard.SamInitRunner
 import software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.ui.wizard.SchemaSelectionPanel
 import software.aws.toolkits.jetbrains.ui.wizard.SdkSelectionPanel
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 import software.aws.toolkits.telemetry.Runtime as TelemetryRuntime
 
@@ -142,17 +141,17 @@ abstract class SamProjectTemplate {
     fun getIcon() = AwsIcons.Resources.SERVERLESS_APP
 
     fun build(project: Project?, runtime: Runtime, schemaParameters: SchemaTemplateParameters?, outputDir: VirtualFile) {
-        var hasException = false
+        var success = true
         try {
             doBuild(runtime, schemaParameters, outputDir)
         } catch (e: Throwable) {
-            hasException = true
+            success = false
             throw e
         } finally {
             SamTelemetry.init(
                 project,
                 name = getName(),
-                result = if (hasException) Result.CANCELLED else Result.FAILED,
+                success = success,
                 runtime = TelemetryRuntime.from(runtime.toString()),
                 version = SamCommon.getVersionString(),
                 templatename = this.javaClass.simpleName,
