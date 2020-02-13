@@ -8,6 +8,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 abstract class ToolkitCredentialsIdentifier {
     /**
      * The ID must be unique across all [ToolkitCredentialsIdentifier].
+     * It is recommended to concatenate the factory ID and the display name.
      */
     abstract val id: String
 
@@ -16,6 +17,10 @@ abstract class ToolkitCredentialsIdentifier {
      */
     abstract val displayName: String
 
+    /**
+     * The ID of the corresponding [CredentialProviderFactory] so that the credential manager knows which factory to invoke in order
+     * to resolve this into a [ToolkitCredentialsProvider]
+     */
     abstract val factoryId: String
 
     override fun equals(other: Any?): Boolean {

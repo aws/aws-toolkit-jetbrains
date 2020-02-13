@@ -12,7 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.XmlSerializer
 import com.intellij.util.xmlb.annotations.Property
 import org.jdom.Element
-import software.aws.toolkits.core.credentials.CredentialProviderNotFound
+import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -65,9 +65,11 @@ abstract class AwsConnectionsRunConfigurationBase<T : BaseAwsConnectionOptions>(
     protected fun resolveCredentials() = credentialProviderId()?.let {
         try {
             val credentialManager = CredentialManager.getInstance()
-            val credentialsIdentifier = credentialManager.getCredentialIdentifierById(it) ?: throw CredentialProviderNotFound("No provider with id '$it'")
+            val credentialsIdentifier = credentialManager.getCredentialIdentifierById(it)
+                ?: throw CredentialProviderNotFoundException("No provider with id '$it'")
+
             credentialManager.getAwsCredentialProvider(credentialsIdentifier, resolveRegion())
-        } catch (e: CredentialProviderNotFound) {
+        } catch (e: CredentialProviderNotFoundException) {
             throw RuntimeConfigurationError(message("lambda.run_configuration.credential_not_found_error", it))
         } catch (e: Exception) {
             throw RuntimeConfigurationError(

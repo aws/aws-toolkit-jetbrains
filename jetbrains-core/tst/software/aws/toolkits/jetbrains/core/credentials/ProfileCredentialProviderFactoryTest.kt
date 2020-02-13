@@ -39,6 +39,8 @@ import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.HttpExecuteResponse
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.http.SdkHttpFullResponse
+import software.aws.toolkits.core.credentials.CredentialsChangeEvent
+import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.rules.SystemPropertyHelper
@@ -50,7 +52,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAccessor
 
-class ProfileToolkitCredentialsProviderFactoryTest {
+class ProfileCredentialProviderFactoryTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
@@ -73,7 +75,7 @@ class ProfileToolkitCredentialsProviderFactoryTest {
     private val mockSdkHttpClient = mock<SdkHttpClient>()
     private val mockRegionProvider = mock<ToolkitRegionProvider>()
     private val profileLoadCallback = mock<CredentialsChangeListener>()
-    private val credentialChangeEvent = argumentCaptor<CredentialIdentifierChange>()
+    private val credentialChangeEvent = argumentCaptor<CredentialsChangeEvent>()
 
     @Before
     fun setUp() {

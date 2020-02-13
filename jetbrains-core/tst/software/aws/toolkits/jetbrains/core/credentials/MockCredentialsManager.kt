@@ -9,6 +9,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.http.SdkHttpClient
+import software.aws.toolkits.core.credentials.CredentialProviderFactory
+import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
@@ -52,7 +54,8 @@ class MockCredentialsManager : CredentialManager() {
         override val factoryId: String = "mockCredentialProviderFactory"
     }
 
-    private object MockCredentialProviderFactory : CredentialProviderFactory {
+    private object MockCredentialProviderFactory :
+        CredentialProviderFactory {
         override val id: String = "mockCredentialProviderFactory"
 
         override fun setUp(credentialLoadCallback: CredentialsChangeListener) {}

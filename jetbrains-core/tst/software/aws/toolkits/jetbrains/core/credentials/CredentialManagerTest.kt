@@ -14,7 +14,10 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.http.SdkHttpClient
-import software.aws.toolkits.core.credentials.CredentialProviderNotFound
+import software.aws.toolkits.core.credentials.CredentialProviderFactory
+import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
+import software.aws.toolkits.core.credentials.CredentialsChangeEvent
+import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
@@ -177,7 +180,7 @@ class CredentialManagerTest {
         credentialFactory.removeCredentials("testFoo1")
 
         // Existing references throw
-        assertThatThrownBy { credentialProvider.resolveCredentials() }.isInstanceOf(CredentialProviderNotFound::class.java)
+        assertThatThrownBy { credentialProvider.resolveCredentials() }.isInstanceOf(CredentialProviderNotFoundException::class.java)
 
         // New ones fail too
         assertThatThrownBy {
@@ -185,7 +188,7 @@ class CredentialManagerTest {
                 credentialsIdentifier,
                 region
             ).resolveCredentials()
-        }.isInstanceOf(CredentialProviderNotFound::class.java)
+        }.isInstanceOf(CredentialProviderNotFoundException::class.java)
 
         assertNull(credentialManager.getCredentialIdentifierById("testFoo1"))
     }
@@ -219,7 +222,7 @@ class CredentialManagerTest {
                 .map { createCredentialIdentifier(it.key.first) }
 
             callback(
-                CredentialIdentifierChange(
+                CredentialsChangeEvent(
                     credentialsAdded,
                     emptyList(),
                     emptyList()
@@ -238,7 +241,7 @@ class CredentialManagerTest {
         fun updateCredentials(providerId: String, credentials: Map<AwsRegion, AwsCredentialsProvider>) {
             credentialsMapping[providerId] = credentials.toMutableMap()
             callback(
-                CredentialIdentifierChange(
+                CredentialsChangeEvent(
                     emptyList(),
                     listOf(createCredentialIdentifier(providerId)),
                     emptyList()
@@ -249,7 +252,7 @@ class CredentialManagerTest {
         fun removeCredentials(providerId: String) {
             credentialsMapping.remove(providerId)
             callback(
-                CredentialIdentifierChange(
+                CredentialsChangeEvent(
                     emptyList(),
                     emptyList(),
                     listOf(createCredentialIdentifier(providerId))

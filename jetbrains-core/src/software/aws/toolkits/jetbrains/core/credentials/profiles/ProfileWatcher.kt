@@ -41,8 +41,8 @@ class ProfileWatcher(parentDisposable: Disposable) : AsyncFileListener, Disposab
         }
     }
 
-    fun start(callback: () -> Unit) {
-        onUpdate = callback
+    fun start(onFileChange: () -> Unit) {
+        onUpdate = onFileChange
 
         watchRoots.addAll(LocalFileSystem.getInstance().addRootsToWatch(watchLocationsStrings, false))
         VirtualFileManager.getInstance().addAsyncFileListener(this, this)

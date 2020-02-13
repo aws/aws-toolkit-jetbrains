@@ -23,13 +23,13 @@ import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 import software.aws.toolkits.core.ToolkitClientManager
+import software.aws.toolkits.core.credentials.CredentialProviderFactory
+import software.aws.toolkits.core.credentials.CredentialsChangeEvent
+import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
-import software.aws.toolkits.jetbrains.core.credentials.CredentialIdentifierChange
-import software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory
-import software.aws.toolkits.jetbrains.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
@@ -40,7 +40,7 @@ import java.util.function.Supplier
 
 const val DEFAULT_PROFILE_ID = "profile:default"
 
-private const val PROFILE_FACTORY_ID = "profileCredentialProviderFactory"
+private const val PROFILE_FACTORY_ID = "ProfileCredentialProviderFactory"
 
 private class ProfileCredentialsIdentifier(internal val profileName: String) : ToolkitCredentialsIdentifier() {
     override val id = "profile:$profileName"
@@ -49,7 +49,6 @@ private class ProfileCredentialsIdentifier(internal val profileName: String) : T
 }
 
 class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
-
     private val profileWatcher = ProfileWatcher(this)
     private val profileHolder = ProfileHolder()
 
@@ -59,9 +58,9 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         // Load the initial data, then start the background watcher
         loadProfiles(credentialLoadCallback, true)
 
-        profileWatcher.start {
+        profileWatcher.start(onFileChange = {
             loadProfiles(credentialLoadCallback, false)
-        }
+        })
     }
 
     private fun loadProfiles(credentialLoadCallback: CredentialsChangeListener, initialLoad: Boolean) {
@@ -97,7 +96,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         previousProfilesSnapshot.keys.asSequence().map { ProfileCredentialsIdentifier(it) }.toCollection(profilesRemoved)
 
         profileHolder.update(newProfiles.validProfiles)
-        credentialLoadCallback(CredentialIdentifierChange(profilesAdded, profilesModified, profilesRemoved))
+        credentialLoadCallback(CredentialsChangeEvent(profilesAdded, profilesModified, profilesRemoved))
 
         notifyUserOfResult(newProfiles, initialLoad)
     }

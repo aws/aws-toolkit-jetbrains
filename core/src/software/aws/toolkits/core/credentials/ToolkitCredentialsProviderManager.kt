@@ -3,13 +3,16 @@
 
 package software.aws.toolkits.core.credentials
 
+/**
+ * TODO: Deprecate and remove this since it is less efficient than [CredentialsChangeEvent]
+ */
 interface ToolkitCredentialsChangeListener {
     fun providerAdded(identifier: ToolkitCredentialsIdentifier) {}
     fun providerModified(identifier: ToolkitCredentialsIdentifier) {}
     fun providerRemoved(identifier: ToolkitCredentialsIdentifier) {}
 }
 
-class CredentialProviderNotFound : RuntimeException {
+class CredentialProviderNotFoundException : RuntimeException {
     constructor(msg: String) : super(msg)
     constructor(msg: String, exception: Exception) : super(msg, exception)
 }

@@ -14,7 +14,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
-import software.aws.toolkits.core.credentials.CredentialProviderNotFound
+import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -70,9 +70,9 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     /**
      * Internal setter that allows for null values and is intended to set the internal state and still notify
      */
-    protected fun changeConnectionSettings(credentials: ToolkitCredentialsIdentifier?, region: AwsRegion?) {
+    protected fun changeConnectionSettings(identifier: ToolkitCredentialsIdentifier?, region: AwsRegion?) {
         changeFieldsAndNotify {
-            credentials?.let {
+            identifier?.let {
                 recentlyUsedProfiles.add(it.id)
             }
 
@@ -80,9 +80,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
                 recentlyUsedRegions.add(it.id)
             }
 
-            selectedCredentialIdentifier = credentials
-            selectedCredentialsProvider = null
-
+            selectedCredentialIdentifier = identifier
             selectedRegion = region
         }
     }
@@ -91,14 +89,13 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     /**
      * Changes the credentials and then validates them. Notifies listeners of results
      */
-    fun changeCredentialProvider(credentials: ToolkitCredentialsIdentifier?) {
+    fun changeCredentialProvider(identifier: ToolkitCredentialsIdentifier?) {
         changeFieldsAndNotify {
-            credentials?.let {
-                recentlyUsedProfiles.add(credentials.id)
+            identifier?.let {
+                recentlyUsedProfiles.add(identifier.id)
             }
 
-            selectedCredentialIdentifier = credentials
-            selectedCredentialsProvider = null
+            selectedCredentialIdentifier = identifier
         }
     }
 
@@ -121,9 +118,12 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
         connectionState = ConnectionState.VALIDATING
         validationJob?.cancel(CancellationException("Newer connection settings chosen"))
 
+        // Clear existing provider
+        selectedCredentialsProvider = null
+
         fieldUpdateBlock()
 
-        validationJob = GlobalScope.launch(Dispatchers.Default) {
+        validationJob = GlobalScope.launch(Dispatchers.IO) {
             broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
 
             val credentialsIdentifier = selectedCredentialIdentifier
@@ -166,8 +166,8 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
      * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
      */
     val activeCredentialProvider: ToolkitCredentialsProvider
-        @Throws(CredentialProviderNotFound::class)
-        get() = selectedCredentialsProvider ?: throw CredentialProviderNotFound(message("credentials.profile.not_configured")).also {
+        @Throws(CredentialProviderNotFoundException::class)
+        get() = selectedCredentialsProvider ?: throw CredentialProviderNotFoundException(message("credentials.profile.not_configured")).also {
             LOGGER.warn(IllegalStateException()) { "Using activeCredentialProvider when credentials is null, calling code needs to be migrated to handle null" }
         }
 
