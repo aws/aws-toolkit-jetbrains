@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SchemaLanguage
 import software.aws.toolkits.telemetry.SchemasTelemetry
 import java.awt.event.ActionEvent
@@ -140,7 +139,7 @@ class DownloadCodeForSchemaDialog(
         val schemaCodeDownloadDetails = viewToSchemaCodeDownloadDetails()
 
         // Telemetry for download code language
-        SchemasTelemetry.download(project, Result.SUCCEEDED, SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue))
+        SchemasTelemetry.download(project, success = true, schemalanguage = SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue))
 
         val schemaName = schemaCodeDownloadDetails.schema.name
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, message("schemas.schema.download_code_bindings.title", schemaName), false) {
@@ -185,7 +184,7 @@ class DownloadCodeForSchemaDialog(
     ) {
         val message = message("schemas.schema.download_code_bindings.notification.finished", schemaName)
         notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
-        SchemasTelemetry.download(project, Result.SUCCEEDED)
+        SchemasTelemetry.download(project, success = true)
     }
 
     private fun showDownloadCompletionErrorNotification(
@@ -197,7 +196,7 @@ class DownloadCodeForSchemaDialog(
             is SchemaCodeDownloadFileCollisionException -> notifyError(title = NOTIFICATION_TITLE, content = rootError.message ?: "", project = project)
             is Exception -> rootError.notifyError(title = NOTIFICATION_TITLE, project = project)
         }
-        SchemasTelemetry.download(project, Result.FAILED)
+        SchemasTelemetry.download(project, success = false)
     }
 
     private fun openSchemaCoreCodeFileInEditor(

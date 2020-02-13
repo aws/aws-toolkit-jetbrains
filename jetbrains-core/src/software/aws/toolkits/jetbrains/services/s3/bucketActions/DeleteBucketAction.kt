@@ -13,7 +13,6 @@ import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 
 class DeleteBucketAction : DeleteResourceAction<S3BucketNode>(message("s3.delete.bucket.action"), TaggingResourceType.S3_BUCKET) {
@@ -22,10 +21,10 @@ class DeleteBucketAction : DeleteResourceAction<S3BucketNode>(message("s3.delete
             val client: S3Client = AwsClientManager.getInstance(selected.nodeProject).getClient()
             client.deleteBucketAndContents(selected.toString())
             AwsExplorerService.refreshAwsTree(selected.nodeProject, S3Resources.LIST_BUCKETS)
-            S3Telemetry.deleteBucket(selected.nodeProject, Result.SUCCEEDED)
+            S3Telemetry.deleteBucket(selected.nodeProject, success = true)
         } catch (e: Exception) {
             notifyError(message("s3.delete.bucket_failed", selected.bucket.name()))
-            S3Telemetry.deleteBucket(selected.nodeProject, Result.FAILED)
+            S3Telemetry.deleteBucket(selected.nodeProject, success = false)
         }
     }
 }

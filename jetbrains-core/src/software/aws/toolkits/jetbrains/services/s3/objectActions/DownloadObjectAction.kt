@@ -17,7 +17,6 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 import java.io.OutputStream
 import java.nio.file.Paths
@@ -57,16 +56,16 @@ class DownloadObjectAction(private val project: Project, treeTable: S3TreeTable)
                 files.forEach { (key, output) ->
                     try {
                         bucket.download(project, key, output)
-                        S3Telemetry.downloadObject(project, Result.SUCCEEDED)
+                        S3Telemetry.downloadObject(project, success = true)
                     } catch (e: Exception) {
                         e.notifyError(message("s3.download.object.failed", key))
-                        S3Telemetry.downloadObject(project, Result.FAILED)
+                        S3Telemetry.downloadObject(project, success = false)
                         throw e
                     }
                 }
-                S3Telemetry.downloadObjects(project, Result.SUCCEEDED, treeTable.selectedRows.size.toDouble())
+                S3Telemetry.downloadObjects(project, success = true, value = treeTable.selectedRows.size.toDouble())
             } catch (e: Exception) {
-                S3Telemetry.downloadObjects(project, Result.FAILED, treeTable.selectedRows.size.toDouble())
+                S3Telemetry.downloadObjects(project, success = true, value = treeTable.selectedRows.size.toDouble())
             }
         }
     }

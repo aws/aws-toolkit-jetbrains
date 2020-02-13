@@ -20,7 +20,6 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.profiles.ProfileFileLocation
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.Result
 import java.io.File
 
 class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
@@ -69,10 +68,10 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
                 }
 
                 if (fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) == null) {
-                    AwsTelemetry.openCredentials(project, Result.FAILED)
+                    AwsTelemetry.openCredentials(project, success = false)
                     throw RuntimeException(message("credentials.could_not_open", it))
                 }
-                AwsTelemetry.openCredentials(project, Result.SUCCEEDED)
+                AwsTelemetry.openCredentials(project, success = true)
             }
         }
     }

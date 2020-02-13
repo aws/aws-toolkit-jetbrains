@@ -9,7 +9,6 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.schemas.SchemaRegistryNode
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SchemasTelemetry
 
 class SearchSchemasAction : AnAction("Search Schemas", null, AwsIcons.Actions.SCHEMA_SEARCH) {
@@ -19,7 +18,7 @@ class SearchSchemasAction : AnAction("Search Schemas", null, AwsIcons.Actions.SC
         val dialog = SchemaSearchDialogManager.INSTANCE.searchAllRegistriesDialog(project)
         dialog.show()
 
-        SchemasTelemetry.search(project, Result.SUCCEEDED)
+        SchemasTelemetry.search(project, success = true)
     }
 }
 
