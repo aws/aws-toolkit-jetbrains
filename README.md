@@ -18,8 +18,9 @@ requests or any positive contribution. See [CONTRIBUTING](CONTRIBUTING.md) for h
 We want your feedback!
 
 - Upvote 👍 [feature requests](https://github.com/aws/aws-toolkit-jetbrains/issues?q=is%3Aissue+is%3Aopen+label%3Afeature-request+sort%3Areactions-%2B1-desc)
-- [Request a new feature](./CONTRIBUTING.md#reporting-bugsfeature-requests)
-- [File an issue](https://github.com/aws/aws-toolkit-jetbrains/issues)
+- [Ask a question](https://github.com/aws/aws-toolkit-jetbrains/issues/new?labels=guidance&template=guidance_request.md)
+- [Request a new feature](https://github.com/aws/aws-toolkit-jetbrains/issues/new?labels=feature-request&template=feature_request.md)
+- [File an issue](https://github.com/aws/aws-toolkit-jetbrains/issues/new?labels=bug&template=bug_report.md)
 
 ## Requirements
 Supported IDEs:
