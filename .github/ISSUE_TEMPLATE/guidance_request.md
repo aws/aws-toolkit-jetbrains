@@ -6,9 +6,12 @@ labels: guidance
 
 **Desktop (please complete the following information):**
 
--   OS:
--   VS Code version:
--   AWS Toolkit extension version:
+- OS: 
+- JetBrains product:
+- JetBrains product version:
+- AWS Toolkit version:
+- SAM CLI version:
+- JVM/Python version:
 
 **Question**
 
