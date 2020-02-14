@@ -30,7 +30,6 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -73,8 +72,6 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
             validateAndGetProfiles()
         } catch (e: Exception) {
             notifyUserOfLoadFailure(e)
-
-            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", false)
 
             return
         }
@@ -122,8 +119,6 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
 
         // All provides were valid
         if (newProfiles.invalidProfiles.isEmpty()) {
-            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", true)
-
             // Don't report we load creds on start to avoid spam
             if (!initialLoad) {
                 notifyInfo(
@@ -150,8 +145,6 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
                     createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
                 )
             )
-
-            TelemetryService.recordSimpleTelemetry(null, "aws_credentials_load", false)
         }
     }
 

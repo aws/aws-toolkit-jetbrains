@@ -8,7 +8,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 abstract class ToolkitCredentialsIdentifier {
     /**
      * The ID must be unique across all [ToolkitCredentialsIdentifier].
-     * It is recommended to concatenate the factory ID and the display name.
+     * It is recommended to concatenate the factory ID into this field to help enforce this requirement.
      */
     abstract val id: String
 
