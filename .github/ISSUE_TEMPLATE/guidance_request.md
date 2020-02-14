@@ -4,7 +4,7 @@ about: Ask for guidance, "how to", or other questions
 labels: guidance
 ---
 
-**Desktop (please complete the following information):**
+**Your Environment**
 
 - OS: 
 - JetBrains product:
