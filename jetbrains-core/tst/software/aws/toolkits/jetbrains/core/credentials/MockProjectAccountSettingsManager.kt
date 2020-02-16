@@ -25,6 +25,15 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
 
         changeConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER, AwsRegionProvider.getInstance().defaultRegion())
 
+        waitUntilStable()
+    }
+
+    fun changeRegionAndWait(region: AwsRegion) {
+        changeRegion(region)
+        waitUntilStable()
+    }
+
+    private fun waitUntilStable() {
         spinUntil(Duration.ofSeconds(10)) { connectionState == ConnectionState.VALID }
     }
 
