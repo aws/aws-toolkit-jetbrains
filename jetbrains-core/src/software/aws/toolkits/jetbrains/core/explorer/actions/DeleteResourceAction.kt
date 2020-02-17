@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePip
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.ServiceType
 
 abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: String, private val taggingResourceType: TaggingResourceType) :
     SingleResourceNodeAction<T>(text, icon = AllIcons.Actions.Cancel), DumbAware {
@@ -39,16 +40,16 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: Str
             )
 
             if (response == null) {
-                AwsTelemetry.deleteResource(selected.project, selected.resourceType(), Result.CANCELLED)
+                AwsTelemetry.deleteResource(selected.project, ServiceType.from(selected.serviceId), Result.CANCELLED)
             } else {
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         performDelete(selected)
                         notifyInfo(message("delete_resource.deleted", resourceType, resourceName))
-                        AwsTelemetry.deleteResource(selected.project, selected.resourceType(), success = true)
+                        AwsTelemetry.deleteResource(selected.project, ServiceType.from(selected.serviceId), success = true)
                     } catch (e: Exception) {
                         e.notifyError(message("delete_resource.delete_failed", resourceType, resourceName), selected.project)
-                        AwsTelemetry.deleteResource(selected.project, selected.resourceType(), success = false)
+                        AwsTelemetry.deleteResource(selected.project, ServiceType.from(selected.serviceId), success = false)
                     }
                 }
             }
