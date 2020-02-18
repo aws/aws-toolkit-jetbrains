@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -23,8 +24,22 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
         recentlyUsedRegions.clear()
         recentlyUsedProfiles.clear()
 
-        changeConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER, AwsRegionProvider.getInstance().defaultRegion())
+        changeConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER, AwsRegionProvider.getInstance().defaultRegion())
 
+        waitUntilStable()
+    }
+
+    fun changeRegionAndWait(region: AwsRegion) {
+        changeRegion(region)
+        waitUntilStable()
+    }
+
+    fun changeCredentialProviderAndWait(identifier: ToolkitCredentialsIdentifier?) {
+        changeCredentialProvider(identifier)
+        waitUntilStable()
+    }
+
+    private fun waitUntilStable() {
         spinUntil(Duration.ofSeconds(10)) { connectionState == ConnectionState.VALID }
     }
 
@@ -41,24 +56,20 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
 fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
     val credentials = DefaultCredentialsProvider.create().resolveCredentials()
 
-    val realCredentials = object : ToolkitCredentialsProvider() {
-        override val id = "RealCredentials"
-        override val displayName = "RealCredentials"
-        override fun resolveCredentials() = credentials
-    }
-
     val manager = MockProjectAccountSettingsManager.getInstance(project)
     val credentialsManager = MockCredentialsManager.getInstance()
     val oldActive = manager.connectionSettings()?.credentials
     try {
         println("Running using real credentials")
-        credentialsManager.addCredentials("RealCredentials", credentials)
-        manager.changeCredentialProvider(realCredentials)
+
+        val realCredentialsProvider = credentialsManager.addCredentials("RealCredentials", credentials)
+        manager.changeCredentialProviderAndWait(realCredentialsProvider)
+
         return block.invoke()
     } finally {
         credentialsManager.reset()
         oldActive?.let {
-            manager.changeCredentialProvider(it)
+            manager.changeCredentialProviderAndWait(credentialsManager.getCredentialIdentifierById(oldActive.id))
         }
     }
 }
