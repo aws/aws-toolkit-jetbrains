@@ -53,7 +53,7 @@ The View As feature acts as a Log Event post-processor to convert the Log Event 
 ![VIEW_LOG_STREAM_JSON]
 
 #### View events around...
-In order to facilitate easier triaging, users should be able to search for events such as "Exception" or "Error". This will filter the currant Log Stream's events to events that contain the specified string. The user can then right click a Log Entry and select "View events around...". This context menu action provides a list of pre-canned durations (i.e. 30 seconds, 1 minute, 5 minutes, custom) that would open up a new Log Stream tab with that duration pre-selected. This allows the user to see events that led up to and resulted from the error they were searching for without losing their triage progress.
+In order to facilitate easier triaging, users should be able to search for events such as "Exception" or "Error". This will filter the currant Log Stream's events to events that contain the specified string. The user can then right click a Log Entry and select `View events around...`. This context menu action provides a list of pre-canned durations (i.e. `30 seconds`, `1 minute`, `5 minutes`, `custom`) that would open up a new Log Stream tab with that duration pre-selected. This allows the user to see events that led up to and resulted from the error they were searching for without losing their triage progress.
 
 #### Tail Stream
 TODO
