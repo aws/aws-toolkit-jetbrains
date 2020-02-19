@@ -29,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTempla
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.Operation

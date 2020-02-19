@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
+import software.aws.toolkits.resources.message
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -48,6 +49,11 @@ fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButto
         samExecutableField.text = getSamExecutable()?.executablePath?.toString()
         postEditCallback?.run()
     }
+
+    val toolTipText = message("aws.settings.find.description", "SAM")
+    label.toolTipText = toolTipText
+    samExecutableField.toolTipText = toolTipText
+    editButton.toolTipText = toolTipText
 
     ExecutableManager.getInstance().getExecutable<SamExecutable>().thenAccept {
         val validSamPath = when (it) {

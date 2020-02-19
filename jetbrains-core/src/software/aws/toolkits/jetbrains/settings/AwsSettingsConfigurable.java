@@ -170,8 +170,8 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
             cloudDebugExecutableTextField.getEmptyText().setText(autoDetectPath);
         }
         field.addBrowseFolderListener(
-            message("aws.settings." + cliName + ".find.title"),
-            message("aws.settings." + cliName + ".find.description"),
+            message("aws.settings.find.title", cliName),
+            message("aws.settings.find.description", cliName),
             project,
             FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
         );
