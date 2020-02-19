@@ -199,7 +199,8 @@ class ExecutableBackedCacheResource<ReturnType, ExecType : ExecutableType<*>>(
         val executable = ExecutableManager.getInstance().getExecutableIfPresent(executableType).let {
             when (it) {
                 is ExecutableInstance.Executable -> it
-                is ExecutableInstance.InvalidExecutable, is ExecutableInstance.UnresolvedExecutable -> throw IllegalStateException((it as ExecutableInstance.BadExecutable).validationError)
+                is ExecutableInstance.InvalidExecutable, is ExecutableInstance.UnresolvedExecutable ->
+                    throw IllegalStateException((it as ExecutableInstance.BadExecutable).validationError)
             }
         }
 

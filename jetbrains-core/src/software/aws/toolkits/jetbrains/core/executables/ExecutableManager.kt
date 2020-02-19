@@ -170,8 +170,8 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
         ExecutableInstance.UnresolvedExecutable(message("aws.settings.executables.resolution_exception", type.displayName, e.asString))
     }
 
-    private fun validate(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance {
-        return try {
+    private fun validate(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance =
+        try {
             (type as? Validatable)?.validate(path)
             determineVersion(type, path, autoResolved)
         } catch (e: Exception) {
@@ -185,7 +185,6 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
                 message
             )
         }
-    }
 
     private fun validateAndSave(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance {
         val originalValue = internalState[type.id]?.second

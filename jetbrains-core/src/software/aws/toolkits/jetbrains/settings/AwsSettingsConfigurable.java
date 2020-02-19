@@ -185,17 +185,21 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private String getSavedExecutablePath(ExecutableType<?> executableType, boolean modifyMessageBasedOnDetectionStatus) {
         try {
             return ExecutableManager.getInstance().getExecutable(executableType).thenApply(it -> {
-                if (it instanceof ExecutableInstance.Executable) {
-                    final String path = ((ExecutableInstance.Executable) it).getExecutablePath().toString();
-                    final boolean autoResolved = ((ExecutableInstance.Executable) it).getAutoResolved();
-                    if (autoResolved && modifyMessageBasedOnDetectionStatus) {
-                        return message("aws.settings.auto_detect", path);
-                    } else if (autoResolved) {
-                        // If it is auto detected, we do not want to return text as the
-                        // box will be filled by empty text with the auto-resolve message
-                        return null;
+                if (it instanceof ExecutableInstance.ExecutableWithPath) {
+                    if (!(it instanceof ExecutableInstance.Executable)) {
+                        return ((ExecutableInstance.ExecutableWithPath) it).getExecutablePath().toString();
                     } else {
-                        return path;
+                        final String path = ((ExecutableInstance.Executable) it).getExecutablePath().toString();
+                        final boolean autoResolved = ((ExecutableInstance.Executable) it).getAutoResolved();
+                        if (autoResolved && modifyMessageBasedOnDetectionStatus) {
+                            return message("aws.settings.auto_detect", path);
+                        } else if (autoResolved) {
+                            // If it is auto detected, we do not want to return text as the
+                            // box will be filled by empty text with the auto-resolve message
+                            return null;
+                        } else {
+                            return path;
+                        }
                     }
                 }
                 return null;
