@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessAp
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryConstants.TelemetryResult
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.Operation
@@ -41,6 +40,8 @@ import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.jetbrains.utils.notifySamCliNotValidError
 import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SamTelemetry
 
 class DeployServerlessApplicationAction : AnAction(
     message("serverless.application.deploy"),
@@ -89,7 +90,7 @@ class DeployServerlessApplicationAction : AnAction(
         val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
         stackDialog.show()
         if (!stackDialog.isOK) {
-            TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Cancelled)
+            SamTelemetry.deploy(project, Result.CANCELLED)
             return
         }
 
@@ -138,10 +139,10 @@ class DeployServerlessApplicationAction : AnAction(
                     message("cloudformation.execute_change_set.success", stackName),
                     project
                 )
-                TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Succeeded)
+                SamTelemetry.deploy(project, Result.SUCCEEDED)
             } catch (e: Exception) {
                 e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
-                TelemetryService.recordSimpleTelemetry(project, TELEMETRY_NAME, TelemetryResult.Failed)
+                SamTelemetry.deploy(project, Result.FAILED)
             }
         }
     }
@@ -198,8 +199,4 @@ class DeployServerlessApplicationAction : AnAction(
         } catch (e: Exception) {
             message("serverless.application.deploy.error.bad_parse", templateFile.path, e)
         }
-
-    companion object {
-        private const val TELEMETRY_NAME = "lambda_deploy"
-    }
 }

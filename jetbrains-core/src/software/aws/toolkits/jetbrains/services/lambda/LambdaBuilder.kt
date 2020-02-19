@@ -106,6 +106,7 @@ abstract class LambdaBuilder {
 
             val commandLine = samExecutable.getCommandLine()
                 .withParameters("build")
+                .withParameters(logicalId)
                 .withParameters("--template")
                 .withParameters(templateLocation.toString())
                 .withParameters("--build-dir")
@@ -131,8 +132,6 @@ abstract class LambdaBuilder {
                     commandLine.withParameters(*it.split(" ").toTypedArray())
                 }
             }
-
-            commandLine.withParameters(logicalId)
 
             val pathMappings = listOf(
                 PathMapping(templateLocation.parent.resolve(codeLocation).toString(), "/"),

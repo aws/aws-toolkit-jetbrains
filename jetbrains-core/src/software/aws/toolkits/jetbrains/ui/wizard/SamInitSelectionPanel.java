@@ -23,6 +23,7 @@ import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.amazon.awssdk.services.lambda.model.Runtime;
+import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier;
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider;
 import software.aws.toolkits.core.region.AwsRegion;
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager;
@@ -164,7 +165,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
 
         ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.Companion.getInstance(generator.getDefaultSourceCreatingProject());
         if (accountSettingsManager.isValidConnectionSettings()) {
-            awsCredentialsUpdated(accountSettingsManager.getActiveRegion(), accountSettingsManager.getActiveCredentialProvider());
+            awsCredentialsUpdated(accountSettingsManager.getActiveRegion(), accountSettingsManager.getActiveCredentialProvider().getId());
         } else {
             mainPanel.revalidate();
         }
@@ -175,26 +176,29 @@ public class SamInitSelectionPanel implements ValidatablePanel {
             return Unit.INSTANCE;
         }
 
-        CredentialManager credentialManager = CredentialManager.Companion.getInstance();
-        ToolkitCredentialsProvider credentialProvider = credentialManager.getCredentialProvider(credentialProviderId);
+        CredentialManager credentialManager = CredentialManager.getInstance();
+        ToolkitCredentialsIdentifier credentialIdentifier = credentialManager.getCredentialIdentifierById(credentialProviderId);
+        if (credentialIdentifier == null) {
+            throw new IllegalArgumentException("Unknown credential provider selected");
+        }
 
-        return awsCredentialsUpdated(awsRegion, credentialProvider);
+        return awsCredentialsUpdated(awsRegion, credentialIdentifier);
     }
 
-    private Unit awsCredentialsUpdated(@NotNull AwsRegion awsRegion, @NotNull ToolkitCredentialsProvider credentialProvider) {
-        ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.Companion.getInstance(generator.getDefaultSourceCreatingProject());
+    private Unit awsCredentialsUpdated(@NotNull AwsRegion awsRegion, @NotNull ToolkitCredentialsIdentifier credentialIdentifier) {
+        ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.getInstance(generator.getDefaultSourceCreatingProject());
         if (!accountSettingsManager.isValidConnectionSettings() ||
-            accountSettingsManager.getActiveCredentialProvider() != credentialProvider) {
-            accountSettingsManager.changeCredentialProvider(credentialProvider);
+            !accountSettingsManager.getActiveCredentialProvider().getId().equals(credentialIdentifier.getId())) {
+            accountSettingsManager.changeCredentialProvider(credentialIdentifier);
         }
         if (accountSettingsManager.getActiveRegion() != awsRegion) {
             accountSettingsManager.changeRegion(awsRegion);
         }
 
-        return initSchemaSelectionPanel(awsRegion, credentialProvider);
+        return initSchemaSelectionPanel(awsRegion, credentialIdentifier);
     }
 
-    private Unit initSchemaSelectionPanel(AwsRegion awsRegion, ToolkitCredentialsProvider credentialProvider) {
+    private Unit initSchemaSelectionPanel(AwsRegion awsRegion, ToolkitCredentialsIdentifier credentialIdentifier) {
         Runtime selectedRuntime = (Runtime) runtimeComboBox.getSelectedItem();
         if (selectedRuntime == null) {
             addNoOpConditionalPanels();
@@ -211,6 +215,8 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         this.schemaSelectionUi = SchemaSelectionPanel.create(selectedRuntime, selectedTemplate, generator);
 
         addSchemaPanel(schemaSelectionUi);
+
+        ToolkitCredentialsProvider credentialProvider = CredentialManager.getInstance().getAwsCredentialProvider(credentialIdentifier, awsRegion);
 
         this.schemaSelectionUi.reloadSchemas(new Pair<>(awsRegion, credentialProvider));
 
