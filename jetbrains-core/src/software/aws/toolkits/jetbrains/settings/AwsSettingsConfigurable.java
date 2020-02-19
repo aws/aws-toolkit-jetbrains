@@ -17,7 +17,7 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.util.ui.SwingHelper;
-import java.nio.file.InvalidPathException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -35,7 +35,6 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryEnabledChangedNotifier;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService;
 
-@SuppressWarnings("NullableProblems")
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String CLOUDDEBUG = "clouddebug";
     private static final String SAM = "sam";
@@ -234,22 +233,21 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         final Path path;
         try {
             path = Paths.get(currentInput);
-        } catch (InvalidPathException e) {
+            if (!Files.isExecutable(path) || !path.toFile().exists() || !path.toFile().isFile()) {
+                throw new IllegalArgumentException("Set file is not an executable");
+            }
+        } catch (Exception e) {
             throw new ConfigurationException(message("aws.settings.executables.executable_invalid", executableName, currentInput));
         }
 
-        final String error = ExecutableManager.getInstance().setExecutablePath(executableType, path).thenApply(it -> {
-            if (it instanceof ExecutableInstance.InvalidExecutable) {
-                return ((ExecutableInstance.InvalidExecutable) it).getValidationError();
-            } else if (it instanceof ExecutableInstance.UnresolvedExecutable) {
-                return ((ExecutableInstance.UnresolvedExecutable) it).getResolutionError();
-            }
-            return null;
-        }).toCompletableFuture().join();
+        ExecutableInstance instance = ExecutableManager.getInstance().validateExecutablePath(executableType, path);
 
-        if (error != null) {
-            throw new ConfigurationException(error);
+        if (instance instanceof ExecutableInstance.BadExecutable) {
+            throw new ConfigurationException(((ExecutableInstance.BadExecutable) instance).getValidationError());
         }
+
+        // We have validated so now we can set
+        ExecutableManager.getInstance().setExecutablePath(executableType, path);
     }
 
     private void saveTelemetrySettings() {

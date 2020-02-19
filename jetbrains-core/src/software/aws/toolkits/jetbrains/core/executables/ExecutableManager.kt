@@ -38,6 +38,7 @@ class ExecutableLoader : StartupActivity, DumbAware {
 interface ExecutableManager {
     fun getExecutable(type: ExecutableType<*>): CompletionStage<ExecutableInstance>
     fun getExecutableIfPresent(type: ExecutableType<*>): ExecutableInstance
+    fun validateExecutablePath(type: ExecutableType<*>, path: Path): ExecutableInstance
     fun setExecutablePath(type: ExecutableType<*>, path: Path): CompletionStage<ExecutableInstance>
     fun removeExecutable(type: ExecutableType<*>)
 
@@ -97,6 +98,8 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
         return instance
     }
 
+    override fun validateExecutablePath(type: ExecutableType<*>, path: Path): ExecutableInstance = validate(type, path, false)
+
     override fun getExecutable(type: ExecutableType<*>): CompletionStage<ExecutableInstance> {
         val future = CompletableFuture<ExecutableInstance>()
         ApplicationManager.getApplication().executeOnPooledThread {
@@ -112,7 +115,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
             future.complete(
                 when {
                     instance is ExecutableWithPath && persisted.autoResolved == true && instance.executablePath.isNewerThan(lastKnownFileTime) ->
-                        validate(type, instance.executablePath, autoResolved = false)
+                        validateAndSave(type, instance.executablePath, autoResolved = false)
                     instance is ExecutableWithPath && instance.executablePath.lastModifiedOrNull() == lastValidated ->
                         instance
                     else ->
@@ -126,7 +129,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
     override fun setExecutablePath(type: ExecutableType<*>, path: Path): CompletionStage<ExecutableInstance> {
         val future = CompletableFuture<ExecutableInstance>()
         ApplicationManager.getApplication().executeOnPooledThread {
-            val executable = validate(type, path, false)
+            val executable = validateAndSave(type, path, false)
             future.complete(executable)
         }
         return future
@@ -140,7 +143,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
         val persistedPath = persisted?.executablePath?.let { Paths.get(it) }
         val autoResolved = persisted?.autoResolved ?: false
         return when {
-            persistedPath?.exists() == true -> validate(type, persistedPath, autoResolved)
+            persistedPath?.exists() == true -> validateAndSave(type, persistedPath, autoResolved)
             else -> resolve(type)
         }
     }
@@ -162,35 +165,43 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
     }
 
     private fun resolve(type: ExecutableType<*>): ExecutableInstance = try {
-        (type as? AutoResolvable)?.resolve()?.let { validate(type, it, autoResolved = true) } ?: ExecutableInstance.UnresolvedExecutable()
+        (type as? AutoResolvable)?.resolve()?.let { validateAndSave(type, it, autoResolved = true) } ?: ExecutableInstance.UnresolvedExecutable()
     } catch (e: Exception) {
         ExecutableInstance.UnresolvedExecutable(message("aws.settings.executables.resolution_exception", type.displayName, e.asString))
     }
 
     private fun validate(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance {
-        val oldValue = internalState[type.id]?.second
-        val previouslyValid = oldValue is ExecutableInstance.Executable
-
-        try {
+        return try {
             (type as? Validatable)?.validate(path)
-            val instance = determineVersion(type, path, autoResolved)
-            updateInternalState(type, instance)
-            return instance
+            determineVersion(type, path, autoResolved)
         } catch (e: Exception) {
             val message = message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
             LOG.warn(e) { message }
 
-            val instance = ExecutableInstance.InvalidExecutable(
+            ExecutableInstance.InvalidExecutable(
                 path,
                 null,
                 autoResolved,
                 message
             )
-            return if (previouslyValid) {
-                oldValue as ExecutableInstance.Executable
-            } else {
+        }
+    }
+
+    private fun validateAndSave(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance {
+        val originalValue = internalState[type.id]?.second
+
+        return when (val instance = validate(type, path, autoResolved)) {
+            is ExecutableInstance.Executable -> {
                 updateInternalState(type, instance)
                 instance
+            }
+            is ExecutableInstance.UnresolvedExecutable, is ExecutableInstance.InvalidExecutable -> {
+                if (originalValue is ExecutableInstance.Executable) {
+                    originalValue
+                } else {
+                    updateInternalState(type, instance)
+                    instance
+                }
             }
         }
     }
@@ -226,6 +237,10 @@ sealed class ExecutableInstance {
         val autoResolved: Boolean
     }
 
+    interface BadExecutable {
+        val validationError: String?
+    }
+
     class Executable(
         override val executablePath: Path,
         override val version: String,
@@ -240,10 +255,10 @@ sealed class ExecutableInstance {
         override val executablePath: Path,
         override val version: String?,
         override val autoResolved: Boolean,
-        val validationError: String
-    ) : ExecutableInstance(), ExecutableWithPath
+        override val validationError: String
+    ) : ExecutableInstance(), ExecutableWithPath, BadExecutable
 
-    class UnresolvedExecutable(val resolutionError: String? = null) : ExecutableInstance() {
+    class UnresolvedExecutable(override val validationError: String? = null) : ExecutableInstance(), BadExecutable {
         override val version: String? = null
     }
 }

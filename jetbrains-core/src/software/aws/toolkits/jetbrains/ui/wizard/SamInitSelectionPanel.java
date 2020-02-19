@@ -328,11 +328,12 @@ public class SamInitSelectionPanel implements ValidatablePanel {
     @Override
     public ValidationInfo validate() {
         ExecutableInstance samExecutable = ExecutableManager.getInstance().getExecutableIfPresent(ExecutableType.getExecutable(SamExecutable.class));
-        if (samExecutable instanceof ExecutableInstance.UnresolvedExecutable) {
-            return new ValidationInfo(((ExecutableInstance.UnresolvedExecutable) samExecutable).getResolutionError(), samExecutableField);
-        }
-        if (samExecutable instanceof ExecutableInstance.InvalidExecutable) {
-            return new ValidationInfo(((ExecutableInstance.InvalidExecutable) samExecutable).getValidationError(), samExecutableField);
+        if (samExecutable instanceof ExecutableInstance.BadExecutable) {
+            String message = ((ExecutableInstance.BadExecutable) samExecutable).getValidationError();
+            if (message == null) {
+                message = "";
+            }
+            return new ValidationInfo(message, samExecutableField);
         }
 
         if (sdkSelectionUi == null) {

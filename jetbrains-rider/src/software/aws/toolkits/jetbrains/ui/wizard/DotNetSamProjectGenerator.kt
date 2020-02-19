@@ -106,10 +106,8 @@ class DotNetSamProjectGenerator(
     override fun validateData() {
         super.validateData()
         ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-            if (it is ExecutableInstance.InvalidExecutable) {
+            if (it is ExecutableInstance.BadExecutable) {
                 validationError.set(it.validationError)
-            } else if (it is ExecutableInstance.UnresolvedExecutable) {
-                validationError.set(it.resolutionError)
             }
         }
     }

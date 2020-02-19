@@ -97,7 +97,7 @@ abstract class LambdaBuilder {
             val samExecutable = when (it) {
                 is ExecutableInstance.Executable -> it
                 else -> {
-                    future.completeExceptionally(RuntimeException(message("sam.cli_not_configured")))
+                    future.completeExceptionally(RuntimeException((it as? ExecutableInstance.BadExecutable)?.validationError ?: ""))
                     return@thenApply
                 }
             }

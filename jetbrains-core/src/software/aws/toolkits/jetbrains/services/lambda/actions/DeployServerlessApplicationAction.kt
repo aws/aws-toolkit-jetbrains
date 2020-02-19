@@ -60,12 +60,11 @@ class DeployServerlessApplicationAction : AnAction(
         ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
             when (it) {
                 is ExecutableInstance.Executable -> it
-                is ExecutableInstance.UnresolvedExecutable -> {
-                    notifySamCliNotValidError(project = project, content = it.resolutionError ?: message("executableCommon.invalid_executable", "sam"))
-                    return
-                }
-                is ExecutableInstance.InvalidExecutable -> {
-                    notifySamCliNotValidError(project = project, content = it.validationError)
+                is ExecutableInstance.InvalidExecutable, is ExecutableInstance.UnresolvedExecutable -> {
+                    notifySamCliNotValidError(
+                        project = project,
+                        content = (it as? ExecutableInstance.BadExecutable)?.validationError ?: message("executableCommon.invalid_executable", "sam")
+                    )
                     return
                 }
             }

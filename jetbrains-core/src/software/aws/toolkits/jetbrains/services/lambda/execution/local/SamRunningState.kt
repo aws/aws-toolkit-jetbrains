@@ -15,7 +15,6 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.BuiltLambda
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.resources.message
 
 class SamRunningState(
     environment: ExecutionEnvironment,
@@ -37,7 +36,7 @@ class SamRunningState(
         val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
             when (it) {
                 is ExecutableInstance.Executable -> it
-                else -> throw RuntimeException(message("sam.cli_not_configured"))
+                else -> throw RuntimeException((it as? ExecutableInstance.BadExecutable)?.validationError ?: "")
             }
         }
         val commandLine = samExecutable.getCommandLine()
