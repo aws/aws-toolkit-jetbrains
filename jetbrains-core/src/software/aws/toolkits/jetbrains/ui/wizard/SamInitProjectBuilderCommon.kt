@@ -4,6 +4,7 @@
 
 package software.aws.toolkits.jetbrains.ui.wizard
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DefaultProjectFactory
@@ -35,7 +36,7 @@ fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButto
         }
 
     fun updateUi(validSamPath: Boolean) {
-        runInEdt {
+        runInEdt(ModalityState.any()) {
             samExecutableField.isVisible = !validSamPath
             editButton.isVisible = !validSamPath
             label.isVisible = !validSamPath
