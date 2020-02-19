@@ -63,7 +63,7 @@ class DeployServerlessApplicationAction : AnAction(
                 is ExecutableInstance.InvalidExecutable, is ExecutableInstance.UnresolvedExecutable -> {
                     notifySamCliNotValidError(
                         project = project,
-                        content = (it as? ExecutableInstance.BadExecutable)?.validationError ?: message("executableCommon.invalid_executable", "sam")
+                        content = (it as ExecutableInstance.BadExecutable).validationError
                     )
                     return
                 }

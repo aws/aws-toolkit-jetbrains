@@ -83,7 +83,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
                 LOG.warn(it) { "Error thrown while updating executable cache" }
                 null
             }
-            return ExecutableInstance.UnresolvedExecutable()
+            return ExecutableInstance.UnresolvedExecutable(message("executableCommon.missing_executable", type.displayName))
         }
 
         // Check if the set executable was modified. If it was, start an update in the background. Overlapping
@@ -165,7 +165,8 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
     }
 
     private fun resolve(type: ExecutableType<*>): ExecutableInstance = try {
-        (type as? AutoResolvable)?.resolve()?.let { validateAndSave(type, it, autoResolved = true) } ?: ExecutableInstance.UnresolvedExecutable()
+        (type as? AutoResolvable)?.resolve()?.let { validateAndSave(type, it, autoResolved = true) }
+            ?: ExecutableInstance.UnresolvedExecutable(message("executableCommon.missing_executable", type.displayName))
     } catch (e: Exception) {
         ExecutableInstance.UnresolvedExecutable(message("aws.settings.executables.resolution_exception", type.displayName, e.asString))
     }
@@ -237,7 +238,7 @@ sealed class ExecutableInstance {
     }
 
     interface BadExecutable {
-        val validationError: String?
+        val validationError: String
     }
 
     class Executable(
@@ -257,7 +258,7 @@ sealed class ExecutableInstance {
         override val validationError: String
     ) : ExecutableInstance(), ExecutableWithPath, BadExecutable
 
-    class UnresolvedExecutable(override val validationError: String? = null) : ExecutableInstance(), BadExecutable {
+    class UnresolvedExecutable(override val validationError: String) : ExecutableInstance(), BadExecutable {
         override val version: String? = null
     }
 }

@@ -116,7 +116,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("executableCommon.invalid_executable", "sam"))
+                .hasMessage(message("executableCommon.missing_executable", "sam"))
         }
     }
 

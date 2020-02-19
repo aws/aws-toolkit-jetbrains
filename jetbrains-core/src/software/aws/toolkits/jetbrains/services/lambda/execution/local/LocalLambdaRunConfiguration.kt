@@ -86,7 +86,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
             when (it) {
                 is ExecutableInstance.Executable -> it
                 is ExecutableInstance.InvalidExecutable, is ExecutableInstance.UnresolvedExecutable -> throw RuntimeConfigurationError(
-                    (it as? ExecutableInstance.BadExecutable)?.validationError ?: message("executableCommon.invalid_executable", "sam")
+                    (it as? ExecutableInstance.BadExecutable)?.validationError
                 )
             }
         }

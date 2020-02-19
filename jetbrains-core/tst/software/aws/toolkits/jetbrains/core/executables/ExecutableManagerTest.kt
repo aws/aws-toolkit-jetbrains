@@ -93,7 +93,7 @@ class ExecutableManagerTest {
         }
 
         assertThat(sut.getExecutable(type).value).isInstanceOfSatisfying(ExecutableInstance.UnresolvedExecutable::class.java) {
-            assertThat(it.resolutionError).endsWith("blah")
+            assertThat(it.validationError).endsWith("blah")
         }
     }
 
