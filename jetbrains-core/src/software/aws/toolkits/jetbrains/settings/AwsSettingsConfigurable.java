@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.settings;
 
+import static com.intellij.openapi.application.ActionsKt.runInEdt;
 import static software.aws.toolkits.resources.Localization.message;
 
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
@@ -216,13 +218,16 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
             ExecutableManager.getInstance()
                              .getExecutable(executableType)
                              .thenRun(() -> {
-                                 String autoDetectPath = getSavedExecutablePath(getCloudDebugExecutableInstance(), true);
-                                 if (autoDetectPath != null) {
-                                     textField.getEmptyText().setText(autoDetectPath);
-                                 } else {
-                                     textField.getEmptyText().setText("");
-                                 }
-                             }).toCompletableFuture().join();
+                                 String autoDetectPath = getSavedExecutablePath(executableType, true);
+                                 runInEdt(ModalityState.any(), () -> {
+                                     if (autoDetectPath != null) {
+                                         textField.getEmptyText().setText(autoDetectPath);
+                                     } else {
+                                         textField.getEmptyText().setText("");
+                                     }
+                                     return null;
+                                 });
+                             });
             return;
         }
 

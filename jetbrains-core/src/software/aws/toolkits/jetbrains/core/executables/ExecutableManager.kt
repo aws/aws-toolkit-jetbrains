@@ -136,7 +136,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
     }
 
     override fun removeExecutable(type: ExecutableType<*>) {
-        internalState.remove(type.id)
+        internalState[type.id] = Triple(ExecutableState(type.id), null, null)
     }
 
     private fun load(type: ExecutableType<*>, persisted: ExecutableState?): ExecutableInstance {
