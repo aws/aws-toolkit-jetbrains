@@ -81,11 +81,25 @@ or the automated resolution has failed.
 These states are conveyed as a `sealed class`:
 
 ```kt
+
 sealed class ExecutableInstance {
     class Executable(val executablePath: Path) : ExecutableInstance(), ExecutableWithPath
-    class InvalidExecutable(val executablePath: Path, val validationError: String) : ExecutableInstance(), ExecutableWithPath
+    class InvalidExecutable(val executablePath: Path, val validationError: String) : ExecutableInstance(), ExecutableWithPath, BadExecutable
     class UnresolvedExecutable(val validationError: String) : ExecutableInstance(), BadExecutable
 }
+```
+
+Each one of the classes in the `sealed class` implement at least one of these interfaces:
+```kt
+interface ExecutableWithPath {
+    val executablePath: Path
+    val autoResolved: Boolean
+}
+
+interface BadExecutable {
+    val validationError: String
+}
+
 ```
 
 ### Operations

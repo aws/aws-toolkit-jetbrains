@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
+import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.core.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
@@ -57,51 +57,50 @@ class DeployServerlessApplicationAction : AnAction(
             return
         }
 
-        ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-            when (it) {
-                is ExecutableInstance.Executable -> it
+        ExecutableManager.getInstance().getExecutable<SamExecutable>().thenAccept { samExecutable ->
+            when (samExecutable) {
                 is ExecutableInstance.InvalidExecutable, is ExecutableInstance.UnresolvedExecutable -> {
                     notifySamCliNotValidError(
                         project = project,
-                        content = (it as ExecutableInstance.BadExecutable).validationError
+                        content = (samExecutable as ExecutableInstance.BadExecutable).validationError
                     )
-                    return
+                    return@thenAccept
                 }
             }
-        }
 
-        val templateFile = getSamTemplateFile(e)
-        if (templateFile == null) {
-            Exception(message("serverless.application.deploy.toast.template_file_failure"))
-                .notifyError(message("aws.notification.title"), project)
-            return
-        }
+            val templateFile = getSamTemplateFile(e)
+            if (templateFile == null) {
+                Exception(message("serverless.application.deploy.toast.template_file_failure"))
+                    .notifyError(message("aws.notification.title"), project)
+                return@thenAccept
+            }
 
-        validateTemplateFile(project, templateFile)?.let {
-            notifyError(content = it, project = project)
-            return
-        }
+            validateTemplateFile(project, templateFile)?.let {
+                notifyError(content = it, project = project)
+                return@thenAccept
+            }
 
-        // Force save before we deploy
-        FileDocumentManager.getInstance().saveAllDocuments()
+            // Force save before we deploy
+            FileDocumentManager.getInstance().saveAllDocuments()
 
-        val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
-        stackDialog.show()
-        if (!stackDialog.isOK) {
-            SamTelemetry.deploy(project, Result.CANCELLED)
-            return
-        }
+            val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
+            stackDialog.show()
+            if (!stackDialog.isOK) {
+                SamTelemetry.deploy(project, Result.CANCELLED)
+                return@thenAccept
+            }
 
-        saveSettings(project, templateFile, stackDialog)
+            saveSettings(project, templateFile, stackDialog)
 
-        val stackName = stackDialog.stackName
-        val stackId = stackDialog.stackId
+            val stackName = stackDialog.stackName
+            val stackId = stackDialog.stackId
 
-        if (stackId == null) {
-            continueDeployment(project, stackName, templateFile, stackDialog)
-        } else {
-            warnResourceOperationAgainstCodePipeline(project, stackName, stackId, TaggingResourceType.CLOUDFORMATION_STACK, Operation.DEPLOY) {
+            if (stackId == null) {
                 continueDeployment(project, stackName, templateFile, stackDialog)
+            } else {
+                warnResourceOperationAgainstCodePipeline(project, stackName, stackId, TaggingResourceType.CLOUDFORMATION_STACK, Operation.DEPLOY) {
+                    continueDeployment(project, stackName, templateFile, stackDialog)
+                }
             }
         }
     }

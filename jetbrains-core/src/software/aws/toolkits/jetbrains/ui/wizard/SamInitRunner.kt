@@ -13,7 +13,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
+import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.lambda.TemplateParameters
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
@@ -33,61 +33,61 @@ object SamInitRunner {
         // set output to a temp dir
         val tempDir = createTempDir()
 
-        val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-            when (it) {
+        ExecutableManager.getInstance().getExecutable<SamExecutable>().thenApply {
+            val samExecutable = when (it) {
                 is ExecutableInstance.Executable -> it
-                else -> throw RuntimeException((it as? ExecutableInstance.BadExecutable)?.validationError ?: "")
+                else -> throw RuntimeException((it as? ExecutableInstance.BadExecutable)?.validationError)
             }
-        }
-        val commandLine = samExecutable
-            .getCommandLine()
-            .withParameters("init")
-            .withParameters("--no-input")
-            .withParameters("--output-dir")
-            .withParameters(tempDir.path)
-            .withParameters("--no-interactive")
-            .apply {
-                when (templateParameters) {
-                    is TemplateParameters.AppBasedTemplate -> {
-                        this.withParameters("--name")
-                            .withParameters(name)
-                            .withParameters("--runtime")
-                            .withParameters(runtime.toString())
-                            .withParameters("--dependency-manager")
-                            .withParameters(templateParameters.dependencyManager)
-                            .withParameters("--app-template")
-                            .withParameters(templateParameters.appTemplate)
+            val commandLine = samExecutable
+                .getCommandLine()
+                .withParameters("init")
+                .withParameters("--no-input")
+                .withParameters("--output-dir")
+                .withParameters(tempDir.path)
+                .withParameters("--no-interactive")
+                .apply {
+                    when (templateParameters) {
+                        is TemplateParameters.AppBasedTemplate -> {
+                            this.withParameters("--name")
+                                .withParameters(name)
+                                .withParameters("--runtime")
+                                .withParameters(runtime.toString())
+                                .withParameters("--dependency-manager")
+                                .withParameters(templateParameters.dependencyManager)
+                                .withParameters("--app-template")
+                                .withParameters(templateParameters.appTemplate)
+                        }
+                        is TemplateParameters.LocationBasedTemplate -> {
+                            this.withParameters("--location")
+                                .withParameters(templateParameters.location)
+                        }
                     }
-                    is TemplateParameters.LocationBasedTemplate -> {
-                        this.withParameters("--location")
-                            .withParameters(templateParameters.location)
+
+                    schemaParameters?.let { params ->
+                        val extraContextAsJson = mapper.writeValueAsString(params.templateExtraContext)
+
+                        this.withParameters("--extra-context")
+                            .withParameters(extraContextAsJson)
                     }
                 }
 
-                schemaParameters?.let { params ->
-                    val extraContextAsJson = mapper.writeValueAsString(params.templateExtraContext)
+            LOG.info { "Running SAM command ${commandLine.commandLineString}" }
 
-                    this.withParameters("--extra-context")
-                        .withParameters(extraContextAsJson)
-                }
+            val process = CapturingProcessHandler(commandLine).runProcess()
+            if (process.exitCode != 0) {
+                throw RuntimeException("${message("sam.init.execution_error")}: ${process.stderrLines}")
+            } else {
+                LOG.info { "SAM output: ${process.stdout}" }
             }
 
-        LOG.info { "Running SAM command ${commandLine.commandLineString}" }
+            val subFolders = tempDir.listFiles()?.toList() ?: emptyList()
 
-        val process = CapturingProcessHandler(commandLine).runProcess()
-        if (process.exitCode != 0) {
-            throw RuntimeException("${message("sam.init.execution_error")}: ${process.stderrLines}")
-        } else {
-            LOG.info { "SAM output: ${process.stdout}" }
+            assert(subFolders.size == 1 && subFolders.first().isDirectory) {
+                message("sam.init.error.subfolder_not_one", tempDir.name)
+            }
+
+            FileUtil.copyDirContent(subFolders.first(), VfsUtil.virtualToIoFile(outputDir))
+            FileUtil.delete(tempDir)
         }
-
-        val subFolders = tempDir.listFiles()?.toList() ?: emptyList()
-
-        assert(subFolders.size == 1 && subFolders.first().isDirectory) {
-            message("sam.init.error.subfolder_not_one", tempDir.name)
-        }
-
-        FileUtil.copyDirContent(subFolders.first(), VfsUtil.virtualToIoFile(outputDir))
-        FileUtil.delete(tempDir)
     }
 }
