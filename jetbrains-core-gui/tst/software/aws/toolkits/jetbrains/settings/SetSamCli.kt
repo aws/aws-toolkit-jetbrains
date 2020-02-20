@@ -13,17 +13,12 @@ import com.intellij.testGuiFramework.impl.textfield
 import com.intellij.testGuiFramework.util.step
 import com.intellij.ui.SearchTextField
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.fixtures.openSettingsDialog
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 
 class SetSamCli : GuiTestCase() {
     @Test
     fun setSamCli() {
-        val instance = ExecutableManager.getInstance().getExecutable<SamExecutable>().toCompletableFuture().join() as? ExecutableInstance.Executable
-        val samPath = System.getenv("SAM_CLI_EXEC") ?: instance?.executablePath?.toString() ?: "sam"
+        val samPath = System.getenv("SAM_CLI_EXEC") ?: "sam"
         welcomeFrame {
             step("Open preferences page") {
                 openSettingsDialog()
