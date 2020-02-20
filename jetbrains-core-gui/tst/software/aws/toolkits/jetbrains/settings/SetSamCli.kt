@@ -22,13 +22,9 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 class SetSamCli : GuiTestCase() {
     @Test
     fun setSamCli() {
-        val instance = ExecutableManager.getInstance().getExecutable<SamExecutable>().thenApply {
-            if (it is ExecutableInstance.Executable) {
-                it
-            } else {
-                null
-            }
-        }.toCompletableFuture().join()
+        val instance = ExecutableManager.getInstance().getExecutable<SamExecutable>().toCompletableFuture().join().takeIf {
+            it is ExecutableInstance.Executable
+        } as ExecutableInstance.Executable?
         val samPath = System.getenv("SAM_CLI_EXEC") ?: instance?.executablePath?.toString() ?: "sam"
         welcomeFrame {
             step("Open preferences page") {

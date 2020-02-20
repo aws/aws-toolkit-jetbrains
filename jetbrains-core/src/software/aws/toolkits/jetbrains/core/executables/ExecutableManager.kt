@@ -76,7 +76,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
             }
         }
 
-        // If the executable is compleatly unresolved, either the path does not exist, or there is no
+        // If the executable is unresolved, either the path does not exist, or there is no
         // entry in the cache. In this case, always try to get the executable out of the cache.
         if (instance == null) {
             getExecutable(type).exceptionally {
