@@ -10,8 +10,8 @@ import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.messages.Topic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
@@ -28,13 +28,10 @@ import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.utils.MRUList
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
-import java.util.concurrent.CancellationException
 
 abstract class ProjectAccountSettingsManager(private val project: Project) : SimpleModificationTracker() {
     private val resourceCache = AwsResourceCache.getInstance(project)
 
-    @Volatile
-    private var validationJob: Job? = null
     @Volatile
     internal var connectionState: ConnectionState = ConnectionState.INITIALIZING
         @TestOnly get
@@ -47,6 +44,13 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     internal var selectedRegion: AwsRegion? = null
 
     private var selectedCredentialsProvider: ToolkitCredentialsProvider? = null
+
+    // Conflated so only the latest change is executed
+    private val credentialChangeActor = GlobalScope.actor<SwitchCredentialsRequest>(Dispatchers.IO, capacity = Channel.CONFLATED) {
+        for (event in channel) {
+            switchCredentials(event)
+        }
+    }
 
     init {
         ApplicationManager.getApplication().messageBus.connect(project)
@@ -116,41 +120,43 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
         incModificationCount()
 
         connectionState = ConnectionState.VALIDATING
-        validationJob?.cancel(CancellationException("Newer connection settings chosen"))
 
         // Clear existing provider
         selectedCredentialsProvider = null
 
         fieldUpdateBlock()
 
-        validationJob = GlobalScope.launch(Dispatchers.IO) {
+        credentialChangeActor.offer(SwitchCredentialsRequest(selectedCredentialIdentifier, selectedRegion))
+    }
+
+    private suspend fun switchCredentials(event: SwitchCredentialsRequest) {
+        broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
+
+        val credentialsIdentifier = event.credentialProviderId
+        val region = event.region
+
+        if (credentialsIdentifier == null || region == null) {
+            connectionState = ConnectionState.INVALID
             broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
+            incModificationCount()
+            return
+        }
 
-            val credentialsIdentifier = selectedCredentialIdentifier
-            val region = selectedRegion
-            if (credentialsIdentifier == null || region == null) {
-                connectionState = ConnectionState.INVALID
-                broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
-                incModificationCount()
-                return@launch
-            }
+        try {
+            val credentialsProvider = CredentialManager.getInstance().getAwsCredentialProvider(credentialsIdentifier, region)
 
-            try {
-                val credentialsProvider = CredentialManager.getInstance().getAwsCredentialProvider(credentialsIdentifier, region)
+            validate(credentialsProvider, region)
+            connectionState = ConnectionState.VALID
+            selectedCredentialsProvider = credentialsProvider
 
-                validate(credentialsProvider, region)
-                connectionState = ConnectionState.VALID
-                selectedCredentialsProvider = credentialsProvider
-
-                broadcastChangeEvent(ValidConnectionSettings(connectionState))
-            } catch (e: Exception) {
-                connectionState = ConnectionState.INVALID
-                LOGGER.warn(e) { message("credentials.profile.validation_error", credentialsIdentifier.displayName) }
-                broadcastChangeEvent(InvalidConnectionSettings(credentialsIdentifier, region, e, connectionState))
-            } finally {
-                incModificationCount()
-                AwsTelemetry.validateCredentials(project, success = isValidConnectionSettings())
-            }
+            broadcastChangeEvent(ValidConnectionSettings(connectionState))
+        } catch (e: Exception) {
+            connectionState = ConnectionState.INVALID
+            LOGGER.warn(e) { message("credentials.profile.validation_error", credentialsIdentifier.displayName) }
+            broadcastChangeEvent(InvalidConnectionSettings(credentialsIdentifier, region, e, connectionState))
+        } finally {
+            incModificationCount()
+            AwsTelemetry.validateCredentials(project, success = isValidConnectionSettings())
         }
     }
 
@@ -207,6 +213,8 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             project.messageBus.syncPublisher(CONNECTION_SETTINGS_CHANGED).settingsChanged(event)
         }
     }
+
+    private data class SwitchCredentialsRequest(val credentialProviderId: ToolkitCredentialsIdentifier?, val region: AwsRegion?)
 
     companion object {
         /***

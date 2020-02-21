@@ -156,6 +156,28 @@ class DefaultProjectAccountSettingsManagerTest {
     }
 
     @Test
+    fun stressTest() {
+        val region = AwsRegionProvider.getInstance().defaultRegion()
+        changeRegion(region)
+
+        assertThat(manager.recentlyUsedCredentials()).isEmpty()
+
+        val credentialsList = List(100) {
+            val credentials = mockCredentialManager.addCredentials("Mock$it")
+            markConnectionSettingsAsValid(credentials, region)
+            credentials
+        }
+
+        credentialsList.forEach {
+            manager.changeCredentialProvider(it)
+        }
+
+        waitForTerminalConnectionState()
+
+        assertThat(manager.connectionSettings()?.credentials?.id).isEqualTo(credentialsList.last().id)
+    }
+
+    @Test
     fun testSavingActiveRegion() {
         manager.changeRegion(AwsRegion.GLOBAL)
         val element = Element("AccountState")
