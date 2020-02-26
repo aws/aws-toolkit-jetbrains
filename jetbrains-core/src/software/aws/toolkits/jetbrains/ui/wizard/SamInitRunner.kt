@@ -89,6 +89,6 @@ object SamInitRunner {
 
             FileUtil.copyDirContent(subFolders.first(), VfsUtil.virtualToIoFile(outputDir))
             FileUtil.delete(tempDir)
-        }
+        }.toCompletableFuture().join()
     }
 }
