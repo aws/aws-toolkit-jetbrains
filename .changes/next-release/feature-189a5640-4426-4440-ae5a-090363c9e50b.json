@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Refactor the AWS explorer's nodes to use an extension point"
+}
