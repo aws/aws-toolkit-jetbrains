@@ -1,7 +1,7 @@
 # CloudWatch Logs Experience
 
 * **Type**: UX Design
-* **Status**: Proposal
+* **Status**: Accepted, not implemented
 
 ## Introduction
 CloudWatch Logs enables a user to centralize the logs from all of their systems, applications, and AWS services that they use, in a single, highly scalable service. This document describes adding CloudWatch Logs functionality into the JetBrains toolkit in order to facilitate easily viewing and searching them for specific error codes or patterns.
@@ -21,12 +21,6 @@ The AWS Explorer gains a CloudWatch root node for interacting wit CloudWatch ser
 
 *Browsing Log Groups in AWS Explorer:*<br />
 ![BROWSE_LOG_GROUP]
-
-#### Alternatives Considered
-Instead of building a new CloudWatch service node in the AWS Explorer, we instead build a CloudWatch Log Group browser tab in the CloudWatch tool window. This new tab is also be linked to the active AWS connection settings. This differs from the other tabs which may lead to a confusing user experience and seen as a con.
-
-*Possible alternative for browsing Log Groups:*<br />
-![ALT_BROWSE_LOG_GROUP]
 
 ### View Log Streams
 Upon selecting a Log Group, a new tab in the CloudWatch tool window is shown to the user. This new tab lists all the streams for the requested group to allow the user to find the exact stream they are looking for.
@@ -59,7 +53,9 @@ In order to facilitate easier triaging, users should be able to search for event
 #### Tail Stream
 TODO
 
-## Terminology
+## Appendix
+
+### Terminology
 
 #### Log Group
 Log groups define groups of log streams that share the same retention, monitoring, and access control settings. Each log stream has to belong to one log group. For example, if you have a separate log stream for the Apache access logs from each host, you could group those log streams into a single log group called MyWebsite.com/Apache/access_log.
@@ -69,6 +65,12 @@ A log stream is a sequence of log events that share the same source. More specif
 
 #### Log Events
 A log event is a record of some activity recorded by the application or resource being monitored. The log event record that CloudWatch Logs understands contains two properties: the timestamp of when the event occurred, and the raw event message.
+
+#### Alternatives Considered
+Instead of building a new CloudWatch service node in the AWS Explorer, we instead build a CloudWatch Log Group browser tab in the CloudWatch tool window. This new tab is also be linked to the active AWS connection settings. This differs from the other tabs which may lead to a confusing user experience and seen as a con.
+
+*Possible alternative for browsing Log Groups:*<br />
+![ALT_BROWSE_LOG_GROUP]
 
 [BROWSE_LOG_GROUP]: images/explorerLogGroups.png
 [ALT_BROWSE_LOG_GROUP]: images/toolWindowLogGroup.png
