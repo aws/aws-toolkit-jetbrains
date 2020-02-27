@@ -15,7 +15,7 @@ phases:
   install:
     commands:
       - |
-        if(-Not($Env:CODEBUILD_BUILD_SUCCEEDING -eq "0" -Or $Env:CODE_COV_TOKEN -eq $null)) {
+        if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             choco install -y --no-progress codecov
         }
       - choco install -y --no-progress dotnetcore-sdk --version 2.2.104
