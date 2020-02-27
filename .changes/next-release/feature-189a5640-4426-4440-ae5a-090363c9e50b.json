@@ -1,4 +1,4 @@
 {
   "type" : "feature",
-  "description" : "Refactor the AWS explorer's nodes to use an extension point"
+  "description" : "Refactor the AWS explorer's nodes to use an extension point which lays the groundwork for enabling wider IDE support in future releases"
 }

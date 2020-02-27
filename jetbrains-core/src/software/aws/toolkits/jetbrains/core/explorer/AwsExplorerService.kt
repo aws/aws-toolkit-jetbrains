@@ -8,19 +8,17 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.Resource
 
-class AwsExplorerService {
-    companion object {
-        fun refreshAwsTree(project: Project, resource: Resource<*>? = null) {
-            val cache = AwsResourceCache.getInstance(project)
-            if (resource == null) {
-                cache.clear()
-            } else {
-                cache.clear(resource)
-            }
-            runInEdt {
-                // redraw explorer
-                ExplorerToolWindow.getInstance(project).invalidateTree()
-            }
+object AwsExplorerService {
+    fun refreshAwsTree(project: Project, resource: Resource<*>? = null) {
+        val cache = AwsResourceCache.getInstance(project)
+        if (resource == null) {
+            cache.clear()
+        } else {
+            cache.clear(resource)
+        }
+        runInEdt {
+            // redraw explorer
+            ExplorerToolWindow.getInstance(project).invalidateTree()
         }
     }
 }

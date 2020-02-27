@@ -62,7 +62,7 @@ class SchemasServiceNodeTest {
             ))
     }
 
-    companion object {
+    private companion object {
         val SCHEMAS_EXPLORER_NODE = SchemasExplorerNodeProvider()
     }
 }

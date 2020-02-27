@@ -87,7 +87,7 @@ class S3ServiceNodeTest {
         )
     }
 
-    companion object {
+    private companion object {
         val S3_EXPLORER_NODE = S3ExplorerNodeProvider()
     }
 }

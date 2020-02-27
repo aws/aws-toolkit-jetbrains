@@ -96,9 +96,7 @@
     </application-components>
 
     <extensionPoints>
-        <extensionPoint name="credentialProviderFactory" beanClass="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactoryEP">
-            <with attribute="implementation" implements="software.aws.toolkits.jetbrains.core.credentials.CredentialProviderFactory"/>
-        </extensionPoint>
+        <extensionPoint name="credentialProviderFactory" interface="software.aws.toolkits.core.credentials.CredentialProviderFactory"/>
 
         <extensionPoint name="lambda.runtimeGroup" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
             <with attribute="implementation" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupInformation"/>
@@ -125,7 +123,7 @@
             <with attribute="runtimeGroup" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup"/>
         </extensionPoint>
 
-        <extensionPoint qualifiedName="aws.toolkit.lambda.handlerCompletion" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
+        <extensionPoint name="lambda.handlerCompletion" beanClass="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoint">
             <with attribute="implementation" implements="software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletion"/>
             <with attribute="runtimeGroup" implements="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup"/>
         </extensionPoint>
@@ -138,7 +136,7 @@
         <extensionPoint name="explorer.nodeProcessor" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor"/>
         <extensionPoint name="explorer.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider"/>
 
-        <extensionPoint name="explorer.node" interface="software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode"/>
+        <extensionPoint name="explorer.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -189,7 +187,7 @@
         <projectService serviceInterface="software.aws.toolkits.jetbrains.core.AwsResourceCache"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.MockResourceCache"/>
-        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.stack.StackWindowManager"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerValidator" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow" />
@@ -233,17 +231,18 @@
 
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable"/>
+        <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
 
         <notice implementation="software.aws.toolkits.jetbrains.core.notification.JetBrainsMinimumVersionChange"/>
 
-        <explorer.node implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerNodeProvider"/>
-        <explorer.node implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.LambdaExplorerNodeProvider"/>
-        <explorer.node implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.S3ExplorerNodeProvider"/>
-        <explorer.node implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.ECSExplorerNodeProvider"/>
-        <explorer.node implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.SchemasExplorerNodeProvider"/>
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerNodeProvider"/>
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.LambdaExplorerNodeProvider"/>
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.S3ExplorerNodeProvider"/>
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.ECSExplorerNodeProvider"/>
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.SchemasExplorerNodeProvider"/>
 
     </extensions>
 
@@ -278,7 +277,7 @@
 
         <group id="aws.toolkit.explorer.cloudformation.stack" popup="true" compact="false">
             <action id="cloudformation.stack.view"
-                    class="software.aws.toolkits.jetbrains.core.stack.OpenStackUiAction"/>
+                    class="software.aws.toolkits.jetbrains.services.cloudformation.stack.OpenStackUiAction"/>
             <separator/>
             <action id="cloudformation.stack.delete"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.actions.DeleteStackAction"/>
@@ -320,7 +319,7 @@
 
         <action class="software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>
         <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials" icon="AwsIcons.Logos.AWS"/>
-        <action id="serverless.application.deploy" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
+        <action class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction" id="serverless.application.deploy" />
 
         <group id="aws.toolkit.serverless.template">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>

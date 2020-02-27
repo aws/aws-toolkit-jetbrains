@@ -84,7 +84,7 @@ class LambdaServiceNodeTest {
             .tracingConfig(TracingConfigResponse.builder().mode(TracingMode.PASS_THROUGH).build())
             .build()
 
-    companion object {
+    private companion object {
         val LAMBDA_EXPLORER_SERVICE_NODE = LambdaExplorerNodeProvider()
     }
 }

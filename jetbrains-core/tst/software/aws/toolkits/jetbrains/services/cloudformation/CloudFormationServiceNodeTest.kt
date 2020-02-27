@@ -70,7 +70,7 @@ class CloudFormationServiceNodeTest {
             ))
     }
 
-    companion object {
+    private companion object {
         val CF_EXPLORER_NODE = CloudFormationExplorerNodeProvider()
     }
 }

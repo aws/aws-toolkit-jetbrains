@@ -16,9 +16,9 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 class AwsExplorerRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(nodeProject, Object()) {
     private val regionProvider = AwsRegionProvider.getInstance()
     private val settings = ProjectAccountSettingsManager.getInstance(nodeProject)
-    private val EP_NAME = ExtensionPointName<AwsExplorerServiceNode>("aws.toolkit.explorer.node")
+    private val EP_NAME = ExtensionPointName<AwsExplorerServiceNode>("aws.toolkit.explorer.serviceNode")
 
-    override fun getChildren(): List<AwsExplorerNode<*>> = EP_NAME.extensions
+    override fun getChildren(): List<AwsExplorerNode<*>> = EP_NAME.extensionList
         .filter { regionProvider.isServiceSupported(settings.activeRegion, it.serviceId) }
         .map { it.buildServiceRootNode(nodeProject) }
 
