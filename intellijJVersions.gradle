@@ -32,6 +32,7 @@ static def ideProfiles() {
                 "RD": [
                     sdkVersion: "RD-2019.2",
                     rdGenVersion: "0.192.36",
+                    nugetVersion: "2019.2.0",
                     plugins: [
                         "yaml"
                     ]
@@ -71,6 +72,7 @@ static def ideProfiles() {
                 "RD": [
                     sdkVersion: "RD-2019.3",
                     rdGenVersion: "0.193.51",
+                    nugetVersion: "2019.3.0",
                     plugins: [
                         "yaml"
                     ]
@@ -111,6 +113,7 @@ static def ideProfiles() {
                 "RD": [
                     sdkVersion: "RD-2020.1-SNAPSHOT",
                     rdGenVersion: "0.201.65",
+                    nugetVersion: "2020.1.0-eap01",
                     plugins: [
                         "yaml"
                     ]
@@ -168,6 +171,14 @@ def rdGenVersion() {
     return rdGen
 }
 
+def riderNugetSdkVersion() {
+    def rdGen = ideProduct("RD").nugetVersion
+    if (rdGen == null) {
+        throw new IllegalArgumentException("Missing 'nugetVersion' in 'RD' product for ${resolveIdeProfileName()}")
+    }
+    return rdGen
+}
+
 def ideProfile() {
     def profileName = resolveIdeProfileName()
     def profile = ideProfiles()[profileName]
@@ -206,6 +217,7 @@ ext {
     ideProfile = this.&ideProfile
     guiTestFramework = this.&guiTestFramework
     rdGenVersion = this.&rdGenVersion
+    riderNugetSdkVersion = this.&riderNugetSdkVersion
     resolveIdeProfileName = this.&resolveIdeProfileName
     shortenVersion = this.&shortenVersion
 }

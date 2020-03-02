@@ -1,8 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import java.util.regex.Pattern
-
 def backendGroup = 'backend'
 
 ext.nugetConfigPath = new File(projectDir, "NuGet.Config")
@@ -12,10 +10,10 @@ task prepareBuildProps {
     group = backendGroup
 
     doLast {
-//        def riderSdkVersion = getRiderSdkPackageVersion()
+        def riderSdkVersion = riderNugetSdkVersion()
         def configText = """<Project>
   <PropertyGroup>
-    <RiderSDKVersion>[2020.1.0-eap01]</RiderSDKVersion>
+    <RiderSDKVersion>[$riderSdkVersion]</RiderSDKVersion>
   </PropertyGroup>
 </Project>
 """
@@ -97,35 +95,6 @@ private File getNugetPackagesPath() {
     if (!riderSdk.isDirectory()) throw new IllegalStateException("${riderSdk} does not exist or not a directory")
 
     return riderSdk
-}
-
-private String getRiderSdkPackageVersion() {
-    def sdkPackageName = "JetBrains.Rider.SDK"
-
-    def regex = Pattern.compile("JetBrains\\.Rider\\.SDK\\.([\\d\\.]+.*)\\.nupkg")
-    def versions = getNugetPackagesPath()
-            .listFiles()
-            .collect { file ->
-                def matches = regex.matcher(file.name)
-                if (matches.matches()) {
-                    matches[0][1]
-                } else {
-                    null
-                }
-            }
-
-    versions.removeAll([null])
-
-    if (versions.size() > 1)
-        throw new IllegalStateException("Found multiple SDK packages matches name $sdkPackageName in $nugetPackagesPath")
-
-    if (versions.size() == 0)
-        throw new IllegalStateException("$sdkPackageName package is not found in $nugetPackagesPath")
-
-    def version = versions.first()
-    println("$sdkPackageName version is $version")
-
-    return version
 }
 
 private static void writeTextIfChanged(File file, String content) {
