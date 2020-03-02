@@ -2,15 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 buildscript {
-    if (resolveIdeProfileName() == "2019.2") {
-        ext.rd_version = "0.192.36"
-    } else if (resolveIdeProfileName() == "2019.3") {
-        ext.rd_version = "0.193.51"
-    } else if (resolveIdeProfileName() == "2020.1") {
-        ext.rd_version = "0.201.48"
-    } else {
-        throw new IllegalStateException("rdgen version not set for $resolveIdeProfileName()")
-    }
+    ext.rd_version = rdGenVersion()
 
     println("Using rd-gen: $rd_version")
 
@@ -77,20 +69,20 @@ tasks.withType(prepareSandbox.class).all {
 
 compileKotlin.dependsOn(generateModel)
 
-tasks.findByName("compileTestKotlin").onlyIf { resolveIdeProfileName() == "2019.3" /* Tests require 2019.3 to build and run */ }
+tasks.findByName("compileTestKotlin").onlyIf { resolveIdeProfileName() != "2019.2" /* Tests require 2019.3 to build and run */ }
 test {
     systemProperty("log.dir", "${org.jetbrains.intellij.Utils.systemDir(intellij.sandboxDirectory, true)}/logs")
 
     useTestNG()
 
     environment("LOCAL_ENV_RUN", localEnv)
-}.onlyIf { resolveIdeProfileName() == "2019.3" /* Tests require 2019.3 to build and run */ }
+}.onlyIf { resolveIdeProfileName() != "2019.32" /* Tests require 2019.3 to build and run */ }
 
 tasks.integrationTest {
     useTestNG()
 
     environment("LOCAL_ENV_RUN", localEnv)
-}.onlyIf { resolveIdeProfileName() == "2019.3" /* Tests require 2019.3 to build and run */ }
+}.onlyIf { resolveIdeProfileName() != "2019.2" /* Tests require 2019.3 to build and run */ }
 
 runIde {
     systemProperty("aws.toolkits.enableTelemetry", false)

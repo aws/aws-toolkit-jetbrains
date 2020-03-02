@@ -31,6 +31,7 @@ static def ideProfiles() {
                 ],
                 "RD": [
                     sdkVersion: "RD-2019.2",
+                    rdGenVersion: "0.192.36",
                     plugins: [
                         "yaml"
                     ]
@@ -69,6 +70,7 @@ static def ideProfiles() {
                 ],
                 "RD": [
                     sdkVersion: "RD-2019.3",
+                    rdGenVersion: "0.193.51",
                     plugins: [
                         "yaml"
                     ]
@@ -80,23 +82,24 @@ static def ideProfiles() {
             "untilVersion": "201.*",
             "products": [
                 "IC": [
-                    sdkVersion: "IC-201.5259.13-EAP-SNAPSHOT",
+                    sdkVersion: "IC-201.5985.32-EAP-SNAPSHOT",
                     plugins: [
                         "terminal",
                         "yaml",
-                        "PythonCore:201.5259.22",
+                        "PythonCore:201.5985.32",
                         "java",
                         "gradle",
                         "maven",
                         "properties", // Used by Maven
-                        "Docker:201.5259.13"
+                        "Docker:201.5985.25"
                     ]
                 ],
                 "IU": [
-                    sdkVersion: "IU-201.5259.13-EAP-SNAPSHOT",
+                    sdkVersion: "IU-201.5985.32-EAP-SNAPSHOT",
                     plugins: [
                         "terminal",
-                        "Pythonid:201.5259.22",
+                        "platform-images", // Used by a bunch of plugins
+                        "Pythonid:201.5985.32",
                         "yaml",
                         "stats-collector", // Transitive, used by JavaScriptLanguage
                         "JavaScriptLanguage",
@@ -107,6 +110,7 @@ static def ideProfiles() {
                 ],
                 "RD": [
                     sdkVersion: "RD-2020.1-SNAPSHOT",
+                    rdGenVersion: "0.201.65",
                     plugins: [
                         "yaml"
                     ]
@@ -156,6 +160,14 @@ def guiTestFramework() {
     return guiVersion
 }
 
+def rdGenVersion() {
+    def rdGen = ideProduct("RD").rdGenVersion
+    if (rdGen == null) {
+        throw new IllegalArgumentException("Missing 'rdGenVersion' in 'RD' product for ${resolveIdeProfileName()}")
+    }
+    return rdGen
+}
+
 def ideProfile() {
     def profileName = resolveIdeProfileName()
     def profile = ideProfiles()[profileName]
@@ -193,6 +205,7 @@ ext {
     ideUntilVersion = this.&ideUntilVersion
     ideProfile = this.&ideProfile
     guiTestFramework = this.&guiTestFramework
+    rdGenVersion = this.&rdGenVersion
     resolveIdeProfileName = this.&resolveIdeProfileName
     shortenVersion = this.&shortenVersion
 }
