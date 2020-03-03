@@ -8,7 +8,6 @@ import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.uiDesigner.core.GridConstraints;
-
 import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 import java.util.List;
@@ -19,28 +18,37 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-
 import kotlin.Pair;
 import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.amazon.awssdk.services.lambda.model.Runtime;
+import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier;
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider;
 import software.aws.toolkits.core.region.AwsRegion;
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager;
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager;
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance;
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager;
+import software.aws.toolkits.jetbrains.core.executables.ExecutableType;
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder;
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings;
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate;
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon;
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
 
 public class SamInitSelectionPanel implements ValidatablePanel {
-    @NotNull JPanel mainPanel;
-    @NotNull private ComboBox<Runtime> runtimeComboBox;
-    @NotNull private JTextField samExecutableField;
-    @NotNull private JButton editSamExecutableButton;
-    @NotNull private JBLabel samLabel;
-    @NotNull private ComboBox<SamProjectTemplate> templateComboBox;
+    @NotNull
+    JPanel mainPanel;
+    @NotNull
+    private ComboBox<Runtime> runtimeComboBox;
+    @NotNull
+    private JTextField samExecutableField;
+    @NotNull
+    private JButton editSamExecutableButton;
+    @NotNull
+    private JBLabel samLabel;
+    @NotNull
+    private ComboBox<SamProjectTemplate> templateComboBox;
 
     private SdkSelectionPanel sdkSelectionUi;
     private JLabel currentSdkSelectorLabel;
@@ -126,7 +134,9 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         templateComboBox.setRenderer(new ColoredListCellRenderer<SamProjectTemplate>() {
             @Override
             protected void customizeCellRenderer(@NotNull JList<? extends SamProjectTemplate> list, SamProjectTemplate value, int index, boolean selected, boolean hasFocus) {
-                if (value == null) return;
+                if (value == null) {
+                    return;
+                }
                 setIcon(value.getIcon());
                 append(value.getName());
             }
@@ -155,7 +165,7 @@ public class SamInitSelectionPanel implements ValidatablePanel {
 
         ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.Companion.getInstance(generator.getDefaultSourceCreatingProject());
         if (accountSettingsManager.isValidConnectionSettings()) {
-            awsCredentialsUpdated(accountSettingsManager.getActiveRegion(), accountSettingsManager.getActiveCredentialProvider());
+            awsCredentialsUpdated(accountSettingsManager.getActiveRegion(), accountSettingsManager.getActiveCredentialProvider().getId());
         } else {
             mainPanel.revalidate();
         }
@@ -166,26 +176,29 @@ public class SamInitSelectionPanel implements ValidatablePanel {
             return Unit.INSTANCE;
         }
 
-        CredentialManager credentialManager = CredentialManager.Companion.getInstance();
-        ToolkitCredentialsProvider credentialProvider = credentialManager.getCredentialProvider(credentialProviderId);
+        CredentialManager credentialManager = CredentialManager.getInstance();
+        ToolkitCredentialsIdentifier credentialIdentifier = credentialManager.getCredentialIdentifierById(credentialProviderId);
+        if (credentialIdentifier == null) {
+            throw new IllegalArgumentException("Unknown credential provider selected");
+        }
 
-        return awsCredentialsUpdated(awsRegion, credentialProvider);
+        return awsCredentialsUpdated(awsRegion, credentialIdentifier);
     }
 
-    private Unit awsCredentialsUpdated(@NotNull AwsRegion awsRegion, @NotNull ToolkitCredentialsProvider credentialProvider) {
-        ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.Companion.getInstance(generator.getDefaultSourceCreatingProject());
+    private Unit awsCredentialsUpdated(@NotNull AwsRegion awsRegion, @NotNull ToolkitCredentialsIdentifier credentialIdentifier) {
+        ProjectAccountSettingsManager accountSettingsManager = ProjectAccountSettingsManager.getInstance(generator.getDefaultSourceCreatingProject());
         if (!accountSettingsManager.isValidConnectionSettings() ||
-            accountSettingsManager.getActiveCredentialProvider() != credentialProvider) {
-            accountSettingsManager.changeCredentialProvider(credentialProvider);
+            !accountSettingsManager.getActiveCredentialProvider().getId().equals(credentialIdentifier.getId())) {
+            accountSettingsManager.changeCredentialProvider(credentialIdentifier);
         }
         if (accountSettingsManager.getActiveRegion() != awsRegion) {
             accountSettingsManager.changeRegion(awsRegion);
         }
 
-        return initSchemaSelectionPanel(awsRegion, credentialProvider);
+        return initSchemaSelectionPanel(awsRegion, credentialIdentifier);
     }
 
-    private Unit initSchemaSelectionPanel(AwsRegion awsRegion, ToolkitCredentialsProvider credentialProvider) {
+    private Unit initSchemaSelectionPanel(AwsRegion awsRegion, ToolkitCredentialsIdentifier credentialIdentifier) {
         Runtime selectedRuntime = (Runtime) runtimeComboBox.getSelectedItem();
         if (selectedRuntime == null) {
             addNoOpConditionalPanels();
@@ -202,6 +215,8 @@ public class SamInitSelectionPanel implements ValidatablePanel {
         this.schemaSelectionUi = SchemaSelectionPanel.create(selectedRuntime, selectedTemplate, generator);
 
         addSchemaPanel(schemaSelectionUi);
+
+        ToolkitCredentialsProvider credentialProvider = CredentialManager.getInstance().getAwsCredentialProvider(credentialIdentifier, awsRegion);
 
         this.schemaSelectionUi.reloadSchemas(new Pair<>(awsRegion, credentialProvider));
 
@@ -312,10 +327,9 @@ public class SamInitSelectionPanel implements ValidatablePanel {
     @Nullable
     @Override
     public ValidationInfo validate() {
-        // validate against currently saved sam path
-        String samValidationMessage = SamCommon.Companion.validate();
-        if (samValidationMessage != null) {
-            return new ValidationInfo(samValidationMessage, samExecutableField);
+        ExecutableInstance samExecutable = ExecutableManager.getInstance().getExecutableIfPresent(ExecutableType.getExecutable(SamExecutable.class));
+        if (samExecutable instanceof ExecutableInstance.BadExecutable) {
+            return new ValidationInfo(((ExecutableInstance.BadExecutable) samExecutable).getValidationError(), samExecutableField);
         }
 
         if (sdkSelectionUi == null) {

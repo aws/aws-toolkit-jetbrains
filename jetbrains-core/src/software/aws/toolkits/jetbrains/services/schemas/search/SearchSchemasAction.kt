@@ -3,27 +3,28 @@
 
 package software.aws.toolkits.jetbrains.services.schemas.search
 
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbAwareAction
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.schemas.SchemaRegistryNode
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.telemetry.SchemasTelemetry
 
-class SearchSchemasAction : AnAction("Search Schemas", null, AwsIcons.Actions.SCHEMA_SEARCH) {
+class SearchSchemasAction : DumbAwareAction("Search Schemas", null, AwsIcons.Actions.SCHEMA_SEARCH) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
         val dialog = SchemaSearchDialogManager.INSTANCE.searchAllRegistriesDialog(project)
         dialog.show()
 
-        TelemetryService.recordSimpleTelemetry(project, "schemas_search")
+        SchemasTelemetry.search(project, success = true)
     }
 }
 
 class SearchSchemasInRegistryAction :
-    SingleResourceNodeAction<SchemaRegistryNode>("Search Schemas in Registry", null, AwsIcons.Actions.SCHEMA_SEARCH) {
+    SingleResourceNodeAction<SchemaRegistryNode>("Search Schemas in Registry", null, AwsIcons.Actions.SCHEMA_SEARCH), DumbAware {
     override fun actionPerformed(selected: SchemaRegistryNode, e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val registry = selected.value.registryName()

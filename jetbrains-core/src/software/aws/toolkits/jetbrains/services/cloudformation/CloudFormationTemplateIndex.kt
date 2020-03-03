@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -54,8 +55,9 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
         val indexedResources = mutableMapOf<String, MutableList<IndexedResource>>()
 
         fileContent.psiFile.acceptNode(object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement?) {
+            override fun visitElement(element: PsiElement) {
                 super.visitElement(element)
+                // element is nullable in versions prior to 2020.1 FIX_WHEN_MIN_IS_201
                 element?.run {
                     val parent = element.parent as? YAMLKeyValue ?: return
                     if (parent.value != this) return
@@ -98,7 +100,8 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
         ): Collection<IndexedResource> {
             val index = FileBasedIndex.getInstance()
             val scope = virtualFile?.let { GlobalSearchScope.fileScope(project, it) } ?: GlobalSearchScope.projectScope(project)
-            return index.getAllKeys(NAME, project)
+            return ApplicationManager.getApplication().runReadAction<Collection<IndexedResource>> {
+                index.getAllKeys(NAME, project)
                     .asSequence()
                     .filter(resourceTypeFilter)
                     .mapNotNull { index.getValues(NAME, it, scope) }
@@ -106,11 +109,12 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
                     .flatten()
                     .flatten()
                     .toList()
+            }
         }
 
         fun listResourcesByType(project: Project, type: String): Collection<IndexedResource> = listResources(project, resourceTypeFilter = { it == type })
 
         fun listFunctions(project: Project, virtualFile: VirtualFile? = null): Collection<IndexedFunction> =
-                listResources(project, virtualFile = virtualFile).filterIsInstance(IndexedFunction::class.java)
+            listResources(project, virtualFile = virtualFile).filterIsInstance(IndexedFunction::class.java)
     }
 }
