@@ -30,12 +30,6 @@ class FeedbackTest {
     }
 
     @Test
-    fun panelDefaultsPositive() {
-        val panel = SubmitFeedbackPanel(initiallyPositive = null)
-        assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
-    }
-
-    @Test
     fun noSentimentSet() {
         runInEdtAndWait {
             val dialog = FeedbackDialog(projectRule.project)
