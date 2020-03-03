@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerNodeProvider
+import software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerRootNode
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import java.util.concurrent.CompletableFuture
 
@@ -71,6 +71,6 @@ class CloudFormationServiceNodeTest {
     }
 
     private companion object {
-        val CF_EXPLORER_NODE = CloudFormationExplorerNodeProvider()
+        val CF_EXPLORER_NODE = CloudFormationExplorerRootNode()
     }
 }

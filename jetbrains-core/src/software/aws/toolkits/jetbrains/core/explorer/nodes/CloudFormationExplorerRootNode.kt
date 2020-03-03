@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationServiceNode
 import software.aws.toolkits.resources.message
 
-class CloudFormationExplorerNodeProvider : AwsExplorerServiceNode {
+class CloudFormationExplorerRootNode : AwsExplorerServiceNode {
     override val serviceId: String = CloudFormationClient.SERVICE_NAME
     override val displayName: String = message("explorer.node.cloudformation")
 

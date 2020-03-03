@@ -11,7 +11,7 @@ import org.junit.Test
 import software.amazon.awssdk.services.schemas.model.RegistrySummary
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.SchemasExplorerNodeProvider
+import software.aws.toolkits.jetbrains.core.explorer.nodes.SchemasExplorerRootNode
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import java.util.concurrent.CompletableFuture
 
@@ -63,6 +63,6 @@ class SchemasServiceNodeTest {
     }
 
     private companion object {
-        val SCHEMAS_EXPLORER_NODE = SchemasExplorerNodeProvider()
+        val SCHEMAS_EXPLORER_NODE = SchemasExplorerRootNode()
     }
 }

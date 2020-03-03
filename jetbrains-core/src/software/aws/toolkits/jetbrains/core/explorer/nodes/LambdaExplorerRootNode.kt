@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.jetbrains.services.lambda.LambdaServiceNode
 import software.aws.toolkits.resources.message
 
-class LambdaExplorerNodeProvider : AwsExplorerServiceNode {
+class LambdaExplorerRootNode : AwsExplorerServiceNode {
     override val serviceId: String = LambdaClient.SERVICE_NAME
     override val displayName: String = message("explorer.node.lambda")
 

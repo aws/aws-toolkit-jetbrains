@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.services.s3.S3ServiceNode
 import software.aws.toolkits.resources.message
 
-class S3ExplorerNodeProvider : AwsExplorerServiceNode {
+class S3ExplorerRootNode : AwsExplorerServiceNode {
     override val serviceId: String = S3Client.SERVICE_NAME
     override val displayName: String = message("explorer.node.s3")
 

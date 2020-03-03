@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.schemas.SchemasClient
 import software.aws.toolkits.jetbrains.services.schemas.SchemasServiceNode
 import software.aws.toolkits.resources.message
 
-class SchemasExplorerNodeProvider : AwsExplorerServiceNode {
+class SchemasExplorerRootNode : AwsExplorerServiceNode {
     override val serviceId: String = SchemasClient.SERVICE_NAME
     override val displayName: String = message("explorer.node.schemas")
 

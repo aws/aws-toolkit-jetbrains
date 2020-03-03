@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.S3ExplorerNodeProvider
+import software.aws.toolkits.jetbrains.core.explorer.nodes.S3ExplorerRootNode
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import java.time.Instant
@@ -88,6 +88,6 @@ class S3ServiceNodeTest {
     }
 
     private companion object {
-        val S3_EXPLORER_NODE = S3ExplorerNodeProvider()
+        val S3_EXPLORER_NODE = S3ExplorerRootNode()
     }
 }

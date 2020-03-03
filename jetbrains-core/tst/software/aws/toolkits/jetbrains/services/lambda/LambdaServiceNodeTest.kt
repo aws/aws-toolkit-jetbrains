@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.LambdaExplorerNodeProvider
+import software.aws.toolkits.jetbrains.core.explorer.nodes.LambdaExplorerRootNode
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import java.util.concurrent.CompletableFuture
 
@@ -85,6 +85,6 @@ class LambdaServiceNodeTest {
             .build()
 
     private companion object {
-        val LAMBDA_EXPLORER_SERVICE_NODE = LambdaExplorerNodeProvider()
+        val LAMBDA_EXPLORER_SERVICE_NODE = LambdaExplorerRootNode()
     }
 }
