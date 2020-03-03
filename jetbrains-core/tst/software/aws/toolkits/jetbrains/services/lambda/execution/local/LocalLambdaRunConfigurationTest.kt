@@ -5,16 +5,15 @@ package software.aws.toolkits.jetbrains.services.lambda.execution.local
 
 import com.intellij.execution.ExecutorRegistry
 import com.intellij.execution.configurations.RuntimeConfigurationError
+import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.After
@@ -26,13 +25,16 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
-import software.aws.toolkits.jetbrains.settings.SamSettings
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.toElement
 import software.aws.toolkits.resources.message
+import java.nio.file.Paths
+import kotlin.test.assertNotNull
 
 class LocalLambdaRunConfigurationTest {
     @Rule
@@ -54,9 +56,9 @@ class LocalLambdaRunConfigurationTest {
 
     @Before
     fun setUp() {
-        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
-        SamSettings.getInstance().savedExecutablePath = validSam
-        preWarmSamVersionCache(validSam)
+        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson())
+        preWarmSamVersionCache(validSam.toString())
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam)
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
 
@@ -79,6 +81,7 @@ class LocalLambdaRunConfigurationTest {
     @After
     fun tearDown() {
         MockCredentialsManager.getInstance().reset()
+        ExecutableManager.getInstance().removeExecutable(SamExecutable())
     }
 
     @Test
@@ -100,7 +103,9 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun samIsNotSet() {
         val fakeSamPath = "NotValid"
-        SamSettings.getInstance().savedExecutablePath = fakeSamPath
+        ExecutableManager.getInstance().removeExecutable(SamExecutable())
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get(fakeSamPath))
+        Thread.sleep(1000)
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
@@ -111,7 +116,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("general.file_not_found", fakeSamPath))
+                .hasMessage(message("executableCommon.missing_executable", "sam"))
         }
     }
 
@@ -402,7 +407,6 @@ class LocalLambdaRunConfigurationTest {
     fun inputTextIsNotSet() {
         val project = projectRule.project
 
-        preWarmSamVersionCache(SamSettings.getInstance().executablePath)
         preWarmLambdaHandlerValidation(project)
 
         runInEdtAndWait {
@@ -716,10 +720,13 @@ class LocalLambdaRunConfigurationTest {
 
     private fun getState(runConfiguration: LocalLambdaRunConfiguration): SamRunningState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        val environmentMock = mock<ExecutionEnvironment> {
-            on { project } doReturn projectRule.project
-            on { getExecutor() } doReturn executor
-        }
-        return runConfiguration.getState(executor, environmentMock)
+        assertNotNull(executor)
+
+        val environment = ExecutionEnvironmentBuilder.create(
+            DefaultDebugExecutor.getDebugExecutorInstance(),
+            runConfiguration
+        ).build()
+
+        return runConfiguration.getState(executor, environment)
     }
 }
