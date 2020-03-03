@@ -16,8 +16,8 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 
-class FeedbackDialog(project: Project, initiallyPositive: Boolean) : DialogWrapper(project) {
-    val panel = SubmitFeedbackPanel(initiallyPositive)
+class FeedbackDialog(project: Project) : DialogWrapper(project) {
+    val panel = SubmitFeedbackPanel(initiallyPositive = true)
 
     init {
         title = feedbackTitle
@@ -29,16 +29,14 @@ class FeedbackDialog(project: Project, initiallyPositive: Boolean) : DialogWrapp
             setOKButtonText(message("feedback.submitting"))
             isOKActionEnabled = false
 
+            val sentiment = panel.sentiment ?: throw RuntimeException("sentiment was null after validation")
+            val comment = panel.comment ?: throw RuntimeException("comment was null after validation")
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
-                    val sentiment = panel.sentiment ?: throw RuntimeException("sentiment was null after validation")
-                    val comment = panel.comment ?: throw RuntimeException("comment was null after validation")
-                    ApplicationManager.getApplication().executeOnPooledThread {
-                        TelemetryService.getInstance().sendFeedback(sentiment, comment)
-                        ApplicationManager.getApplication().invokeLater({
-                            close(OK_EXIT_CODE)
-                        }, ModalityState.stateForComponent(panel.panel))
-                    }
+                    TelemetryService.getInstance().sendFeedback(sentiment, comment)
+                    ApplicationManager.getApplication().invokeLater({
+                        close(OK_EXIT_CODE)
+                    }, ModalityState.stateForComponent(panel.panel))
                 } catch (e: Exception) {
                     Messages.showMessageDialog(panel.panel, message("feedback.submit_failed", e), message("feedback.submit_failed_title"), null)
                 }
@@ -47,10 +45,8 @@ class FeedbackDialog(project: Project, initiallyPositive: Boolean) : DialogWrapp
     }
 
     public override fun doValidate(): ValidationInfo? {
-        val sentiment = panel.sentiment
+        panel.sentiment ?: return ValidationInfo(message("feedback.validation.no_sentiment"))
         val comment = panel.comment
-
-        sentiment ?: return ValidationInfo(message("feedback.validation.no_sentiment"))
 
         return when {
             comment == null || comment.isEmpty() -> ValidationInfo(message("feedback.validation.empty_comment"))
@@ -66,10 +62,11 @@ class FeedbackDialog(project: Project, initiallyPositive: Boolean) : DialogWrapp
 
     companion object {
         private val feedbackTitle = message("feedback.title")
+
         fun getAction(project: Project) =
             object : DumbAwareAction(feedbackTitle, message("feedback.description"), AwsIcons.Misc.SMILE_GREY) {
                 override fun actionPerformed(e: AnActionEvent) {
-                    FeedbackDialog(project, true).showAndGet()
+                    FeedbackDialog(project).showAndGet()
                 }
             }
     }

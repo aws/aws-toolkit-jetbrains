@@ -1,3 +1,6 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.ui.feedback
 
 import com.intellij.openapi.ui.ValidationInfo
@@ -16,28 +19,26 @@ class FeedbackTest {
 
     @Test
     fun panelInitiallyNegative() {
-        runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project, initiallyPositive = false)
-            val panel = dialog.getViewForTesting()
-
-            assertThat(panel.sentiment).isEqualTo(Sentiment.NEGATIVE)
-        }
+        val panel = SubmitFeedbackPanel(initiallyPositive = false)
+        assertThat(panel.sentiment).isEqualTo(Sentiment.NEGATIVE)
     }
 
     @Test
     fun panelInitiallyPositive() {
-        runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project, initiallyPositive = true)
-            val panel = dialog.getViewForTesting()
+        val panel = SubmitFeedbackPanel(initiallyPositive = true)
+        assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
+    }
 
-            assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
-        }
+    @Test
+    fun panelDefaultsPositive() {
+        val panel = SubmitFeedbackPanel(initiallyPositive = null)
+        assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
     }
 
     @Test
     fun noSentimentSet() {
         runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project, initiallyPositive = true)
+            val dialog = FeedbackDialog(projectRule.project)
             val panel = dialog.getViewForTesting()
 
             assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
@@ -53,7 +54,7 @@ class FeedbackTest {
     @Test
     fun noCommentSet() {
         runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project, initiallyPositive = true)
+            val dialog = FeedbackDialog(projectRule.project)
             val panel = dialog.getViewForTesting()
 
             listOf(
@@ -72,7 +73,7 @@ class FeedbackTest {
     @Test
     fun commentTooLong() {
         runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project, initiallyPositive = true)
+            val dialog = FeedbackDialog(projectRule.project)
             val panel = dialog.getViewForTesting()
 
             panel.comment = "string".repeat(2000)

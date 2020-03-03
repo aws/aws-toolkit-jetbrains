@@ -19,8 +19,8 @@ import javax.swing.ButtonGroup
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-class SubmitFeedbackPanel(initiallyPositive: Boolean? = true) {
-    private lateinit var panel1: JPanel
+class SubmitFeedbackPanel(initiallyPositive: Boolean = true) {
+    private lateinit var rootPanel: JPanel
     private lateinit var smileButton: JBRadioButton
     private lateinit var sadButton: JBRadioButton
     private lateinit var smileIcon: JLabel
@@ -32,7 +32,7 @@ class SubmitFeedbackPanel(initiallyPositive: Boolean? = true) {
     private lateinit var sentimentButtonGroup: ButtonGroup
 
     val panel: JPanel
-        get() = panel1
+        get() = rootPanel
 
     val sentiment: Sentiment?
         get() = when {
@@ -58,18 +58,16 @@ class SubmitFeedbackPanel(initiallyPositive: Boolean? = true) {
     }
 
     init {
-        // runs after $$$setupUI$$$?
+        // runs after $$$setupUI$$$
         // null out placeholder text
         smileIcon.text = null
         sadIcon.text = null
 
-        // select initial value if requested
-        initiallyPositive?.also {
-            if (it) {
-                smileButton.isSelected = true
-            } else {
-                sadButton.isSelected = true
-            }
+        // select initial value
+        if (initiallyPositive) {
+            smileButton.isSelected = true
+        } else {
+            sadButton.isSelected = true
         }
 
         // update remaining character count
@@ -82,7 +80,7 @@ class SubmitFeedbackPanel(initiallyPositive: Boolean? = true) {
         val currentLength = comment?.length ?: 0
         lengthLimitLabel.text = message("feedback.limit.label", currentLength, MAX_LENGTH)
         if (currentLength >= MAX_LENGTH) {
-            lengthLimitLabel.text = message("feedback.limit.reached")
+            lengthLimitLabel.text = message("feedback.limit.reached", MAX_LENGTH)
         }
 
         val currentBody = comment ?: ""
