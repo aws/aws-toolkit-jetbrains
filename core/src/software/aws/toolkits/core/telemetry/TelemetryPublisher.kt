@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.core.telemetry
 
+import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+
 interface TelemetryPublisher {
     fun publish(metricEvents: Collection<MetricEvent>): Boolean
+    fun sendFeedback(sentiment: Sentiment, comment: String)
 }
