@@ -11,9 +11,7 @@ import software.aws.toolkits.resources.message
 
 class OpenLogGroups : SingleResourceNodeAction<CloudWatchLogsNode>(message("cloudwatch.log.open")), DumbAware {
     override fun actionPerformed(selected: CloudWatchLogsNode, e: AnActionEvent) {
+        // TODO subsequent PRs will fill this in
         println("this will open the window")
     }
 }
-
-
-

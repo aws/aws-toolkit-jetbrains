@@ -39,6 +39,7 @@ class CloudWatchLogsNode(
     override fun displayName() = logGroupName
 
     override fun onDoubleClick() {
+        // TODO pr's after this will fill it in
         println("This will open another window")
     }
 }

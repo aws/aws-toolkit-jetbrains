@@ -67,7 +67,6 @@ class CloudWatchLogsServiceNodeTest {
         )
     }
 
-
     private companion object {
         val CLOUDWATCH_LOGS_EXPLORER_SERVICE_NODE = CloudWatchRootNode()
     }
