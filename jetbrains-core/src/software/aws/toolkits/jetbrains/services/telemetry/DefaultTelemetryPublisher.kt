@@ -1,9 +1,10 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
-import com.intellij.openapi.application.ApplicationManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cognitoidentity.CognitoIdentityClient
@@ -14,8 +15,6 @@ import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import kotlin.streams.toList
@@ -24,8 +23,8 @@ class DefaultTelemetryPublisher(
     private val clientMetadata: ClientMetadata = ClientMetadata.DEFAULT_METADATA,
     private val client: ToolkitTelemetryClient = createDefaultTelemetryClient()
 ) : TelemetryPublisher {
-    override fun publish(metricEvents: Collection<MetricEvent>): Boolean = ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
-        try {
+    override suspend fun publish(metricEvents: Collection<MetricEvent>) {
+        withContext(Dispatchers.IO) {
             client.postMetrics {
                 it.awsProduct(clientMetadata.productName)
                 it.awsProductVersion(clientMetadata.productVersion)
@@ -36,12 +35,8 @@ class DefaultTelemetryPublisher(
                 it.parentProductVersion(clientMetadata.parentProductVersion)
                 it.metricData(metricEvents.toMetricData())
             }
-            true
-        } catch (e: Exception) {
-            LOG.warn(e) { "Failed to publish metrics" }
-            false
         }
-    }.get()
+    }
 
     override fun sendFeedback(sentiment: Sentiment, comment: String) {
         client.postFeedback {
@@ -87,7 +82,6 @@ class DefaultTelemetryPublisher(
         }
 
     private companion object {
-        private val LOG = getLogger<DefaultTelemetryPublisher>()
 
         private const val METADATA_AWS_ACCOUNT = "awsAccount"
         private const val METADATA_AWS_REGION = "awsRegion"
