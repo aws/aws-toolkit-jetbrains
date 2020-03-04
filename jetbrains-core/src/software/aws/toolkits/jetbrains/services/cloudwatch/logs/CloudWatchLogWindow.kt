@@ -12,10 +12,28 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogGroup
 import software.aws.toolkits.resources.message
 
 class CloudWatchLogWindow(private val project: Project) {
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, CW_LOGS_TOOL_WINDOW)
+
+    fun showLogGroup(logGroup: String) {
+        val existingWindow = toolWindow.find(logGroup)
+        if (existingWindow != null) {
+            runInEdt {
+                existingWindow.show()
+            }
+            return
+        }
+        val client = project.awsClient<CloudWatchLogsClient>()
+        val groups = CloudWatchLogGroup(project, client, logGroup)
+        runInEdt {
+            toolWindow.addTab(title = groups.title, component = groups.content, activate = true, id = logGroup)
+        }
+    }
+
+    // TODO this will be refactored out in the next PR
     fun showLog(logGroup: String, logStream: String, fromHead: Boolean = true, title: String? = null) {
         val client = project.awsClient<CloudWatchLogsClient>()
         val console = TextConsoleBuilderFactory.getInstance().createBuilder(project).apply { setViewer(true) }.console

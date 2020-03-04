@@ -5,7 +5,11 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.Project
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsNode
 import software.aws.toolkits.resources.message
 
@@ -13,5 +17,13 @@ class OpenLogGroups : SingleResourceNodeAction<CloudWatchLogsNode>(message("clou
     override fun actionPerformed(selected: CloudWatchLogsNode, e: AnActionEvent) {
         // TODO subsequent PRs will fill this in
         println("this will open the window")
+    }
+}
+
+fun openLogGroups(project: Project, logGroupName: String) {
+    GlobalScope.launch {
+        println("This will open another window")
+        val window = project?.let { CloudWatchLogWindow.getInstance(it) }
+        window?.showLogGroup(logGroupName)
     }
 }
