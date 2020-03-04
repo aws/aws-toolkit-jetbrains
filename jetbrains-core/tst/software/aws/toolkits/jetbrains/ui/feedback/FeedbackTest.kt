@@ -9,70 +9,86 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Suite
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.resources.message
 
+@RunWith(Suite::class)
+@Suite.SuiteClasses(FeedbackTest.NonParameterizedTests::class, FeedbackTest.NoCommentSetTest::class)
 class FeedbackTest {
-    @Rule
-    @JvmField
-    val projectRule = ProjectRule()
-
-    @Test
-    fun panelInitiallyNegative() {
-        val panel = SubmitFeedbackPanel(initiallyPositive = false)
-        assertThat(panel.sentiment).isEqualTo(Sentiment.NEGATIVE)
+    companion object {
+        @Rule
+        @JvmField
+        val projectRule = ProjectRule()
     }
 
-    @Test
-    fun panelInitiallyPositive() {
-        val panel = SubmitFeedbackPanel(initiallyPositive = true)
-        assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
-    }
+    class NonParameterizedTests {
+        @Test
+        fun panelInitiallyNegative() {
+            val panel = SubmitFeedbackPanel(initiallyPositive = false)
+            assertThat(panel.sentiment).isEqualTo(Sentiment.NEGATIVE)
+        }
 
-    @Test
-    fun noSentimentSet() {
-        runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project)
-            val panel = dialog.getViewForTesting()
-
+        @Test
+        fun panelInitiallyPositive() {
+            val panel = SubmitFeedbackPanel(initiallyPositive = true)
             assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
+        }
 
-            panel.clearSentimentSelection()
-            assertThat(panel.sentiment).isEqualTo(null)
-            assertThat(dialog.doValidate()).isInstanceOfSatisfying(ValidationInfo::class.java) {
-                it.message.contains(message("feedback.validation.no_sentiment"))
+        @Test
+        fun noSentimentSet() {
+            runInEdtAndWait {
+                val dialog = FeedbackDialog(projectRule.project)
+                val panel = dialog.getViewForTesting()
+
+                assertThat(panel.sentiment).isEqualTo(Sentiment.POSITIVE)
+
+                panel.clearSentimentSelection()
+                assertThat(panel.sentiment).isEqualTo(null)
+                assertThat(dialog.doValidate()).isInstanceOfSatisfying(ValidationInfo::class.java) {
+                    it.message.contains(message("feedback.validation.no_sentiment"))
+                }
             }
         }
-    }
 
-    @Test
-    fun noCommentSet() {
-        runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project)
-            val panel = dialog.getViewForTesting()
+        @Test
+        fun commentTooLong() {
+            runInEdtAndWait {
+                val dialog = FeedbackDialog(projectRule.project)
+                val panel = dialog.getViewForTesting()
 
-            listOf(
-                "",
-                "      ",
-                "\n"
-            ).forEach { case ->
-                panel.comment = case
+                panel.comment = "string".repeat(2000)
                 assertThat(dialog.doValidate()).isInstanceOfSatisfying(ValidationInfo::class.java) {
-                    it.message.contains(message("feedback.validation.empty_comment"))
+                    it.message.contains(message("feedback.validation.comment_too_long"))
                 }
             }
         }
     }
 
-    @Test
-    fun commentTooLong() {
-        runInEdtAndWait {
-            val dialog = FeedbackDialog(projectRule.project)
-            val panel = dialog.getViewForTesting()
+    @RunWith(Parameterized::class)
+    class NoCommentSetTest(private val name: String, private val case: String) {
+        companion object {
+            @Parameterized.Parameters(name = "{0}")
+            @JvmStatic
+            fun data() = listOf(
+                arrayOf("empty string", ""),
+                arrayOf("spaces", "      "),
+                arrayOf("new line", "\n")
+            )
+        }
 
-            panel.comment = "string".repeat(2000)
-            assertThat(dialog.doValidate()).isInstanceOfSatisfying(ValidationInfo::class.java) {
-                it.message.contains(message("feedback.validation.comment_too_long"))
+        @Test
+        fun noCommentSet() {
+            runInEdtAndWait {
+                val dialog = FeedbackDialog(projectRule.project)
+                val panel = dialog.getViewForTesting()
+
+                panel.comment = case
+                assertThat(dialog.doValidate()).isInstanceOfSatisfying(ValidationInfo::class.java) {
+                    it.message.contains(message("feedback.validation.empty_comment"))
+                }
             }
         }
     }

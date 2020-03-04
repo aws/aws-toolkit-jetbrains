@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.ui.feedback
 
+import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.ColorUtil
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBScrollPane
@@ -78,13 +80,15 @@ class SubmitFeedbackPanel(initiallyPositive: Boolean = true) {
 
     private fun onTextAreaUpdate() {
         val currentLength = comment?.length ?: 0
-        lengthLimitLabel.text = message("feedback.limit.label", currentLength, MAX_LENGTH)
-        if (currentLength >= MAX_LENGTH) {
-            lengthLimitLabel.text = message("feedback.limit.reached", MAX_LENGTH)
+        val lengthText = message("feedback.limit.label", currentLength, MAX_LENGTH)
+        lengthLimitLabel.text = if (currentLength >= MAX_LENGTH) {
+            "<html><font color='#${ColorUtil.toHex(DialogWrapper.ERROR_FOREGROUND_COLOR)}'>$lengthText</font></html>"
+        } else {
+            lengthText
         }
 
         val currentBody = comment ?: ""
-        githubLink.text = message("feedback.github.link", "$githubLinkBase${URLEncoder.encode("$currentBody\n\n$toolkitMetadata", Charsets.UTF_8.name())}")
+        githubLink.text = message("feedback.github.link", "$GITHUB_LINK_BASE${URLEncoder.encode("$currentBody\n\n$toolkitMetadata", Charsets.UTF_8.name())}")
     }
 
     @TestOnly
@@ -93,7 +97,9 @@ class SubmitFeedbackPanel(initiallyPositive: Boolean = true) {
     }
 
     companion object {
-        private const val githubLinkBase = "https://github.com/aws/aws-toolkit-jetbrains/issues/new?body="
+        const val MAX_LENGTH = 2000 // backend restriction
+
+        private const val GITHUB_LINK_BASE = "https://github.com/aws/aws-toolkit-jetbrains/issues/new?body="
         private val toolkitMetadata = ClientMetadata.DEFAULT_METADATA.let {
             """
                 ---
@@ -102,7 +108,5 @@ class SubmitFeedbackPanel(initiallyPositive: Boolean = true) {
                 IDE: ${it.parentProduct} ${it.parentProductVersion}
             """.trimIndent()
         }
-
-        const val MAX_LENGTH = 2000 // backend restriction
     }
 }

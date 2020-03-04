@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.ui.feedback
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -21,6 +22,7 @@ class FeedbackDialog(project: Project) : DialogWrapper(project) {
 
     init {
         title = feedbackTitle
+        setOKButtonText(message("feedback.submit_button"))
         init()
     }
 
@@ -29,14 +31,14 @@ class FeedbackDialog(project: Project) : DialogWrapper(project) {
             setOKButtonText(message("feedback.submitting"))
             isOKActionEnabled = false
 
-            val sentiment = panel.sentiment ?: throw RuntimeException("sentiment was null after validation")
-            val comment = panel.comment ?: throw RuntimeException("comment was null after validation")
+            val sentiment = panel.sentiment ?: throw IllegalStateException("sentiment was null after validation")
+            val comment = panel.comment ?: throw IllegalStateException("comment was null after validation")
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     TelemetryService.getInstance().sendFeedback(sentiment, comment)
-                    ApplicationManager.getApplication().invokeLater({
+                    runInEdt(ModalityState.stateForComponent(panel.panel)) {
                         close(OK_EXIT_CODE)
-                    }, ModalityState.stateForComponent(panel.panel))
+                    }
                 } catch (e: Exception) {
                     Messages.showMessageDialog(panel.panel, message("feedback.submit_failed", e), message("feedback.submit_failed_title"), null)
                 }
@@ -49,7 +51,7 @@ class FeedbackDialog(project: Project) : DialogWrapper(project) {
         val comment = panel.comment
 
         return when {
-            comment == null || comment.isEmpty() -> ValidationInfo(message("feedback.validation.empty_comment"))
+            comment.isNullOrEmpty() -> ValidationInfo(message("feedback.validation.empty_comment"))
             comment.length >= SubmitFeedbackPanel.MAX_LENGTH -> ValidationInfo(message("feedback.validation.comment_too_long"))
             else -> null
         }
