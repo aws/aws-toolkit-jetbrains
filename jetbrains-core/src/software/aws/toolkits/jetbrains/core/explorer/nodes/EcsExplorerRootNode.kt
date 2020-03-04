@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.ecs.EcsClient
 import software.aws.toolkits.jetbrains.services.ecs.EcsParentNode
 import software.aws.toolkits.resources.message
 
-class ECSExplorerRootNode : AwsExplorerServiceNode {
+class EcsExplorerRootNode : AwsExplorerServiceNode {
     override val serviceId: String = EcsClient.SERVICE_NAME
     override val displayName: String = message("explorer.node.ecs")
 
