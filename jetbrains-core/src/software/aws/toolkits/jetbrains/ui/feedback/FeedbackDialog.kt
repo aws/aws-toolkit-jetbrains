@@ -36,9 +36,9 @@ class FeedbackDialog(project: Project) : DialogWrapper(project) {
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     TelemetryService.getInstance().sendFeedback(sentiment, comment)
-                    runInEdt(ModalityState.stateForComponent(panel.panel)) {
+                    ApplicationManager.getApplication().invokeLater({
                         close(OK_EXIT_CODE)
-                    }
+                    }, ModalityState.stateForComponent(panel.panel))
                 } catch (e: Exception) {
                     Messages.showMessageDialog(panel.panel, message("feedback.submit_failed", e), message("feedback.submit_failed_title"), null)
                 }
