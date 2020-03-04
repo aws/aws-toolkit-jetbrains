@@ -24,7 +24,7 @@ class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNod
 class CloudWatchLogsNode(
     project: Project,
     val arn: String,
-    val logGroupName: String
+    private val logGroupName: String
 ) : AwsExplorerResourceNode<String>(
     project,
     CloudWatchLogsClient.SERVICE_NAME,
