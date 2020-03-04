@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.testFramework.ProjectRule
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -32,8 +32,8 @@ class CloudWatchLogsServiceNodeTest {
 
         val children = CloudWatchLogsServiceNode(projectRule.project, CLOUDWATCH_LOGS_EXPLORER_SERVICE_NODE).children
 
-        Assertions.assertThat(children).allMatch { it is CloudWatchLogsNode }
-        Assertions.assertThat(children.filterIsInstance<CloudWatchLogsNode>().map { it.displayName() }).containsExactlyInAnyOrder("abc", "AEF", "bcd", "zzz")
+        assertThat(children).allMatch { it is CloudWatchLogsNode }
+        assertThat(children.filterIsInstance<CloudWatchLogsNode>().map { it.displayName() }).containsExactlyInAnyOrder("abc", "AEF", "bcd", "zzz")
     }
 
     @Test
@@ -42,8 +42,8 @@ class CloudWatchLogsServiceNodeTest {
 
         val children = CloudWatchLogsServiceNode(projectRule.project, CLOUDWATCH_LOGS_EXPLORER_SERVICE_NODE).children
 
-        Assertions.assertThat(children).hasSize(1)
-        Assertions.assertThat(children).allMatch { it is AwsExplorerEmptyNode }
+        assertThat(children).hasSize(1)
+        assertThat(children).allMatch { it is AwsExplorerEmptyNode }
     }
 
     @Test
@@ -54,8 +54,8 @@ class CloudWatchLogsServiceNodeTest {
 
         val children = CloudWatchLogsServiceNode(projectRule.project, CLOUDWATCH_LOGS_EXPLORER_SERVICE_NODE).children
 
-        Assertions.assertThat(children).hasSize(1)
-        Assertions.assertThat(children).allMatch { it is AwsExplorerErrorNode }
+        assertThat(children).hasSize(1)
+        assertThat(children).allMatch { it is AwsExplorerErrorNode }
     }
 
     private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
