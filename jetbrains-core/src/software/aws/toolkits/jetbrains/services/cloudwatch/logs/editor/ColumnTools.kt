@@ -10,7 +10,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-class CloudWatchLogsStreamsColumn : ColumnInfo<LogStream, String>("log streams <change this is not localized>") {
+class CloudWatchLogsStreamsColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
     override fun valueOf(item: LogStream?): String? = item?.logStreamName()
 }
 

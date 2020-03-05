@@ -1,8 +1,11 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.components.JBLoadingPanel
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.Dispatchers
@@ -12,23 +15,27 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
+import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.resources.message
+import java.awt.BorderLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
-import javax.swing.JTextField
 import javax.swing.SortOrder
 import javax.swing.table.TableRowSorter
 
 class CloudWatchLogGroup(private val project: Project, private val cloudWatchLogsClient: CloudWatchLogsClient, private val logGroup: String) {
     val title = logGroup.split("/").last()
     lateinit var content: JPanel
-    lateinit var groupsPanel: JPanel
-    lateinit var textInformation: JLabel
-    lateinit var filterField: JTextField
+    lateinit var refreshButton: JButton
+    lateinit var groupsPanel: JBLoadingPanel
+    lateinit var locationInformation: JLabel
+    lateinit var filterField: JBTextField
 
     private val table: TableView<LogStream> = TableView(
         ListTableModel<LogStream>(
@@ -52,6 +59,10 @@ class CloudWatchLogGroup(private val project: Project, private val cloudWatchLog
         }
     }
 
+    private fun createUIComponents() {
+        groupsPanel = JBLoadingPanel(BorderLayout(), project)
+    }
+
     init {
         table.rowSorter = object : TableRowSorter<ListTableModel<LogStream>>(table.listTableModel) {
             init {
@@ -60,12 +71,30 @@ class CloudWatchLogGroup(private val project: Project, private val cloudWatchLog
                 setSortable(1, false)
             }
         }
-        groupsPanel.add(scrollPane)
         table.addMouseListener(doubleClickListener)
-        textInformation.text = "${project.activeRegion().displayName} => $logGroup"
+        locationInformation.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup"
+        filterField.emptyText.text = message("cloudwatch.logs.filter_log_streams")
 
+        refreshButton.isBorderPainted = false
+        refreshButton.isContentAreaFilled = false
+        refreshButton.icon = AllIcons.Actions.Refresh
+        refreshButton.addActionListener { refresh() }
+
+        groupsPanel.add(scrollPane)
+
+        refresh()
+    }
+
+
+    private fun refresh() {
+        runInEdt {
+            groupsPanel.startLoading()
+        }
         GlobalScope.launch {
             populateModel()
+            runInEdt {
+                groupsPanel.stopLoading()
+            }
         }
     }
 

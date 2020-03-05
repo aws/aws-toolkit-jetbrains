@@ -51,7 +51,7 @@ class CloudWatchLogWindow(private val project: Project) {
     }
 
     companion object {
-        private val CW_LOGS_TOOL_WINDOW = ToolkitToolWindowType("AWS.CloudWatchLog", message("cloudwatch.log.toolwindow"))
+        private val CW_LOGS_TOOL_WINDOW = ToolkitToolWindowType("AWS.CloudWatchLog", message("cloudwatch.logs.toolwindow"))
         fun getInstance(project: Project) = ServiceManager.getService(project, CloudWatchLogWindow::class.java)
     }
 }
