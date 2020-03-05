@@ -10,10 +10,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PlatformTestCase
 import com.intellij.testFramework.PlatformTestUtil
+import com.intellij.util.concurrency.AppExecutorUtil
+import kotlinx.coroutines.CoroutineDispatcher
 import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.tryOrNull
 import java.io.File
 import java.nio.file.Path
+import kotlin.coroutines.CoroutineContext
 
 /**
  * A set of functions that attempt to abstract API differences that are incompatible between IDEA versions.
@@ -73,5 +76,23 @@ object CompatibilityUtils {
         val parentClass = localFileFinder::class.java.superclass.takeIf { it != Any::class.java } ?: localFileFinder::class.java.interfaces.first()
         val constructor = Remote::class.java.getConstructor(BiMap::class.java, parentClass)
         return constructor.newInstance(mappings, localFileFinder)
+    }
+
+    /**
+     * Can be removed when min-version is 19.3 FIX_WHEN_MIN_IS_193
+     *
+     * Can be replaced with Dispatchers.ApplicationThreadPool at the call-site
+     * ApplicationThreadPool is an extension val defined as an util in JetBrains' platform-impl
+     */
+    @Suppress("unused") // unused receiver
+    val ApplicationThreadPool: CoroutineDispatcher
+        get() = ApplicationThreadPoolDispatcher
+
+    private object ApplicationThreadPoolDispatcher : CoroutineDispatcher() {
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            AppExecutorUtil.getAppExecutorService().execute(block)
+        }
+
+        override fun toString() = AppExecutorUtil.getAppExecutorService().toString()
     }
 }

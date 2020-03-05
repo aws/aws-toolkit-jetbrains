@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
+import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.amazon.awssdk.services.toolkittelemetry.model.Unit.MILLISECONDS
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
@@ -133,7 +134,9 @@ class DefaultTelemetryService(settings: AwsSettings) :
     }
 
     override fun sendFeedback(sentiment: Sentiment, comment: String) {
-        publisher.sendFeedback(sentiment, comment)
+        runBlocking {
+            publisher.sendFeedback(sentiment, comment)
+        }
     }
 
     private fun record(event: MetricEvent.Builder.() -> Unit): MetricEvent = record(TelemetryService.MetricEventMetadata(), event)
