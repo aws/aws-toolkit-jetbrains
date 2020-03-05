@@ -5,14 +5,13 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
-import kotlinx.coroutines.GlobalScope
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.openLogGroups
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.openLogGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 
 class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<LogGroup>(
@@ -41,6 +40,6 @@ class CloudWatchLogsNode(
     override fun displayName() = logGroupName
 
     override fun onDoubleClick() {
-        openLogGroups(nodeProject, logGroupName)
+        openLogGroup(nodeProject, logGroupName)
     }
 }

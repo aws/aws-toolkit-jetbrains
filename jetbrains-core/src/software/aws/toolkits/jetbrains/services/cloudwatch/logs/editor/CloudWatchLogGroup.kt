@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
@@ -32,13 +33,14 @@ import javax.swing.SortOrder
 import javax.swing.event.DocumentEvent
 import javax.swing.table.TableRowSorter
 
-class CloudWatchLogGroup(private val project: Project, private val cloudWatchLogsClient: CloudWatchLogsClient, private val logGroup: String) {
+class CloudWatchLogGroup(private val project: Project, private val logGroup: String) {
     val title = logGroup.split("/").last()
     lateinit var content: JPanel
-    lateinit var refreshButton: JButton
-    lateinit var groupsPanel: JBLoadingPanel
-    lateinit var locationInformation: JLabel
-    lateinit var filterField: JBTextField
+
+    private lateinit var refreshButton: JButton
+    private lateinit var groupsPanel: JBLoadingPanel
+    private lateinit var locationInformation: JLabel
+    private lateinit var filterField: JBTextField
 
     private val table: TableView<LogStream> = TableView(
         ListTableModel<LogStream>(
@@ -61,13 +63,14 @@ class CloudWatchLogGroup(private val project: Project, private val cloudWatchLog
             }
         }
     }
-    val rowSorter = object : TableRowSorter<ListTableModel<LogStream>>(table.listTableModel) {
+    private val rowSorter = object : TableRowSorter<ListTableModel<LogStream>>(table.listTableModel) {
         init {
             sortKeys = listOf(SortKey(1, SortOrder.DESCENDING))
             setSortable(0, false)
             setSortable(1, false)
         }
     }
+    private val client = project.awsClient<CloudWatchLogsClient>()
 
     private fun createUIComponents() {
         groupsPanel = JBLoadingPanel(BorderLayout(), project)
@@ -90,9 +93,8 @@ class CloudWatchLogGroup(private val project: Project, private val cloudWatchLog
             }
         })
 
-        refreshButton.isBorderPainted = false
-        refreshButton.isContentAreaFilled = false
         refreshButton.background = null
+        refreshButton.border = null
         refreshButton.icon = AllIcons.Actions.Refresh
         refreshButton.addActionListener { refresh() }
 
@@ -115,7 +117,7 @@ class CloudWatchLogGroup(private val project: Project, private val cloudWatchLog
     }
 
     private suspend fun populateModel() = withContext(Dispatchers.IO) {
-        val streams = cloudWatchLogsClient.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
+        val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
         streams.filterNotNull().firstOrNull()?.logStreams()?.let { runInEdt { table.tableViewModel.items = it } }
     }
 }

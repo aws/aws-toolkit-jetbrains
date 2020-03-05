@@ -13,17 +13,13 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWin
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsNode
 import software.aws.toolkits.resources.message
 
-class OpenLogGroups : SingleResourceNodeAction<CloudWatchLogsNode>(message("cloudwatch.logs.open")), DumbAware {
+class OpenLogGroup : SingleResourceNodeAction<CloudWatchLogsNode>(message("cloudwatch.logs.open")), DumbAware {
     override fun actionPerformed(selected: CloudWatchLogsNode, e: AnActionEvent) {
         // TODO subsequent PRs will fill this in
         println("this will open the window")
     }
 }
 
-fun openLogGroups(project: Project, logGroupName: String) {
-    GlobalScope.launch {
-        println("This will open another window")
-        val window = project?.let { CloudWatchLogWindow.getInstance(it) }
-        window?.showLogGroup(logGroupName)
-    }
+fun openLogGroup(project: Project, logGroupName: String) = GlobalScope.launch {
+    CloudWatchLogWindow.getInstance(project)?.showLogGroup(logGroupName)
 }
