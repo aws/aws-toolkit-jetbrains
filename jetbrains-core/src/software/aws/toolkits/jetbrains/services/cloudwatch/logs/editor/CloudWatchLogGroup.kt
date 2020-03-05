@@ -3,6 +3,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBTextField
@@ -26,7 +27,9 @@ import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.RowFilter
 import javax.swing.SortOrder
+import javax.swing.event.DocumentEvent
 import javax.swing.table.TableRowSorter
 
 class CloudWatchLogGroup(private val project: Project, private val cloudWatchLogsClient: CloudWatchLogsClient, private val logGroup: String) {
@@ -58,25 +61,38 @@ class CloudWatchLogGroup(private val project: Project, private val cloudWatchLog
             }
         }
     }
+    val rowSorter = object : TableRowSorter<ListTableModel<LogStream>>(table.listTableModel) {
+        init {
+            sortKeys = listOf(SortKey(1, SortOrder.DESCENDING))
+            setSortable(0, false)
+            setSortable(1, false)
+        }
+    }
 
     private fun createUIComponents() {
         groupsPanel = JBLoadingPanel(BorderLayout(), project)
     }
 
     init {
-        table.rowSorter = object : TableRowSorter<ListTableModel<LogStream>>(table.listTableModel) {
-            init {
-                sortKeys = listOf(SortKey(1, SortOrder.DESCENDING))
-                setSortable(0, false)
-                setSortable(1, false)
-            }
-        }
+        table.rowSorter = rowSorter
+        table.emptyText.text = message("cloudwatch.logs.no_log_groups")
         table.addMouseListener(doubleClickListener)
         locationInformation.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup"
         filterField.emptyText.text = message("cloudwatch.logs.filter_log_streams")
+        filterField.document.addDocumentListener(object : DocumentAdapter() {
+            override fun textChanged(e: DocumentEvent) {
+                val text = filterField.text
+                if (text.isNullOrBlank()) {
+                    rowSorter.rowFilter = null
+                } else {
+                    rowSorter.rowFilter = RowFilter.regexFilter(text)
+                }
+            }
+        })
 
         refreshButton.isBorderPainted = false
         refreshButton.isContentAreaFilled = false
+        refreshButton.background = null
         refreshButton.icon = AllIcons.Actions.Refresh
         refreshButton.addActionListener { refresh() }
 
