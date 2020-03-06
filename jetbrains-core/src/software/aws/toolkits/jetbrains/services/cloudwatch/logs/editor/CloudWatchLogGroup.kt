@@ -4,15 +4,18 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ListTableModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
@@ -22,6 +25,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -33,7 +37,7 @@ import javax.swing.RowFilter
 import javax.swing.SortOrder
 import javax.swing.event.DocumentEvent
 
-class CloudWatchLogGroup(private val project: Project, private val logGroup: String) {
+class CloudWatchLogGroup(private val project: Project, private val logGroup: String) : CoroutineScope by GlobalScope, Disposable {
     val title = logGroup.split("/").last()
     lateinit var content: JPanel
 
@@ -45,6 +49,8 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
     private lateinit var tableModel: ListTableModel<LogStream>
 
     private val client: CloudWatchLogsClient = project.awsClient()
+
+    private val edt = getCoroutineUiContext(disposable = this)
 
     private fun createUIComponents() {
         tableModel = ListTableModel(
@@ -70,9 +76,8 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
 
         styleRefreshButton()
 
-        refreshLogStreams()
+        launch { refreshLogStreams() }
     }
-
 
     private fun buildStreamSearchListener(table: JBTable) = object : DocumentAdapter() {
         override fun textChanged(e: DocumentEvent) {
@@ -94,7 +99,7 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
             val row = table.rowAtPoint(e.point).takeIf { it >= 0 } ?: return
             val logStream = table.getValueAt(row, 0) as? String ?: return
             val window = CloudWatchLogWindow.getInstance(project)
-            GlobalScope.launch {
+            launch {
                 window.showLog(logGroup, logStream)
             }
         }
@@ -104,23 +109,30 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
         refreshButton.background = null
         refreshButton.border = null
         refreshButton.icon = AllIcons.Actions.Refresh
-        refreshButton.addActionListener { refreshLogStreams() }
+        refreshButton.addActionListener { launch { refreshLogStreams() } }
     }
 
-    private fun refreshLogStreams() {
-        runInEdt {
+    private suspend fun refreshLogStreams() {
+        withContext(edt) {
             groupTable.setPaintBusy(true)
         }
-        GlobalScope.launch {
-            populateModel()
-            runInEdt {
-                groupTable.setPaintBusy(false)
-            }
+        populateModel()
+        withContext(edt) {
+            groupTable.setPaintBusy(false)
         }
     }
 
     private suspend fun populateModel() = withContext(Dispatchers.IO) {
         val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-        streams.filterNotNull().firstOrNull()?.logStreams()?.let { runInEdt { tableModel.addRows(it) } }
+        streams.filterNotNull().firstOrNull()?.logStreams()?.let {
+            withContext(edt) { tableModel.addRows(it) }
+        }
+    }
+
+    override fun dispose() {
+        // FIX_WHEN_MIN_IS_193 we can use the same cancellation as the UI components in 2019.3+. Until then,
+        // Add this explicit cancelChildren
+        coroutineContext.cancelChildren()
+        coroutineContext.cancel()
     }
 }
