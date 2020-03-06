@@ -12,7 +12,6 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
@@ -26,6 +25,7 @@ import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.utils.runUnlessDisposed
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -122,7 +122,7 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
         }
     }
 
-    private suspend fun populateModel() = withContext(Dispatchers.IO) {
+    private suspend fun populateModel() = runUnlessDisposed {
         val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
         streams.filterNotNull().firstOrNull()?.logStreams()?.let {
             withContext(edt) { tableModel.addRows(it) }

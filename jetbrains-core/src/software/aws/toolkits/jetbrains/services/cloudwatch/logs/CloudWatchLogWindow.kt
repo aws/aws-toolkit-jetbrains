@@ -10,8 +10,8 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
+import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogGroup
 import software.aws.toolkits.resources.message
 
@@ -28,7 +28,7 @@ class CloudWatchLogWindow(private val project: Project) {
         }
         val group = CloudWatchLogGroup(project, logGroup)
         runInEdt {
-            toolWindow.addTab(title = group.title, component = group.content, activate = true, id = logGroup)
+            toolWindow.addTab(title = group.title, component = group.content, activate = true, id = logGroup, disposable = group)
         }
     }
 
