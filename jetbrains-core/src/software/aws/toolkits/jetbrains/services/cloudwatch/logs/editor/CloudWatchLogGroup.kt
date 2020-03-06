@@ -125,7 +125,7 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
     private suspend fun populateModel() = runUnlessDisposed {
         val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
         streams.filterNotNull().firstOrNull()?.logStreams()?.let {
-            withContext(edt) { tableModel.addRows(it) }
+            withContext(edt) { tableModel.items = it }
         }
     }
 
