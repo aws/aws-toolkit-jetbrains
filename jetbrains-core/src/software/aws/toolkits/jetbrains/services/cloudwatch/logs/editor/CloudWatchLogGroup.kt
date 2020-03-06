@@ -14,17 +14,19 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.runUnlessDisposed
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseAdapter
@@ -123,16 +125,25 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
     }
 
     private suspend fun populateModel() = runUnlessDisposed {
-        val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-        streams.filterNotNull().firstOrNull()?.logStreams()?.let {
-            withContext(edt) { tableModel.items = it }
+        try {
+            val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
+            streams.filterNotNull().firstOrNull()?.logStreams()?.let {
+                withContext(edt) { tableModel.items = it }
+            }
+        } catch (e: Exception) {
+            val errorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
+            LOG.error(e) { errorMessage }
+            notifyError(title = errorMessage, project = project)
         }
     }
 
     override fun dispose() {
         // FIX_WHEN_MIN_IS_193 we can use the same cancellation as the UI components in 2019.3+. Until then,
-        // Add this explicit cancelChildren
-        coroutineContext.cancelChildren()
+        // Add this cancel
         coroutineContext.cancel()
+    }
+
+    companion object {
+        val LOG = getLogger<CloudWatchLogGroup>()
     }
 }
