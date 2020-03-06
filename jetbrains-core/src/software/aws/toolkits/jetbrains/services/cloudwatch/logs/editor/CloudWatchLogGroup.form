@@ -8,14 +8,6 @@
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="97588" class = "com.intellij.ui.components.JBLoadingPanel" binding="groupsPanel" custom-create="true" layout-manager="BorderLayout" hgap="0" vgap="0">
-        <constraints>
-          <grid row="2" column="0" row-span="1" col-span="4" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
-        <border type="none"/>
-        <children/>
-      </grid>
       <component id="c43d5" class="javax.swing.JLabel" binding="locationInformation">
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="4" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -53,6 +45,14 @@
         <properties>
           <text value=""/>
         </properties>
+      </component>
+      <component id="baa18" class="javax.swing.JScrollPane" binding="tableScroll" custom-create="true">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="4" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="50"/>
+          </grid>
+        </constraints>
+        <properties/>
       </component>
     </children>
   </grid>

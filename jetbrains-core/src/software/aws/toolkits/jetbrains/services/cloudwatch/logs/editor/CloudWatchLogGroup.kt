@@ -8,9 +8,8 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBTextField
-import com.intellij.ui.table.TableView
+import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -24,7 +23,6 @@ import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.resources.message
-import java.awt.BorderLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JButton
@@ -40,47 +38,43 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
     lateinit var content: JPanel
 
     private lateinit var refreshButton: JButton
-    private lateinit var groupsPanel: JBLoadingPanel
     private lateinit var locationInformation: JLabel
     private lateinit var filterField: JBTextField
+    private lateinit var tableScroll: JScrollPane
+    private lateinit var groupTable: JBTable
+    private lateinit var tableModel: ListTableModel<LogStream>
 
-    private val table: TableView<LogStream>
-    private val scrollPane: JScrollPane
     private val client: CloudWatchLogsClient = project.awsClient()
 
     private fun createUIComponents() {
-        groupsPanel = JBLoadingPanel(BorderLayout(), project)
+        tableModel = ListTableModel(
+            arrayOf(CloudWatchLogsStreamsColumn(), CloudWatchLogsStreamsColumnDate()),
+            mutableListOf<LogStream>(),
+            1,
+            SortOrder.ASCENDING
+        )
+        groupTable = JBTable(tableModel).apply {
+            setPaintBusy(true)
+            autoscrolls = true
+        }
+        groupTable.rowSorter = LogGroupTableSorter(tableModel)
+        groupTable.emptyText.text = message("cloudwatch.logs.no_log_groups")
+        groupTable.addMouseListener(buildMouseListener(groupTable))
+        tableScroll = ScrollPaneFactory.createScrollPane(groupTable)
     }
 
     init {
-        table = buildLogGroupTable()
-        scrollPane = ScrollPaneFactory.createScrollPane(table)
         locationInformation.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup"
         filterField.emptyText.text = message("cloudwatch.logs.filter_log_streams")
-        filterField.document.addDocumentListener(buildStreamSearchListener(table))
+        filterField.document.addDocumentListener(buildStreamSearchListener(groupTable))
 
         styleRefreshButton()
-        groupsPanel.add(scrollPane)
 
         refreshLogStreams()
     }
 
-    private fun buildLogGroupTable(): TableView<LogStream> {
-        val tableView = TableView(
-            ListTableModel<LogStream>(
-                arrayOf(CloudWatchLogsStreamsColumn(), CloudWatchLogsStreamsColumnDate()),
-                listOf<LogStream>(),
-                1,
-                SortOrder.ASCENDING
-            )
-        )
-        tableView.rowSorter = LogGroupTableSorter(tableView.listTableModel)
-        tableView.emptyText.text = message("cloudwatch.logs.no_log_groups")
-        tableView.addMouseListener(buildMouseListener(tableView))
-        return tableView
-    }
 
-    private fun buildStreamSearchListener(table: TableView<*>) = object : DocumentAdapter() {
+    private fun buildStreamSearchListener(table: JBTable) = object : DocumentAdapter() {
         override fun textChanged(e: DocumentEvent) {
             val text = filterField.text
             val sorter = (table.rowSorter as LogGroupTableSorter)
@@ -92,15 +86,16 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
         }
     }
 
-    private fun buildMouseListener(tableView: TableView<LogStream>) = object : MouseAdapter() {
+    private fun buildMouseListener(table: JBTable) = object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent) {
             if (e.clickCount < 2 || e.button != MouseEvent.BUTTON1) {
                 return
             }
-            val row = tableView.rowAtPoint(e.point).takeIf { it >= 0 } ?: return
+            val row = table.rowAtPoint(e.point).takeIf { it >= 0 } ?: return
+            val logStream = table.getValueAt(row, 0) as? String ?: return
             val window = CloudWatchLogWindow.getInstance(project)
             GlobalScope.launch {
-                window.showLog(logGroup, tableView.getRow(row).logStreamName())
+                window.showLog(logGroup, logStream)
             }
         }
     }
@@ -114,18 +109,18 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
 
     private fun refreshLogStreams() {
         runInEdt {
-            groupsPanel.startLoading()
+            groupTable.setPaintBusy(true)
         }
         GlobalScope.launch {
             populateModel()
             runInEdt {
-                groupsPanel.stopLoading()
+                groupTable.setPaintBusy(false)
             }
         }
     }
 
     private suspend fun populateModel() = withContext(Dispatchers.IO) {
         val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-        streams.filterNotNull().firstOrNull()?.logStreams()?.let { runInEdt { table.tableViewModel.items = it } }
+        streams.filterNotNull().firstOrNull()?.logStreams()?.let { runInEdt { tableModel.addRows(it) } }
     }
 }
