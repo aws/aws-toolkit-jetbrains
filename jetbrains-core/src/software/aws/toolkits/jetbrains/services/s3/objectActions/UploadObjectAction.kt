@@ -6,8 +6,6 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
@@ -21,17 +19,8 @@ class UploadObjectAction(private val project: Project, treeTable: S3TreeTable) :
         val chooserDialog = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
         val filesChosen = chooserDialog.choose(project, null).toList()
 
-        if (filesChosen.isEmpty()) {
-            LOG.info { "No files were chosen to be uploaded to S3, skipping attempted upload" }
-            return
-        }
-
         treeTable.uploadAndRefresh(filesChosen, node)
     }
 
     override fun enabled(node: S3TreeNode): Boolean = node is S3TreeDirectoryNode
-
-    companion object {
-        private val LOG = getLogger<UploadObjectAction>()
-    }
 }

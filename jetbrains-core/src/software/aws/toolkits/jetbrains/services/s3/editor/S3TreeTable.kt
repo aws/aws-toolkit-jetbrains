@@ -61,11 +61,6 @@ class S3TreeTable(
                 lfs.findFileByIoFile(it)
             }
 
-            if (virtualFiles.isEmpty()) {
-                LOG.info { "0 files were dragged and dropped onto the S3 view, skipping attempted upload" }
-                return
-            }
-
             uploadAndRefresh(virtualFiles, node)
         }
     }
