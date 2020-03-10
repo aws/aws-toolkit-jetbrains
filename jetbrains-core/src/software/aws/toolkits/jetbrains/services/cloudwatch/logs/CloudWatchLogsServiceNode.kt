@@ -11,7 +11,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.openLogGroup
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 
 class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<LogGroup>(
@@ -25,7 +25,7 @@ class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNod
 class CloudWatchLogsNode(
     project: Project,
     val arn: String,
-    private val logGroupName: String
+    val logGroupName: String
 ) : AwsExplorerResourceNode<String>(
     project,
     CloudWatchLogsClient.SERVICE_NAME,
@@ -40,6 +40,6 @@ class CloudWatchLogsNode(
     override fun displayName() = logGroupName
 
     override fun onDoubleClick() {
-        openLogGroup(nodeProject, logGroupName)
+        OpenLogGroup.openLogGroup(nodeProject, logGroupName)
     }
 }
