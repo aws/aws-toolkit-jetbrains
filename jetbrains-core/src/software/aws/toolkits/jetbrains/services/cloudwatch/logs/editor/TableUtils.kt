@@ -13,6 +13,8 @@ import javax.swing.table.TableRowSorter
 
 class CloudWatchLogsStreamsColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
     override fun valueOf(item: LogStream?): String? = item?.logStreamName()
+
+    override fun isCellEditable(item: LogStream?): Boolean = false
 }
 
 class CloudWatchLogsStreamsColumnDate : ColumnInfo<LogStream, String>(message("cloudwatch.logs.last_event_time")) {
@@ -22,6 +24,8 @@ class CloudWatchLogsStreamsColumnDate : ColumnInfo<LogStream, String>(message("c
         val time = DateFormatUtil.getTimeFormat().format(timestamp)
         return "$date $time"
     }
+
+    override fun isCellEditable(item: LogStream?): Boolean = false
 }
 
 class LogGroupTableSorter(model: ListTableModel<LogStream>) : TableRowSorter<ListTableModel<LogStream>>(model) {

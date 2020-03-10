@@ -12,7 +12,6 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -25,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.runUnlessDisposed
@@ -39,8 +39,11 @@ import javax.swing.RowFilter
 import javax.swing.SortOrder
 import javax.swing.event.DocumentEvent
 
-class CloudWatchLogGroup(private val project: Project, private val logGroup: String) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
-    val title = logGroup.split("/").last()
+class CloudWatchLogGroup(
+    private val project: Project,
+    private val logGroup: String
+) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
+    val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
     lateinit var content: JPanel
 
     private lateinit var refreshButton: JButton
@@ -58,13 +61,14 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
         tableModel = ListTableModel(
             arrayOf(CloudWatchLogsStreamsColumn(), CloudWatchLogsStreamsColumnDate()),
             mutableListOf<LogStream>(),
-            1,
-            SortOrder.ASCENDING
+            // To display and sort by different values, we sort the model's values instead
+            -1,
+            SortOrder.UNSORTED
         )
         groupTable = JBTable(tableModel).apply {
             setPaintBusy(true)
-            emptyText.text = message("loading_resource.loading")
             autoscrolls = true
+            emptyText.text = message("loading_resource.loading")
         }
         groupTable.rowSorter = LogGroupTableSorter(tableModel)
 
@@ -129,7 +133,7 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
     private suspend fun populateModel() = runUnlessDisposed {
         try {
             val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-            streams.filterNotNull().firstOrNull()?.logStreams()?.let {
+            streams.filterNotNull().firstOrNull()?.logStreams()?.sortedBy { it.lastEventTimestamp() }?.let {
                 withContext(edt) { tableModel.items = it }
             }
         } catch (e: Exception) {
