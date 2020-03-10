@@ -12,11 +12,11 @@ import com.intellij.testFramework.PlatformTestCase
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.util.concurrency.AppExecutorUtil
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.tryOrNull
 import java.io.File
 import java.nio.file.Path
-import kotlin.coroutines.CoroutineContext
 
 /**
  * A set of functions that attempt to abstract API differences that are incompatible between IDEA versions.
@@ -86,13 +86,5 @@ object CompatibilityUtils {
      */
     @Suppress("unused") // unused receiver
     val ApplicationThreadPool: CoroutineDispatcher
-        get() = ApplicationThreadPoolDispatcher
-
-    private object ApplicationThreadPoolDispatcher : CoroutineDispatcher() {
-        override fun dispatch(context: CoroutineContext, block: Runnable) {
-            AppExecutorUtil.getAppExecutorService().execute(block)
-        }
-
-        override fun toString() = AppExecutorUtil.getAppExecutorService().toString()
-    }
+        get() = AppExecutorUtil.getAppExecutorService().asCoroutineDispatcher()
 }
