@@ -55,7 +55,7 @@ class CloudWatchLogGroup(
 
     private val client: CloudWatchLogsClient = project.awsClient()
 
-    private val edt = getCoroutineUiContext(disposable = this)
+    private val edtContext = getCoroutineUiContext(disposable = this)
 
     private fun createUIComponents() {
         tableModel = ListTableModel(
@@ -120,11 +120,11 @@ class CloudWatchLogGroup(
     }
 
     private suspend fun refreshLogStreams() {
-        withContext(edt) {
+        withContext(edtContext) {
             groupTable.setPaintBusy(true)
         }
         populateModel()
-        withContext(edt) {
+        withContext(edtContext) {
             groupTable.emptyText.text = message("cloudwatch.logs.no_log_groups")
             groupTable.setPaintBusy(false)
         }
@@ -134,7 +134,7 @@ class CloudWatchLogGroup(
         try {
             val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
             streams.filterNotNull().firstOrNull()?.logStreams()?.sortedBy { it.lastEventTimestamp() }?.let {
-                withContext(edt) { tableModel.items = it }
+                withContext(edtContext) { tableModel.items = it }
             }
         } catch (e: Exception) {
             val errorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)

@@ -8,26 +8,29 @@ import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogGroup
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
 class CloudWatchLogWindow(private val project: Project) {
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, CW_LOGS_TOOL_WINDOW)
+    private val edtContext = getCoroutineUiContext()
 
-    fun showLogGroup(logGroup: String) {
+    suspend fun showLogGroup(logGroup: String) {
         val existingWindow = toolWindow.find(logGroup)
         if (existingWindow != null) {
-            runInEdt {
+            withContext(edtContext) {
                 existingWindow.show()
             }
             return
         }
         val group = CloudWatchLogGroup(project, logGroup)
-        runInEdt {
+        withContext(edtContext) {
             toolWindow.addTab(title = group.title, component = group.content, activate = true, id = logGroup, disposable = group)
         }
     }
