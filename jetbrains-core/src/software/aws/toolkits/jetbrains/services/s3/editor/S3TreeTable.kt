@@ -19,6 +19,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.s3.objectActions.deleteSelectedObjects
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -58,6 +59,11 @@ class S3TreeTable(
             val lfs = LocalFileSystem.getInstance()
             val virtualFiles = data.mapNotNull {
                 lfs.findFileByIoFile(it)
+            }
+
+            if (virtualFiles.isEmpty()) {
+                LOG.info { "0 files were dragged and dropped onto the S3 view, skipping attempted upload" }
+                return
             }
 
             uploadAndRefresh(virtualFiles, node)
@@ -145,6 +151,10 @@ class S3TreeTable(
     }
 
     fun uploadAndRefresh(selectedFiles: List<VirtualFile>, node: S3TreeNode) {
+        if (selectedFiles.isEmpty()) {
+            LOG.warn { "Zero files passed into s3 uploadAndRefresh, not attempting upload or refresh" }
+            return
+        }
         GlobalScope.launch {
             try {
                 selectedFiles.forEach {
