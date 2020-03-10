@@ -4,9 +4,7 @@
 package software.aws.toolkits.jetbrains.ui.feedback
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.AppUIExecutor
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -20,6 +18,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
@@ -40,15 +39,15 @@ class FeedbackDialog(private val project: Project) : DialogWrapper(project), Cor
             val sentiment = panel.sentiment ?: throw IllegalStateException("sentiment was null after validation")
             val comment = panel.comment ?: throw IllegalStateException("comment was null after validation")
             launch(coroutineContext) {
-                val edtDispatcher = AppUIExecutor.onUiThread(ModalityState.stateForComponent(panel.panel)).coroutineDispatchingContext()
+                val edtContext = getCoroutineUiContext(ModalityState.stateForComponent(panel.panel))
                 try {
                     TelemetryService.getInstance().sendFeedback(sentiment, comment)
-                    withContext(edtDispatcher) {
+                    withContext(edtContext) {
                         close(OK_EXIT_CODE)
                     }
                     notifyInfo(message("aws.notification.title"), message("feedback.submit_success"), project)
                 } catch (e: Exception) {
-                    withContext(edtDispatcher) {
+                    withContext(edtContext) {
                         Messages.showMessageDialog(panel.panel, message("feedback.submit_failed", e), message("feedback.submit_failed_title"), null)
                         setOKButtonText(message("feedback.submit_button"))
                         isOKActionEnabled = true
