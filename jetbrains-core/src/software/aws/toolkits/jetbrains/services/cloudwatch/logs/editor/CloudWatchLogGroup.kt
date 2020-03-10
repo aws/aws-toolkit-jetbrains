@@ -39,7 +39,7 @@ import javax.swing.RowFilter
 import javax.swing.SortOrder
 import javax.swing.event.DocumentEvent
 
-class CloudWatchLogGroup(private val project: Project, private val logGroup: String) : CoroutineScope by GlobalScope, Disposable {
+class CloudWatchLogGroup(private val project: Project, private val logGroup: String) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
     val title = logGroup.split("/").last()
     lateinit var content: JPanel
 
@@ -63,10 +63,11 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
         )
         groupTable = JBTable(tableModel).apply {
             setPaintBusy(true)
+            emptyText.text = message("loading_resource.loading")
             autoscrolls = true
         }
         groupTable.rowSorter = LogGroupTableSorter(tableModel)
-        groupTable.emptyText.text = message("cloudwatch.logs.no_log_groups")
+
         groupTable.addMouseListener(buildMouseListener(groupTable))
         tableScroll = ScrollPaneFactory.createScrollPane(groupTable)
     }
@@ -120,6 +121,7 @@ class CloudWatchLogGroup(private val project: Project, private val logGroup: Str
         }
         populateModel()
         withContext(edt) {
+            groupTable.emptyText.text = message("cloudwatch.logs.no_log_groups")
             groupTable.setPaintBusy(false)
         }
     }
