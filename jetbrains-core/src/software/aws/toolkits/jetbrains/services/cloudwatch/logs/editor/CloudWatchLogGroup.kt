@@ -64,7 +64,7 @@ class CloudWatchLogGroup(
 
     private fun createUIComponents() {
         tableModel = ListTableModel(
-            arrayOf(CloudWatchLogsStreamsColumn(), CloudWatchLogsStreamsColumnDate()),
+            arrayOf(LogStreamsColumn(), LogStreamsDateColumn()),
             mutableListOf<LogStream>(),
             // To display and sort by different values, we sort the model's values instead
             -1,

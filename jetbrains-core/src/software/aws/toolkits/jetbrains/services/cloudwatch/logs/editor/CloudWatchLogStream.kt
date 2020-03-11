@@ -4,13 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
-import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ColumnInfo
@@ -63,13 +58,13 @@ class CloudWatchLogStream(
     private var logStreamingJob: Deferred<*>? = null
 
     private lateinit var defaultColumnInfo: Array<ColumnInfo<OutputLogEvent, String>>
-    private val wrappingColumnInfo = arrayOf(CloudWatchLogStreamColumnDate(), CloudWatchLogStreamWrappingColumn())
+    private val wrappingColumnInfo = arrayOf(LogStreamColumnDate(), LogStreamWrappingColumn())
 
     private lateinit var logsTable: JBTable
     private val logStreamClient = CloudWatchLogStreamClient(project, logGroup, logStream)
 
     private fun createUIComponents() {
-        defaultColumnInfo = arrayOf(CloudWatchLogStreamColumnDate(), CloudWatchLogStreamColumn())
+        defaultColumnInfo = arrayOf(LogStreamColumnDate(), LogStreamColumn())
 
         val model = ListTableModel<OutputLogEvent>(defaultColumnInfo, mutableListOf<OutputLogEvent>())
         logsTable = JBTable(model).apply {

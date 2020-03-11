@@ -16,13 +16,13 @@ import javax.swing.SortOrder
 import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
 
-class CloudWatchLogsStreamsColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
+class LogStreamsColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
     override fun valueOf(item: LogStream?): String? = item?.logStreamName()
 
     override fun isCellEditable(item: LogStream?): Boolean = false
 }
 
-class CloudWatchLogsStreamsColumnDate : ColumnInfo<LogStream, String>(message("cloudwatch.logs.last_event_time")) {
+class LogStreamsDateColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.last_event_time")) {
     override fun valueOf(item: LogStream?): String? {
         val timestamp = item?.lastEventTimestamp() ?: return null
         return DateFormatUtil.getDateTimeFormat().format(timestamp)
@@ -33,29 +33,27 @@ class CloudWatchLogsStreamsColumnDate : ColumnInfo<LogStream, String>(message("c
 
 class LogGroupTableSorter(model: ListTableModel<LogStream>) : TableRowSorter<ListTableModel<LogStream>>(model) {
     init {
-        sortKeys = listOf(SortKey(1, SortOrder.DESCENDING))
+        sortKeys = listOf(SortKey(1, SortOrder.UNSORTED))
         setSortable(0, false)
         setSortable(1, false)
     }
 }
 
-class CloudWatchLogStreamColumnDate : ColumnInfo<OutputLogEvent, String>(message("general.time")) {
+class LogStreamColumnDate : ColumnInfo<OutputLogEvent, String>(message("general.time")) {
     override fun valueOf(item: OutputLogEvent?): String? {
         val timestamp = item?.timestamp() ?: return null
-        val date = DateFormatUtil.getDateFormat().format(timestamp)
-        val time = DateFormatUtil.getTimeFormat().format(timestamp)
-        return "$date $time"
+        return DateFormatUtil.getDateTimeFormat().format(timestamp)
     }
 
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
 
-class CloudWatchLogStreamColumn : ColumnInfo<OutputLogEvent, String>("message <change this is not localized>") {
+class LogStreamColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
     override fun valueOf(item: OutputLogEvent?): String? = item?.message()
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
 
-class CloudWatchLogStreamWrappingColumn : ColumnInfo<OutputLogEvent, String>("message <change this is not localized>") {
+class LogStreamWrappingColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
     override fun valueOf(item: OutputLogEvent?): String? = item?.message()
 
     override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = object : JBTextArea(), TableCellRenderer {
@@ -72,7 +70,7 @@ class CloudWatchLogStreamWrappingColumn : ColumnInfo<OutputLogEvent, String>("me
             row: Int,
             column: Int
         ): Component {
-            text = value.toString().trimEnd()
+            text = (value as? String)?.trim() ?: return this
             setSize(table.columnModel.getColumn(column).width, preferredSize.height)
             if (table.getRowHeight(row) != preferredSize.height) {
                 table.setRowHeight(row, preferredSize.height)
