@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.Cell
+import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import kotlinx.coroutines.GlobalScope
@@ -33,7 +34,6 @@ import java.awt.dnd.DropTargetAdapter
 import java.awt.dnd.DropTargetDropEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
-import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
 import javax.swing.tree.DefaultMutableTreeNode
@@ -65,14 +65,19 @@ class S3TreeTable(
         }
     }
 
-    private val doubleClickListener = object : MouseAdapter() {
-        override fun mouseClicked(e: MouseEvent) {
-            if (e.clickCount < 2 || e.button != MouseEvent.BUTTON1) {
-                return
-            }
-            val row = rowAtPoint(e.point).takeIf { it >= 0 } ?: return
-            handleOpeningFile(row)
-            handleLoadingMore(row)
+    private val openFileListener = object : DoubleClickListener() {
+        override fun onDoubleClick(e: MouseEvent?): Boolean {
+            e ?: return false
+            val row = rowAtPoint(e.point).takeIf { it >= 0 } ?: return false
+            return handleOpeningFile(row)
+        }
+    }
+
+    private val loadMoreListener = object : DoubleClickListener() {
+        override fun onDoubleClick(e: MouseEvent?): Boolean {
+            e ?: return false
+            val row = rowAtPoint(e.point).takeIf { it >= 0 } ?: return false
+            return handleLoadingMore(row)
         }
     }
 
@@ -91,11 +96,11 @@ class S3TreeTable(
         }
     }
 
-    private fun handleOpeningFile(row: Int) {
-        val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return
+    private fun handleOpeningFile(row: Int): Boolean {
+        val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return false
         if (objectNode.size > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE) {
             notifyError(message("s3.open.file_too_big", StringUtil.formatFileSize(S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE.toLong())))
-            return
+            return true
         }
         val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}"))
         // set the file to not be read only so that the S3Client can write to the file
@@ -119,16 +124,19 @@ class S3TreeTable(
                 }
             }
         }
+        return true
     }
 
-    private fun handleLoadingMore(row: Int) {
-        val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeContinuationNode ?: return
-        val parent = continuationNode.parent ?: return
+    private fun handleLoadingMore(row: Int): Boolean {
+        val continuationNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeContinuationNode ?: return false
+        val parent = continuationNode.parent ?: return false
 
-        ApplicationManager.getApplication().executeOnPooledThread {
+        GlobalScope.launch {
             parent.loadMore(continuationNode.token)
             refresh()
         }
+
+        return true
     }
 
     init {
@@ -141,7 +149,8 @@ class S3TreeTable(
                 else -> obj.toString()
             }
         }
-        super.addMouseListener(doubleClickListener)
+        loadMoreListener.installOn(this)
+        openFileListener.installOn(this)
         super.addKeyListener(keyListener)
     }
 
