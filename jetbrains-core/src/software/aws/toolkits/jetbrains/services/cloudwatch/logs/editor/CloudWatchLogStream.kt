@@ -27,8 +27,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogStreamClient
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditor
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -134,7 +132,7 @@ class CloudWatchLogStream(
             }
         }
         setUpTemporaryButtons()
-        addActions()
+        // addActions()
     }
 
     private fun setUpTemporaryButtons() {
@@ -177,6 +175,7 @@ class CloudWatchLogStream(
         }
     }
 
+    /* will be added in the next PR but less annoying to comment out
     private fun addActions() {
         val actionGroup = DefaultActionGroup()
         actionGroup.add(OpenCurrentInEditor(project, logStream, logsTable.logsModel))
@@ -189,6 +188,7 @@ class CloudWatchLogStream(
             ActionManager.getInstance()
         )
     }
+    */
 
     override fun dispose() {}
 
