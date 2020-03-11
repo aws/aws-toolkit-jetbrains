@@ -101,7 +101,7 @@ class S3TreeTable(
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return false
         val maxFileSize = getUserContentLoadLimit()
         if (objectNode.size > maxFileSize) {
-            notifyError(message("s3.open.file_too_big", StringUtil.formatFileSize(maxFileSize.toLong())))
+            notifyError(content = message("s3.open.file_too_big", StringUtil.formatFileSize(maxFileSize.toLong())))
             return true
         }
         val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}"))
