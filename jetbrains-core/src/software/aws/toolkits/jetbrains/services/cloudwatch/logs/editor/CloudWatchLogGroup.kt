@@ -5,10 +5,15 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
+
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.DoubleClickListener
+import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
@@ -25,6 +30,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogStreamInEditor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -82,6 +88,7 @@ class CloudWatchLogGroup(
         filterField.document.addDocumentListener(buildStreamSearchListener(groupTable))
 
         styleRefreshButton()
+        addActions()
 
         launch { refreshLogStreams() }
     }
@@ -105,9 +112,7 @@ class CloudWatchLogGroup(
                 val row = table.selectedRow.takeIf { it >= 0 } ?: return false
                 val logStream = table.getValueAt(row, 0) as? String ?: return false
                 val window = CloudWatchLogWindow.getInstance(project)
-                launch {
-                    window.showLog(logGroup, logStream)
-                }
+                window.showLogStream(logGroup, logStream)
                 return true
             }
         }.installOn(table)
@@ -129,6 +134,17 @@ class CloudWatchLogGroup(
             groupTable.emptyText.text = message("cloudwatch.logs.no_log_groups")
             groupTable.setPaintBusy(false)
         }
+    }
+
+    private fun addActions() {
+        val actionGroup = DefaultActionGroup()
+        actionGroup.addAction(OpenLogStreamInEditor(project, logGroup, groupTable))
+        PopupHandler.installPopupHandler(
+            groupTable,
+            actionGroup,
+            ActionPlaces.EDITOR_POPUP,
+            ActionManager.getInstance()
+        )
     }
 
     private suspend fun populateModel() = runUnlessDisposed(this) {
