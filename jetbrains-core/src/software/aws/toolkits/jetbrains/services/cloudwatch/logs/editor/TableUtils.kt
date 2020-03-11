@@ -20,9 +20,7 @@ class CloudWatchLogsStreamsColumn : ColumnInfo<LogStream, String>(message("cloud
 class CloudWatchLogsStreamsColumnDate : ColumnInfo<LogStream, String>(message("cloudwatch.logs.last_event_time")) {
     override fun valueOf(item: LogStream?): String? {
         val timestamp = item?.lastEventTimestamp() ?: return null
-        val date = DateFormatUtil.getDateFormat().format(timestamp)
-        val time = DateFormatUtil.getTimeFormat().format(timestamp)
-        return "$date $time"
+        return DateFormatUtil.getDateTimeFormat().format(timestamp)
     }
 
     override fun isCellEditable(item: LogStream?): Boolean = false

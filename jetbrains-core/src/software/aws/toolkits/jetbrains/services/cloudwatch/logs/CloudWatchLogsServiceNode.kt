@@ -11,7 +11,6 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 
 class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<LogGroup>(
@@ -40,6 +39,6 @@ class CloudWatchLogsNode(
     override fun displayName() = logGroupName
 
     override fun onDoubleClick() {
-        OpenLogGroup.openLogGroup(nodeProject, logGroupName)
+        CloudWatchLogWindow.getInstance(nodeProject)?.showLogGroup(logGroupName)
     }
 }
