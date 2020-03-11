@@ -13,6 +13,7 @@ import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.util.ui.ColumnInfo;
+import com.intellij.ui.ClickListener;
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -22,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
+import org.jetbrains.annotations.NotNull;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
@@ -130,13 +132,18 @@ public class S3ViewerPanel {
     }
 
     private void clearSelectionOnWhiteSpace() {
-        mainPanel.addMouseListener(new MouseAdapter() {
+        new ClickListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                if (!treeTable.contains(e.getPoint())) {
-                    treeTable.clearSelection();
+            public boolean onClick(@NotNull MouseEvent e, int clickCount) {
+                if(clickCount != 1) {
+                    return false;
                 }
+                if (treeTable.rowAtPoint(e.getPoint()) < 0) {
+                    treeTable.clearSelection();
+                    return true;
+                }
+                return false;
             }
-        });
+        }.installOn(treeTable);
     }
 }
