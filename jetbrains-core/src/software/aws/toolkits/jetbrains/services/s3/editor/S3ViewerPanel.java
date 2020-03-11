@@ -9,13 +9,12 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.ClickListener;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.util.ui.ColumnInfo;
-import com.intellij.ui.ClickListener;
 import java.awt.BorderLayout;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -135,7 +134,7 @@ public class S3ViewerPanel {
         new ClickListener() {
             @Override
             public boolean onClick(@NotNull MouseEvent e, int clickCount) {
-                if(clickCount != 1) {
+                if (clickCount != 1) {
                     return false;
                 }
                 if (treeTable.rowAtPoint(e.getPoint()) < 0) {
