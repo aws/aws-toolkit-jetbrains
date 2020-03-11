@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileTypes.ex.FileTypeChooser
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt.getUserContentLoadLimit
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -67,16 +68,14 @@ class S3TreeTable(
 
     private val openFileListener = object : DoubleClickListener() {
         override fun onDoubleClick(e: MouseEvent?): Boolean {
-            e ?: return false
-            val row = rowAtPoint(e.point).takeIf { it >= 0 } ?: return false
+            val row = selectedRow.takeIf { it >= 0 } ?: return false
             return handleOpeningFile(row)
         }
     }
 
     private val loadMoreListener = object : DoubleClickListener() {
         override fun onDoubleClick(e: MouseEvent?): Boolean {
-            e ?: return false
-            val row = rowAtPoint(e.point).takeIf { it >= 0 } ?: return false
+            val row = selectedRow.takeIf { it >= 0 } ?: return false
             return handleLoadingMore(row)
         }
     }
@@ -98,8 +97,9 @@ class S3TreeTable(
 
     private fun handleOpeningFile(row: Int): Boolean {
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return false
-        if (objectNode.size > S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE) {
-            notifyError(message("s3.open.file_too_big", StringUtil.formatFileSize(S3TreeObjectNode.MAX_FILE_SIZE_TO_OPEN_IN_IDE.toLong())))
+        val maxFileSize = getUserContentLoadLimit()
+        if (objectNode.size > maxFileSize) {
+            notifyError(message("s3.open.file_too_big", StringUtil.formatFileSize(maxFileSize.toLong())))
             return true
         }
         val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}"))
