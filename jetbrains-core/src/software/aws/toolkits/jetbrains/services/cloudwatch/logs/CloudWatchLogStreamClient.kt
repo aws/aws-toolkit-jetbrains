@@ -25,19 +25,33 @@ class CloudWatchLogStreamClient(
     private val loadingBackwardEvent: AtomicBoolean = AtomicBoolean(false)
 
     suspend fun loadInitialAround(startTime: Long, timeScale: Long): List<OutputLogEvent> {
-        val request = GetLogEventsRequest
-            .builder()
-            .logGroupName(logGroup)
-            .logStreamName(logStream)
-            .startTime(startTime - timeScale)
-            .endTime(startTime + timeScale)
-            .build()
-        return load(request, saveForwardToken = true, saveBackwardToken = true)
+        try {
+            loadingForwardEvent.set(true)
+            loadingBackwardEvent.set(true)
+            val request = GetLogEventsRequest
+                .builder()
+                .logGroupName(logGroup)
+                .logStreamName(logStream)
+                .startTime(startTime - timeScale)
+                .endTime(startTime + timeScale)
+                .build()
+            return load(request, saveForwardToken = true, saveBackwardToken = true)
+        } finally {
+            loadingBackwardEvent.set(false)
+            loadingForwardEvent.set(false)
+        }
     }
 
     suspend fun loadInitial(fromHead: Boolean): List<OutputLogEvent> {
-        val request = GetLogEventsRequest.builder().logGroupName(logGroup).logStreamName(logStream).startFromHead(fromHead).build()
-        return load(request, saveForwardToken = true, saveBackwardToken = true)
+        try {
+            loadingForwardEvent.set(true)
+            loadingBackwardEvent.set(true)
+            val request = GetLogEventsRequest.builder().logGroupName(logGroup).logStreamName(logStream).startFromHead(fromHead).build()
+            return load(request, saveForwardToken = true, saveBackwardToken = true)
+        } finally {
+            loadingBackwardEvent.set(false)
+            loadingForwardEvent.set(false)
+        }
     }
 
     suspend fun loadMoreForward(): List<OutputLogEvent> {
