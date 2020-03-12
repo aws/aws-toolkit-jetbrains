@@ -54,13 +54,9 @@ class CloudWatchLogStreamClient(
         }
     }
 
-    suspend fun loadMoreForward(): List<OutputLogEvent> {
-        return loadMore(loadingForwardEvent, nextForwardToken, saveForwardToken = true)
-    }
+    suspend fun loadMoreForward(): List<OutputLogEvent> = loadMore(loadingForwardEvent, nextForwardToken, saveForwardToken = true)
 
-    suspend fun loadMoreBackward(): List<OutputLogEvent> {
-        return loadMore(loadingBackwardEvent, nextBackwardToken, saveBackwardToken = true)
-    }
+    suspend fun loadMoreBackward(): List<OutputLogEvent> = loadMore(loadingBackwardEvent, nextBackwardToken, saveBackwardToken = true)
 
     private suspend fun loadMore(
         loadingGuard: AtomicBoolean,
