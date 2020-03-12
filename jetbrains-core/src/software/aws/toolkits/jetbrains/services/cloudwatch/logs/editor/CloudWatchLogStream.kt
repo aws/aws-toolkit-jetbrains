@@ -4,9 +4,15 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
+import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
@@ -14,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,12 +29,15 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogStreamClient
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollBar
@@ -37,7 +47,7 @@ import javax.swing.JTextField
 
 class CloudWatchLogStream(
     private val project: Project,
-    logGroup: String,
+    private val logGroup: String,
     private val logStream: String,
     fromHead: Boolean,
     startTime: Long? = null,
@@ -51,6 +61,8 @@ class CloudWatchLogStream(
     lateinit var unwrapButton: JButton
     lateinit var streamLogsOn: JButton
     lateinit var streamLogsOff: JButton
+    lateinit var toolbarHolder: Wrapper
+    lateinit var toolWindow: JComponent
 
     val title = message("cloudwatch.logs.log_stream_title", logStream)
     private val edtContext = getCoroutineUiContext(disposable = this)
@@ -130,7 +142,11 @@ class CloudWatchLogStream(
             }
         }
         setUpTemporaryButtons()
-        // addActions()
+        addActions()
+        val actionGroup = DefaultActionGroup()
+        actionGroup.add(OpenCurrentInEditor(project, logStream, logsTable.logsModel))
+        val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
+        toolbarHolder.setContent(toolbar.component)
     }
 
     private fun setUpTemporaryButtons() {
@@ -163,7 +179,6 @@ class CloudWatchLogStream(
         }
     }
 
-    /* will be added in the next PR but less annoying to comment out
     private fun addActions() {
         val actionGroup = DefaultActionGroup()
         actionGroup.add(OpenCurrentInEditor(project, logStream, logsTable.logsModel))
@@ -176,7 +191,6 @@ class CloudWatchLogStream(
             ActionManager.getInstance()
         )
     }
-    */
 
     override fun dispose() {}
 
