@@ -47,7 +47,7 @@ class CloudWatchLogStream(
     lateinit var logsPanel: JScrollPane
     lateinit var searchLabel: JLabel
     lateinit var searchField: JTextField
-    lateinit var showAsButton: JButton
+    lateinit var wrapButton: JButton
     lateinit var unwrapButton: JButton
     lateinit var streamLogsOn: JButton
     lateinit var streamLogsOff: JButton
@@ -58,7 +58,6 @@ class CloudWatchLogStream(
     private var logStreamingJob: Deferred<*>? = null
 
     private lateinit var defaultColumnInfo: Array<ColumnInfo<OutputLogEvent, String>>
-    private val wrappingColumnInfo = arrayOf(LogStreamDateColumn(), LogStreamWrappingMessageColumn())
 
     private lateinit var logsTable: JBTable
     private val logStreamClient = CloudWatchLogStreamClient(project, logGroup, logStream)
@@ -135,16 +134,6 @@ class CloudWatchLogStream(
     }
 
     private fun setUpTemporaryButtons() {
-        showAsButton.addActionListener {
-            launch(edtContext) {
-                logsTable.logsModel.columnInfos = wrappingColumnInfo
-            }
-        }
-        unwrapButton.addActionListener {
-            launch(edtContext) {
-                logsTable.logsModel.columnInfos = defaultColumnInfo
-            }
-        }
         streamLogsOn.addActionListener {
             val alreadyStreaming = streamingLogs.getAndSet(true)
             if (alreadyStreaming) {

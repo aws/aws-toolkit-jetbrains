@@ -32,7 +32,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="46363" class="javax.swing.JButton" binding="showAsButton">
+          <component id="46363" class="javax.swing.JButton" binding="wrapButton">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>

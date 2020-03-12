@@ -52,32 +52,3 @@ class LogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("gener
     override fun valueOf(item: OutputLogEvent?): String? = item?.message()
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
-
-class LogStreamWrappingMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
-    override fun valueOf(item: OutputLogEvent?): String? = item?.message()
-
-    override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = object : JBTextArea(), TableCellRenderer {
-        init {
-            lineWrap = true
-            wrapStyleWord = true
-        }
-
-        override fun getTableCellRendererComponent(
-            table: JTable,
-            value: Any,
-            isSelected: Boolean,
-            hasFocus: Boolean,
-            row: Int,
-            column: Int
-        ): Component {
-            text = (value as? String)?.trim() ?: return this
-            setSize(table.columnModel.getColumn(column).width, preferredSize.height)
-            if (table.getRowHeight(row) != preferredSize.height) {
-                table.setRowHeight(row, preferredSize.height)
-            }
-            return this
-        }
-    }
-
-    override fun isCellEditable(item: OutputLogEvent?): Boolean = false
-}
