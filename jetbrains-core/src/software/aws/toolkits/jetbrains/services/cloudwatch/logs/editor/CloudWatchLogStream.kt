@@ -3,9 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.impl.runUnlessDisposed
@@ -17,11 +20,6 @@ import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
@@ -35,8 +33,6 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import java.util.concurrent.atomic.AtomicBoolean
-import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -57,17 +53,11 @@ class CloudWatchLogStream(
     lateinit var logsPanel: JScrollPane
     lateinit var searchLabel: JLabel
     lateinit var searchField: JTextField
-    lateinit var wrapButton: JButton
-    lateinit var unwrapButton: JButton
-    lateinit var streamLogsOn: JButton
-    lateinit var streamLogsOff: JButton
     lateinit var toolbarHolder: Wrapper
     lateinit var toolWindow: JComponent
 
     val title = message("cloudwatch.logs.log_stream_title", logStream)
     private val edtContext = getCoroutineUiContext(disposable = this)
-    private val streamingLogs: AtomicBoolean = AtomicBoolean(false)
-    private var logStreamingJob: Deferred<*>? = null
 
     private lateinit var defaultColumnInfo: Array<ColumnInfo<OutputLogEvent, String>>
 
@@ -145,11 +135,24 @@ class CloudWatchLogStream(
         addActions()
         val actionGroup = DefaultActionGroup()
         actionGroup.add(OpenCurrentInEditor(project, logStream, logsTable.logsModel))
+        actionGroup.add(object : AnAction("tail logs <localize>", null, AllIcons.RunConfigurations.Scroll_down) {
+            override fun actionPerformed(e: AnActionEvent) {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+        })
+        actionGroup.add(object : AnAction("wrap logs <localize>", null, AllIcons.Actions.ToggleSoftWrap) {
+            override fun actionPerformed(e: AnActionEvent) {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+        })
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
         toolbarHolder.setContent(toolbar.component)
     }
 
     private fun setUpTemporaryButtons() {
+        /*
         streamLogsOn.addActionListener {
             val alreadyStreaming = streamingLogs.getAndSet(true)
             if (alreadyStreaming) {
@@ -176,7 +179,7 @@ class CloudWatchLogStream(
                     streamingLogs.set(false)
                 }
             }
-        }
+        }*/
     }
 
     private fun addActions() {
