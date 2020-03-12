@@ -5,15 +5,10 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
-
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.DoubleClickListener
-import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
@@ -30,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogStreamInEditor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -64,7 +58,7 @@ class CloudWatchLogGroup(
 
     private fun createUIComponents() {
         tableModel = ListTableModel(
-            arrayOf(LogStreamsColumn(), LogStreamsDateColumn()),
+            arrayOf(LogStreamsStreamColumn(), LogStreamsDateColumn()),
             mutableListOf<LogStream>(),
             // To display and sort by different values, we sort the model's values instead
             -1,
@@ -88,7 +82,7 @@ class CloudWatchLogGroup(
         filterField.document.addDocumentListener(buildStreamSearchListener(groupTable))
 
         styleRefreshButton()
-        addActions()
+        // addActions()
 
         launch { refreshLogStreams() }
     }
@@ -136,6 +130,7 @@ class CloudWatchLogGroup(
         }
     }
 
+    /*
     private fun addActions() {
         val actionGroup = DefaultActionGroup()
         actionGroup.addAction(OpenLogStreamInEditor(project, logGroup, groupTable))
@@ -146,11 +141,12 @@ class CloudWatchLogGroup(
             ActionManager.getInstance()
         )
     }
+    */
 
     private suspend fun populateModel() = runUnlessDisposed(this) {
         try {
             val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-            streams.filterNotNull().firstOrNull()?.logStreams()?.sortedBy { it.lastEventTimestamp() }?.let {
+            streams.filterNotNull().firstOrNull()?.logStreams()?.sortedByDescending { it.lastEventTimestamp() }?.let {
                 withContext(edtContext) { tableModel.items = it }
             }
         } catch (e: Exception) {

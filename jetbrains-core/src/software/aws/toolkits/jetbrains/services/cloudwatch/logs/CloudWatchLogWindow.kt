@@ -39,7 +39,7 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
         logStream: String,
         fromHead: Boolean = true,
         startTime: Long? = null,
-        timeScale: Long? = null
+        duration: Long? = null
     ) = launch {
         val id = "$logGroup/$logStream"
         // dispose existing window if it exists to update. TODO add a refresh, duh
@@ -49,7 +49,7 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
                 existingWindow.dispose()
             }
         }
-        val group = CloudWatchLogStream(project, logGroup, logStream, fromHead, startTime, timeScale)
+        val group = CloudWatchLogStream(project, logGroup, logStream, fromHead, startTime, duration)
         withContext(edtContext) {
             toolWindow.addTab(group.title, group.content, activate = true, id = id, disposable = group)
         }

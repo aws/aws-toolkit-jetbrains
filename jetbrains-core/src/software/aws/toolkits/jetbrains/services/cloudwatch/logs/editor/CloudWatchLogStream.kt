@@ -37,11 +37,11 @@ import javax.swing.JTextField
 
 class CloudWatchLogStream(
     private val project: Project,
-    private val logGroup: String,
+    logGroup: String,
     private val logStream: String,
     fromHead: Boolean,
     startTime: Long? = null,
-    timeScale: Long? = null
+    duration: Long? = null
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
     lateinit var content: JPanel
     lateinit var logsPanel: JScrollPane
@@ -58,13 +58,13 @@ class CloudWatchLogStream(
     private var logStreamingJob: Deferred<*>? = null
 
     private lateinit var defaultColumnInfo: Array<ColumnInfo<OutputLogEvent, String>>
-    private val wrappingColumnInfo = arrayOf(LogStreamColumnDate(), LogStreamWrappingColumn())
+    private val wrappingColumnInfo = arrayOf(LogStreamDateColumn(), LogStreamWrappingMessageColumn())
 
     private lateinit var logsTable: JBTable
     private val logStreamClient = CloudWatchLogStreamClient(project, logGroup, logStream)
 
     private fun createUIComponents() {
-        defaultColumnInfo = arrayOf(LogStreamColumnDate(), LogStreamColumn())
+        defaultColumnInfo = arrayOf(LogStreamDateColumn(), LogStreamMessageColumn())
 
         val model = ListTableModel<OutputLogEvent>(defaultColumnInfo, mutableListOf<OutputLogEvent>())
         logsTable = JBTable(model).apply {
@@ -89,18 +89,22 @@ class CloudWatchLogStream(
             }
             if (logsPanel.verticalScrollBar.isAtBottom()) {
                 launch {
-                    val items = logStreamClient.loadMoreForward()
-                    if (items.isNotEmpty()) {
-                        val events = logsTable.logsModel.items.plus(items)
-                        withContext(edtContext) { logsTable.logsModel.items = events }
+                    runUnlessDisposed(this@CloudWatchLogStream) {
+                        val items = logStreamClient.loadMoreForward()
+                        if (items.isNotEmpty()) {
+                            val events = logsTable.logsModel.items.plus(items)
+                            withContext(edtContext) { logsTable.logsModel.items = events }
+                        }
                     }
                 }
             } else if (logsPanel.verticalScrollBar.isAtTop()) {
                 launch {
-                    val items = logStreamClient.loadMoreBackward()
-                    if (items.isNotEmpty()) {
-                        val events = items.plus(logsTable.logsModel.items)
-                        withContext(edtContext) { logsTable.logsModel.items = events }
+                    runUnlessDisposed(this@CloudWatchLogStream) {
+                        val items = logStreamClient.loadMoreBackward()
+                        if (items.isNotEmpty()) {
+                            val events = items.plus(logsTable.logsModel.items)
+                            withContext(edtContext) { logsTable.logsModel.items = events }
+                        }
                     }
                 }
             }
@@ -108,8 +112,8 @@ class CloudWatchLogStream(
         launch {
             runUnlessDisposed(this@CloudWatchLogStream) {
                 try {
-                    val items = if (startTime != null && timeScale != null) {
-                        logStreamClient.loadInitialAround(startTime, timeScale)
+                    val items = if (startTime != null && duration != null) {
+                        logStreamClient.loadInitialAround(startTime, duration)
                     } else {
                         logStreamClient.loadInitial(fromHead)
                     }

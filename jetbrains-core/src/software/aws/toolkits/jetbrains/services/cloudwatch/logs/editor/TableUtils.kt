@@ -16,7 +16,7 @@ import javax.swing.SortOrder
 import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
 
-class LogStreamsColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
+class LogStreamsStreamColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
     override fun valueOf(item: LogStream?): String? = item?.logStreamName()
 
     override fun isCellEditable(item: LogStream?): Boolean = false
@@ -39,7 +39,7 @@ class LogGroupTableSorter(model: ListTableModel<LogStream>) : TableRowSorter<Lis
     }
 }
 
-class LogStreamColumnDate : ColumnInfo<OutputLogEvent, String>(message("general.time")) {
+class LogStreamDateColumn : ColumnInfo<OutputLogEvent, String>(message("general.time")) {
     override fun valueOf(item: OutputLogEvent?): String? {
         val timestamp = item?.timestamp() ?: return null
         return DateFormatUtil.getDateTimeFormat().format(timestamp)
@@ -48,12 +48,12 @@ class LogStreamColumnDate : ColumnInfo<OutputLogEvent, String>(message("general.
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
 
-class LogStreamColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
+class LogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
     override fun valueOf(item: OutputLogEvent?): String? = item?.message()
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
 
-class LogStreamWrappingColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
+class LogStreamWrappingMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
     override fun valueOf(item: OutputLogEvent?): String? = item?.message()
 
     override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = object : JBTextArea(), TableCellRenderer {
