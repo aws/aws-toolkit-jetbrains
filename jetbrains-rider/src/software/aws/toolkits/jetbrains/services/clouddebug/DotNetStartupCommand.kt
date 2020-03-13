@@ -24,7 +24,7 @@ class DotNetStartupCommand : CloudDebugStartupCommand(CloudDebuggingPlatform.DOT
         private const val STARTUP_COMMAND_HINT_TEXT = "Example: dotnet /path/to/assembly.dll"
     }
 
-    override val isStartCommandAutoGenerateSupported: Boolean
+    override val isStartCommandAutoFillSupported: Boolean
         get() = true
 
     override fun updateStartupCommand(
@@ -56,17 +56,19 @@ class DotNetStartupCommand : CloudDebugStartupCommand(CloudDebuggingPlatform.DOT
             } else
                 remoteFile
 
-        // To get a project output we make a protocol call that is executed on AWT thread using run configuration dialog modality.
-        // Then protocol queue is waiting for return to AWT to be able to pump protocol queue and get a response back.
-        // We should allow pumping protocol queue with current run configuration modality to get a response back.
+        // We make a protocol call to get an information about project output and assembly. This call is started on AWT thread with modality of current
+        // run configuration dialog. The response is back on AWS message queue When call is completed. So, a protocol handler is waiting for a
+        // run configuration dialog to be closed to process the handler. Here, we should allow pumping protocol queue with current run configuration modality
+        // to get a response back while run config is opened.
+        //
         // Note: This is better to allow pumping for a specific component using [PermittedModalitiesImpl#allowPumpProtocolForComponent] API,
-        //       but for a particular case we can use a call that use current modality since we are in the same run config context.
+        //       but for a particular case we are safe to use a call that use current modality since we are in the same run config context.
         IPermittedModalities.getInstance().allowPumpProtocolUnderCurrentModality()
 
-        // TODO: This might be a bit unclear approach here - we are trying to get assembly info for a project based on local path that we define in
-        //       Artifacts Mapping table. This should work fine if specified path is related to a project inside a current solution.
-        //       One of the edge case here might be when user specify a Local Path to a directory that is unrelated to a solution. In that case we have
-        //       no information about assembly info.
+        // TODO: We are trying to get assembly info for a project based on local path that we define in an Artifacts Mapping table.
+        //       This should work fine if specified path is related to any project inside a current solution.
+        //       One of the edge case here might be when a user specify a Local Path to a directory that is unrelated to a solution.
+        //       In that case we are not able to get any information about an assembly.
         //       Alternatively, we could add a ComboBox with ability to select a Project for a run configuration and explicitly specify it when run.
         model.getProjectOutput.start(AwsProjectOutputRequest(localPath)).result.advise(project.lifetime) { result ->
             when (result) {

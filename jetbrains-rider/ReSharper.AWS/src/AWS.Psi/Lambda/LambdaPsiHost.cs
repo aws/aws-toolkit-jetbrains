@@ -40,17 +40,7 @@ namespace AWS.Psi.Lambda
             _locks = locks;
             _logger = logger;
 
-            if (solution == null)
-            {
-                throw new Exception("AAA - solution is null");
-            }
-
             var model = solution.GetProtocolSolution().GetLambdaPsiModel();
-
-            if (model == null)
-            {
-                throw new Exception("AAA - LambdaPsiModel is null");
-            }
 
             model.DetermineHandlers.Set((lifetime, unit) =>
             {

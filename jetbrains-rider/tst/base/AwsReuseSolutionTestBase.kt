@@ -7,7 +7,6 @@ import com.intellij.ide.GeneralSettings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
-import com.jetbrains.rider.test.base.PrepareTestEnvironment
 import com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
 import com.jetbrains.rider.test.scriptingApi.setUpDotNetCoreCliPath
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
@@ -48,15 +47,14 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
 
     @BeforeClass(alwaysRun = true)
     fun setUpClassSolution() {
-
         openSolution(getSolutionDirectoryName())
     }
 
     @BeforeClass(alwaysRun = true)
     fun setUpBuildToolPath() {
         if (SystemInfo.isWindows) {
-            PrepareTestEnvironment.dotnetCoreCliPath = "C:\\Program Files\\dotnet\\dotnet.exe"
-            setUpDotNetCoreCliPath(PrepareTestEnvironment.dotnetCoreCliPath)
+            dotnetCoreCliPath = "C:\\Program Files\\dotnet\\dotnet.exe"
+            setUpDotNetCoreCliPath(dotnetCoreCliPath)
             setUpCustomToolset("C:\\Program Files\\dotnet\\sdk\\2.2.104\\MSBuild.dll")
         }
     }

@@ -14,7 +14,7 @@ import software.aws.toolkits.resources.message
  */
 open class CloudDebugStartupCommand(val platform: CloudDebuggingPlatform) {
 
-    open val isStartCommandAutoGenerateSupported: Boolean = false
+    open val isStartCommandAutoFillSupported: Boolean = false
 
     /**
      * Update a startup command after selecting an artifact to use to run debugger.

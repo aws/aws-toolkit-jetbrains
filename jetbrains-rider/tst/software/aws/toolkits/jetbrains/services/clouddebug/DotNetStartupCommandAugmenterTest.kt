@@ -50,7 +50,7 @@ class DotNetStartupCommandAugmenterTest : AwsReuseSolutionTestBase() {
     }
 
     @Test
-    fun testAugmentStatement_MonoRuntime_ChmodToRuntimeAndMono() {
+    fun testAugmentStatement_MonoRuntime() {
         Registry.get(DotNetDebuggerSupport.USE_DOTNET_CORE_RUNTIME_FLAG_NAME).setValue(false)
 
         val pathToDebugger = "/path/to/debugger"
@@ -81,7 +81,7 @@ class DotNetStartupCommandAugmenterTest : AwsReuseSolutionTestBase() {
     }
 
     @Test
-    fun testAugmentStatement_DotNetCoreRuntime_ChmodToRuntimeAndMono() {
+    fun testAugmentStatement_DotNetCoreRuntime() {
         Registry.get(DotNetDebuggerSupport.USE_DOTNET_CORE_RUNTIME_FLAG_NAME).setValue(true)
 
         val pathToDebugger = "/path/to/debugger"

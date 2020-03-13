@@ -5,59 +5,20 @@ package software.aws.toolkits.jetbrains.services.ecs.execution
 
 import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
-import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
-import com.intellij.ui.CommonActionsPanel
-import com.intellij.ui.SimpleTextAttributes
-import com.intellij.ui.TableUtil
-import com.intellij.util.ArrayUtil
-import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
-import com.intellij.util.ui.StatusText
 import software.aws.toolkits.jetbrains.ui.LocalPathProjectBaseCellEditor
 import software.aws.toolkits.resources.message
-import javax.swing.SwingUtilities
 import javax.swing.table.TableCellEditor
 
-class ArtifactMappingsTable(project: Project) : ListTableWithButtons<ArtifactMapping>() {
+class ArtifactMappingsTable(project: Project) : ContainerMappingTable<ArtifactMapping>(
+    emptyTableMainText = message("cloud_debug.ecs.run_config.container.artifacts.empty.text"),
+    addNewEntryText = message("cloud_debug.ecs.run_config.container.artifacts.add")
+) {
 
-    init {
-        tableView.apply {
-            emptyText.text = message("cloud_debug.ecs.run_config.container.artifacts.empty.text")
-
-            emptyText.appendSecondaryText(
-                message("cloud_debug.ecs.run_config.container.artifacts.add"),
-                SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, JBUI.CurrentTheme.Link.linkColor())
-            ) {
-                stopEditing()
-                val listModel = tableView.listTableModel
-                listModel.addRow(ArtifactMapping())
-                val index = listModel.rowCount - 1
-                tableView.setRowSelectionInterval(index, index)
-                SwingUtilities.invokeLater {
-                    TableUtil.scrollSelectionToVisible(tableView)
-                    TableUtil.editCellAt(tableView, index, 0)
-                }
-            }
-
-            val shortcutSet = CommonActionsPanel.getCommonShortcut(CommonActionsPanel.Buttons.ADD)
-            val shortcut = ArrayUtil.getFirstElement(shortcutSet.shortcuts)
-            if (shortcut != null) {
-                emptyText.appendSecondaryText(" (${KeymapUtil.getShortcutText(shortcut)})", StatusText.DEFAULT_ATTRIBUTES, null)
-            }
-        }
-    }
-
-    private val pathCellEditor = LocalPathProjectBaseCellEditor(project)
-        .normalizePath(true)
-        .fileChooserDescriptor(FileChooserDescriptorFactory.createSingleFileDescriptor())
-
-    override fun isEmpty(element: ArtifactMapping): Boolean = element.localPath.isNullOrEmpty() ||
-        element.remotePath.isNullOrEmpty()
+    override fun isEmpty(element: ArtifactMapping): Boolean = element.localPath.isNullOrEmpty() || element.remotePath.isNullOrEmpty()
 
     override fun cloneElement(variable: ArtifactMapping): ArtifactMapping = variable.copy()
-
-    override fun canDeleteElement(selection: ArtifactMapping): Boolean = true
 
     override fun createElement(): ArtifactMapping = ArtifactMapping()
 
@@ -99,4 +60,8 @@ class ArtifactMappingsTable(project: Project) : ListTableWithButtons<ArtifactMap
 
         override fun getEditor(item: ArtifactMapping): TableCellEditor? = editor()
     }
+
+    private val pathCellEditor = LocalPathProjectBaseCellEditor(project)
+        .normalizePath(true)
+        .fileChooserDescriptor(FileChooserDescriptorFactory.createSingleFileDescriptor())
 }

@@ -23,14 +23,14 @@ import org.jetbrains.annotations.NotNull;
 import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugConstants;
 import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingPlatform;
 import software.aws.toolkits.jetbrains.services.clouddebug.DebuggerSupport;
-import software.aws.toolkits.jetbrains.ui.clouddebug.StartupCommandWithAutofile;
+import software.aws.toolkits.jetbrains.ui.clouddebug.StartupCommandWithAutoFill;
 
 public class PerContainerSettings {
     private final SortedComboBoxModel<CloudDebuggingPlatform> platformModel;
 
     JPanel panel;
     ComboBox<CloudDebuggingPlatform> platform;
-    @NotNull StartupCommandWithAutofile startCommand;
+    @NotNull StartupCommandWithAutoFill startCommand;
     JPanel containerSettingsTabsPanel;
     JBTabs containerSettingsTabs;
     RemoteDebugPort remoteDebugPort;
@@ -69,7 +69,7 @@ public class PerContainerSettings {
     }
 
     private void createUIComponents() {
-        startCommand = new StartupCommandWithAutofile(project, containerName);
+        startCommand = new StartupCommandWithAutoFill(project, containerName);
     }
 
     public JComponent getComponent() {
@@ -94,12 +94,12 @@ public class PerContainerSettings {
     }
 
     private void initStartupCommandField() {
-        this.startCommand.setGenerateAutomaticallyPopupContent(() -> artifactMappingsTable.getArtifactMappings());
+        this.startCommand.setAutoFillPopupContent(() -> artifactMappingsTable.getArtifactMappings());
     }
 
     private void initArtifactMappingTable() {
         artifactMappingsTable.getTableView().getListTableModel().addTableModelListener(
-            tableModelEvent -> startCommand.setGenerateAutomaticallyLinkEnabled(
+            tableModelEvent -> startCommand.setAutoFillLinkEnabled(
                 artifactMappingsTable.getArtifactMappings().stream().anyMatch(
                     artifactMapping -> {
                         String localPath = artifactMapping.getLocalPath();

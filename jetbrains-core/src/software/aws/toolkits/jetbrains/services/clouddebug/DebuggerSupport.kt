@@ -79,8 +79,9 @@ abstract class DebuggerSupport {
     protected abstract fun attachDebuggingArguments(input: List<String>, ports: List<Int>, debuggerPath: String): String
 
     open fun augmentStatement(input: String, ports: List<Int>, debuggerPath: String): String {
-        if (ports.isEmpty())
+        if (ports.isEmpty()) {
             throw IllegalStateException(message("cloud_debug.step.augment_statement.missing_debug_port"))
+        }
 
         return "env ${CloudDebugConstants.REMOTE_DEBUG_PORT_ENV}=${ports.first()} ${attachDebuggingArguments(
             input = ParametersListUtil.parse(input, true, false),

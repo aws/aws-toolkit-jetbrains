@@ -47,7 +47,7 @@ class ArtifactMappingPopup {
 }
 
 class ArtifactMappingPopupStep(paths: List<ArtifactMapping>, private val onSelected: (ArtifactMapping?) -> Unit) :
-    BaseListPopupStep<ArtifactMapping>(message("cloud_debug.run_configuration.generate_automatically.popup_title"), paths) {
+    BaseListPopupStep<ArtifactMapping>(message("cloud_debug.run_configuration.auto_fill_link.popup_title"), paths) {
 
     override fun isSpeedSearchEnabled(): Boolean = true
 
@@ -76,8 +76,8 @@ class PathMappingPopupCellRenderer : CellRendererPanel(), ListCellRenderer<Artif
     companion object {
         private val logger = getLogger<PathMappingPopupCellRenderer>()
 
-        private const val LEFT_COMPONENT_MAX_WIDTH = 300
-        private const val LEFT_COMPONENT_MIN_WIDTH = 50
+        const val LEFT_COMPONENT_MAX_WIDTH = 300
+        const val LEFT_COMPONENT_MIN_WIDTH = 50
     }
 
     private var leftComponentWidth: Int = -1

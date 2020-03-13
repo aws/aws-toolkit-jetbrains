@@ -22,18 +22,17 @@ import javax.swing.JPanel
  * @param project - [com.intellij.openapi.project.Project] instance
  * @param containerName - AWS Docker container name
  */
-class StartupCommandWithAutofile(private val project: Project, private val containerName: String) :
+class StartupCommandWithAutoFill(private val project: Project, private val containerName: String) :
     JPanel(MigLayout("novisualpadding, ins 0, gap 0, fillx, wrap 2, hidemode 3", "[][min!]")) {
 
     private val startupCommandField = ExpandableTextField()
-    private val generateAutomaticallyLink =
-        LinkLabel(message("cloud_debug.run_configuration.generate_automatically.link_text"), null, ::onGenerateAutomaticallyLinkClicked)
+    private val autoFillLink = LinkLabel(message("cloud_debug.run_configuration.auto_fill_link.text"), null, ::onAutoFillLinkClicked)
 
     var command: String
         get() = startupCommandField.text
         set(value) { startupCommandField.text = value }
 
-    var generateAutomaticallyPopupContent: () -> List<ArtifactMapping> = { emptyList() }
+    var autoFillPopupContent: () -> List<ArtifactMapping> = { emptyList() }
 
     var platform: CloudDebuggingPlatform? = null
         set(value) {
@@ -41,8 +40,8 @@ class StartupCommandWithAutofile(private val project: Project, private val conta
 
             val commandHelper = DebuggerSupport.debugger(myPlatform).startupCommand()
 
-            // Show/hide generate automatically button
-            generateAutomaticallyLink.isVisible = commandHelper.isStartCommandAutoGenerateSupported
+            // Show/hide Auto-fill button
+            autoFillLink.isVisible = commandHelper.isStartCommandAutoFillSupported
 
             // Update start command hints
             startupCommandField.emptyText.text = commandHelper.getStartupCommandTextFieldHintText()
@@ -53,18 +52,18 @@ class StartupCommandWithAutofile(private val project: Project, private val conta
 
     init {
         add(startupCommandField, "growx")
-        add(generateAutomaticallyLink, "gapbefore ${JBUI.scale(2)}")
+        add(autoFillLink, "gapbefore ${JBUI.scale(3)}")
 
         initStartupCommandField()
     }
 
     /**
-     * Set "Generate automatically" button enabled state.
+     * Set "Auto-fill" button enabled state.
      * When the button is enabled we skip the tooltip. Otherwise, show a tooltip with text to clarify the behavior.
      */
-    fun setGenerateAutomaticallyLinkEnabled(isEnabled: Boolean) {
-        generateAutomaticallyLink.isEnabled = isEnabled
-        generateAutomaticallyLink.toolTipText = if (isEnabled) "" else message("cloud_debug.run_configuration.generate_automatically.link_tooltip_text")
+    fun setAutoFillLinkEnabled(isEnabled: Boolean) {
+        autoFillLink.isEnabled = isEnabled
+        autoFillLink.toolTipText = if (isEnabled) "" else message("cloud_debug.run_configuration.auto_fill_link.tooltip_text")
     }
 
     private fun initStartupCommandField() {
@@ -72,8 +71,8 @@ class StartupCommandWithAutofile(private val project: Project, private val conta
     }
 
     @Suppress("UNUSED_PARAMETER")
-    private fun onGenerateAutomaticallyLinkClicked(label: LinkLabel<Any?>, ignored: Any?) {
-        val artifactMappingItems = generateAutomaticallyPopupContent().filter { artifact ->
+    private fun onAutoFillLinkClicked(label: LinkLabel<Any?>, ignored: Any?) {
+        val artifactMappingItems = autoFillPopupContent().filter { artifact ->
             !artifact.localPath?.trim().isNullOrEmpty() && !artifact.remotePath?.trim().isNullOrEmpty()
         }
 
@@ -91,7 +90,7 @@ class StartupCommandWithAutofile(private val project: Project, private val conta
                 )
             }
         )
-        val dataContext = DataManager.getInstance().getDataContext(generateAutomaticallyLink)
+        val dataContext = DataManager.getInstance().getDataContext(autoFillLink)
         popup.showInBestPositionFor(dataContext)
     }
 }
