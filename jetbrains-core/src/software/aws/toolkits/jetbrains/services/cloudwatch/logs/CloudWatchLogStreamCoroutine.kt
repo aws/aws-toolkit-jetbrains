@@ -76,12 +76,13 @@ class CloudWatchLogStreamCoroutine(
     }
 
     private suspend fun loadAndPopulate(request: GetLogEventsRequest) {
-        var items = listOf<OutputLogEvent>()
         try {
-            items = load(request, saveForwardToken = true, saveBackwardToken = true)
-        } finally {
+            val items = load(request, saveForwardToken = true, saveBackwardToken = true)
             withContext(edtContext) {
                 table.listTableModel.addRows(items)
+            }
+        } finally {
+            withContext(edtContext) {
                 table.emptyText.text = message("cloudwatch.logs.no_events")
                 table.setPaintBusy(false)
             }
