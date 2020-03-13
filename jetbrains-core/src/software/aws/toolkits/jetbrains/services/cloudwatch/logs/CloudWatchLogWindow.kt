@@ -29,8 +29,9 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
             return@launch
         }
         val group = CloudWatchLogGroup(project, logGroup)
+        val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
         withContext(edtContext) {
-            toolWindow.addTab(title = group.title, component = group.content, activate = true, id = logGroup, disposable = group)
+            toolWindow.addTab(title, group.content, activate = true, id = logGroup, disposable = group)
         }
     }
 
@@ -48,9 +49,10 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
                 existingWindow.dispose()
             }
         }
-        val group = CloudWatchLogStream(project, logGroup, logStream, startTime, duration)
+        val title = message("cloudwatch.logs.log_stream_title", logStream)
+        val stream = CloudWatchLogStream(project, logGroup, logStream, startTime, duration)
         withContext(edtContext) {
-            toolWindow.addTab(group.title, group.content, activate = true, id = id, disposable = group)
+            toolWindow.addTab(title, stream.content, activate = true, id = id, disposable = stream)
         }
     }
 

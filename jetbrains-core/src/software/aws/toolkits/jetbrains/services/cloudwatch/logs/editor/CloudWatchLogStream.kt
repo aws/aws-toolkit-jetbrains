@@ -53,7 +53,6 @@ class CloudWatchLogStream(
     lateinit var streamLogsOn: JButton
     lateinit var streamLogsOff: JButton
 
-    val title = message("cloudwatch.logs.log_stream_title", logStream)
     private val edtContext = getCoroutineUiContext(disposable = this)
     private val logStreamingJobLock = Object()
     private var logStreamingJob: Deferred<*>? = null
