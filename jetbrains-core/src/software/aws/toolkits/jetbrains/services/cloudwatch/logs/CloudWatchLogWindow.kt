@@ -37,7 +37,6 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
     fun showLogStream(
         logGroup: String,
         logStream: String,
-        fromHead: Boolean = true,
         startTime: Long? = null,
         duration: Long? = null
     ) = launch {
@@ -49,7 +48,7 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
                 existingWindow.dispose()
             }
         }
-        val group = CloudWatchLogStream(project, logGroup, logStream, fromHead, startTime, duration)
+        val group = CloudWatchLogStream(project, logGroup, logStream, startTime, duration)
         withContext(edtContext) {
             toolWindow.addTab(group.title, group.content, activate = true, id = id, disposable = group)
         }

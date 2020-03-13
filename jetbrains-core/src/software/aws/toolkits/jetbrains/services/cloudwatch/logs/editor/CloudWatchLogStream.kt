@@ -6,14 +6,13 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.JBTable
-import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,12 +20,11 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogStreamClient
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogStreamCoroutine
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -34,12 +32,12 @@ import javax.swing.JScrollBar
 import javax.swing.JScrollPane
 import javax.swing.JTable
 import javax.swing.JTextField
+import javax.swing.SortOrder
 
 class CloudWatchLogStream(
     private val project: Project,
     logGroup: String,
     private val logStream: String,
-    fromHead: Boolean,
     startTime: Long? = null,
     duration: Long? = null
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
@@ -54,18 +52,19 @@ class CloudWatchLogStream(
 
     val title = message("cloudwatch.logs.log_stream_title", logStream)
     private val edtContext = getCoroutineUiContext(disposable = this)
-    private val streamingLogs: AtomicBoolean = AtomicBoolean(false)
     private var logStreamingJob: Deferred<*>? = null
 
-    private lateinit var defaultColumnInfo: Array<ColumnInfo<OutputLogEvent, String>>
-
     private lateinit var logsTable: JBTable
-    private val logStreamClient = CloudWatchLogStreamClient(project, logGroup, logStream)
+    private val logStreamClient: CloudWatchLogStreamCoroutine
 
     private fun createUIComponents() {
-        defaultColumnInfo = arrayOf(LogStreamDateColumn(), LogStreamMessageColumn())
-
-        val model = ListTableModel<OutputLogEvent>(defaultColumnInfo, mutableListOf<OutputLogEvent>())
+        val model = ListTableModel<OutputLogEvent>(
+            arrayOf(LogStreamDateColumn(), LogStreamMessageColumn()),
+            mutableListOf<OutputLogEvent>(),
+            // Don't sort in the model because the requests come sorted
+            -1,
+            SortOrder.UNSORTED
+        )
         logsTable = JBTable(model).apply {
             setPaintBusy(true)
             autoscrolls = true
@@ -80,6 +79,8 @@ class CloudWatchLogStream(
     }
 
     init {
+        logStreamClient = CloudWatchLogStreamCoroutine(project, logsTable, logGroup, logStream)
+        Disposer.register(this, logStreamClient)
         searchLabel.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup => $logStream"
         logsTable.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
         logsPanel.verticalScrollBar.addAdjustmentListener {
@@ -87,78 +88,44 @@ class CloudWatchLogStream(
                 return@addAdjustmentListener
             }
             if (logsPanel.verticalScrollBar.isAtBottom()) {
-                launch {
-                    runUnlessDisposed(this@CloudWatchLogStream) {
-                        val items = logStreamClient.loadMoreForward()
-                        if (items.isNotEmpty()) {
-                            val events = logsTable.logsModel.items.plus(items)
-                            withContext(edtContext) { logsTable.logsModel.items = events }
-                        }
-                    }
-                }
+                launch { logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD) }
             } else if (logsPanel.verticalScrollBar.isAtTop()) {
-                launch {
-                    runUnlessDisposed(this@CloudWatchLogStream) {
-                        val items = logStreamClient.loadMoreBackward()
-                        if (items.isNotEmpty()) {
-                            val events = items.plus(logsTable.logsModel.items)
-                            withContext(edtContext) { logsTable.logsModel.items = events }
-                        }
-                    }
-                }
+                launch { logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_BACKWARD) }
             }
         }
         launch {
-            runUnlessDisposed(this@CloudWatchLogStream) {
-                try {
-                    val items = if (startTime != null && duration != null) {
-                        logStreamClient.loadInitialAround(startTime, duration)
-                    } else {
-                        logStreamClient.loadInitial(fromHead)
-                    }
-                    withContext(edtContext) {
-                        logsTable.emptyText.text = message("cloudwatch.logs.no_events")
-                        logsTable.logsModel.items = items
-                        logsTable.setPaintBusy(false)
-                    }
-                } catch (e: Exception) {
-                    val errorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
-                    CloudWatchLogGroup.LOG.error(e) { errorMessage }
-                    notifyError(title = errorMessage, project = project)
-                    withContext(edtContext) { logsTable.emptyText.text = errorMessage }
+            try {
+                if (startTime != null && duration != null) {
+                    logStreamClient.loadInitialAround(startTime, duration)
+                } else {
+                    logStreamClient.loadInitial()
                 }
+            } catch (e: Exception) {
+                val errorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
+                CloudWatchLogGroup.LOG.error(e) { errorMessage }
+                notifyError(title = errorMessage, project = project)
+                withContext(edtContext) { logsTable.emptyText.text = errorMessage }
             }
         }
         setUpTemporaryButtons()
+
         // addActions()
     }
 
     private fun setUpTemporaryButtons() {
         streamLogsOn.addActionListener {
-            val alreadyStreaming = streamingLogs.getAndSet(true)
-            if (alreadyStreaming) {
-                return@addActionListener
-            }
             logStreamingJob = async {
                 runUnlessDisposed(this@CloudWatchLogStream) {
                     while (true) {
-                        val items = logStreamClient.loadMoreForward()
-                        if (items.isNotEmpty()) {
-                            val events = logsTable.logsModel.items.plus(items)
-                            withContext(edtContext) { logsTable.logsModel.items = events }
-                        }
-                        delay(1000L)
+                        logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
+                        delay(1000)
                     }
                 }
             }
         }
         streamLogsOff.addActionListener {
             launch {
-                try {
-                    logStreamingJob?.cancelAndJoin()
-                } finally {
-                    streamingLogs.set(false)
-                }
+                logStreamingJob?.cancel()
             }
         }
     }
@@ -182,5 +149,4 @@ class CloudWatchLogStream(
 
     private fun JScrollBar.isAtBottom(): Boolean = value == (maximum - visibleAmount)
     private fun JScrollBar.isAtTop(): Boolean = value == minimum
-    private val JBTable.logsModel: ListTableModel<OutputLogEvent> get() = this.model as ListTableModel<OutputLogEvent>
 }
