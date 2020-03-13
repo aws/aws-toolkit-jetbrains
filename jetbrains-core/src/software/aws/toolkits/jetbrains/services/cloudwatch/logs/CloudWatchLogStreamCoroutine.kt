@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 import com.intellij.openapi.Disposable
 import com.intellij.ui.table.TableView
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.asDeferred
@@ -122,5 +123,6 @@ class CloudWatchLogStreamCoroutine(
 
     override fun dispose() {
         channel.close()
+        cancel()
     }
 }

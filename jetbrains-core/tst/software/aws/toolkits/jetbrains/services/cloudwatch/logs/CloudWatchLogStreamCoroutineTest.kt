@@ -6,10 +6,10 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -17,7 +17,6 @@ import kotlinx.coroutines.withTimeout
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
@@ -30,6 +29,8 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 
+// ExperimentalCoroutinesApi is needed for TestCoroutineScope
+@ExperimentalCoroutinesApi
 class CloudWatchLogStreamCoroutineTest {
     @JvmField
     @Rule
@@ -39,19 +40,11 @@ class CloudWatchLogStreamCoroutineTest {
     @Rule
     val mockClientManagerRule = MockClientManagerRule(projectRule)
 
-    private var testCoroutineScope: CoroutineScope = TestCoroutineScope()
-
-    @Before
-    fun before() {
-        testCoroutineScope = TestCoroutineScope()
-    }
+    private val testCoroutineScope: TestCoroutineScope = TestCoroutineScope()
 
     @After
     fun after() {
-        try {
-            testCoroutineScope?.cancel()
-        } catch (e: Exception) {
-        }
+        testCoroutineScope.cleanupTestCoroutines()
     }
 
     @Test
@@ -71,6 +64,22 @@ class CloudWatchLogStreamCoroutineTest {
     }
 
     @Test
+    fun modelIsPopulatedRange() {
+        val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        `when`(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>()))
+            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
+        val tableModel = ListTableModel<OutputLogEvent>()
+        val table = TableView<OutputLogEvent>(tableModel)
+        val coroutine = CloudWatchLogStreamCoroutine(mockClient, table, "abc", "def")
+        runBlocking {
+            coroutine.loadInitialRange(0L, 0L)
+        }
+        assertThat(tableModel.items.size).isOne()
+        assertThat(tableModel.items.first().message()).isEqualTo("message")
+        assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
+    }
+
+    @Test
     fun emptyTableOnExceptionThrown() {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         `when`(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
@@ -78,6 +87,18 @@ class CloudWatchLogStreamCoroutineTest {
         val table = TableView<OutputLogEvent>(tableModel)
         val coroutine = CloudWatchLogStreamCoroutine(mockClient, table, "abc", "def")
         assertThatThrownBy { runBlocking { coroutine.loadInitial() } }.hasMessage("network broke")
+        assertThat(tableModel.items).isEmpty()
+        assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
+    }
+
+    @Test
+    fun emptyTableOnExceptionThrownRange() {
+        val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        `when`(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
+        val tableModel = ListTableModel<OutputLogEvent>()
+        val table = TableView<OutputLogEvent>(tableModel)
+        val coroutine = CloudWatchLogStreamCoroutine(mockClient, table, "abc", "def")
+        assertThatThrownBy { runBlocking { coroutine.loadInitialRange(0L, 0L) } }.hasMessage("network broke")
         assertThat(tableModel.items).isEmpty()
         assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
     }
@@ -103,7 +124,7 @@ class CloudWatchLogStreamCoroutineTest {
         runBlocking {
             coroutine.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
             coroutine.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
-            waitForListToBeAtLeastSize(tableModel.items, 2)
+            waitForModelToBeAtLestSize(tableModel, 2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
         assertThat(tableModel.items[1].message()).isEqualTo("message2")
@@ -130,7 +151,7 @@ class CloudWatchLogStreamCoroutineTest {
         runBlocking {
             coroutine.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_BACKWARD)
             coroutine.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_BACKWARD)
-            waitForListToBeAtLeastSize(tableModel.items, 2)
+            waitForModelToBeAtLestSize(tableModel, 2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
         assertThat(tableModel.items.first().message()).isEqualTo("message2")
@@ -138,16 +159,11 @@ class CloudWatchLogStreamCoroutineTest {
     }
 
     @Test
-    fun writeChannelIsClosedOnDispose() {
+    fun writeChannelAndCoroutineIsDisposed() {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
-        `when`(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().build()))
         val tableModel = ListTableModel<OutputLogEvent>()
         val table = TableView<OutputLogEvent>(tableModel)
         val coroutine = CloudWatchLogStreamCoroutine(mockClient, table, "abc", "def")
-        runBlocking {
-            coroutine.loadInitial()
-        }
         val channel = coroutine.channel
         coroutine.dispose()
         assertThatThrownBy {
@@ -155,10 +171,11 @@ class CloudWatchLogStreamCoroutineTest {
                 channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_BACKWARD)
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
+        assertThat(coroutine.isActive).isFalse()
     }
 
-    private suspend fun waitForListToBeAtLeastSize(items: List<*>, size: Int) = withTimeout(200) {
-        while (items.size < size) {
+    private suspend fun waitForModelToBeAtLestSize(list: ListTableModel<OutputLogEvent>, size: Int) = withTimeout(100) {
+        while (list.items.size < size) {
             delay(10)
         }
     }
