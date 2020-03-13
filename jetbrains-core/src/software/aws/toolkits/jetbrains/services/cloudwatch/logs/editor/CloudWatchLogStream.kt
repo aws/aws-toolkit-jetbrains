@@ -7,7 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.table.JBTable
+import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogStreamCoroutine
@@ -56,7 +58,7 @@ class CloudWatchLogStream(
     private val logStreamingJobLock = Object()
     private var logStreamingJob: Deferred<*>? = null
 
-    private lateinit var logsTable: JBTable
+    private lateinit var logsTable: TableView<OutputLogEvent>
     private val logStreamClient: CloudWatchLogStreamCoroutine
 
     private fun createUIComponents() {
@@ -67,7 +69,7 @@ class CloudWatchLogStream(
             -1,
             SortOrder.UNSORTED
         )
-        logsTable = JBTable(model).apply {
+        logsTable = TableView(model).apply {
             setPaintBusy(true)
             autoscrolls = true
             emptyText.text = message("loading_resource.loading")
@@ -81,7 +83,7 @@ class CloudWatchLogStream(
     }
 
     init {
-        logStreamClient = CloudWatchLogStreamCoroutine(project, logsTable, logGroup, logStream)
+        logStreamClient = CloudWatchLogStreamCoroutine(project.awsClient(), logsTable, logGroup, logStream)
         Disposer.register(this, logStreamClient)
         searchLabel.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup => $logStream"
         logsTable.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
@@ -103,13 +105,14 @@ class CloudWatchLogStream(
         launch {
             try {
                 if (startTime != null && duration != null) {
-                    logStreamClient.loadInitialAround(startTime, duration)
+                    logStreamClient.loadInitialRange(startTime, duration)
                 } else {
                     logStreamClient.loadInitial()
                 }
+                logStreamClient.startListening()
             } catch (e: Exception) {
                 val errorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
-                CloudWatchLogGroup.LOG.error(e) { errorMessage }
+                LOG.error(e) { errorMessage }
                 notifyError(title = errorMessage, project = project)
                 withContext(edtContext) { logsTable.emptyText.text = errorMessage }
             }
@@ -169,4 +172,8 @@ class CloudWatchLogStream(
 
     private fun JScrollBar.isAtBottom(): Boolean = value == (maximum - visibleAmount)
     private fun JScrollBar.isAtTop(): Boolean = value == minimum
+
+    companion object {
+        private val LOG = getLogger<CloudWatchLogStream>()
+    }
 }

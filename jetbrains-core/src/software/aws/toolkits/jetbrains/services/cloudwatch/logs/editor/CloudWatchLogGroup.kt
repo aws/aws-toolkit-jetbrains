@@ -159,6 +159,6 @@ class CloudWatchLogGroup(
     override fun dispose() {}
 
     companion object {
-        val LOG = getLogger<CloudWatchLogGroup>()
+        private val LOG = getLogger<CloudWatchLogGroup>()
     }
 }
