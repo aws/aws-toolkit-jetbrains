@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.ScrollPaneFactory
@@ -13,6 +12,8 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,6 +53,7 @@ class CloudWatchLogStream(
 
     val title = message("cloudwatch.logs.log_stream_title", logStream)
     private val edtContext = getCoroutineUiContext(disposable = this)
+    private val logStreamingJobLock = Object()
     private var logStreamingJob: Deferred<*>? = null
 
     private lateinit var logsTable: JBTable
@@ -88,7 +90,12 @@ class CloudWatchLogStream(
                 return@addAdjustmentListener
             }
             if (logsPanel.verticalScrollBar.isAtBottom()) {
-                launch { logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD) }
+                launch {
+                    // Don't load more if there is a logStreamingJob because then it will just keep loading forever at the bottom
+                    if (logStreamingJob == null) {
+                        logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
+                    }
+                }
             } else if (logsPanel.verticalScrollBar.isAtTop()) {
                 launch { logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_BACKWARD) }
             }
@@ -114,18 +121,31 @@ class CloudWatchLogStream(
 
     private fun setUpTemporaryButtons() {
         streamLogsOn.addActionListener {
-            logStreamingJob = async {
-                runUnlessDisposed(this@CloudWatchLogStream) {
+            synchronized(logStreamingJobLock) {
+                if (logStreamingJob != null) {
+                    return@synchronized
+                }
+                logStreamingJob = async {
                     while (true) {
-                        logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
-                        delay(1000)
+                        try {
+                            logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
+                            delay(1000)
+                        } catch (e: ClosedSendChannelException) {
+                            // Channel is closed, so break out of the while loop and kill the coroutine
+                            return@async
+                        }
                     }
                 }
             }
         }
         streamLogsOff.addActionListener {
             launch {
-                logStreamingJob?.cancel()
+                val oldJob = synchronized(logStreamingJobLock) {
+                    val oldJob = logStreamingJob
+                    logStreamingJob = null
+                    return@synchronized oldJob
+                }
+                oldJob?.cancelAndJoin()
             }
         }
     }
