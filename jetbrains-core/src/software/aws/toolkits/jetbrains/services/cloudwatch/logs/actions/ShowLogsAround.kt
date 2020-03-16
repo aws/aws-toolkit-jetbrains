@@ -9,15 +9,14 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.project.DumbAware
-import com.intellij.ui.table.JBTable
-import com.intellij.util.ui.ListTableModel
+import com.intellij.ui.table.TableView
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 
 class ShowLogsAroundGroup(
     private val logGroup: String,
     private val logStream: String,
-    private val treeTable: JBTable
+    private val treeTable: TableView<OutputLogEvent>
 ) : ActionGroup("show logs around <localize this>", null, AllIcons.Ide.Link), DumbAware {
     init {
         isPopup = true
@@ -33,7 +32,7 @@ class ShowLogsAroundGroup(
 private class ShowLogsAround(
     private val logGroup: String,
     private val logStream: String,
-    private val treeTable: JBTable,
+    private val treeTable: TableView<OutputLogEvent>,
     time: String,
     private val timescale: Long
 ) :
@@ -41,8 +40,8 @@ private class ShowLogsAround(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val window = CloudWatchLogWindow.getInstance(project)
-        val selectedObject = (treeTable.model as? ListTableModel<OutputLogEvent>)?.getItem(treeTable.selectedRow) ?: return
+        val selectedObject = treeTable.listTableModel.getItem(treeTable.selectedRow) ?: return
         // 1 minute for now
-        window.showLogStream(logGroup, logStream, true, selectedObject.timestamp(), timescale)
+        window.showLogStream(logGroup, logStream, selectedObject.timestamp(), timescale)
     }
 }

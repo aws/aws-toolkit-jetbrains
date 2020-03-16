@@ -47,7 +47,6 @@ class CloudWatchLogGroup(
     private val project: Project,
     private val logGroup: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
-    val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
     lateinit var content: JPanel
 
     private lateinit var refreshButton: JButton
@@ -162,6 +161,6 @@ class CloudWatchLogGroup(
     override fun dispose() {}
 
     companion object {
-        val LOG = getLogger<CloudWatchLogGroup>()
+        private val LOG = getLogger<CloudWatchLogGroup>()
     }
 }
