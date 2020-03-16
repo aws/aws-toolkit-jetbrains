@@ -143,7 +143,7 @@ class CloudWatchLogStream(
         val actionGroup = DefaultActionGroup()
         actionGroup.add(OpenCurrentInEditor(project, logStream, logsTable.listTableModel))
         actionGroup.add(TailLogs(logStreamActor.channel))
-        actionGroup.add(WrapLogs())
+        actionGroup.add(WrapLogs(logsTable))
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
         toolbarHolder.setContent(toolbar.component)
     }
