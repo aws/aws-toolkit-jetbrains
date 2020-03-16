@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
@@ -40,7 +41,6 @@ import javax.swing.JPanel
 import javax.swing.JScrollBar
 import javax.swing.JScrollPane
 import javax.swing.JTable
-import javax.swing.JTextField
 import javax.swing.SortOrder
 
 class CloudWatchLogStream(
@@ -53,16 +53,16 @@ class CloudWatchLogStream(
     lateinit var content: JPanel
     lateinit var logsPanel: JScrollPane
     lateinit var searchLabel: JLabel
-    lateinit var searchField: JTextField
+    lateinit var searchField: JBTextField
     lateinit var toolbarHolder: Wrapper
     lateinit var toolWindow: JComponent
 
     private val edtContext = getCoroutineUiContext(disposable = this)
-    private val logStreamingJobLock = Object()
+
     private var logStreamingJob: Deferred<*>? = null
 
     private lateinit var logsTable: TableView<OutputLogEvent>
-    private val logStreamClient: LogStreamActor
+    private val logStreamActor: LogStreamActor
 
     private fun createUIComponents() {
         val model = ListTableModel<OutputLogEvent>(
@@ -86,9 +86,10 @@ class CloudWatchLogStream(
     }
 
     init {
-        logStreamClient = LogStreamActor(project.awsClient(), logsTable, logGroup, logStream)
-        Disposer.register(this, logStreamClient)
+        logStreamActor = LogStreamActor(project.awsClient(), logsTable, logGroup, logStream)
+        Disposer.register(this, logStreamActor)
         searchLabel.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup => $logStream"
+        searchField.emptyText.text = message("cloudwatch.logs.filter_logs")
         logsTable.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
         logsPanel.verticalScrollBar.addAdjustmentListener {
             if (logsTable.model.rowCount == 0) {
@@ -98,21 +99,21 @@ class CloudWatchLogStream(
                 launch {
                     // Don't load more if there is a logStreamingJob because then it will just keep loading forever at the bottom
                     if (logStreamingJob == null) {
-                        logStreamClient.channel.send(LogStreamActor.Messages.LOAD_FORWARD)
+                        logStreamActor.channel.send(LogStreamActor.Messages.LOAD_FORWARD)
                     }
                 }
             } else if (logsPanel.verticalScrollBar.isAtTop()) {
-                launch { logStreamClient.channel.send(LogStreamActor.Messages.LOAD_BACKWARD) }
+                launch { logStreamActor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD) }
             }
         }
         launch {
             try {
                 if (startTime != null && duration != null) {
-                    logStreamClient.loadInitialRange(startTime, duration)
+                    logStreamActor.loadInitialRange(startTime, duration)
                 } else {
-                    logStreamClient.loadInitial()
+                    logStreamActor.loadInitial()
                 }
-                logStreamClient.startListening()
+                logStreamActor.startListening()
             } catch (e: Exception) {
                 val errorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
                 LOG.error(e) { errorMessage }
@@ -120,43 +121,9 @@ class CloudWatchLogStream(
                 withContext(edtContext) { logsTable.emptyText.text = errorMessage }
             }
         }
-        setUpTemporaryButtons()
 
         addAction()
         addActionToolbar()
-    }
-
-    private fun setUpTemporaryButtons() {
-        /*
-        streamLogsOn.addActionListener {
-            synchronized(logStreamingJobLock) {
-                if (logStreamingJob != null) {
-                    return@synchronized
-                }
-                logStreamingJob = async {
-                    while (true) {
-                        try {
-                            logStreamClient.channel.send(LogStreamActor.Messages.LOAD_FORWARD)
-                            delay(1000)
-                        } catch (e: ClosedSendChannelException) {
-                            // Channel is closed, so break out of the while loop and kill the coroutine
-                            return@async
-                        }
-                    }
-                }
-            }
-        }
-        streamLogsOff.addActionListener {
-            launch {
-                val oldJob = synchronized(logStreamingJobLock) {
-                    val oldJob = logStreamingJob
-                    logStreamingJob = null
-                    return@synchronized oldJob
-                }
-                oldJob?.cancelAndJoin()
-            }
-        }
-        */
     }
 
     private fun addAction() {
@@ -175,13 +142,10 @@ class CloudWatchLogStream(
     private fun addActionToolbar() {
         val actionGroup = DefaultActionGroup()
         actionGroup.add(OpenCurrentInEditor(project, logStream, logsTable.listTableModel))
-        actionGroup.add(TailLogs())
+        actionGroup.add(TailLogs(logStreamActor.channel))
         actionGroup.add(WrapLogs())
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
-        val component = toolbar.component
-        component.border = null
-        toolbarHolder.setContent(component)
-        toolbarHolder.border = null
+        toolbarHolder.setContent(toolbar.component)
     }
 
     override fun dispose() {}

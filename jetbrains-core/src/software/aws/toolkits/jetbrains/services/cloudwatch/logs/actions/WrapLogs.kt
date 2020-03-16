@@ -7,13 +7,20 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
+import com.intellij.ui.table.TableView
+import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.resources.message
 
-class WrapLogs : ToggleAction(message("cloudwatch.logs.wrap"), null, AllIcons.Actions.ToggleSoftWrap), DumbAware {
+class WrapLogs(private val table: TableView<OutputLogEvent>) : ToggleAction(message("cloudwatch.logs.wrap"), null, AllIcons.Actions.ToggleSoftWrap), DumbAware {
     private var isSelected = false
     override fun isSelected(e: AnActionEvent): Boolean = isSelected
 
     override fun setSelected(e: AnActionEvent, state: Boolean) {
         isSelected = state
+        if(isSelected) {
+            println("wrap")
+        } else {
+            println("unwrap")
+        }
     }
 }
