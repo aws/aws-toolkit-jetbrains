@@ -12,20 +12,21 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.table.TableView
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.resources.message
 
 class ShowLogsAroundGroup(
     private val logGroup: String,
     private val logStream: String,
     private val treeTable: TableView<OutputLogEvent>
-) : ActionGroup("show logs around <localize this>", null, AllIcons.Ide.Link), DumbAware {
+) : ActionGroup(message("cloudwatch.logs.show_logs_around"), null, AllIcons.Ide.Link), DumbAware {
     init {
         isPopup = true
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-        ShowLogsAround(logGroup, logStream, treeTable, "one minute <Localize>", 60 * 1000),
-        ShowLogsAround(logGroup, logStream, treeTable, "five minutes <Localize>", 5 * 60 * 1000),
-        ShowLogsAround(logGroup, logStream, treeTable, "ten minutes <Localize>", 10 * 60 * 1000)
+        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.one_minute"), 60 * 1000),
+        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.five_minutes"), 5 * 60 * 1000),
+        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.ten_minutes"), 10 * 60 * 1000)
     )
 }
 
@@ -34,14 +35,14 @@ private class ShowLogsAround(
     private val logStream: String,
     private val treeTable: TableView<OutputLogEvent>,
     time: String,
-    private val timescale: Long
+    private val durationMilliseconds: Long
 ) :
-    AnAction("Show logs around $time <LOCALIZE THIS>", "abc <localize this>", AllIcons.Ide.Link), DumbAware {
+    AnAction(time, null, null), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val window = CloudWatchLogWindow.getInstance(project)
         val selectedObject = treeTable.listTableModel.getItem(treeTable.selectedRow) ?: return
         // 1 minute for now
-        window.showLogStream(logGroup, logStream, selectedObject.timestamp(), timescale)
+        window.showLogStream(logGroup, logStream, selectedObject.timestamp(), durationMilliseconds)
     }
 }

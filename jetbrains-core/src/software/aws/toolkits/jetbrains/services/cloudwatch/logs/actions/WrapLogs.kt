@@ -7,8 +7,9 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
+import software.aws.toolkits.resources.message
 
-class WrapLogs : ToggleAction("wrap logs <localize>", null, AllIcons.Actions.ToggleSoftWrap), DumbAware {
+class WrapLogs : ToggleAction(message("cloudwatch.logs.wrap"), null, AllIcons.Actions.ToggleSoftWrap), DumbAware {
     private var isSelected = false
     override fun isSelected(e: AnActionEvent): Boolean = isSelected
 

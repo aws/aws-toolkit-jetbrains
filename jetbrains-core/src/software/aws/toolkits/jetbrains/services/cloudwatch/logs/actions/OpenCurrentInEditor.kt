@@ -22,13 +22,14 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 
 class OpenCurrentInEditor(
     private val project: Project,
     private val logStream: String,
     private val logsTableModel: ListTableModel<OutputLogEvent>
 ) :
-    AnAction("Open in editor <LOCALIZE>", null, AllIcons.Actions.Menu_open), CoroutineScope by GlobalScope, DumbAware {
+    AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.Menu_open), CoroutineScope by GlobalScope, DumbAware {
     private val edt = getCoroutineUiContext(ModalityState.defaultModalityState())
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -54,7 +55,7 @@ class OpenCurrentInEditor(
                 }
                 // set virtual file to read only
                 FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
-                    notifyError("open in logs failed <localize>")
+                    notifyError(message("cloudwatch.logs.open_in_editor_failed"))
                 }
             }
         }

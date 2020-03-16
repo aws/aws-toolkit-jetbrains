@@ -7,8 +7,9 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
+import software.aws.toolkits.resources.message
 
-class TailLogs : ToggleAction("tail logs <localize>", null, AllIcons.RunConfigurations.Scroll_down), DumbAware {
+class TailLogs : ToggleAction(message("cloudwatch.logs.tail"), null, AllIcons.RunConfigurations.Scroll_down), DumbAware {
     private var isSelected = false
 
     override fun isSelected(e: AnActionEvent): Boolean = isSelected

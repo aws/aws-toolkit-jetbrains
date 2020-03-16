@@ -23,13 +23,14 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 
 class OpenLogStreamInEditor(
     private val project: Project,
     private val logGroup: String,
     private val groupTable: JBTable
 ) :
-    AnAction("Open in editor <LOCALIZE>", null, AllIcons.Actions.Menu_open),
+    AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.Menu_open),
     CoroutineScope by ApplicationThreadPoolScope("OpenLogStreamInEditor"),
     DumbAware {
     private val edt = getCoroutineUiContext(ModalityState.defaultModalityState())
@@ -61,7 +62,7 @@ class OpenLogStreamInEditor(
                 }
                 // set virtual file to read only
                 FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
-                    notifyError("open in logs failed <localize>")
+                    notifyError(message("cloudwatch.logs.open_in_editor_failed"))
                 }
             }
         }
