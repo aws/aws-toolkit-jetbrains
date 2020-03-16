@@ -16,11 +16,11 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.ui.table.JBTable
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 
@@ -29,7 +29,9 @@ class OpenLogStreamInEditor(
     private val logGroup: String,
     private val groupTable: JBTable
 ) :
-    AnAction("Open in editor <LOCALIZE>", null, AllIcons.Actions.Menu_open), CoroutineScope by GlobalScope, DumbAware {
+    AnAction("Open in editor <LOCALIZE>", null, AllIcons.Actions.Menu_open),
+    CoroutineScope by ApplicationThreadPoolScope("OpenLogStreamInEditor"),
+    DumbAware {
     private val edt = getCoroutineUiContext(ModalityState.defaultModalityState())
 
     override fun actionPerformed(e: AnActionEvent) {

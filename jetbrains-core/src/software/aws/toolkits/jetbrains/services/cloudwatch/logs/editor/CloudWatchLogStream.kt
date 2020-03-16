@@ -3,12 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.impl.runUnlessDisposed
@@ -18,6 +15,7 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ColumnInfo
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -29,6 +27,8 @@ import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogStreamClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundGroup
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.TailLogs
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogs
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -83,7 +83,7 @@ class CloudWatchLogStream(
 
     init {
         searchLabel.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup => $logStream"
-        logsTable.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
+        logsTable.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
         logsPanel.verticalScrollBar.addAdjustmentListener {
             if (logsTable.model.rowCount == 0) {
                 return@addAdjustmentListener
@@ -135,20 +135,13 @@ class CloudWatchLogStream(
         addActions()
         val actionGroup = DefaultActionGroup()
         actionGroup.add(OpenCurrentInEditor(project, logStream, logsTable.logsModel))
-        actionGroup.add(object : AnAction("tail logs <localize>", null, AllIcons.RunConfigurations.Scroll_down) {
-            override fun actionPerformed(e: AnActionEvent) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-            }
-
-        })
-        actionGroup.add(object : AnAction("wrap logs <localize>", null, AllIcons.Actions.ToggleSoftWrap) {
-            override fun actionPerformed(e: AnActionEvent) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-            }
-
-        })
+        actionGroup.add(TailLogs())
+        actionGroup.add(WrapLogs())
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
-        toolbarHolder.setContent(toolbar.component)
+        val component = toolbar.component
+        component.border = null
+        toolbarHolder.setContent(component)
+        toolbarHolder.border = null
     }
 
     private fun setUpTemporaryButtons() {
