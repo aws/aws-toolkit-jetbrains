@@ -23,7 +23,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogStreamCoroutine
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -58,7 +58,7 @@ class CloudWatchLogStream(
     private var logStreamingJob: Deferred<*>? = null
 
     private lateinit var logsTable: TableView<OutputLogEvent>
-    private val logStreamClient: CloudWatchLogStreamCoroutine
+    private val logStreamClient: LogStreamActor
 
     private fun createUIComponents() {
         val model = ListTableModel<OutputLogEvent>(
@@ -82,7 +82,7 @@ class CloudWatchLogStream(
     }
 
     init {
-        logStreamClient = CloudWatchLogStreamCoroutine(project.awsClient(), logsTable, logGroup, logStream)
+        logStreamClient = LogStreamActor(project.awsClient(), logsTable, logGroup, logStream)
         Disposer.register(this, logStreamClient)
         searchLabel.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup => $logStream"
         logsTable.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
@@ -94,11 +94,11 @@ class CloudWatchLogStream(
                 launch {
                     // Don't load more if there is a logStreamingJob because then it will just keep loading forever at the bottom
                     if (logStreamingJob == null) {
-                        logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
+                        logStreamClient.channel.send(LogStreamActor.Messages.LOAD_FORWARD)
                     }
                 }
             } else if (logsPanel.verticalScrollBar.isAtTop()) {
-                launch { logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_BACKWARD) }
+                launch { logStreamClient.channel.send(LogStreamActor.Messages.LOAD_BACKWARD) }
             }
         }
         launch {
@@ -130,7 +130,7 @@ class CloudWatchLogStream(
                 logStreamingJob = async {
                     while (true) {
                         try {
-                            logStreamClient.channel.send(CloudWatchLogStreamCoroutine.Messages.LOAD_FORWARD)
+                            logStreamClient.channel.send(LogStreamActor.Messages.LOAD_FORWARD)
                             delay(1000)
                         } catch (e: ClosedSendChannelException) {
                             // Channel is closed, so break out of the while loop and kill the coroutine

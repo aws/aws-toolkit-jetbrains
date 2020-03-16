@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
-class CloudWatchLogStreamCoroutine(
+class LogStreamActor(
     private val client: CloudWatchLogsAsyncClient,
     private val table: TableView<OutputLogEvent>,
     private val logGroup: String,
