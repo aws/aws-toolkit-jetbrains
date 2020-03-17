@@ -49,27 +49,28 @@ class LogStreamDateColumn : ColumnInfo<OutputLogEvent, String>(message("general.
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
 
-open class LogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
+class LogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
     override fun valueOf(item: OutputLogEvent?): String? = item?.message()
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
 
-class WrappingLogStreamMessageColumn : LogStreamMessageColumn() {
-    override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = object : JBTextArea(), TableCellRenderer {
-        override fun getTableCellRendererComponent(
-            table: JTable,
-            value: Any,
-            isSelected: Boolean,
-            hasFocus: Boolean,
-            row: Int,
-            column: Int
-        ): Component {
-            text = item?.message()
-            setSize(table.columnModel.getColumn(column).width, preferredSize.height)
-            if (table.getRowHeight(row) != preferredSize.height) {
-                table.setRowHeight(row, preferredSize.height)
-            }
-            return this
+class WrappingLogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
+    private val renderer = WrappingLogStreamMessageRenderer()
+    override fun valueOf(item: OutputLogEvent?): String? = item?.message()
+    override fun isCellEditable(item: OutputLogEvent?): Boolean = false
+    override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = renderer
+}
+
+class WrappingLogStreamMessageRenderer : TableCellRenderer {
+    override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+        val component = JBTextArea()
+        component.wrapStyleWord = true
+        component.lineWrap = true
+        component.text = (value as? String)?.trim()
+        component.setSize(table.columnModel.getColumn(column).width, component.preferredSize.height)
+        if (table.getRowHeight(row) != component.preferredSize.height) {
+            table.setRowHeight(row, component.preferredSize.height)
         }
+        return component
     }
 }

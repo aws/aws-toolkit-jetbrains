@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.WrappingL
 import software.aws.toolkits.resources.message
 
 class WrapLogs(private val table: TableView<OutputLogEvent>) : ToggleAction(message("cloudwatch.logs.wrap"), null, AllIcons.Actions.ToggleSoftWrap), DumbAware {
+    private val messageColumn = 1
     private var isSelected = false
     override fun isSelected(e: AnActionEvent): Boolean = isSelected
 
@@ -27,12 +28,10 @@ class WrapLogs(private val table: TableView<OutputLogEvent>) : ToggleAction(mess
     }
 
     private fun wrap() {
-        table.listTableModel.columnInfos[1] = WrappingLogStreamMessageColumn()
-        table.invalidate()
+        table.listTableModel.columnInfos[messageColumn] = WrappingLogStreamMessageColumn()
     }
 
     private fun unwrap() {
-        table.listTableModel.columnInfos[1] = LogStreamMessageColumn()
-        table.invalidate()
+        table.listTableModel.columnInfos[messageColumn] = LogStreamMessageColumn()
     }
 }
