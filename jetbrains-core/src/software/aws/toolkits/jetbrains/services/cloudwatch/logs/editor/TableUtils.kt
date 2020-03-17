@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.ui.ColumnInfo
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
@@ -61,7 +62,7 @@ class WrappingLogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(messag
     override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = renderer
 }
 
-class WrappingLogStreamMessageRenderer : TableCellRenderer {
+private class WrappingLogStreamMessageRenderer : TableCellRenderer {
     override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = JBTextArea()
         component.wrapStyleWord = true

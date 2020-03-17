@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
@@ -35,7 +36,7 @@ class OpenLogStreamInEditor(
     }
 
     private suspend fun actionPerformedSuspend(e: AnActionEvent) {
-        val client: CloudWatchLogsClient = AwsClientManager.getInstance(project).getClient()
+        val client: CloudWatchLogsClient = project.awsClient()
         val row = groupTable.selectedRow.takeIf { it >= 0 } ?: return
         val logStream = groupTable.getValueAt(row, 0) as String
         val events = client.getLogEventsPaginator { it.startFromHead(true).logGroupName(logGroup).logStreamName(logStream) }
