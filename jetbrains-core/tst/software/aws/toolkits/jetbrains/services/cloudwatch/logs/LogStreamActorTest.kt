@@ -9,12 +9,12 @@ import com.intellij.util.ui.ListTableModel
 import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
+import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.withTimeout
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.After
@@ -39,6 +39,10 @@ class LogStreamActorTest {
     @JvmField
     @Rule
     val mockClientManagerRule = MockClientManagerRule(projectRule)
+
+    @JvmField
+    @Rule
+    val timeout = CoroutinesTimeout.seconds(10)
 
     private val testCoroutineScope: TestCoroutineScope = TestCoroutineScope()
 
@@ -174,7 +178,7 @@ class LogStreamActorTest {
         assertThat(coroutine.isActive).isFalse()
     }
 
-    private suspend fun waitForModelToBeAtLeastSize(list: ListTableModel<OutputLogEvent>, size: Int) = withTimeout(100) {
+    private suspend fun waitForModelToBeAtLeastSize(list: ListTableModel<OutputLogEvent>, size: Int) {
         while (list.items.size < size) {
             delay(10)
         }

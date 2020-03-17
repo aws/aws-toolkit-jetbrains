@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestActionEvent
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -18,6 +19,10 @@ class StreamLogsTest {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
+
+    @JvmField
+    @Rule
+    val timeout = CoroutinesTimeout.seconds(10)
 
     @Test
     fun streamsWhenEnabled() {
@@ -41,11 +46,9 @@ class StreamLogsTest {
         channel.close()
         tailLogs.setSelected(TestActionEvent(), true)
         runBlocking {
-            withTimeout(100) {
-                while (tailLogs.logStreamingJob?.isCompleted != true) {
-                    delay(10)
-                    println(tailLogs.logStreamingJob?.isActive)
-                }
+            while (tailLogs.logStreamingJob?.isCompleted != true) {
+                delay(10)
+                println(tailLogs.logStreamingJob?.isActive)
             }
         }
         assertThat(tailLogs.logStreamingJob?.isActive).isFalse()
@@ -59,10 +62,8 @@ class StreamLogsTest {
         assertThat(tailLogs.logStreamingJob?.isActive).isTrue()
         tailLogs.setSelected(TestActionEvent(), false)
         runBlocking {
-            withTimeout(100) {
-                while (tailLogs.logStreamingJob?.isCompleted != true) {
-                    delay(10)
-                }
+            while (tailLogs.logStreamingJob?.isCompleted != true) {
+                delay(10)
             }
         }
         assertThat(tailLogs.logStreamingJob?.isActive).isFalse()

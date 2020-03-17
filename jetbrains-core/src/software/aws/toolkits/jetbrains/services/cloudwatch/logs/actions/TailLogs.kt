@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
@@ -23,6 +24,8 @@ class TailLogs(private val channel: Channel<LogStreamActor.Messages>) :
     DumbAware {
     private var isSelected = false
     var logStreamingJob: Job? = null
+        private set
+        @TestOnly get
 
     override fun isSelected(e: AnActionEvent): Boolean = isSelected
 

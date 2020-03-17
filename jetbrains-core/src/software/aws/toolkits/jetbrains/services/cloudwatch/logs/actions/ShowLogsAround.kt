@@ -42,7 +42,6 @@ private class ShowLogsAround(
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val window = CloudWatchLogWindow.getInstance(project)
         val selectedObject = treeTable.listTableModel.getItem(treeTable.selectedRow) ?: return
-        // 1 minute for now
         window.showLogStream(logGroup, logStream, selectedObject.timestamp(), durationMilliseconds)
     }
 }

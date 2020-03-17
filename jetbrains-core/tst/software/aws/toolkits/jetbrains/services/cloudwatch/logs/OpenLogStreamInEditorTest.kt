@@ -11,9 +11,9 @@ import com.intellij.testFramework.TestActionEvent
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ListTableModel
 import com.nhaarman.mockitokotlin2.whenever
+import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Rule
@@ -39,6 +39,10 @@ class OpenLogStreamInEditorTest {
     @JvmField
     @Rule
     val mockClientManagerRule = MockClientManagerRule(projectRule)
+
+    @JvmField
+    @Rule
+    val timeout = CoroutinesTimeout.seconds(10)
 
     @After
     fun after() {
@@ -101,10 +105,8 @@ class OpenLogStreamInEditorTest {
 
     private suspend fun blockUntilFileOpen() {
         val editorManager = FileEditorManager.getInstance(projectRule.project)
-        withTimeout(4000) {
-            while (editorManager.openFiles.isEmpty()) {
-                delay(20)
-            }
+        while (editorManager.openFiles.isEmpty()) {
+            delay(20)
         }
     }
 }
