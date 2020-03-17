@@ -12,17 +12,12 @@ import kotlinx.coroutines.withTimeout
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.TailLogs
 
 class StreamLogsTest {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
-
-    @JvmField
-    @Rule
-    val mockClientManagerRule = MockClientManagerRule(projectRule)
 
     @Test
     fun streamsWhenEnabled() {

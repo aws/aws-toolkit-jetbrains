@@ -65,7 +65,8 @@ class OpenLogStreamInEditorTest {
         val tableModel = ListTableModel<LogStream>(LogStreamsStreamColumn())
         val table = JBTable(tableModel)
         tableModel.addRow(LogStream.builder().logStreamName("54321").build())
-        table.setRowSelectionInterval(0, 0);
+        // select the first row
+        table.setRowSelectionInterval(0, 0)
         val action = OpenLogStreamInEditor(projectRule.project, "12345", table)
         action.actionPerformed(TestActionEvent())
         runBlocking {
