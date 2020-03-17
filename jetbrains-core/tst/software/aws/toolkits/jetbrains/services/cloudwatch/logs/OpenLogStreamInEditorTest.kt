@@ -101,9 +101,9 @@ class OpenLogStreamInEditorTest {
 
     private suspend fun blockUntilFileOpen() {
         val editorManager = FileEditorManager.getInstance(projectRule.project)
-        withTimeout(1000) {
+        withTimeout(4000) {
             while (editorManager.openFiles.isEmpty()) {
-                delay(10)
+                delay(20)
             }
         }
     }
