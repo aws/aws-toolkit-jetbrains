@@ -18,6 +18,8 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
+// TODO check resulting file size/ size of log stream and have a pop up if > max editor size
+// TODO add progress bar for loading
 class OpenLogStreamInEditor(
     private val project: Project,
     private val logGroup: String,
