@@ -22,7 +22,7 @@ class TailLogs(private val channel: Channel<LogStreamActor.Messages>) :
     CoroutineScope by ApplicationThreadPoolScope("TailCloudWatchLogs"),
     DumbAware {
     private var isSelected = false
-    private var logStreamingJob: Job? = null
+    var logStreamingJob: Job? = null
 
     override fun isSelected(e: AnActionEvent): Boolean = isSelected
 
@@ -43,7 +43,7 @@ class TailLogs(private val channel: Channel<LogStreamActor.Messages>) :
                     delay(1000)
                 } catch (e: ClosedSendChannelException) {
                     // Channel is closed, so break out of the while loop and kill the coroutine
-                    return@launch
+                    break
                 }
             }
         }

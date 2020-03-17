@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.testFramework.LightVirtualFile
@@ -68,7 +67,7 @@ class OpenLogStreamInEditorTest {
         tableModel.addRow(LogStream.builder().logStreamName("54321").build())
         table.setRowSelectionInterval(0, 0);
         val action = OpenLogStreamInEditor(projectRule.project, "12345", table)
-        action.actionPerformed(TestActionEvent(DataContext { projectRule.project }))
+        action.actionPerformed(TestActionEvent())
         runBlocking {
             blockUntilFileOpen()
         }
@@ -89,7 +88,7 @@ class OpenLogStreamInEditorTest {
             )
         )
         val action = OpenCurrentInEditor(projectRule.project, "12345", tableModel)
-        action.actionPerformed(TestActionEvent(DataContext { projectRule.project }))
+        action.actionPerformed(TestActionEvent())
         runBlocking {
             blockUntilFileOpen()
         }
