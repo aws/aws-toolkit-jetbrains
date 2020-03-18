@@ -36,6 +36,7 @@ sealed class LogStreamActor(
     protected val client: CloudWatchLogsAsyncClient = project.awsClient()
     protected var nextBackwardToken: String? = null
     protected var nextForwardToken: String? = null
+    protected abstract val emptyText: String
 
     private val edtContext = getCoroutineUiContext(disposable = this)
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
@@ -96,7 +97,7 @@ sealed class LogStreamActor(
             withContext(edtContext) { table.emptyText.text = errorMessage }
         } finally {
             withContext(edtContext) {
-                table.emptyText.text = message("cloudwatch.logs.no_events")
+                table.emptyText.text = emptyText
                 table.setPaintBusy(false)
             }
         }
@@ -123,6 +124,8 @@ class LogStreamFilterActor(
     logGroup: String,
     logStream: String
 ) : LogStreamActor(project, table, logGroup, logStream) {
+    override val emptyText = message("cloudwatch.logs.no_events_query", logStream)
+
     override suspend fun loadInitial() {
         throw IllegalStateException("FilterActor can only loadInitialFilter")
     }
@@ -173,6 +176,7 @@ class LogStreamListActor(
     logStream: String
 ) :
     LogStreamActor(project, table, logGroup, logStream) {
+    override val emptyText = message("cloudwatch.logs.no_events")
     override suspend fun loadInitial() {
         val request = GetLogEventsRequest
             .builder()

@@ -12,10 +12,10 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterActor
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import javax.swing.JScrollBar
@@ -66,8 +66,8 @@ class LogStreamTable(
             TableType.LIST -> LogStreamListActor(project, logsTable, logGroup, logStream)
             TableType.FILTER -> LogStreamFilterActor(project, logsTable, logGroup, logStream)
         }
+        Disposer.register(this@LogStreamTable, logStreamActor)
         channel = logStreamActor.channel
-        Disposer.register(this, logStreamActor)
 
         component.verticalScrollBar.addAdjustmentListener {
             if (logsTable.model.rowCount == 0) {

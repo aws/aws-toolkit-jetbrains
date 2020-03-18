@@ -73,7 +73,7 @@ class LogStreamFilterActorTest {
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
-        assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
+        assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events_query", "def"))
     }
 
     @Test

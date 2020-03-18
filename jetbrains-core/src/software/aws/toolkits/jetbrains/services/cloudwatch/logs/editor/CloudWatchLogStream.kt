@@ -83,11 +83,15 @@ class CloudWatchLogStream(
                         logsPanel.setContent(logStreamTable.component)
                     }
                 } else {
+                    // This is thread safe because the actionPerformed is run on the UI thread
                     val table = LogStreamTable(project, logGroup, logStream, LogStreamTable.TableType.FILTER)
                     Disposer.register(this@CloudWatchLogStream, table)
+                    val oldTable = searchStreamTable
                     searchStreamTable = table
                     launch(edtContext) {
                         logsPanel.setContent(table.component)
+                        // Dispose the old one if it was not null
+                        oldTable?.let { launch { Disposer.dispose(it) } }
                     }
                     launch {
                         table.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER(searchFieldText))
