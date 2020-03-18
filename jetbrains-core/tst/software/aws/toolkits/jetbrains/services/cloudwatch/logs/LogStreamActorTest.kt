@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.resources.message
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 // ExperimentalCoroutinesApi is needed for TestCoroutineScope
@@ -76,7 +77,7 @@ class LogStreamActorTest {
         val table = TableView<OutputLogEvent>(tableModel)
         val coroutine = LogStreamActor(mockClient, table, "abc", "def")
         runBlocking {
-            coroutine.loadInitialRange(0L, 0L)
+            coroutine.loadInitialRange(0L, Duration.ofMillis(0L))
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message()).isEqualTo("message")
@@ -102,7 +103,7 @@ class LogStreamActorTest {
         val tableModel = ListTableModel<OutputLogEvent>()
         val table = TableView<OutputLogEvent>(tableModel)
         val coroutine = LogStreamActor(mockClient, table, "abc", "def")
-        assertThatThrownBy { runBlocking { coroutine.loadInitialRange(0L, 0L) } }.hasMessage("network broke")
+        assertThatThrownBy { runBlocking { coroutine.loadInitialRange(0L, Duration.ofMillis(0L)) } }.hasMessage("network broke")
         assertThat(tableModel.items).isEmpty()
         assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
     }
