@@ -169,7 +169,7 @@ class LogStreamListActorTest {
 
     @Test
     fun writeChannelAndCoroutineIsDisposed() {
-        val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")

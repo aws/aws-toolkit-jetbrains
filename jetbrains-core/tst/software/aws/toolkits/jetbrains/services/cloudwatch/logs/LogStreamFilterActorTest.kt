@@ -8,11 +8,13 @@ import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineScope
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -69,9 +71,91 @@ class LogStreamFilterActorTest {
             actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("filter query"))
             tableModel.waitForModelToBeAtLeast(1)
         }
-        Assertions.assertThat(tableModel.items.size).isOne()
-        Assertions.assertThat(tableModel.items.first().message).isEqualTo("message")
-        Assertions.assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
+        assertThat(tableModel.items.size).isOne()
+        assertThat(tableModel.items.first().message).isEqualTo("message")
+        assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
+    }
+
+    @Test
+    fun loadingForwardAppendsToTable() {
+        val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        whenever(mockClient.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    FilterLogEventsResponse
+                        .builder()
+                        .events(FilteredLogEvent.builder().message("message").build())
+                        .build()
+                )
+            )
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    FilterLogEventsResponse
+                        .builder()
+                        .events(FilteredLogEvent.builder().message("message2").build())
+                        .build()
+                )
+            )
+        val tableModel = ListTableModel<LogStreamEntry>()
+        val table = TableView<LogStreamEntry>(tableModel)
+        val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
+        runBlocking {
+            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("filter query"))
+            actor.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
+            tableModel.waitForModelToBeAtLeast(2)
+        }
+        assertThat(tableModel.items).hasSize(2)
+        assertThat(tableModel.items.first().message).isEqualTo("message")
+        assertThat(tableModel.items[1].message).isEqualTo("message2")
+    }
+
+    @Test
+    fun loadingBackwardsDoesNothing() {
+        val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        whenever(mockClient.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    FilterLogEventsResponse
+                        .builder()
+                        .events(FilteredLogEvent.builder().message("message").build())
+                        .build()
+                )
+            )
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    FilterLogEventsResponse
+                        .builder()
+                        .events(FilteredLogEvent.builder().message("message2").build())
+                        .build()
+                )
+            )
+        val tableModel = ListTableModel<LogStreamEntry>()
+        val table = TableView<LogStreamEntry>(tableModel)
+        val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
+        runBlocking {
+            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("filter query"))
+            actor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD())
+            actor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD())
+            tableModel.waitForModelToBeAtLeast(1)
+        }
+        assertThat(tableModel.items).hasSize(1)
+        assertThat(tableModel.items.first().message).isEqualTo("message")
+    }
+
+    @Test
+    fun writeChannelAndCoroutineIsDisposed() {
+        mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val tableModel = ListTableModel<LogStreamEntry>()
+        val table = TableView<LogStreamEntry>(tableModel)
+        val coroutine = LogStreamFilterActor(projectRule.project, table, "abc", "def")
+        val channel = coroutine.channel
+        coroutine.dispose()
+        assertThatThrownBy {
+            runBlocking {
+                channel.send(LogStreamActor.Messages.LOAD_FORWARD())
+            }
+        }.isInstanceOf(ClosedSendChannelException::class.java)
+        assertThat(coroutine.isActive).isFalse()
     }
 
     @Test
