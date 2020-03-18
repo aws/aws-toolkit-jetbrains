@@ -73,24 +73,3 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
         return component
     }
 }
-
-class WrappingLogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
-    private val renderer = WrappingLogStreamMessageRenderer()
-    override fun valueOf(item: OutputLogEvent?): String? = item?.message()
-    override fun isCellEditable(item: OutputLogEvent?): Boolean = false
-    override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = renderer
-}
-
-private class WrappingLogStreamMessageRenderer : TableCellRenderer {
-    override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
-        val component = JBTextArea()
-        component.wrapStyleWord = true
-        component.lineWrap = true
-        component.text = (value as? String)?.trim()
-        component.setSize(table.columnModel.getColumn(column).width, component.preferredSize.height)
-        if (table.getRowHeight(row) != component.preferredSize.height) {
-            table.setRowHeight(row, component.preferredSize.height)
-        }
-        return component
-    }
-}
