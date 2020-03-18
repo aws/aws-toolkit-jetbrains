@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.table.TableView
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -37,6 +38,13 @@ sealed class LogStreamActor(
     protected var nextBackwardToken: String? = null
     protected var nextForwardToken: String? = null
 
+    private val exceptionHandler = CoroutineExceptionHandler { _, e ->
+        LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
+        notifyError(title = message("general.unknown_error"), project = project)
+        channel.close()
+        cancel()
+    }
+
     sealed class Messages {
         class LOAD_INITIAL : Messages()
         class LOAD_INITIAL_RANGE(val startTime: Long, val duration: Duration) : Messages()
@@ -46,7 +54,7 @@ sealed class LogStreamActor(
     }
 
     init {
-        launch {
+        launch(exceptionHandler) {
             startListening()
         }
     }

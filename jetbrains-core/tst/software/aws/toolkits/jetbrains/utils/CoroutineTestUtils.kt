@@ -7,11 +7,17 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.delay
 
 suspend fun ListTableModel<*>.waitForModelToBeAtLeast(size: Int) {
-    waitForTrue { items.size < size }
+    waitForFalse { items.size < size }
+}
+
+suspend fun waitForFalse(block: () -> Boolean) {
+    while (block()) {
+        delay(10)
+    }
 }
 
 suspend fun waitForTrue(block: () -> Boolean) {
-    while (block()) {
+    while (!block()) {
         delay(10)
     }
 }
