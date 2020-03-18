@@ -109,7 +109,7 @@ sealed class LogStreamActor(
     }
 }
 
-class FilterActor(
+class LogStreamFilterActor(
     project: Project,
     table: TableView<LogStreamEntry>,
     logGroup: String,
@@ -153,7 +153,7 @@ class FilterActor(
     }
 }
 
-class ListActor(
+class LogStreamListActor(
     project: Project,
     table: TableView<LogStreamEntry>,
     logGroup: String,

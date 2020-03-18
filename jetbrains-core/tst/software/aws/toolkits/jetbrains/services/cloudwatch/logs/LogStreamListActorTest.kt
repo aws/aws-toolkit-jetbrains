@@ -10,7 +10,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -25,13 +24,15 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
+import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 // ExperimentalCoroutinesApi is needed for TestCoroutineScope
 @ExperimentalCoroutinesApi
-class LogStreamActorTest {
+class LogStreamListActorTest {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
@@ -58,10 +59,10 @@ class LogStreamActorTest {
             .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = ListActor(projectRule.project, table, "abc", "def")
+        val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL())
-            waitForModelToBeAtLeastSize(tableModel, 1)
+            tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
@@ -75,10 +76,10 @@ class LogStreamActorTest {
             .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = ListActor(projectRule.project, table, "abc", "def")
+        val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
-            waitForModelToBeAtLeastSize(tableModel, 1)
+            tableModel.waitForModelToBeAtLeast(1)
         }
 
         assertThat(tableModel.items.size).isOne()
@@ -92,7 +93,7 @@ class LogStreamActorTest {
         whenever(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = ListActor(projectRule.project, table, "abc", "def")
+        val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL())
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
@@ -106,7 +107,7 @@ class LogStreamActorTest {
         whenever(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = ListActor(projectRule.project, table, "abc", "def")
+        val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
@@ -123,17 +124,17 @@ class LogStreamActorTest {
             .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message2").build()).build()))
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = ListActor(projectRule.project, table, "abc", "def")
+        val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
-            waitForModelToBeAtLeastSize(tableModel, 1)
+            tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
             coroutine.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
-            waitForModelToBeAtLeastSize(tableModel, 2)
+            tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
         assertThat(tableModel.items[1].message).isEqualTo("message2")
@@ -148,17 +149,17 @@ class LogStreamActorTest {
             .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message2").build()).build()))
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = ListActor(projectRule.project, table, "abc", "def")
+        val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
-            waitForModelToBeAtLeastSize(tableModel, 1)
+            tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_BACKWARD())
             coroutine.channel.send(LogStreamActor.Messages.LOAD_BACKWARD())
-            waitForModelToBeAtLeastSize(tableModel, 2)
+            tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
         assertThat(tableModel.items.first().message).isEqualTo("message2")
@@ -170,7 +171,7 @@ class LogStreamActorTest {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = ListActor(projectRule.project, table, "abc", "def")
+        val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         val channel = coroutine.channel
         coroutine.dispose()
         assertThatThrownBy {
@@ -179,15 +180,5 @@ class LogStreamActorTest {
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
         assertThat(coroutine.isActive).isFalse()
-    }
-
-    private suspend fun waitForModelToBeAtLeastSize(list: ListTableModel<*>, size: Int) {
-        waitForTrue { list.items.size < size }
-    }
-
-    private suspend fun waitForTrue(block: () -> Boolean) {
-        while (block()) {
-            delay(10)
-        }
     }
 }

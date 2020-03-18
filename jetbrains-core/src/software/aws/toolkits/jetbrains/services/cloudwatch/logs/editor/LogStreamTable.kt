@@ -12,8 +12,8 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.FilterActor
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.ListActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -63,8 +63,8 @@ class LogStreamTable(
         component = ScrollPaneFactory.createScrollPane(logsTable)
 
         logStreamActor = when (type) {
-            TableType.LIST -> ListActor(project, logsTable, logGroup, logStream)
-            TableType.FILTER -> FilterActor(project, logsTable, logGroup, logStream)
+            TableType.LIST -> LogStreamListActor(project, logsTable, logGroup, logStream)
+            TableType.FILTER -> LogStreamFilterActor(project, logsTable, logGroup, logStream)
         }
         channel = logStreamActor.channel
         Disposer.register(this, logStreamActor)
