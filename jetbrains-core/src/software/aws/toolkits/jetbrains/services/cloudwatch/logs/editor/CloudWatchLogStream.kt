@@ -18,8 +18,10 @@ import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -35,6 +37,8 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import java.awt.event.ActionEvent
+import java.awt.event.ActionListener
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -90,6 +94,25 @@ class CloudWatchLogStream(
         Disposer.register(this, logStreamActor)
         searchLabel.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup => $logStream"
         searchField.emptyText.text = message("cloudwatch.logs.filter_logs")
+        searchField.addActionListener(object : ActionListener {
+            private var lastText: String? = null
+            override fun actionPerformed(e: ActionEvent?) {
+                if (searchField.text == lastText) {
+                    return
+                }
+                lastText = searchField.text
+                val client: CloudWatchLogsAsyncClient = project.awsClient()
+                launch {
+                    val response = client.filterLogEvents {
+                        it
+                            .logGroupName(logGroup)
+                            .logStreamNames(logStream)
+                            .filterPattern(lastText)
+                    }.await()
+                    val events = response.events()
+                }
+            }
+        })
         logsTable.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
         logsPanel.verticalScrollBar.addAdjustmentListener {
             if (logsTable.model.rowCount == 0) {
