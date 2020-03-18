@@ -9,7 +9,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -29,13 +28,11 @@ class StreamLogsTest {
         val channel = Channel<LogStreamActor.Messages>()
         val tailLogs = TailLogs(channel)
         runBlocking {
-            withTimeout(1500) {
-                tailLogs.setSelected(TestActionEvent(), true)
-                var response = channel.receive()
-                assertThat(response).isEqualTo(LogStreamActor.Messages.LOAD_FORWARD)
-                response = channel.receive()
-                assertThat(response).isEqualTo(LogStreamActor.Messages.LOAD_FORWARD)
-            }
+            tailLogs.setSelected(TestActionEvent(), true)
+            var response = channel.receive()
+            assertThat(response).isInstanceOf(LogStreamActor.Messages.LOAD_FORWARD::class.java)
+            response = channel.receive()
+            assertThat(response).isInstanceOf(LogStreamActor.Messages.LOAD_FORWARD::class.java)
         }
     }
 

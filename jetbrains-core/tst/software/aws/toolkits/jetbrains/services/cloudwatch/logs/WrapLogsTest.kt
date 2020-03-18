@@ -17,8 +17,8 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.WrappingL
 class WrapLogsTest {
     @Test
     fun wrappingChangesModel() {
-        val model = ListTableModel<OutputLogEvent>(LogStreamDateColumn(), LogStreamMessageColumn())
-        val table = TableView<OutputLogEvent>(model)
+        val model = ListTableModel<LogStreamEntry>(LogStreamDateColumn(), LogStreamMessageColumn())
+        val table = TableView<LogStreamEntry>(model)
         val wrapLogsAction = WrapLogs(table)
         wrapLogsAction.setSelected(TestActionEvent(), true)
         assertThat(model.columnInfos[1]).isInstanceOf(WrappingLogStreamMessageColumn::class.java)

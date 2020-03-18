@@ -84,12 +84,12 @@ class OpenLogStreamInEditorTest {
 
     @Test
     fun testOpeningFileFromStream() {
-        val tableModel = ListTableModel<OutputLogEvent>()
+        val tableModel = ListTableModel<LogStreamEntry>()
         tableModel.addRows(
             mutableListOf(
-                OutputLogEvent.builder().message("abc\n").build(),
-                OutputLogEvent.builder().message("def\n").build(),
-                OutputLogEvent.builder().message("ghi\n").build()
+                LogStreamEntry("abc\n", 0L),
+                LogStreamEntry("def\n", 0L),
+                LogStreamEntry("ghi\n", 0L)
             )
         )
         val action = OpenCurrentInEditor(projectRule.project, "12345", tableModel)
