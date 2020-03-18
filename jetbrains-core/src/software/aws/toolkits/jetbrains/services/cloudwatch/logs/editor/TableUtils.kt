@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
+import software.amazon.awssdk.services.cloudwatchlogs.model.FilteredLogEvent
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.resources.message
@@ -53,11 +54,32 @@ class LogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("gener
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
 }
 
+class LogStreamDateColumn : ColumnInfo<OutputLogEvent, String>(message("general.time")) {
+    override fun valueOf(item: OutputLogEvent?): String? {
+        val timestamp = item?.timestamp() ?: return null
+        return DateFormatUtil.getDateTimeFormat().format(timestamp)
+    }
+
+    override fun isCellEditable(item: OutputLogEvent?): Boolean = false
+}
+
 class WrappingLogStreamMessageColumn : ColumnInfo<OutputLogEvent, String>(message("general.message")) {
     private val renderer = WrappingLogStreamMessageRenderer()
     override fun valueOf(item: OutputLogEvent?): String? = item?.message()
     override fun isCellEditable(item: OutputLogEvent?): Boolean = false
     override fun getRenderer(item: OutputLogEvent?): TableCellRenderer? = renderer
+}
+
+class FilteredLogStreamMessageColumn : ColumnInfo<FilteredLogEvent, String>(message("general.message")) {
+    override fun valueOf(item: FilteredLogEvent?): String? = item?.message()
+    override fun isCellEditable(item: FilteredLogEvent?): Boolean = false
+}
+
+class WrappingLogStreamMessageColumn : ColumnInfo<FilteredLogEvent, String>(message("general.message")) {
+    private val renderer = WrappingLogStreamMessageRenderer()
+    override fun valueOf(item: FilteredLogEvent?): String? = item?.message()
+    override fun isCellEditable(item: FilteredLogEvent?): Boolean = false
+    override fun getRenderer(item: FilteredLogEvent?): TableCellRenderer? = renderer
 }
 
 private class WrappingLogStreamMessageRenderer : TableCellRenderer {
