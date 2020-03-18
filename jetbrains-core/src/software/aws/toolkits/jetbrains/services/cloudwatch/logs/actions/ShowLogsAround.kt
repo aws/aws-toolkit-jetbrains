@@ -7,7 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.table.TableView
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
@@ -40,7 +40,7 @@ private class ShowLogsAround(
 ) :
     AnAction(timeMessage, null, null), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
-        val project = e.getRequiredData(LangDataKeys.PROJECT)
+        val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val window = CloudWatchLogWindow.getInstance(project)
         val selectedObject = treeTable.listTableModel.getItem(treeTable.selectedRow) ?: return
         window.showLogStream(logGroup, logStream, selectedObject.timestamp, duration)

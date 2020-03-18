@@ -32,12 +32,12 @@ sealed class LogStreamActor(
     protected val logStream: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {
     val channel = Channel<Messages>()
-    protected val client: CloudWatchLogsAsyncClient = project.awsClient()
-    private val edtContext = getCoroutineUiContext(disposable = this)
 
+    protected val client: CloudWatchLogsAsyncClient = project.awsClient()
     protected var nextBackwardToken: String? = null
     protected var nextForwardToken: String? = null
 
+    private val edtContext = getCoroutineUiContext(disposable = this)
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
