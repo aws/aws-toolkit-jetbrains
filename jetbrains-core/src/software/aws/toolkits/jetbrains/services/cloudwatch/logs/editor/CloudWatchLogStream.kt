@@ -46,7 +46,7 @@ class CloudWatchLogStream(
 
     private val edtContext = getCoroutineUiContext(disposable = this)
 
-    private val logStreamTable: LogStreamTable = LogStreamTable(project, logGroup, logStream)
+    private val logStreamTable: LogStreamTable = LogStreamTable(project, logGroup, logStream, LogStreamTable.TableType.LIST)
     private var searchStreamTable: LogStreamTable? = null
 
     init {
@@ -83,7 +83,7 @@ class CloudWatchLogStream(
                         logsPanel.setContent(logStreamTable.component)
                     }
                 } else {
-                    val table = LogStreamTable(project, logGroup, logStream)
+                    val table = LogStreamTable(project, logGroup, logStream, LogStreamTable.TableType.FILTER)
                     Disposer.register(this@CloudWatchLogStream, table)
                     searchStreamTable = table
                     launch(edtContext) {

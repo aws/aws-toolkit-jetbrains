@@ -7,9 +7,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
-import software.amazon.awssdk.services.cloudwatchlogs.model.FilteredLogEvent
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
-import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.resources.message
 import java.awt.Component

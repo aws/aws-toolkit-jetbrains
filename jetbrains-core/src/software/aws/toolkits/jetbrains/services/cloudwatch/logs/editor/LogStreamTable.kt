@@ -12,6 +12,8 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.FilterActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.ListActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -24,9 +26,15 @@ import javax.swing.SortOrder
 class LogStreamTable(
     val project: Project,
     logGroup: String,
-    logStream: String
+    logStream: String,
+    type: TableType
 ) :
     CoroutineScope by ApplicationThreadPoolScope("LogStreamTable"), Disposable {
+
+    enum class TableType {
+        LIST,
+        FILTER
+    }
 
     val component: JScrollPane
     val channel: Channel<LogStreamActor.Messages>
@@ -54,7 +62,10 @@ class LogStreamTable(
 
         component = ScrollPaneFactory.createScrollPane(logsTable)
 
-        logStreamActor = LogStreamActor(project, logsTable, logGroup, logStream)
+        logStreamActor = when (type) {
+            TableType.LIST -> ListActor(project, logsTable, logGroup, logStream)
+            TableType.FILTER -> FilterActor(project, logsTable, logGroup, logStream)
+        }
         channel = logStreamActor.channel
         Disposer.register(this, logStreamActor)
 
@@ -70,7 +81,6 @@ class LogStreamTable(
                 launch { logStreamActor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD()) }
             }
         }
-
     }
 
     private fun JScrollBar.isAtBottom(): Boolean = value == (maximum - visibleAmount)

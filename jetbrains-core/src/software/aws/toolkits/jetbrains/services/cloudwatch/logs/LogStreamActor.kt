@@ -24,19 +24,18 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
 
-class LogStreamActor(
+sealed class LogStreamActor(
     private val project: Project,
     private val table: TableView<LogStreamEntry>,
-    private val logGroup: String,
-    private val logStream: String
+    protected val logGroup: String,
+    protected val logStream: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {
     val channel = Channel<Messages>()
-    private val client: CloudWatchLogsAsyncClient = project.awsClient()
+    protected val client: CloudWatchLogsAsyncClient = project.awsClient()
     private val edtContext = getCoroutineUiContext(disposable = this)
 
-    private var clientType: ClientType? = null
-    private var nextBackwardToken: String? = null
-    private var nextForwardToken: String? = null
+    protected var nextBackwardToken: String? = null
+    protected var nextForwardToken: String? = null
 
     sealed class Messages {
         class LOAD_INITIAL : Messages()
@@ -44,11 +43,6 @@ class LogStreamActor(
         class LOAD_INITIAL_SEARCH(val queryString: String) : Messages()
         class LOAD_FORWARD : Messages()
         class LOAD_BACKWARD : Messages()
-    }
-
-    private enum class ClientType {
-        GET,
-        FILTER
     }
 
     init {
@@ -62,11 +56,7 @@ class LogStreamActor(
             when (message) {
                 is Messages.LOAD_FORWARD -> {
                     if (nextForwardToken != null) {
-                        val items = if (clientType == ClientType.GET) {
-                            loadMore(nextForwardToken, saveForwardToken = true)
-                        } else {
-                            loadMoreSearch(nextForwardToken)
-                        }
+                        val items = loadMore(nextForwardToken, saveForwardToken = true)
                         withContext(edtContext) { table.listTableModel.addRows(items) }
                     }
                 }
@@ -77,63 +67,19 @@ class LogStreamActor(
                     }
                 }
                 is Messages.LOAD_INITIAL -> {
-                    // skip loading if we have a client
-                    if (clientType == null) {
-                        clientType = ClientType.GET
-                        loadInitial()
-                    }
+                    loadInitial()
                 }
                 is Messages.LOAD_INITIAL_RANGE -> {
-                    // skip loading if we have a client
-                    if (clientType == null) {
-                        clientType = ClientType.GET
-                        loadInitialRange(message.startTime, message.duration)
-                    }
+                    loadInitialRange(message.startTime, message.duration)
                 }
                 is Messages.LOAD_INITIAL_SEARCH -> {
-                    // skip loading if we have a client
-                    if (clientType == null) {
-                        clientType = ClientType.FILTER
-                        loadInitialSearch(message.queryString)
-                    }
+                    loadInitialSearch(message.queryString)
                 }
             }
         }
     }
 
-    private suspend fun loadInitial() {
-        val request = GetLogEventsRequest
-            .builder()
-            .logGroupName(logGroup)
-            .logStreamName(logStream)
-            .startFromHead(true)
-            .build()
-        loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
-    }
-
-    private suspend fun loadInitialRange(startTime: Long, duration: Duration) {
-        val request = GetLogEventsRequest
-            .builder()
-            .logGroupName(logGroup)
-            .logStreamName(logStream)
-            .startFromHead(true)
-            .startTime(startTime - duration.toMillis())
-            .endTime(startTime + duration.toMillis())
-            .build()
-        loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
-    }
-
-    private suspend fun loadInitialSearch(queryString: String) {
-        val request = FilterLogEventsRequest
-            .builder()
-            .logGroupName(logGroup)
-            .logStreamNames(logStream)
-            .filterPattern(queryString)
-            .build()
-        loadAndPopulate { getSearchLogEvents(request) }
-    }
-
-    private suspend fun loadAndPopulate(loadBlock: suspend () -> List<LogStreamEntry>) {
+    protected suspend fun loadAndPopulate(loadBlock: suspend () -> List<LogStreamEntry>) {
         try {
             val items = loadBlock()
             withContext(edtContext) {
@@ -152,23 +98,46 @@ class LogStreamActor(
         }
     }
 
-    private suspend fun loadMore(
-        nextToken: String?,
-        saveForwardToken: Boolean = false,
-        saveBackwardToken: Boolean = false
-    ): List<LogStreamEntry> {
-        val request = GetLogEventsRequest
-            .builder()
-            .logGroupName(logGroup)
-            .logStreamName(logStream)
-            .startFromHead(true)
-            .nextToken(nextToken)
-            .build()
+    abstract suspend fun loadInitial()
+    abstract suspend fun loadInitialRange(startTime: Long, duration: Duration)
+    abstract suspend fun loadInitialSearch(queryString: String)
+    abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<LogStreamEntry>
 
-        return getLogEvents(request, saveForwardToken = saveForwardToken, saveBackwardToken = saveBackwardToken)
+    override fun dispose() {
+        channel.close()
+        cancel()
     }
 
-    private suspend fun loadMoreSearch(nextToken: String?): List<LogStreamEntry> {
+    companion object {
+        private val LOG = getLogger<LogStreamActor>()
+    }
+}
+
+class FilterActor(
+    project: Project,
+    table: TableView<LogStreamEntry>,
+    logGroup: String,
+    logStream: String
+) : LogStreamActor(project, table, logGroup, logStream) {
+    override suspend fun loadInitial() {
+        throw IllegalStateException("FilterActor can only loadInitialSearch")
+    }
+
+    override suspend fun loadInitialSearch(queryString: String) {
+        val request = FilterLogEventsRequest
+            .builder()
+            .logGroupName(logGroup)
+            .logStreamNames(logStream)
+            .filterPattern(queryString)
+            .build()
+        loadAndPopulate { getSearchLogEvents(request) }
+    }
+
+    override suspend fun loadInitialRange(startTime: Long, duration: Duration) {
+        throw IllegalStateException("FilterActor can only loadInitialSearch")
+    }
+
+    override suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean, saveBackwardToken: Boolean): List<LogStreamEntry> {
         val request = FilterLogEventsRequest
             .builder()
             .logGroupName(logGroup)
@@ -186,6 +155,52 @@ class LogStreamActor(
 
         return events
     }
+}
+
+class ListActor(
+    project: Project,
+    table: TableView<LogStreamEntry>,
+    logGroup: String,
+    logStream: String
+) :
+    LogStreamActor(project, table, logGroup, logStream) {
+    override suspend fun loadInitial() {
+        val request = GetLogEventsRequest
+            .builder()
+            .logGroupName(logGroup)
+            .logStreamName(logStream)
+            .startFromHead(true)
+            .build()
+        loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
+    }
+
+    override suspend fun loadInitialRange(startTime: Long, duration: Duration) {
+        val request = GetLogEventsRequest
+            .builder()
+            .logGroupName(logGroup)
+            .logStreamName(logStream)
+            .startFromHead(true)
+            .startTime(startTime - duration.toMillis())
+            .endTime(startTime + duration.toMillis())
+            .build()
+        loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
+    }
+
+    override suspend fun loadInitialSearch(queryString: String) {
+        throw IllegalStateException("GetActor can not loadInitialSearch")
+    }
+
+    override suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean, saveBackwardToken: Boolean): List<LogStreamEntry> {
+        val request = GetLogEventsRequest
+            .builder()
+            .logGroupName(logGroup)
+            .logStreamName(logStream)
+            .startFromHead(true)
+            .nextToken(nextToken)
+            .build()
+
+        return getLogEvents(request, saveForwardToken = saveForwardToken, saveBackwardToken = saveBackwardToken)
+    }
 
     private suspend fun getLogEvents(
         request: GetLogEventsRequest,
@@ -202,14 +217,5 @@ class LogStreamActor(
         }
 
         return events
-    }
-
-    override fun dispose() {
-        channel.close()
-        cancel()
-    }
-
-    companion object {
-        private val LOG = getLogger<LogStreamActor>()
     }
 }

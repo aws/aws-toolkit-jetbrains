@@ -22,7 +22,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
-import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
@@ -59,7 +58,8 @@ class LogStreamActorTest {
             .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = LogStreamActor(projectRule.project, table, "abc", "def")
+        val coroutine =
+            LogStreamActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL())
             waitForModelToBeAtLeastSize(tableModel, 1)
