@@ -40,7 +40,7 @@ sealed class LogStreamActor(
     sealed class Messages {
         class LOAD_INITIAL : Messages()
         class LOAD_INITIAL_RANGE(val startTime: Long, val duration: Duration) : Messages()
-        class LOAD_INITIAL_SEARCH(val queryString: String) : Messages()
+        class LOAD_INITIAL_FILTER(val queryString: String) : Messages()
         class LOAD_FORWARD : Messages()
         class LOAD_BACKWARD : Messages()
     }
@@ -68,8 +68,8 @@ sealed class LogStreamActor(
                 is Messages.LOAD_INITIAL_RANGE -> {
                     loadInitialRange(message.startTime, message.duration)
                 }
-                is Messages.LOAD_INITIAL_SEARCH -> {
-                    loadInitialSearch(message.queryString)
+                is Messages.LOAD_INITIAL_FILTER -> {
+                    loadInitialFilter(message.queryString)
                 }
             }
         }
@@ -96,7 +96,7 @@ sealed class LogStreamActor(
 
     protected abstract suspend fun loadInitial()
     protected abstract suspend fun loadInitialRange(startTime: Long, duration: Duration)
-    protected abstract suspend fun loadInitialSearch(queryString: String)
+    protected abstract suspend fun loadInitialFilter(queryString: String)
     protected abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<LogStreamEntry>
 
     override fun dispose() {
@@ -116,10 +116,10 @@ class LogStreamFilterActor(
     logStream: String
 ) : LogStreamActor(project, table, logGroup, logStream) {
     override suspend fun loadInitial() {
-        throw IllegalStateException("FilterActor can only loadInitialSearch")
+        throw IllegalStateException("FilterActor can only loadInitialFilter")
     }
 
-    override suspend fun loadInitialSearch(queryString: String) {
+    override suspend fun loadInitialFilter(queryString: String) {
         val request = FilterLogEventsRequest
             .builder()
             .logGroupName(logGroup)
@@ -130,7 +130,7 @@ class LogStreamFilterActor(
     }
 
     override suspend fun loadInitialRange(startTime: Long, duration: Duration) {
-        throw IllegalStateException("FilterActor can only loadInitialSearch")
+        throw IllegalStateException("FilterActor can only loadInitialFilter")
     }
 
     override suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean, saveBackwardToken: Boolean): List<LogStreamEntry> {
@@ -182,8 +182,8 @@ class LogStreamListActor(
         loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
     }
 
-    override suspend fun loadInitialSearch(queryString: String) {
-        throw IllegalStateException("GetActor can not loadInitialSearch")
+    override suspend fun loadInitialFilter(queryString: String) {
+        throw IllegalStateException("GetActor can not loadInitialFilter")
     }
 
     override suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean, saveBackwardToken: Boolean): List<LogStreamEntry> {

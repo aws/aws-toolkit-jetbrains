@@ -90,7 +90,7 @@ class CloudWatchLogStream(
                         logsPanel.setContent(table.component)
                     }
                     launch {
-                        table.channel.send(LogStreamActor.Messages.LOAD_INITIAL_SEARCH(searchFieldText))
+                        table.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER(searchFieldText))
                     }
                 }
             }

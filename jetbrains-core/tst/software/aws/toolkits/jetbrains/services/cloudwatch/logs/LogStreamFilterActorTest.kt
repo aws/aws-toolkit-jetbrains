@@ -17,9 +17,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
-import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
-import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
+import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsResponse
+import software.amazon.awssdk.services.cloudwatchlogs.model.FilteredLogEvent
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.resources.message
@@ -50,13 +50,13 @@ class LogStreamFilterActorTest {
     @Test
     fun modelIsPopulated() {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
-        whenever(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
+        whenever(mockClient.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
+            .thenReturn(CompletableFuture.completedFuture(FilterLogEventsResponse.builder().events(FilteredLogEvent.builder().message("message").build()).build()))
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
-        val coroutine = LogStreamFilterActor(projectRule.project, table, "abc", "def")
+        val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
-            coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL_SEARCH("filter query"))
+            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("filter query"))
             tableModel.waitForModelToBeAtLeast(1)
         }
         Assertions.assertThat(tableModel.items.size).isOne()
