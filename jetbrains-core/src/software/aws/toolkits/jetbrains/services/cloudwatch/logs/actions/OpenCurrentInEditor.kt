@@ -11,7 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
@@ -19,7 +19,7 @@ import software.aws.toolkits.resources.message
 class OpenCurrentInEditor(
     private val project: Project,
     private val logStream: String,
-    private val logsTableModel: ListTableModel<OutputLogEvent>
+    private val logsTableModel: ListTableModel<LogStreamEntry>
 ) :
     AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.Menu_open),
     CoroutineScope by ApplicationThreadPoolScope("OpenCurrentInEditor"),
@@ -35,7 +35,7 @@ class OpenCurrentInEditor(
     private suspend fun actionPerformedSuspend(e: AnActionEvent) {
         val fileContent = buildString {
             logsTableModel.items.forEach { log ->
-                val msg = log.message()
+                val msg = log.message
                 append(msg)
                 if (!msg.endsWith('\n')) {
                     append('\n')

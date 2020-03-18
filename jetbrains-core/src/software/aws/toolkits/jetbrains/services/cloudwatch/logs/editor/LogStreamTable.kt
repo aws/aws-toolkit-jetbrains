@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import java.time.Duration
 import javax.swing.JScrollBar
 import javax.swing.JScrollPane
 import javax.swing.JTable
@@ -32,11 +33,9 @@ import javax.swing.SortOrder
 class LogStreamTable(
     val project: Project,
     val logGroup: String,
-    val logStream: String,
-    startTime: Long? = null,
-    duration: Long? = null
+    val logStream: String
 ) :
-    CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
+    CoroutineScope by ApplicationThreadPoolScope("LogStreamTable"), Disposable {
 
     val component: JScrollPane
     val channel: Channel<LogStreamActor.Messages>
@@ -66,7 +65,7 @@ class LogStreamTable(
 
         component = ScrollPaneFactory.createScrollPane(logsTable)
 
-        logStreamActor = LogStreamActor(project.awsClient(), logsTable, logGroup, logStream)
+        logStreamActor = LogStreamActor(project, logsTable, logGroup, logStream)
         channel = logStreamActor.channel
         Disposer.register(this, logStreamActor)
 
@@ -78,29 +77,14 @@ class LogStreamTable(
                 launch {
                     // Don't load more if there is a logStreamingJob because then it will just keep loading forever at the bottom
                     if (logStreamingJob == null) {
-                        logStreamActor.channel.send(LogStreamActor.Messages.LOAD_FORWARD)
+                        logStreamActor.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
                     }
                 }
             } else if (component.verticalScrollBar.isAtTop()) {
-                launch { logStreamActor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD) }
+                launch { logStreamActor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD()) }
             }
         }
 
-        launch {
-            try {
-                if (startTime != null && duration != null) {
-                    logStreamActor.loadInitialRange(startTime, duration)
-                } else {
-                    logStreamActor.loadInitial()
-                }
-                logStreamActor.startListening()
-            } catch (e: Exception) {
-                val errorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
-                LOG.error(e) { errorMessage }
-                notifyError(title = errorMessage, project = project)
-                withContext(edtContext) { logsTable.emptyText.text = errorMessage }
-            }
-        }
     }
 
     private fun JScrollBar.isAtBottom(): Boolean = value == (maximum - visibleAmount)

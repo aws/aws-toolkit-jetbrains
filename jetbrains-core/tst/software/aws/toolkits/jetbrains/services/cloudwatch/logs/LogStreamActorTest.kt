@@ -22,6 +22,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
@@ -56,14 +57,15 @@ class LogStreamActorTest {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         whenever(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
-        val tableModel = ListTableModel<OutputLogEvent>()
-        val table = TableView<OutputLogEvent>(tableModel)
-        val coroutine = LogStreamActor(mockClient, table, "abc", "def")
+        val tableModel = ListTableModel<LogStreamEntry>()
+        val table = TableView<LogStreamEntry>(tableModel)
+        val coroutine = LogStreamActor(projectRule.project, table, "abc", "def")
         runBlocking {
-            coroutine.loadInitial()
+            coroutine.channel.send(LogStreamActor.Messages.LOAD_INITIAL())
+            waitForModelToBeAtLeastSize(tableModel, 1)
         }
         assertThat(tableModel.items.size).isOne()
-        assertThat(tableModel.items.first().message()).isEqualTo("message")
+        assertThat(tableModel.items.first().message).isEqualTo("message")
         assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
     }
 
@@ -178,7 +180,7 @@ class LogStreamActorTest {
         assertThat(coroutine.isActive).isFalse()
     }
 
-    private suspend fun waitForModelToBeAtLeastSize(list: ListTableModel<OutputLogEvent>, size: Int) {
+    private suspend fun waitForModelToBeAtLeastSize(list: ListTableModel<*>, size: Int) {
         while (list.items.size < size) {
             delay(10)
         }

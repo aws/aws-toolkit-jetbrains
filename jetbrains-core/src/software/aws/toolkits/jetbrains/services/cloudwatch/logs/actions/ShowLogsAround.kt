@@ -10,38 +10,39 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.table.TableView
-import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.resources.message
+import java.time.Duration
 
 class ShowLogsAroundGroup(
     private val logGroup: String,
     private val logStream: String,
-    private val treeTable: TableView<OutputLogEvent>
+    private val treeTable: TableView<LogStreamEntry>
 ) : ActionGroup(message("cloudwatch.logs.show_logs_around"), null, AllIcons.Ide.Link), DumbAware {
     init {
         isPopup = true
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.one_minute"), 60 * 1000),
-        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.five_minutes"), 5 * 60 * 1000),
-        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.ten_minutes"), 10 * 60 * 1000)
+        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.one_minute"), Duration.ofMinutes(1)),
+        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.five_minutes"), Duration.ofMinutes(5)),
+        ShowLogsAround(logGroup, logStream, treeTable, message("general.time.ten_minutes"), Duration.ofMinutes(10))
     )
 }
 
 private class ShowLogsAround(
     private val logGroup: String,
     private val logStream: String,
-    private val treeTable: TableView<OutputLogEvent>,
-    time: String,
-    private val durationMilliseconds: Long
+    private val treeTable: TableView<LogStreamEntry>,
+    timeMessage: String,
+    private val duration: Duration
 ) :
-    AnAction(time, null, null), DumbAware {
+    AnAction(timeMessage, null, null), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val window = CloudWatchLogWindow.getInstance(project)
         val selectedObject = treeTable.listTableModel.getItem(treeTable.selectedRow) ?: return
-        window.showLogStream(logGroup, logStream, selectedObject.timestamp(), durationMilliseconds)
+        window.showLogStream(logGroup, logStream, selectedObject.timestamp, duration)
     }
 }
