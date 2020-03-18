@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.utils.waitForFalse
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
@@ -43,7 +44,7 @@ class LogStreamListActorTest {
 
     @JvmField
     @Rule
-    val timeout = CoroutinesTimeout.seconds(10)
+    val timeout = CoroutinesTimeout.seconds(15)
 
     private val testCoroutineScope: TestCoroutineScope = TestCoroutineScope()
 
@@ -180,5 +181,17 @@ class LogStreamListActorTest {
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
         assertThat(coroutine.isActive).isFalse()
+    }
+
+    @Test
+    fun loadInitialFilterThrows() {
+        mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val tableModel = ListTableModel<LogStreamEntry>()
+        val table = TableView<LogStreamEntry>(tableModel)
+        val actor = LogStreamListActor(projectRule.project, table, "abc", "def")
+        runBlocking {
+            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("abc"))
+            waitForFalse { actor.isActive }
+        }
     }
 }

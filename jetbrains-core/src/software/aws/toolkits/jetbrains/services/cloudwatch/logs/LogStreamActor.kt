@@ -142,6 +142,11 @@ class LogStreamFilterActor(
     }
 
     override suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean, saveBackwardToken: Boolean): List<LogStreamEntry> {
+        // loading backwards doesn't make sense in this context, so just skip it
+        if (saveBackwardToken) {
+            return listOf()
+        }
+
         val request = FilterLogEventsRequest
             .builder()
             .logGroupName(logGroup)

@@ -7,7 +7,6 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import com.nhaarman.mockitokotlin2.whenever
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.isActive
@@ -26,6 +25,7 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.waitForFalse
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.resources.message
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 // ExperimentalCoroutinesApi is needed for TestCoroutineScope
@@ -41,7 +41,7 @@ class LogStreamFilterActorTest {
 
     @JvmField
     @Rule
-    val timeout = CoroutinesTimeout.seconds(10)
+    val timeout = CoroutinesTimeout.seconds(15)
 
     private val testCoroutineScope: TestCoroutineScope = TestCoroutineScope()
 
@@ -54,7 +54,14 @@ class LogStreamFilterActorTest {
     fun modelIsPopulated() {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         whenever(mockClient.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
-            .thenReturn(CompletableFuture.completedFuture(FilterLogEventsResponse.builder().events(FilteredLogEvent.builder().message("message").build()).build()))
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    FilterLogEventsResponse
+                        .builder()
+                        .events(FilteredLogEvent.builder().message("message").build())
+                        .build()
+                )
+            )
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
@@ -69,17 +76,24 @@ class LogStreamFilterActorTest {
 
     @Test
     fun loadInitialThrows() {
-        val handler = CoroutineExceptionHandler { _, exception ->
-            println("Caught $exception")
-        }
-        val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
-        whenever(mockClient.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
-            .thenReturn(CompletableFuture.completedFuture(FilterLogEventsResponse.builder().events(FilteredLogEvent.builder().message("message").build()).build()))
+        mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
-        runBlocking(handler) {
+        runBlocking {
             actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL())
+            waitForFalse { actor.isActive }
+        }
+    }
+
+    @Test
+    fun loadInitialRangeThrows() {
+        mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val tableModel = ListTableModel<LogStreamEntry>()
+        val table = TableView<LogStreamEntry>(tableModel)
+        val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
+        runBlocking {
+            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_RANGE(0, Duration.ofMillis(0)))
             waitForFalse { actor.isActive }
         }
     }

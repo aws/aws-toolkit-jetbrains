@@ -8,7 +8,6 @@ import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogs
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamDateColumn
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamMessageColumn
