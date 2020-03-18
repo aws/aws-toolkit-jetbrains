@@ -21,7 +21,7 @@ import software.aws.toolkits.resources.message
 
 class LogStreamActor(
     private val client: CloudWatchLogsAsyncClient,
-    private val table: TableView<OutputLogEvent>,
+    private val table: TableView<LogStreamEntry>,
     private val logGroup: String,
     private val logStream: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {

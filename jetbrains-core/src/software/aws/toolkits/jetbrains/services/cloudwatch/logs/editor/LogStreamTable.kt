@@ -19,6 +19,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -39,15 +40,15 @@ class LogStreamTable(
 
     val component: JScrollPane
     val channel: Channel<LogStreamActor.Messages>
-    val logsTable: TableView<OutputLogEvent>
+    val logsTable: TableView<LogStreamEntry>
     private val logStreamActor: LogStreamActor
     private var logStreamingJob: Deferred<*>? = null
     private val edtContext = getCoroutineUiContext(disposable = this)
 
     init {
-        val model = ListTableModel<OutputLogEvent>(
+        val model = ListTableModel<LogStreamEntry>(
             arrayOf(LogStreamDateColumn(), LogStreamMessageColumn()),
-            mutableListOf<OutputLogEvent>(),
+            mutableListOf<LogStreamEntry>(),
             // Don't sort in the model because the requests come sorted
             -1,
             SortOrder.UNSORTED
