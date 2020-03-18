@@ -24,6 +24,8 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.TailLogs
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogs
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
+import java.awt.event.ActionEvent
+import java.awt.event.ActionListener
 import java.time.Duration
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -42,6 +44,7 @@ class CloudWatchLogStream(
     lateinit var toolbarHolder: Wrapper
 
     private val logStreamTable: LogStreamTable = LogStreamTable(project, logGroup, logStream)
+    private var searchStreamTable: LogStreamTable? = null
 
     init {
         logsPanel.setContent(logStreamTable.component)
@@ -51,6 +54,7 @@ class CloudWatchLogStream(
 
         addAction()
         addActionToolbar()
+        addSearchListener()
 
         launch {
             if (startTime != null && duration != null) {
@@ -60,26 +64,31 @@ class CloudWatchLogStream(
             }
         }
     }
-/*
-    searchField.addActionListener(object : ActionListener {
-        private var lastText: String? = null
-        override fun actionPerformed(e: ActionEvent?) {
-            if (searchField.text == lastText) {
-                return
+
+    private fun addSearchListener() {
+        searchField.addActionListener(object : ActionListener {
+            private var lastText = ""
+            override fun actionPerformed(e: ActionEvent?) {
+                val searchFieldText = searchField.text.trim()
+                if (searchFieldText == lastText) {
+                    return
+                }
+                lastText = searchFieldText
+                // If it is empty, replace the table with the original table
+                if (lastText.isEmpty()) {
+                    logsPanel.setContent(logStreamTable.component)
+                } else {
+                    val table = LogStreamTable(project, logGroup, logStream)
+                    Disposer.register(this@CloudWatchLogStream, table)
+                    searchStreamTable = table
+                    logsPanel.setContent(table.component)
+                    launch {
+                        table.channel.send(LogStreamActor.Messages.LOAD_INITIAL_SEARCH(searchFieldText))
+                    }
+                }
             }
-            lastText = searchField.text
-            val client: CloudWatchLogsAsyncClient = project.awsClient()
-            launch {
-                val response = client.filterLogEvents {
-                    it
-                        .logGroupName(logGroup)
-                        .logStreamNames(logStream)
-                        .filterPattern(lastText)
-                }.await()
-                val events = response.events()
-            }
-        }
-    })*/
+        })
+    }
 
     private fun addAction() {
         val actionGroup = DefaultActionGroup()
