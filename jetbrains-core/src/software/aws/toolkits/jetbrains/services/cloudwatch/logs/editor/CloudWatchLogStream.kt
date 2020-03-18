@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogs
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.TailLogs
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogs
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
@@ -42,6 +43,8 @@ class CloudWatchLogStream(
     lateinit var searchLabel: JLabel
     lateinit var searchField: JBTextField
     lateinit var toolbarHolder: Wrapper
+
+    private val edtContext = getCoroutineUiContext(disposable = this)
 
     private val logStreamTable: LogStreamTable = LogStreamTable(project, logGroup, logStream)
     private var searchStreamTable: LogStreamTable? = null
@@ -76,12 +79,20 @@ class CloudWatchLogStream(
                 lastText = searchFieldText
                 // If it is empty, replace the table with the original table
                 if (lastText.isEmpty()) {
-                    logsPanel.setContent(logStreamTable.component)
+                    // dispose one if there was a previous one
+                    searchStreamTable?.dispose()
+                    launch(edtContext) {
+                        logsPanel.setContent(logStreamTable.component)
+                    }
                 } else {
                     val table = LogStreamTable(project, logGroup, logStream)
                     Disposer.register(this@CloudWatchLogStream, table)
                     searchStreamTable = table
-                    logsPanel.setContent(table.component)
+                    // dispose one if there was a previous one
+                    searchStreamTable?.dispose()
+                    launch(edtContext) {
+                        logsPanel.setContent(table.component)
+                    }
                     launch {
                         table.channel.send(LogStreamActor.Messages.LOAD_INITIAL_SEARCH(searchFieldText))
                     }

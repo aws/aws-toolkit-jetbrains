@@ -13,8 +13,8 @@ import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
+import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
-import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -34,6 +34,7 @@ class LogStreamActor(
     private val client: CloudWatchLogsAsyncClient = project.awsClient()
     private val edtContext = getCoroutineUiContext(disposable = this)
 
+    private var clientType: ClientType? = null
     private var nextBackwardToken: String? = null
     private var nextForwardToken: String? = null
 
@@ -43,6 +44,11 @@ class LogStreamActor(
         class LOAD_INITIAL_SEARCH(val queryString: String) : Messages()
         class LOAD_FORWARD : Messages()
         class LOAD_BACKWARD : Messages()
+    }
+
+    private enum class ClientType {
+        GET,
+        FILTER
     }
 
     init {
@@ -55,21 +61,41 @@ class LogStreamActor(
         for (message in channel) {
             when (message) {
                 is Messages.LOAD_FORWARD -> {
-                    val items = loadMore(nextForwardToken, saveForwardToken = true).map { it.toLogStreamEntry() }
-                    withContext(edtContext) { table.listTableModel.addRows(items) }
+                    if (nextForwardToken != null) {
+                        val items = if (clientType == ClientType.GET) {
+                            loadMore(nextForwardToken, saveForwardToken = true)
+                        } else {
+                            loadMoreSearch(nextForwardToken)
+                        }
+                        withContext(edtContext) { table.listTableModel.addRows(items) }
+                    }
                 }
                 is Messages.LOAD_BACKWARD -> {
-                    val items = loadMore(nextBackwardToken, saveBackwardToken = true).map { it.toLogStreamEntry() }
-                    withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
+                    if (nextBackwardToken != null) {
+                        val items = loadMore(nextBackwardToken, saveBackwardToken = true)
+                        withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
+                    }
                 }
                 is Messages.LOAD_INITIAL -> {
-                    loadInitial()
+                    // skip loading if we have a client
+                    if (clientType == null) {
+                        clientType = ClientType.GET
+                        loadInitial()
+                    }
                 }
                 is Messages.LOAD_INITIAL_RANGE -> {
-                    loadInitialRange(message.startTime, message.duration)
+                    // skip loading if we have a client
+                    if (clientType == null) {
+                        clientType = ClientType.GET
+                        loadInitialRange(message.startTime, message.duration)
+                    }
                 }
                 is Messages.LOAD_INITIAL_SEARCH -> {
-                    TODO("TODO")
+                    // skip loading if we have a client
+                    if (clientType == null) {
+                        clientType = ClientType.FILTER
+                        loadInitialSearch(message.queryString)
+                    }
                 }
             }
         }
@@ -82,7 +108,7 @@ class LogStreamActor(
             .logStreamName(logStream)
             .startFromHead(true)
             .build()
-        loadAndPopulate(request)
+        loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
     }
 
     private suspend fun loadInitialRange(startTime: Long, duration: Duration) {
@@ -94,13 +120,22 @@ class LogStreamActor(
             .startTime(startTime - duration.toMillis())
             .endTime(startTime + duration.toMillis())
             .build()
-        loadAndPopulate(request)
+        loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
     }
 
+    private suspend fun loadInitialSearch(queryString: String) {
+        val request = FilterLogEventsRequest
+            .builder()
+            .logGroupName(logGroup)
+            .logStreamNames(logStream)
+            .filterPattern(queryString)
+            .build()
+        loadAndPopulate { getSearchLogEvents(request) }
+    }
 
-    private suspend fun loadAndPopulate(request: GetLogEventsRequest) {
+    private suspend fun loadAndPopulate(loadBlock: suspend () -> List<LogStreamEntry>) {
         try {
-            val items = load(request, saveForwardToken = true, saveBackwardToken = true).map { it.toLogStreamEntry() }
+            val items = loadBlock()
             withContext(edtContext) {
                 table.listTableModel.addRows(items)
             }
@@ -121,7 +156,7 @@ class LogStreamActor(
         nextToken: String?,
         saveForwardToken: Boolean = false,
         saveBackwardToken: Boolean = false
-    ): List<OutputLogEvent> {
+    ): List<LogStreamEntry> {
         val request = GetLogEventsRequest
             .builder()
             .logGroupName(logGroup)
@@ -130,16 +165,35 @@ class LogStreamActor(
             .nextToken(nextToken)
             .build()
 
-        return load(request, saveForwardToken = saveForwardToken, saveBackwardToken = saveBackwardToken)
+        return getLogEvents(request, saveForwardToken = saveForwardToken, saveBackwardToken = saveBackwardToken)
     }
 
-    private suspend fun load(
+    private suspend fun loadMoreSearch(nextToken: String?): List<LogStreamEntry> {
+        val request = FilterLogEventsRequest
+            .builder()
+            .logGroupName(logGroup)
+            .logStreamNames(logStream)
+            .nextToken(nextToken)
+            .build()
+
+        return getSearchLogEvents(request)
+    }
+
+    private suspend fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> {
+        val response = client.filterLogEvents(request).asDeferred().await()
+        val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
+        nextForwardToken = response.nextToken()
+
+        return events
+    }
+
+    private suspend fun getLogEvents(
         request: GetLogEventsRequest,
         saveForwardToken: Boolean = false,
         saveBackwardToken: Boolean = false
-    ): List<OutputLogEvent> {
+    ): List<LogStreamEntry> {
         val response = client.getLogEvents(request).asDeferred().await()
-        val events = response.events().filterNotNull()
+        val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
         if (saveForwardToken) {
             nextForwardToken = response.nextForwardToken()
         }
