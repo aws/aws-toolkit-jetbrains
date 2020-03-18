@@ -10,21 +10,12 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import java.time.Duration
 import javax.swing.JScrollBar
 import javax.swing.JScrollPane
 import javax.swing.JTable
@@ -32,8 +23,8 @@ import javax.swing.SortOrder
 
 class LogStreamTable(
     val project: Project,
-    val logGroup: String,
-    val logStream: String
+    logGroup: String,
+    logStream: String
 ) :
     CoroutineScope by ApplicationThreadPoolScope("LogStreamTable"), Disposable {
 
@@ -41,8 +32,6 @@ class LogStreamTable(
     val channel: Channel<LogStreamActor.Messages>
     val logsTable: TableView<LogStreamEntry>
     private val logStreamActor: LogStreamActor
-    private var logStreamingJob: Deferred<*>? = null
-    private val edtContext = getCoroutineUiContext(disposable = this)
 
     init {
         val model = ListTableModel<LogStreamEntry>(
@@ -75,10 +64,7 @@ class LogStreamTable(
             }
             if (component.verticalScrollBar.isAtBottom()) {
                 launch {
-                    // Don't load more if there is a logStreamingJob because then it will just keep loading forever at the bottom
-                    if (logStreamingJob == null) {
-                        logStreamActor.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
-                    }
+                    logStreamActor.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
                 }
             } else if (component.verticalScrollBar.isAtTop()) {
                 launch { logStreamActor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD()) }
@@ -91,8 +77,4 @@ class LogStreamTable(
     private fun JScrollBar.isAtTop(): Boolean = value == minimum
 
     override fun dispose() {}
-
-    companion object {
-        private val LOG = getLogger<LogStreamTable>()
-    }
 }

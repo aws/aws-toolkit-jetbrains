@@ -78,9 +78,7 @@ class CloudWatchLogStream(
                 }
                 lastText = searchFieldText
                 // If it is empty, replace the table with the original table
-                if (lastText.isEmpty()) {
-                    // dispose one if there was a previous one
-                    searchStreamTable?.dispose()
+                if (searchFieldText.isEmpty()) {
                     launch(edtContext) {
                         logsPanel.setContent(logStreamTable.component)
                     }
@@ -88,8 +86,6 @@ class CloudWatchLogStream(
                     val table = LogStreamTable(project, logGroup, logStream)
                     Disposer.register(this@CloudWatchLogStream, table)
                     searchStreamTable = table
-                    // dispose one if there was a previous one
-                    searchStreamTable?.dispose()
                     launch(edtContext) {
                         logsPanel.setContent(table.component)
                     }
