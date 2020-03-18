@@ -10,15 +10,17 @@ import com.intellij.testFramework.ReadOnlyLightVirtualFile
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
 
 object OpenStreamInEditor {
-    suspend fun open(project: Project, edt: ContinuationInterceptor, logStream: String, fileContent: String) {
+    suspend fun open(project: Project, edt: CoroutineContext, logStream: String, fileContent: String) {
         val file = ReadOnlyLightVirtualFile(logStream, PlainTextLanguage.INSTANCE, fileContent)
         withContext(edt) {
             // set virtual file to read only
             FileEditorManager.getInstance(project).openFile(file, true, true).ifEmpty {
-                notifyError(message("cloudwatch.logs.open_in_editor_failed"))
+                if (!fileContent.isBlank()) {
+                    notifyError(message("cloudwatch.logs.open_in_editor_failed"))
+                }
             }
         }
     }
