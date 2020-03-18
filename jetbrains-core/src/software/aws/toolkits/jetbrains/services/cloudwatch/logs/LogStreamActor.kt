@@ -55,16 +55,12 @@ sealed class LogStreamActor(
         for (message in channel) {
             when (message) {
                 is Messages.LOAD_FORWARD -> {
-                    if (nextForwardToken != null) {
-                        val items = loadMore(nextForwardToken, saveForwardToken = true)
-                        withContext(edtContext) { table.listTableModel.addRows(items) }
-                    }
+                    val items = loadMore(nextForwardToken, saveForwardToken = true)
+                    withContext(edtContext) { table.listTableModel.addRows(items) }
                 }
                 is Messages.LOAD_BACKWARD -> {
-                    if (nextBackwardToken != null) {
-                        val items = loadMore(nextBackwardToken, saveBackwardToken = true)
-                        withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
-                    }
+                    val items = loadMore(nextBackwardToken, saveBackwardToken = true)
+                    withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
                 }
                 is Messages.LOAD_INITIAL -> {
                     loadInitial()
@@ -98,10 +94,10 @@ sealed class LogStreamActor(
         }
     }
 
-    abstract suspend fun loadInitial()
-    abstract suspend fun loadInitialRange(startTime: Long, duration: Duration)
-    abstract suspend fun loadInitialSearch(queryString: String)
-    abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<LogStreamEntry>
+    protected abstract suspend fun loadInitial()
+    protected abstract suspend fun loadInitialRange(startTime: Long, duration: Duration)
+    protected abstract suspend fun loadInitialSearch(queryString: String)
+    protected abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<LogStreamEntry>
 
     override fun dispose() {
         channel.close()
