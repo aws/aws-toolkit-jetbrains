@@ -18,7 +18,9 @@ object OpenStreamInEditor {
         withContext(edt) {
             // set virtual file to read only
             FileEditorManager.getInstance(project).openFile(file, true, true).ifEmpty {
-                notifyError(message("cloudwatch.logs.open_in_editor_failed"))
+                if (!fileContent.isBlank()) {
+                    notifyError(message("cloudwatch.logs.open_in_editor_failed"))
+                }
             }
         }
     }
