@@ -18,7 +18,7 @@ class WrapLogsTest {
     fun wrappingChangesModel() {
         val model = ListTableModel<LogStreamEntry>(LogStreamDateColumn(), LogStreamMessageColumn())
         val table = TableView<LogStreamEntry>(model)
-        val wrapLogsAction = WrapLogs(table)
+        val wrapLogsAction = WrapLogs { table }
         wrapLogsAction.setSelected(TestActionEvent(), true)
         assertThat(model.columnInfos[1]).isInstanceOf(WrappingLogStreamMessageColumn::class.java)
         wrapLogsAction.setSelected(TestActionEvent(), false)

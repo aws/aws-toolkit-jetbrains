@@ -19,7 +19,7 @@ import software.aws.toolkits.resources.message
 class OpenCurrentInEditor(
     private val project: Project,
     private val logStream: String,
-    private val logsTableModel: ListTableModel<LogStreamEntry>
+    private val tableEntries: () -> List<LogStreamEntry>
 ) :
     AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.Menu_open),
     CoroutineScope by ApplicationThreadPoolScope("OpenCurrentInEditor"),
@@ -34,7 +34,7 @@ class OpenCurrentInEditor(
 
     private suspend fun actionPerformedSuspend(e: AnActionEvent) {
         val fileContent = buildString {
-            logsTableModel.items.forEach { log ->
+            tableEntries().forEach { log ->
                 val msg = log.message
                 append(msg)
                 if (!msg.endsWith('\n')) {

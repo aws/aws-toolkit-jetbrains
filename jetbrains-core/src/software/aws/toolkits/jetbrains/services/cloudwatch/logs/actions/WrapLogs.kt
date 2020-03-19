@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.WrappingLogStreamMessageColumn
 import software.aws.toolkits.resources.message
 
-class WrapLogs(private val table: TableView<LogStreamEntry>) :
+class WrapLogs(private val block: () -> TableView<LogStreamEntry>) :
     ToggleAction(message("cloudwatch.logs.wrap"), null, AllIcons.Actions.ToggleSoftWrap),
     DumbAware {
     private val messageColumn = 1
@@ -30,10 +30,10 @@ class WrapLogs(private val table: TableView<LogStreamEntry>) :
     }
 
     private fun wrap() {
-        table.listTableModel.columnInfos[messageColumn] = WrappingLogStreamMessageColumn()
+        block().listTableModel.columnInfos[messageColumn] = WrappingLogStreamMessageColumn()
     }
 
     private fun unwrap() {
-        table.listTableModel.columnInfos[messageColumn] = LogStreamMessageColumn()
+        block().listTableModel.columnInfos[messageColumn] = LogStreamMessageColumn()
     }
 }

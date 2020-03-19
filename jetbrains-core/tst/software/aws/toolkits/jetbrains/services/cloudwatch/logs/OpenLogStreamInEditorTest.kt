@@ -92,7 +92,7 @@ class OpenLogStreamInEditorTest {
                 LogStreamEntry("ghi\n", 0L)
             )
         )
-        val action = OpenCurrentInEditor(projectRule.project, "12345", tableModel)
+        val action = OpenCurrentInEditor(projectRule.project, "12345") { tableModel.items }
         action.actionPerformed(TestActionEvent())
         runBlocking {
             blockUntilFileOpen()

@@ -77,20 +77,22 @@ class CloudWatchLogStream(
                     return
                 }
                 lastText = searchFieldText
+                val oldTable = searchStreamTable
                 // If it is empty, replace the table with the original table
                 if (searchFieldText.isEmpty()) {
+                    searchStreamTable = null
                     launch(edtContext) {
                         logsPanel.setContent(logStreamTable.component)
+                        // Dispose the old one if it was not null
+                        oldTable?.let { launch { Disposer.dispose(it) } }
                     }
                 } else {
                     // This is thread safe because the actionPerformed is run on the UI thread
                     val table = LogStreamTable(project, logGroup, logStream, LogStreamTable.TableType.FILTER)
                     Disposer.register(this@CloudWatchLogStream, table)
-                    val oldTable = searchStreamTable
                     searchStreamTable = table
                     launch(edtContext) {
                         logsPanel.setContent(table.component)
-                        // Dispose the old one if it was not null
                         oldTable?.let { launch { Disposer.dispose(it) } }
                     }
                     launch {
@@ -103,7 +105,9 @@ class CloudWatchLogStream(
 
     private fun addAction() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.add(OpenCurrentInEditor(project, logStream, logStreamTable.logsTable.listTableModel))
+        actionGroup.add(OpenCurrentInEditor(project, logStream) {
+            searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
+        })
         actionGroup.add(Separator())
         actionGroup.add(ShowLogsAroundGroup(logGroup, logStream, logStreamTable.logsTable))
         PopupHandler.installPopupHandler(
@@ -116,9 +120,11 @@ class CloudWatchLogStream(
 
     private fun addActionToolbar() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.add(OpenCurrentInEditor(project, logStream, logStreamTable.logsTable.listTableModel))
-        actionGroup.add(TailLogs(logStreamTable.channel))
-        actionGroup.add(WrapLogs(logStreamTable.logsTable))
+        actionGroup.add(OpenCurrentInEditor(project, logStream) {
+            searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
+        })
+        actionGroup.add(TailLogs { searchStreamTable?.channel ?: logStreamTable.channel })
+        actionGroup.add(WrapLogs { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
         toolbarHolder.setContent(toolbar.component)
     }

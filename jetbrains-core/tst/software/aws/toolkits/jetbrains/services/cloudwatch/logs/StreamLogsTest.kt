@@ -26,7 +26,7 @@ class StreamLogsTest {
     @Test
     fun streamsWhenEnabled() {
         val channel = Channel<LogStreamActor.Messages>()
-        val tailLogs = TailLogs(channel)
+        val tailLogs = TailLogs { channel }
         runBlocking {
             tailLogs.setSelected(TestActionEvent(), true)
             var response = channel.receive()
@@ -39,7 +39,7 @@ class StreamLogsTest {
     @Test
     fun cancelsOnChannelClose() {
         val channel = Channel<LogStreamActor.Messages>()
-        val tailLogs = TailLogs(channel)
+        val tailLogs = TailLogs { channel }
         channel.close()
         tailLogs.setSelected(TestActionEvent(), true)
         runBlocking {
@@ -54,7 +54,7 @@ class StreamLogsTest {
     @Test
     fun cancelsOnCancel() {
         val channel = Channel<LogStreamActor.Messages>()
-        val tailLogs = TailLogs(channel)
+        val tailLogs = TailLogs { channel }
         tailLogs.setSelected(TestActionEvent(), true)
         assertThat(tailLogs.logStreamingJob?.isActive).isTrue()
         tailLogs.setSelected(TestActionEvent(), false)
