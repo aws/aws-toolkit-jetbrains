@@ -15,6 +15,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.util.io.FileUtilRt.getUserContentLoadLimit
 import com.intellij.ui.table.JBTable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -59,25 +60,11 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
         var events: List<OutputLogEvent>
         var nextToken: String? = null
         val buffer = StringBuilder()
-        val maxFileSize = 1000 //getUserContentLoadLimit()
+        // This is an approximation
+        val maxBufferLength = getUserContentLoadLimit() / 2
         do {
-            if (buffer.length > maxFileSize) {
-                when (promptWriteToFile()) {
-                    Messages.OK -> {
-                        val descriptor = FileSaverDescriptor(message("s3.download.object.action"), message("s3.download.object.description"))
-                        val saveLocation = withContext(edt) {
-                            val destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-                            destination.save(null, null)
-                        }
-                        if (saveLocation != null) {
-                            writeToFile(indicator, startTime, nextToken, saveLocation.file, buffer)
-                        }
-                        return
-                    }
-                    Messages.CANCEL -> {
-                        indicator.cancel()
-                    }
-                }
+            if (buffer.length > maxBufferLength) {
+                handleLargeLogStream(indicator, startTime, nextToken, buffer)
             }
             indicator.checkCanceled()
             val response = client.getLogEvents {
@@ -90,25 +77,41 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
             }
             events = response.events()
             nextToken = response.nextForwardToken()
-            val str = events.joinToString("") { if (it.message().endsWith("\n")) it.message() else "${it.message()}\n" }
+            val str = events.buildStringFromLogs()
             buffer.append(str)
         } while (events.isNotEmpty())
 
         OpenStreamInEditor.open(project, edt, logStream, buffer.toString())
     }
 
-    suspend fun promptWriteToFile(): Int = withContext(edt) {
+    private suspend fun handleLargeLogStream(indicator: ProgressIndicator, startTime: Instant, nextToken: String?, buffer: StringBuilder) {
+        when (promptWriteToFile()) {
+            Messages.OK -> {
+                val descriptor = FileSaverDescriptor(message("s3.download.object.action"), message("s3.download.object.description"))
+                val saveLocation = withContext(edt) {
+                    val destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
+                    destination.save(null, null)
+                }
+                if (saveLocation != null) {
+                    streamLogStreamToFile(indicator, startTime, nextToken, saveLocation.file, buffer)
+                }
+            }
+        }
+        indicator.cancel()
+    }
+
+    private suspend fun promptWriteToFile(): Int = withContext(edt) {
         return@withContext Messages.showOkCancelDialog(
             project,
-            message("cloudwatch.logs.stream_too_big_message"),
+            message("cloudwatch.logs.stream_too_big_message", logStream),
             message("cloudwatch.logs.stream_too_big"),
-            Messages.OK_BUTTON,
+            message("cloudwatch.logs.stream_save_to_file", logStream),
             Messages.CANCEL_BUTTON,
             AllIcons.General.QuestionDialog
         )
     }
 
-    fun writeToFile(indicator: ProgressIndicator, startTime: Instant, next: String?, file: File, buffer: StringBuilder) {
+    private fun streamLogStreamToFile(indicator: ProgressIndicator, startTime: Instant, next: String?, file: File, buffer: StringBuilder) {
         file.appendText(buffer.toString())
         var events: List<OutputLogEvent>
         var nextToken: String? = next
@@ -124,7 +127,7 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
             }
             events = response.events()
             nextToken = response.nextForwardToken()
-            val str = events.joinToString("") { if (it.message().endsWith("\n")) it.message() else "${it.message()}\n" }
+            val str = events.buildStringFromLogs()
             file.appendText(str)
         } while (events.isNotEmpty())
     }
