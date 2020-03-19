@@ -21,11 +21,14 @@ import software.aws.toolkits.resources.message
 
 class ChangeAccountSettingsActionGroup(private val project: Project, private val showRegions: Boolean) : ComputableActionGroup(), DumbAware {
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
-    private val regionSelector = ChangeRegionActionGroup()
+    private val partitionSelector = ChangePartitionActionGroup()
+    private val regionSelector = ChangeRegionActionGroup(accountSettingsManager)
     private val credentialSelector = ChangeCredentialsActionGroup(true)
 
     override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
         val actions = mutableListOf<AnAction>()
+
+        actions.add(partitionSelector)
 
         if (showRegions) {
             val usedRegions = accountSettingsManager.recentlyUsedRegions()
@@ -63,6 +66,24 @@ class ChangeAccountSettingsActionGroup(private val project: Project, private val
     }
 }
 
+private class ChangePartitionActionGroup : DefaultActionGroup() {
+    init {
+        addSeparator(message("settings.partitions"))
+        addAll(AwsRegionProvider.getInstance().partitions().map {
+            object : ToggleAction(it.value.description) {
+                private val partition = it.value
+                override fun isSelected(e: AnActionEvent) = getAccountSetting(e).selectedPartition == partition
+
+                override fun setSelected(e: AnActionEvent, state: Boolean) {
+                    if (state) {
+                        getAccountSetting(e).changePartition(partition)
+                    }
+                }
+            }
+        })
+    }
+}
+
 private class ChangeCredentialsActionGroup(popup: Boolean) : ComputableActionGroup(
     message("settings.credentials.profile_sub_menu"),
     popup
@@ -81,19 +102,26 @@ private class ChangeCredentialsActionGroup(popup: Boolean) : ComputableActionGro
     }
 }
 
-// TODO: This should be computable, but region provider is immutable today
-private class ChangeRegionActionGroup : DefaultActionGroup(), DumbAware {
-    init {
-        templatePresentation.text = message("settings.regions.region_sub_menu")
+private class ChangeRegionActionGroup(private val accountSettingsManager: ProjectAccountSettingsManager) :
+    ComputableActionGroup(message("settings.regions.region_sub_menu"), true), DumbAware {
+    private val regionProvider = AwsRegionProvider.getInstance()
+    override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
+        val partition = accountSettingsManager.selectedPartition
+        val regionMap = partition?.let {
+            // if a partition has been selected, only show regions in that partition
+            regionProvider.regions(partition.id)
+            // otherwise show everything
+        } ?: regionProvider.allRegions()
+        val regions = regionMap.values.groupBy { it.category }
 
-        val regions = AwsRegionProvider.getInstance().regions().values.groupBy { it.category }
-
-        regions.forEach { (category, subRegions) ->
-            addSeparator(category)
-            subRegions.forEach {
-                add(ChangeRegionAction(it))
+        val actions = regions.flatMap { (category, subRegions) ->
+            listOf(Separator.create(category)) +
+            subRegions.map {
+                ChangeRegionAction(it)
             }
-        }
+        } as List<AnAction>
+
+        CachedValueProvider.Result.create(actions.toTypedArray(), accountSettingsManager)
     }
 }
 

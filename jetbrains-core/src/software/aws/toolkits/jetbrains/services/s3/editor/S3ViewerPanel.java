@@ -23,7 +23,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import org.jetbrains.annotations.NotNull;
+import software.aws.toolkits.core.region.AwsRegion;
+import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager;
 import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
+import software.aws.toolkits.jetbrains.services.s3.S3UtilsKt;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
@@ -57,7 +60,8 @@ public class S3ViewerPanel {
         name.setText(bucketVirtual.getName());
         date.setText(S3Resources.formatDate(bucketVirtual.getS3Bucket().creationDate()));
 
-        arnText.setText("arn:aws:s3:::" + bucketVirtual.getName());
+        AwsRegion activeRegion = ProjectAccountSettingsManager.getInstance(project).getActiveRegion();
+        arnText.setText(S3UtilsKt.bucketArn(bucketVirtual.getName(), activeRegion));
         bucketArn.setText("Bucket ARN:");
         bucketName.setText("Bucket Name:");
         creationDate.setText("Creation Date:");

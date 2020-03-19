@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.DEFAULT_PROFILE
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
 data class ConnectionSettingsState(
+    var activePartition: String? = null,
     var activeProfile: String? = null,
     var activeRegion: String? = null,
     var recentlyUsedProfiles: List<String> = mutableListOf(),
@@ -25,6 +26,7 @@ data class ConnectionSettingsState(
 class DefaultProjectAccountSettingsManager(private val project: Project) : ProjectAccountSettingsManager(project),
     PersistentStateComponent<ConnectionSettingsState> {
     override fun getState(): ConnectionSettingsState = ConnectionSettingsState(
+        activePartition = selectedPartition?.id,
         activeProfile = selectedCredentialIdentifier?.id,
         activeRegion = selectedRegion?.id,
         recentlyUsedProfiles = recentlyUsedProfiles.elements(),
@@ -49,10 +51,12 @@ class DefaultProjectAccountSettingsManager(private val project: Project) : Proje
                 CredentialManager.getInstance().getCredentialIdentifierById(credentialId)
             }
 
+            val partitionId = state.activePartition ?: AwsRegionProvider.getInstance().defaultPartition().id
             val regionId = state.activeRegion ?: AwsRegionProvider.getInstance().defaultRegion().id
-            val region = AwsRegionProvider.getInstance().regions()[regionId]
+            val partition = AwsRegionProvider.getInstance().partitions()[partitionId]
+            val region = AwsRegionProvider.getInstance().allRegions()[regionId]
 
-            changeConnectionSettings(credentials, region)
+            changeConnectionSettings(credentials, partition, region)
         }
     }
 }

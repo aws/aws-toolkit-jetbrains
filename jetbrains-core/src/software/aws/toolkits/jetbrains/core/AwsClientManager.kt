@@ -18,15 +18,18 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
 open class AwsClientManager(project: Project, sdkClient: AwsSdkClient) :
     ToolkitClientManager(sdkClient.sdkHttpClient), Disposable {
 
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
+    private val regionProvider = AwsRegionProvider.getInstance()
 
     init {
         Disposer.register(project, Disposable { this.dispose() })
@@ -57,6 +60,8 @@ open class AwsClientManager(project: Project, sdkClient: AwsSdkClient) :
     }
 
     override fun getRegion(): AwsRegion = accountSettingsManager.activeRegion
+
+    override fun getRegionProvider(): ToolkitRegionProvider = regionProvider
 
     companion object {
         @JvmStatic
