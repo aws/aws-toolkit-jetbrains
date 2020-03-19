@@ -23,9 +23,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.time.Instant
@@ -58,8 +62,8 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
         val startTime = Instant.now()
         val buffer = StringBuilder()
         // Default content load limit is 20MB, default per page is 1MB/10000 log entries. so we load MaxLength/1MB
-        // until we give up
-        val maxLoads = getUserContentLoadLimit() / (1 * MEGABYTE)
+        // until we give up and prompt the user to save to file
+        val maxPages = getUserContentLoadLimit() / (1 * MEGABYTE)
         var index = 0
         val request = GetLogEventsRequest
             .builder()
@@ -69,10 +73,11 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
             .endTime(startTime.toEpochMilli())
         val getRequest = client.getLogEventsPaginator(request.build())
         getRequest.stream().forEach {
-            if (index >= maxLoads) {
+            if (index >= maxPages) {
                 runBlocking {
                     request.nextToken(it.nextForwardToken())
                     handleLargeLogStream(indicator, request.build(), buffer)
+                    indicator.cancel()
                 }
             }
             indicator.checkCanceled()
@@ -84,19 +89,18 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
     }
 
     private suspend fun handleLargeLogStream(indicator: ProgressIndicator, request: GetLogEventsRequest, buffer: StringBuilder) {
-        when (promptWriteToFile()) {
-            Messages.OK -> {
-                val descriptor = FileSaverDescriptor(message("s3.download.object.action"), message("s3.download.object.description"))
-                val saveLocation = withContext(edt) {
-                    val destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-                    destination.save(null, null)
-                }
-                if (saveLocation != null) {
-                    streamLogStreamToFile(indicator, request, saveLocation.file, buffer)
-                }
+        if (promptWriteToFile() != Messages.OK) {
+            indicator.cancel()
+        } else {
+            val descriptor = FileSaverDescriptor(message("s3.download.object.action"), message("s3.download.object.description"))
+            val saveLocation = withContext(edt) {
+                val destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
+                destination.save(null, null)
+            }
+            if (saveLocation != null) {
+                streamLogStreamToFile(indicator, request, saveLocation.file, buffer)
             }
         }
-        indicator.cancel()
     }
 
     private suspend fun promptWriteToFile(): Int = withContext(edt) {
@@ -111,13 +115,27 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
     }
 
     private fun streamLogStreamToFile(indicator: ProgressIndicator, request: GetLogEventsRequest, file: File, buffer: StringBuilder) {
-        file.appendText(buffer.toString())
-        val getRequest = client.getLogEventsPaginator(request)
-        getRequest.stream().forEach {
-            indicator.checkCanceled()
-            val str = it.events().buildStringFromLogs()
-            file.appendText(str)
+        try {
+            title = message("cloudwatch.logs.saving_to_disk", logStream)
+            file.appendText(buffer.toString())
+            val getRequest = client.getLogEventsPaginator(request)
+            getRequest.stream().forEach {
+                indicator.checkCanceled()
+                val str = it.events().buildStringFromLogs()
+                file.appendText(str)
+            }
+            notifyInfo(
+                project = project,
+                title = message("aws.notification.title"),
+                content = message("cloudwatch.logs.saving_to_disk_succeeded", logStream)
+            )
+        } catch (e: Exception) {
+            LOG.error(e) { "Exception thrown while downloading large log stream" }
+            e.notifyError(project = project, title = message("cloudwatch.logs.saving_to_disk_failed", logStream))
         }
-        notifyFinished()
+    }
+
+    companion object {
+        private val LOG = getLogger<OpenLogStreamInEditor>()
     }
 }
