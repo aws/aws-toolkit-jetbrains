@@ -43,11 +43,11 @@ class OpenLogStreamInEditor(
         val client: CloudWatchLogsClient = project.awsClient()
         val row = groupTable.selectedRow.takeIf { it >= 0 } ?: return
         val logStream = groupTable.getValueAt(row, 0) as String
-        ProgressManager.getInstance().run(DownloadTask(project, client, logGroup, logStream))
+        ProgressManager.getInstance().run(LogStreamDownloadTask(project, client, logGroup, logStream))
     }
 }
 
-private class DownloadTask(project: Project, val client: CloudWatchLogsClient, val logGroup: String, val logStream: String) :
+private class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, val logGroup: String, val logStream: String) :
     Task.Backgroundable(project, message("cloudwatch.logs.opening_in_editor", logStream), true),
     CoroutineScope by ApplicationThreadPoolScope("OpenLogStreamInEditor") {
     private val edt = getCoroutineUiContext(ModalityState.defaultModalityState())
@@ -59,11 +59,11 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
     }
 
     suspend fun runSuspend(indicator: ProgressIndicator) {
-        val startTime = Instant.now()
-        val buffer = StringBuilder()
         // Default content load limit is 20MB, default per page is 1MB/10000 log entries. so we load MaxLength/1MB
         // until we give up and prompt the user to save to file
         val maxPages = getUserContentLoadLimit() / (1 * MEGABYTE)
+        val startTime = Instant.now()
+        val buffer = StringBuilder()
         var index = 0
         val request = GetLogEventsRequest
             .builder()
@@ -136,6 +136,6 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
     }
 
     companion object {
-        private val LOG = getLogger<OpenLogStreamInEditor>()
+        private val LOG = getLogger<LogStreamDownloadTask>()
     }
 }
