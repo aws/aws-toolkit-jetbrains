@@ -61,9 +61,9 @@ class CloudWatchLogStream(
 
         launch {
             if (startTime != null && duration != null) {
-                logStreamTable.channel.send(LogStreamActor.Messages.LOAD_INITIAL_RANGE(startTime, duration))
+                logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(startTime, duration))
             } else {
-                logStreamTable.channel.send(LogStreamActor.Messages.LOAD_INITIAL())
+                logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL())
             }
         }
     }
@@ -96,7 +96,7 @@ class CloudWatchLogStream(
                         oldTable?.let { launch { Disposer.dispose(it) } }
                     }
                     launch {
-                        table.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER(searchFieldText))
+                        table.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER(searchFieldText))
                     }
                 }
             }

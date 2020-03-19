@@ -68,7 +68,7 @@ class LogStreamFilterActorTest {
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
-            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("filter query"))
+            actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("filter query"))
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
@@ -100,8 +100,8 @@ class LogStreamFilterActorTest {
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
-            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("filter query"))
-            actor.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
+            actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("filter query"))
+            actor.channel.send(LogStreamActor.Message.LOAD_FORWARD())
             tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items).hasSize(2)
@@ -133,9 +133,9 @@ class LogStreamFilterActorTest {
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
-            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_FILTER("filter query"))
-            actor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD())
-            actor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD())
+            actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("filter query"))
+            actor.channel.send(LogStreamActor.Message.LOAD_BACKWARD())
+            actor.channel.send(LogStreamActor.Message.LOAD_BACKWARD())
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items).hasSize(1)
@@ -152,7 +152,7 @@ class LogStreamFilterActorTest {
         coroutine.dispose()
         assertThatThrownBy {
             runBlocking {
-                channel.send(LogStreamActor.Messages.LOAD_FORWARD())
+                channel.send(LogStreamActor.Message.LOAD_FORWARD())
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
         assertThat(coroutine.isActive).isFalse()
@@ -165,7 +165,7 @@ class LogStreamFilterActorTest {
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
-            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL())
+            actor.channel.send(LogStreamActor.Message.LOAD_INITIAL())
             waitForFalse { actor.isActive }
         }
     }
@@ -177,7 +177,7 @@ class LogStreamFilterActorTest {
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
-            actor.channel.send(LogStreamActor.Messages.LOAD_INITIAL_RANGE(0, Duration.ofMillis(0)))
+            actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0, Duration.ofMillis(0)))
             waitForFalse { actor.isActive }
         }
     }

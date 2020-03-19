@@ -25,20 +25,20 @@ class StreamLogsTest {
 
     @Test
     fun streamsWhenEnabled() {
-        val channel = Channel<LogStreamActor.Messages>()
+        val channel = Channel<LogStreamActor.Message>()
         val tailLogs = TailLogs { channel }
         runBlocking {
             tailLogs.setSelected(TestActionEvent(), true)
             var response = channel.receive()
-            assertThat(response).isInstanceOf(LogStreamActor.Messages.LOAD_FORWARD::class.java)
+            assertThat(response).isInstanceOf(LogStreamActor.Message.LOAD_FORWARD::class.java)
             response = channel.receive()
-            assertThat(response).isInstanceOf(LogStreamActor.Messages.LOAD_FORWARD::class.java)
+            assertThat(response).isInstanceOf(LogStreamActor.Message.LOAD_FORWARD::class.java)
         }
     }
 
     @Test
     fun cancelsOnChannelClose() {
-        val channel = Channel<LogStreamActor.Messages>()
+        val channel = Channel<LogStreamActor.Message>()
         val tailLogs = TailLogs { channel }
         channel.close()
         tailLogs.setSelected(TestActionEvent(), true)
@@ -53,7 +53,7 @@ class StreamLogsTest {
 
     @Test
     fun cancelsOnCancel() {
-        val channel = Channel<LogStreamActor.Messages>()
+        val channel = Channel<LogStreamActor.Message>()
         val tailLogs = TailLogs { channel }
         tailLogs.setSelected(TestActionEvent(), true)
         assertThat(tailLogs.logStreamingJob?.isActive).isTrue()

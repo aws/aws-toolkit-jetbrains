@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.table.TableView
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,7 @@ sealed class LogStreamActor(
     protected val logGroup: String,
     protected val logStream: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {
-    val channel = Channel<Messages>()
+    val channel = Channel<Message>()
 
     protected val client: CloudWatchLogsAsyncClient = project.awsClient()
     protected var nextBackwardToken: String? = null
@@ -42,42 +43,41 @@ sealed class LogStreamActor(
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
-        channel.close()
-        cancel()
+        Disposer.dispose(this)
     }
 
-    sealed class Messages {
-        class LOAD_INITIAL : Messages()
-        class LOAD_INITIAL_RANGE(val startTime: Long, val duration: Duration) : Messages()
-        class LOAD_INITIAL_FILTER(val queryString: String) : Messages()
-        class LOAD_FORWARD : Messages()
-        class LOAD_BACKWARD : Messages()
+    sealed class Message {
+        class LOAD_INITIAL : Message()
+        class LOAD_INITIAL_RANGE(val startTime: Long, val duration: Duration) : Message()
+        class LOAD_INITIAL_FILTER(val queryString: String) : Message()
+        class LOAD_FORWARD : Message()
+        class LOAD_BACKWARD : Message()
     }
 
     init {
         launch(exceptionHandler) {
-            startListening()
+            handleMessages()
         }
     }
 
-    private suspend fun startListening() {
+    private suspend fun handleMessages() {
         for (message in channel) {
             when (message) {
-                is Messages.LOAD_FORWARD -> {
+                is Message.LOAD_FORWARD -> {
                     val items = loadMore(nextForwardToken, saveForwardToken = true)
                     withContext(edtContext) { table.listTableModel.addRows(items) }
                 }
-                is Messages.LOAD_BACKWARD -> {
+                is Message.LOAD_BACKWARD -> {
                     val items = loadMore(nextBackwardToken, saveBackwardToken = true)
                     withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
                 }
-                is Messages.LOAD_INITIAL -> {
+                is Message.LOAD_INITIAL -> {
                     loadInitial()
                 }
-                is Messages.LOAD_INITIAL_RANGE -> {
+                is Message.LOAD_INITIAL_RANGE -> {
                     loadInitialRange(message.startTime, message.duration)
                 }
-                is Messages.LOAD_INITIAL_FILTER -> {
+                is Message.LOAD_INITIAL_FILTER -> {
                     loadInitialFilter(message.queryString)
                 }
             }
@@ -145,7 +145,7 @@ class LogStreamFilterActor(
     }
 
     override suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean, saveBackwardToken: Boolean): List<LogStreamEntry> {
-        // loading backwards doesn't make sense in this context, so just skip it
+        // loading backwards doesn't make sense in this context, so just skip the event
         if (saveBackwardToken) {
             return listOf()
         }

@@ -37,7 +37,7 @@ class LogStreamTable(
     }
 
     val component: JScrollPane
-    val channel: Channel<LogStreamActor.Messages>
+    val channel: Channel<LogStreamActor.Message>
     val logsTable: TableView<LogStreamEntry>
     private val logStreamActor: LogStreamActor
 
@@ -75,10 +75,10 @@ class LogStreamTable(
             }
             if (component.verticalScrollBar.isAtBottom()) {
                 launch {
-                    logStreamActor.channel.send(LogStreamActor.Messages.LOAD_FORWARD())
+                    logStreamActor.channel.send(LogStreamActor.Message.LOAD_FORWARD())
                 }
             } else if (component.verticalScrollBar.isAtTop()) {
-                launch { logStreamActor.channel.send(LogStreamActor.Messages.LOAD_BACKWARD()) }
+                launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_BACKWARD()) }
             }
         }
     }
