@@ -29,8 +29,6 @@ import software.aws.toolkits.resources.message
 import java.io.File
 import java.time.Instant
 
-// TODO check resulting file size/ size of log stream and have a pop up if > max editor size
-// TODO add progress bar for loading
 class OpenLogStreamInEditor(
     private val project: Project,
     private val logGroup: String,
@@ -60,7 +58,9 @@ private class DownloadTask(project: Project, val client: CloudWatchLogsClient, v
         var events: List<OutputLogEvent>
         var nextToken: String? = null
         val buffer = StringBuilder()
-        // This is an approximation
+        // Default content load limit is 20MB, but utf-8 strings (the default encoding for intellij files) are
+        // variable length, so we divide by 2 which should work for all normal logs. Sadly we do not get back
+        // what the string is encoded from the service so we can't just
         val maxBufferLength = getUserContentLoadLimit() / 2
         do {
             if (buffer.length > maxBufferLength) {
