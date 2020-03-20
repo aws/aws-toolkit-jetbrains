@@ -32,7 +32,7 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
         val group = CloudWatchLogGroup(project, logGroup)
         val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
         withContext(edtContext) {
-            toolWindow.addTab(title, group.content, activate = true, id = logGroup, disposable = group)
+            toolWindow.addTab(title, group.panel, activate = true, id = logGroup, disposable = group)
         }
     }
 

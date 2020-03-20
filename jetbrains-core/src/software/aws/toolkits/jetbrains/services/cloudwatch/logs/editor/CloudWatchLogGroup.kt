@@ -7,13 +7,17 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ListTableModel
@@ -36,7 +40,6 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
 import javax.swing.JButton
-import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.RowFilter
@@ -47,10 +50,10 @@ class CloudWatchLogGroup(
     private val project: Project,
     private val logGroup: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
-    lateinit var content: JPanel
+    lateinit var panel: JPanel
 
     private lateinit var refreshButton: JButton
-    private lateinit var locationInformation: JLabel
+    private lateinit var locationInformation: JBLabel
     private lateinit var filterField: JBTextField
     private lateinit var tableScroll: JScrollPane
     private lateinit var groupTable: JBTable
@@ -81,7 +84,8 @@ class CloudWatchLogGroup(
     }
 
     init {
-        locationInformation.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup"
+        locationInformation.text = "${project.activeCredentialProvider().displayName} > ${project.activeRegion().displayName} > $logGroup"
+        locationInformation.background = null
         filterField.emptyText.text = message("cloudwatch.logs.filter_log_streams")
         filterField.document.addDocumentListener(buildStreamSearchListener(groupTable))
 
