@@ -20,6 +20,7 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.table.JBTable
+import com.intellij.ui.table.TableView
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +29,7 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
+import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -59,21 +61,15 @@ class CloudWatchLogGroup(
     private fun createUIComponents() {
         tableModel = ListTableModel(
             arrayOf(LogStreamsStreamColumn(), LogStreamsDateColumn()),
-            mutableListOf<LogStream>(),
-            // To display and sort by different values, we sort the model's values instead
-            -1,
-            SortOrder.UNSORTED
+            mutableListOf<LogStream>()
         )
-        groupTable = JBTable(tableModel).apply {
+        groupTable = TableView(tableModel).apply {
             setPaintBusy(true)
             autoscrolls = true
             emptyText.text = message("loading_resource.loading")
             tableHeader.reorderingAllowed = false
         }
         groupTable.rowSorter = LogGroupTableSorter(tableModel)
-        // TODO fix resizing
-        groupTable.columnModel.getColumn(1).preferredWidth = 150
-        groupTable.columnModel.getColumn(1).maxWidth = 150
         TableSpeedSearch(groupTable)
 
         addTableMouseListener(groupTable)
@@ -141,8 +137,11 @@ class CloudWatchLogGroup(
     private suspend fun populateModel() = runUnlessDisposed(this) {
         try {
             val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-            streams.filterNotNull().firstOrNull()?.logStreams()?.sortedByDescending { it.lastEventTimestamp() }?.let {
-                withContext(edtContext) { tableModel.items = it }
+            streams.filterNotNull().firstOrNull()?.logStreams()?.let {
+                withContext(edtContext) {
+                    tableModel.items = it
+                    groupTable.invalidate()
+                }
             }
         } catch (e: Exception) {
             val errorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
