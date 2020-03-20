@@ -17,6 +17,7 @@ import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.JBColor
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
@@ -73,6 +74,7 @@ class CloudWatchLogGroup(
         // TODO fix resizing
         groupTable.columnModel.getColumn(1).preferredWidth = 150
         groupTable.columnModel.getColumn(1).maxWidth = 150
+        TableSpeedSearch(groupTable)
 
         addTableMouseListener(groupTable)
         val scroll = ScrollPaneFactory.createScrollPane(groupTable)
