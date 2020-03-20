@@ -7,19 +7,17 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.table.JBTable
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -30,8 +28,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogStreamInEditor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -53,11 +49,11 @@ class CloudWatchLogGroup(
     lateinit var panel: JPanel
 
     private lateinit var refreshButton: JButton
-    private lateinit var locationInformation: JBLabel
     private lateinit var filterField: JBTextField
     private lateinit var tableScroll: JScrollPane
     private lateinit var groupTable: JBTable
     private lateinit var tableModel: ListTableModel<LogStream>
+    private lateinit var locationInformation: Breadcrumbs
 
     private val client: CloudWatchLogsClient = project.awsClient()
 
@@ -84,12 +80,12 @@ class CloudWatchLogGroup(
     }
 
     init {
-        locationInformation.text = "${project.activeCredentialProvider().displayName} > ${project.activeRegion().displayName} > $logGroup"
-        locationInformation.background = null
+        val locationCrumbs = LocationCrumbs(project, logGroup)
+        locationInformation.crumbs = locationCrumbs.crumbs
         filterField.emptyText.text = message("cloudwatch.logs.filter_log_streams")
         filterField.document.addDocumentListener(buildStreamSearchListener(groupTable))
 
-        styleRefreshButton()
+        setUpRefreshButton()
         addActions()
 
         launch { refreshLogStreams() }
@@ -120,9 +116,12 @@ class CloudWatchLogGroup(
         }.installOn(table)
     }
 
-    private fun styleRefreshButton() {
+    private fun setUpRefreshButton() {
         refreshButton.background = null
         refreshButton.border = null
+        refreshButton.isBorderPainted = false
+        refreshButton.margin = JBUI.emptyInsets()
+        refreshButton.isContentAreaFilled = false
         refreshButton.icon = AllIcons.Actions.Refresh
         refreshButton.addActionListener { launch { refreshLogStreams() } }
     }
