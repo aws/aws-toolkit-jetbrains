@@ -42,7 +42,7 @@ class OpenLogStreamInEditorTest {
 
     @JvmField
     @Rule
-    val timeout = CoroutinesTimeout.seconds(10)
+    val timeout = CoroutinesTimeout.seconds(15)
 
     @After
     fun after() {
