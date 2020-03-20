@@ -25,7 +25,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import org.jetbrains.annotations.NotNull;
 import software.aws.toolkits.core.region.AwsRegion;
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager;
-import software.aws.toolkits.jetbrains.services.s3.S3TreeCellRenderer;
 import software.aws.toolkits.jetbrains.services.s3.S3UtilsKt;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
@@ -62,12 +61,6 @@ public class S3ViewerPanel {
 
         AwsRegion activeRegion = ProjectAccountSettingsManager.getInstance(project).getActiveRegion();
         arnText.setText(S3UtilsKt.bucketArn(bucketVirtual.getName(), activeRegion));
-        bucketArn.setText("Bucket ARN:");
-        bucketName.setText("Bucket Name:");
-        creationDate.setText("Creation Date:");
-        date.setEditable(false);
-        arnText.setEditable(false);
-        name.setEditable(false);
 
         s3TreeNode = new S3TreeDirectoryNode(bucketVirtual, null, "");
 
@@ -77,13 +70,13 @@ public class S3ViewerPanel {
         ColumnInfo<Object, String>[] columns = new ColumnInfo[] {key, size, modified};
         model = createTreeTableModel(columns);
 
-        S3TreeCellRenderer treeRenderer = new S3TreeCellRenderer();
         DefaultTableCellRenderer tableRenderer = new DefaultTableCellRenderer();
         tableRenderer.setHorizontalAlignment(SwingConstants.LEFT);
 
         treeTable = new S3TreeTable(model, bucketVirtual, project);
         treeTable.setRootVisible(false);
         treeTable.setDefaultRenderer(Object.class, tableRenderer);
+        S3TreeCellRenderer treeRenderer = new S3TreeCellRenderer(treeTable);
         treeTable.setTreeCellRenderer(treeRenderer);
         treeTable.setCellSelectionEnabled(false);
 
