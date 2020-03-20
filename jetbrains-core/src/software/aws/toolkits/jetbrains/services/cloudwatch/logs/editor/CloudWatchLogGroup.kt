@@ -7,14 +7,16 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
-import com.intellij.ui.DocumentAdapter
+import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DoubleClickListener
+import com.intellij.ui.JBColor
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
@@ -35,22 +37,16 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
-import javax.swing.JButton
 import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.RowFilter
 import javax.swing.SortOrder
-import javax.swing.event.DocumentEvent
 
 class CloudWatchLogGroup(
     private val project: Project,
     private val logGroup: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
-    lateinit var panel: JPanel
+    lateinit var content: JPanel
 
-    private lateinit var refreshButton: JButton
-    private lateinit var filterField: JBTextField
-    private lateinit var tableScroll: JScrollPane
+    private lateinit var tablePanel: SimpleToolWindowPanel
     private lateinit var groupTable: JBTable
     private lateinit var tableModel: ListTableModel<LogStream>
     private lateinit var locationInformation: Breadcrumbs
@@ -74,33 +70,25 @@ class CloudWatchLogGroup(
             tableHeader.reorderingAllowed = false
         }
         groupTable.rowSorter = LogGroupTableSorter(tableModel)
+        // TODO fix resizing
+        groupTable.columnModel.getColumn(1).preferredWidth = 150
+        groupTable.columnModel.getColumn(1).maxWidth = 150
 
         addTableMouseListener(groupTable)
-        tableScroll = ScrollPaneFactory.createScrollPane(groupTable)
+        val scroll = ScrollPaneFactory.createScrollPane(groupTable)
+        tablePanel = SimpleToolWindowPanel(false, true)
+        tablePanel.setContent(scroll)
     }
 
     init {
         val locationCrumbs = LocationCrumbs(project, logGroup)
         locationInformation.crumbs = locationCrumbs.crumbs
-        filterField.emptyText.text = message("cloudwatch.logs.filter_log_streams")
-        filterField.document.addDocumentListener(buildStreamSearchListener(groupTable))
+        locationInformation.border = JBUI.Borders.customLine(JBColor.border(), 0, 0, 1, 0)
 
-        setUpRefreshButton()
         addActions()
+        addToolbar()
 
         launch { refreshLogStreams() }
-    }
-
-    private fun buildStreamSearchListener(table: JBTable) = object : DocumentAdapter() {
-        override fun textChanged(e: DocumentEvent) {
-            val text = filterField.text
-            val sorter = (table.rowSorter as LogGroupTableSorter)
-            if (text.isNullOrBlank()) {
-                sorter.rowFilter = null
-            } else {
-                sorter.rowFilter = RowFilter.regexFilter(text)
-            }
-        }
     }
 
     private fun addTableMouseListener(table: JBTable) {
@@ -114,16 +102,6 @@ class CloudWatchLogGroup(
                 return true
             }
         }.installOn(table)
-    }
-
-    private fun setUpRefreshButton() {
-        refreshButton.background = null
-        refreshButton.border = null
-        refreshButton.isBorderPainted = false
-        refreshButton.margin = JBUI.emptyInsets()
-        refreshButton.isContentAreaFilled = false
-        refreshButton.icon = AllIcons.Actions.Refresh
-        refreshButton.addActionListener { launch { refreshLogStreams() } }
     }
 
     private suspend fun refreshLogStreams() {
@@ -146,6 +124,16 @@ class CloudWatchLogGroup(
             ActionPlaces.EDITOR_POPUP,
             ActionManager.getInstance()
         )
+    }
+
+    private fun addToolbar() {
+        val actionGroup = DefaultActionGroup()
+        actionGroup.addAction(object : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh) {
+            override fun actionPerformed(e: AnActionEvent) {
+                launch { refreshLogStreams() }
+            }
+        })
+        tablePanel.toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false).component
     }
 
     private suspend fun populateModel() = runUnlessDisposed(this) {
