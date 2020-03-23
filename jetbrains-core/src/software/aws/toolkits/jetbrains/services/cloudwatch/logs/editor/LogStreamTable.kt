@@ -18,6 +18,8 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterA
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
+import java.awt.event.AdjustmentEvent
+import java.awt.event.AdjustmentListener
 import javax.swing.JComponent
 import javax.swing.JScrollBar
 import javax.swing.JTable
@@ -65,16 +67,20 @@ class LogStreamTable(
         Disposer.register(this@LogStreamTable, logStreamActor)
         channel = logStreamActor.channel
 
-        component.verticalScrollBar.addAdjustmentListener {
-            if (logsTable.model.rowCount == 0) {
-                return@addAdjustmentListener
+        component.verticalScrollBar.addAdjustmentListener(object : AdjustmentListener {
+            var lastAdjustment = component.verticalScrollBar.minimum
+            override fun adjustmentValueChanged(e: AdjustmentEvent?) {
+                if (e == null || logsTable.model.rowCount == 0 || e.value == lastAdjustment) {
+                    return
+                }
+                lastAdjustment = e.value
+                if (component.verticalScrollBar.isAtBottom()) {
+                    launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_FORWARD()) }
+                } else if (component.verticalScrollBar.isAtTop()) {
+                    launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_BACKWARD()) }
+                }
             }
-            if (component.verticalScrollBar.isAtBottom()) {
-                launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_FORWARD()) }
-            } else if (component.verticalScrollBar.isAtTop()) {
-                launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_BACKWARD()) }
-            }
-        }
+        })
     }
 
     private fun JScrollBar.isAtBottom(): Boolean = value == (maximum - visibleAmount)
