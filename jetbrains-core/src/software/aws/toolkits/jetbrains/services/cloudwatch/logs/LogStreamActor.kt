@@ -63,23 +63,17 @@ sealed class LogStreamActor(
     private suspend fun handleMessages() {
         for (message in channel) {
             when (message) {
-                is Message.LOAD_FORWARD -> {
+                is Message.LOAD_FORWARD -> if (!nextForwardToken.isNullOrEmpty()) {
                     val items = loadMore(nextForwardToken, saveForwardToken = true)
                     withContext(edtContext) { table.listTableModel.addRows(items) }
                 }
-                is Message.LOAD_BACKWARD -> {
+                is Message.LOAD_BACKWARD -> if (!nextBackwardToken.isNullOrEmpty()) {
                     val items = loadMore(nextBackwardToken, saveBackwardToken = true)
                     withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
                 }
-                is Message.LOAD_INITIAL -> {
-                    loadInitial()
-                }
-                is Message.LOAD_INITIAL_RANGE -> {
-                    loadInitialRange(message.startTime, message.duration)
-                }
-                is Message.LOAD_INITIAL_FILTER -> {
-                    loadInitialFilter(message.queryString)
-                }
+                is Message.LOAD_INITIAL -> loadInitial()
+                is Message.LOAD_INITIAL_RANGE -> loadInitialRange(message.startTime, message.duration)
+                is Message.LOAD_INITIAL_FILTER -> loadInitialFilter(message.queryString)
             }
         }
     }
