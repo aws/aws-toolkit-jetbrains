@@ -9,10 +9,14 @@ import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.JBColor
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
@@ -39,21 +43,27 @@ class CloudWatchLogStream(
     private val duration: Duration? = null
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogStream"), Disposable {
     lateinit var content: JPanel
-    lateinit var logsPanel: Wrapper
-    lateinit var searchLabel: JLabel
-    lateinit var searchField: JBTextField
-    lateinit var toolbarHolder: Wrapper
+    private lateinit var breadcrumbHolder: JPanel
+    private lateinit var locationInformation: Breadcrumbs
+    private lateinit var tablePanel: SimpleToolWindowPanel
+    private lateinit var searchField: JBTextField
 
     private val edtContext = getCoroutineUiContext(disposable = this)
 
     private val logStreamTable: LogStreamTable = LogStreamTable(project, logGroup, logStream, LogStreamTable.TableType.LIST)
     private var searchStreamTable: LogStreamTable? = null
 
+    private fun createUIComponents() {
+        tablePanel = SimpleToolWindowPanel(false, true)
+        locationInformation = LocationCrumbs(project, logGroup, logStream)
+    }
+
     init {
-        logsPanel.setContent(logStreamTable.component)
+        tablePanel.setContent(logStreamTable.component)
+
         Disposer.register(this, logStreamTable)
-        searchLabel.text = "${project.activeCredentialProvider().displayName} => ${project.activeRegion().displayName} => $logGroup => $logStream"
         searchField.emptyText.text = message("cloudwatch.logs.filter_logs")
+        searchField.preferredSize.width = 150
 
         addAction()
         addActionToolbar()
@@ -82,7 +92,7 @@ class CloudWatchLogStream(
                 if (searchFieldText.isEmpty()) {
                     searchStreamTable = null
                     launch(edtContext) {
-                        logsPanel.setContent(logStreamTable.component)
+                        tablePanel.setContent(logStreamTable.component)
                         // Dispose the old one if it was not null
                         oldTable?.let { launch { Disposer.dispose(it) } }
                     }
@@ -92,7 +102,7 @@ class CloudWatchLogStream(
                     Disposer.register(this@CloudWatchLogStream, table)
                     searchStreamTable = table
                     launch(edtContext) {
-                        logsPanel.setContent(table.component)
+                        tablePanel.setContent(table.component)
                         oldTable?.let { launch { Disposer.dispose(it) } }
                     }
                     launch {
@@ -126,7 +136,7 @@ class CloudWatchLogStream(
         actionGroup.add(TailLogs { searchStreamTable?.channel ?: logStreamTable.channel })
         actionGroup.add(WrapLogs { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
-        toolbarHolder.setContent(toolbar.component)
+        tablePanel.toolbar = toolbar.component
     }
 
     override fun dispose() {}

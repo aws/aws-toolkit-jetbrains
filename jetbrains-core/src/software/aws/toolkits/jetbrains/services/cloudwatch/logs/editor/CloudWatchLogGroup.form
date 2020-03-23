@@ -9,7 +9,7 @@
       <color color="-16777216"/>
     </border>
     <children>
-      <component id="c43d5" class="com.intellij.ui.components.breadcrumbs.Breadcrumbs" binding="locationInformation">
+      <component id="c43d5" class="com.intellij.ui.components.breadcrumbs.Breadcrumbs" binding="locationInformation" custom-create="true">
         <constraints border-constraint="North"/>
         <properties/>
       </component>
