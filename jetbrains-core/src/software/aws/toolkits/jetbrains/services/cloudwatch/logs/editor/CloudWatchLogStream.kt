@@ -12,7 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.PopupHandler
-import com.intellij.ui.components.JBTextField
+import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -40,7 +40,7 @@ class CloudWatchLogStream(
     private lateinit var breadcrumbHolder: JPanel
     private lateinit var locationInformation: Breadcrumbs
     private lateinit var tablePanel: SimpleToolWindowPanel
-    private lateinit var searchField: JBTextField
+    private lateinit var searchField: SearchTextField
 
     private val edtContext = getCoroutineUiContext(disposable = this)
 
@@ -49,6 +49,7 @@ class CloudWatchLogStream(
 
     private fun createUIComponents() {
         tablePanel = SimpleToolWindowPanel(false, true)
+        searchField = SearchTextField(false)
     }
 
     init {
@@ -59,7 +60,7 @@ class CloudWatchLogStream(
         breadcrumbHolder.border = locationCrumbs.border
 
         Disposer.register(this, logStreamTable)
-        searchField.emptyText.text = message("cloudwatch.logs.filter_logs")
+        searchField.textEditor.emptyText.text = message("cloudwatch.logs.filter_logs")
 
         addAction()
         addActionToolbar()
@@ -75,7 +76,7 @@ class CloudWatchLogStream(
     }
 
     private fun addSearchListener() {
-        searchField.addActionListener(object : ActionListener {
+        searchField.textEditor.addActionListener(object : ActionListener {
             private var lastText = ""
             override fun actionPerformed(e: ActionEvent?) {
                 val searchFieldText = searchField.text.trim()
