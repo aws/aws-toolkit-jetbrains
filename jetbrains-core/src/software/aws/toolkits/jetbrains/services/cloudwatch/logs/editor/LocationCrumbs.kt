@@ -4,15 +4,15 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.JBColor
+import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.SideBorder
 import com.intellij.ui.components.breadcrumbs.Crumb
-import com.intellij.util.ui.JBUI
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 
 // TODO add actions
 class LocationCrumbs(project: Project, logGroup: String, logStream: String? = null) {
-    val border = JBUI.Borders.customLine(JBColor.border(), 0, 0, 1, 0)
+    val border = IdeBorderFactory.createBorder(SideBorder.BOTTOM)
 
     val crumbs = listOfNotNull(
         Crumb.Impl(null, project.activeCredentialProvider().displayName, null, null),
