@@ -14,14 +14,14 @@ import com.intellij.openapi.application.impl.runUnlessDisposed
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DoubleClickListener
-import com.intellij.ui.JBColor
+import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.SideBorder
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.table.JBTable
 import com.intellij.ui.table.TableView
-import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -79,7 +79,7 @@ class CloudWatchLogGroup(
     init {
         val locationCrumbs = LocationCrumbs(project, logGroup)
         locationInformation.crumbs = locationCrumbs.crumbs
-        locationInformation.border = JBUI.Borders.customLine(JBColor.border(), 0, 0, 1, 0)
+        locationInformation.border = IdeBorderFactory.createBorder(SideBorder.BOTTOM)
 
         addActions()
         addToolbar()
