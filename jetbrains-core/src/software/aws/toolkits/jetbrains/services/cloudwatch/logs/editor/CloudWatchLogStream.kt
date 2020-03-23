@@ -55,7 +55,7 @@ class CloudWatchLogStream(
     init {
         tablePanel.setContent(logStreamTable.component)
 
-        val locationCrumbs = LocationCrumbs(project, logGroup)
+        val locationCrumbs = LocationCrumbs(project, logGroup, logStream)
         locationInformation.crumbs = locationCrumbs.crumbs
         breadcrumbHolder.border = locationCrumbs.border
 
