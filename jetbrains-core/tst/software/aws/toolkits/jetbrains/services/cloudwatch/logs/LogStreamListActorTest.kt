@@ -64,10 +64,10 @@ class LogStreamListActorTest {
         runBlocking {
             coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL())
             tableModel.waitForModelToBeAtLeast(1)
+            waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
-        assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events"))
     }
 
     @Test
@@ -81,6 +81,7 @@ class LogStreamListActorTest {
         runBlocking {
             coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
             tableModel.waitForModelToBeAtLeast(1)
+            waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
         }
 
         assertThat(tableModel.items.size).isOne()
@@ -97,7 +98,7 @@ class LogStreamListActorTest {
         val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL())
-            waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
+            waitForTrue { table.emptyText.text == message("cloudwatch.logs.failed_to_load_stream", "def") }
         }
         assertThat(tableModel.items).isEmpty()
     }
@@ -111,7 +112,7 @@ class LogStreamListActorTest {
         val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
-            waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
+            waitForTrue { table.emptyText.text == message("cloudwatch.logs.failed_to_load_stream", "def") }
         }
         assertThat(tableModel.items).isEmpty()
     }
@@ -120,9 +121,21 @@ class LogStreamListActorTest {
     fun loadingForwardAppendsToTable() {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         whenever(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().build()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message2").build()).build()))
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).nextForwardToken(
+                        "2"
+                    ).build()
+                )
+            )
+            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().nextForwardToken("3").build()))
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message2").build()).nextForwardToken(
+                        "4"
+                    ).build()
+                )
+            )
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
@@ -145,9 +158,27 @@ class LogStreamListActorTest {
     fun loadingBackwardsPrependsToTable() {
         val mockClient = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
         whenever(mockClient.getLogEvents(Mockito.any<GetLogEventsRequest>()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().build()))
-            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message2").build()).build()))
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).nextBackwardToken(
+                        "2"
+                    ).build()
+                )
+            )
+            .thenReturn(CompletableFuture.completedFuture(GetLogEventsResponse.builder().nextBackwardToken("3").build()))
+            .thenReturn(
+                CompletableFuture.completedFuture(
+                    GetLogEventsResponse
+                        .builder()
+                        .events(
+                            OutputLogEvent
+                                .builder()
+                                .message("message2").timestamp(3).build()
+                        )
+                        .nextBackwardToken("2")
+                        .build()
+                )
+            )
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, table, "abc", "def")
@@ -164,7 +195,9 @@ class LogStreamListActorTest {
         }
         assertThat(tableModel.items.size).isEqualTo(2)
         assertThat(tableModel.items.first().message).isEqualTo("message2")
+        assertThat(tableModel.items.first().timestamp).isEqualTo(3)
         assertThat(tableModel.items[1].message).isEqualTo("message")
+        assertThat(tableModel.items[1].timestamp).isZero()
     }
 
     @Test

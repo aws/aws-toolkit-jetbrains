@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.FilteredLogEvent
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.waitForFalse
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
-import software.aws.toolkits.resources.message
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
@@ -73,7 +72,6 @@ class LogStreamFilterActorTest {
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
-        assertThat(table.emptyText.text).isEqualTo(message("cloudwatch.logs.no_events_query", "def"))
     }
 
     @Test
@@ -85,6 +83,7 @@ class LogStreamFilterActorTest {
                     FilterLogEventsResponse
                         .builder()
                         .events(FilteredLogEvent.builder().message("message").build())
+                        .nextToken("2")
                         .build()
                 )
             )
@@ -92,7 +91,8 @@ class LogStreamFilterActorTest {
                 CompletableFuture.completedFuture(
                     FilterLogEventsResponse
                         .builder()
-                        .events(FilteredLogEvent.builder().message("message2").build())
+                        .events(FilteredLogEvent.builder().message("message2").timestamp(2).build())
+                        .nextToken("3")
                         .build()
                 )
             )
@@ -106,7 +106,9 @@ class LogStreamFilterActorTest {
         }
         assertThat(tableModel.items).hasSize(2)
         assertThat(tableModel.items.first().message).isEqualTo("message")
+        assertThat(tableModel.items.first().timestamp).isZero()
         assertThat(tableModel.items[1].message).isEqualTo("message2")
+        assertThat(tableModel.items[1].timestamp).isEqualTo(2)
     }
 
     @Test

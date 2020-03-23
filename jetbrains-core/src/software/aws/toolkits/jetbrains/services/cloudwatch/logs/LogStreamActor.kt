@@ -33,6 +33,7 @@ sealed class LogStreamActor(
     protected val logStream: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {
     val channel = Channel<Message>()
+    private val tableErrorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
 
     protected val client: CloudWatchLogsAsyncClient = project.awsClient()
     protected var nextBackwardToken: String? = null
@@ -86,10 +87,9 @@ sealed class LogStreamActor(
             }
             table.emptyText.text = emptyText
         } catch (e: Exception) {
-            val errorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
-            LOG.error(e) { errorMessage }
-            notifyError(title = errorMessage, project = project)
-            withContext(edtContext) { table.emptyText.text = errorMessage }
+            LOG.error(e) { tableErrorMessage }
+            notifyError(title = tableErrorMessage, project = project)
+            withContext(edtContext) { table.emptyText.text = tableErrorMessage }
         } finally {
             withContext(edtContext) {
                 table.setPaintBusy(false)
