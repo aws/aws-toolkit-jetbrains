@@ -19,7 +19,7 @@ class ShowLogsAroundGroup(
     private val logGroup: String,
     private val logStream: String,
     private val treeTable: TableView<LogStreamEntry>
-) : ActionGroup(message("cloudwatch.logs.show_logs_around"), null, AllIcons.Ide.Link), DumbAware {
+) : ActionGroup(message("cloudwatch.logs.show_logs_around"), null, null), DumbAware {
     init {
         isPopup = true
     }

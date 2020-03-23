@@ -52,9 +52,11 @@ class LogStreamMessageColumn : ColumnInfo<LogStreamEntry, String>(message("gener
     fun wrap() {
         renderer.wrap = true
     }
+
     fun unwrap() {
         renderer.wrap = false
     }
+
     override fun valueOf(item: LogStreamEntry?): String? = item?.message
     override fun isCellEditable(item: LogStreamEntry?): Boolean = false
     override fun getRenderer(item: LogStreamEntry?): TableCellRenderer? = renderer
@@ -62,12 +64,15 @@ class LogStreamMessageColumn : ColumnInfo<LogStreamEntry, String>(message("gener
 
 private class WrappingLogStreamMessageRenderer : TableCellRenderer {
     var wrap = false
+    // JBTextArea has a different font from JBLabel (the default in a table) so harvest the font off of it
+    private val font = JBLabel().font
 
     override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = JBTextArea()
         component.wrapStyleWord = wrap
         component.lineWrap = wrap
         component.text = (value as? String)?.trim()
+        component.font = font
         component.setSize(table.columnModel.getColumn(column).width, component.preferredSize.height)
         if (table.getRowHeight(row) != component.preferredSize.height) {
             table.setRowHeight(row, component.preferredSize.height)
