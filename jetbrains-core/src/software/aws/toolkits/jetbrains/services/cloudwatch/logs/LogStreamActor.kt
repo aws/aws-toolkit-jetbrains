@@ -84,6 +84,7 @@ sealed class LogStreamActor(
             withContext(edtContext) {
                 table.listTableModel.addRows(items)
             }
+            table.emptyText.text = emptyText
         } catch (e: Exception) {
             val errorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
             LOG.error(e) { errorMessage }
@@ -91,7 +92,6 @@ sealed class LogStreamActor(
             withContext(edtContext) { table.emptyText.text = errorMessage }
         } finally {
             withContext(edtContext) {
-                table.emptyText.text = emptyText
                 table.setPaintBusy(false)
             }
         }

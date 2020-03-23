@@ -18,8 +18,8 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterA
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
+import javax.swing.JComponent
 import javax.swing.JScrollBar
-import javax.swing.JScrollPane
 import javax.swing.JTable
 import javax.swing.SortOrder
 
@@ -28,15 +28,14 @@ class LogStreamTable(
     logGroup: String,
     logStream: String,
     type: TableType
-) :
-    CoroutineScope by ApplicationThreadPoolScope("LogStreamTable"), Disposable {
+) : CoroutineScope by ApplicationThreadPoolScope("LogStreamTable"), Disposable {
 
     enum class TableType {
         LIST,
         FILTER
     }
 
-    val component: JScrollPane
+    val component: JComponent
     val channel: Channel<LogStreamActor.Message>
     val logsTable: TableView<LogStreamEntry>
     private val logStreamActor: LogStreamActor
