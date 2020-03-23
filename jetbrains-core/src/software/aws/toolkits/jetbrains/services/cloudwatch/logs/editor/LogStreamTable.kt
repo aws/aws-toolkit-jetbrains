@@ -73,9 +73,7 @@ class LogStreamTable(
                 return@addAdjustmentListener
             }
             if (component.verticalScrollBar.isAtBottom()) {
-                launch {
-                    logStreamActor.channel.send(LogStreamActor.Message.LOAD_FORWARD())
-                }
+                launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_FORWARD()) }
             } else if (component.verticalScrollBar.isAtTop()) {
                 launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_BACKWARD()) }
             }
