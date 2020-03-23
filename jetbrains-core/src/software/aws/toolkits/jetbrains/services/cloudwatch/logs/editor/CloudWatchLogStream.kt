@@ -124,7 +124,7 @@ class CloudWatchLogStream(
             searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
         })
         actionGroup.add(TailLogs { searchStreamTable?.channel ?: logStreamTable.channel })
-        actionGroup.add(WrapLogs(logsPanel) { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
+        actionGroup.add(WrapLogs(content) { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
         toolbarHolder.setContent(toolbar.component)
     }
