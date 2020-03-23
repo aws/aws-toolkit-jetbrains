@@ -6,14 +6,16 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
+import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.table.TableView
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamMessageColumn
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.WrappingLogStreamMessageColumn
 import software.aws.toolkits.resources.message
 
-class WrapLogs(private val block: () -> TableView<LogStreamEntry>) :
+class WrapLogs(private val logsPanel: Wrapper, private val getCurrentTableView: () -> TableView<LogStreamEntry>) :
     ToggleAction(message("cloudwatch.logs.wrap"), null, AllIcons.Actions.ToggleSoftWrap),
     DumbAware {
     private val messageColumn = 1
@@ -30,10 +32,17 @@ class WrapLogs(private val block: () -> TableView<LogStreamEntry>) :
     }
 
     private fun wrap() {
-        block().listTableModel.columnInfos[messageColumn] = WrappingLogStreamMessageColumn()
+        (getCurrentTableView().listTableModel.columnInfos[messageColumn] as? LogStreamMessageColumn)?.wrap()
+        redrawTable()
     }
 
     private fun unwrap() {
-        block().listTableModel.columnInfos[messageColumn] = LogStreamMessageColumn()
+        (getCurrentTableView().listTableModel.columnInfos[messageColumn] as? LogStreamMessageColumn)?.unwrap()
+        redrawTable()
+    }
+
+    private fun redrawTable() = runInEdt(ModalityState.any()) {
+        getCurrentTableView().invalidate()
+        logsPanel.invalidate()
     }
 }

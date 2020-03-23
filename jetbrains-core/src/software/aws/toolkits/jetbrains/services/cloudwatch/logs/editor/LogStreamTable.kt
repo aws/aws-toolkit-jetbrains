@@ -54,9 +54,6 @@ class LogStreamTable(
             emptyText.text = message("loading_resource.loading")
             tableHeader.reorderingAllowed = false
         }
-        // TODO fix resizing
-        logsTable.columnModel.getColumn(0).preferredWidth = 150
-        logsTable.columnModel.getColumn(0).maxWidth = 150
         logsTable.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
         component = ScrollPaneFactory.createScrollPane(logsTable)

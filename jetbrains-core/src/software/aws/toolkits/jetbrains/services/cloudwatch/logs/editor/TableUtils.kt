@@ -40,31 +40,33 @@ class LogGroupTableSorter(model: ListTableModel<LogStream>) : TableRowSorter<Lis
 }
 
 class LogStreamDateColumn : ColumnInfo<LogStreamEntry, String>(message("general.time")) {
-    override fun valueOf(item: LogStreamEntry?): String? {
-        val timestamp = item?.timestamp ?: return null
-        return DateFormatUtil.getDateTimeFormat().format(timestamp)
-    }
+    private val renderer = ResizingDateColumnRenderer()
+    override fun valueOf(item: LogStreamEntry?): String? = item?.timestamp?.toString()
 
     override fun isCellEditable(item: LogStreamEntry?): Boolean = false
+    override fun getRenderer(item: LogStreamEntry?): TableCellRenderer? = renderer
 }
 
 class LogStreamMessageColumn : ColumnInfo<LogStreamEntry, String>(message("general.message")) {
-    override fun valueOf(item: LogStreamEntry?): String? = item?.message
-    override fun isCellEditable(item: LogStreamEntry?): Boolean = false
-}
-
-class WrappingLogStreamMessageColumn : ColumnInfo<LogStreamEntry, String>(message("general.message")) {
     private val renderer = WrappingLogStreamMessageRenderer()
+    fun wrap() {
+        renderer.wrap = true
+    }
+    fun unwrap() {
+        renderer.wrap = false
+    }
     override fun valueOf(item: LogStreamEntry?): String? = item?.message
     override fun isCellEditable(item: LogStreamEntry?): Boolean = false
     override fun getRenderer(item: LogStreamEntry?): TableCellRenderer? = renderer
 }
 
 private class WrappingLogStreamMessageRenderer : TableCellRenderer {
+    var wrap = false
+
     override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = JBTextArea()
-        component.wrapStyleWord = true
-        component.lineWrap = true
+        component.wrapStyleWord = wrap
+        component.lineWrap = wrap
         component.text = (value as? String)?.trim()
         component.setSize(table.columnModel.getColumn(column).width, component.preferredSize.height)
         if (table.getRowHeight(row) != component.preferredSize.height) {
