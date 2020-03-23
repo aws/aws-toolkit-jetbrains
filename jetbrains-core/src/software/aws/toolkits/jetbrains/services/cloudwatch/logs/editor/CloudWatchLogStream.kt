@@ -11,16 +11,11 @@ import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.JBColor
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
-import com.intellij.ui.components.panels.Wrapper
-import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundGroup
@@ -32,7 +27,6 @@ import software.aws.toolkits.resources.message
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import java.time.Duration
-import javax.swing.JLabel
 import javax.swing.JPanel
 
 class CloudWatchLogStream(
@@ -55,15 +49,17 @@ class CloudWatchLogStream(
 
     private fun createUIComponents() {
         tablePanel = SimpleToolWindowPanel(false, true)
-        locationInformation = LocationCrumbs(project, logGroup, logStream)
     }
 
     init {
         tablePanel.setContent(logStreamTable.component)
 
+        val locationCrumbs = LocationCrumbs(project, logGroup)
+        locationInformation.crumbs = locationCrumbs.crumbs
+        breadcrumbHolder.border = locationCrumbs.border
+
         Disposer.register(this, logStreamTable)
         searchField.emptyText.text = message("cloudwatch.logs.filter_logs")
-        searchField.preferredSize.width = 150
 
         addAction()
         addActionToolbar()

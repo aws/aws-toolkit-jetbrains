@@ -73,13 +73,13 @@ class CloudWatchLogGroup(
         val scroll = ScrollPaneFactory.createScrollPane(groupTable)
         tablePanel = SimpleToolWindowPanel(false, true)
         tablePanel.setContent(scroll)
-        locationInformation = LocationCrumbs(project, logGroup)
     }
 
     init {
-        val locationCrumbs = LocationCrumbs(project, logGroup)
+        val locationCrumbs = LocationCrumbs(project,logGroup)
         locationInformation.crumbs = locationCrumbs.crumbs
-        locationInformation.border = IdeBorderFactory.createBorder(SideBorder.BOTTOM)
+        locationInformation.border = locationCrumbs.border
+
         addActions()
         addToolbar()
 
