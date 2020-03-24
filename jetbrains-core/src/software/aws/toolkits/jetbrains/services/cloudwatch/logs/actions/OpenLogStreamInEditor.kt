@@ -49,7 +49,7 @@ class OpenLogStreamInEditor(
 private class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, val logGroup: String, val logStream: String) :
     Task.Backgroundable(project, message("cloudwatch.logs.opening_in_editor", logStream), true),
     CoroutineScope by ApplicationThreadPoolScope("OpenLogStreamInEditor") {
-    private val edt = getCoroutineUiContext(ModalityState.defaultModalityState())
+    private val edt = getCoroutineUiContext()
 
     override fun run(indicator: ProgressIndicator) {
         runBlocking {
@@ -91,14 +91,7 @@ private class LogStreamDownloadTask(project: Project, val client: CloudWatchLogs
         if (promptWriteToFile() != Messages.OK) {
             indicator.cancel()
         } else {
-            val descriptor = FileSaverDescriptor(message("s3.download.object.action"), message("s3.download.object.description"))
-            val saveLocation = withContext(edt) {
-                val destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-                destination.save(null, null)
-            }
-            if (saveLocation != null) {
-                streamLogStreamToFile(indicator, request, saveLocation.file, buffer)
-            }
+            ProgressManager.getInstance().run(DownloadLog())
         }
     }
 
@@ -111,27 +104,6 @@ private class LogStreamDownloadTask(project: Project, val client: CloudWatchLogs
             Messages.CANCEL_BUTTON,
             AllIcons.General.QuestionDialog
         )
-    }
-
-    private fun streamLogStreamToFile(indicator: ProgressIndicator, request: GetLogEventsRequest, file: File, buffer: StringBuilder) {
-        try {
-            title = message("cloudwatch.logs.saving_to_disk", logStream)
-            file.appendText(buffer.toString())
-            val getRequest = client.getLogEventsPaginator(request)
-            getRequest.stream().forEach {
-                indicator.checkCanceled()
-                val str = it.events().buildStringFromLogsOutput()
-                file.appendText(str)
-            }
-            notifyInfo(
-                project = project,
-                title = message("aws.notification.title"),
-                content = message("cloudwatch.logs.saving_to_disk_succeeded", logStream)
-            )
-        } catch (e: Exception) {
-            LOG.error(e) { "Exception thrown while downloading large log stream" }
-            e.notifyError(project = project, title = message("cloudwatch.logs.saving_to_disk_failed", logStream))
-        }
     }
 
     companion object {
