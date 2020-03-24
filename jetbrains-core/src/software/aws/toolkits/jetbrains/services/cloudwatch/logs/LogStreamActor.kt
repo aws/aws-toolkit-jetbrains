@@ -28,6 +28,7 @@ import java.time.Duration
 
 sealed class LogStreamActor(
     private val project: Project,
+    protected val client: CloudWatchLogsAsyncClient,
     private val table: TableView<LogStreamEntry>,
     protected val logGroup: String,
     protected val logStream: String
@@ -35,7 +36,6 @@ sealed class LogStreamActor(
     val channel = Channel<Message>()
     private val tableErrorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
 
-    protected val client: CloudWatchLogsAsyncClient = project.awsClient()
     protected var nextBackwardToken: String? = null
     protected var nextForwardToken: String? = null
     protected abstract val emptyText: String
@@ -115,10 +115,11 @@ sealed class LogStreamActor(
 
 class LogStreamFilterActor(
     project: Project,
+    client: CloudWatchLogsAsyncClient,
     table: TableView<LogStreamEntry>,
     logGroup: String,
     logStream: String
-) : LogStreamActor(project, table, logGroup, logStream) {
+) : LogStreamActor(project, client, table, logGroup, logStream) {
     override val emptyText = message("cloudwatch.logs.no_events_query", logStream)
 
     override suspend fun loadInitial() {
@@ -166,11 +167,12 @@ class LogStreamFilterActor(
 
 class LogStreamListActor(
     project: Project,
+    client: CloudWatchLogsAsyncClient,
     table: TableView<LogStreamEntry>,
     logGroup: String,
     logStream: String
 ) :
-    LogStreamActor(project, table, logGroup, logStream) {
+    LogStreamActor(project, client, table, logGroup, logStream) {
     override val emptyText = message("cloudwatch.logs.no_events")
     override suspend fun loadInitial() {
         val request = GetLogEventsRequest
