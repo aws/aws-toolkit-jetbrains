@@ -12,7 +12,12 @@ import com.intellij.ui.table.JBTable
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.resources.message
 
-class ExportActionGroup(private val project: Project, private val client: CloudWatchLogsClient, private val logGroup: String, private val groupTable: JBTable) :
+class ExportActionGroup(
+    private val project: Project,
+    private val client: CloudWatchLogsClient,
+    private val logGroup: String,
+    private val groupTable: JBTable
+) :
     ActionGroup(message("cloudwatch.logs.export"), null, AllIcons.Actions.Download) {
     init {
         isPopup = true
@@ -20,6 +25,6 @@ class ExportActionGroup(private val project: Project, private val client: CloudW
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
         OpenLogStreamInEditor(project, client, logGroup, groupTable),
-        DownloadLogStream(project, logGroup, "")
+        DownloadLogStream(project, client, logGroup, groupTable)
     )
 }

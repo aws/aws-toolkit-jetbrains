@@ -6,32 +6,13 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.fileChooser.FileChooserFactory
-import com.intellij.openapi.fileChooser.FileSaverDescriptor
-import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.util.io.FileUtilRt.MEGABYTE
-import com.intellij.openapi.util.io.FileUtilRt.getUserContentLoadLimit
 import com.intellij.ui.table.JBTable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
-import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamDownloadTask
 import software.aws.toolkits.resources.message
-import java.io.File
-import java.time.Instant
 
 class OpenLogStreamInEditor(
     private val project: Project,
@@ -46,67 +27,3 @@ class OpenLogStreamInEditor(
     }
 }
 
-private class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, val logGroup: String, val logStream: String) :
-    Task.Backgroundable(project, message("cloudwatch.logs.opening_in_editor", logStream), true),
-    CoroutineScope by ApplicationThreadPoolScope("OpenLogStreamInEditor") {
-    private val edt = getCoroutineUiContext()
-
-    override fun run(indicator: ProgressIndicator) {
-        runBlocking {
-            runSuspend(indicator)
-        }
-    }
-
-    suspend fun runSuspend(indicator: ProgressIndicator) {
-        // Default content load limit is 20MB, default per page is 1MB/10000 log entries. so we load MaxLength/1MB
-        // until we give up and prompt the user to save to file
-        val maxPages = getUserContentLoadLimit() / (1 * MEGABYTE)
-        val startTime = Instant.now()
-        val buffer = StringBuilder()
-        var index = 0
-        val request = GetLogEventsRequest
-            .builder()
-            .startFromHead(true)
-            .logGroupName(logGroup)
-            .logStreamName(logStream)
-            .endTime(startTime.toEpochMilli())
-        val getRequest = client.getLogEventsPaginator(request.build())
-        getRequest.stream().forEach {
-            if (index >= maxPages) {
-                runBlocking {
-                    request.nextToken(it.nextForwardToken())
-                    handleLargeLogStream(indicator, request.build(), buffer)
-                    indicator.cancel()
-                }
-            }
-            indicator.checkCanceled()
-            buffer.append(it.events().buildStringFromLogsOutput())
-            index++
-        }
-
-        OpenStreamInEditor.open(project, edt, logStream, buffer.toString())
-    }
-
-    private suspend fun handleLargeLogStream(indicator: ProgressIndicator, request: GetLogEventsRequest, buffer: StringBuilder) {
-        if (promptWriteToFile() != Messages.OK) {
-            indicator.cancel()
-        } else {
-            ProgressManager.getInstance().run(DownloadLog())
-        }
-    }
-
-    private suspend fun promptWriteToFile(): Int = withContext(edt) {
-        return@withContext Messages.showOkCancelDialog(
-            project,
-            message("cloudwatch.logs.stream_too_big_message", logStream),
-            message("cloudwatch.logs.stream_too_big"),
-            message("cloudwatch.logs.stream_save_to_file", logStream),
-            Messages.CANCEL_BUTTON,
-            AllIcons.General.QuestionDialog
-        )
-    }
-
-    companion object {
-        private val LOG = getLogger<LogStreamDownloadTask>()
-    }
-}
