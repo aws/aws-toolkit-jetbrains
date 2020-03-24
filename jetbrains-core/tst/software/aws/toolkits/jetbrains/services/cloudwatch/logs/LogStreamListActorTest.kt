@@ -213,7 +213,6 @@ class LogStreamListActorTest {
                 channel.send(LogStreamActor.Message.LOAD_BACKWARD())
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
-        assertThat(coroutine.isActive).isFalse()
     }
 
     @Test
@@ -224,7 +223,7 @@ class LogStreamListActorTest {
         val actor = LogStreamListActor(projectRule.project, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("abc"))
-            waitForFalse { actor.isActive }
+            waitForTrue { actor.channel.isClosedForSend }
         }
     }
 }

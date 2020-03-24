@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.FilteredLogEvent
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.waitForFalse
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
+import software.aws.toolkits.jetbrains.utils.waitForTrue
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
@@ -157,7 +158,6 @@ class LogStreamFilterActorTest {
                 channel.send(LogStreamActor.Message.LOAD_FORWARD())
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
-        assertThat(coroutine.isActive).isFalse()
     }
 
     @Test
@@ -168,7 +168,7 @@ class LogStreamFilterActorTest {
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL())
-            waitForFalse { actor.isActive }
+            waitForTrue { actor.channel.isClosedForSend }
         }
     }
 
@@ -180,7 +180,7 @@ class LogStreamFilterActorTest {
         val actor = LogStreamFilterActor(projectRule.project, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0, Duration.ofMillis(0)))
-            waitForFalse { actor.isActive }
+            waitForTrue { actor.channel.isClosedForSend }
         }
     }
 }

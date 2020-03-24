@@ -7,9 +7,9 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.table.TableView
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.launch
@@ -40,7 +40,7 @@ sealed class LogStreamActor(
     protected var nextForwardToken: String? = null
     protected abstract val emptyText: String
 
-    private val edtContext = getCoroutineUiContext(disposable = this)
+    private val edtContext = getCoroutineUiContext(disposable = this@LogStreamActor)
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
@@ -86,6 +86,8 @@ sealed class LogStreamActor(
                 table.listTableModel.addRows(items)
             }
             table.emptyText.text = emptyText
+        } catch (e: CancellationException) {
+            // CancellationException is fine, just ignore it
         } catch (e: Exception) {
             LOG.error(e) { tableErrorMessage }
             notifyError(title = tableErrorMessage, project = project)
@@ -104,7 +106,6 @@ sealed class LogStreamActor(
 
     override fun dispose() {
         channel.close()
-        cancel()
     }
 
     companion object {
