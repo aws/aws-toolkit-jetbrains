@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsReque
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
