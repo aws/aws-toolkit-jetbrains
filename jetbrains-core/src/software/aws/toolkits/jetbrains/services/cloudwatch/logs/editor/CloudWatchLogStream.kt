@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogs
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import java.time.Duration
@@ -99,6 +100,7 @@ class CloudWatchLogStream(
                 } else {
                     // This is thread safe because the actionPerformed is run on the UI thread
                     val table = LogStreamTable(project, client, logGroup, logStream, LogStreamTable.TableType.FILTER)
+                    CloudwatchlogsTelemetry.searchStream(project, true)
                     Disposer.register(this@CloudWatchLogStream, table)
                     searchStreamTable = table
                     launch(edtContext) {
@@ -119,7 +121,7 @@ class CloudWatchLogStream(
             searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
         })
         actionGroup.add(Separator())
-        actionGroup.add(ShowLogsAroundActionGroup(logGroup, logStream, logStreamTable.logsTable))
+        actionGroup.add(ShowLogsAroundActionGroup(project, logGroup, logStream, logStreamTable.logsTable))
         PopupHandler.installPopupHandler(
             logStreamTable.logsTable,
             actionGroup,
@@ -133,8 +135,8 @@ class CloudWatchLogStream(
         actionGroup.add(OpenCurrentInEditorAction(project, logStream) {
             searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
         })
-        actionGroup.add(TailLogsAction { searchStreamTable?.channel ?: logStreamTable.channel })
-        actionGroup.add(WrapLogsAction { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
+        actionGroup.add(TailLogsAction(project) { searchStreamTable?.channel ?: logStreamTable.channel })
+        actionGroup.add(WrapLogsAction(project) { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
         tablePanel.toolbar = toolbar.component
     }
