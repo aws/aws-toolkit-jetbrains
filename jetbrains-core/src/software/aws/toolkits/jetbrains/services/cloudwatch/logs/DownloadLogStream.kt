@@ -34,13 +34,7 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
     CoroutineScope by ApplicationThreadPoolScope("OpenLogStreamInEditor") {
     private val edt = getCoroutineUiContext()
 
-    override fun run(indicator: ProgressIndicator) {
-        runBlocking {
-            runSuspend(indicator)
-        }
-    }
-
-    private suspend fun runSuspend(indicator: ProgressIndicator) {
+    override fun run(indicator: ProgressIndicator) = runBlocking {
         // Default content load limit is 20MB, default per page is 1MB/10000 log entries. so we load MaxLength/1MB
         // until we give up and prompt the user to save to file
         val maxPages = FileUtilRt.getUserContentLoadLimit() / (1 * FileUtilRt.MEGABYTE)
@@ -74,7 +68,7 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
         if (promptWriteToFile() != Messages.OK) {
             indicator.cancel()
         } else {
-            ProgressManager.getInstance().run(DownloadLogStreamToFileTask(project, client, logGroup, logStream, buffer.toString(), request))
+            ProgressManager.getInstance().run(LogStreamDownloadToFileTask(project, client, logGroup, logStream, buffer.toString(), request))
         }
     }
 
@@ -90,7 +84,7 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
     }
 }
 
-class DownloadLogStreamToFileTask(
+class LogStreamDownloadToFileTask(
     project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
@@ -100,18 +94,16 @@ class DownloadLogStreamToFileTask(
 ) : Task.Backgroundable(project, message("cloudwatch.logs.saving_to_disk", logStream), true) {
     private val edt = getCoroutineUiContext()
 
-    override fun run(indicator: ProgressIndicator) {
-        runBlocking {
-            val startTime = Instant.now()
-            val finalRequest = request ?: GetLogEventsRequest
-                .builder()
-                .startFromHead(true)
-                .logGroupName(logGroup)
-                .logStreamName(logStream)
-                .endTime(startTime.toEpochMilli())
-                .build()
-            promptToDownload(indicator, finalRequest, buffer)
-        }
+    override fun run(indicator: ProgressIndicator) = runBlocking {
+        val startTime = Instant.now()
+        val finalRequest = request ?: GetLogEventsRequest
+            .builder()
+            .startFromHead(true)
+            .logGroupName(logGroup)
+            .logStreamName(logStream)
+            .endTime(startTime.toEpochMilli())
+            .build()
+        promptToDownload(indicator, finalRequest, buffer)
     }
 
     private suspend fun promptToDownload(indicator: ProgressIndicator, request: GetLogEventsRequest, buffer: String) {
@@ -146,6 +138,6 @@ class DownloadLogStreamToFileTask(
     }
 
     companion object {
-        val LOG = getLogger<DownloadLogStreamToFileTask>()
+        val LOG = getLogger<LogStreamDownloadToFileTask>()
     }
 }
