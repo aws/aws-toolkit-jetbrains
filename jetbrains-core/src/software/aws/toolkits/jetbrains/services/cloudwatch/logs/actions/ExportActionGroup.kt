@@ -17,8 +17,7 @@ class ExportActionGroup(
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
     private val logStream: () -> String?
-) :
-    ActionGroup(message("cloudwatch.logs.export"), null, AllIcons.Actions.Download), DumbAware {
+) : ActionGroup(message("cloudwatch.logs.export"), null, AllIcons.Actions.Download), DumbAware {
     init {
         isPopup = true
     }
