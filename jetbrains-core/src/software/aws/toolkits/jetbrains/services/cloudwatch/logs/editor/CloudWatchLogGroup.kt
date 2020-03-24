@@ -110,7 +110,7 @@ class CloudWatchLogGroup(
 
     private fun addActions() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.addAction(OpenLogStreamInEditor(project, logGroup, groupTable))
+        actionGroup.addAction(OpenLogStreamInEditor(project, client, logGroup, groupTable))
         PopupHandler.installPopupHandler(
             groupTable,
             actionGroup,
