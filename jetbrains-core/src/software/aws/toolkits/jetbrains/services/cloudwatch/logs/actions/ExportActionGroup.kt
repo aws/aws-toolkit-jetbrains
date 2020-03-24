@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.intellij.ui.table.JBTable
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.resources.message
 
@@ -16,7 +15,7 @@ class ExportActionGroup(
     private val project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
-    private val groupTable: JBTable
+    private val logStream: () -> String?
 ) :
     ActionGroup(message("cloudwatch.logs.export"), null, AllIcons.Actions.Download) {
     init {
@@ -24,7 +23,7 @@ class ExportActionGroup(
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-        OpenLogStreamInEditor(project, client, logGroup, groupTable),
-        DownloadLogStream(project, client, logGroup, groupTable)
+        OpenLogStreamInEditor(project, client, logGroup, logStream()),
+        DownloadLogStreamToFile(project, client, logGroup, logStream())
     )
 }

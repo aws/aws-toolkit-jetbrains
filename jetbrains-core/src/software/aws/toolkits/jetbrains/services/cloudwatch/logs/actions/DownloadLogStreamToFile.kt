@@ -9,20 +9,18 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.ui.table.JBTable
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.DownloadLogToFileTask
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.DownloadLogStreamToFileTask
 import software.aws.toolkits.resources.message
 
-class DownloadLogStream(
+class DownloadLogStreamToFile(
     private val project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
-    private val groupTable: JBTable
+    private val logStream: String?
 ) : AnAction(message("cloudwatch.logs.save_action"), null, AllIcons.Actions.Menu_saveall), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
-        val row = groupTable.selectedRow.takeIf { it >= 0 } ?: return
-        val logStream = groupTable.getValueAt(row, 0) as String
-        ProgressManager.getInstance().run(DownloadLogToFileTask(project, client, logGroup, logStream, ""))
+        logStream ?: return
+        ProgressManager.getInstance().run(DownloadLogStreamToFileTask(project, client, logGroup, logStream, ""))
     }
 }

@@ -110,7 +110,10 @@ class CloudWatchLogGroup(
 
     private fun addActions() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.add(ExportActionGroup(project, client, logGroup, groupTable))
+        actionGroup.add(ExportActionGroup(project, client, logGroup) {
+            val row = groupTable.selectedRow.takeIf { it >= 0 } ?: return@ExportActionGroup null
+            groupTable.getValueAt(row, 0) as? String
+        })
         PopupHandler.installPopupHandler(
             groupTable,
             actionGroup,

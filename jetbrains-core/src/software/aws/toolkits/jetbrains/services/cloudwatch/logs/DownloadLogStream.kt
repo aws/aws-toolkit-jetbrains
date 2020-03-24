@@ -29,7 +29,6 @@ import software.aws.toolkits.resources.message
 import java.io.File
 import java.time.Instant
 
-
 class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, val logGroup: String, val logStream: String) :
     Task.Backgroundable(project, message("cloudwatch.logs.opening_in_editor", logStream), true),
     CoroutineScope by ApplicationThreadPoolScope("OpenLogStreamInEditor") {
@@ -75,7 +74,7 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
         if (promptWriteToFile() != Messages.OK) {
             indicator.cancel()
         } else {
-            ProgressManager.getInstance().run(DownloadLogToFileTask(project, client, logGroup, logStream, buffer.toString(), request))
+            ProgressManager.getInstance().run(DownloadLogStreamToFileTask(project, client, logGroup, logStream, buffer.toString(), request))
         }
     }
 
@@ -91,7 +90,7 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
     }
 }
 
-class DownloadLogToFileTask(
+class DownloadLogStreamToFileTask(
     project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
@@ -147,6 +146,6 @@ class DownloadLogToFileTask(
     }
 
     companion object {
-        val LOG = getLogger<DownloadLogToFileTask>()
+        val LOG = getLogger<DownloadLogStreamToFileTask>()
     }
 }
