@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -24,6 +25,7 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
+import java.util.concurrent.CompletionException
 
 sealed class LogStreamActor(
     private val project: Project,
@@ -87,10 +89,17 @@ sealed class LogStreamActor(
             table.emptyText.text = emptyText
         } catch (e: CancellationException) {
             // CancellationException is fine, just ignore it
-        } catch (e: Exception) {
+        } catch (e: CompletionException) {
             LOG.error(e) { tableErrorMessage }
-            notifyError(title = tableErrorMessage, project = project)
-            withContext(edtContext) { table.emptyText.text = tableErrorMessage }
+            withContext(edtContext) {
+                // This is thrown if we try to open a ECS container. cause is wrapped in another CompletionException :(
+                if (e.cause?.cause is ResourceNotFoundException) {
+                    table.emptyText.text = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
+                } else {
+                    table.emptyText.text = tableErrorMessage
+                    notifyError(title = tableErrorMessage, project = project)
+                }
+            }
         } finally {
             withContext(edtContext) {
                 table.setPaintBusy(false)
