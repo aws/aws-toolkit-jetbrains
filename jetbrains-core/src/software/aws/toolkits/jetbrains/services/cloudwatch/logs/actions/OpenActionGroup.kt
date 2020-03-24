@@ -9,15 +9,16 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.intellij.ui.table.JBTable
+import software.aws.toolkits.resources.message
 
-class OpenActionGroup(private val project: Project, private val logGroup: String, private val groupTable: JBTable) :
-    ActionGroup("name <localize>", null, AllIcons.Actions.Download) {
+class ExportActionGroup(private val project: Project, private val logGroup: String, private val groupTable: JBTable) :
+    ActionGroup(message("cloudwatch.logs.export"), null, AllIcons.Actions.Download) {
     init {
         isPopup = true
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
         OpenLogStreamInEditor(project, logGroup, groupTable),
-        OpenLogStreamInEditor(project, logGroup, groupTable)
+        DownloadLogStream(project, logGroup, "")
     )
 }

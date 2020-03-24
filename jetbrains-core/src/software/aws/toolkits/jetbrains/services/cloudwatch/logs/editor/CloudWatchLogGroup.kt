@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
@@ -31,8 +30,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenActionGroup
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogStreamInEditor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ExportActionGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -112,7 +110,7 @@ class CloudWatchLogGroup(
 
     private fun addActions() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.add(OpenActionGroup(project, logGroup, groupTable))
+        actionGroup.add(ExportActionGroup(project, logGroup, groupTable))
         PopupHandler.installPopupHandler(
             groupTable,
             actionGroup,
