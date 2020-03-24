@@ -84,24 +84,24 @@ static def ideProfiles() {
             "untilVersion": "201.*",
             "products": [
                 "IC": [
-                    sdkVersion: "IC-201.5985.32-EAP-SNAPSHOT",
+                    sdkVersion: "IC-201.6487.11-EAP-SNAPSHOT",
                     plugins: [
                         "terminal",
                         "yaml",
-                        "PythonCore:201.5985.32",
+                        "PythonCore:201.6487.11",
                         "java",
                         "gradle",
                         "maven",
                         "properties", // Used by Maven
-                        "Docker:201.5985.25"
+                        "Docker:201.6487.11"
                     ]
                 ],
                 "IU": [
-                    sdkVersion: "IU-201.5985.32-EAP-SNAPSHOT",
+                    sdkVersion: "IU-201.6487.11-EAP-SNAPSHOT",
                     plugins: [
                         "terminal",
                         "platform-images", // Used by a bunch of plugins
-                        "Pythonid:201.5985.32",
+                        "Pythonid:201.6487.11",
                         "yaml",
                         "stats-collector", // Transitive, used by JavaScriptLanguage
                         "JavaScriptLanguage",

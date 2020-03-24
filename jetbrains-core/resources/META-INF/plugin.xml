@@ -220,6 +220,7 @@
 
         <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.s3.S3ViewerEditorProvider"/>
+        <executionTargetType implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugTargetEnvironmentType"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">
