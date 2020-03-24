@@ -73,11 +73,11 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
         val component = JBTextArea()
 
         if (isSelected) {
-            component.foreground = table.selectionForeground;
-            component.background = table.selectionBackground;
+            component.foreground = table.selectionForeground
+            component.background = table.selectionBackground
         } else {
-            component.foreground = table.foreground;
-            component.background = table.background;
+            component.foreground = table.foreground
+            component.background = table.background
         }
 
         component.wrapStyleWord = wrap

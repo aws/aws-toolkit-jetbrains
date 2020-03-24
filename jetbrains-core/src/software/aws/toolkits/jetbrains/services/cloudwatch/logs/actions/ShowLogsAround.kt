@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
