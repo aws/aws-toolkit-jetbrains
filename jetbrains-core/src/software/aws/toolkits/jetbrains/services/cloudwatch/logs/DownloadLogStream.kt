@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
+import java.nio.file.Files
 import java.time.Instant
 
 class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, val logGroup: String, val logStream: String) :
@@ -49,27 +50,32 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
             .endTime(startTime.toEpochMilli())
         val getRequest = client.getLogEventsPaginator(request.build())
         getRequest.stream().forEach {
-            if (index >= maxPages) {
-                runBlocking {
-                    request.nextToken(it.nextForwardToken())
-                    handleLargeLogStream(indicator, request.build(), buffer)
-                    indicator.cancel()
-                }
-            }
             indicator.checkCanceled()
             buffer.append(it.events().buildStringFromLogsOutput())
             index++
+            if (index >= maxPages) {
+                runBlocking {
+                    request.nextToken(it.nextForwardToken())
+                    if (promptWriteToFile() == Messages.OK) {
+                        ProgressManager.getInstance().run(
+                            LogStreamDownloadToFileTask(
+                                project,
+                                client,
+                                logGroup,
+                                logStream,
+                                buffer.toString(),
+                                request.build()
+                            )
+                        )
+                    }
+                    // Cancel this Task no matter what. If the user has agreed to download,
+                    // That new task will handle everything
+                    indicator.cancel()
+                }
+            }
         }
 
         OpenStreamInEditor.open(project, edt, logStream, buffer.toString())
-    }
-
-    private suspend fun handleLargeLogStream(indicator: ProgressIndicator, request: GetLogEventsRequest, buffer: StringBuilder) {
-        if (promptWriteToFile() != Messages.OK) {
-            indicator.cancel()
-        } else {
-            ProgressManager.getInstance().run(LogStreamDownloadToFileTask(project, client, logGroup, logStream, buffer.toString(), request))
-        }
     }
 
     private suspend fun promptWriteToFile(): Int = withContext(edt) {
@@ -119,6 +125,8 @@ class LogStreamDownloadToFileTask(
 
     private fun streamLogStreamToFile(indicator: ProgressIndicator, request: GetLogEventsRequest, file: File, buffer: String) {
         try {
+            // Delete the existing file if one exists so we don't append to it
+            Files.deleteIfExists(file.toPath())
             file.appendText(buffer)
             val getRequest = client.getLogEventsPaginator(request)
             getRequest.stream().forEach {
@@ -129,7 +137,7 @@ class LogStreamDownloadToFileTask(
             notifyInfo(
                 project = project,
                 title = message("aws.notification.title"),
-                content = message("cloudwatch.logs.saving_to_disk_succeeded", logStream)
+                content = message("cloudwatch.logs.saving_to_disk_succeeded", logStream, file.path)
             )
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while downloading large log stream" }

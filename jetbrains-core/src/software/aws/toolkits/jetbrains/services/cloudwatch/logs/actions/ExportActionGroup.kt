@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.resources.message
@@ -17,7 +18,7 @@ class ExportActionGroup(
     private val logGroup: String,
     private val logStream: () -> String?
 ) :
-    ActionGroup(message("cloudwatch.logs.export"), null, AllIcons.Actions.Download) {
+    ActionGroup(message("cloudwatch.logs.export"), null, AllIcons.Actions.Download), DumbAware {
     init {
         isPopup = true
     }
