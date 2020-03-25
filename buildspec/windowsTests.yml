@@ -1,29 +1,26 @@
 version: 0.2
 
-cache:
-  paths:
-    - 'build-cache/caches/'
-    - 'build-cache/wrapper/'
-
 env:
   variables:
     CI: true
     LOCAL_ENV_RUN: true
-    GRADLE_CACHE_LOCATION: build-cache
 
 phases:
   install:
+    runtime-versions:
+      java: openjdk11
+      dotnet: 2.2
+
     commands:
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             choco install -y --no-progress codecov
         }
-      - choco install -y --no-progress dotnetcore-sdk --version 2.2.104
       - choco install -y --no-progress netfx-4.6.1-devpack
 
   build:
     commands:
-      - ./gradlew check coverageReport --info --full-stacktrace --console plain --gradle-user-home $Env:GRADLE_CACHE_LOCATION
+      - ./gradlew check coverageReport --info --full-stacktrace --console plain
 
   post_build:
     commands:
