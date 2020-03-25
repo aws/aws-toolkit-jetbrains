@@ -16,7 +16,7 @@ import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditor
@@ -46,7 +46,7 @@ class CloudWatchLogStream(
 
     private val edtContext = getCoroutineUiContext(disposable = this)
 
-    private val client: CloudWatchLogsAsyncClient = project.awsClient()
+    private val client: CloudWatchLogsClient = project.awsClient()
     private val logStreamTable: LogStreamTable = LogStreamTable(project, client, logGroup, logStream, LogStreamTable.TableType.LIST)
     private var searchStreamTable: LogStreamTable? = null
 

@@ -18,7 +18,7 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
-import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.FilteredLogEvent
@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.jetbrains.utils.waitForTrue
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
 
 // ExperimentalCoroutinesApi is needed for TestCoroutineScope
 @ExperimentalCoroutinesApi
@@ -52,15 +51,13 @@ class LogStreamFilterActorTest {
 
     @Test
     fun modelIsPopulated() {
-        val client = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         whenever(client.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
             .thenReturn(
-                CompletableFuture.completedFuture(
-                    FilterLogEventsResponse
-                        .builder()
-                        .events(FilteredLogEvent.builder().message("message").build())
-                        .build()
-                )
+                FilterLogEventsResponse
+                    .builder()
+                    .events(FilteredLogEvent.builder().message("message").build())
+                    .build()
             )
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
@@ -75,25 +72,21 @@ class LogStreamFilterActorTest {
 
     @Test
     fun loadingForwardAppendsToTable() {
-        val client = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         whenever(client.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
             .thenReturn(
-                CompletableFuture.completedFuture(
-                    FilterLogEventsResponse
-                        .builder()
-                        .events(FilteredLogEvent.builder().message("message").build())
-                        .nextToken("2")
-                        .build()
-                )
+                FilterLogEventsResponse
+                    .builder()
+                    .events(FilteredLogEvent.builder().message("message").build())
+                    .nextToken("2")
+                    .build()
             )
             .thenReturn(
-                CompletableFuture.completedFuture(
-                    FilterLogEventsResponse
-                        .builder()
-                        .events(FilteredLogEvent.builder().message("message2").timestamp(2).build())
-                        .nextToken("3")
-                        .build()
-                )
+                FilterLogEventsResponse
+                    .builder()
+                    .events(FilteredLogEvent.builder().message("message2").timestamp(2).build())
+                    .nextToken("3")
+                    .build()
             )
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
@@ -112,23 +105,19 @@ class LogStreamFilterActorTest {
 
     @Test
     fun loadingBackwardsDoesNothing() {
-        val client = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         whenever(client.filterLogEvents(Mockito.any<FilterLogEventsRequest>()))
             .thenReturn(
-                CompletableFuture.completedFuture(
-                    FilterLogEventsResponse
-                        .builder()
-                        .events(FilteredLogEvent.builder().message("message").build())
-                        .build()
-                )
+                FilterLogEventsResponse
+                    .builder()
+                    .events(FilteredLogEvent.builder().message("message").build())
+                    .build()
             )
             .thenReturn(
-                CompletableFuture.completedFuture(
-                    FilterLogEventsResponse
-                        .builder()
-                        .events(FilteredLogEvent.builder().message("message2").build())
-                        .build()
-                )
+                FilterLogEventsResponse
+                    .builder()
+                    .events(FilteredLogEvent.builder().message("message2").build())
+                    .build()
             )
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
@@ -145,7 +134,7 @@ class LogStreamFilterActorTest {
 
     @Test
     fun writeChannelAndCoroutineIsDisposed() {
-        val client = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val coroutine = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
@@ -160,7 +149,7 @@ class LogStreamFilterActorTest {
 
     @Test
     fun loadInitialThrows() {
-        val client = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
@@ -172,7 +161,7 @@ class LogStreamFilterActorTest {
 
     @Test
     fun loadInitialRangeThrows() {
-        val client = mockClientManagerRule.create<CloudWatchLogsAsyncClient>()
+        val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView<LogStreamEntry>(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")

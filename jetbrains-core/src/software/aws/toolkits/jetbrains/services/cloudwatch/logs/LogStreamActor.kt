@@ -7,14 +7,12 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.table.TableView
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsAsyncClient
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
@@ -25,11 +23,10 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
-import java.util.concurrent.CompletionException
 
 sealed class LogStreamActor(
     private val project: Project,
-    protected val client: CloudWatchLogsAsyncClient,
+    protected val client: CloudWatchLogsClient,
     private val table: TableView<LogStreamEntry>,
     protected val logGroup: String,
     protected val logStream: String
@@ -87,18 +84,15 @@ sealed class LogStreamActor(
                 table.listTableModel.addRows(items)
             }
             table.emptyText.text = emptyText
-        } catch (e: CancellationException) {
-            // CancellationException is fine, just ignore it
-        } catch (e: CompletionException) {
+        } catch (e: ResourceNotFoundException) {
+            withContext(edtContext) {
+                table.emptyText.text = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
+            }
+        } catch (e: Exception) {
             LOG.error(e) { tableErrorMessage }
             withContext(edtContext) {
-                // This is thrown if we try to open a ECS container. cause is wrapped in another CompletionException :(
-                if (e.cause?.cause is ResourceNotFoundException) {
-                    table.emptyText.text = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
-                } else {
-                    table.emptyText.text = tableErrorMessage
-                    notifyError(title = tableErrorMessage, project = project)
-                }
+                table.emptyText.text = tableErrorMessage
+                notifyError(title = tableErrorMessage, project = project)
             }
         } finally {
             withContext(edtContext) {
@@ -123,7 +117,7 @@ sealed class LogStreamActor(
 
 class LogStreamFilterActor(
     project: Project,
-    client: CloudWatchLogsAsyncClient,
+    client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
     logGroup: String,
     logStream: String
@@ -164,8 +158,9 @@ class LogStreamFilterActor(
         return getSearchLogEvents(request)
     }
 
-    private suspend fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> {
-        val response = client.filterLogEvents(request).asDeferred().await()
+    private fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> {
+        // withContext is required to give the execution the same scope as us so if it throws and exception we can catch it
+        val response = client.filterLogEvents(request)
         val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
         nextForwardToken = response.nextToken()
 
@@ -175,7 +170,7 @@ class LogStreamFilterActor(
 
 class LogStreamListActor(
     project: Project,
-    client: CloudWatchLogsAsyncClient,
+    client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
     logGroup: String,
     logStream: String
@@ -220,12 +215,12 @@ class LogStreamListActor(
         return getLogEvents(request, saveForwardToken = saveForwardToken, saveBackwardToken = saveBackwardToken)
     }
 
-    private suspend fun getLogEvents(
+    private fun getLogEvents(
         request: GetLogEventsRequest,
         saveForwardToken: Boolean = false,
         saveBackwardToken: Boolean = false
     ): List<LogStreamEntry> {
-        val response = client.getLogEvents(request).asDeferred().await()
+        val response = client.getLogEvents(request)
         val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
         if (saveForwardToken) {
             nextForwardToken = response.nextForwardToken()
