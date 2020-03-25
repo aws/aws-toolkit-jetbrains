@@ -26,8 +26,12 @@ The left view represents the credential/region selector in the initial state and
 1. Same as above, but partition is a submenu
 ![4]
 
+1. Expose regions as a nested submenu of the partition submenu
+![5]
+
  
 [1]: img/1-always-show-partition.png
 [2]: img/2-no-partitions.png
 [3]: img/3-show-partition-after-select.png
 [4]: img/4-show-partition-after-select-2.png
+[5]: img/5-nested-submenu.png
