@@ -13,7 +13,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamDownloadTask
 import software.aws.toolkits.resources.message
 
-class OpenLogStreamInEditor(
+class OpenLogStreamInEditorAction(
     private val project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
