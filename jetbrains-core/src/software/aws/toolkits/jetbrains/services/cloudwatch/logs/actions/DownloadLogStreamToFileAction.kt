@@ -13,7 +13,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamDownloadToFileTask
 import software.aws.toolkits.resources.message
 
-class DownloadLogStreamToFile(
+class DownloadLogStreamToFileAction(
     private val project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,

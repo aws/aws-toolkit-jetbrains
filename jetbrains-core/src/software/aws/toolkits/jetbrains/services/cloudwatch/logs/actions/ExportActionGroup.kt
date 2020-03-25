@@ -23,7 +23,7 @@ class ExportActionGroup(
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-        OpenLogStreamInEditor(project, client, logGroup, logStream()),
-        DownloadLogStreamToFile(project, client, logGroup, logStream())
+        OpenLogStreamInEditorAction(project, client, logGroup, logStream()),
+        DownloadLogStreamToFileAction(project, client, logGroup, logStream())
     )
 }
