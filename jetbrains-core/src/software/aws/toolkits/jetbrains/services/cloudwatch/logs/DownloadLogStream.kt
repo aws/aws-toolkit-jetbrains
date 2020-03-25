@@ -29,6 +29,7 @@ import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Files
 import java.time.Instant
+import kotlin.streams.asSequence
 
 class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, val logGroup: String, val logStream: String) :
     Task.Backgroundable(project, message("cloudwatch.logs.opening_in_editor", logStream), true),
@@ -41,7 +42,6 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
         val maxPages = FileUtilRt.getUserContentLoadLimit() / (1 * FileUtilRt.MEGABYTE)
         val startTime = Instant.now()
         val buffer = StringBuilder()
-        var index = 0
         val request = GetLogEventsRequest
             .builder()
             .startFromHead(true)
@@ -49,10 +49,12 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
             .logStreamName(logStream)
             .endTime(startTime.toEpochMilli())
         val getRequest = client.getLogEventsPaginator(request.build())
-        getRequest.stream().forEach {
+        getRequest.stream().asSequence().forEachIndexed { index, it ->
             indicator.checkCanceled()
             buffer.append(it.events().buildStringFromLogsOutput())
-            index++
+            // This might look off by 1 because for example if we are at index 20, it's the
+            // 21st iteration, but at this point we won't try to open in a file so we bail from
+            // streaming at the correct time
             if (index >= maxPages) {
                 runBlocking {
                     request.nextToken(it.nextForwardToken())
@@ -68,8 +70,8 @@ class LogStreamDownloadTask(project: Project, val client: CloudWatchLogsClient, 
                             )
                         )
                     }
-                    // Cancel this Task no matter what. If the user has agreed to download,
-                    // That new task will handle everything
+                    // Cancel this Task no matter what. If the user has agreed to download to a file,
+                    // the download to a file task will handle everything from here
                     indicator.cancel()
                 }
             }
