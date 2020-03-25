@@ -31,9 +31,7 @@ import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import com.intellij.util.io.isDirectory
 import icons.AwsIcons
-import io.netty.util.concurrent.CompleteFuture
 import org.jetbrains.concurrency.AsyncPromise
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -54,7 +52,6 @@ import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import javax.swing.Icon
 import javax.swing.JComponent
