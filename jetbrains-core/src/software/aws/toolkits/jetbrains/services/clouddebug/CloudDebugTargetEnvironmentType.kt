@@ -5,9 +5,13 @@
 
 package software.aws.toolkits.jetbrains.services.clouddebug
 
+import com.intellij.build.BuildViewManager
 import com.intellij.execution.Platform
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
+import com.intellij.execution.process.ProcessAdapter
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.target.TargetEnvironment
 import com.intellij.execution.target.TargetEnvironmentConfiguration
 import com.intellij.execution.target.TargetEnvironmentFactory
@@ -16,15 +20,24 @@ import com.intellij.execution.target.TargetEnvironmentType
 import com.intellij.execution.target.TargetPlatform
 import com.intellij.execution.target.TargetedCommandLine
 import com.intellij.execution.target.value.DeferredLocalTargetValue
+import com.intellij.execution.target.value.DeferredTargetValue
 import com.intellij.execution.target.value.TargetValue
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
+import com.intellij.util.io.isDirectory
 import icons.AwsIcons
+import io.netty.util.concurrent.CompleteFuture
+import org.jetbrains.concurrency.AsyncPromise
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.tryOrThrow
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
@@ -33,10 +46,16 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugTargetEnvironmentFactory.CloudDebugTargetEnvironmentRequest
+import software.aws.toolkits.jetbrains.services.clouddebug.execution.DefaultMessageEmitter
 import software.aws.toolkits.jetbrains.services.clouddebug.resources.CloudDebuggingResources
 import software.aws.toolkits.jetbrains.services.ecs.EcsUtils
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import java.nio.file.Paths
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -68,7 +87,7 @@ class CloudDebugTargetEnvironmentConfiguration : TargetEnvironmentConfiguration(
         var cluster: String? = "default",
         var service: String? = "cloud-debug-custom-service",
         var containerName: String? = "custom",
-        var workingDirectory: String? = null
+        var workingDirectory: String? = "/tmp/wsp"
     )
 
     override fun getState(): PersistentState? = state
@@ -77,7 +96,7 @@ class CloudDebugTargetEnvironmentConfiguration : TargetEnvironmentConfiguration(
         this.state = state
     }
 
-    fun workingDirectory(): String = state.workingDirectory ?: throw IllegalStateException("Missing 'workingDirectory'")
+    fun workingDirectory(): String = state.workingDirectory ?: "/tmp/wsp" //throw IllegalStateException("Missing 'workingDirectory'")
 
     fun cluster(): String = state.cluster ?: throw IllegalStateException("Missing 'cluster'")
 
@@ -112,7 +131,7 @@ class CloudDebugTargetEnvironmentFactory(private val project: Project, private v
 
     private val executable: ExecutableInstance.Executable by lazy {
         val ex = ExecutableManager.getInstance().getExecutableIfPresent<CloudDebugExecutable>()
-        if(ex !is ExecutableInstance.Executable) {
+        if (ex !is ExecutableInstance.Executable) {
             runInEdt {
                 notifyError("Can't resolve cloud-debug cli")
             }
@@ -128,7 +147,9 @@ class CloudDebugTargetEnvironmentFactory(private val project: Project, private v
     override fun getTargetPlatform(): TargetPlatform = TargetPlatform(Platform.UNIX, TargetPlatform.Arch.x64bit)
 
     override fun prepareRemoteEnvironment(request: TargetEnvironmentRequest, indicator: ProgressIndicator): TargetEnvironment {
-        val description = CloudDebuggingResources.describeInstrumentedResource(project, config.cluster(), config.cluster())
+        val messageEmitter = DefaultMessageEmitter.createRoot(ServiceManager.getService(project, BuildViewManager::class.java), "Resolve CLI")
+        CloudDebugResolver.validateOrUpdateCloudDebug(project, messageEmitter, null)
+        val description = CloudDebuggingResources.describeInstrumentedResource(project, config.cluster(), config.service())
         if (description == null || description.status != CloudDebugConstants.INSTRUMENTED_STATUS || description.taskRole.isEmpty()) {
             runInEdt {
                 notifyError(message("cloud_debug.execution.failed.not_set_up"))
@@ -139,24 +160,35 @@ class CloudDebugTargetEnvironmentFactory(private val project: Project, private v
 
         val instrumentResponse = runInstrument(project, executable, config.cluster(), config.service(), role, indicator)
 
-        return CloudDebugTargetEnvironment(project, targetPlatform, request as CloudDebugTargetEnvironmentRequest, executable, instrumentResponse.target, config)
+        (request as CloudDebugTargetEnvironmentRequest).target = instrumentResponse.target
+
+        return CloudDebugTargetEnvironment(
+            project,
+            targetPlatform,
+            request,
+            executable,
+            instrumentResponse.target,
+            config
+        )
     }
 
     inner class CloudDebugTargetEnvironmentRequest : TargetEnvironmentRequest {
         private val ports = mutableListOf<PortValue>()
+        internal var target: String? = null
 
         override fun createUpload(localPath: String): TargetValue<String> {
-
-            return TargetValue.fixed(localPath)
+            val tgt = target ?: throw IllegalStateException("Container target not set")
+            return PathValue(localPath, config.workingDirectory(), tgt, config.containerName(), project, executable)
         }
 
         override fun bindTargetPort(targetPort: Int): TargetValue<Int> = PortValue(targetPort).also { ports.add(it) }
 
-        override fun getTargetPlatform(): TargetPlatform = targetPlatform
+        override fun getTargetPlatform(): TargetPlatform = this@CloudDebugTargetEnvironmentFactory.targetPlatform
 
         fun cancel() {
             //TODO unwind port mappings
         }
+
     }
 }
 
@@ -168,6 +200,72 @@ class PortValue(private val remotePort: Int) : DeferredLocalTargetValue<Int>(rem
     }
 
     fun binding() = "$localPort:$remotePort"
+}
+
+class PathValue(
+    localPath: String,
+    remoteWorkingDirectory: String,
+    target: String,
+    container: String,
+    project: Project,
+    executable: ExecutableInstance.Executable
+) : DeferredTargetValue<String>(localPath) {
+    init {
+        val remotePath = "$remoteWorkingDirectory/${UUID.randomUUID()}"
+
+        val createPath =  buildBaseCmdLine(project, executable).withParameters("exec")
+            .withParameters("--target")
+            .withParameters(target)
+            /* TODO remove this when the cli conforms to the contract */
+            .withParameters("--selector")
+            .withParameters(container)
+            .withParameters("mkdir", "-p", remotePath)
+
+        val copyCommand = buildBaseCmdLine(project, executable).withParameters("--verbose")
+            .withParameters("--json")
+            .withParameters("copy")
+            .withParameters("--src")
+            .withParameters(localPath)
+            .withParameters("--dest")
+            .withParameters("remote://$target://$container://$remotePath")
+
+        val future = CompletableFuture<Nothing>()
+        runCommand(createPath, {future.completeExceptionally(RuntimeException(it))}) {
+            runCommand(copyCommand, {future.completeExceptionally(RuntimeException(it))}) {
+                val resolvedLocalPath = Paths.get(localPath)
+                val resolvedPath = "$remotePath/${localPath.substringAfterLast("/")}" //if (resolvedLocalPath.isDirectory()) { remotePath } else {  }
+                resolve(resolvedPath)
+                future.complete(null)
+            }
+        }
+        future.get(5000, TimeUnit.MILLISECONDS)
+    }
+
+    private fun runCommand(command: GeneralCommandLine, error: (String) -> Unit = {}, callback: () -> Unit) {
+        LOG.info { "About to run command: $command" }
+        ProcessHandlerFactory.getInstance().createProcessHandler(command).apply {
+            addProcessListener(object : ProcessAdapter() {
+                override fun processTerminated(event: ProcessEvent) {
+                    LOG.info { "Process Terminated (${event.exitCode}): [${event.source}] ${event.text}" }
+                    if (event.exitCode == 0) {
+                        callback()
+                    } else {
+                        val msg = "Command $command failed: ${event.text}"
+                        error(msg)
+                        (targetValue as AsyncPromise).setError(msg)
+                    }
+                }
+
+                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                    LOG.info { event.text }
+                }
+            })
+        }.startNotify()
+    }
+
+    companion object {
+        private val LOG = getLogger<PathValue>()
+    }
 }
 
 class CloudDebugTargetEnvironment(
@@ -183,13 +281,21 @@ class CloudDebugTargetEnvironment(
     override fun getRequest() = request
 
     override fun createProcess(commandLine: TargetedCommandLine, indicator: ProgressIndicator): Process {
+        val command = LOG.tryOrThrow("Failed to get command") {
+            commandLine.collectCommandsSynchronously().toTypedArray()
+        }
+
         return buildBaseCmdLine(project, executable).withParameters("exec")
             .withParameters("--target")
             .withParameters(target)
             /* TODO remove this when the cli conforms to the contract */
             .withParameters("--selector")
             .withParameters(config.containerName())
-            .withParameters(commandLine.getCommandPresentation(this)).createProcess()
+            .withParameters(*command).createProcess()
+    }
+
+    companion object {
+        val LOG = getLogger<CloudDebugTargetEnvironment>()
     }
 }
 

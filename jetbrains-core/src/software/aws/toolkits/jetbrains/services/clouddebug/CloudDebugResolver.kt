@@ -46,18 +46,16 @@ object CloudDebugResolver {
      * @param context: Context (optional), used by steps to set attributes for other steps in the workflows
      */
     fun validateOrUpdateCloudDebug(project: Project, messageEmitter: MessageEmitter, context: Context?) {
-        var currentExecutable: ExecutableInstance.Executable? = null
-        var currentVersion: String? = null
-
         // do we already have an executable? If so, get it so we can check version against it
-        try {
-            currentExecutable = CloudDebugCliValidate.validateAndLoadCloudDebugExecutable()
-            context?.putAttribute(CloudDebugCliValidate.EXECUTABLE_ATTRIBUTE, currentExecutable)
-            currentVersion = currentExecutable.version
-            messageEmitter.emitMessage(message("cloud_debug.step.clouddebug.validate.success", currentVersion), false)
+        val currentExecutable = try {
+            CloudDebugCliValidate.validateAndLoadCloudDebugExecutable().also {
+                context?.putAttribute(CloudDebugCliValidate.EXECUTABLE_ATTRIBUTE, it)
+                messageEmitter.emitMessage(message("cloud_debug.step.clouddebug.validate.success", it.version), false)
+            }
         } catch (e: RuntimeException) {
             // existing executable had some sort of an error
             // swallow it and attempt an update; doesn't matter if this is broken if we can give them something that works
+            null
         }
 
         // if we have an executable and it's not autoresolved (read: a user manually set it), always default to that.
@@ -67,23 +65,22 @@ object CloudDebugResolver {
             messageEmitter.emitMessage(message("cloud_debug.step.clouddebug.resolution.auto"), false)
             return
         }
-        attemptToUpdateCloudDebug(project, messageEmitter, currentExecutable, currentVersion, context)
+        attemptToUpdateCloudDebug(project, messageEmitter, currentExecutable, context)
     }
 
     private fun attemptToUpdateCloudDebug(
         project: Project,
         messageEmitter: MessageEmitter,
         currentExecutable: ExecutableInstance.Executable?,
-        currentVersion: String?,
         context: Context?
     ) {
         try {
             messageEmitter.emitMessage(message("cloud_debug.step.clouddebug.update_check"), false)
             val upstreamExecutableVersion = getUpstreamCloudDebugVersion()
             // install if we don't have an executable or if we're out of date
-            if (currentExecutable == null || upstreamExecutableVersion > SemVer.parseFromText(currentVersion)) {
+            if (currentExecutable == null || upstreamExecutableVersion > SemVer.parseFromText(currentExecutable.version)) {
                 // If we are out of date, also run shutdown
-                if (currentExecutable != null && upstreamExecutableVersion > SemVer.parseFromText(currentVersion)) {
+                if (currentExecutable != null && upstreamExecutableVersion > SemVer.parseFromText(currentExecutable.version)) {
                     CloudDebuggingResources.shutdownCloudDebugDispatcher()
                 }
 
@@ -92,7 +89,7 @@ object CloudDebugResolver {
                 installCloudDebugCli(
                     manifest,
                     project,
-                    currentVersion
+                    currentExecutable?.version
                 )
 
                 // clear the executable cache after install
