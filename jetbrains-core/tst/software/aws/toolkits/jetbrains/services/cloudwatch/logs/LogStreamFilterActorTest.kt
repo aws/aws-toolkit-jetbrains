@@ -60,7 +60,7 @@ class LogStreamFilterActorTest {
                     .build()
             )
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("filter query"))
@@ -89,7 +89,7 @@ class LogStreamFilterActorTest {
                     .build()
             )
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("filter query"))
@@ -120,7 +120,7 @@ class LogStreamFilterActorTest {
                     .build()
             )
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("filter query"))
@@ -136,7 +136,7 @@ class LogStreamFilterActorTest {
     fun writeChannelAndCoroutineIsDisposed() {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val coroutine = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
         val channel = coroutine.channel
         coroutine.dispose()
@@ -151,7 +151,7 @@ class LogStreamFilterActorTest {
     fun loadInitialThrows() {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL())
@@ -163,7 +163,7 @@ class LogStreamFilterActorTest {
     fun loadInitialRangeThrows() {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val actor = LogStreamFilterActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0, Duration.ofMillis(0)))

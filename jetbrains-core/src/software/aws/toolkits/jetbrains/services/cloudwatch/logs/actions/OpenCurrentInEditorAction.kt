@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
-class OpenCurrentInEditor(
+class OpenCurrentInEditorAction(
     private val project: Project,
     private val logStream: String,
     private val tableEntries: () -> List<LogStreamEntry>

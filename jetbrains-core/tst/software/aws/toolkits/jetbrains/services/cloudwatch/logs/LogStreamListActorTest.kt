@@ -56,7 +56,7 @@ class LogStreamListActorTest {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build())
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL())
@@ -73,7 +73,7 @@ class LogStreamListActorTest {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build())
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
@@ -108,7 +108,7 @@ class LogStreamListActorTest {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
@@ -176,7 +176,7 @@ class LogStreamListActorTest {
     fun writeChannelAndCoroutineIsDisposed() {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         val channel = coroutine.channel
         coroutine.dispose()
@@ -191,7 +191,7 @@ class LogStreamListActorTest {
     fun loadInitialFilterThrows() {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
-        val table = TableView<LogStreamEntry>(tableModel)
+        val table = TableView(tableModel)
         val actor = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
             actor.channel.send(LogStreamActor.Message.LOAD_INITIAL_FILTER("abc"))
