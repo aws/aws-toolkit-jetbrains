@@ -128,7 +128,7 @@ class CloudWatchLogGroup(
         val actionGroup = DefaultActionGroup()
         actionGroup.addAction(object : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh), DumbAware {
             override fun actionPerformed(e: AnActionEvent) {
-                CloudwatchlogsTelemetry.refreshLogGroup(project)
+                CloudwatchlogsTelemetry.refreshGroup(project)
                 launch { refreshLogStreams() }
             }
         })

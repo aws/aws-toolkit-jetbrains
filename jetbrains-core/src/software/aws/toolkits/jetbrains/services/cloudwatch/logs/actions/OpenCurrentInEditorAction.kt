@@ -29,7 +29,7 @@ class OpenCurrentInEditorAction(
     override fun actionPerformed(e: AnActionEvent) {
         launch {
             val success = OpenStreamInEditor.open(project, edt, logStream, tableEntries().buildStringFromLogs())
-            CloudwatchlogsTelemetry.openCurrentInEditor(project, success = success, value = tableEntries().size.toDouble())
+            CloudwatchlogsTelemetry.viewCurrentMessagesInEditor(project, success = success, value = tableEntries().size.toDouble())
         }
     }
 }
