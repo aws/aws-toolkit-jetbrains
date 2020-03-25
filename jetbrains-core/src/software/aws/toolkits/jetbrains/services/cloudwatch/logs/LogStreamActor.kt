@@ -159,7 +159,6 @@ class LogStreamFilterActor(
     }
 
     private fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> {
-        // withContext is required to give the execution the same scope as us so if it throws and exception we can catch it
         val response = client.filterLogEvents(request)
         val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
         nextForwardToken = response.nextToken()
