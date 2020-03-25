@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWin
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException as CloudWatchResourceNotFoundException
 
 class ContainerActions(
     private val project: Project,
@@ -96,8 +97,11 @@ class ContainerLogsAction(
         }
     }
 
-    private fun CloudWatchLogsClient.checkIfLogStreamExists(logGroup: String, logStream: String): Boolean {
+    private fun CloudWatchLogsClient.checkIfLogStreamExists(logGroup: String, logStream: String) = try {
         val existingStreams = describeLogStreams { it.logGroupName(logGroup).logStreamNamePrefix(logStream) }
-        return existingStreams.logStreams().any { it.logStreamName() == logStream }
+        existingStreams.logStreams().any { it.logStreamName() == logStream }
+        // Thrown if the log group does not exist
+    } catch (e: CloudWatchResourceNotFoundException) {
+        false
     }
 }
