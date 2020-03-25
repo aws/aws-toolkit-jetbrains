@@ -93,7 +93,7 @@ class CloudDebugTargetEnvironmentConfiguration : TargetEnvironmentConfiguration(
         this.state = state
     }
 
-    fun workingDirectory(): String = state.workingDirectory ?: "/tmp/wsp" //throw IllegalStateException("Missing 'workingDirectory'")
+    fun workingDirectory(): String = state.workingDirectory ?: "/tmp/wsp" // throw IllegalStateException("Missing 'workingDirectory'")
 
     fun cluster(): String = state.cluster ?: throw IllegalStateException("Missing 'cluster'")
 
@@ -120,7 +120,6 @@ class CloudDebugTargetConfigurable(private val project: Project, config: CloudDe
     override fun apply() {
         // dun do nothing
     }
-
 }
 
 class CloudDebugTargetEnvironmentFactory(private val project: Project, private val config: CloudDebugTargetEnvironmentConfiguration) :
@@ -183,9 +182,8 @@ class CloudDebugTargetEnvironmentFactory(private val project: Project, private v
         override fun getTargetPlatform(): TargetPlatform = this@CloudDebugTargetEnvironmentFactory.targetPlatform
 
         fun cancel() {
-            //TODO unwind port mappings
+            // TODO unwind port mappings
         }
-
     }
 }
 
@@ -210,7 +208,7 @@ class PathValue(
     init {
         val remotePath = "$remoteWorkingDirectory/${UUID.randomUUID()}"
 
-        val createPath =  buildBaseCmdLine(project, executable).withParameters("exec")
+        val createPath = buildBaseCmdLine(project, executable).withParameters("exec")
             .withParameters("--target")
             .withParameters(target)
             /* TODO remove this when the cli conforms to the contract */
@@ -227,10 +225,10 @@ class PathValue(
             .withParameters("remote://$target://$container://$remotePath")
 
         val future = CompletableFuture<Nothing>()
-        runCommand(createPath, {future.completeExceptionally(RuntimeException(it))}) {
-            runCommand(copyCommand, {future.completeExceptionally(RuntimeException(it))}) {
+        runCommand(createPath, { future.completeExceptionally(RuntimeException(it)) }) {
+            runCommand(copyCommand, { future.completeExceptionally(RuntimeException(it)) }) {
                 val resolvedLocalPath = Paths.get(localPath)
-                val resolvedPath = "$remotePath/${localPath.substringAfterLast("/")}" //if (resolvedLocalPath.isDirectory()) { remotePath } else {  }
+                val resolvedPath = "$remotePath/${localPath.substringAfterLast("/")}"
                 resolve(resolvedPath)
                 future.complete(null)
             }
