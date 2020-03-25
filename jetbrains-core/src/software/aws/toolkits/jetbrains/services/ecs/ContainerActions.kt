@@ -8,10 +8,12 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
@@ -80,8 +82,22 @@ class ContainerLogsAction(
         val window = CloudWatchLogWindow.getInstance(project)
 
         AwsResourceCache.getInstance(project).getResource(EcsResources.listTaskIds(container.service.clusterArn(), container.service.serviceArn())).thenAccept {
-            it.firstOrNull()?.let { taskId -> window.showLogStream(logGroup, "$logPrefix/${container.containerDefinition.name()}/$taskId") }
-                ?: notifyError(message("ecs.service.logs.no_running_tasks"))
+            val taskId = it.firstOrNull()
+            if (taskId == null) {
+                notifyError(message("ecs.service.logs.no_running_tasks"))
+                return@thenAccept
+            }
+            val logStream = "$logPrefix/${container.containerDefinition.name()}/$taskId"
+            if (!project.awsClient<CloudWatchLogsClient>().checkIfLogStreamExists(logGroup, logStream)) {
+                notifyError(message("ecs.service.logs.no_log_stream"))
+                return@thenAccept
+            }
+            window.showLogStream(logGroup, logStream)
         }
+    }
+
+    private fun CloudWatchLogsClient.checkIfLogStreamExists(logGroup: String, logStream: String): Boolean {
+        val existingStreams = describeLogStreams { it.logGroupName(logGroup).logStreamNamePrefix(logStream) }
+        return existingStreams.logStreams().any { it.logStreamName() == logStream }
     }
 }
