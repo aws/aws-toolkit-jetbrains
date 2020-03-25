@@ -14,7 +14,6 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWin
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
-import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 
 class ShowLogsAroundActionGroup(
@@ -43,7 +42,7 @@ private class ShowLogsAround(
     private val duration: Duration
 ) : AnAction(timeMessage, null, null), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
-        CloudwatchlogsTelemetry.showEventsAround(project, result = Result.SUCCEEDED, value = duration.toMillis().toDouble())
+        CloudwatchlogsTelemetry.showEventsAround(project, success = true, value = duration.toMillis().toDouble())
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val window = CloudWatchLogWindow.getInstance(project)
         val selectedObject = treeTable.listTableModel.getItem(treeTable.selectedRow) ?: return
