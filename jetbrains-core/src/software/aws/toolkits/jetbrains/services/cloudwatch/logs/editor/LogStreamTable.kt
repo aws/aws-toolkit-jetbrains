@@ -36,7 +36,7 @@ import javax.swing.SortOrder
 
 class LogStreamTable(
     val project: Project,
-    private val client: CloudWatchLogsClient,
+    client: CloudWatchLogsClient,
     private val logGroup: String,
     private val logStream: String,
     type: TableType
@@ -53,7 +53,7 @@ class LogStreamTable(
     private val logStreamActor: LogStreamActor
 
     init {
-        val model = ListTableModel<LogStreamEntry>(
+        val model = ListTableModel(
             arrayOf(LogStreamDateColumn(), LogStreamMessageColumn()),
             mutableListOf<LogStreamEntry>(),
             // Don't sort in the model because the requests come sorted

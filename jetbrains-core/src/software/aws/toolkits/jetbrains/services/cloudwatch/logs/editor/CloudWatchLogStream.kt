@@ -3,9 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
@@ -64,13 +68,7 @@ class CloudWatchLogStream(
         addActionToolbar()
         addSearchListener()
 
-        launch {
-            if (startTime != null && duration != null) {
-                logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(startTime, duration))
-            } else {
-                logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL())
-            }
-        }
+        refreshTable()
     }
 
     private fun addSearchListener() {
@@ -115,8 +113,25 @@ class CloudWatchLogStream(
         })
         actionGroup.add(TailLogsAction { searchStreamTable?.channel ?: logStreamTable.channel })
         actionGroup.add(WrapLogsAction { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
+        actionGroup.addAction(object : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh), DumbAware {
+            override fun actionPerformed(e: AnActionEvent) {
+                launch { refreshTable() }
+            }
+        })
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
         tablePanel.toolbar = toolbar.component
+    }
+
+    private fun refreshTable() {
+        launch {
+            if (searchField.text.isNotEmpty() && searchStreamTable != null) {
+                searchStreamTable?.channel?.send(LogStreamActor.Message.LOAD_INITIAL_FILTER(searchField.text.trim()))
+            } else if (startTime != null && duration != null) {
+                logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(startTime, duration))
+            } else {
+                logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL())
+            }
+        }
     }
 
     override fun dispose() {}
