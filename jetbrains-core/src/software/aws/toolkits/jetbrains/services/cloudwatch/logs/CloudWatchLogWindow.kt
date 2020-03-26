@@ -58,7 +58,6 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
         var result = Result.SUCCEEDED
         try {
             val id = "$logGroup/$logStream"
-            // dispose existing window if it exists to update. TODO add a refresh, duh
             val existingWindow = toolWindow.find(id)
             if (existingWindow != null) {
                 withContext(edtContext) {
