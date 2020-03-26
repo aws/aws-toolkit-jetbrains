@@ -5,13 +5,10 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.PopupHandler
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +17,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditorAction
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundActionGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.TailLogsAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogsAction
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -65,7 +61,6 @@ class CloudWatchLogStream(
         Disposer.register(this, logStreamTable)
         searchField.textEditor.emptyText.text = message("cloudwatch.logs.filter_logs")
 
-        addAction()
         addActionToolbar()
         addSearchListener()
 
@@ -111,21 +106,6 @@ class CloudWatchLogStream(
                 }
             }
         })
-    }
-
-    private fun addAction() {
-        val actionGroup = DefaultActionGroup()
-        actionGroup.add(OpenCurrentInEditorAction(project, logStream) {
-            searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
-        })
-        actionGroup.add(Separator())
-        actionGroup.add(ShowLogsAroundActionGroup(logGroup, logStream, logStreamTable.logsTable))
-        PopupHandler.installPopupHandler(
-            logStreamTable.logsTable,
-            actionGroup,
-            ActionPlaces.EDITOR_POPUP,
-            ActionManager.getInstance()
-        )
     }
 
     private fun addActionToolbar() {
