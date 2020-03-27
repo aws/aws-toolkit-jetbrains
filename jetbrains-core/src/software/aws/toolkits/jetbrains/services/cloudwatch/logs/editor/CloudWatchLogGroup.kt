@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.Constraints
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -113,10 +114,10 @@ class CloudWatchLogGroup(
 
     private fun addActions() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.add(ExportActionGroup(project, client, logGroup) {
+        actionGroup.addAction(ExportActionGroup(project, client, logGroup) {
             val row = groupTable.selectedRow.takeIf { it >= 0 } ?: return@ExportActionGroup null
             groupTable.getValueAt(row, 0) as? String
-        })
+        }, Constraints.FIRST)
         PopupHandler.installPopupHandler(
             groupTable,
             actionGroup,
