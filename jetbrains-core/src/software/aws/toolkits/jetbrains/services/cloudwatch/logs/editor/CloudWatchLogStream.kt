@@ -64,7 +64,7 @@ class CloudWatchLogStream(
         val locationCrumbs = LocationCrumbs(project, logGroup, logStream)
         locationInformation.crumbs = locationCrumbs.crumbs
         breadcrumbHolder.border = locationCrumbs.border
-        locationInformation.installDoubleClickListener()
+        locationInformation.installClickListener()
 
         Disposer.register(this, logStreamTable)
         searchField.textEditor.emptyText.text = message("cloudwatch.logs.filter_logs")

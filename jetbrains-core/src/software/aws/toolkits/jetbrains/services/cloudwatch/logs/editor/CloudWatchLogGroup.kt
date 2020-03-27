@@ -18,7 +18,6 @@ import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TableSpeedSearch
-import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.table.JBTable
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
@@ -50,7 +49,7 @@ class CloudWatchLogGroup(
     private lateinit var tablePanel: SimpleToolWindowPanel
     private lateinit var groupTable: JBTable
     private lateinit var tableModel: ListTableModel<LogStream>
-    private lateinit var locationInformation: Breadcrumbs
+    private lateinit var locationInformation: LocationBreadcrumbs
 
     private val client: CloudWatchLogsClient = project.awsClient()
 
@@ -80,7 +79,7 @@ class CloudWatchLogGroup(
         val locationCrumbs = LocationCrumbs(project, logGroup)
         locationInformation.crumbs = locationCrumbs.crumbs
         locationInformation.border = locationCrumbs.border
-        locationInformation.installDoubleClickListener()
+        locationInformation.installClickListener()
 
         addActions()
         addToolbar()
