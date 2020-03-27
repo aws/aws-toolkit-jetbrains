@@ -58,7 +58,7 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
     ) = launch {
         var result = Result.SUCCEEDED
         try {
-            val id = "$logGroup/$logStream/${startTime}/${duration}"
+            val id = "$logGroup/$logStream/$startTime/$duration"
             val existingWindow = toolWindow.find(id)
             if (existingWindow != null) {
                 withContext(edtContext) {
