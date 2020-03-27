@@ -31,7 +31,13 @@ class LocationCrumbs(project: Project, logGroup: String, logStream: String? = nu
                 CloudWatchLogWindow.getInstance(project)?.showLogGroup(logGroup)
             }
         }),
-        logStream?.let { Crumb.Impl(null, it, null, null) }
+        logStream?.let {
+            Crumb.Impl(null, it, null, object : AbstractAction(message("cloudwatch.logs.show_log_stream")), DumbAware {
+                override fun actionPerformed(e: ActionEvent?) {
+                    CloudWatchLogWindow.getInstance(project)?.showLogStream(logGroup, it)
+                }
+            })
+        }
     )
 }
 
