@@ -4,8 +4,11 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -13,6 +16,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.io.FileUtilRt
+import com.intellij.openapi.vfs.VirtualFileWrapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -133,10 +137,10 @@ class LogStreamDownloadToFileTask(
     }
 
     private suspend fun promptToDownload(indicator: ProgressIndicator, request: GetLogEventsRequest, buffer: String) {
-        val descriptor = FileSaverDescriptor(message("s3.download.object.action"), message("s3.download.object.description"))
+        val descriptor = FileSaverDescriptor(message("cloudwatch.logs.download"), message("cloudwatch.logs.download.description"))
         val saveLocation = withContext(edt) {
             val destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-            destination.save(null, null)
+            destination.save(null, logStream)
         }
         if (saveLocation != null) {
             streamLogStreamToFile(indicator, request, saveLocation.file, buffer)
@@ -157,7 +161,16 @@ class LogStreamDownloadToFileTask(
             notifyInfo(
                 project = project,
                 title = message("aws.notification.title"),
-                content = message("cloudwatch.logs.saving_to_disk_succeeded", logStream, file.path)
+                content = message("cloudwatch.logs.saving_to_disk_succeeded", logStream, file.path),
+                notificationActions = listOf(
+                    object : AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.Menu_open) {
+                        override fun actionPerformed(e: AnActionEvent) {
+                            val virtualFile = VirtualFileWrapper(file).virtualFile
+                                ?: throw IllegalStateException("Log Stream was downloaded but does not exist on disk!")
+                            FileEditorManager.getInstance(project).openFile(virtualFile, true, true)
+                        }
+                    }
+                )
             )
             CloudwatchlogsTelemetry.downloadStreamToFile(project, success = true)
         } catch (e: Exception) {
