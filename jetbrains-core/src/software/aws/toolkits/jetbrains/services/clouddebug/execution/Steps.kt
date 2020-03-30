@@ -200,11 +200,7 @@ abstract class CliBasedStep : Step() {
                 logEvent.level?.let { previousLevel.set(it) }
             }
             // output to the log for diagnostic and integrations tests
-            if (outputType == ProcessOutputTypes.STDERR) {
-                LOG.error(event.text)
-            } else {
-                LOG.info(event.text)
-            }
+            LOG.info { event.text }
         }
     }
 
