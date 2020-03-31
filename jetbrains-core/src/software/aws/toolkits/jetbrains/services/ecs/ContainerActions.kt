@@ -22,7 +22,6 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStream
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException as CloudWatchResourceNotFoundException
 
 class ContainerActions(
     private val project: Project,
