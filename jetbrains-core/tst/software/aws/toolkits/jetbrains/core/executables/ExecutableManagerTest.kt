@@ -110,6 +110,37 @@ class ExecutableManagerTest {
     }
 
     @Test
+    fun updatingExecutableRevalidates() {
+        val executable = tempFolder.newFile()
+        val type = object : DummyExecutableType("dummy"), AutoResolvable, Validatable {
+            var runtimeException = true
+            override fun resolve(): Path = executable.toPath()
+            override fun validate(path: Path) {
+                if(runtimeException) {
+                    throw RuntimeException("blah")
+                }
+            }
+        }
+
+        assertThat(sut.getExecutable(type).value).isInstanceOf(ExecutableInstance.InvalidExecutable::class.java)
+        type.runtimeException = false
+        assertThat(sut.getExecutable(type)).wait().isCompletedWithValueMatching { (it as ExecutableInstance.Executable).executablePath == executable.toPath() }
+    }
+
+    @Test
+    fun savedInvalidPathOverwrittenWithValid() {
+        val executable = tempFolder.newFile()
+        val type = object : DummyExecutableType("dummy"), AutoResolvable, Validatable {
+            override fun resolve(): Path = executable.toPath()
+            override fun validate(path: Path) {}
+        }
+
+        sut.loadState(ExecutableStateList(listOf(ExecutableState(type.id, "/very/invalid/path"))))
+        assertThat(sut.getExecutableIfPresent(type)).isInstanceOf(ExecutableInstance.InvalidExecutable::class.java)
+        assertThat(sut.getExecutable(type)).wait().isCompletedWithValueMatching { (it as ExecutableInstance.Executable).executablePath == executable.toPath() }
+    }
+
+    @Test
     fun validationExceptionsArePropagated() {
 
         val executable = tempFolder.newFile()
@@ -176,8 +207,8 @@ class ExecutableManagerTest {
 
         sut.setExecutablePath(type, Paths.get(executable)).value
 
-        // as there was not a valid path set, invalid executable is allowed to be set
-        assertThat(sut.getExecutable(type).value).isInstanceOf(ExecutableInstance.InvalidExecutable::class.java)
+        // path does not exist so it's unresolved
+        assertThat(sut.getExecutable(type).value).isInstanceOf(ExecutableInstance.UnresolvedExecutable::class.java)
     }
 
     @Test
