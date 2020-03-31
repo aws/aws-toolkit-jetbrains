@@ -260,6 +260,8 @@
             <action id="ecs.function.instrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.InstrumentResourceFromExplorerAction"/>
             <action id="clouddebug.resource.deinstrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.DeinstrumentResourceFromExplorerAction"/>
             <separator/>
+            <action id="ecs.service.showLogGroup" class="software.aws.toolkits.jetbrains.services.ecs.actions.EcsLogGroupAction"/>
+            <separator/>
         </group>
 
         <group id="aws.toolkit.explorer.lambda" popup="true" compact="false">

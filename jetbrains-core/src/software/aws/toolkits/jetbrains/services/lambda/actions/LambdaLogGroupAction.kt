@@ -11,13 +11,14 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogGroupExists
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunctionNode
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class LambdaLogGroupAction :
-    SingleExplorerNodeAction<LambdaFunctionNode>(message("lambda.logs.action_label")),
+    SingleExplorerNodeAction<LambdaFunctionNode>(message("cloudwatch.logs.show_log_group")),
     CoroutineScope by ApplicationThreadPoolScope("LambdaLogGroupAction"),
     DumbAware {
     override fun actionPerformed(selected: LambdaFunctionNode, e: AnActionEvent) {
@@ -32,10 +33,5 @@ class LambdaLogGroupAction :
                 notifyError(message("lambda.logs.does_not_exist"))
             }
         }
-    }
-
-    private fun CloudWatchLogsClient.checkIfLogGroupExists(logGroup: String): Boolean {
-        val existingGroups = describeLogGroups { it.logGroupNamePrefix(logGroup) }
-        return existingGroups.logGroups().any { it.logGroupName() == logGroup }
     }
 }

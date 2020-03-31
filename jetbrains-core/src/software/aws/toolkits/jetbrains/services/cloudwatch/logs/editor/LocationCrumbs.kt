@@ -50,7 +50,7 @@ class LocationCrumbs(project: Project, logGroup: String, logStream: String? = nu
     val crumbs = listOfNotNull(
         Crumb.Impl(null, project.activeCredentialProvider().displayName, null, listOf()),
         Crumb.Impl(null, project.activeRegion().displayName, null, listOf()),
-        Crumb.Impl(null, logGroup, null, object : AbstractAction(message("lambda.logs.action_label")), DumbAware {
+        Crumb.Impl(null, logGroup, null, object : AbstractAction(message("cloudwatch.logs.show_log_group")), DumbAware {
             override fun actionPerformed(e: ActionEvent?) {
                 CloudWatchLogWindow.getInstance(project)?.showLogGroup(logGroup)
             }
