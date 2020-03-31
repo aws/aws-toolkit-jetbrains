@@ -125,7 +125,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
                 when {
                     instance is ExecutableWithPath && persisted.autoResolved == true && instance.executablePath.isNewerThan(lastKnownFileTime) ->
                         validateAndSave(type, instance.executablePath, autoResolved = false)
-                    instance is ExecutableWithPath && instance.executablePath.lastModifiedOrNull() == lastValidated ->
+                    instance is ExecutableInstance.Executable && instance.executablePath.lastModifiedOrNull() == lastValidated ->
                         instance
                     else ->
                         load(type, persisted)
