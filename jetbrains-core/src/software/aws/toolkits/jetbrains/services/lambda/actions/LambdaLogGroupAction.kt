@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
+import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
@@ -18,7 +19,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class LambdaLogGroupAction :
-    SingleExplorerNodeAction<LambdaFunctionNode>(message("cloudwatch.logs.show_log_group")),
+    SingleExplorerNodeAction<LambdaFunctionNode>(message("cloudwatch.logs.show_log_group"), null, AwsIcons.Resources.CloudWatch.LOGS),
     CoroutineScope by ApplicationThreadPoolScope("LambdaLogGroupAction"),
     DumbAware {
     override fun actionPerformed(selected: LambdaFunctionNode, e: AnActionEvent) {
