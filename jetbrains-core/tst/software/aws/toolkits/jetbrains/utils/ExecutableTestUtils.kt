@@ -9,7 +9,12 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import java.nio.file.Paths
 
 fun setSamExecutableFromEnvironment() {
+    val samPath = System.getenv()["SAM_CLI_EXEC"] ?: SamExecutable().resolve()?.toString() ?: "sam"
+
     ExecutableManager.getInstance()
-        .setExecutablePath(ExecutableType.getInstance<SamExecutable>(), Paths.get(System.getenv().getOrDefault("SAM_CLI_EXEC", "sam")))
+        .setExecutablePath(
+            ExecutableType.getInstance<SamExecutable>(),
+            Paths.get(samPath)
+        )
         .toCompletableFuture().join()
 }
