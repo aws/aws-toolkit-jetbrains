@@ -21,6 +21,8 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.FeedbackTelemetry
+import software.aws.toolkits.telemetry.Result
 
 class FeedbackDialog(private val project: Project) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("FeedbackDialog") {
     val panel = SubmitFeedbackPanel(initiallyPositive = true)
@@ -52,7 +54,9 @@ class FeedbackDialog(private val project: Project) : DialogWrapper(project), Cor
                         setOKButtonText(message("feedback.submit_button"))
                         isOKActionEnabled = true
                     }
+                    FeedbackTelemetry.result(project, success = false)
                 }
+                FeedbackTelemetry.result(project, success = true)
             }
         }
     }
@@ -61,6 +65,7 @@ class FeedbackDialog(private val project: Project) : DialogWrapper(project), Cor
         super.doCancelAction()
         // kill any remaining coroutines
         coroutineContext.cancel()
+        FeedbackTelemetry.result(project, result = Result.CANCELLED)
     }
 
     public override fun doValidate(): ValidationInfo? {
