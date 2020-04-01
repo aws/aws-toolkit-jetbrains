@@ -154,18 +154,16 @@ class ExecutableManagerTest {
             override fun resolve(): Path? = executable.toPath()
         }
 
-        assertThat(sut.getExecutable(type).value).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
-            assertThat(it.executablePath).isEqualTo(executable.toPath())
-            assertThat(it.autoResolved).isTrue()
-        }
-        executable.setLastModified(1L)
         retryableAssert(timeout = Duration.ofMillis(100), interval = Duration.ofMillis(20)) {
             assertThat(sut.getExecutable(type).value).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
                 assertThat(it.executablePath).isEqualTo(executable.toPath())
                 assertThat(it.autoResolved).isTrue()
             }
         }
-        executable.setLastModified(2L)
+        assertThat(sut.getExecutable(type).value).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
+            assertThat(it.executablePath).isEqualTo(executable.toPath())
+            assertThat(it.autoResolved).isTrue()
+        }
         retryableAssert(timeout = Duration.ofMillis(100), interval = Duration.ofMillis(20)) {
             assertThat(sut.setExecutablePath(type, executable.toPath()).value).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
                 assertThat(it.executablePath).isEqualTo(executable.toPath())
