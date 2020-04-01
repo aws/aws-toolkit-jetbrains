@@ -49,8 +49,6 @@ class LogStreamTable(
     }
 
     val component: JComponent
-    // Scrollpane is what component is but we are encapsulating it
-    private val scrollPane: JScrollPane
     val channel: Channel<LogStreamActor.Message>
     val logsTable: TableView<LogStreamEntry>
     private val logStreamActor: LogStreamActor
@@ -73,11 +71,10 @@ class LogStreamTable(
 
         TableSpeedSearch(logsTable)
         component = ScrollPaneFactory.createScrollPane(logsTable)
-        scrollPane = component
 
         logStreamActor = when (type) {
-            TableType.LIST -> LogStreamListActor(project, client, logsTable, logGroup, logStream)
-            TableType.FILTER -> LogStreamFilterActor(project, client, logsTable, logGroup, logStream)
+            TableType.LIST -> LogStreamListActor(project, client, logsTable, component, logGroup, logStream)
+            TableType.FILTER -> LogStreamFilterActor(project, client, logsTable, component, logGroup, logStream)
         }
         Disposer.register(this@LogStreamTable, logStreamActor)
         channel = logStreamActor.channel
@@ -97,10 +94,6 @@ class LogStreamTable(
             }
         })
         addActionsToTable()
-    }
-
-    fun scrollToTop() {
-        scrollPane.verticalScrollBar.value = scrollPane.verticalScrollBar.minimum
     }
 
     private fun addActionsToTable() {

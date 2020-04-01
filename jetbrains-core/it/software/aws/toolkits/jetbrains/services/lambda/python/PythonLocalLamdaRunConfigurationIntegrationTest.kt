@@ -34,10 +34,11 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data(): Collection<Array<Runtime>> = listOf(
-            arrayOf(Runtime.PYTHON2_7),
+            arrayOf(Runtime.PYTHON2_7)
+            /*
             arrayOf(Runtime.PYTHON3_6),
             arrayOf(Runtime.PYTHON3_7),
-            arrayOf(Runtime.PYTHON3_8)
+            arrayOf(Runtime.PYTHON3_8)*/
         )
     }
 
@@ -93,7 +94,8 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
             runtime = runtime,
             handler = "src/hello_world.app.lambda_handler",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            samOptions = SamOptions(buildInContainer = true)
         )
         assertThat(runConfiguration).isNotNull
 
@@ -307,7 +309,8 @@ class PythonLocalLamdaRunConfigurationIntegrationTest(private val runtime: Runti
             templateFile = templateFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            samOptions = SamOptions(buildInContainer = true)
         )
         assertThat(runConfiguration).isNotNull
 

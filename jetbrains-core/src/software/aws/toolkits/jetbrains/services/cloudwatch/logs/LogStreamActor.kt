@@ -23,11 +23,13 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
+import javax.swing.JScrollPane
 
 sealed class LogStreamActor(
     private val project: Project,
     protected val client: CloudWatchLogsClient,
     private val table: TableView<LogStreamEntry>,
+    private val scrollPane: JScrollPane,
     protected val logGroup: String,
     protected val logStream: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {
@@ -70,9 +72,24 @@ sealed class LogStreamActor(
                     val items = loadMore(nextBackwardToken, saveBackwardToken = true)
                     withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
                 }
-                is Message.LOAD_INITIAL -> loadInitial()
-                is Message.LOAD_INITIAL_RANGE -> loadInitialRange(message.startTime, message.duration)
-                is Message.LOAD_INITIAL_FILTER -> loadInitialFilter(message.queryString)
+                is Message.LOAD_INITIAL -> {
+                    loadInitial()
+                    // make sure the scroll pane is at the top after loading
+                    scrollPane.verticalScrollBar.value = scrollPane.verticalScrollBar.minimum
+                }
+                is Message.LOAD_INITIAL_RANGE -> {
+                    loadInitialRange(message.startTime, message.duration)
+                    // make sure the scroll pane is in the middle of the loaded entries after loading
+                    val index = table.listTableModel.items.firstOrNull { it.timestamp == message.startTime }
+                    index?.let {
+                        table.clearSelection()
+                        table.selection = mutableListOf(it)
+                    }
+                    //scrollPane.verticalScrollBar.value = (scrollPane.verticalScrollBar.minimum+scrollPane.verticalScrollBar.maximum)/2
+                }
+                is Message.LOAD_INITIAL_FILTER -> {
+                    loadInitialFilter(message.queryString)
+                }
             }
         }
     }
@@ -119,9 +136,10 @@ class LogStreamFilterActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
+    scrollPane: JScrollPane,
     logGroup: String,
     logStream: String
-) : LogStreamActor(project, client, table, logGroup, logStream) {
+) : LogStreamActor(project, client, table, scrollPane, logGroup, logStream) {
     override val emptyText = message("cloudwatch.logs.no_events_query", logStream)
 
     override suspend fun loadInitial() {
@@ -171,10 +189,11 @@ class LogStreamListActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
+    scrollPane: JScrollPane,
     logGroup: String,
     logStream: String
 ) :
-    LogStreamActor(project, client, table, logGroup, logStream) {
+    LogStreamActor(project, client, table, scrollPane, logGroup, logStream) {
     override val emptyText = message("cloudwatch.logs.no_events")
     override suspend fun loadInitial() {
         val request = GetLogEventsRequest

@@ -136,13 +136,10 @@ class CloudWatchLogStream(
 
     private fun refreshTable() = launch {
         if (searchField.text.isNotEmpty() && searchStreamTable != null) {
-            searchStreamTable?.scrollToTop()
             searchStreamTable?.channel?.send(LogStreamActor.Message.LOAD_INITIAL_FILTER(searchField.text.trim()))
         } else if (startTime != null && duration != null) {
-            logStreamTable.scrollToTop()
             logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(startTime, duration))
         } else {
-            logStreamTable.scrollToTop()
             logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL())
         }
     }
