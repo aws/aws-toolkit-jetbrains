@@ -37,6 +37,7 @@ class FeedbackDialog(private val project: Project) : DialogWrapper(project), Cor
         if (okAction.isEnabled) {
             setOKButtonText(message("feedback.submitting"))
             isOKActionEnabled = false
+            var result = Result.SUCCEEDED
 
             val sentiment = panel.sentiment ?: throw IllegalStateException("sentiment was null after validation")
             val comment = panel.comment ?: throw IllegalStateException("comment was null after validation")
@@ -54,9 +55,10 @@ class FeedbackDialog(private val project: Project) : DialogWrapper(project), Cor
                         setOKButtonText(message("feedback.submit_button"))
                         isOKActionEnabled = true
                     }
-                    FeedbackTelemetry.result(project, success = false)
+                    result = Result.FAILED
+                } finally {
+                    FeedbackTelemetry.result(project, result = result)
                 }
-                FeedbackTelemetry.result(project, success = true)
             }
         }
     }
