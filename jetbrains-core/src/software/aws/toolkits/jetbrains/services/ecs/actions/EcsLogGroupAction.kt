@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class EcsLogGroupAction :
-    SingleResourceNodeAction<EcsClusterNode>(message("cloudwatch.logs.show_log_group"), null, AwsIcons.Resources.CloudWatch.LOGS),
+    SingleResourceNodeAction<EcsClusterNode>(message("cloudwatch.logs.view_log_streams"), null, AwsIcons.Resources.CloudWatch.LOGS),
     CoroutineScope by ApplicationThreadPoolScope("EcsLogGroupAction"),
     DumbAware {
     override fun actionPerformed(selected: EcsClusterNode, e: AnActionEvent) {
