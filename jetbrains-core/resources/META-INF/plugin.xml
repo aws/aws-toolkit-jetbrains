@@ -88,6 +88,10 @@
         <xi:fallback/>
     </xi:include>
 
+    <xi:include href="/META-INF/plugin-extra.xml" xpointer="xpointer(/idea-plugin/*)">
+        <xi:fallback/>
+    </xi:include>
+
     <application-components>
         <component>
             <interface-class>software.aws.toolkits.jetbrains.components.telemetry.TelemetryComponent</interface-class>
@@ -248,6 +252,10 @@
     </extensions>
 
     <actions>
+        <group id="aws.toolkit.explorer.ecs.cluster" popup="true" compact="false">
+            <action id="ecs.service.showLogGroup" class="software.aws.toolkits.jetbrains.services.ecs.actions.EcsLogGroupAction"/>
+            <separator/>
+        </group>
 
         <group id="aws.toolkit.explorer.ecs.service" popup="true" compact="false">
             <reference ref="RunContextGroupInner"/>

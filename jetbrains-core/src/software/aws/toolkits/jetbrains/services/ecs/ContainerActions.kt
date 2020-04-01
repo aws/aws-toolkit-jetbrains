@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
+import icons.AwsIcons
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
@@ -17,10 +18,10 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException as CloudWatchResourceNotFoundException
 
 class ContainerActions(
     private val project: Project,
@@ -61,7 +62,7 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
 class ContainerLogsAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.service.logs.action_label")) {
+) : AnAction(message("ecs.service.container_logs.action_label"), null, AwsIcons.Resources.CloudWatch.LOGS) {
 
     private val logConfiguration: Pair<String, String>? by lazy {
         container.containerDefinition.logConfiguration().takeIf { it.logDriver() == LogDriver.AWSLOGS }?.options()?.let {
@@ -95,13 +96,5 @@ class ContainerLogsAction(
             }
             window.showLogStream(logGroup, logStream)
         }
-    }
-
-    private fun CloudWatchLogsClient.checkIfLogStreamExists(logGroup: String, logStream: String) = try {
-        val existingStreams = describeLogStreams { it.logGroupName(logGroup).logStreamNamePrefix(logStream) }
-        existingStreams.logStreams().any { it.logStreamName() == logStream }
-        // Thrown if the log group does not exist
-    } catch (e: CloudWatchResourceNotFoundException) {
-        false
     }
 }
