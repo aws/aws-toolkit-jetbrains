@@ -31,6 +31,7 @@ import java.awt.event.AdjustmentEvent
 import java.awt.event.AdjustmentListener
 import javax.swing.JComponent
 import javax.swing.JScrollBar
+import javax.swing.JScrollPane
 import javax.swing.JTable
 import javax.swing.SortOrder
 
@@ -48,6 +49,8 @@ class LogStreamTable(
     }
 
     val component: JComponent
+    // Scrollpane is what component is but we are encapsulating it
+    private val scrollPane: JScrollPane
     val channel: Channel<LogStreamActor.Message>
     val logsTable: TableView<LogStreamEntry>
     private val logStreamActor: LogStreamActor
@@ -70,6 +73,7 @@ class LogStreamTable(
 
         TableSpeedSearch(logsTable)
         component = ScrollPaneFactory.createScrollPane(logsTable)
+        scrollPane = component
 
         logStreamActor = when (type) {
             TableType.LIST -> LogStreamListActor(project, client, logsTable, logGroup, logStream)
@@ -93,6 +97,10 @@ class LogStreamTable(
             }
         })
         addActionsToTable()
+    }
+
+    fun scrollToTop() {
+        scrollPane.verticalScrollBar.value = scrollPane.verticalScrollBar.minimum
     }
 
     private fun addActionsToTable() {

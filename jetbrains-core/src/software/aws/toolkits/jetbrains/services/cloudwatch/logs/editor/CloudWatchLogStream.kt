@@ -121,7 +121,8 @@ class CloudWatchLogStream(
         val actionGroup = DefaultActionGroup()
         actionGroup.addAction(object : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh), DumbAware {
             override fun actionPerformed(e: AnActionEvent) {
-                launch { refreshTable() }
+                refreshTable()
+                CloudwatchlogsTelemetry.refreshStream(project)
             }
         }, Constraints.FIRST)
         actionGroup.add(OpenCurrentInEditorAction(project, logStream) {
@@ -134,12 +135,14 @@ class CloudWatchLogStream(
     }
 
     private fun refreshTable() = launch {
-        CloudwatchlogsTelemetry.refreshStream(project)
         if (searchField.text.isNotEmpty() && searchStreamTable != null) {
+            searchStreamTable?.scrollToTop()
             searchStreamTable?.channel?.send(LogStreamActor.Message.LOAD_INITIAL_FILTER(searchField.text.trim()))
         } else if (startTime != null && duration != null) {
+            logStreamTable.scrollToTop()
             logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(startTime, duration))
         } else {
+            logStreamTable.scrollToTop()
             logStreamTable.channel.send(LogStreamActor.Message.LOAD_INITIAL())
         }
     }
