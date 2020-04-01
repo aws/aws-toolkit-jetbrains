@@ -123,8 +123,8 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
 
             future.complete(
                 when {
-                    // If this is an autoresolved path, and has been updated, remove the autoresolvedness and update
-                    instance is ExecutableInstance.Executable && persisted.autoResolved == true && instance.executablePath.isNewerThan(lastKnownFileTime) ->
+                    // If this is an autoresolved path, and has been updated, remove the autoresolvedness and revalidate
+                    instance is ExecutableWithPath && persisted.autoResolved == true && instance.executablePath.isNewerThan(lastKnownFileTime) ->
                         validateAndSave(type, instance.executablePath, autoResolved = false)
                     // If it is valid, and has not changed, we return the existing cached one
                     instance is ExecutableInstance.Executable && instance.executablePath.lastModifiedOrNull() == lastValidated ->

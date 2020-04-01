@@ -138,13 +138,40 @@ class ExecutableManagerTest {
         }
 
         sut.loadState(ExecutableStateList(listOf(ExecutableState(type.id, "/very/invalid/path"))))
-        assertThat(sut.getExecutableIfPresent(type)).isInstanceOf(ExecutableInstance.UnresolvedExecutable::class.java)
-        assertThat(sut.getExecutable(type)).wait().isCompletedWithValueMatching { (it as ExecutableInstance.Executable).executablePath == executable.toPath() }
+        val invalidExecutableInstance = sut.getExecutableIfPresent(type)
+        assertThat(invalidExecutableInstance).isInstanceOf(ExecutableInstance.UnresolvedExecutable::class.java)
+        val validExecutableInstance = sut.getExecutable(type).value
+        assertThat(validExecutableInstance).isInstanceOf(ExecutableInstance.Executable::class.java)
+        assertThat((validExecutableInstance as ExecutableInstance.Executable).autoResolved).isTrue()
+    }
+
+    @Test
+    fun updatedExecutableNoLongerAutoResolved() {
+        val executable = tempFolder.newFile()
+        executable.setLastModified(0L)
+        val type = object : DummyExecutableType("dummy"), AutoResolvable, Validatable {
+            override fun validate(path: Path) {}
+            override fun resolve(): Path? = executable.toPath()
+        }
+
+        assertThat(sut.getExecutable(type).value).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
+            assertThat(it.executablePath).isEqualTo(executable.toPath())
+            assertThat(it.autoResolved).isTrue()
+        }
+        executable.setLastModified(1L)
+        assertThat(sut.getExecutable(type).value).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
+            assertThat(it.executablePath).isEqualTo(executable.toPath())
+            assertThat(it.autoResolved).isTrue()
+        }
+        executable.setLastModified(2L)
+        assertThat(sut.setExecutablePath(type, executable.toPath()).value).isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) {
+            assertThat(it.executablePath).isEqualTo(executable.toPath())
+            assertThat(it.autoResolved).isFalse()
+        }
     }
 
     @Test
     fun validationExceptionsArePropagated() {
-
         val executable = tempFolder.newFile()
 
         val type = object : DummyExecutableType("dummy"), Validatable {
