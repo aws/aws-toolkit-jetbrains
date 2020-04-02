@@ -94,7 +94,6 @@ class ContainerLogsAction(
                         logGroup,
                         "$logPrefix/${container.containerDefinition.name()}/${tasks.first()}"
                     ) -> return@thenAccept
-
                 }
                 window.showLogGroup(logGroup)
             }
