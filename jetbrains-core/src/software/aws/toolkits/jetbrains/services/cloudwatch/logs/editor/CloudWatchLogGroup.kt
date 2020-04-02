@@ -106,7 +106,7 @@ class CloudWatchLogGroup(
         }
         populateModel()
         withContext(edtContext) {
-            groupTable.emptyText.text = message("cloudwatch.logs.no_log_groups")
+            groupTable.emptyText.text = message("cloudwatch.logs.no_log_streams")
             groupTable.setPaintBusy(false)
         }
     }

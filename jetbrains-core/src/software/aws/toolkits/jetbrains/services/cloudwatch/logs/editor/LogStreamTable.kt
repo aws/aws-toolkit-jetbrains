@@ -31,7 +31,6 @@ import java.awt.event.AdjustmentEvent
 import java.awt.event.AdjustmentListener
 import javax.swing.JComponent
 import javax.swing.JScrollBar
-import javax.swing.JScrollPane
 import javax.swing.JTable
 import javax.swing.SortOrder
 
@@ -62,12 +61,12 @@ class LogStreamTable(
             SortOrder.UNSORTED
         )
         logsTable = TableView(model).apply {
-            setPaintBusy(true)
             autoscrolls = true
-            emptyText.text = message("loading_resource.loading")
             tableHeader.reorderingAllowed = false
+            autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+            setPaintBusy(true)
+            emptyText.text = message("loading_resource.loading")
         }
-        logsTable.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
         TableSpeedSearch(logsTable)
         component = ScrollPaneFactory.createScrollPane(logsTable)

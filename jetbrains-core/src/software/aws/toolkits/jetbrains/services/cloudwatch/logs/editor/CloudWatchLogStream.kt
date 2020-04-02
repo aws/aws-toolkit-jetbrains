@@ -77,6 +77,9 @@ class CloudWatchLogStream(
     private fun addSearchListener() {
         searchField.textEditor.addPropertyChangeListener {
             // If the text field is emptied, like what the x button does, clear the table and dispose the old one if it exists
+            // This leads to a weird UX where we search if enter is pressed but if the text in the box is deleted we clear the
+            // search state.
+            // TODO can we do better?
             if (searchField.text.isEmpty()) {
                 val oldTable = searchStreamTable
                 searchStreamTable = null

@@ -73,7 +73,7 @@ sealed class LogStreamActor(
                 is Message.LOAD_INITIAL -> {
                     loadInitial()
                     // make sure the scroll pane is at the top after loading
-                    val cellRect = table.getCellRect(0,0,true)
+                    val cellRect = table.getCellRect(0, 0, true)
                     table.scrollRectToVisible(cellRect)
                 }
                 is Message.LOAD_INITIAL_RANGE -> {
@@ -95,6 +95,7 @@ sealed class LogStreamActor(
 
     protected suspend fun loadAndPopulate(loadBlock: suspend () -> List<LogStreamEntry>) {
         try {
+            tableLoading()
             val items = loadBlock()
             withContext(edtContext) {
                 table.listTableModel.items = items
@@ -112,7 +113,7 @@ sealed class LogStreamActor(
             }
         } finally {
             withContext(edtContext) {
-                table.setPaintBusy(false)
+                tableDoneLoading()
             }
         }
     }
@@ -121,6 +122,15 @@ sealed class LogStreamActor(
     protected abstract suspend fun loadInitialRange(startTime: Long, duration: Duration)
     protected abstract suspend fun loadInitialFilter(queryString: String)
     protected abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<LogStreamEntry>
+
+    private fun tableLoading() {
+        table.setPaintBusy(true)
+        table.emptyText.text = message("loading_resource.loading")
+    }
+
+    private fun tableDoneLoading() {
+        table.setPaintBusy(false)
+    }
 
     override fun dispose() {
         channel.close()
