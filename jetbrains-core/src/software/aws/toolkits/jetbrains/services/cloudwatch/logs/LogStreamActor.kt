@@ -47,7 +47,7 @@ sealed class LogStreamActor(
 
     sealed class Message {
         class LOAD_INITIAL : Message()
-        class LOAD_INITIAL_RANGE(val startTime: Long, val duration: Duration) : Message()
+        class LOAD_INITIAL_RANGE(val previousEvent: LogStreamEntry, val duration: Duration) : Message()
         class LOAD_INITIAL_FILTER(val queryString: String) : Message()
         class LOAD_FORWARD : Message()
         class LOAD_BACKWARD : Message()
@@ -72,19 +72,17 @@ sealed class LogStreamActor(
                 }
                 is Message.LOAD_INITIAL -> {
                     loadInitial()
-                    // make sure the scroll pane is at the top after loading
+                    // make sure the scroll pane is at the top after loading. Needed for Refresh!
                     val cellRect = table.getCellRect(0, 0, true)
                     table.scrollRectToVisible(cellRect)
                 }
                 is Message.LOAD_INITIAL_RANGE -> {
-                    loadInitialRange(message.startTime, message.duration)
-                    // make sure the scroll pane is in the middle of the loaded entries after loading
-                    val index = table.listTableModel.items.firstOrNull { it.timestamp == message.startTime }
-                    index?.let {
-                        table.clearSelection()
-                        table.selection = mutableListOf(it)
-                    }
-                    //scrollPane.verticalScrollBar.value = (scrollPane.verticalScrollBar.minimum+scrollPane.verticalScrollBar.maximum)/2
+                    loadInitialRange(message.previousEvent.timestamp, message.duration)
+                    val item = table.listTableModel.items.firstOrNull { it == message.previousEvent }
+                    val index = table.listTableModel.indexOf(item).takeIf { it > 0 } ?: return
+                    table.setRowSelectionInterval(index, index)
+                    val cellRect = table.getCellRect(index, 0, true)
+                    table.scrollRectToVisible(cellRect)
                 }
                 is Message.LOAD_INITIAL_FILTER -> {
                     loadInitialFilter(message.queryString)
@@ -210,16 +208,23 @@ class LogStreamListActor(
         loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
     }
 
-    override suspend fun loadInitialRange(startTime: Long, duration: Duration) {
-        val request = GetLogEventsRequest
-            .builder()
-            .logGroupName(logGroup)
-            .logStreamName(logStream)
-            .startFromHead(true)
-            .startTime(startTime - duration.toMillis())
-            .endTime(startTime + duration.toMillis())
-            .build()
-        loadAndPopulate { getLogEvents(request, saveForwardToken = true, saveBackwardToken = true) }
+    override suspend fun loadInitialRange(startTime: Long, duration: Duration) = loadAndPopulate {
+        val events = mutableListOf<LogStreamEntry>()
+        client.getLogEventsPaginator {
+            it
+                .logGroupName(logGroup)
+                .logStreamName(logStream)
+                .startFromHead(true)
+                .startTime(startTime - duration.toMillis())
+                .endTime(startTime + duration.toMillis())
+        }.stream().forEach { response ->
+            if (nextBackwardToken == null) {
+                nextBackwardToken = response.nextBackwardToken()
+            }
+            nextForwardToken = response.nextForwardToken()
+            events.addAll(response.events().mapNotNull { it.toLogStreamEntry() })
+        }
+        return@loadAndPopulate events
     }
 
     override suspend fun loadInitialFilter(queryString: String) {
