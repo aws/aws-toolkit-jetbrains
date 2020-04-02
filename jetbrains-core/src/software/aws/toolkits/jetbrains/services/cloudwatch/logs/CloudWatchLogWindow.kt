@@ -71,8 +71,7 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
                 message(
                     "cloudwatch.logs.filtered_log_stream_title", logStream,
                     DateFormatUtil.getDateTimeFormat().format(previousEvent.timestamp - duration.toMillis()),
-                    DateFormatUtil.getDateTimeFormat().format(previousEvent.timestamp + duration.toMillis()),
-                    previousEvent.message
+                    DateFormatUtil.getDateTimeFormat().format(previousEvent.timestamp + duration.toMillis())
                 )
             } else {
                 message("cloudwatch.logs.log_stream_title", logStream)

@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -74,15 +75,18 @@ sealed class LogStreamActor(
                     loadInitial()
                     // make sure the scroll pane is at the top after loading. Needed for Refresh!
                     val rect = table.getCellRect(0, 0, true)
-                    table.scrollRectToVisible(rect)
+                    withContext(edtContext) {
+                        table.scrollRectToVisible(rect)
+                    }
                 }
                 is Message.LOAD_INITIAL_RANGE -> {
                     loadInitialRange(message.previousEvent.timestamp, message.duration)
                     val item = table.listTableModel.items.firstOrNull { it == message.previousEvent }
                     val index = table.listTableModel.indexOf(item).takeIf { it > 0 } ?: return
-                    table.setRowSelectionInterval(index, index)
-                    val rect = table.getCellRect(index, 0, true)
-                    table.scrollRectToVisible(rect)
+                    withContext(edtContext) {
+                        table.setRowSelectionInterval(index, index)
+                        TableUtil.scrollSelectionToVisible(table)
+                    }
                 }
                 is Message.LOAD_INITIAL_FILTER -> {
                     loadInitialFilter(message.queryString)
@@ -98,7 +102,6 @@ sealed class LogStreamActor(
             table.listTableModel.items = items
             table.emptyText.text = emptyText
         } catch (e: ResourceNotFoundException) {
-            table.isVisible = false
             withContext(edtContext) {
                 table.emptyText.text = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
             }
@@ -211,8 +214,7 @@ class LogStreamListActor(
     override suspend fun loadInitialRange(startTime: Long, duration: Duration) = loadAndPopulate {
         val events = mutableListOf<LogStreamEntry>()
         client.getLogEventsPaginator {
-            it
-                .logGroupName(logGroup)
+            it.logGroupName(logGroup)
                 .logStreamName(logStream)
                 .startFromHead(true)
                 .startTime(startTime - duration.toMillis())
