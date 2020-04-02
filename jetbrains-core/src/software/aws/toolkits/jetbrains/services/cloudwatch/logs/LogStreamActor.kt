@@ -73,16 +73,16 @@ sealed class LogStreamActor(
                 is Message.LOAD_INITIAL -> {
                     loadInitial()
                     // make sure the scroll pane is at the top after loading. Needed for Refresh!
-                    val cellRect = table.getCellRect(0, 0, true)
-                    table.scrollRectToVisible(cellRect)
+                    val rect = table.getCellRect(0, 0, true)
+                    table.scrollRectToVisible(rect)
                 }
                 is Message.LOAD_INITIAL_RANGE -> {
                     loadInitialRange(message.previousEvent.timestamp, message.duration)
                     val item = table.listTableModel.items.firstOrNull { it == message.previousEvent }
                     val index = table.listTableModel.indexOf(item).takeIf { it > 0 } ?: return
                     table.setRowSelectionInterval(index, index)
-                    val cellRect = table.getCellRect(index, 0, true)
-                    table.scrollRectToVisible(cellRect)
+                    val rect = table.getCellRect(index, 0, true)
+                    table.scrollRectToVisible(rect)
                 }
                 is Message.LOAD_INITIAL_FILTER -> {
                     loadInitialFilter(message.queryString)

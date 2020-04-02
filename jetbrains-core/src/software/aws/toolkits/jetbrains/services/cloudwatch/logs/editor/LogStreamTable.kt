@@ -14,6 +14,7 @@ import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.table.TableView
+import com.intellij.util.containers.Convertor
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -68,6 +69,9 @@ class LogStreamTable(
             emptyText.text = message("loading_resource.loading")
         }
 
+        // TODO this also searches the date column which we don't want to do. however,
+        // The converter for TableSpeedSearch takes a string which we can't do much with
+        // unless we want to detect it's a timestamp but it might detect messages too
         TableSpeedSearch(logsTable)
         component = ScrollPaneFactory.createScrollPane(logsTable)
 
