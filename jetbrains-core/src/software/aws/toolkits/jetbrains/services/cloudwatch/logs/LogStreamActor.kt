@@ -23,13 +23,11 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
-import javax.swing.JScrollPane
 
 sealed class LogStreamActor(
     private val project: Project,
     protected val client: CloudWatchLogsClient,
     private val table: TableView<LogStreamEntry>,
-    private val scrollPane: JScrollPane,
     protected val logGroup: String,
     protected val logStream: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {
@@ -75,7 +73,8 @@ sealed class LogStreamActor(
                 is Message.LOAD_INITIAL -> {
                     loadInitial()
                     // make sure the scroll pane is at the top after loading
-                    scrollPane.verticalScrollBar.value = scrollPane.verticalScrollBar.minimum
+                    val cellRect = table.getCellRect(0,0,true)
+                    table.scrollRectToVisible(cellRect)
                 }
                 is Message.LOAD_INITIAL_RANGE -> {
                     loadInitialRange(message.startTime, message.duration)
@@ -136,10 +135,9 @@ class LogStreamFilterActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
-    scrollPane: JScrollPane,
     logGroup: String,
     logStream: String
-) : LogStreamActor(project, client, table, scrollPane, logGroup, logStream) {
+) : LogStreamActor(project, client, table, logGroup, logStream) {
     override val emptyText = message("cloudwatch.logs.no_events_query", logStream)
 
     override suspend fun loadInitial() {
@@ -189,11 +187,10 @@ class LogStreamListActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
-    scrollPane: JScrollPane,
     logGroup: String,
     logStream: String
 ) :
-    LogStreamActor(project, client, table, scrollPane, logGroup, logStream) {
+    LogStreamActor(project, client, table, logGroup, logStream) {
     override val emptyText = message("cloudwatch.logs.no_events")
     override suspend fun loadInitial() {
         val request = GetLogEventsRequest

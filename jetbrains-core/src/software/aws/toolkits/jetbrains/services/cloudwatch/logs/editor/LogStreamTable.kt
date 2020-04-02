@@ -73,8 +73,8 @@ class LogStreamTable(
         component = ScrollPaneFactory.createScrollPane(logsTable)
 
         logStreamActor = when (type) {
-            TableType.LIST -> LogStreamListActor(project, client, logsTable, component, logGroup, logStream)
-            TableType.FILTER -> LogStreamFilterActor(project, client, logsTable, component, logGroup, logStream)
+            TableType.LIST -> LogStreamListActor(project, client, logsTable, logGroup, logStream)
+            TableType.FILTER -> LogStreamFilterActor(project, client, logsTable, logGroup, logStream)
         }
         Disposer.register(this@LogStreamTable, logStreamActor)
         channel = logStreamActor.channel
