@@ -95,9 +95,7 @@ sealed class LogStreamActor(
         try {
             tableLoading()
             val items = loadBlock()
-            withContext(edtContext) {
-                table.listTableModel.items = items
-            }
+            table.listTableModel.items = items
             table.emptyText.text = emptyText
         } catch (e: ResourceNotFoundException) {
             withContext(edtContext) {
@@ -126,6 +124,7 @@ sealed class LogStreamActor(
 
     private suspend fun tableDoneLoading() = withContext(edtContext) {
         table.setPaintBusy(false)
+        table.tableViewModel.fireTableDataChanged()
     }
 
     override fun dispose() {
