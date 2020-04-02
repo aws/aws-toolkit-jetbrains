@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.resources.message
 import java.awt.datatransfer.StringSelection
 
+// FIX_WHEN_MIN_IS_201 make anaction text dynamic based on table size
 class CopyFromTableAction(private val table: TableView<LogStreamEntry>) :
     AnAction(message("cloudwatch.logs.copy_action"), null, AllIcons.Actions.Copy),
     DumbAware {
