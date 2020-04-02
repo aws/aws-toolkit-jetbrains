@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.text.DateFormatUtil
+import com.intellij.util.text.SyncDateFormat
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
@@ -14,7 +15,6 @@ import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Component
 import java.text.SimpleDateFormat
-import java.util.TimeZone
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTable
@@ -98,10 +98,12 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
     }
 }
 
-private class ResizingDateColumnRenderer(private val showSeconds: Boolean) : TableCellRenderer {
+private class ResizingDateColumnRenderer(showSeconds: Boolean) : TableCellRenderer {
     private val defaultRenderer = DefaultTableCellRenderer()
-    private val formatWithSeconds = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").apply {
-        timeZone = TimeZone.getTimeZone("UTC")
+    private val formatter: SyncDateFormat = if (showSeconds) {
+        SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+    } else {
+        DateFormatUtil.getDateTimeFormat()
     }
 
     override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
@@ -110,11 +112,7 @@ private class ResizingDateColumnRenderer(private val showSeconds: Boolean) : Tab
         val defaultComponent = defaultRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
         val component = defaultComponent as? JLabel ?: return defaultComponent
         component.text = (value as? String)?.toLongOrNull()?.let {
-            if (showSeconds) {
-                formatWithSeconds.format(it)
-            } else {
-                DateFormatUtil.formatDateTime(it)
-            }
+            formatter.format(it)
         }
         if (component.preferredSize.width > table.columnModel.getColumn(column).preferredWidth) {
             // add 3 pixels of padding. No padding makes it go into ... mode cutting off the end
