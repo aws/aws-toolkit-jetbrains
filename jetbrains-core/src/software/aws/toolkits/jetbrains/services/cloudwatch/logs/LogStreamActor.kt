@@ -98,6 +98,7 @@ sealed class LogStreamActor(
             table.listTableModel.items = items
             table.emptyText.text = emptyText
         } catch (e: ResourceNotFoundException) {
+            table.isVisible = false
             withContext(edtContext) {
                 table.emptyText.text = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
             }
@@ -123,8 +124,8 @@ sealed class LogStreamActor(
     }
 
     private suspend fun tableDoneLoading() = withContext(edtContext) {
-        table.setPaintBusy(false)
         table.tableViewModel.fireTableDataChanged()
+        table.setPaintBusy(false)
     }
 
     override fun dispose() {
