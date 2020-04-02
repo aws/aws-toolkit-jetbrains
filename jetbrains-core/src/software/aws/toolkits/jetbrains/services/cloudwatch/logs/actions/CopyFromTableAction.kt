@@ -15,8 +15,12 @@ import java.awt.datatransfer.StringSelection
 
 // FIX_WHEN_MIN_IS_201 make anaction text dynamic based on table size
 class CopyFromTableAction(private val table: TableView<LogStreamEntry>) :
-    AnAction(message("cloudwatch.logs.copy_action"), null, AllIcons.Actions.Copy),
+    AnAction(message("cloudwatch.logs.copy_action", 1), null, AllIcons.Actions.Copy),
     DumbAware {
+    override fun update(e: AnActionEvent) {
+        e.presentation.text = message("cloudwatch.logs.copy_action", table.selectedRows.size)
+    }
+
     override fun actionPerformed(e: AnActionEvent) {
         val copyPasteManager = CopyPasteManager.getInstance()
         // This emulates the copy that that comes from the jtable which is TSV. We could
