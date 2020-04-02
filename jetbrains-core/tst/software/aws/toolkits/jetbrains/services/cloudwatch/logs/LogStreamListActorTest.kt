@@ -76,7 +76,7 @@ class LogStreamListActorTest {
         val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
-            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
+            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
             tableModel.waitForModelToBeAtLeast(1)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
         }
@@ -111,7 +111,7 @@ class LogStreamListActorTest {
         val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
-            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
+            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.failed_to_load_stream", "def") }
         }
         assertThat(tableModel.items).isEmpty()
@@ -128,7 +128,7 @@ class LogStreamListActorTest {
         val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
-            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
+            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
@@ -155,7 +155,7 @@ class LogStreamListActorTest {
         val table = TableView(tableModel)
         val coroutine = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
-            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(0L, Duration.ofMillis(0)))
+            coroutine.channel.send(LogStreamActor.Message.LOAD_INITIAL_RANGE(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
