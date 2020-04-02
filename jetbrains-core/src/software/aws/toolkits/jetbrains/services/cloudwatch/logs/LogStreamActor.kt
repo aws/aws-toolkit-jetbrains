@@ -112,9 +112,7 @@ sealed class LogStreamActor(
                 notifyError(title = tableErrorMessage, project = project)
             }
         } finally {
-            withContext(edtContext) {
-                tableDoneLoading()
-            }
+            tableDoneLoading()
         }
     }
 
@@ -123,12 +121,12 @@ sealed class LogStreamActor(
     protected abstract suspend fun loadInitialFilter(queryString: String)
     protected abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<LogStreamEntry>
 
-    private fun tableLoading() {
+    private suspend fun tableLoading() = withContext(edtContext) {
         table.setPaintBusy(true)
         table.emptyText.text = message("loading_resource.loading")
     }
 
-    private fun tableDoneLoading() {
+    private suspend fun tableDoneLoading() = withContext(edtContext) {
         table.setPaintBusy(false)
     }
 
