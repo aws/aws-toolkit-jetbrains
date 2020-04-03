@@ -41,6 +41,7 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
+import kotlin.streams.toList
 
 class CloudWatchLogGroup(
     private val project: Project,
@@ -121,9 +122,9 @@ class CloudWatchLogGroup(
         }
         populateModel()
         withContext(edtContext) {
+            groupTable.tableViewModel.fireTableDataChanged()
             groupTable.emptyText.text = message("cloudwatch.logs.no_log_streams")
             groupTable.setPaintBusy(false)
-            groupTable.tableViewModel.fireTableDataChanged()
         }
     }
 
@@ -154,9 +155,7 @@ class CloudWatchLogGroup(
 
     private fun populateModel() = try {
         val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-        streams.filterNotNull().firstOrNull()?.logStreams()?.let {
-            tableModel.items = it
-        }
+        tableModel.items = streams.asSequence().map { it.logStreams() }.toList().flatten()
     } catch (e: Exception) {
         val errorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
         LOG.error(e) { errorMessage }
