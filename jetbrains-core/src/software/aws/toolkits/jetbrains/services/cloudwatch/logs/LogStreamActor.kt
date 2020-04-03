@@ -83,7 +83,6 @@ sealed class LogStreamActor(
                         val newRow = items.size + 1
                         val rect = table.getCellRect(newRow, 0, true)
                         withContext(edtContext) {
-                            table.listTableModel.items = items + table.listTableModel.items
                             table.scrollRectToVisible(rect)
                             // Re-add the selection
                             newSelection.forEach {
