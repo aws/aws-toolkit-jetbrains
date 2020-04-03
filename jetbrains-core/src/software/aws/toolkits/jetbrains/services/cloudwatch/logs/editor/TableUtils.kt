@@ -118,7 +118,9 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
             table.setRowHeight(row, component.preferredSize.height)
         }
 
-        component.speedSearchHighlighter(table, isSelected)
+        if (!wrap) {
+            component.speedSearchHighlighter(table, isSelected)
+        }
 
         return component
     }
