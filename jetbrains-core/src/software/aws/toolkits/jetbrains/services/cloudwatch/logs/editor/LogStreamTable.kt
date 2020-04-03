@@ -23,7 +23,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditorAction
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.CopyFromTableAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundActionGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
@@ -61,13 +61,16 @@ class LogStreamTable(
             SortOrder.UNSORTED
         )
         logsTable = TableView(model).apply {
-            setPaintBusy(true)
             autoscrolls = true
-            emptyText.text = message("loading_resource.loading")
             tableHeader.reorderingAllowed = false
+            autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+            setPaintBusy(true)
+            emptyText.text = message("loading_resource.loading")
         }
-        logsTable.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
+        // TODO this also searches the date column which we don't want to do. however,
+        // The converter for TableSpeedSearch takes a string which we can't do much with
+        // unless we want to detect it's a timestamp but it might detect messages too
         TableSpeedSearch(logsTable)
         component = ScrollPaneFactory.createScrollPane(logsTable)
 
@@ -96,10 +99,11 @@ class LogStreamTable(
     }
 
     private fun addActionsToTable() {
-        val actionGroup = DefaultActionGroup()
-        actionGroup.add(OpenCurrentInEditorAction(project, logStream) { logsTable.listTableModel.items })
-        actionGroup.add(Separator())
-        actionGroup.add(ShowLogsAroundActionGroup(project, logGroup, logStream, logsTable))
+        val actionGroup = DefaultActionGroup().apply {
+            add(CopyFromTableAction(logsTable))
+            add(Separator())
+            add(ShowLogsAroundActionGroup(project, logGroup, logStream, logsTable))
+        }
         PopupHandler.installPopupHandler(
             logsTable,
             actionGroup,
