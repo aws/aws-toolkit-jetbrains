@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 
+import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.speedSearch.SpeedSearchUtil
 import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.text.SyncDateFormat
 import com.intellij.util.ui.ColumnInfo
@@ -15,6 +17,7 @@ import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Component
 import java.text.SimpleDateFormat
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTable
@@ -27,6 +30,20 @@ class LogStreamsStreamColumn : ColumnInfo<LogStream, String>(message("cloudwatch
     override fun valueOf(item: LogStream?): String? = item?.logStreamName()
 
     override fun isCellEditable(item: LogStream?): Boolean = false
+}
+
+class LogStreamsStreamColumnRenderer(private val speedSearchTarget: JComponent) : TableCellRenderer {
+    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+        val component = SimpleColoredComponent()
+        component.append((value as? String)?.trim() ?: "")
+        if (table == null) {
+            return component
+        }
+        component.setHighlighting(table, isSelected)
+        SpeedSearchUtil.applySpeedSearchHighlighting(speedSearchTarget, component, true, isSelected)
+
+        return component
+    }
 }
 
 class LogStreamsDateColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.last_event_time")) {
@@ -74,21 +91,18 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
     // JBTextArea has a different font from JBLabel (the default in a table) so harvest the font off of it
     private val font = JBLabel().font
 
-    override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = JBTextArea()
-
-        if (isSelected) {
-            component.foreground = table.selectionForeground
-            component.background = table.selectionBackground
-        } else {
-            component.foreground = table.foreground
-            component.background = table.background
+        // table is nullable
+        if (table == null) {
+            return component
         }
 
         component.wrapStyleWord = wrap
         component.lineWrap = wrap
         component.text = (value as? String)?.trim()
         component.font = font
+        component.setHighlighting(table, isSelected)
 
         component.setSize(table.columnModel.getColumn(column).width, component.preferredSize.height)
         if (table.getRowHeight(row) != component.preferredSize.height) {
@@ -126,5 +140,15 @@ private class ResizingDateColumnRenderer(showSeconds: Boolean) : TableCellRender
         wrapper.border = component.border
         component.border = null
         return wrapper
+    }
+}
+
+private fun Component.setHighlighting(table: JTable, isSelected: Boolean) {
+    if (isSelected) {
+        foreground = table.selectionForeground
+        background = table.selectionBackground
+    } else {
+        foreground = table.foreground
+        background = table.background
     }
 }
