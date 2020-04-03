@@ -6,24 +6,33 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.speedSearch.SpeedSearchSupply
 import com.intellij.ui.speedSearch.SpeedSearchUtil
 import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.text.SyncDateFormat
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
+import com.intellij.util.ui.UIUtil
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.Shape
 import java.text.SimpleDateFormat
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTable
+import javax.swing.JTextArea
 import javax.swing.SortOrder
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
+import javax.swing.text.Highlighter
+import javax.swing.text.JTextComponent
 
 class LogStreamsStreamColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
     private val renderer = LogStreamsStreamColumnRenderer()
@@ -108,6 +117,9 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
         if (table.getRowHeight(row) != component.preferredSize.height) {
             table.setRowHeight(row, component.preferredSize.height)
         }
+
+        component.speedSearchHighlighter(table, isSelected)
+
         return component
     }
 }
@@ -153,5 +165,22 @@ private fun Component.setSelectionHighlighting(table: JTable, isSelected: Boolea
     } else {
         foreground = table.foreground
         background = table.background
+    }
+}
+
+private class SpeedSearchHighlighter : Highlighter.HighlightPainter {
+    override fun paint(g: Graphics?, p0: Int, p1: Int, bounds: Shape?, component: JTextComponent?) {
+        val mapper = component?.ui ?: return
+        val rect1 = mapper.modelToView(component, p0)
+        val rect2 = mapper.modelToView(component, p1)
+        UIUtil.drawSearchMatch(g as Graphics2D, rect1.x.toFloat(), rect2.x.toFloat(), rect1.height)
+    }
+}
+
+private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JComponent, isSelected: Boolean) {
+    val speedSearch = SpeedSearchSupply.getSupply(speedSearchEnabledComponent) ?: return
+    val fragments = speedSearch.matchingFragments(text)?.iterator() ?: return
+    fragments.forEach {
+        highlighter?.addHighlight(it.startOffset, it.endOffset, SpeedSearchHighlighter())
     }
 }
