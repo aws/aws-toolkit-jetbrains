@@ -68,8 +68,6 @@ class CloudWatchLogGroup(
         }
         groupTable.rowSorter = LogGroupTableSorter(tableModel)
         TableSpeedSearch(groupTable)
-        // since LogStreamsStreamColumnRenderer has a dependency on the table we have to apply it later
-        groupTable.columnModel.getColumn(0).cellRenderer = LogStreamsStreamColumnRenderer(groupTable)
 
         addTableMouseListener(groupTable)
         val scroll = ScrollPaneFactory.createScrollPane(groupTable)

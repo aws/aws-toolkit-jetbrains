@@ -17,7 +17,6 @@ import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Component
 import java.text.SimpleDateFormat
-import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTable
@@ -27,12 +26,14 @@ import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
 
 class LogStreamsStreamColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.log_streams")) {
+    private val renderer = LogStreamsStreamColumnRenderer()
     override fun valueOf(item: LogStream?): String? = item?.logStreamName()
 
     override fun isCellEditable(item: LogStream?): Boolean = false
+    override fun getRenderer(item: LogStream?): TableCellRenderer? = renderer
 }
 
-class LogStreamsStreamColumnRenderer(private val speedSearchTarget: JComponent) : TableCellRenderer {
+class LogStreamsStreamColumnRenderer() : TableCellRenderer {
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = SimpleColoredComponent()
         component.append((value as? String)?.trim() ?: "")
@@ -40,7 +41,7 @@ class LogStreamsStreamColumnRenderer(private val speedSearchTarget: JComponent) 
             return component
         }
         component.setSelectionHighlighting(table, isSelected)
-        SpeedSearchUtil.applySpeedSearchHighlighting(speedSearchTarget, component, true, isSelected)
+        SpeedSearchUtil.applySpeedSearchHighlighting(table, component, true, isSelected)
 
         return component
     }
