@@ -67,7 +67,7 @@ class MockCredentialsManager : CredentialManager() {
         override fun createAwsCredentialProvider(
             providerId: ToolkitCredentialsIdentifier,
             region: AwsRegion,
-            sdkClient: SdkHttpClient
+            sdkHttpClientSupplier: () -> SdkHttpClient
         ): ToolkitCredentialsProvider = ToolkitCredentialsProvider(providerId, (providerId as MockCredentialIdentifier).credentials)
     }
 }
