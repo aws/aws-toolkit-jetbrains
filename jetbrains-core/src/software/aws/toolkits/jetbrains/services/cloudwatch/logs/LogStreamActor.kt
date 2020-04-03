@@ -64,12 +64,34 @@ sealed class LogStreamActor(
         for (message in channel) {
             when (message) {
                 is Message.LOAD_FORWARD -> if (!nextForwardToken.isNullOrEmpty()) {
+                    withContext(edtContext) { table.setPaintBusy(true) }
                     val items = loadMore(nextForwardToken, saveForwardToken = true)
-                    withContext(edtContext) { table.listTableModel.addRows(items) }
+                    withContext(edtContext) {
+                        table.listTableModel.addRows(items)
+                        table.setPaintBusy(false)
+                    }
                 }
                 is Message.LOAD_BACKWARD -> if (!nextBackwardToken.isNullOrEmpty()) {
+                    withContext(edtContext) { table.setPaintBusy(true) }
                     val items = loadMore(nextBackwardToken, saveBackwardToken = true)
-                    withContext(edtContext) { table.listTableModel.items = items + table.listTableModel.items }
+                    if (items.isNotEmpty()) {
+                        val newSelection = table.selectedRows.map { it + items.size }
+                        table.listTableModel.items = items + table.listTableModel.items
+                        withContext(edtContext) {
+                            table.tableViewModel.fireTableDataChanged()
+                        }
+                        val newRow = items.size + 1
+                        val rect = table.getCellRect(newRow, 0, true)
+                        withContext(edtContext) {
+                            table.listTableModel.items = items + table.listTableModel.items
+                            table.scrollRectToVisible(rect)
+                            // Re-add the selection
+                            newSelection.forEach {
+                                table.addRowSelectionInterval(it, it)
+                            }
+                        }
+                    }
+                    withContext(edtContext) { table.setPaintBusy(false) }
                 }
                 is Message.LOAD_INITIAL -> {
                     loadInitial()
