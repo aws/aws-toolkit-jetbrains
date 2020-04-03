@@ -39,7 +39,7 @@ class LogStreamsStreamColumnRenderer(private val speedSearchTarget: JComponent) 
         if (table == null) {
             return component
         }
-        component.setHighlighting(table, isSelected)
+        component.setSelectionHighlighting(table, isSelected)
         SpeedSearchUtil.applySpeedSearchHighlighting(speedSearchTarget, component, true, isSelected)
 
         return component
@@ -93,7 +93,6 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
 
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = JBTextArea()
-        // table is nullable
         if (table == null) {
             return component
         }
@@ -102,7 +101,7 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
         component.lineWrap = wrap
         component.text = (value as? String)?.trim()
         component.font = font
-        component.setHighlighting(table, isSelected)
+        component.setSelectionHighlighting(table, isSelected)
 
         component.setSize(table.columnModel.getColumn(column).width, component.preferredSize.height)
         if (table.getRowHeight(row) != component.preferredSize.height) {
@@ -120,10 +119,13 @@ private class ResizingDateColumnRenderer(showSeconds: Boolean) : TableCellRender
         DateFormatUtil.getDateTimeFormat()
     }
 
-    override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         // This wrapper will let us force the component to be at the top instead of in the middle for linewraps
         val wrapper = JPanel(BorderLayout())
         val defaultComponent = defaultRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+        if (table == null) {
+            return defaultComponent
+        }
         val component = defaultComponent as? JLabel ?: return defaultComponent
         component.text = (value as? String)?.toLongOrNull()?.let {
             formatter.format(it)
@@ -143,7 +145,7 @@ private class ResizingDateColumnRenderer(showSeconds: Boolean) : TableCellRender
     }
 }
 
-private fun Component.setHighlighting(table: JTable, isSelected: Boolean) {
+private fun Component.setSelectionHighlighting(table: JTable, isSelected: Boolean) {
     if (isSelected) {
         foreground = table.selectionForeground
         background = table.selectionBackground
