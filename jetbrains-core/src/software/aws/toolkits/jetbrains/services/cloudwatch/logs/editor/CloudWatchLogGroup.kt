@@ -41,7 +41,6 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
-import kotlin.streams.toList
 
 class CloudWatchLogGroup(
     private val project: Project,
@@ -155,7 +154,7 @@ class CloudWatchLogGroup(
 
     private fun populateModel() = try {
         val streams = client.describeLogStreamsPaginator(DescribeLogStreamsRequest.builder().logGroupName(logGroup).build())
-        tableModel.items = streams.asSequence().map { it.logStreams() }.toList().flatten()
+        tableModel.items = streams.asSequence().flatMap { it.logStreams().asSequence() }.toList()
     } catch (e: Exception) {
         val errorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
         LOG.error(e) { errorMessage }
