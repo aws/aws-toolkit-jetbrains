@@ -11,7 +11,6 @@ import com.intellij.lang.javascript.psi.JSReferenceExpression
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList
 import com.intellij.lang.javascript.psi.resolve.JSClassResolver
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -61,15 +60,9 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
             return null
         }
 
-        val project = element.project
         val virtualFile = element.containingFile.virtualFile ?: return null
 
-        // Ignore files that are considered test sources. Ignore the IDE warning, it uses IDE extension points.
-        if (TestSourcesFilter.isTestSources(virtualFile, project)) {
-            return null
-        }
-
-        val sourceRoot = inferSourceRoot(project, virtualFile) ?: return null
+        val sourceRoot = inferSourceRoot(element.project, virtualFile) ?: return null
         val relativePath = VfsUtilCore.findRelativePath(sourceRoot, virtualFile, '/') ?: return null
         val prefix = FileUtilRt.getNameWithoutExtension(relativePath)
         val handlerName = element.text

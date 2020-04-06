@@ -7,6 +7,7 @@ import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.DumbServiceImpl
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -414,6 +415,23 @@ class JavaLambdaHandlerResolverTest {
                 assertThat(handler).containsExactly("com.example.LambdaHandler::handleRequest")
             }
         }
+    }
+
+    @Test
+    fun handlersInDirectoriesMarkedTestNotFound() {
+        val vfs = projectRule.fixture.addFileToProject(
+            "tst/LambdaHandler.java",
+            """
+            package com.example;
+
+            public class LambdaHandler {
+                public static void handleRequest(Object input) { }
+            }
+            """
+        ).virtualFile
+        PsiTestUtil.addSourceRoot(projectRule.module, vfs.parent, true)
+        val handler = Lambda.findPsiElementsForHandler(projectRule.project, Runtime.JAVA8, "com.example.LambdaHandler::handleRequest")
+        assertThat(handler).isEmpty()
     }
 
     @Test
