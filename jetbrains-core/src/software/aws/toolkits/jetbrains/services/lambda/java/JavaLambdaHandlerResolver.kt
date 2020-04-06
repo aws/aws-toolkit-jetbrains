@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.NavigatablePsiElement
@@ -53,8 +54,16 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         }
     }
 
-    override fun determineHandler(element: PsiElement): String? =
-        DumbService.getInstance(element.project).computeWithAlternativeResolveEnabled<String, Exception> {
+    override fun determineHandler(element: PsiElement): String? {
+        val project = element.project
+        val virtualFile = element.containingFile.virtualFile ?: return null
+
+        // Ignore files that are considered test sources. Ignore the IDE warning, it uses IDE extension points.
+        if (TestSourcesFilter.isTestSources(virtualFile, project)) {
+            return null
+        }
+
+        return DumbService.getInstance(project).computeWithAlternativeResolveEnabled<String, Exception> {
             when (element) {
                 is PsiClass -> findByClass(element)
                 is PsiMethod -> findByMethod(element)
@@ -62,6 +71,7 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
                 else -> null
             }
         }
+    }
 
     override fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> =
         DumbService.getInstance(element.project).computeWithAlternativeResolveEnabled<Set<String>, Exception> {
