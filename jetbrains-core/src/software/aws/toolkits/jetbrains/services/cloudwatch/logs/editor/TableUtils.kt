@@ -12,9 +12,9 @@ import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.text.SyncDateFormat
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
-import com.intellij.util.ui.UIUtil
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
+import software.aws.toolkits.jetbrains.utils.ui.drawSearchMatch
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Component
@@ -118,9 +118,7 @@ private class WrappingLogStreamMessageRenderer : TableCellRenderer {
             table.setRowHeight(row, component.preferredSize.height)
         }
 
-        if (!wrap) {
-            component.speedSearchHighlighter(table, isSelected)
-        }
+        component.speedSearchHighlighter(table)
 
         return component
     }
@@ -172,15 +170,17 @@ private fun Component.setSelectionHighlighting(table: JTable, isSelected: Boolea
 
 private class SpeedSearchHighlighter : Highlighter.HighlightPainter {
     override fun paint(g: Graphics?, p0: Int, p1: Int, bounds: Shape?, component: JTextComponent?) {
+        component ?: return
         val graphics = g as? Graphics2D ?: return
-        val mapper = component?.ui ?: return
-        val rect1 = mapper.modelToView(component, p0)
-        val rect2 = mapper.modelToView(component, p1)
-        UIUtil.drawSearchMatch(graphics, rect1.x.toFloat(), rect2.x.toFloat(), rect1.height)
+        val beginningRect = component.modelToView(p0)
+        val endingRect = component.modelToView(p1)
+        drawSearchMatch(graphics, beginningRect.x.toFloat(), endingRect.x.toFloat(), beginningRect.y.toFloat(), beginningRect.height)
     }
 }
 
-private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JComponent, isSelected: Boolean) {
+private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JComponent) {
+    // matchingFragments does work with wrapped text but not around words if they are wrapped, so it will also need to be extended
+    // in the future
     val speedSearch = SpeedSearchSupply.getSupply(speedSearchEnabledComponent) ?: return
     val fragments = speedSearch.matchingFragments(text)?.iterator() ?: return
     fragments.forEach {

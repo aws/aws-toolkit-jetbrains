@@ -7,13 +7,22 @@ package software.aws.toolkits.jetbrains.utils.ui
 import com.intellij.lang.Language
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.ui.GraphicsConfig
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.ClickListener
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.JBColor
+import com.intellij.ui.JreHiDpiUtil
+import com.intellij.ui.paint.LinePainter2D
+import com.intellij.util.ui.GraphicsUtil
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.jetbrains.utils.formatText
+import java.awt.AlphaComposite
 import java.awt.Color
+import java.awt.Graphics2D
 import java.awt.event.MouseEvent
+import java.awt.geom.RoundRectangle2D
 import javax.swing.AbstractButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
@@ -72,3 +81,51 @@ fun JComponent.validationInfo(message: String) = when {
 }
 
 val BETTER_GREEN = JBColor(Color(104, 197, 116), JBColor.GREEN.darker())
+
+/**
+ * Fork of JetBrain's intellij-community UIUtils.drawSearchMatch allowing us to highlight multiple a multi-line
+ * text field (startY was added and used instead of constants). Also auto-converted to Kotlin by Intellij
+ */
+fun drawSearchMatch(
+    g: Graphics2D,
+    startX: Float,
+    endX: Float,
+    startY: Float,
+    height: Int
+) {
+    val c1: Color =
+        JBColor.namedColor("SearchMatch.startBackground", JBColor.namedColor("SearchMatch.startColor", 0xffeaa2))
+    val c2: Color =
+        JBColor.namedColor("SearchMatch.endBackground", JBColor.namedColor("SearchMatch.endColor", 0xffd042))
+    drawSearchMatch(g, startX, endX, startY, height, c1, c2)
+}
+
+fun drawSearchMatch(g: Graphics2D, startXf: Float, endXf: Float, startY: Float, height: Int, c1: Color?, c2: Color?) {
+    val config = GraphicsConfig(g)
+    var alpha = JBUI.getInt("SearchMatch.transparency", 70) / 100f
+    alpha = if (alpha < 0 || alpha > 1) 0.7f else alpha
+    g.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
+    g.paint = UIUtil.getGradientPaint(startXf, startY + 2f, c1!!, startXf, startY - height - 5.toFloat(), c2!!)
+    // AWS comment, this is available in 2019.2 (5728) ignore the IDE warning
+    if (JreHiDpiUtil.isJreHiDPI(g)) {
+        val c = GraphicsUtil.setupRoundedBorderAntialiasing(g)
+        g.fill(RoundRectangle2D.Float(startXf, startY + 2, endXf - startXf, (height - 4).toFloat(), 5f, 5f))
+        c.restore()
+        config.restore()
+        return
+    }
+    val startX = startXf.toInt()
+    val endX = endXf.toInt()
+    g.fillRect(startX, startY.toInt() + 3, endX - startX, height - 5)
+    val drawRound = endXf - startXf > 4
+    if (drawRound) {
+        LinePainter2D.paint(g, startX - 1.toDouble(), startY + 4.0, startX - 1.toDouble(), startY + height - 4.toDouble())
+        LinePainter2D.paint(g, endX.toDouble(), startY + 4.0, endX.toDouble(), startY + height - 4.toDouble())
+        g.color = Color(100, 100, 100, 50)
+        LinePainter2D.paint(g, startX - 1.toDouble(), startY + 4.0, startX - 1.toDouble(), startY + height - 4.toDouble())
+        LinePainter2D.paint(g, endX.toDouble(), startY + 4.0, endX.toDouble(), startY + height - 4.toDouble())
+        LinePainter2D.paint(g, startX.toDouble(), startY + 3.0, endX - 1.toDouble(), startY + 3.0)
+        LinePainter2D.paint(g, startX.toDouble(), startY + height - 3.toDouble(), endX - 1.toDouble(), startY + height - 3.toDouble())
+    }
+    config.restore()
+}
