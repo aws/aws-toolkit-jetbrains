@@ -54,7 +54,7 @@ class WrapLogsAction(private val project: Project, private val getCurrentTableVi
             listTableModel.fireTableDataChanged()
             // maintain the top cell at the top
             scrollRectToVisible(getCellRect(row, 0, true))
-            // reselect because fireTableDataChanged unselects
+            // reselect because fireTableDataChanged unselects. Selection can be non-contiguous
             selection.forEach {
                 addRowSelectionInterval(it, it)
             }

@@ -79,6 +79,7 @@ sealed class LogStreamActor(
                     withContext(edtContext) { table.setPaintBusy(true) }
                     val items = loadMore(nextBackwardToken, saveBackwardToken = true)
                     if (items.isNotEmpty()) {
+                        // Selected rows can be non contiguous so we ahve to save every row selected
                         val newSelection = table.selectedRows.map { it + items.size }
                         val rect = table.visibleRect
                         table.listTableModel.items = items + table.listTableModel.items
