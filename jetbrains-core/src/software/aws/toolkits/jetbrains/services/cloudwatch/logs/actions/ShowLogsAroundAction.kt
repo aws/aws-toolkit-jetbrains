@@ -46,7 +46,7 @@ private class ShowLogsAround(
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val window = CloudWatchLogWindow.getInstance(project)
         val selectedRow = treeTable.selectedRow
-        if(selectedRow >= treeTable.listTableModel.rowCount || selectedRow < 0) {
+        if (selectedRow >= treeTable.listTableModel.rowCount || selectedRow < 0) {
             return
         }
         val selectedObject = treeTable.listTableModel.getItem(selectedRow) ?: return
