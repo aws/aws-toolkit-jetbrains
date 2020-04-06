@@ -43,6 +43,7 @@ sealed class LogStreamActor(
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
+        table.setPaintBusy(false)
         Disposer.dispose(this)
     }
 
@@ -56,11 +57,7 @@ sealed class LogStreamActor(
 
     init {
         launch(exceptionHandler) {
-            try {
-                handleMessages()
-            } catch (e: Exception) {
-                withContext(edtContext) { table.setPaintBusy(false) }
-            }
+            handleMessages()
         }
     }
 
@@ -79,18 +76,18 @@ sealed class LogStreamActor(
                     withContext(edtContext) { table.setPaintBusy(true) }
                     val items = loadMore(nextBackwardToken, saveBackwardToken = true)
                     if (items.isNotEmpty()) {
-                        // Selected rows can be non contiguous so we ahve to save every row selected
+                        // Selected rows can be non contiguous so we have to save every row selected
                         val newSelection = table.selectedRows.map { it + items.size }
-                        val rect = table.visibleRect
+                        val viewRect = table.visibleRect
                         table.listTableModel.items = items + table.listTableModel.items
                         withContext(edtContext) {
                             table.tableViewModel.fireTableDataChanged()
                         }
                         val offset = table.getCellRect(items.size, 0, true)
                         // Move the view box down y - cell height amount to stay in the same place
-                        rect.y = (rect.y + offset.y - offset.height)
+                        viewRect.y = (viewRect.y + offset.y - offset.height)
                         withContext(edtContext) {
-                            table.scrollRectToVisible(rect)
+                            table.scrollRectToVisible(viewRect)
                             // Re-add the selection
                             newSelection.forEach {
                                 table.addRowSelectionInterval(it, it)
