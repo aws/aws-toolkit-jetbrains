@@ -93,39 +93,37 @@ fun drawSearchMatch(
     startY: Float,
     height: Int
 ) {
-    val c1: Color =
-        JBColor.namedColor("SearchMatch.startBackground", JBColor.namedColor("SearchMatch.startColor", 0xffeaa2))
-    val c2: Color =
-        JBColor.namedColor("SearchMatch.endBackground", JBColor.namedColor("SearchMatch.endColor", 0xffd042))
-    drawSearchMatch(g, startX, endX, startY, height, c1, c2)
+    val color1 = JBColor.namedColor("SearchMatch.startBackground", JBColor.namedColor("SearchMatch.startColor", 0xffeaa2))
+    val color2 = JBColor.namedColor("SearchMatch.endBackground", JBColor.namedColor("SearchMatch.endColor", 0xffd042))
+    drawSearchMatch(g, startX, endX, startY, height, color1, color2)
 }
 
-fun drawSearchMatch(g: Graphics2D, startXf: Float, endXf: Float, startY: Float, height: Int, c1: Color?, c2: Color?) {
-    val config = GraphicsConfig(g)
+fun drawSearchMatch(graphics2D: Graphics2D, startXf: Float, endXf: Float, startY: Float, height: Int, gradientStart: Color, gradientEnd: Color) {
+    val config = GraphicsConfig(graphics2D)
     var alpha = JBUI.getInt("SearchMatch.transparency", 70) / 100f
     alpha = if (alpha < 0 || alpha > 1) 0.7f else alpha
-    g.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
-    g.paint = UIUtil.getGradientPaint(startXf, startY + 2f, c1!!, startXf, startY - height - 5.toFloat(), c2!!)
+    graphics2D.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
+    graphics2D.paint = UIUtil.getGradientPaint(startXf, startY + 2f, gradientStart, startXf, startY - height - 5.toFloat(), gradientEnd)
     // AWS comment, this is available in 2019.2 (5728) ignore the IDE warning
-    if (JreHiDpiUtil.isJreHiDPI(g)) {
-        val c = GraphicsUtil.setupRoundedBorderAntialiasing(g)
-        g.fill(RoundRectangle2D.Float(startXf, startY + 2, endXf - startXf, (height - 4).toFloat(), 5f, 5f))
+    if (JreHiDpiUtil.isJreHiDPI(graphics2D)) {
+        val c = GraphicsUtil.setupRoundedBorderAntialiasing(graphics2D)
+        graphics2D.fill(RoundRectangle2D.Float(startXf, startY + 2, endXf - startXf, (height - 4).toFloat(), 5f, 5f))
         c.restore()
         config.restore()
         return
     }
     val startX = startXf.toInt()
     val endX = endXf.toInt()
-    g.fillRect(startX, startY.toInt() + 3, endX - startX, height - 5)
+    graphics2D.fillRect(startX, startY.toInt() + 3, endX - startX, height - 5)
     val drawRound = endXf - startXf > 4
     if (drawRound) {
-        LinePainter2D.paint(g, startX - 1.toDouble(), startY + 4.0, startX - 1.toDouble(), startY + height - 4.toDouble())
-        LinePainter2D.paint(g, endX.toDouble(), startY + 4.0, endX.toDouble(), startY + height - 4.toDouble())
-        g.color = Color(100, 100, 100, 50)
-        LinePainter2D.paint(g, startX - 1.toDouble(), startY + 4.0, startX - 1.toDouble(), startY + height - 4.toDouble())
-        LinePainter2D.paint(g, endX.toDouble(), startY + 4.0, endX.toDouble(), startY + height - 4.toDouble())
-        LinePainter2D.paint(g, startX.toDouble(), startY + 3.0, endX - 1.toDouble(), startY + 3.0)
-        LinePainter2D.paint(g, startX.toDouble(), startY + height - 3.toDouble(), endX - 1.toDouble(), startY + height - 3.toDouble())
+        LinePainter2D.paint(graphics2D, startX - 1.toDouble(), startY + 4.0, startX - 1.toDouble(), startY + height - 4.toDouble())
+        LinePainter2D.paint(graphics2D, endX.toDouble(), startY + 4.0, endX.toDouble(), startY + height - 4.toDouble())
+        graphics2D.color = Color(100, 100, 100, 50)
+        LinePainter2D.paint(graphics2D, startX - 1.toDouble(), startY + 4.0, startX - 1.toDouble(), startY + height - 4.toDouble())
+        LinePainter2D.paint(graphics2D, endX.toDouble(), startY + 4.0, endX.toDouble(), startY + height - 4.toDouble())
+        LinePainter2D.paint(graphics2D, startX.toDouble(), startY + 3.0, endX - 1.toDouble(), startY + 3.0)
+        LinePainter2D.paint(graphics2D, startX.toDouble(), startY + height - 3.toDouble(), endX - 1.toDouble(), startY + height - 3.toDouble())
     }
     config.restore()
 }
