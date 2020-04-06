@@ -56,7 +56,11 @@ sealed class LogStreamActor(
 
     init {
         launch(exceptionHandler) {
-            handleMessages()
+            try {
+                handleMessages()
+            } catch (e: Exception) {
+                withContext(edtContext) { table.setPaintBusy(false) }
+            }
         }
     }
 
@@ -76,12 +80,13 @@ sealed class LogStreamActor(
                     val items = loadMore(nextBackwardToken, saveBackwardToken = true)
                     if (items.isNotEmpty()) {
                         val newSelection = table.selectedRows.map { it + items.size }
+                        val rect = table.visibleRect
                         table.listTableModel.items = items + table.listTableModel.items
                         withContext(edtContext) {
                             table.tableViewModel.fireTableDataChanged()
                         }
-                        val newRow = items.size + 1
-                        val rect = table.getCellRect(newRow, 0, true)
+                        // Move the view box down y amount
+                        rect.y += table.getCellRect(items.size, 0, true).y
                         withContext(edtContext) {
                             table.scrollRectToVisible(rect)
                             // Re-add the selection
