@@ -109,13 +109,13 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
         val function = element.parent as? PyFunction ?: return null
         val virtualFile = element.containingFile.virtualFile ?: return null
 
-        if (function.parent is PyFile
-            && function.parameterList.parameters.size == 2
+        if (function.parent is PyFile &&
+            function.parameterList.parameters.size == 2 &&
             // Ignore files that are considered test sources. Ignore the IDE warning, it uses IDE extension points.
-            && !TestSourcesFilter.isTestSources(virtualFile, project)
+            !TestSourcesFilter.isTestSources(virtualFile, project) &&
             // ignore pytest tests: they start with test_ by convention:
             // https://pytest.readthedocs.io/en/reorganize-docs/new-docs/user/naming_conventions.html#id1
-            && function.name?.startsWith("test_") != true
+            function.name?.startsWith("test_") != true
         ) {
             return function.qualifiedName
         }
