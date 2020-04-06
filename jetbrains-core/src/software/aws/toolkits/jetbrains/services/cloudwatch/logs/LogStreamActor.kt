@@ -85,8 +85,9 @@ sealed class LogStreamActor(
                         withContext(edtContext) {
                             table.tableViewModel.fireTableDataChanged()
                         }
-                        // Move the view box down y amount
-                        rect.y += table.getCellRect(items.size, 0, true).y
+                        val offset = table.getCellRect(items.size, 0, true)
+                        // Move the view box down y - cell height amount to stay in the same place
+                        rect.y = (rect.y + offset.y - offset.height)
                         withContext(edtContext) {
                             table.scrollRectToVisible(rect)
                             // Re-add the selection
