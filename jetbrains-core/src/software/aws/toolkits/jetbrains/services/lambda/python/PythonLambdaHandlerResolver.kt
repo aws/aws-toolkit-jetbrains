@@ -105,7 +105,11 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
             return null
         }
         val function = element.parent as? PyFunction ?: return null
-        if (function.parent is PyFile && function.parameterList.parameters.size == 2) {
+        if (function.parent is PyFile
+            && function.parameterList.parameters.size == 2
+            // ignore pytest tests: they start with test_ by convention:
+            // https://pytest.readthedocs.io/en/reorganize-docs/new-docs/user/naming_conventions.html#id1
+            && function.name?.startsWith("test_") != true) {
             return function.qualifiedName
         }
         return null
