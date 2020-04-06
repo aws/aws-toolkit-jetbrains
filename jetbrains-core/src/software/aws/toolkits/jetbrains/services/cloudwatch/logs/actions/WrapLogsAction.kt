@@ -49,7 +49,7 @@ class WrapLogsAction(private val project: Project, private val getCurrentTableVi
 
     private fun TableView<LogStreamEntry>.redrawTable() {
         val selection = selectedRows
-        val row = rowAtPoint(visibleRect.location)
+        val row = rowAtPoint(visibleRect.location).takeIf { it >= 0 } ?: 0
         runInEdt {
             listTableModel.fireTableDataChanged()
             // maintain the top cell at the top
