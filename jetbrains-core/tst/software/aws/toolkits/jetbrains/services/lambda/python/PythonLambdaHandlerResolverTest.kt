@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.python
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
+import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.runInEdtAndWait
 import com.jetbrains.python.psi.PyFunction
 import org.assertj.core.api.Assertions.assertThat
@@ -141,6 +142,20 @@ class PythonLambdaHandlerResolverTest {
     }
 
     @Test
+    fun pyTestHandlersIgnored() {
+        createPyTestHandler("hello_world/app.py")
+
+        assertHandler("doesnt_exist", false)
+    }
+
+    @Test
+    fun handlesInDirectoriesMarkedTestNotFound() {
+        val vfs = createHandler("tst/app.py")
+        PsiTestUtil.addSourceRoot(projectRule.module, vfs.parent, true)
+        assertHandler("doesnt_exist", false)
+    }
+
+    @Test
     fun findWorkIfRequirementsFileIsFound() {
         createHandler("src/hello_world/foo_bar/app.py")
         createInitPy("src/hello_world")
@@ -154,6 +169,14 @@ class PythonLambdaHandlerResolverTest {
         path,
         """
         def handle(event, context):
+            return "HelloWorld"
+        """.trimIndent()
+    ).virtualFile
+
+    private fun createPyTestHandler(path: String): VirtualFile = projectRule.fixture.addFileToProject(
+        path,
+        """
+        def test_handle(event, context):
             return "HelloWorld"
         """.trimIndent()
     ).virtualFile
