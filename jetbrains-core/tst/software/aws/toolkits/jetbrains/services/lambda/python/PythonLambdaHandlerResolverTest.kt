@@ -145,14 +145,15 @@ class PythonLambdaHandlerResolverTest {
     fun pyTestHandlersIgnored() {
         createPyTestHandler("hello_world/app.py")
 
-        assertHandler("doesnt_exist", false)
+        assertHandler("hello_world/app.handle", false)
     }
 
     @Test
     fun handlesInDirectoriesMarkedTestNotFound() {
-        val vfs = createHandler("tst/app.py")
+        val vfs = createPyTestHandler("hello_world/app.py")
         PsiTestUtil.addSourceRoot(projectRule.module, vfs.parent, true)
-        assertHandler("doesnt_exist", false)
+
+        assertHandler("hello_world/app.handle", false)
     }
 
     @Test
