@@ -169,11 +169,11 @@ private fun Component.setSelectionHighlighting(table: JTable, isSelected: Boolea
 }
 
 private class SpeedSearchHighlighter : Highlighter.HighlightPainter {
-    override fun paint(g: Graphics?, p0: Int, p1: Int, bounds: Shape?, component: JTextComponent?) {
+    override fun paint(g: Graphics?, startingPoint: Int, endingPoint: Int, bounds: Shape?, component: JTextComponent?) {
         component ?: return
         val graphics = g as? Graphics2D ?: return
-        val beginningRect = component.modelToView(p0)
-        val endingRect = component.modelToView(p1)
+        val beginningRect = component.modelToView(startingPoint)
+        val endingRect = component.modelToView(endingPoint)
         drawSearchMatch(graphics, beginningRect.x.toFloat(), endingRect.x.toFloat(), beginningRect.y.toFloat(), beginningRect.height)
     }
 }
