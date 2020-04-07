@@ -164,14 +164,14 @@ class PythonLambdaHandlerResolverTest {
     fun foundHandlersAreDeterminedValid() {
         createHandler("hello_world/foo_bar/app.py")
 
-        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", true)
+        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", false)
     }
 
     @Test
     fun pyTestHandlersAreDeterminedInvalid() {
         createPyTestHandler("hello_world/foo_bar/app.py")
 
-        assertHandlerDetermineHandlers("hello_world/foo_bar/app.test_handle", false)
+        assertHandlerDetermineHandlers("hello_world/foo_bar/app.test_handle", true)
     }
 
     @Test
@@ -179,21 +179,21 @@ class PythonLambdaHandlerResolverTest {
         val vfs = createHandler("hello_world/foo_bar/app.py")
         PsiTestUtil.addSourceRoot(projectRule.module, vfs.parent, true)
 
-        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", false)
+        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", true)
     }
 
     @Test
     fun foundHandlersOneArugmentIsDeterminedInvalid() {
         createInvalidHandler("hello_world/foo_bar/app.py", 1)
 
-        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", false)
+        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", true)
     }
 
     @Test
     fun foundHandlersThreeArugmentsIsDeterminedInvalid() {
         createInvalidHandler("hello_world/foo_bar/app.py", 3)
 
-        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", false)
+        assertHandlerDetermineHandlers("hello_world/foo_bar/app.handle", true)
     }
 
     private fun createHandler(path: String): VirtualFile = projectRule.fixture.addFileToProject(
@@ -242,17 +242,17 @@ class PythonLambdaHandlerResolverTest {
         }
     }
 
-    private fun assertHandlerDetermineHandlers(handler: String, shouldBeFound: Boolean) {
+    private fun assertHandlerDetermineHandlers(handler: String, shouldBeFilteredOut: Boolean) {
         runInEdtAndWait {
             val elementSet = findHandler(handler)
             assertThat(elementSet).hasSize(1)
             assertThat(elementSet[0]).isInstanceOf(PyFunction::class.java)
             val pyElement = elementSet[0] as PyFunction
             val elements = getHandlerResolver().determineHandlers(pyElement.identifyingElement!!, pyElement.containingFile.virtualFile)
-            if (shouldBeFound) {
-                assertThat(elements).hasSize(1)
-            } else {
+            if (shouldBeFilteredOut) {
                 assertThat(elements).isEmpty()
+            } else {
+                assertThat(elements).hasSize(1)
             }
         }
     }
