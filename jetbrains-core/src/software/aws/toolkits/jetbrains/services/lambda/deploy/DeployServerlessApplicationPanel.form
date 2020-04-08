@@ -125,7 +125,7 @@
           <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="cloudformation.capabilities.toolTipText"/>
         </properties>
       </component>
-      <grid id="28d08" binding="capabilitiesPanel" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+      <grid id="28d08" binding="capabilitiesPanel" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="0">
         <constraints>
           <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>

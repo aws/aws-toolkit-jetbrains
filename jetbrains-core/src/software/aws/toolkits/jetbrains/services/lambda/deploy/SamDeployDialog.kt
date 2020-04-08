@@ -135,17 +135,15 @@ class SamDeployDialog(
 
     private fun runSamDeploy(packagedTemplateFile: Path): CompletionStage<String> {
         advanceStep()
-        return createBaseCommand().thenApply { it ->
-            it
-                .withParameters("deploy")
+        return createBaseCommand().thenApply {
+            it.withParameters("deploy")
                 .withParameters("--template-file")
                 .withParameters(packagedTemplateFile.toString())
                 .withParameters("--stack-name")
                 .withParameters(stackName)
 
             if (capabilities.isNotEmpty()) {
-                it
-                    .withParameters("--capabilities")
+                it.withParameters("--capabilities")
                     .withParameters(capabilities)
             }
 

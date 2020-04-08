@@ -100,7 +100,7 @@ class DeployServerlessApplicationDialog(
         view.useContainer.isSelected = (settings?.samUseContainer(samPath) ?: false)
 
         CloudFormationCreateCapabilities.values().forEach {
-            val checkBox = JCheckBox(it.capability)
+            val checkBox = JCheckBox(it.text)
             checkBox.toolTipText = it.toolTipText
             checkBox.isSelected = it.defaultSet
             view.capabilitiesPanel.add(checkBox)
@@ -151,7 +151,9 @@ class DeployServerlessApplicationDialog(
     val capabilities: List<String>
         get() = view.capabilitiesPanel.components.mapNotNull {
             if ((it as? JCheckBox)?.isSelected == true) {
-                it.text
+                CloudFormationCreateCapabilities
+                    .values()
+                    .firstOrNull { cap -> cap.text == it.text }?.capability
             } else {
                 null
             }
