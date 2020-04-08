@@ -45,14 +45,7 @@
       <vspacer id="54e5f">
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="2" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-            <preferred-size width="-1" height="10"/>
-          </grid>
-        </constraints>
-      </vspacer>
-      <vspacer id="12357">
-        <constraints>
-          <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="2" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-            <preferred-size width="-1" height="10"/>
+            <preferred-size width="-1" height="2"/>
           </grid>
         </constraints>
       </vspacer>
@@ -68,7 +61,7 @@
       <vspacer id="fb0ec">
         <constraints>
           <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="2" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-            <preferred-size width="-1" height="10"/>
+            <preferred-size width="-1" height="2"/>
           </grid>
         </constraints>
       </vspacer>
@@ -125,7 +118,6 @@
           <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <enabled value="false"/>
           <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="serverless.application.deploy.tooltip.updateStack"/>
         </properties>
       </component>
@@ -136,6 +128,24 @@
         <properties>
           <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="serverless.application.deploy.use_container"/>
           <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="lambda.sam.buildInContainer.tooltip"/>
+        </properties>
+      </component>
+      <component id="a1a05" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="capabilities&lt;localize this&gt;"/>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="serverless.application.deploy.tooltip.s3Bucket"/>
+        </properties>
+      </component>
+      <component id="5f6ca" class="javax.swing.JCheckBox">
+        <constraints>
+          <grid row="6" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="&lt;localize this&gt; CAPABILITY_AUTO_EXPAND"/>
+          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="serverless.application.deploy.tooltip.deploymentConfirmation"/>
         </properties>
       </component>
     </children>
