@@ -44,7 +44,8 @@ class SamDeployDialog(
     private val parameters: Map<String, String>,
     private val s3Bucket: String,
     private val autoExecute: Boolean,
-    private val useContainer: Boolean
+    private val useContainer: Boolean,
+    private val capabilities: List<String>
 ) : DialogWrapper(project) {
     private val progressIndicator = ProgressIndicatorBase()
     private val view = SamDeployView(project, progressIndicator)
@@ -141,9 +142,14 @@ class SamDeployDialog(
                 .withParameters(packagedTemplateFile.toString())
                 .withParameters("--stack-name")
                 .withParameters(stackName)
-                .withParameters("--capabilities")
-                .withParameters("CAPABILITY_IAM", "CAPABILITY_NAMED_IAM")
-                .withParameters("--no-execute-changeset")
+
+            if (capabilities.isNotEmpty()) {
+                it
+                    .withParameters("--capabilities")
+                    .withParameters(capabilities)
+            }
+
+            it.withParameters("--no-execute-changeset")
 
             if (parameters.isNotEmpty()) {
                 it.withParameters("--parameter-overrides")

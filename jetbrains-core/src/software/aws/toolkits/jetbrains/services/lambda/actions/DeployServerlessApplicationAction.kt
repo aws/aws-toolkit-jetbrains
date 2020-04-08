@@ -113,7 +113,8 @@ class DeployServerlessApplicationAction : AnAction(
             stackDialog.parameters,
             stackDialog.bucket,
             stackDialog.autoExecute,
-            stackDialog.useContainer
+            stackDialog.useContainer,
+            stackDialog.capabilities
         )
 
         deployDialog.show()
