@@ -29,6 +29,7 @@ class JavaLambdaBuilder : LambdaBuilder() {
             ?: throw IllegalStateException(message("lambda.build.unable_to_locate_project_root", module))
 
     private fun isMaven(module: Module): Boolean {
+        // Replace with PluginManagerCore FIX_WHEN_MIN_IS_193
         if (PluginManager.getPlugin(PluginId.getId("org.jetbrains.idea.maven"))?.isEnabled == true) {
             return MavenProjectsManager.getInstance(module.project).isMavenizedModule(module)
         }

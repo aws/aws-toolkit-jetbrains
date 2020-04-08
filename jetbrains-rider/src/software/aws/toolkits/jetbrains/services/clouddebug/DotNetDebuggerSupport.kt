@@ -11,8 +11,6 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.RunContentDescriptor
-import com.intellij.ide.plugins.PluginManager
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.rd.defineNestedLifetime
@@ -50,6 +48,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.trace
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.Context
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.CloudDebugCliValidate
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.ResourceInstrumenter
@@ -515,11 +514,8 @@ class DotNetDebuggerSupport : DebuggerSupport() {
         }
 
         // Copy tool to detect dbgshim 'AWS.DebuggerTools'
-        val pluginId = PluginManagerCore.getPluginByClassName(this.javaClass.name)
-            ?: throw IllegalStateException("Unable to find plugin id")
-
-        val pluginBasePath = PluginManager.getPlugin(pluginId)?.path
-            ?: throw IllegalStateException("Unable to find plugin with id: '$pluginId'")
+        val pluginBasePath = AwsToolkit.plugin?.path
+            ?: throw IllegalStateException("Unable to find AWS plugin with ID: '${AwsToolkit.PLUGIN_ID}'")
 
         val dotnetPluginDir = File(pluginBasePath, "dotnet")
         if (!dotnetPluginDir.exists()) throw IllegalStateException("Unable to find 'dotnet' folder inside path: '$dotnetPluginDir'")
