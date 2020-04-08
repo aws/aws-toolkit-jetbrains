@@ -14,6 +14,7 @@ import com.intellij.ui.AnActionButton;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.panels.Wrapper;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,10 +45,17 @@ public class DeployServerlessApplicationPanel {
     @NotNull JCheckBox requireReview;
     @NotNull JPanel parametersPanel;
     @NotNull JCheckBox useContainer;
+    @NotNull JPanel capabilitiesPanel;
     private final Project project;
 
     public DeployServerlessApplicationPanel(Project project) {
         this.project = project;
+        Arrays.stream(CloudFormationCreateCapabilities.values()).forEach( it -> {
+            final JCheckBox checkBox = new JCheckBox(it.getCapability());
+            checkBox.setToolTipText(it.getToolTipText());
+            checkBox.setSelected(it.getDefaultSet());
+            capabilitiesPanel.add(checkBox);
+        });
     }
 
     public DeployServerlessApplicationPanel withTemplateParameters(final Collection<Parameter> parameters) {
