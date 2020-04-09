@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
-import javax.swing.JCheckBox
 import javax.swing.JComponent
 
 class DeployServerlessApplicationDialog(
@@ -99,12 +98,8 @@ class DeployServerlessApplicationDialog(
 
         view.useContainer.isSelected = (settings?.samUseContainer(samPath) ?: false)
 
-        CloudFormationCreateCapabilities.values().forEach {
-            val checkBox = JCheckBox(it.text)
-            checkBox.toolTipText = it.toolTipText
-            checkBox.isSelected = it.defaultSet
-            view.capabilitiesPanel.add(checkBox)
-        }
+        val setCapabilities = CreateCapabilities.values().mapNotNull { if (it.defaultSet) it else null }
+        view.capabilitiesCheckBoxes.selected = setCapabilities
     }
 
     override fun createCenterPanel(): JComponent? = view.content
@@ -149,15 +144,7 @@ class DeployServerlessApplicationDialog(
         get() = view.useContainer.isSelected
 
     val capabilities: List<String>
-        get() = view.capabilitiesPanel.components.mapNotNull {
-            if ((it as? JCheckBox)?.isSelected == true) {
-                CloudFormationCreateCapabilities
-                    .values()
-                    .firstOrNull { cap -> cap.text == it.text }?.capability
-            } else {
-                null
-            }
-        }
+        get() = view.capabilitiesCheckBoxes.selected.map { it.capability }
 
     private fun updateStackEnabledStates() {
         view.newStackName.isEnabled = view.createStack.isSelected

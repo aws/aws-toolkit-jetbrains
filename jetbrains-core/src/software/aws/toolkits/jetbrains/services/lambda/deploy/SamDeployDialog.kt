@@ -135,7 +135,7 @@ class SamDeployDialog(
 
     private fun runSamDeploy(packagedTemplateFile: Path): CompletionStage<String> {
         advanceStep()
-        return createBaseCommand().thenApply {
+        return createBaseCommand().thenApply { it ->
             it.withParameters("deploy")
                 .withParameters("--template-file")
                 .withParameters(packagedTemplateFile.toString())

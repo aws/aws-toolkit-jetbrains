@@ -29,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter;
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources;
 import software.aws.toolkits.jetbrains.ui.ResourceSelector;
+import software.aws.toolkits.jetbrains.utils.ui.EnumCheckBoxes;
 
 @SuppressWarnings("NullableProblems")
 public class DeployServerlessApplicationPanel {
@@ -45,10 +46,12 @@ public class DeployServerlessApplicationPanel {
     @NotNull JPanel parametersPanel;
     @NotNull JCheckBox useContainer;
     @NotNull JPanel capabilitiesPanel;
+    final EnumCheckBoxes<CreateCapabilities> capabilitiesCheckBoxes;
     private final Project project;
 
     public DeployServerlessApplicationPanel(Project project) {
         this.project = project;
+        this.capabilitiesCheckBoxes = new EnumCheckBoxes(CreateCapabilities.class);
     }
 
     public DeployServerlessApplicationPanel withTemplateParameters(final Collection<Parameter> parameters) {

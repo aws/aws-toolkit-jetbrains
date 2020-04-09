@@ -13,6 +13,7 @@ import com.intellij.ui.ClickListener
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.JBColor
 import com.intellij.ui.JreHiDpiUtil
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.paint.LinePainter2D
 import com.intellij.util.ui.GraphicsUtil
 import com.intellij.util.ui.JBUI
@@ -81,6 +82,23 @@ fun JComponent.validationInfo(message: String) = when {
 }
 
 val BETTER_GREEN = JBColor(Color(104, 197, 116), JBColor.GREEN.darker())
+
+// Enum check box makes several JBCheckBox's that can then return their state as the input enum
+// Helpful when having a list of things to check that are independent of one another
+class EnumCheckBoxes<E : Enum<E>> constructor(e: Class<E>) {
+    private val enums = e.enumConstants.toList()
+    val checkboxes = enums.map { JBCheckBox() }
+
+    var selected: List<E>
+        get() {
+            return checkboxes.zip(enums).filter { it.first.isSelected }.map { it.second }
+        }
+        set(e) {
+            checkboxes.forEachIndexed { index, buttonModel ->
+                buttonModel.isSelected = enums[index] in e
+            }
+        }
+}
 
 /**
  * Fork of JetBrain's intellij-community UIUtils.drawSearchMatch allowing us to highlight multiple a multi-line

@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.deploy
 
 import software.aws.toolkits.resources.message
 
-enum class CloudFormationCreateCapabilities(val capability: String, val text: String, val toolTipText: String, val defaultSet: Boolean) {
+enum class CreateCapabilities(val capability: String, val text: String, val toolTipText: String, val defaultSet: Boolean) {
     IAM(
         "CAPABILITY_IAM",
         message("cloudformation.capabilities.iam"),
