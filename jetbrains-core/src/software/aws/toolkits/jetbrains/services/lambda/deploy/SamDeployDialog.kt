@@ -45,7 +45,7 @@ class SamDeployDialog(
     private val s3Bucket: String,
     private val autoExecute: Boolean,
     private val useContainer: Boolean,
-    private val capabilities: List<String>
+    private val capabilities: List<CreateCapabilities>
 ) : DialogWrapper(project) {
     private val progressIndicator = ProgressIndicatorBase()
     private val view = SamDeployView(project, progressIndicator)
@@ -144,7 +144,7 @@ class SamDeployDialog(
 
             if (capabilities.isNotEmpty()) {
                 it.withParameters("--capabilities")
-                    .withParameters(capabilities)
+                    .withParameters(capabilities.map { it.capability })
             }
 
             it.withParameters("--no-execute-changeset")

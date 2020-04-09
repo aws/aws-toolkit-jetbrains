@@ -149,7 +149,7 @@ class SamDeployTest {
                     bucketRule.createBucket(stackName),
                     false,
                     true,
-                    CreateCapabilities.values().map { it.capability }
+                    CreateCapabilities.values().toList()
                 ).also {
                     Disposer.register(projectRule.fixture.testRootDisposable, it.disposable)
                 }

@@ -32,9 +32,9 @@ class CapabilitiesEnumCheckBoxes {
     val checkboxes = enums.map {
         val box = JBCheckBox(it.text)
         box.toolTipText = it.toolTipText
-        box.isSelected = it.defaultSet
         box
     }
 
+    fun setSelected(values: List<CreateCapabilities>) = checkboxes.zip(values).forEach { it.first.isSelected = true }
     fun getSelected(): List<CreateCapabilities> = checkboxes.zip(enums).filter { it.first.isSelected }.map { it.second }
 }

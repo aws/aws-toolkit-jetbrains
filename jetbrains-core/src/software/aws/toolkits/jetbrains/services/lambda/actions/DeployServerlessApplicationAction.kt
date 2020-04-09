@@ -186,6 +186,7 @@ class DeployServerlessApplicationAction : AnAction(
                     setSamBucketName(samPath, stackDialog.bucket)
                     setSamAutoExecute(samPath, stackDialog.autoExecute)
                     setSamUseContainer(samPath, stackDialog.useContainer)
+                    setEnabledCapabilities(samPath, stackDialog.capabilities)
                 }
             }
         }
