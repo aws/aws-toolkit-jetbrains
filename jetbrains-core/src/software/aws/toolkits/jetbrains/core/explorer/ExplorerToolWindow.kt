@@ -103,7 +103,8 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
      * @param selectedNode AbstractTreeNode to redraw the tree from
      */
     fun invalidateTree(selectedNode: AbstractTreeNode<*>? = null) {
-        // save the state and reapply it after we invalidate (which is the point where the state is wiped)
+        // Save the state and reapply it after we invalidate (which is the point where the state is wiped).
+        // Items are expanded again if their user object is unchanged (.equals()).
         val state = TreeState.createOn(awsTree)
         if (selectedNode != null) {
             structureTreeModel.invalidate(selectedNode, true)
