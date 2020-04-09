@@ -35,6 +35,7 @@ class CapabilitiesEnumCheckBoxes {
         box
     }
 
-    fun setSelected(values: List<CreateCapabilities>) = checkboxes.zip(values).forEach { it.first.isSelected = true }
-    fun getSelected(): List<CreateCapabilities> = checkboxes.zip(enums).filter { it.first.isSelected }.map { it.second }
+    var selected: List<CreateCapabilities>
+        get() = checkboxes.zip(enums).filter { it.first.isSelected }.map { it.second }
+        set(values) = checkboxes.zip(values).forEach { it.first.isSelected = true }
 }
