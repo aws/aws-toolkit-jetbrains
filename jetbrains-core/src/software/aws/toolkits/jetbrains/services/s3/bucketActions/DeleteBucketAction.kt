@@ -15,7 +15,6 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.S3Telemetry
 
 class DeleteBucketAction : DeleteResourceAction<S3BucketNode>(message("s3.delete.bucket.action"), TaggingResourceType.S3_BUCKET) {
     override fun performDelete(selected: S3BucketNode) {
@@ -33,6 +32,5 @@ class DeleteBucketAction : DeleteResourceAction<S3BucketNode>(message("s3.delete
 
         client.deleteBucketAndContents(selected.displayName())
         selected.nodeProject.refreshAwsTree(S3Resources.LIST_BUCKETS)
-        S3Telemetry.deleteBucket(selected.nodeProject, success = true)
     }
 }
