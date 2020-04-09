@@ -157,6 +157,7 @@ private class ResizingDateColumnRenderer(showSeconds: Boolean) : TableCellRender
         if (isSelected) {
             // this border has an outside and inside border, take only the outside border
             wrapper.border = (component.border as? CompoundBorder)?.outsideBorder
+            // Push the text up to compensate for the new border
             component.border = EmptyBorder(-1, 0, 0, 0)
         } else {
             component.border = null
