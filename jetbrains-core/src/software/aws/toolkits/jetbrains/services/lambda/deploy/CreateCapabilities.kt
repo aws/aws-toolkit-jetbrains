@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.deploy
 
+import com.intellij.ui.components.JBCheckBox
 import software.aws.toolkits.resources.message
 
 enum class CreateCapabilities(val capability: String, val text: String, val toolTipText: String, val defaultSet: Boolean) {
@@ -24,4 +25,16 @@ enum class CreateCapabilities(val capability: String, val text: String, val tool
         message("cloudformation.capabilities.auto_expand.toolTipText"),
         false
     );
+}
+
+class CapabilitiesEnumCheckBoxes {
+    private val enums = CreateCapabilities.values()
+    val checkboxes = enums.map {
+        val box = JBCheckBox(it.text)
+        box.toolTipText = it.toolTipText
+        box.isSelected = it.defaultSet
+        box
+    }
+
+    fun getSelected(): List<CreateCapabilities> = checkboxes.zip(enums).filter { it.first.isSelected }.map { it.second }
 }
