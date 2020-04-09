@@ -45,13 +45,13 @@ public class DeployServerlessApplicationPanel {
     @NotNull JPanel parametersPanel;
     @NotNull JCheckBox useContainer;
     @NotNull JPanel capabilitiesPanel;
-    final CapabilitiesEnumCheckBoxes capabilitiesCheckBoxes;
+    final CapabilitiesEnumCheckBoxes capabilities;
     private final Project project;
 
     public DeployServerlessApplicationPanel(Project project) {
         this.project = project;
-        this.capabilitiesCheckBoxes = new CapabilitiesEnumCheckBoxes();
-        this.capabilitiesCheckBoxes.getCheckboxes().forEach(it -> capabilitiesPanel.add(it));
+        this.capabilities = new CapabilitiesEnumCheckBoxes();
+        this.capabilities.getCheckboxes().forEach(it -> capabilitiesPanel.add(it));
     }
 
     public DeployServerlessApplicationPanel withTemplateParameters(final Collection<Parameter> parameters) {

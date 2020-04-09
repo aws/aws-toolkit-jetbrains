@@ -141,7 +141,7 @@ class DeployServerlessApplicationDialog(
         get() = view.useContainer.isSelected
 
     val capabilities: List<String>
-        get() = view.capabilitiesCheckBoxes.getSelected().map { it.capability }
+        get() = view.capabilities.getSelected().map { it.capability }
 
     private fun updateStackEnabledStates() {
         view.newStackName.isEnabled = view.createStack.isSelected
