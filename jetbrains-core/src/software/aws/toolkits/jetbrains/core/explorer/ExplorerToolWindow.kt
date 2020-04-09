@@ -96,13 +96,14 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     }
 
     /**
-     * Invalidates tree nodes, causing IntelliJ to redraw the tree
+     * Invalidates tree nodes, causing IntelliJ to redraw the tree. Preserves node state.
      * Provide an AbstractTreeNode in order to redraw the tree from that point downwards
-     * Otherwise redraws (and collapses) the entire tree
+     * Otherwise redraws the entire tree
      *
      * @param selectedNode AbstractTreeNode to redraw the tree from
      */
     fun invalidateTree(selectedNode: AbstractTreeNode<*>? = null) {
+        // save the state and reapply it after we invalidate (which is the point where the state is wiped)
         val state = TreeState.createOn(awsTree)
         if (selectedNode != null) {
             structureTreeModel.invalidate(selectedNode, true)
