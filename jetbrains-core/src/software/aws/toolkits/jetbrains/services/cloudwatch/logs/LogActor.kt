@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
+import javax.swing.JScrollPane
 
 sealed class LogActor<T>(
     private val project: Project,
@@ -157,11 +158,15 @@ sealed class LogActor<T>(
 
     private suspend fun tableLoading() = withContext(edtContext) {
         table.setPaintBusy(true)
+        // if it's in a jscrollpane disable scrolling
+        (table.parent as? JScrollPane)?.isEnabled = false
         table.emptyText.text = message("loading_resource.loading")
     }
 
     private suspend fun tableDoneLoading() = withContext(edtContext) {
         table.tableViewModel.fireTableDataChanged()
+        // if it's in a jscrollpane enable scrolling
+        (table.parent as? JScrollPane)?.isEnabled = true
         table.setPaintBusy(false)
     }
 
