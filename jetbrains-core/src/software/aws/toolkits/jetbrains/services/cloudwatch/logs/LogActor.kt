@@ -141,7 +141,10 @@ sealed class LogActor<T>(
         }
     }
 
-    protected abstract suspend fun loadInitial()
+    protected open suspend fun loadInitial() {
+        throw IllegalStateException("Table does not support loadInitial")
+    }
+
     protected open suspend fun loadInitialRange(startTime: Long, duration: Duration) {
         throw IllegalStateException("Table does not support loadInitialRange")
     }
@@ -181,10 +184,6 @@ class LogStreamFilterActor(
     override val emptyText = message("cloudwatch.logs.no_events_query", logStream)
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
     override val notFoundText = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
-
-    override suspend fun loadInitial() {
-        throw IllegalStateException("FilterActor can only loadInitialFilter")
-    }
 
     override suspend fun loadInitialFilter(queryString: String) {
         val request = FilterLogEventsRequest
