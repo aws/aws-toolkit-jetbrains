@@ -297,8 +297,8 @@ class LogGroupActor(
     private val logGroup: String
 ) : LogActor<LogStream>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_log_streams")
-    override val tableErrorMessage = "<LOCALIZE> error"
-    override val notFoundText = "<LOCALIZE> not found"
+    override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
+    override val notFoundText = message("cloudwatch.logs.log_group_does_not_exist", logGroup)
 
     override suspend fun loadInitial() {
         // With this order by we can't filter (API limitation), but it wouldn't make sense to order by name
@@ -307,7 +307,7 @@ class LogGroupActor(
             .descending(true)
             .orderBy(OrderBy.LAST_EVENT_TIME)
             .build()
-        loadAndPopulate { getSearchLogEvents(request) }
+        loadAndPopulate { getLogStreams(request) }
     }
 
     override suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean, saveBackwardToken: Boolean): List<LogStream> {
@@ -323,10 +323,10 @@ class LogGroupActor(
             .orderBy(OrderBy.LAST_EVENT_TIME)
             .build()
 
-        return getSearchLogEvents(request)
+        return getLogStreams(request)
     }
 
-    private fun getSearchLogEvents(request: DescribeLogStreamsRequest): List<LogStream> {
+    private fun getLogStreams(request: DescribeLogStreamsRequest): List<LogStream> {
         val response = client.describeLogStreams(request)
         val events = response.logStreams().filterNotNull()
         nextForwardToken = response.nextToken()
