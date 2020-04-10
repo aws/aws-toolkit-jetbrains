@@ -26,11 +26,10 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListAct
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.CopyFromTableAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundActionGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.ui.bottomReached
+import software.aws.toolkits.jetbrains.utils.ui.topReached
 import software.aws.toolkits.resources.message
-import java.awt.event.AdjustmentEvent
-import java.awt.event.AdjustmentListener
 import javax.swing.JComponent
-import javax.swing.JScrollBar
 import javax.swing.JTable
 import javax.swing.SortOrder
 
@@ -69,11 +68,10 @@ class LogStreamTable(
             emptyText.text = message("loading_resource.loading")
         }
 
-        // TODO this also searches the date column which we don't want to do. however,
+        // TODO this also searches the date column which we don't want to do.
         // The converter for TableSpeedSearch takes a string which we can't do much with
         // unless we want to detect it's a timestamp but it might detect messages too
         TableSpeedSearch(logsTable)
-        component = ScrollPaneFactory.createScrollPane(logsTable)
 
         logStreamActor = when (type) {
             TableType.LIST -> LogStreamListActor(project, client, logsTable, logGroup, logStream)
@@ -82,20 +80,19 @@ class LogStreamTable(
         Disposer.register(this@LogStreamTable, logStreamActor)
         channel = logStreamActor.channel
 
-        component.verticalScrollBar.addAdjustmentListener(object : AdjustmentListener {
-            var lastAdjustment = component.verticalScrollBar.minimum
-            override fun adjustmentValueChanged(e: AdjustmentEvent?) {
-                if (e == null || logsTable.model.rowCount == 0 || e.value == lastAdjustment) {
-                    return
-                }
-                lastAdjustment = e.value
-                if (component.verticalScrollBar.isAtBottom()) {
-                    launch { logStreamActor.channel.send(LogActor.Message.LOAD_FORWARD()) }
-                } else if (component.verticalScrollBar.isAtTop()) {
+        component = ScrollPaneFactory.createScrollPane(logsTable).also {
+            it.topReached {
+                if (logsTable.rowCount != 0) {
                     launch { logStreamActor.channel.send(LogActor.Message.LOAD_BACKWARD()) }
                 }
             }
-        })
+            it.bottomReached {
+                if (logsTable.rowCount != 0) {
+                    launch { logStreamActor.channel.send(LogActor.Message.LOAD_FORWARD()) }
+                }
+            }
+        }
+
         addActionsToTable()
     }
 
@@ -112,9 +109,6 @@ class LogStreamTable(
             ActionManager.getInstance()
         )
     }
-
-    private fun JScrollBar.isAtBottom(): Boolean = value == (maximum - visibleAmount)
-    private fun JScrollBar.isAtTop(): Boolean = value == minimum
 
     override fun dispose() {}
 }

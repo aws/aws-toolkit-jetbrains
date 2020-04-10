@@ -33,7 +33,7 @@ class CloudWatchLogGroup(
     private lateinit var locationInformation: LocationBreadcrumbs
 
     val client: CloudWatchLogsClient = project.awsClient()
-    val groupTable: LogGroupTable = LogGroupTable(project, client, logGroup)
+    private val groupTable: LogGroupTable = LogGroupTable(project, client, logGroup)
 
     private fun createUIComponents() {
         tablePanel = SimpleToolWindowPanel(false, true)

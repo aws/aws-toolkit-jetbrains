@@ -334,4 +334,3 @@ class LogGroupActor(
         return events
     }
 }
-

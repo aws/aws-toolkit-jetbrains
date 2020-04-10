@@ -22,18 +22,16 @@ import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogGroupActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogGroupActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ExportActionGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.ui.bottomReached
 import software.aws.toolkits.resources.message
-import java.awt.event.AdjustmentEvent
-import java.awt.event.AdjustmentListener
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import javax.swing.JComponent
-import javax.swing.JScrollBar
 
 class LogGroupTable(
     private val project: Project,
@@ -66,22 +64,13 @@ class LogGroupTable(
         logGroupActor = LogGroupActor(project, client, groupTable, logGroup)
         channel = logGroupActor.channel
 
-        component = ScrollPaneFactory.createScrollPane(groupTable)
-
-        component.verticalScrollBar.addAdjustmentListener(object : AdjustmentListener {
-            var lastAdjustment = component.verticalScrollBar.minimum
-            override fun adjustmentValueChanged(e: AdjustmentEvent?) {
-                if (e == null || groupTable.model.rowCount == 0 || e.value == lastAdjustment) {
-                    return
-                }
-                lastAdjustment = e.value
-                if (component.verticalScrollBar.isAtBottom()) {
+        component = ScrollPaneFactory.createScrollPane(groupTable).also {
+            it.bottomReached {
+                if (groupTable.rowCount != 0) {
                     launch { logGroupActor.channel.send(LogActor.Message.LOAD_FORWARD()) }
-                } else if (component.verticalScrollBar.isAtTop()) {
-                    //
                 }
             }
-        })
+        }
     }
 
     private fun addKeyListener(table: JBTable) {
@@ -127,9 +116,6 @@ class LogGroupTable(
         val row = selectedRow.takeIf { it >= 0 } ?: return null
         return getValueAt(row, 0) as? String
     }
-
-    private fun JScrollBar.isAtBottom(): Boolean = value == (maximum - visibleAmount)
-    private fun JScrollBar.isAtTop(): Boolean = value == minimum
 
     override fun dispose() {}
 }
