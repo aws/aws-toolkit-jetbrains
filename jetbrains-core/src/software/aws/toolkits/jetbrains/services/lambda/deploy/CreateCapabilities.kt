@@ -4,23 +4,24 @@
 package software.aws.toolkits.jetbrains.services.lambda.deploy
 
 import com.intellij.ui.components.JBCheckBox
+import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.aws.toolkits.resources.message
 
-enum class CreateCapabilities(val capability: String, val text: String, val toolTipText: String, val defaultSet: Boolean) {
+enum class CreateCapabilities(val capability: String, val text: String, val toolTipText: String, val defaultEnabled: Boolean) {
     IAM(
-        "CAPABILITY_IAM",
+        Capability.CAPABILITY_IAM.toString(),
         message("cloudformation.capabilities.iam"),
         message("cloudformation.capabilities.iam.toolTipText"),
         true
     ),
     NAMED_IAM(
-        "CAPABILITY_NAMED_IAM",
+        Capability.CAPABILITY_NAMED_IAM.toString(),
         message("cloudformation.capabilities.named_iam"),
         message("cloudformation.capabilities.named_iam.toolTipText"),
         true
     ),
     AUTO_EXPAND(
-        "CAPABILITY_AUTO_EXPAND",
+        Capability.CAPABILITY_AUTO_EXPAND.toString(),
         message("cloudformation.capabilities.auto_expand"),
         message("cloudformation.capabilities.auto_expand.toolTipText"),
         false

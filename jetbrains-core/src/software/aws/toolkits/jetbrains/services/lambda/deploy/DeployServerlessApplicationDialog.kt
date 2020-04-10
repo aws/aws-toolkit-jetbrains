@@ -97,7 +97,7 @@ class DeployServerlessApplicationDialog(
         view.requireReview.isSelected = !(settings?.samAutoExecute(samPath) ?: true)
 
         view.useContainer.isSelected = (settings?.samUseContainer(samPath) ?: false)
-        view.capabilities.selected = settings?.enabledCapabilities(samPath) ?: CreateCapabilities.values().filter { it.defaultSet }
+        view.capabilities.selected = settings?.enabledCapabilities(samPath) ?: CreateCapabilities.values().filter { it.defaultEnabled }
     }
 
     override fun createCenterPanel(): JComponent? = view.content
