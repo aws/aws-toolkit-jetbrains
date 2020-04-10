@@ -19,7 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
@@ -48,9 +48,9 @@ class LogStreamTable(
     }
 
     val component: JComponent
-    val channel: Channel<LogStreamActor.Message>
+    val channel: Channel<LogActor.Message>
     val logsTable: TableView<LogStreamEntry>
-    private val logStreamActor: LogStreamActor
+    private val logStreamActor: LogActor<LogStreamEntry>
 
     init {
         val model = ListTableModel(
@@ -63,6 +63,7 @@ class LogStreamTable(
         logsTable = TableView(model).apply {
             autoscrolls = true
             tableHeader.reorderingAllowed = false
+            tableHeader.resizingAllowed = false
             autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
             setPaintBusy(true)
             emptyText.text = message("loading_resource.loading")
@@ -89,9 +90,9 @@ class LogStreamTable(
                 }
                 lastAdjustment = e.value
                 if (component.verticalScrollBar.isAtBottom()) {
-                    launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_FORWARD()) }
+                    launch { logStreamActor.channel.send(LogActor.Message.LOAD_FORWARD()) }
                 } else if (component.verticalScrollBar.isAtTop()) {
-                    launch { logStreamActor.channel.send(LogStreamActor.Message.LOAD_BACKWARD()) }
+                    launch { logStreamActor.channel.send(LogActor.Message.LOAD_BACKWARD()) }
                 }
             }
         })
