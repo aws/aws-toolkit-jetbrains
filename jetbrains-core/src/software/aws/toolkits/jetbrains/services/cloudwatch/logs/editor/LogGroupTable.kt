@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogGroupActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogGroupSearchActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ExportActionGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.bottomReached
@@ -36,12 +37,18 @@ import javax.swing.JComponent
 class LogGroupTable(
     private val project: Project,
     private val client: CloudWatchLogsClient,
-    private val logGroup: String
+    private val logGroup: String,
+    type: TableType
 ) : CoroutineScope by ApplicationThreadPoolScope("LogGroupTable"), Disposable {
     val component: JComponent
     val channel: Channel<LogActor.Message>
     private val groupTable: TableView<LogStream>
     private val logGroupActor: LogActor<LogStream>
+
+    enum class TableType {
+        LIST,
+        FILTER
+    }
 
     init {
         val tableModel = ListTableModel(
@@ -61,7 +68,11 @@ class LogGroupTable(
         addKeyListener(groupTable)
         addActions(groupTable)
 
-        logGroupActor = LogGroupActor(project, client, groupTable, logGroup)
+        logGroupActor = when (type) {
+            TableType.LIST -> LogGroupActor(project, client, groupTable, logGroup)
+            TableType.FILTER -> LogGroupSearchActor(project, client, groupTable, logGroup)
+        }
+
         channel = logGroupActor.channel
 
         component = ScrollPaneFactory.createScrollPane(groupTable).also {
