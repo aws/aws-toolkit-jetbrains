@@ -1,0 +1,28 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+repositories {
+    maven { url = "https://jetbrains.bintray.com/intellij-third-party-dependencies" }
+}
+
+apply plugin: 'jacoco'
+
+sourceSets {
+    uiTest {
+        kotlin.srcDir 'ui'
+    }
+}
+
+dependencies {
+    testImplementation gradleApi()
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "com.intellij.remoterobot:remote-robot:$remoteRobotVersion"
+    testImplementation "com.intellij.remoterobot:remote-fixtures:$uiTestFixturesVersion"
+}
+
+// don't run UI tests as part of check by default
+test.enabled = false
+
+task uiTest(type: Test) {
+    systemProperty "robot-server.port", remoteRobotPort
+}
