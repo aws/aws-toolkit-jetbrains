@@ -18,9 +18,12 @@ buildscript {
 
 apply from: 'intellijJVersions.gradle'
 
+def ideVersion = shortenVersion(resolveIdeProfileName())
+
 group 'software.aws.toolkits'
 // please check changelog generation logic if this format is changed
-version toolkitVersion + "-" + shortenVersion(resolveIdeProfileName())
+version "$toolkitVersion-$ideVersion".toString()
+
 
 repositories {
     maven { url "https://www.jetbrains.com/intellij-repository/snapshots/" }
@@ -94,19 +97,21 @@ subprojects {
     }
 
     sourceSets {
-        main.java.srcDir 'src'
-        main.resources.srcDir 'resources'
-        test.java.srcDir 'tst'
-        test.resources.srcDir 'tst-resources'
+        main.java.srcDirs = ['src', "src-$ideVersion"]
+        main.resources.srcDirs = ['resources', "resources-$ideVersion"]
+        test.java.srcDirs = ['tst', "tst-$ideVersion"]
+        test.resources.srcDirs = ['tst-resources', "tst-resources-$ideVersion"]
         integrationTest {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            java.srcDir 'it'
-            resources.srcDir 'it-resources'
+            java.srcDirs = ['it', "it-$ideVersion"]
+            resources.srcDirs = ['it-resources', "it-resources-$ideVersion"]
         }
     }
 
     configurations {
+        testArtifacts
+
         integrationTestImplementation.extendsFrom testImplementation
         integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     }
@@ -131,7 +136,7 @@ subprojects {
         jacoco {
             // don't instrument sdk, icons, ktlint, etc.
             includes = ["software.aws.toolkits.*"]
-            excludes = ["software.aws.toolkits.ktlint"]
+            excludes = ["software.aws.toolkits.ktlint.*"]
         }
 
         reports {
@@ -142,11 +147,18 @@ subprojects {
 
     idea {
         module {
+            sourceDirs += file("src-$ideVersion")
+            resourceDirs += file("resources-$ideVersion")
+            testSourceDirs += file("tst-$ideVersion")
+            testResourceDirs += file("tst-resources-$ideVersion")
+
             sourceDirs -= file("it")
             testSourceDirs += file("it")
+            testSourceDirs += file("it-$ideVersion")
 
             resourceDirs -= file("it-resources")
             testResourceDirs += file("it-resources")
+            testResourceDirs += file("it-resources-$ideVersion")
         }
     }
 
@@ -157,7 +169,13 @@ subprojects {
         classpath = sourceSets.integrationTest.runtimeClasspath
 
         jacoco {
-            excludes = ["com.sun.*"] // See https://groups.google.com/forum/#!topic/jacoco/H0gDwxNuhK4
+            // don't instrument sdk, icons, ktlint, etc.
+            includes = ["software.aws.toolkits.*"]
+            excludes = ["software.aws.toolkits.ktlint.*"]
+        }
+
+        project.plugins.withId("org.jetbrains.intellij") {
+            systemProperty("log.dir", "${org.jetbrains.intellij.Utils.systemDir(project.intellij.sandboxDirectory, true)}/logs")
         }
 
         mustRunAfter tasks.test
@@ -169,6 +187,16 @@ subprojects {
 
     // Force us to compile the integration tests even during check even though we don't run them
     check.dependsOn(integrationTestClasses)
+
+    task testJar (type: Jar) {
+        baseName = "${project.name}-test"
+        from sourceSets.test.output
+        from sourceSets.integrationTest.output
+    }
+
+    artifacts {
+        testArtifacts testJar
+    }
 
     // Remove the tasks added in by gradle-intellij-plugin so that we don't publish/verify multiple times
     project.afterEvaluate {
@@ -265,17 +293,19 @@ check.dependsOn coverageReport
 // community edition
 if (gradle.startParameter.taskNames.contains("runIde")) {
     // Only disable this if running from root project
-    if (project.projectDir == project.rootProject.rootDir
+    if (gradle.startParameter.projectDir == project.rootProject.rootDir
         || System.properties.containsKey("idea.gui.tests.gradle.runner")) {
         println("Top level runIde selected, excluding sub-projects' runIde")
         gradle.taskGraph.whenReady { graph ->
             graph.allTasks.forEach {
                 if (gradle.startParameter.systemPropertiesArgs.getOrDefault("exec.args", "").contains("guitest")) {
-                    if (it.name == "runIde" && it.project != project(':jetbrains-core-gui')) {
+                    if (it.name == "runIde" &&
+                        it.project != project(':jetbrains-core-gui')) {
                         it.enabled = false
                     }
                 } else {
-                    if (it.name == "runIde" && it.project != project(':jetbrains-core')) {
+                    if (it.name == "runIde" &&
+                        it.project != project(':jetbrains-core')) {
                         it.enabled = false
                     }
                 }

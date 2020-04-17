@@ -11,7 +11,7 @@ buildscript {
         maven { setUrl("https://jitpack.io") }
     }
     dependencies {
-        classpath("software.aws.toolkits:telemetry-generator:0.0.17")
+        classpath("software.aws.toolkits:telemetry-generator:0.0.19")
     }
 }
 
@@ -44,13 +44,7 @@ sourceSets {
 }
 
 test {
-    systemProperty("log.dir", "${org.jetbrains.intellij.Utils.systemDir(intellij.sandboxDirectory, true)}/logs")
-}
-
-task testJar (type: Jar) {
-    archiveBaseName = "${project.name}-test"
-    from sourceSets.test.output
-    from sourceSets.integrationTest.output
+    systemProperty("log.dir", "${org.jetbrains.intellij.Utils.systemDir(project.intellij.sandboxDirectory, true)}/logs")
 }
 
 task pluginChangeLog(type: GenerateChangeLog) {
@@ -68,10 +62,6 @@ jar {
     }
 }
 
-artifacts {
-    testArtifacts testJar
-}
-
 dependencies {
     api(project(":core"))
     api("software.amazon.awssdk:s3:$awsSdkVersion")
@@ -86,6 +76,8 @@ dependencies {
 
     testImplementation project(path: ":core", configuration: 'testArtifacts')
     testImplementation('com.github.tomakehurst:wiremock-jre8:2.26.0')
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:$coroutinesVersion")
 
     integrationTestImplementation('org.eclipse.jetty:jetty-servlet:9.4.15.v20190215')
     integrationTestImplementation('org.eclipse.jetty:jetty-proxy:9.4.15.v20190215')

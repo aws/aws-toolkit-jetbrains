@@ -10,6 +10,7 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import javax.swing.Icon
 
+// TODO: The treeTable should be removed, and migrated to DataKey to decouple this from the treeTable
 abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: String, icon: Icon? = null) : DumbAwareAction(title, null, icon) {
     protected abstract fun performAction(nodes: List<S3TreeNode>)
 
@@ -22,7 +23,7 @@ abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: Strin
 
     override fun actionPerformed(e: AnActionEvent) = performAction(selected().filter { it !is S3TreeContinuationNode })
 
-    private fun selected() = treeTable.getSelectedNodes().takeIf { it.isNotEmpty() } ?: listOf(treeTable.getRootNode())
+    private fun selected(): List<S3TreeNode> = treeTable.getSelectedNodes().takeIf { it.isNotEmpty() } ?: listOf(treeTable.getRootNode())
 }
 
 abstract class SingleS3ObjectAction(treeTable: S3TreeTable, title: String, icon: Icon? = null) : S3ObjectAction(treeTable, title, icon) {

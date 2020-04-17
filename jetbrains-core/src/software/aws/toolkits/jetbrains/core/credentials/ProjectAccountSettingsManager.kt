@@ -164,6 +164,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             } finally {
                 incModificationCount()
                 AwsTelemetry.validateCredentials(project, success = isValidConnectionSettings())
+                validationJob = null
             }
         }
     }

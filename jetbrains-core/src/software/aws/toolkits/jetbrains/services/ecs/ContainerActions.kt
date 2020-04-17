@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.ecs
@@ -8,15 +8,20 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
+import icons.AwsIcons
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
 class ContainerActions(
@@ -58,7 +63,7 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
 class ContainerLogsAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.service.logs.action_label")) {
+) : AnAction(message("ecs.service.container_logs.action_label"), null, AwsIcons.Resources.CloudWatch.LOGS) {
 
     private val logConfiguration: Pair<String, String>? by lazy {
         container.containerDefinition.logConfiguration().takeIf { it.logDriver() == LogDriver.AWSLOGS }?.options()?.let {
@@ -79,9 +84,27 @@ class ContainerLogsAction(
 
         val window = CloudWatchLogWindow.getInstance(project)
 
-        AwsResourceCache.getInstance(project).getResource(EcsResources.listTaskIds(container.service.clusterArn(), container.service.serviceArn())).thenAccept {
-            it.firstOrNull()?.let { taskId -> window.showLog(logGroup, "$logPrefix/${container.containerDefinition.name()}/$taskId") }
-                ?: notifyError(message("ecs.service.logs.no_running_tasks"))
+        AwsResourceCache.getInstance(project)
+            .getResource(EcsResources.listTaskIds(container.service.clusterArn(), container.service.serviceArn()))
+            .thenAccept { tasks ->
+                when {
+                    tasks.isEmpty() -> notifyInfo(message("ecs.service.logs.no_running_tasks"))
+                    tasks.size == 1 && showSingleStream(
+                        window,
+                        logGroup,
+                        "$logPrefix/${container.containerDefinition.name()}/${tasks.first()}"
+                    ) -> return@thenAccept
+                }
+                window.showLogGroup(logGroup)
+            }
+    }
+
+    private fun showSingleStream(window: CloudWatchLogWindow, logGroup: String, logStream: String): Boolean {
+        if (!project.awsClient<CloudWatchLogsClient>().checkIfLogStreamExists(logGroup, logStream)) {
+            notifyInfo(message("ecs.service.logs.no_log_stream"))
+            return false
         }
+        window.showLogStream(logGroup, logStream)
+        return true
     }
 }

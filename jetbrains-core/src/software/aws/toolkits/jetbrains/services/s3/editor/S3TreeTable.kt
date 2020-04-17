@@ -50,7 +50,8 @@ class S3TreeTable(
             val node = rowAtPoint(dropEvent.location).takeIf { it >= 0 }?.let { getNodeForRow(it) } ?: getRootNode()
             val data = try {
                 dropEvent.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE)
-                dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<File>
+                val list = dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+                list.filterIsInstance<File>()
             } catch (e: UnsupportedFlavorException) {
                 // When the drag and drop data is not what we expect (like when it is text) this is thrown and can be safey ignored
                 LOG.info(e) { "Unsupported flavor attempted to be dragged and dropped" }
@@ -121,7 +122,7 @@ class S3TreeTable(
                     FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@runInEdt
                     // set virtual file to read only
                     FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
-                        notifyError(message("s3.open.viewer.failed"))
+                        notifyError(project = project, content = message("s3.open.viewer.failed"))
                     }
                 }
             }

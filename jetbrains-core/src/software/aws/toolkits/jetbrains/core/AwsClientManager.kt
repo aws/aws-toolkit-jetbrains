@@ -12,6 +12,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import software.amazon.awssdk.core.SdkClient
+import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
@@ -25,8 +26,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
-open class AwsClientManager(project: Project, sdkClient: AwsSdkClient) :
-    ToolkitClientManager(sdkClient.sdkHttpClient), Disposable {
+open class AwsClientManager(project: Project) : ToolkitClientManager(), Disposable {
 
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
     private val regionProvider = AwsRegionProvider.getInstance()
@@ -45,6 +45,9 @@ open class AwsClientManager(project: Project, sdkClient: AwsSdkClient) :
     override fun dispose() {
         shutdown()
     }
+
+    override val sdkHttpClient: SdkHttpClient
+        get() = AwsSdkClient.getInstance().sdkHttpClient
 
     override val userAgent = AwsClientManager.userAgent
 
