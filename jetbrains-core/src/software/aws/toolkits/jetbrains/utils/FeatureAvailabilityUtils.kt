@@ -11,7 +11,7 @@ private const val CLASSIC_PARTITION = "aws"
 private fun availableInClassic(activeRegion: AwsRegion): Boolean = activeRegion.partitionId == CLASSIC_PARTITION
 
 // technically available in govcloud but the api/console is broken
-fun lambdaTracingConfigIsAvailable(activeRegion: AwsRegion) = availableInClassic(activeRegion)
-    && AwsRegionProvider.getInstance().isServiceSupported(activeRegion, "xray")
+fun lambdaTracingConfigIsAvailable(activeRegion: AwsRegion) = availableInClassic(activeRegion) &&
+    AwsRegionProvider.getInstance().isServiceSupported(activeRegion, "xray")
 
 fun cloudDebugIsAvailable(activeRegion: AwsRegion) = availableInClassic(activeRegion)

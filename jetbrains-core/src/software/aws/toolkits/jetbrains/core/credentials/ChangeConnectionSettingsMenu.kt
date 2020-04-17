@@ -22,13 +22,11 @@ import software.aws.toolkits.resources.message
 class ChangeAccountSettingsActionGroup(private val project: Project, private val showRegions: Boolean) : ComputableActionGroup(), DumbAware {
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
     private val partitionSelector = ChangePartitionActionGroup()
-    private val regionSelector = ChangeRegionActionGroup(accountSettingsManager)
+    private val regionSelector = ChangeRegionActionGroup(partitionSelector, accountSettingsManager)
     private val credentialSelector = ChangeCredentialsActionGroup(true)
 
     override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
         val actions = mutableListOf<AnAction>()
-
-        actions.add(partitionSelector)
 
         if (showRegions) {
             val usedRegions = accountSettingsManager.recentlyUsedRegions()
@@ -66,9 +64,8 @@ class ChangeAccountSettingsActionGroup(private val project: Project, private val
     }
 }
 
-private class ChangePartitionActionGroup : DefaultActionGroup() {
+private class ChangePartitionActionGroup : DefaultActionGroup(message("settings.partitions"), true) {
     init {
-        addSeparator(message("settings.partitions"))
         addAll(AwsRegionProvider.getInstance().partitions().map {
             object : ToggleAction(it.value.description) {
                 private val partition = it.value
@@ -102,19 +99,25 @@ private class ChangeCredentialsActionGroup(popup: Boolean) : ComputableActionGro
     }
 }
 
-private class ChangeRegionActionGroup(private val accountSettingsManager: ProjectAccountSettingsManager) :
+private class ChangeRegionActionGroup(
+    private val partitionSelector: ChangePartitionActionGroup,
+    private val accountSettingsManager: ProjectAccountSettingsManager
+) :
     ComputableActionGroup(message("settings.regions.region_sub_menu"), true), DumbAware {
     private val regionProvider = AwsRegionProvider.getInstance()
     override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
         val partition = accountSettingsManager.selectedPartition
-        val regionMap = partition?.let {
+        val (regionMap, partitionGroup) = partition?.let {
             // if a partition has been selected, only show regions in that partition
-            regionProvider.regions(partition.id)
-            // otherwise show everything
-        } ?: regionProvider.allRegions()
+            // and the partition selector
+            regionProvider.regions(partition.id) to partitionSelector
+            // otherwise show everything with no partition selector
+        } ?: regionProvider.allRegions() to null
         val regions = regionMap.values.groupBy { it.category }
+        val partitionActions = partitionGroup?.let { listOf(it) } ?: emptyList<AnAction>()
 
-        val actions = regions.flatMap { (category, subRegions) ->
+        val actions = partitionActions +
+        regions.flatMap { (category, subRegions) ->
             listOf(Separator.create(category)) +
             subRegions.map {
                 ChangeRegionAction(it)
