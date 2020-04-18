@@ -101,6 +101,7 @@ To test your changes locally, you can run the project from IntelliJ or gradle.
   ```
   - Requires valid AWS credentials (take care: it will respect any credentials currently defined in your environmental variables, and fallback to your default AWS profile otherwise).
   - Requires `sam` CLI to be on your `$PATH`.
+  - Requires `cfn-lint` CLI to be on your `$PATH`.
 - To run **GUI tests**:
   ```
   ./gradlew guiTest

@@ -224,6 +224,14 @@
 
         <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.s3.S3ViewerEditorProvider"/>
+
+        <!-- CloudFormation template linting -->
+        <externalAnnotator language="JSON"
+                           id="annotatorJSON"
+                           implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.annotations.ErrorAnnotator"/>
+        <externalAnnotator language="yaml"
+                           id="annotatorYAML"
+                           implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.annotations.ErrorAnnotator"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">
