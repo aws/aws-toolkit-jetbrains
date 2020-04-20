@@ -8,21 +8,21 @@ import com.intellij.openapi.util.SystemInfo
 class LinterExecutable {
 
     companion object {
-        private val PLUGIN_NAME = "cfn-lint"
+        private val EXECUTABLE_NAME = "cfn-lint"
 
         @Throws(Exception::class)
         fun getExecutablePath(): String {
             var executable: String? = null
             if (SystemInfo.isWindows) {
-                executable = PathEnvironmentVariableUtil.findExecutableInWindowsPath(PLUGIN_NAME)
+                executable = PathEnvironmentVariableUtil.findExecutableInWindowsPath(EXECUTABLE_NAME)
             } else {
-                val executableFile = PathEnvironmentVariableUtil.findInPath(PLUGIN_NAME)
+                val executableFile = PathEnvironmentVariableUtil.findInPath(EXECUTABLE_NAME)
                 if (executableFile != null) {
                     executable = executableFile.absolutePath
                 }
             }
             if (executable == null || executable.isEmpty()) {
-                throw Exception("Couldn't find the cfn-lint plugin in the PATH. Please install the cfn-lint plugin.")
+                throw Exception("Couldn't find cfn-lint in the PATH. Please install cfn-lint")
             }
             return executable
         }
