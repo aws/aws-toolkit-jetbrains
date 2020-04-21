@@ -231,6 +231,7 @@ class LogStreamListActor(
     override val emptyText = message("cloudwatch.logs.no_events")
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
     override val notFoundText = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
+    
     override suspend fun loadInitial() {
         val request = GetLogEventsRequest
             .builder()
