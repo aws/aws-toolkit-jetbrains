@@ -4,44 +4,47 @@
 package software.aws.toolkits.jetbrains.services.cloudformation.annotations
 
 import com.intellij.lang.annotation.HighlightSeverity
-import junit.framework.Assert.assertEquals
+import kotlin.test.assertEquals
 import org.junit.Test
 
 class ErrorAnnotationTest {
 
     @Test
     fun parsesLinterResponse() {
-        val linterOutput = "[\n" +
-            "  {\n" +
-            "    \"Filename\": \"linterInput.json\",\n" +
-            "    \"Level\": \"Error\",\n" +
-            "    \"Location\": {\n" +
-            "      \"End\": {\n" +
-            "        \"ColumnNumber\": 13,\n" +
-            "        \"LineNumber\": 4\n" +
-            "      },\n" +
-            "      \"Path\": [\n" +
-            "        \"Resources\",\n" +
-            "        \"S3Bucket\",\n" +
-            "        \"Type\"\n" +
-            "      ],\n" +
-            "      \"Start\": {\n" +
-            "        \"ColumnNumber\": 7,\n" +
-            "        \"LineNumber\": 4\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"Message\": \"Invalid or unsupported Type undefined for resource S3Bucket in us-east-1\",\n" +
-            "    \"Rule\": {\n" +
-            "      \"Description\": \"Making sure the basic CloudFormation resources are properly configured\",\n" +
-            "      \"Id\": \"E3001\",\n" +
-            "      \"ShortDescription\": \"Basic CloudFormation Resource Check\",\n" +
-            "      \"Source\": \"https://github.com/aws-cloudformation/cfn-python-lint\"\n" +
-            "    }\n" +
-            "  }\n" +
-            "]\n"
+        val linterOutput = """
+            [
+              {
+                "Filename": "linterInput.json",
+                "Level": "Error",
+                "Location": {
+                  "End": {
+                    "ColumnNumber": 13,
+                    "LineNumber": 4
+                  },
+                  "Path": [
+                    "Resources",
+                    "S3Bucket",
+                    "Type"
+                  ],
+                  "Start": {
+                    "ColumnNumber": 7,
+                    "LineNumber": 4
+                  }
+                },
+                "Message": "Invalid or unsupported Type undefined for resource S3Bucket in us-east-1",
+                "Rule": {
+                  "Description": "Making sure the basic CloudFormation resources are properly configured",
+                  "Id": "E3001",
+                  "ShortDescription": "Basic CloudFormation Resource Check",
+                  "Source": "https://github.com/aws-cloudformation/cfn-python-lint"
+                }
+              }
+            ]
+        """
 
         val linter = Linter()
         val errors = linter.getErrorAnnotations(linterOutput)
+        assertEquals(1, errors.size)
 
         val onlyError = errors[0]
 
