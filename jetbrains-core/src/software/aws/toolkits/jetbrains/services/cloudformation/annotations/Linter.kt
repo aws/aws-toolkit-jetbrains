@@ -33,11 +33,11 @@ class Linter {
             val linterProcess = processBuilder.start()
 
             val reader = BufferedReader(InputStreamReader(linterProcess.inputStream))
-            val linterResultBuilder = StringBuilder()
+            val linterOutput = StringBuilder()
             reader.forEachLine {
-                linterResultBuilder.append(it)
+                linterOutput.append(it)
             }
-            errors = getErrorAnnotations(linterResultBuilder.toString())
+            errors = getErrorAnnotations(linterOutput.toString())
             linterProcess.waitFor()
             LOG.info { "Finished execution of CloudFormation linter with no errors" }
         } catch (e: Exception) {
@@ -46,12 +46,12 @@ class Linter {
         return errors
     }
 
-    private fun getErrorAnnotations(input: String): List<ErrorAnnotation> {
+    fun getErrorAnnotations(linterOutputJson: String): List<ErrorAnnotation> {
         val mapper = ObjectMapper()
         val typeReference = TypeFactory.defaultInstance().constructCollectionType(
                 MutableList::class.java, ErrorAnnotation::class.java
             )
 
-        return mapper.readValue(input, typeReference)
+        return mapper.readValue(linterOutputJson, typeReference)
     }
 }

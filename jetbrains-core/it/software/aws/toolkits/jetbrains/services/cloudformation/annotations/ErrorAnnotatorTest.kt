@@ -39,11 +39,13 @@ class ErrorAnnotatorTest {
     }
 
     @Test
-    fun testDoAnnotate() {
+    fun canAnnotate() {
         val initialAnnotationResults = errorAnnotator.collectInformation(psiFile)
         assertThat(initialAnnotationResults).isNotNull
         val errors = errorAnnotator.doAnnotate(initialAnnotationResults)
         assertThat(errors).isNotNull
         assertThat(errors.size).isEqualTo(1)
+
+        // TODO test errorAnnotator.apply(), but I would need to be able to mock a static method
     }
 }
