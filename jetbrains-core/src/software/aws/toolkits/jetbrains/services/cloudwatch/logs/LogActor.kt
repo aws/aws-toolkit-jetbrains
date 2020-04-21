@@ -379,5 +379,3 @@ class LogGroupSearchActor(
         return events
     }
 }
-
-
