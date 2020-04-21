@@ -62,7 +62,10 @@ class LogGroupTable(
             tableHeader.reorderingAllowed = false
             tableHeader.resizingAllowed = false
         }
-        groupTable.rowSorter = LogGroupTableSorter(tableModel)
+        groupTable.rowSorter = when (type) {
+            TableType.LIST -> LogGroupTableSorter(tableModel)
+            TableType.FILTER -> LogGroupFilterTableSorter(tableModel)
+        }
         TableSpeedSearch(groupTable)
         addTableMouseListener(groupTable)
         addKeyListener(groupTable)
