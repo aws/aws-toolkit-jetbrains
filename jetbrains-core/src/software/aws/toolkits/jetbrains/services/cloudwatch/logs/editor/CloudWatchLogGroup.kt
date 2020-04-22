@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.ui.onEmpty
-import software.aws.toolkits.jetbrains.utils.ui.onTextChanged
+import software.aws.toolkits.jetbrains.utils.ui.onEnter
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 import javax.swing.JPanel
@@ -75,7 +75,7 @@ class CloudWatchLogGroup(
                 oldTable?.let { launch { Disposer.dispose(it) } }
             }
         }
-        searchField.onTextChanged {
+        searchField.onEnter {
             val oldTable = searchGroupTable
             // If it is not empty do a search
             if (searchField.text.isNotEmpty()) {

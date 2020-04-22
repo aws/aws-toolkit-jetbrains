@@ -25,7 +25,7 @@ fun SearchTextField.onEmpty(block: () -> Unit) {
     })
 }
 
-fun SearchTextField.onTextChanged(block: () -> Unit) {
+fun SearchTextField.onEnter(block: () -> Unit) {
     textEditor.addActionListener(object : ActionListener {
         private var lastText = ""
         override fun actionPerformed(e: ActionEvent?) {
