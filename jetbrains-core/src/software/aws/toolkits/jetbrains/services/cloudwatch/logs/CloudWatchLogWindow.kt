@@ -98,7 +98,7 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
     }
 
     companion object {
-        private val CW_LOGS_TOOL_WINDOW = ToolkitToolWindowType(
+        internal val CW_LOGS_TOOL_WINDOW = ToolkitToolWindowType(
             "AWS.CloudWatchLog",
             message("cloudwatch.logs.toolwindow"),
             AwsIcons.Resources.CloudWatch.LOGS
