@@ -80,7 +80,7 @@ class CloudWatchLogGroup(
             // If it is not empty do a search
             if (searchField.text.isNotEmpty()) {
                 // This is thread safe because the actionPerformed is run on the UI thread
-                CloudwatchlogsTelemetry.searchStream(project, true)
+                CloudwatchlogsTelemetry.searchGroup(project, true)
                 val table = LogGroupTable(project, client, logGroup, LogGroupTable.TableType.FILTER)
                 Disposer.register(this@CloudWatchLogGroup, table)
                 searchGroupTable = table
