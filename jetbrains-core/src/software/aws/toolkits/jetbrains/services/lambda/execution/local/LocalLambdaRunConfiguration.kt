@@ -53,6 +53,8 @@ class LocalLambdaRunConfigurationFactory(configuration: LambdaRunConfigurationTy
     override fun getName(): String = "Local"
     // Overwitten because it was deprecated in 2020.1
     override fun getId(): String = name
+    // Only show it if we have any runtime groups
+    override fun isApplicable(project: Project): Boolean = LambdaHandlerResolver.supportedRuntimeGroups.isNotEmpty()
 }
 
 class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactory) :
