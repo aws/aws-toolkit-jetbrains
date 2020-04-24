@@ -59,6 +59,7 @@ class DeleteGroupActionTest {
         val toolWindowManager = ToolkitToolWindowManager.getInstance(projectRule.project, CloudWatchLogWindow.CW_LOGS_TOOL_WINDOW)
         toolWindowManager.addTab("test", JPanel(), true, "name")
         toolWindowManager.addTab("test", JPanel(), true, "name/eman")
+        toolWindowManager.addTab("test", JPanel(), true, "name2")
         assertThat(toolWindowManager.findPrefix("name").size).isEqualTo(2)
         val delete = DeleteGroupAction()
         delete.performDelete(mockNode)
@@ -66,7 +67,7 @@ class DeleteGroupActionTest {
         retryableAssert {
             assertThat(toolWindowManager.find("name")).isNull()
             assertThat(toolWindowManager.find("name/eman")).isNull()
-            assertThat(toolWindowManager.findPrefix("name").size).isEqualTo(0)
+            assertThat(toolWindowManager.findPrefix("name2").size).isEqualTo(1)
         }
     }
 

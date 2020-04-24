@@ -20,6 +20,7 @@ import javax.swing.JComponent
 interface ToolkitToolWindow {
     fun addTab(title: String, component: JComponent, activate: Boolean = false, id: String = title, disposable: Disposable? = null): ToolkitToolWindowTab
     fun find(id: String): ToolkitToolWindowTab?
+    // prefix is prefix of the id. Assumes the window is using id composed of paths, like: "loggroup/logstream"
     fun findPrefix(prefix: String): List<ToolkitToolWindowTab>
 }
 
@@ -62,7 +63,7 @@ class ToolkitToolWindowManager(private val project: Project) {
         }
 
         override fun findPrefix(prefix: String): List<ToolkitToolWindowTab> = tabs
-            .filter { it.key.startsWith(prefix) }
+            .filter { it.key.startsWith("$prefix/") || it.key == prefix }
             .mapNotNull {
                 if (Disposer.isDisposed(it.value.content)) {
                     tabs.remove(it.key)
