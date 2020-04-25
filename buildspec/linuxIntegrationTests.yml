@@ -27,6 +27,7 @@ phases:
       - export TOKEN=`jq -r '.Credentials.SessionToken' creds.json`
       - pip3 install --user --upgrade  aws-sam-cli
       - pip3 install --upgrade awscli
+      - pip3 install cfn-lint
 
   build:
     commands:

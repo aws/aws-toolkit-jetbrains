@@ -12,16 +12,14 @@ class LinterExecutable {
 
         @Throws(Exception::class)
         fun getExecutablePath(): String {
-            var executable: String? = null
-            if (SystemInfo.isWindows) {
-                executable = PathEnvironmentVariableUtil.findExecutableInWindowsPath(EXECUTABLE_NAME)
+            val executable = if (SystemInfo.isWindows) {
+                PathEnvironmentVariableUtil.findExecutableInWindowsPath(EXECUTABLE_NAME)
             } else {
                 val executableFile = PathEnvironmentVariableUtil.findInPath(EXECUTABLE_NAME)
-                if (executableFile != null) {
-                    executable = executableFile.absolutePath
-                }
+                executableFile?.absolutePath
             }
-            if (executable == null || executable.isEmpty()) {
+
+            if (executable.isNullOrEmpty()) {
                 throw Exception("Couldn't find cfn-lint in the PATH. Please install cfn-lint")
             }
             return executable

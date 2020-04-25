@@ -7,13 +7,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.intellij.lang.annotation.HighlightSeverity
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-class ErrorAnnotation {
+class CloudFormationLintAnnotation {
 
     @JsonProperty(value = "Level")
     val level: String = ""
 
     @JsonProperty(value = "Location")
-    val location: ErrorLocation? = null
+    val location: CloudFormationLintAnnotationLocation? = null
 
     @JsonProperty(value = "Rule")
     val linterRule: LinterRule? = null

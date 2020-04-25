@@ -12,7 +12,7 @@ class LinterTest {
 
     companion object {
         private var jsonTemplate = "/linterInput.json"
-        var errors: List<ErrorAnnotation> = mutableListOf()
+        var cloudFormationLints: List<CloudFormationLintAnnotation> = mutableListOf()
 
         @BeforeClass
         @JvmStatic
@@ -20,12 +20,12 @@ class LinterTest {
             val cloudFormationLinter = Linter()
             val templatePath = File(LinterTest::class.java.getResource(jsonTemplate).path).toString()
             val initialAnnotationResults = InitialAnnotationResults(templatePath)
-            errors = cloudFormationLinter.execute(initialAnnotationResults)
+            cloudFormationLints = cloudFormationLinter.execute(initialAnnotationResults)
         }
     }
 
     @Test
     fun getsRightNumberOfErrors() {
-        assertThat(errors.size).isEqualTo(1)
+        assertThat(cloudFormationLints.size).isEqualTo(1)
     }
 }

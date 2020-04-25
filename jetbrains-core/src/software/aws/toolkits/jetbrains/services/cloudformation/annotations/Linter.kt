@@ -4,54 +4,37 @@ package software.aws.toolkits.jetbrains.services.cloudformation.annotations
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.type.TypeFactory
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.util.ExecUtil
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 class Linter {
 
     companion object {
         private val LOG = getLogger<Linter>()
+        private val mapper = ObjectMapper()
+        private val typeReference = TypeFactory.defaultInstance().constructCollectionType(
+            MutableList::class.java, CloudFormationLintAnnotation::class.java
+        )
     }
 
-    fun execute(initialAnnotationResults: InitialAnnotationResults): List<ErrorAnnotation> {
-        var errors: List<ErrorAnnotation> = ArrayList()
-
+    fun execute(initialAnnotationResults: InitialAnnotationResults): List<CloudFormationLintAnnotation> =
         try {
             LOG.info { "Beginning execution of CloudFormation linter" }
             val executable: String = LinterExecutable.getExecutablePath()
-            val command: MutableList<String> = mutableListOf()
-            command.add(executable)
-            command.add("--template")
-            command.add(initialAnnotationResults.pathToTemplate)
-            command.add("--format")
-            command.add("json")
-            val processBuilder = ProcessBuilder(command)
-            processBuilder.redirectErrorStream(true)
-            val linterProcess = processBuilder.start()
-
-            val reader = BufferedReader(InputStreamReader(linterProcess.inputStream))
-            val linterOutput = StringBuilder()
-            reader.forEachLine {
-                linterOutput.append(it)
+            val output = ExecUtil.execAndGetOutput(GeneralCommandLine(executable, "--template", initialAnnotationResults.pathToTemplate, "--format", "json"))
+            if (output.exitCode == 2) {
+                getErrorAnnotations(output.stdout)
+            } else {
+                throw IllegalStateException("Failed to run CloudFormation linter: ${output.stderr}")
             }
-            errors = getErrorAnnotations(linterOutput.toString())
-            linterProcess.waitFor()
-            LOG.info { "Finished execution of CloudFormation linter with no errors" }
         } catch (e: Exception) {
-            LOG.error(e) { "Error: " + e.message }
+            LOG.error(e) { "Error running CloudFormation linter: " + e.message }
+            emptyList()
         }
-        return errors
-    }
 
-    fun getErrorAnnotations(linterOutputJson: String): List<ErrorAnnotation> {
-        val mapper = ObjectMapper()
-        val typeReference = TypeFactory.defaultInstance().constructCollectionType(
-                MutableList::class.java, ErrorAnnotation::class.java
-            )
-
-        return mapper.readValue(linterOutputJson, typeReference)
-    }
+    fun getErrorAnnotations(linterOutputJson: String): List<CloudFormationLintAnnotation> =
+        mapper.readValue(linterOutputJson, typeReference)
 }

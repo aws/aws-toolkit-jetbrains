@@ -228,10 +228,10 @@
         <!-- CloudFormation template linting -->
         <externalAnnotator language="JSON"
                            id="annotatorJSON"
-                           implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.annotations.ErrorAnnotator"/>
+                           implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.annotations.CloudFormationLintAnnotator"/>
         <externalAnnotator language="yaml"
                            id="annotatorYAML"
-                           implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.annotations.ErrorAnnotator"/>
+                           implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.annotations.CloudFormationLintAnnotator"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">

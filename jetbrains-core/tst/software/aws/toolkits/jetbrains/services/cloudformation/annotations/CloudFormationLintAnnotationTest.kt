@@ -7,7 +7,7 @@ import com.intellij.lang.annotation.HighlightSeverity
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class ErrorAnnotationTest {
+class CloudFormationLintAnnotationTest {
 
     @Test
     fun parsesLinterResponse() {

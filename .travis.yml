@@ -14,8 +14,6 @@ matrix:
       dist: xenial
       jdk:
         - openjdk8
-      before_install:
-          - pip install cfn-lint
       addons:
         apt:
           update: true
@@ -27,7 +25,6 @@ matrix:
           packages:
             - dotnet-sdk-2.2
             - mono-complete
-            - python3-pip
     - os: osx
       # .NET Core 2 requires OSX 10.12+
       osx_image: xcode8.3
@@ -38,7 +35,6 @@ matrix:
           update: true
           packages:
             - mono
-            - cfn-lint
           casks:
             - dotnet-sdk
 

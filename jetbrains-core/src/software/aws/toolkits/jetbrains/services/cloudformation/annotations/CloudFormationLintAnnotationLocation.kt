@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class ErrorLocation @JsonCreator constructor(
+data class CloudFormationLintAnnotationLocation @JsonCreator constructor(
     @JsonProperty("Start") val start: ErrorOffset,
     @JsonProperty("End") val end: ErrorOffset
 ) {

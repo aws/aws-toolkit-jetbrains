@@ -20,7 +20,7 @@ import com.intellij.psi.PsiFile
  * 3. highlighting data is applied to a file by [.apply]
  *
  */
-class ErrorAnnotator : ExternalAnnotator<InitialAnnotationResults, List<ErrorAnnotation>>() {
+class CloudFormationLintAnnotator : ExternalAnnotator<InitialAnnotationResults, List<CloudFormationLintAnnotation>>() {
 
     /**
      * Collects initial information needed for launching a tool. This method is called within a read action;
@@ -42,7 +42,7 @@ class ErrorAnnotator : ExternalAnnotator<InitialAnnotationResults, List<ErrorAnn
      * @param initialAnnotationResults initial information gathered by [.collectInformation]
      * @return annotations to pass to [.apply]
      */
-    override fun doAnnotate(initialAnnotationResults: InitialAnnotationResults): List<ErrorAnnotation> {
+    override fun doAnnotate(initialAnnotationResults: InitialAnnotationResults): List<CloudFormationLintAnnotation> {
         val linter = Linter()
         return linter.execute(initialAnnotationResults)
     }
@@ -56,17 +56,17 @@ class ErrorAnnotator : ExternalAnnotator<InitialAnnotationResults, List<ErrorAnn
      */
     override fun apply(
         file: PsiFile,
-        annotationResult: List<ErrorAnnotation>,
+        annotationResult: List<CloudFormationLintAnnotation>,
         holder: AnnotationHolder
     ) {
         val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)
         annotationResult.forEach { error ->
-            val startOffset = document?.getLineStartOffset(error.location?.start?.lineNumber!! - 1)
-                            ?.plus(error.location.start.columnNumber - 1)
-                            ?: 0
-            val endOffset = document?.getLineStartOffset(error.location?.end?.lineNumber!! - 1)
-                            ?.plus(error.location.end.columnNumber - 1)
-                            ?: 0
+            val startOffset = error.location?.start?.let {
+                document?.getLineStartOffset(it.lineNumber - 1)?.plus(it.columnNumber - 1)
+            } ?: 0
+            val endOffset = error.location?.end?.let {
+                document?.getLineStartOffset(it.lineNumber - 1)?.plus(it.columnNumber - 1)
+            } ?: 0
             val textRange = TextRange(startOffset, endOffset)
             holder.createAnnotation(error.severity, textRange, error.message)
         }
