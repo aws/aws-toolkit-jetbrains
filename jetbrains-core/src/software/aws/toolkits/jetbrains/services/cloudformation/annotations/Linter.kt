@@ -25,7 +25,8 @@ class Linter {
             LOG.info { "Beginning execution of CloudFormation linter" }
             val executable: String = LinterExecutable.getExecutablePath()
             val output = ExecUtil.execAndGetOutput(GeneralCommandLine(executable, "--template", initialAnnotationResults.pathToTemplate, "--format", "json"))
-            if (output.exitCode == 2) {
+            // https://github.com/aws-cloudformation/cfn-python-lint/blob/052bf770eab4b8ff270f193b7491d9dfcf34ba54/src/cfnlint/core.py#L54
+            if (output.exitCode >= 0) {
                 getErrorAnnotations(output.stdout)
             } else {
                 throw IllegalStateException("Failed to run CloudFormation linter: ${output.stderr}")
