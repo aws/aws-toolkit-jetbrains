@@ -83,6 +83,8 @@
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
     <depends optional="true" config-file="ext-nodejs.xml">JavaScriptDebugger</depends>
     <depends optional="true" config-file="ext-rider.xml">com.intellij.modules.rider</depends>
+    <depends optional="true" config-file="ext-json.xml">com.intellij.modules.json</depends>
+    <depends optional="true" config-file="ext-yaml.xml">org.jetbrains.plugins.yaml</depends>
 
     <xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
@@ -216,6 +218,9 @@
         <configurationType implementation="software.aws.toolkits.jetbrains.services.ecs.execution.EcsCloudDebugRunConfigurationType"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.clouddebug.execution.CloudDebuggingRunner"/>
         <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.ecs.execution.EcsCloudDebugRunConfigurationProducer" />
+
+        <!-- CloudFormation -->
+        <fileTypeDetector implementation="software.aws.toolkits.jetbrains.services.cloudformation.CfnFileTypeDetector"/>
 
         <!-- Project Wizard components -->
         <moduleType id="AWS" implementationClass="software.aws.toolkits.jetbrains.ui.wizard.AwsModuleType" />
