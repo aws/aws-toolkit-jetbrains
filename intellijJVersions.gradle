@@ -26,7 +26,8 @@ static def ideProfiles() {
                         "JavaScriptLanguage",
                         "JavaScriptDebugger",
                         "CSS",
-                        "Pythonid:2019.2.192.5728.98"
+                        "Pythonid:2019.2.192.5728.98",
+                        "NodeJS"
                     ]
                 ],
                 "RD": [
@@ -67,6 +68,7 @@ static def ideProfiles() {
                         "JavaScriptLanguage",
                         "JavaScriptDebugger",
                         "CSS",
+                        "NodeJS"
                     ]
                 ],
                 "RD": [
@@ -108,7 +110,8 @@ static def ideProfiles() {
                         "JavaScriptLanguage",
                         "JavaScriptDebugger",
                         "CSS",
-                        "DatabaseTools"
+                        "DatabaseTools",
+                        "NodeJS"
                     ]
                 ],
                 "RD": [
