@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.cloudformation.CfnOutputsNode
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnParameterNode
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnParametersNode
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnParsedFile
+import software.aws.toolkits.jetbrains.services.cloudformation.CfnProblem
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnResourceConditionNode
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnResourceDependsOnNode
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnResourceNode
@@ -45,7 +46,6 @@ import software.aws.toolkits.jetbrains.services.cloudformation.CfnScalarValueNod
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnSecondLevelMappingNode
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnSection
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnTransformNode
-import software.aws.toolkits.jetbrains.services.cloudformation.CfnProblem
 import software.aws.toolkits.resources.message
 
 class JsonCfnParser private constructor() {
@@ -108,7 +108,7 @@ class JsonCfnParser private constructor() {
 
     private fun handleTransform(property: JsonProperty): CfnNode? {
         val values = checkAndGetStringOrStringArray(property)
-        return CfnTransformNode(keyName(property), values)
+        return CfnTransformNode(property.cfnKey(), values)
     }
 
     private fun handleParameters(parameters: JsonProperty): CfnParametersNode = parseNameValues(
@@ -119,7 +119,7 @@ class JsonCfnParser private constructor() {
 
     private fun handleParameter(parameter: JsonProperty): CfnParameterNode = parseNameValues(
         parameter,
-        { node -> CfnNameValueNode(keyName(node), node.value?.let { handleExpression(it, allowFunctions = false) }) },
+        { node -> CfnNameValueNode(node.cfnKey(), node.value?.let { handleExpression(it, allowFunctions = false) }) },
         { nameNode, list -> CfnParameterNode(nameNode, list).registerNode(parameter) }
     )
 
@@ -130,7 +130,7 @@ class JsonCfnParser private constructor() {
     )
 
     private fun handleResource(resourceProperty: JsonProperty): CfnResourceNode {
-        val key = keyName(resourceProperty)
+        val key = resourceProperty.cfnKey()
 
         val obj = checkAndGetObject(resourceProperty) ?: return CfnResourceNode(key, null, null, null, null, emptyMap()).registerNode(resourceProperty)
 
@@ -149,7 +149,7 @@ class JsonCfnParser private constructor() {
                 CONDITION -> handleResourceCondition(property)
                 PROPERTIES -> handleResourceProperties(property)
                 else -> {
-                    CfnNameValueNode(keyName(property), property.value?.let { handleExpression(it, true) }).registerNode(property)
+                    CfnNameValueNode(property.cfnKey(), property.value?.let { handleExpression(it, true) }).registerNode(property)
                 }
             }
 
@@ -169,45 +169,45 @@ class JsonCfnParser private constructor() {
 
     private fun handleResourceDependsOn(property: JsonProperty): CfnResourceDependsOnNode {
         val values = checkAndGetStringOrStringArray(property)
-        return CfnResourceDependsOnNode(keyName(property), values).registerNode(property)
+        return CfnResourceDependsOnNode(property.cfnKey(), values).registerNode(property)
     }
 
     private fun handleResourceType(typeProperty: JsonProperty): CfnResourceTypeNode = CfnResourceTypeNode(
-        keyName(typeProperty),
+        typeProperty.cfnKey(),
         // Contract implies that if value is null return type is null, else nonnull
         checkAndGetStringElement(typeProperty.value)?.registerNode(typeProperty.value as PsiElement)
     ).registerNode(typeProperty)
 
     private fun handleResourceCondition(property: JsonProperty): CfnResourceConditionNode =
-        CfnResourceConditionNode(keyName(property), checkAndGetStringElement(property.value)).registerNode(property)
+        CfnResourceConditionNode(property.cfnKey(), checkAndGetStringElement(property.value)).registerNode(property)
 
     private fun handleResourceProperties(propertiesProperty: JsonProperty): CfnResourcePropertiesNode {
         val value = checkAndGetObject(propertiesProperty)
-            ?: return CfnResourcePropertiesNode(keyName(propertiesProperty), emptyList()).registerNode(propertiesProperty)
+            ?: return CfnResourcePropertiesNode(propertiesProperty.cfnKey(), emptyList()).registerNode(propertiesProperty)
 
         val propertyNodes = value.propertyList.mapNotNull { property ->
-            CfnResourcePropertyNode(keyName(property), property.value?.let { handleExpression(it, allowFunctions = true) }).registerNode(property)
+            CfnResourcePropertyNode(property.cfnKey(), property.value?.let { handleExpression(it, allowFunctions = true) }).registerNode(property)
         }
 
-        return CfnResourcePropertiesNode(keyName(propertiesProperty), propertyNodes).registerNode(propertiesProperty)
+        return CfnResourcePropertiesNode(propertiesProperty.cfnKey(), propertyNodes).registerNode(propertiesProperty)
     }
 
     private fun handleConditions(conditions: JsonProperty): CfnConditionsNode = parseNameValues(
         conditions,
-        { node -> CfnConditionNode(keyName(node), handleExpression(node.value!!, allowFunctions = true)).registerNode(node) },
+        { node -> CfnConditionNode(node.cfnKey(), handleExpression(node.value!!, allowFunctions = true)).registerNode(node) },
         { nameNode, list -> CfnConditionsNode(nameNode, list) }
     )
 
     private fun handleMetadata(metadata: JsonProperty): CfnMetadataNode {
         val valueNode = checkAndGetObject(metadata)
-        return CfnMetadataNode(keyName(metadata), valueNode?.let { handleExpression(valueNode, allowFunctions = false) } as? CfnObjectValueNode).registerNode(
+        return CfnMetadataNode(metadata.cfnKey(), valueNode?.let { handleExpression(valueNode, allowFunctions = false) } as? CfnObjectValueNode).registerNode(
             metadata
         )
     }
 
     private fun handleOutputs(outputs: JsonProperty): CfnOutputsNode = parseNameValues(
         outputs,
-        { output -> CfnOutputNode(keyName(output), handleExpression(output.value!!, allowFunctions = true)).registerNode(output) },
+        { output -> CfnOutputNode(output.cfnKey(), handleExpression(output.value!!, allowFunctions = true)).registerNode(output) },
         { nameNode, list -> CfnOutputsNode(nameNode, list) }
     )
 
@@ -225,7 +225,7 @@ class JsonCfnParser private constructor() {
 
     private fun handleSecondLevelMapping(mapping: JsonProperty): CfnSecondLevelMappingNode = parseNameValues(
         mapping,
-        { node -> CfnMappingValue(keyName(node), node.value?.let { handleExpression(it, allowFunctions = false) }).registerNode(node) },
+        { node -> CfnMappingValue(node.cfnKey(), node.value?.let { handleExpression(it, allowFunctions = false) }).registerNode(node) },
         { nameNode, list -> CfnSecondLevelMappingNode(nameNode, list) }
     )
 
@@ -284,7 +284,7 @@ class JsonCfnParser private constructor() {
         valueFactory: (JsonProperty) -> ValueNodeType,
         resultFactory: (CfnScalarValueNode?, List<ValueNodeType>) -> ResultNodeType
     ): ResultNodeType {
-        val nameNode = keyName(property)
+        val nameNode = property.cfnKey()
 
         val obj = checkAndGetObject(property) ?: return resultFactory(nameNode, emptyList()).registerNode(property)
 
@@ -340,7 +340,7 @@ class JsonCfnParser private constructor() {
         return obj
     }
 
-    private fun keyName(property: JsonProperty): CfnScalarValueNode = CfnScalarValueNode(property.name).registerNode(property.nameElement)
+    private fun JsonProperty.cfnKey(): CfnScalarValueNode = CfnScalarValueNode(name).registerNode(nameElement)
 
     private fun <T : CfnNode> T.registerNode(psiElement: PsiElement): T {
         assert(!nodeMap.containsKey(this)) { "Nodes map already has $psiElement" }
