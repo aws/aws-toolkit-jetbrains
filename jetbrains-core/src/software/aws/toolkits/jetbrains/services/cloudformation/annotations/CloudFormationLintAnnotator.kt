@@ -40,9 +40,6 @@ class CloudFormationLintAnnotator : ExternalAnnotator<InitialAnnotationResults, 
      * @return annotations to pass to [.apply]
      */
     override fun doAnnotate(initialAnnotationResults: InitialAnnotationResults): List<CloudFormationLintAnnotation> {
-        if (!initialAnnotationResults.isCloudFormationTemplate) {
-            return emptyList()
-        }
         val linter = Linter()
         return linter.execute(initialAnnotationResults)
     }

@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType;
+import software.aws.toolkits.jetbrains.core.executables.CfnLintExecutable;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryEnabledChangedNotifier;
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService;
@@ -40,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService;
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String CLOUDDEBUG = "clouddebug";
     private static final String SAM = "sam";
+    private static final String CFNLINT = "cfnlint";
 
     private final Project project;
     private JPanel panel;
@@ -47,11 +49,15 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     TextFieldWithBrowseButton samExecutablePath;
     @NotNull
     TextFieldWithBrowseButton cloudDebugExecutablePath;
+    @NotNull
+    TextFieldWithBrowseButton cfnLintExecutablePath;
     private LinkLabel samHelp;
     private LinkLabel cloudDebugHelp;
+    private LinkLabel cfnLintHelp;
     private JBCheckBox showAllHandlerGutterIcons;
     @NotNull
     JBCheckBox enableTelemetry;
+    private JPanel cfnLintSettings;
     private JPanel serverlessSettings;
     private JPanel remoteDebugSettings;
     private JPanel applicationLevelSettings;
@@ -63,12 +69,15 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         applicationLevelSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.global_label")));
         serverlessSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.serverless_label")));
+        cfnLintSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.cfnlint_label")));
         remoteDebugSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.remote_debug_label")));
 
         publisher = TelemetryService.syncPublisher();
 
+        SwingHelper.setPreferredWidth(cfnLintExecutablePath, this.panel.getWidth());
         SwingHelper.setPreferredWidth(samExecutablePath, this.panel.getWidth());
         SwingHelper.setPreferredWidth(cloudDebugExecutablePath, this.panel.getWidth());
+        SwingHelper.setPreferredWidth(cfnLintExecutablePath, this.panel.getWidth());
     }
 
     @Nullable
@@ -84,6 +93,9 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         samHelp = createHelpLink("lambda.sam.cli.install_url");
         samHelp.setEnabled(false);
         samExecutablePath = createCliConfigurationElement(getSamExecutableInstance(), SAM);
+        cfnLintHelp = createHelpLink("cloudformation.linter.install_url");
+        cfnLintHelp.setEnabled(false);
+        cfnLintExecutablePath = createCliConfigurationElement(getCfnLintExecutableInstance(), CFNLINT);
     }
 
     @NotNull
@@ -105,6 +117,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         return !Objects.equals(getSamTextboxInput(), getSavedExecutablePath(getSamExecutableInstance(), false)) ||
                !Objects.equals(getCloudDebugTextboxInput(), getSavedExecutablePath(getCloudDebugExecutableInstance(), false)) ||
+               !Objects.equals(getCfnLintTextboxInput(), getSavedExecutablePath(getCfnLintExecutableInstance(), false)) ||
                isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons()) ||
                isModified(enableTelemetry, awsSettings.isTelemetryEnabled());
     }
@@ -121,6 +134,11 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
                                    getCloudDebugExecutableInstance(),
                                    getSavedExecutablePath(getCloudDebugExecutableInstance(), false),
                                    getCloudDebugTextboxInput());
+        validateAndSaveCliSettings((JBTextField) cfnLintExecutablePath.getTextField(),
+                                   "cfn-lint",
+                                   getCfnLintExecutableInstance(),
+                                   getSavedExecutablePath(getCfnLintExecutableInstance(), false),
+                                   getCfnLintTextboxInput());
 
         saveTelemetrySettings();
         saveLambdaSettings();
@@ -133,6 +151,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
         samExecutablePath.setText(getSavedExecutablePath(getSamExecutableInstance(), false));
         cloudDebugExecutablePath.setText(getSavedExecutablePath(getCloudDebugExecutableInstance(), false));
+        cfnLintExecutablePath.setText(getSavedExecutablePath(getCfnLintExecutableInstance(), false));
         showAllHandlerGutterIcons.setSelected(lambdaSettings.getShowAllHandlerGutterIcons());
         enableTelemetry.setSelected(awsSettings.isTelemetryEnabled());
     }
@@ -147,6 +166,11 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         return ExecutableType.getExecutable(SamExecutable.class);
     }
 
+    @NotNull
+    private CfnLintExecutable getCfnLintExecutableInstance() {
+        return ExecutableType.getExecutable(CfnLintExecutable.class);
+    }
+
     @Nullable
     private String getSamTextboxInput() {
         return StringUtil.nullize(samExecutablePath.getText().trim());
@@ -155,6 +179,11 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     @Nullable
     private String getCloudDebugTextboxInput() {
         return StringUtil.nullize(cloudDebugExecutablePath.getText().trim());
+    }
+
+    @Nullable
+    private String getCfnLintTextboxInput() {
+        return StringUtil.nullize(cfnLintExecutablePath.getText().trim());
     }
 
     @NotNull

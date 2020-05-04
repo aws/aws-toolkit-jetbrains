@@ -9,6 +9,7 @@ import com.intellij.execution.util.ExecUtil
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.executables.CfnLintExecutable
 import software.aws.toolkits.resources.message
 
 class Linter {
@@ -19,18 +20,25 @@ class Linter {
         private val typeReference = TypeFactory.defaultInstance().constructCollectionType(
             MutableList::class.java, CloudFormationLintAnnotation::class.java
         )
+        private val executable = CfnLintExecutable().resolve()
     }
 
     fun execute(initialAnnotationResults: InitialAnnotationResults): List<CloudFormationLintAnnotation> =
         try {
-            LOG.info { "Beginning execution of CloudFormation linter" }
-            val executable: String? = LinterExecutable.getExecutablePath()
-            val output = ExecUtil.execAndGetOutput(GeneralCommandLine(executable, "--template", initialAnnotationResults.pathToTemplate, "--format", "json"))
-            // https://github.com/aws-cloudformation/cfn-python-lint/blob/052bf770eab4b8ff270f193b7491d9dfcf34ba54/src/cfnlint/core.py#L54
-            if (output.exitCode >= 0) {
-                getErrorAnnotations(output.stdout)
+            if (executable == null || ! initialAnnotationResults.isCloudFormationTemplate) {
+                emptyList()
             } else {
-                throw IllegalStateException("Failed to run CloudFormation linter: ${output.stderr}")
+                LOG.info { "Beginning execution of CloudFormation linter" }
+                val output = ExecUtil.execAndGetOutput(GeneralCommandLine(executable.toString(),
+                    "--template",
+                    initialAnnotationResults.pathToTemplate,
+                    "--format", "json"))
+                // https://github.com/aws-cloudformation/cfn-python-lint/blob/052bf770eab4b8ff270f193b7491d9dfcf34ba54/src/cfnlint/core.py#L54
+                if (output.exitCode >= 0) {
+                    getErrorAnnotations(output.stdout)
+                } else {
+                    throw IllegalStateException("Failed to run CloudFormation linter: ${output.stderr}")
+                }
             }
         } catch (e: Exception) {
             LOG.error(e) { message("cloudformation.linter.general_error") + e.message }
