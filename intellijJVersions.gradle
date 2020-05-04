@@ -84,7 +84,7 @@ static def ideProfiles() {
             "untilVersion": "201.*",
             "products": [
                 "IC": [
-                    sdkVersion: "IC-201.6668.13-EAP-SNAPSHOT",
+                    sdkVersion: "IC-2020.1",
                     plugins: [
                         "terminal",
                         "yaml",
@@ -98,7 +98,7 @@ static def ideProfiles() {
                     ]
                 ],
                 "IU": [
-                    sdkVersion: "IU-201.6668.13-EAP-SNAPSHOT",
+                    sdkVersion: "IU-2020.1",
                     plugins: [
                         "terminal",
                         "platform-images", // Used by a bunch of plugins
