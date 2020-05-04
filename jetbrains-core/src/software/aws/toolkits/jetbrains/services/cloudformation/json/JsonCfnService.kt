@@ -10,12 +10,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
-import software.aws.toolkits.jetbrains.services.cloudformation.CFN_FORMAT_VERSION
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnParsedFile
-import software.aws.toolkits.jetbrains.services.cloudformation.SERVERLESS_TRANSFORM
 
 /**
- * Acts a proxy that hides all the logic that requires JSON plugin to be enabled
+ * Single entry point that encapsulates all logic that will fail if the underlying JSON support is not present.
+ *
+ * If [JsonCfnService.getInstance] returns null, this means that JSON support is not present and should not be acted upon.
  */
 class JsonCfnService {
     fun isCloudFormation(element: PsiElement): Boolean {
@@ -25,13 +25,7 @@ class JsonCfnService {
         }
 
         val fileType = psiFile.fileType
-        return if (fileType == JsonCfnFileType.INSTANCE) {
-            true
-        } else {
-            val rootElement = rootElement(psiFile)
-
-            rootElement?.findProperty(CFN_FORMAT_VERSION) != null || rootElement?.findProperty("Transform")?.value?.textMatches(SERVERLESS_TRANSFORM) == true
-        }
+        return fileType == JsonCfnFileType.INSTANCE
     }
 
     private fun rootElement(file: JsonFile): JsonObject? = PsiTreeUtil.getChildOfType(file, JsonObject::class.java)

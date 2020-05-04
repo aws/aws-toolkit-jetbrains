@@ -3,6 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation
 
+/**
+ * Act as a language agnostic AST that is used to build validations, references, and auto-complete.
+ *
+ * Child nodes should map to constructs defined [here](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html)
+ */
 sealed class CfnNode
 
 abstract class CfnExpressionNode : CfnNode()
