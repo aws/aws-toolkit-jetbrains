@@ -41,7 +41,7 @@ import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService;
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String CLOUDDEBUG = "clouddebug";
     private static final String SAM = "sam";
-    private static final String CFNLINT = "cfnlint";
+    private static final String CFNLINT = "cfn-lint";
 
     private final Project project;
     private JPanel panel;
@@ -201,7 +201,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         }
         field.addBrowseFolderListener(
             message("aws.settings.find.title", cliName),
-            message("aws.settings.find.description", cliName),
+            message("aws.settings.executables.find.description", cliName),
             project,
             FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
         );
