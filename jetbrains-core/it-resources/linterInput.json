@@ -1,7 +1,0 @@
-{
-  "Resources" : {
-    "S3Bucket" : {
-      "Type" : "undefined"
-    }
-  }
-}
