@@ -48,6 +48,8 @@ public class EditFunctionPanel {
     @NotNull JPanel configurationSettings;
     @NotNull JLabel handlerLabel;
     @NotNull JCheckBox xrayEnabled;
+    @NotNull JPanel buildSettings;
+    @NotNull JCheckBox buildInContainer;
 
     private SortedComboBoxModel<Runtime> runtimeModel;
     private Runtime lastSelectedRuntime = null;

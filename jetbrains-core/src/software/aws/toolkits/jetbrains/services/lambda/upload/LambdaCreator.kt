@@ -69,7 +69,7 @@ class LambdaCreator internal constructor(
             handler,
             functionDetails.handler,
             functionDetails.runtime,
-            SamOptions()
+            functionDetails.samOptions
         )
 
         // We should never hit this point since validation logic of the UI should validate this cant be null
