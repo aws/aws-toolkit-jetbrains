@@ -29,10 +29,7 @@ class CloudFormationLintAnnotator : ExternalAnnotator<InitialAnnotationResults, 
      * @param psiFile a file to annotate
      * @return information to pass to [)][.doAnnotate], or `null` if not applicable
      */
-    override fun collectInformation(psiFile: PsiFile): InitialAnnotationResults {
-        val pathToTemplate = psiFile.virtualFile.path
-        return InitialAnnotationResults(pathToTemplate)
-    }
+    override fun collectInformation(psiFile: PsiFile) = InitialAnnotationResults(psiFile)
 
     /**
      * Collects full information required for annotation. This method is intended for long-running activities
@@ -43,6 +40,9 @@ class CloudFormationLintAnnotator : ExternalAnnotator<InitialAnnotationResults, 
      * @return annotations to pass to [.apply]
      */
     override fun doAnnotate(initialAnnotationResults: InitialAnnotationResults): List<CloudFormationLintAnnotation> {
+        if (!initialAnnotationResults.isCloudFormationTemplate) {
+            return emptyList()
+        }
         val linter = Linter()
         return linter.execute(initialAnnotationResults)
     }

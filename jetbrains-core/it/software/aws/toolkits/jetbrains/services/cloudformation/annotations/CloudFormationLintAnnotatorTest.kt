@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation.annotations
 
+import com.intellij.lang.xml.XMLLanguage
 import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.xml.XmlFile
 import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.yaml.YAMLLanguage
@@ -22,7 +24,16 @@ class CloudFormationLintAnnotatorTest {
 
     @Test
     fun canAnnotate() {
-        val initialAnnotationResults = cloudFormationLintAnnotator.collectInformation(yamlFile())
+        val psiFile = runInEdtAndGet {
+            PsiFileFactory.getInstance(projectRule.project).createFileFromText(
+                YAMLLanguage.INSTANCE, """
+Resources:
+  s3Bucket:
+    Type: undef
+        """.trimIndent()
+            ) as YAMLFile
+        }
+        val initialAnnotationResults = cloudFormationLintAnnotator.collectInformation(psiFile)
         assertThat(initialAnnotationResults).isNotNull
         val errors = cloudFormationLintAnnotator.doAnnotate(initialAnnotationResults)
         assertThat(errors).isNotNull
@@ -31,13 +42,19 @@ class CloudFormationLintAnnotatorTest {
         // TODO test errorAnnotator.apply(), but I would need to be able to mock a static method
     }
 
-    private fun yamlFile(): YAMLFile = runInEdtAndGet {
-        PsiFileFactory.getInstance(projectRule.project).createFileFromText(
-            YAMLLanguage.INSTANCE, """
-Resources:
-  s3Bucket:
-    Type: undef
+    @Test
+    fun doesNotAnnotate() {
+        val psiFile = runInEdtAndGet {
+            PsiFileFactory.getInstance(projectRule.project).createFileFromText(
+                XMLLanguage.INSTANCE, """
+<demo>test</demo>
         """.trimIndent()
-        ) as YAMLFile
+            ) as XmlFile
+        }
+        val initialAnnotationResults = cloudFormationLintAnnotator.collectInformation(psiFile)
+        assertThat(initialAnnotationResults).isNotNull
+        val errors = cloudFormationLintAnnotator.doAnnotate(initialAnnotationResults)
+        assertThat(errors).isNotNull
+        assertThat(errors.size).isEqualTo(0)
     }
 }

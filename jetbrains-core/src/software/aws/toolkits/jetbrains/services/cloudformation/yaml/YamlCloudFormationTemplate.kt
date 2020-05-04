@@ -28,7 +28,7 @@ import software.aws.toolkits.resources.message
 class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
     constructor(project: Project, templateFile: VirtualFile) : this(loadYamlFile(project, templateFile))
 
-    private val templateRoot = getTemplateRoot(template)
+    val templateRoot = getTemplateRoot(template)
 
     private fun getTemplateRoot(file: YAMLFile): YAMLMapping? {
         val documents = file.documents
