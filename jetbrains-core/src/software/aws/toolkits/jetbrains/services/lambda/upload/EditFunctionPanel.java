@@ -60,6 +60,7 @@ public class EditFunctionPanel {
 
         deploySettings.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.upload.deployment_settings"), false));
         configurationSettings.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.upload.configuration_settings"), false));
+        buildSettings.setBorder(IdeBorderFactory.createTitledBorder(message("lambda.upload.build_settings"), false));
 
         runtime.addActionListener(e -> {
             int index = runtime.getSelectedIndex();

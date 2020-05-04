@@ -116,6 +116,7 @@ class EditFunctionDialog(
         if (mode == UPDATE_CONFIGURATION) {
             view.name.isEnabled = false
             view.deploySettings.isVisible = false
+            view.buildSettings.isVisible = false
         } else {
             view.createBucket.addActionListener {
                 val bucketDialog = CreateS3BucketDialog(
