@@ -88,13 +88,13 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     private void createUIComponents() {
         cloudDebugHelp = createHelpLink("aws.settings.clouddebug.help_url");
-        cloudDebugHelp.setEnabled(false);
+        cloudDebugHelp.setEnabled(true);
         cloudDebugExecutablePath = createCliConfigurationElement(getCloudDebugExecutableInstance(), CLOUDDEBUG);
         samHelp = createHelpLink("lambda.sam.cli.install_url");
-        samHelp.setEnabled(false);
+        samHelp.setEnabled(true);
         samExecutablePath = createCliConfigurationElement(getSamExecutableInstance(), SAM);
         cfnLintHelp = createHelpLink("cloudformation.linter.install_url");
-        cfnLintHelp.setEnabled(false);
+        cfnLintHelp.setEnabled(true);
         cfnLintExecutablePath = createCliConfigurationElement(getCfnLintExecutableInstance(), CFNLINT);
     }
 
