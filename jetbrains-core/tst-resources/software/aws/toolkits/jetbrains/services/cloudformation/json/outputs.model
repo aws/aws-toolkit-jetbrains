@@ -1,0 +1,58 @@
+CfnRootNode[
+  metadataNode=<null>,
+  transformNode=<null>,
+  parametersNode=<null>,
+  mappingsNode=<null>,
+  conditionsNode=<null>,
+  resourcesNode=<null>,
+  globalsNode=<null>,
+  outputsNode=CfnOutputsNode[
+    properties={
+      CfnOutputNode[
+        value=CfnObjectValueNode[
+          properties={
+            CfnNameValueNode[
+              value=CfnScalarValueNode[
+                value=Information about the value
+              ],
+              name=CfnScalarValueNode[
+                value=Description
+              ]
+            ],
+            CfnNameValueNode[
+              value=CfnScalarValueNode[
+                value=Value to return
+              ],
+              name=CfnScalarValueNode[
+                value=Value
+              ]
+            ],
+            CfnNameValueNode[
+              value=CfnObjectValueNode[
+                properties={
+                  CfnNameValueNode[
+                    value=CfnScalarValueNode[
+                      value=Value to export
+                    ],
+                    name=CfnScalarValueNode[
+                      value=Name
+                    ]
+                  ]
+                }
+              ],
+              name=CfnScalarValueNode[
+                value=Export
+              ]
+            ]
+          }
+        ],
+        name=CfnScalarValueNode[
+          value=Logical ID
+        ]
+      ]
+    },
+    name=CfnScalarValueNode[
+      value=Outputs
+    ]
+  ]
+]

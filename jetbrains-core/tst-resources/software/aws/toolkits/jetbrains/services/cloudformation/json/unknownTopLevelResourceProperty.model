@@ -1,0 +1,40 @@
+CfnRootNode[
+  metadataNode=<null>,
+  transformNode=<null>,
+  parametersNode=<null>,
+  mappingsNode=<null>,
+  conditionsNode=<null>,
+  resourcesNode=CfnResourcesNode[
+    resources={
+      CfnResourceNode[
+        type=CfnResourceTypeNode[
+          value=CfnScalarValueNode[
+            value=AWS::SQS::Queue
+          ],
+          name=CfnScalarValueNode[
+            value=Type
+          ]
+        ],
+        properties=CfnResourcePropertiesNode[
+          properties={
+            
+          },
+          name=CfnScalarValueNode[
+            value=Properties
+          ]
+        ],
+        condition=<null>,
+        dependsOn=<null>,
+        allTopLevelProperties=<TRUNCATED MAP>,
+        name=CfnScalarValueNode[
+          value=MyQueue
+        ]
+      ]
+    },
+    name=CfnScalarValueNode[
+      value=Resources
+    ]
+  ],
+  globalsNode=<null>,
+  outputsNode=<null>
+]

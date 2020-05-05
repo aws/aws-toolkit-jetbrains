@@ -1,0 +1,10 @@
+{
+    "Resources": {
+        "MyQueue": {
+            "Type": "AWS::SQS::Queue",
+            <problem description="Unknown property: Unknown">"Unknown"</problem>: "Thing",
+            "Properties": {
+            }
+        }
+    }
+}
