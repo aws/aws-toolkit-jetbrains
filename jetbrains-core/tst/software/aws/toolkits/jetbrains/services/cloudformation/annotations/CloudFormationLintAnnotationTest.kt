@@ -54,6 +54,7 @@ class CloudFormationLintAnnotationTest {
         assertEquals(13, onlyError.location?.end?.columnNumber)
         assertEquals(4, onlyError.location?.end?.lineNumber)
         assertEquals("E3001", onlyError.linterRule?.id)
+        assertEquals("Invalid or unsupported Type undefined for resource S3Bucket in us-east-1", onlyError.message)
     }
 
     @Test
