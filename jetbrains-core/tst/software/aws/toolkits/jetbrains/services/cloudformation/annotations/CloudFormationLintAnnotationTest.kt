@@ -55,4 +55,11 @@ class CloudFormationLintAnnotationTest {
         assertEquals(4, onlyError.location?.end?.lineNumber)
         assertEquals("E3001", onlyError.linterRule?.id)
     }
+
+    @Test
+    fun emptyResponseFromLinter() {
+        val linter = Linter()
+        val errors = linter.getErrorAnnotations("")
+        assertEquals(0, errors.size)
+    }
 }

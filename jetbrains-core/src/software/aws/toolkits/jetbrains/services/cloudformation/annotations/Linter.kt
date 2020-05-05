@@ -46,5 +46,9 @@ class Linter {
         }
 
     fun getErrorAnnotations(linterOutputJson: String): List<CloudFormationLintAnnotation> =
-        mapper.readValue(linterOutputJson, typeReference)
+        if (linterOutputJson.isEmpty()) {
+            emptyList()
+        } else {
+            mapper.readValue(linterOutputJson, typeReference)
+        }
 }
