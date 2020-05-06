@@ -5,5 +5,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="AWS CloudFormation (JSON)" implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.json.JsonCfnFileType"
                   fieldName="INSTANCE"/>
+
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.json.JsonCfnService"/>
     </extensions>
 </idea-plugin>
