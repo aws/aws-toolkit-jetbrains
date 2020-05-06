@@ -1,68 +1,68 @@
-CfnRootNode[
+CfnRootNode{
   metadataNode=<null>,
   transformNode=<null>,
   parametersNode=<null>,
-  mappingsNode=CfnMappingsNode[
-    mappings={
-      CfnFirstLevelMappingNode[
-        firstLevelMapping={
-          CfnSecondLevelMappingNode[
-            secondLevelMapping={
-              CfnMappingValue[
-                value=CfnScalarValueNode[
+  mappingsNode=CfnMappingsNode{
+    mappings=[
+      CfnFirstLevelMappingNode{
+        firstLevelMapping=[
+          CfnSecondLevelMappingNode{
+            secondLevelMapping=[
+              CfnMappingValue{
+                value=CfnScalarValueNode{
                   value=Value01
-                ],
-                name=CfnScalarValueNode[
+                },
+                name=CfnScalarValueNode{
                   value=Name
-                ]
-              ]
-            },
-            name=CfnScalarValueNode[
+                }
+              }
+            ],
+            name=CfnScalarValueNode{
               value=Key01
-            ]
-          ],
-          CfnSecondLevelMappingNode[
-            secondLevelMapping={
-              CfnMappingValue[
-                value=CfnScalarValueNode[
+            }
+          },
+          CfnSecondLevelMappingNode{
+            secondLevelMapping=[
+              CfnMappingValue{
+                value=CfnScalarValueNode{
                   value=Value02
-                ],
-                name=CfnScalarValueNode[
+                },
+                name=CfnScalarValueNode{
                   value=Name
-                ]
-              ]
-            },
-            name=CfnScalarValueNode[
+                }
+              }
+            ],
+            name=CfnScalarValueNode{
               value=Key02
-            ]
-          ],
-          CfnSecondLevelMappingNode[
-            secondLevelMapping={
-              CfnMappingValue[
-                value=CfnScalarValueNode[
+            }
+          },
+          CfnSecondLevelMappingNode{
+            secondLevelMapping=[
+              CfnMappingValue{
+                value=CfnScalarValueNode{
                   value=Value03
-                ],
-                name=CfnScalarValueNode[
+                },
+                name=CfnScalarValueNode{
                   value=Name
-                ]
-              ]
-            },
-            name=CfnScalarValueNode[
+                }
+              }
+            ],
+            name=CfnScalarValueNode{
               value=Key03
-            ]
-          ]
-        },
-        name=CfnScalarValueNode[
+            }
+          }
+        ],
+        name=CfnScalarValueNode{
           value=Mapping01
-        ]
-      ]
-    },
-    name=CfnScalarValueNode[
+        }
+      }
+    ],
+    name=CfnScalarValueNode{
       value=Mappings
-    ]
-  ],
+    }
+  },
   conditionsNode=<null>,
   resourcesNode=<null>,
   globalsNode=<null>,
   outputsNode=<null>
-]
+}

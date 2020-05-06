@@ -1,22 +1,22 @@
-CfnRootNode[
+CfnRootNode{
   metadataNode=<null>,
-  transformNode=CfnTransformNode[
-    transforms={
-      CfnScalarValueNode[
+  transformNode=CfnTransformNode{
+    transforms=[
+      CfnScalarValueNode{
         value=FooTransform
-      ],
-      CfnScalarValueNode[
+      },
+      CfnScalarValueNode{
         value=AWS::Serverless-2016-10-31
-      ]
-    },
-    name=CfnScalarValueNode[
+      }
+    ],
+    name=CfnScalarValueNode{
       value=Transform
-    ]
-  ],
+    }
+  },
   parametersNode=<null>,
   mappingsNode=<null>,
   conditionsNode=<null>,
   resourcesNode=<null>,
   globalsNode=<null>,
   outputsNode=<null>
-]
+}

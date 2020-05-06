@@ -1,4 +1,4 @@
-CfnRootNode[
+CfnRootNode{
   metadataNode=<null>,
   transformNode=<null>,
   parametersNode=<null>,
@@ -6,53 +6,53 @@ CfnRootNode[
   conditionsNode=<null>,
   resourcesNode=<null>,
   globalsNode=<null>,
-  outputsNode=CfnOutputsNode[
-    properties={
-      CfnOutputNode[
-        value=CfnObjectValueNode[
-          properties={
-            CfnNameValueNode[
-              value=CfnScalarValueNode[
+  outputsNode=CfnOutputsNode{
+    properties=[
+      CfnOutputNode{
+        value=CfnObjectValueNode{
+          properties=[
+            CfnNameValueNode{
+              value=CfnScalarValueNode{
                 value=Information about the value
-              ],
-              name=CfnScalarValueNode[
+              },
+              name=CfnScalarValueNode{
                 value=Description
-              ]
-            ],
-            CfnNameValueNode[
-              value=CfnScalarValueNode[
+              }
+            },
+            CfnNameValueNode{
+              value=CfnScalarValueNode{
                 value=Value to return
-              ],
-              name=CfnScalarValueNode[
+              },
+              name=CfnScalarValueNode{
                 value=Value
-              ]
-            ],
-            CfnNameValueNode[
-              value=CfnObjectValueNode[
-                properties={
-                  CfnNameValueNode[
-                    value=CfnScalarValueNode[
+              }
+            },
+            CfnNameValueNode{
+              value=CfnObjectValueNode{
+                properties=[
+                  CfnNameValueNode{
+                    value=CfnScalarValueNode{
                       value=Value to export
-                    ],
-                    name=CfnScalarValueNode[
+                    },
+                    name=CfnScalarValueNode{
                       value=Name
-                    ]
-                  ]
-                }
-              ],
-              name=CfnScalarValueNode[
+                    }
+                  }
+                ]
+              },
+              name=CfnScalarValueNode{
                 value=Export
-              ]
-            ]
-          }
-        ],
-        name=CfnScalarValueNode[
+              }
+            }
+          ]
+        },
+        name=CfnScalarValueNode{
           value=Logical ID
-        ]
-      ]
-    },
-    name=CfnScalarValueNode[
+        }
+      }
+    ],
+    name=CfnScalarValueNode{
       value=Outputs
-    ]
-  ]
-]
+    }
+  }
+}

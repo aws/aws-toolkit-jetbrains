@@ -1,4 +1,4 @@
-CfnRootNode[
+CfnRootNode{
   metadataNode=<null>,
   transformNode=<null>,
   parametersNode=<null>,
@@ -7,4 +7,4 @@ CfnRootNode[
   resourcesNode=<null>,
   globalsNode=<null>,
   outputsNode=<null>
-]
+}

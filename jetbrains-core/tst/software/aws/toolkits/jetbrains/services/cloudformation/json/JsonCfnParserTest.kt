@@ -6,12 +6,15 @@ package software.aws.toolkits.jetbrains.services.cloudformation.json
 import com.intellij.json.psi.JsonFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.runInEdtAndWait
-import org.apache.commons.lang3.builder.MultilineRecursiveToStringStyle
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder
+import org.apache.commons.lang3.builder.ToStringStyle
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnNode
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnParsedFile
 import software.aws.toolkits.jetbrains.services.cloudformation.CfnProblem
@@ -19,63 +22,38 @@ import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRul
 import kotlin.reflect.full.isSubclassOf
 import kotlin.test.assertNotNull
 
-class JsonCfnParserTest {
+@RunWith(Parameterized::class)
+class JsonCfnParserTest(private val templateName: String) {
+    companion object {
+        @Parameters(name = "{0}")
+        @JvmStatic
+        fun data() = listOf(
+            "completeExample.json",
+            "conditions.json",
+            "mappings.json",
+            "mappingsMultipleValues.json",
+            "metadata.json",
+            "metadataWrongType.json",
+            "outputs.json",
+            "parameters.json",
+            "resources.json",
+            "transformString.json",
+            "transformStringArray.json",
+            "transformWrongType.json",
+            "unknownSection.json",
+            "unknownTopLevelResourceProperty.json",
+            "unsupportedVersion.json",
+            "version.json",
+            "versionWrongType.json"
+        )
+    }
+
     @Rule
     @JvmField
     val projectRule = JavaCodeInsightTestFixtureRule()
 
     @Test
-    fun parameters() = runTest("parameters.json")
-
-    @Test
-    fun metadata() = runTest("metadata.json")
-
-    @Test
-    fun metadataWrongType() = runTest("metadataWrongType.json")
-
-    @Test
-    fun transformString() = runTest("transformString.json")
-
-    @Test
-    fun transformStringArray() = runTest("transformStringArray.json")
-
-    @Test
-    fun transformWrongType() = runTest("transformWrongType.json")
-
-    @Test
-    fun mappings() = runTest("mappings.json")
-
-    @Test
-    fun mappingsMultipleValues() = runTest("mappingsMultipleValues.json")
-
-    @Test
-    fun version() = runTest("version.json")
-
-    @Test
-    fun unsupportedVersion() = runTest("unsupportedVersion.json")
-
-    @Test
-    fun versionWrongType() = runTest("versionWrongType.json")
-
-    @Test
-    fun outputs() = runTest("outputs.json")
-
-    @Test
-    fun conditions() = runTest("conditions.json")
-
-    @Test
-    fun resources() = runTest("resources.json")
-
-    @Test
-    fun unknownTopLevelResourceProperty() = runTest("unknownTopLevelResourceProperty.json")
-
-    @Test
-    fun unknownSection() = runTest("unknownSection.json")
-
-    @Test
-    fun completeExample() = runTest("completeExample.json")
-
-    private fun runTest(templateName: String) {
+    fun runTest() {
         val jsonCfnService = JsonCfnService.getInstance(projectRule.project) ?: fail("Failed to get JSON service")
 
         val inputTemplate = loadFile(templateName) ?: fail("$templateName not found")
@@ -98,7 +76,6 @@ class JsonCfnParserTest {
     private fun validateModel(parsedFile: CfnParsedFile, templateName: String) {
         val expectedFile = templateName.replace(".json", ".model")
         val modelString = convertToString(parsedFile.root)
-
         val expectedModel = loadFile(expectedFile) ?: ""
 
         assertThat(modelString)
@@ -116,7 +93,7 @@ class JsonCfnParserTest {
             .isEqualToNormalizingWhitespace(expectedProblems)
     }
 
-    private fun convertToString(node: CfnNode): String = ReflectionToStringBuilder.reflectionToString(node, ShortRecursiveToString())
+    private fun convertToString(node: CfnNode): String = ShortRecursiveToString.toString(node)
 
     private fun renderProblems(psiFile: PsiFile, problems: List<CfnProblem>): String {
         val baseText = StringBuffer(psiFile.text)
@@ -140,23 +117,59 @@ class JsonCfnParserTest {
         return baseText.toString()
     }
 
-    inner class ShortRecursiveToString : MultilineRecursiveToStringStyle() {
+    private class ShortRecursiveToString(private var offset: Int) : ToStringStyle() {
+        companion object {
+            fun toString(obj: Any?, offset: Int = 1): String =
+                ReflectionToStringBuilder(obj, ShortRecursiveToString(offset)).toString()
+        }
+
+        private data class Entry(val key: Any?, val value: Any?)
+
+        private val lineSep = '\n'
+        private val spacer = "  "
+
         init {
             isUseShortClassName = true
             isUseIdentityHashCode = false
+
+            updateIndents()
         }
 
-        override fun appendDetail(buffer: StringBuffer?, fieldName: String?, coll: Collection<*>) {
-            appendDetail(buffer, fieldName, coll.toTypedArray())
+        private fun updateIndents() {
+            contentStart = "{" + lineSep + spacer.repeat(offset)
+            contentEnd = lineSep + spacer.repeat(offset - 1) + "}"
+
+            fieldSeparator = "," + lineSep + spacer.repeat(offset)
+
+            arrayStart = "[" + lineSep + spacer.repeat(offset)
+            arraySeparator = "," + lineSep + spacer.repeat(offset)
+            arrayEnd = lineSep + spacer.repeat(offset - 1) + "]"
         }
 
         override fun appendDetail(buffer: StringBuffer, fieldName: String, map: MutableMap<*, *>) {
-            // This library is kinda buggy (Recursive toString doesnt copy over settings into child toString)
-            // and so maps dont work. We dont really care about the Map field (allTopLevelProperties) anyway
-            // TODO: Is there a better lib?
             appendDetail(buffer, fieldName, "<TRUNCATED MAP>")
         }
 
-        override fun accept(clazz: Class<*>): Boolean = clazz.kotlin.isSubclassOf(CfnNode::class)
+        override fun appendDetail(buffer: StringBuffer, fieldName: String?, col: Collection<*>) {
+            this.appendDetail(buffer, fieldName, col.toTypedArray())
+        }
+
+        override fun appendDetail(buffer: StringBuffer, fieldName: String?, array: Array<Any?>) {
+            offset += 1
+            updateIndents()
+
+            super.appendDetail(buffer, fieldName, array)
+
+            offset -= 1
+            updateIndents()
+        }
+
+        override fun appendDetail(buffer: StringBuffer, fieldName: String?, value: Any) {
+            if (value is Entry || value.javaClass.kotlin.isSubclassOf(CfnNode::class)) {
+                buffer.append(toString(value, offset + 1))
+            } else {
+                super.appendDetail(buffer, fieldName, value)
+            }
+        }
     }
 }

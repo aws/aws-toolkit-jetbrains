@@ -1,65 +1,65 @@
-CfnRootNode[
+CfnRootNode{
   metadataNode=<null>,
   transformNode=<null>,
   parametersNode=<null>,
   mappingsNode=<null>,
-  conditionsNode=CfnConditionsNode[
-    conditions={
-      CfnConditionNode[
-        value=CfnFunctionNode[
-          name=CfnScalarValueNode[
+  conditionsNode=CfnConditionsNode{
+    conditions=[
+      CfnConditionNode{
+        value=CfnFunctionNode{
+          name=CfnScalarValueNode{
             value=Fn::Equals
-          ],
+          },
           function=FnEquals,
-          args={
-            CfnArrayValueNode[
-              items={
-                CfnFunctionNode[
-                  name=CfnScalarValueNode[
+          args=[
+            CfnArrayValueNode{
+              items=[
+                CfnFunctionNode{
+                  name=CfnScalarValueNode{
                     value=Ref
-                  ],
+                  },
                   function=Ref,
-                  args={
-                    CfnScalarValueNode[
+                  args=[
+                    CfnScalarValueNode{
                       value=EnvType
-                    ]
-                  }
-                ],
-                CfnScalarValueNode[
+                    }
+                  ]
+                },
+                CfnScalarValueNode{
                   value=prod
-                ]
-              }
-            ],
-            CfnArrayValueNode[
-              items={
-                CfnFunctionNode[
-                  name=CfnScalarValueNode[
+                }
+              ]
+            },
+            CfnArrayValueNode{
+              items=[
+                CfnFunctionNode{
+                  name=CfnScalarValueNode{
                     value=Ref
-                  ],
+                  },
                   function=Ref,
-                  args={
-                    CfnScalarValueNode[
+                  args=[
+                    CfnScalarValueNode{
                       value=EnvType
-                    ]
-                  }
-                ],
-                CfnScalarValueNode[
+                    }
+                  ]
+                },
+                CfnScalarValueNode{
                   value=prod
-                ]
-              }
-            ]
-          }
-        ],
-        name=CfnScalarValueNode[
+                }
+              ]
+            }
+          ]
+        },
+        name=CfnScalarValueNode{
           value=CreateProdResources
-        ]
-      ]
-    },
-    name=CfnScalarValueNode[
+        }
+      }
+    ],
+    name=CfnScalarValueNode{
       value=Conditions
-    ]
-  ],
+    }
+  },
   resourcesNode=<null>,
   globalsNode=<null>,
   outputsNode=<null>
-]
+}

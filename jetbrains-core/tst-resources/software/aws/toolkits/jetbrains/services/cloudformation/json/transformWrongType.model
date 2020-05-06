@@ -1,17 +1,17 @@
-CfnRootNode[
+CfnRootNode{
   metadataNode=<null>,
-  transformNode=CfnTransformNode[
-    transforms={
+  transformNode=CfnTransformNode{
+    transforms=[
 
-    },
-    name=CfnScalarValueNode[
+    ],
+    name=CfnScalarValueNode{
       value=Transform
-    ]
-  ],
+    }
+  },
   parametersNode=<null>,
   mappingsNode=<null>,
   conditionsNode=<null>,
   resourcesNode=<null>,
   globalsNode=<null>,
   outputsNode=<null>
-]
+}

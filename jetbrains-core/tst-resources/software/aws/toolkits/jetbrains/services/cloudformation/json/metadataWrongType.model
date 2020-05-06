@@ -1,10 +1,10 @@
-CfnRootNode[
-  metadataNode=CfnMetadataNode[
+CfnRootNode{
+  metadataNode=CfnMetadataNode{
     value=<null>,
-    name=CfnScalarValueNode[
+    name=CfnScalarValueNode{
       value=Metadata
-    ]
-  ],
+    }
+  },
   transformNode=<null>,
   parametersNode=<null>,
   mappingsNode=<null>,
@@ -12,4 +12,4 @@ CfnRootNode[
   resourcesNode=<null>,
   globalsNode=<null>,
   outputsNode=<null>
-]
+}
