@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.services.cloudformation.CfnParsedFile
  */
 class JsonCfnService {
     fun isCloudFormation(element: PsiElement): Boolean {
-        val psiFile = element.firstChild
+        val psiFile = element.containingFile
         if (psiFile !is JsonFile) {
             return false
         }
@@ -28,12 +28,12 @@ class JsonCfnService {
         return fileType == JsonCfnFileType.INSTANCE
     }
 
-    private fun rootElement(file: JsonFile): JsonObject? = PsiTreeUtil.getChildOfType(file, JsonObject::class.java)
-
     fun parse(file: PsiFile): CfnParsedFile? {
         val rootElement = rootElement(file as JsonFile) ?: return null
         return JsonCfnParser.parse(rootElement)
     }
+
+    private fun rootElement(file: JsonFile): JsonObject? = PsiTreeUtil.getChildOfType(file, JsonObject::class.java)
 
     companion object {
         fun getInstance(project: Project): JsonCfnService? = ServiceManager.getService(project, JsonCfnService::class.java)

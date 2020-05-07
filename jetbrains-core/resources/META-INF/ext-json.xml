@@ -7,5 +7,17 @@
                   fieldName="INSTANCE"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.json.JsonCfnService"/>
+
+        <localInspection id="aws.cloudformation.jsonFormatViolation"
+                         shortName="JsonCfnFormatInspection"
+                         language="JSON"
+                         groupPath="AWS CloudFormation"
+                         groupName="JSON"
+                         bundle="software.aws.toolkits.resources.localized_messages"
+                         key="cloudformation.inspections.format_violation"
+                         enabledByDefault="true"
+                         level="ERROR"
+                         hasStaticDescription="true"
+                         implementationClass="software.aws.toolkits.jetbrains.services.cloudformation.json.JsonFormatViolationInspection"/>
     </extensions>
 </idea-plugin>
