@@ -42,8 +42,7 @@ class CloudFormationLintAnnotationTest {
             ]
         """
 
-        val linter = Linter()
-        val errors = linter.getErrorAnnotations(linterOutput)
+        val errors = Linter.getErrorAnnotations(linterOutput)
         assertEquals(1, errors.size)
 
         val onlyError = errors[0]
@@ -59,8 +58,7 @@ class CloudFormationLintAnnotationTest {
 
     @Test
     fun emptyResponseFromLinter() {
-        val linter = Linter()
-        val errors = linter.getErrorAnnotations("")
+        val errors = Linter.getErrorAnnotations("")
         assertEquals(0, errors.size)
     }
 }
