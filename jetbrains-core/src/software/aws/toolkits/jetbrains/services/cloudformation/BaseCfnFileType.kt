@@ -29,6 +29,10 @@ abstract class BaseCfnFileType(language: Language) : LanguageFileType(language, 
             return false
         }
 
+        if (!file.isInLocalFileSystem) {
+            return false
+        }
+
         val bytes = try {
             FileUtil.loadFirstAndClose(file.inputStream, 10 * 1024)
         } catch (_: FileNotFoundException) {
