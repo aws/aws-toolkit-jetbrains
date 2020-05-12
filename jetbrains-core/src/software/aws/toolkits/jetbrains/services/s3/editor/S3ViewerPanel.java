@@ -4,13 +4,17 @@
 package software.aws.toolkits.jetbrains.services.s3.editor;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.util.ui.ColumnInfo;
 import java.awt.BorderLayout;
@@ -32,6 +36,8 @@ import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources;
 import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel;
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 
+import static com.intellij.openapi.actionSystem.ActionToolbarPosition.TOP;
+
 @SuppressWarnings("unchecked")
 public class S3ViewerPanel {
     private Disposable disposable;
@@ -39,7 +45,6 @@ public class S3ViewerPanel {
     private JTextField name;
     private JTextField date;
     private JPanel mainPanel;
-    private JTextField arnText;
     private S3TreeTable treeTable;
     private S3TreeNode s3TreeNode;
     private S3TreeTableModel model;
@@ -51,9 +56,6 @@ public class S3ViewerPanel {
 
         name.setText(bucketVirtual.getName());
         date.setText(S3Resources.formatDate(bucketVirtual.getS3Bucket().creationDate()));
-
-        AwsRegion activeRegion = ProjectAccountSettingsManager.getInstance(project).getActiveRegion();
-        arnText.setText(S3UtilsKt.bucketArn(bucketVirtual.getName(), activeRegion));
 
         s3TreeNode = new S3TreeDirectoryNode(bucketVirtual, null, "");
 
@@ -80,11 +82,22 @@ public class S3ViewerPanel {
         addTreeActions();
 
         treeTable.getColumnModel().getColumn(1).setMaxWidth(120);
+        //SimpleToolWindowPanel tablePanel = new SimpleToolWindowPanel(true, false);
+        ToolbarDecorator panel = addToolbar(treeTable);
+        //tablePanel.setContent(ScrollPaneFactory.createScrollPane(treeTable));
 
-        mainPanel.add(ScrollPaneFactory.createScrollPane(treeTable), BorderLayout.CENTER);
+        //mainPanel.add(tablePanel, BorderLayout.CENTER);
+        mainPanel.add(panel.createPanel());
     }
 
     private void createUIComponents() {
+    }
+
+    private ToolbarDecorator addToolbar(S3TreeTable treeTable) {
+        return ToolbarDecorator
+            .createDecorator(treeTable)
+            .setActionGroup(makeActionGroup())
+            .setToolbarPosition(TOP);
     }
 
     public JComponent getComponent() {
@@ -106,6 +119,10 @@ public class S3ViewerPanel {
     }
 
     private void addTreeActions() {
+        PopupHandler.installPopupHandler(treeTable, makeActionGroup(), ActionPlaces.EDITOR_POPUP, ActionManager.getInstance());
+    }
+
+    private DefaultActionGroup makeActionGroup() {
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(new DownloadObjectAction(project, treeTable));
         actionGroup.add(new UploadObjectAction(project, treeTable));
@@ -115,6 +132,6 @@ public class S3ViewerPanel {
         actionGroup.add(new CopyPathAction(project, treeTable));
         actionGroup.add(new Separator());
         actionGroup.add(new DeleteObjectAction(project, treeTable));
-        PopupHandler.installPopupHandler(treeTable, actionGroup, ActionPlaces.EDITOR_POPUP, ActionManager.getInstance());
+        return actionGroup;
     }
 }
