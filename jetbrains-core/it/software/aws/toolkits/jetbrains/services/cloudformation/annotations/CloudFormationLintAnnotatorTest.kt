@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation.annotations
 
+import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.xml.XMLLanguage
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.xml.XmlFile
 import com.intellij.testFramework.runInEdtAndGet
+import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.yaml.YAMLLanguage
 import org.jetbrains.yaml.psi.YAMLFile
@@ -20,7 +22,9 @@ class CloudFormationLintAnnotatorTest {
     @JvmField
     val projectRule = JavaCodeInsightTestFixtureRule()
 
-    var cloudFormationLintAnnotator: CloudFormationLintAnnotator = CloudFormationLintAnnotator()
+    val cloudFormationLintAnnotator = CloudFormationLintAnnotator()
+
+    val annotationHolder = mock<AnnotationHolder>()
 
     @Test
     fun canAnnotate() {
@@ -33,13 +37,15 @@ Resources:
         """.trimIndent()
             ) as YAMLFile
         }
+
         val initialAnnotationResults = cloudFormationLintAnnotator.collectInformation(psiFile)
         assertThat(initialAnnotationResults).isNotNull
         val errors = cloudFormationLintAnnotator.doAnnotate(initialAnnotationResults)
         assertThat(errors).isNotNull
         assertThat(errors.size).isEqualTo(1)
-
-        // TODO test errorAnnotator.apply(), but I would need to be able to mock a static method
+        runInEdtAndGet {
+            cloudFormationLintAnnotator.apply(psiFile, errors, annotationHolder)
+        }
     }
 
     @Test
