@@ -24,12 +24,16 @@ class InitialAnnotationResultsTest {
     val projectRule = JavaCodeInsightTestFixtureRule()
 
     @Test
-    fun isCloudFormationTemplate_Json_EmptyResourcesBlock() {
+    fun isCloudFormationTemplate_Json_ResourcesAndType() {
         val psiFile = runInEdtAndGet {
             PsiFileFactory.getInstance(projectRule.project).createFileFromText(
                 JsonLanguage.INSTANCE, """
 {
-  "Resources" : {}
+    "Resources" : {
+         "S3Bucket" : {
+                "Type" : "AWS::S3::Bucket"
+        }
+    }
 }
         """.trimIndent()
             ) as JsonFile
@@ -38,6 +42,25 @@ class InitialAnnotationResultsTest {
         val initialAnnotationResults = InitialAnnotationResults(psiFile)
 
         assertTrue(initialAnnotationResults.isCloudFormationTemplate)
+    }
+
+    @Test
+    fun isNotCloudFormationTemplate_Json_ResourcesButNoType() {
+        val psiFile = runInEdtAndGet {
+            PsiFileFactory.getInstance(projectRule.project).createFileFromText(
+                JsonLanguage.INSTANCE, """
+{
+    "Resources" : {
+         "S3Bucket" : {}
+    }
+}
+        """.trimIndent()
+            ) as JsonFile
+        }
+
+        val initialAnnotationResults = InitialAnnotationResults(psiFile)
+
+        assertFalse(initialAnnotationResults.isCloudFormationTemplate)
     }
 
     @Test
@@ -90,11 +113,13 @@ Unrecognized:
     }
 
     @Test
-    fun isCloudFormationTemplate_Yaml_EmptyResourcesBlock() {
+    fun isCloudFormationTemplate_Yaml_ResourcesAndType() {
         val psiFile = runInEdtAndGet {
             PsiFileFactory.getInstance(projectRule.project).createFileFromText(
                 YAMLLanguage.INSTANCE, """
 Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
         """.trimIndent()
             ) as YAMLFile
         }
@@ -102,6 +127,23 @@ Resources:
         val initialAnnotationResults = InitialAnnotationResults(psiFile)
 
         assertTrue(initialAnnotationResults.isCloudFormationTemplate)
+    }
+
+    @Test
+    fun isNotCloudFormationTemplate_Yaml_ResourcesButNoType() {
+        val psiFile = runInEdtAndGet {
+            PsiFileFactory.getInstance(projectRule.project).createFileFromText(
+                YAMLLanguage.INSTANCE, """
+Resources:
+  S3Bucket:
+    
+        """.trimIndent()
+            ) as YAMLFile
+        }
+
+        val initialAnnotationResults = InitialAnnotationResults(psiFile)
+
+        assertFalse(initialAnnotationResults.isCloudFormationTemplate)
     }
 
     @Test

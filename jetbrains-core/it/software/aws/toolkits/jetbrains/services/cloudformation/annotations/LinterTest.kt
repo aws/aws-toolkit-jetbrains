@@ -20,9 +20,8 @@ class LinterTest {
 
     @Test
     fun getsRightNumberOfErrors() {
-        val cloudFormationLinter = Linter()
         val initialAnnotationResults = InitialAnnotationResults(jsonFile())
-        val cloudFormationLints = cloudFormationLinter.execute(initialAnnotationResults)
+        val cloudFormationLints = Linter.execute(initialAnnotationResults)
 
         assertThat(cloudFormationLints.size).isEqualTo(1)
     }
