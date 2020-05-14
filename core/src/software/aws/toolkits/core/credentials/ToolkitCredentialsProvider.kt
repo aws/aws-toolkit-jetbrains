@@ -23,6 +23,11 @@ abstract class ToolkitCredentialsIdentifier {
      */
     abstract val factoryId: String
 
+    /**
+     * Some ID types (e.g. Profile) have a concept of a default region, this is optional.
+     */
+    open val defaultRegion: String? get() = null
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

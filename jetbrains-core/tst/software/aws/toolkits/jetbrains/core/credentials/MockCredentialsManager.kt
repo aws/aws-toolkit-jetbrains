@@ -28,9 +28,10 @@ class MockCredentialsManager : CredentialManager() {
 
     fun addCredentials(
         id: String,
-        credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret")
+        credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
+        region: String? = null
     ): ToolkitCredentialsIdentifier {
-        val credentialIdentifier = MockCredentialIdentifier(id, StaticCredentialsProvider.create(credentials))
+        val credentialIdentifier = MockCredentialIdentifier(id, StaticCredentialsProvider.create(credentials), region)
 
         addProvider(credentialIdentifier)
 
@@ -48,11 +49,12 @@ class MockCredentialsManager : CredentialManager() {
 
         val DUMMY_PROVIDER_IDENTIFIER: ToolkitCredentialsIdentifier = MockCredentialIdentifier(
             "DUMMY_CREDENTIALS",
-            StaticCredentialsProvider.create(AwsBasicCredentials.create("DummyAccess", "DummySecret"))
+            StaticCredentialsProvider.create(AwsBasicCredentials.create("DummyAccess", "DummySecret")),
+            null
         )
     }
 
-    private class MockCredentialIdentifier(override val displayName: String, val credentials: AwsCredentialsProvider) :
+    private class MockCredentialIdentifier(override val displayName: String, val credentials: AwsCredentialsProvider, override val defaultRegion: String?) :
         ToolkitCredentialsIdentifier() {
         override val id: String = displayName
         override val factoryId: String = "mockCredentialProviderFactory"
