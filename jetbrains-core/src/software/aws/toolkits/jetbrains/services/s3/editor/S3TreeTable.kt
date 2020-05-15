@@ -207,7 +207,7 @@ class S3TreeTable(
         return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
 
-    // This is nullable because tableModel.root is nullable. It is null sometimes, like when we invalidte the tree on a refresh
+    // This is nullable because tableModel.root is nullable. It is null sometimes, like when we invalidate the tree on a refresh
     fun getRootNode(): S3TreeDirectoryNode? = (tableModel.root as? DefaultMutableTreeNode)?.userObject as? S3TreeDirectoryNode
 
     fun getSelectedNodes(): List<S3TreeNode> = selectedRows.map { getNodeForRow(it) }.filterNotNull()

@@ -32,18 +32,15 @@ import javax.swing.table.DefaultTableCellRenderer
 class S3ViewerPanel(disposable: Disposable, private val project: Project, private val virtualBucket: S3VirtualBucket) {
     val component: JComponent
     val treeTable: S3TreeTable
-    private val structureTreeModel: StructureTreeModel<SimpleTreeStructure>
-    private val rootNode: S3TreeDirectoryNode
+    private val rootNode: S3TreeDirectoryNode = S3TreeDirectoryNode(virtualBucket, null, "")
+    private val structureTreeModel: StructureTreeModel<SimpleTreeStructure> = StructureTreeModel(SimpleTreeStructure.Impl(rootNode), disposable)
 
     init {
-        val key = S3Column(S3ColumnType.NAME)
-        val size = S3Column(S3ColumnType.SIZE)
-        val modified = S3Column(S3ColumnType.LAST_MODIFIED)
-        rootNode = S3TreeDirectoryNode(virtualBucket, null, "")
-        structureTreeModel = StructureTreeModel(
-            SimpleTreeStructure.Impl(rootNode), disposable
+        val model = S3TreeTableModel(
+            AsyncTreeModel(structureTreeModel, true, disposable),
+            arrayOf(S3Column(S3ColumnType.NAME), S3Column(S3ColumnType.SIZE), S3Column(S3ColumnType.LAST_MODIFIED)),
+            structureTreeModel
         )
-        val model = S3TreeTableModel(AsyncTreeModel(structureTreeModel, true, disposable), arrayOf(key, size, modified), structureTreeModel)
         treeTable = S3TreeTable(model, virtualBucket, project).also {
             it.setRootVisible(false)
             it.cellSelectionEnabled = false
@@ -59,7 +56,12 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, privat
         treeTable.setTreeCellRenderer(treeRenderer)
         val tableRenderer = DefaultTableCellRenderer().also { it.horizontalAlignment = SwingConstants.LEFT }
         treeTable.setDefaultRenderer(Any::class.java, tableRenderer)
-        addTreeActions(treeTable)
+        PopupHandler.installPopupHandler(
+            treeTable,
+            makeActionGroup(treeTable),
+            ActionPlaces.EDITOR_POPUP,
+            ActionManager.getInstance()
+        )
     }
 
     private fun addToolbar(table: S3TreeTable): ToolbarDecorator {
@@ -70,30 +72,17 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, privat
                 structureTreeModel.invalidate()
             }
         })
-        return ToolbarDecorator
-            .createDecorator(table)
-            .setActionGroup(group)
+        return ToolbarDecorator.createDecorator(table).setActionGroup(group)
     }
 
-    private fun addTreeActions(table: S3TreeTable) {
-        PopupHandler.installPopupHandler(
-            table,
-            makeActionGroup(table),
-            ActionPlaces.EDITOR_POPUP,
-            ActionManager.getInstance()
-        )
-    }
-
-    private fun makeActionGroup(table: S3TreeTable): DefaultActionGroup {
-        val actionGroup = DefaultActionGroup()
-        actionGroup.add(DownloadObjectAction(project, table))
-        actionGroup.add(UploadObjectAction(project, table))
-        actionGroup.add(Separator())
-        actionGroup.add(NewFolderAction(project, table))
-        actionGroup.add(RenameObjectAction(project, table))
-        actionGroup.add(CopyPathAction(project, table))
-        actionGroup.add(Separator())
-        actionGroup.add(DeleteObjectAction(project, table))
-        return actionGroup
+    private fun makeActionGroup(table: S3TreeTable): DefaultActionGroup = DefaultActionGroup().also {
+        it.add(DownloadObjectAction(project, table))
+        it.add(UploadObjectAction(project, table))
+        it.add(Separator())
+        it.add(NewFolderAction(project, table))
+        it.add(RenameObjectAction(project, table))
+        it.add(CopyPathAction(project, table))
+        it.add(Separator())
+        it.add(DeleteObjectAction(project, table))
     }
 }
