@@ -41,7 +41,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, privat
             arrayOf(S3Column(S3ColumnType.NAME), S3Column(S3ColumnType.SIZE), S3Column(S3ColumnType.LAST_MODIFIED)),
             structureTreeModel
         )
-        treeTable = S3TreeTable(model, virtualBucket, project).also {
+        treeTable = S3TreeTable(model, rootNode, virtualBucket, project).also {
             it.setRootVisible(false)
             it.cellSelectionEnabled = false
             it.rowSelectionAllowed = true

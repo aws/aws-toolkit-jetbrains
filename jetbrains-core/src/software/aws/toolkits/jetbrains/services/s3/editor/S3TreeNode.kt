@@ -54,7 +54,6 @@ class S3TreeDirectoryNode(private val bucket: S3VirtualBucket, parent: S3TreeDir
         }
 
         val continuation = listOfNotNull(response.nextContinuationToken()?.let {
-            // Spaces are intentional
             S3TreeContinuationNode(bucketName, this, "${this.key}/${message("s3.load_more")}", it)
         })
 
