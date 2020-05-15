@@ -3,15 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.s3.editor
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
-import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ToolbarDecorator
@@ -20,11 +16,12 @@ import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.NewFolderAction
+import software.aws.toolkits.jetbrains.services.s3.objectActions.RefreshSubTreeAction
+import software.aws.toolkits.jetbrains.services.s3.objectActions.RefreshTreeAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction
 import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel
-import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.SwingConstants
 import javax.swing.table.DefaultTableCellRenderer
@@ -33,9 +30,9 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, privat
     val component: JComponent
     val treeTable: S3TreeTable
     private val rootNode: S3TreeDirectoryNode = S3TreeDirectoryNode(virtualBucket, null, "")
-    private val structureTreeModel: StructureTreeModel<SimpleTreeStructure> = StructureTreeModel(SimpleTreeStructure.Impl(rootNode), disposable)
 
     init {
+        val structureTreeModel: StructureTreeModel<SimpleTreeStructure> = StructureTreeModel(SimpleTreeStructure.Impl(rootNode), disposable)
         val model = S3TreeTableModel(
             AsyncTreeModel(structureTreeModel, true, disposable),
             arrayOf(S3Column(S3ColumnType.NAME), S3Column(S3ColumnType.SIZE), S3Column(S3ColumnType.LAST_MODIFIED)),
@@ -51,31 +48,29 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, privat
             it.tableHeader.reorderingAllowed = false
             it.columnModel.getColumn(1).maxWidth = 120
         }
-        component = addToolbar(treeTable).createPanel()
+        component = addToolbar().createPanel()
         val treeRenderer = S3TreeCellRenderer(treeTable)
         treeTable.setTreeCellRenderer(treeRenderer)
         val tableRenderer = DefaultTableCellRenderer().also { it.horizontalAlignment = SwingConstants.LEFT }
         treeTable.setDefaultRenderer(Any::class.java, tableRenderer)
         PopupHandler.installPopupHandler(
             treeTable,
-            makeActionGroup(treeTable),
+            createCommonActionGroup(treeTable).also {
+                it.addAction(RefreshSubTreeAction(treeTable))
+            },
             ActionPlaces.EDITOR_POPUP,
             ActionManager.getInstance()
         )
     }
 
-    private fun addToolbar(table: S3TreeTable): ToolbarDecorator {
-        val group = makeActionGroup(table)
-        group.addAction(object : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh), DumbAware {
-            override fun actionPerformed(e: AnActionEvent) {
-                rootNode.removeAllChildren()
-                structureTreeModel.invalidate()
-            }
-        })
-        return ToolbarDecorator.createDecorator(table).setActionGroup(group)
+    private fun addToolbar(): ToolbarDecorator {
+        val group = createCommonActionGroup(treeTable).also {
+            it.addAction(RefreshTreeAction(treeTable, rootNode))
+        }
+        return ToolbarDecorator.createDecorator(treeTable).setActionGroup(group)
     }
 
-    private fun makeActionGroup(table: S3TreeTable): DefaultActionGroup = DefaultActionGroup().also {
+    private fun createCommonActionGroup(table: S3TreeTable): DefaultActionGroup = DefaultActionGroup().also {
         it.add(DownloadObjectAction(project, table))
         it.add(UploadObjectAction(project, table))
         it.add(Separator())
@@ -84,5 +79,6 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, privat
         it.add(CopyPathAction(project, table))
         it.add(Separator())
         it.add(DeleteObjectAction(project, table))
+        it.add(Separator())
     }
 }
