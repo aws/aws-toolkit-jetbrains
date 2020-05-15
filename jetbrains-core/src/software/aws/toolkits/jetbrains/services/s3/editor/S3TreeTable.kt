@@ -47,7 +47,7 @@ class S3TreeTable(
 
     private val dropTargetListener = object : DropTargetAdapter() {
         override fun drop(dropEvent: DropTargetDropEvent) {
-            val node = rowAtPoint(dropEvent.location).takeIf { it >= 0 }?.let { getNodeForRow(it) } ?: getRootNode()
+            val node = rowAtPoint(dropEvent.location).takeIf { it >= 0 }?.let { getNodeForRow(it) } ?: getRootNode() ?: return
             val data = try {
                 dropEvent.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE)
                 val list = dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
@@ -207,7 +207,8 @@ class S3TreeTable(
         return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
 
-    fun getRootNode(): S3TreeDirectoryNode = (tableModel.root as DefaultMutableTreeNode).userObject as S3TreeDirectoryNode
+    // This is nullable because tableModel.root is nullable. It is null sometimes, like when we invalidte the tree on a refresh
+    fun getRootNode(): S3TreeDirectoryNode? = (tableModel.root as? DefaultMutableTreeNode)?.userObject as? S3TreeDirectoryNode
 
     fun getSelectedNodes(): List<S3TreeNode> = selectedRows.map { getNodeForRow(it) }.filterNotNull()
 

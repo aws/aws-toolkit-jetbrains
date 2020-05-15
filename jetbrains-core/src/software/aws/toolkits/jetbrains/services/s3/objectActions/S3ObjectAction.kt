@@ -14,7 +14,7 @@ import javax.swing.Icon
 abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: String, icon: Icon? = null) : DumbAwareAction(title, null, icon) {
     protected abstract fun performAction(nodes: List<S3TreeNode>)
 
-    protected open fun enabled(nodes: List<S3TreeNode>): Boolean = true
+    protected open fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isNotEmpty()
 
     override fun update(e: AnActionEvent) {
         val selected = selected()
@@ -23,7 +23,17 @@ abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: Strin
 
     override fun actionPerformed(e: AnActionEvent) = performAction(selected().filter { it !is S3TreeContinuationNode })
 
-    private fun selected(): List<S3TreeNode> = treeTable.getSelectedNodes().takeIf { it.isNotEmpty() } ?: listOf(treeTable.getRootNode())
+    private fun selected(): List<S3TreeNode> {
+        val selectedNodes = treeTable.getSelectedNodes()
+        if (selectedNodes.isNotEmpty()) {
+            return selectedNodes
+        }
+        val rootNode = treeTable.getRootNode()
+        if (rootNode != null) {
+            return listOf(rootNode)
+        }
+        return listOf()
+    }
 }
 
 abstract class SingleS3ObjectAction(treeTable: S3TreeTable, title: String, icon: Icon? = null) : S3ObjectAction(treeTable, title, icon) {
