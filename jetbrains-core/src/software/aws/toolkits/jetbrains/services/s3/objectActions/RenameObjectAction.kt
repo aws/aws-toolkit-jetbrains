@@ -16,8 +16,10 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 
-class RenameObjectAction(private val project: Project, treeTable: S3TreeTable) :
-    SingleS3ObjectAction(treeTable, message("s3.rename.object.action"), AllIcons.Actions.RefactoringBulb) {
+class RenameObjectAction(
+    private val project: Project,
+    treeTable: S3TreeTable
+) : SingleS3ObjectAction(treeTable, message("s3.rename.object.action"), AllIcons.Actions.RefactoringBulb) {
 
     override fun enabled(node: S3TreeNode): Boolean = node is S3TreeObjectNode
 

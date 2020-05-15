@@ -34,9 +34,8 @@ import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 
 @SuppressWarnings("unchecked")
 public class S3ViewerPanel {
+    private final JComponent component;
     private final Disposable disposable;
-    private JPanel content;
-    private JPanel mainPanel;
     private final S3TreeTable treeTable;
     private final Project project;
     private final ColumnInfo<Object, Object>[] columns;
@@ -62,7 +61,7 @@ public class S3ViewerPanel {
         addTreeActions(treeTable);
 
         ToolbarDecorator panel = addToolbar(treeTable);
-        mainPanel.add(panel.createPanel());
+        component = panel.createPanel();
     }
 
     private void createUIComponents() {
@@ -104,7 +103,7 @@ public class S3ViewerPanel {
     }
 
     public JComponent getComponent() {
-        return content;
+        return component;
     }
 
     public JComponent getFocusComponent() {

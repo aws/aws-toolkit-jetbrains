@@ -14,8 +14,10 @@ import software.aws.toolkits.jetbrains.services.s3.editor.getDirectoryKey
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
-class NewFolderAction(private val project: Project, treeTable: S3TreeTable) :
-    SingleS3ObjectAction(treeTable, message("s3.new.folder"), AllIcons.Actions.NewFolder) {
+class NewFolderAction(
+    private val project: Project,
+    treeTable: S3TreeTable
+) : SingleS3ObjectAction(treeTable, message("s3.new.folder"), AllIcons.Actions.NewFolder) {
     override fun performAction(node: S3TreeNode) {
         Messages.showInputDialog(project, message("s3.new.folder.name"), message("s3.new.folder"), null)?.let { key ->
             GlobalScope.launch {
