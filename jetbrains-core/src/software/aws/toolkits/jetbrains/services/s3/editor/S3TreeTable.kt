@@ -41,7 +41,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 
 class S3TreeTable(
     private val treeTableModel: S3TreeTableModel,
-    public val rootNode: S3TreeDirectoryNode,
+    val rootNode: S3TreeDirectoryNode,
     val bucket: S3VirtualBucket,
     private val project: Project
 ) : TreeTable(treeTableModel) {
