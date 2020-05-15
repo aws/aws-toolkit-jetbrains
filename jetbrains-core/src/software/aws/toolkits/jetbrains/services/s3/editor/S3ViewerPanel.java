@@ -3,34 +3,46 @@
 
 package software.aws.toolkits.jetbrains.services.s3.editor;
 
+import static software.aws.toolkits.resources.Localization.message;
+
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.Separator;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.util.ui.ColumnInfo;
-import org.jetbrains.annotations.NotNull;
-import software.aws.toolkits.jetbrains.services.s3.objectActions.*;
-import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel;
-import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
-
-import static software.aws.toolkits.resources.Localization.message;
+import org.jetbrains.annotations.NotNull;
+import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyPathAction;
+import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction;
+import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction;
+import software.aws.toolkits.jetbrains.services.s3.objectActions.NewFolderAction;
+import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction;
+import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction;
+import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel;
+import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel;
 
 @SuppressWarnings("unchecked")
 public class S3ViewerPanel {
-    private Disposable disposable;
+    private final Disposable disposable;
     private JPanel content;
     private JPanel mainPanel;
-    private S3TreeTable treeTable;
+    private final S3TreeTable treeTable;
     private final Project project;
-    private final ColumnInfo<Object, String>[] columns;
-    private S3VirtualBucket virtualBucket;
+    private final ColumnInfo<Object, Object>[] columns;
+    private final S3VirtualBucket virtualBucket;
+    private final StructureTreeModel<SimpleTreeStructure> structureTreeModel;
+    private final S3TreeDirectoryNode rootNode;
 
     public S3ViewerPanel(Disposable disposable, Project project, S3VirtualBucket bucketVirtual) {
         this.project = project;
@@ -41,7 +53,10 @@ public class S3ViewerPanel {
         ColumnInfo<Object, String> size = new S3Column(S3ColumnType.SIZE);
         ColumnInfo<Object, String> modified = new S3Column(S3ColumnType.LAST_MODIFIED);
         columns = new ColumnInfo[] {key, size, modified};
-        S3TreeTableModel model = createTreeTableModel(columns, new S3TreeDirectoryNode(bucketVirtual, null, ""));
+
+        rootNode = new S3TreeDirectoryNode(bucketVirtual, null, "");
+        structureTreeModel = new StructureTreeModel<>(new SimpleTreeStructure.Impl(rootNode), disposable);
+        S3TreeTableModel model = new S3TreeTableModel(new AsyncTreeModel(structureTreeModel, true, disposable), columns, structureTreeModel);
         treeTable = new S3TreeTable(model, bucketVirtual, project);
         applyTreeStyle(treeTable);
         addTreeActions(treeTable);
@@ -63,10 +78,8 @@ public class S3ViewerPanel {
 
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
-                table.setModel(createTreeTableModel(columns, new S3TreeDirectoryNode(virtualBucket, null, "")));
-                // we have to apply style again because changing the model breaks the style
-                applyTreeStyle(table);
-                table.invalidate();
+                rootNode.removeAllChildren();
+                structureTreeModel.invalidate();
             }
         });
         return ToolbarDecorator
@@ -96,12 +109,6 @@ public class S3ViewerPanel {
 
     public JComponent getFocusComponent() {
         return treeTable;
-    }
-
-    private S3TreeTableModel createTreeTableModel(ColumnInfo[] columns, S3TreeDirectoryNode s3TreeNode) {
-        SimpleTreeStructure treeStructure = new SimpleTreeStructure.Impl(s3TreeNode);
-        StructureTreeModel<SimpleTreeStructure> myTreeModel = new StructureTreeModel(treeStructure, disposable);
-        return new S3TreeTableModel(new AsyncTreeModel(myTreeModel, true, disposable), columns, myTreeModel);
     }
 
     private void addTreeActions(S3TreeTable table) {
