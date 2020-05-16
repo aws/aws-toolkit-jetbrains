@@ -10,27 +10,30 @@ import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ide.util.treeView.TreeState
 import com.intellij.openapi.actionSystem.ActionGroup
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
+import com.intellij.openapi.actionSystem.ex.ComboBoxAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DoubleClickListener
-import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeUIHelper
-import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.treeStructure.Tree
+import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsActionGroup
+import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsActionGroupType
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeNotifier
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-import software.aws.toolkits.jetbrains.core.credentials.SettingsSelector
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -46,52 +49,54 @@ import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import java.awt.event.MouseEvent
-import javax.swing.JPanel
+import javax.swing.JComponent
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
 
 class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true), ConnectionSettingsChangeNotifier {
     private val actionManager = ActionManagerEx.getInstanceEx()
-    private val treePanelWrapper: Wrapper = Wrapper()
-    private val errorPanel: JPanel
     private val awsTreeModel = AwsExplorerTreeStructure(project)
     private val structureTreeModel = StructureTreeModel(awsTreeModel, project)
     private val awsTree = createTree(AsyncTreeModel(structureTreeModel, true, project))
     private val awsTreePanel = ScrollPaneFactory.createScrollPane(awsTree)
-    private val settingsSelector by lazy {
-        SettingsSelector(project)
-    }
 
     init {
-        val select = HyperlinkLabel(message("configure.toolkit"))
-        select.addHyperlinkListener { settingsSelector.settingsPopup(select, showRegions = false).showInCenterOf(select) }
+        val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
 
-        errorPanel = JPanel()
-        errorPanel.add(select)
-
-        setContent(treePanelWrapper)
-
-        if (ProjectAccountSettingsManager.getInstance(project).isValidConnectionSettings()) {
-            treePanelWrapper.setContent(awsTreePanel)
-        } else {
-            treePanelWrapper.setContent(errorPanel)
-        }
+        val group = DefaultActionGroup(
+            settingSelector(message("settings.credentials.none_selected"), ChangeAccountSettingsActionGroupType.CREDENTIALS) {
+                accountSettingsManager.selectedCredentialIdentifier?.displayName
+            },
+            settingSelector(message("settings.regions.none_selected"), ChangeAccountSettingsActionGroupType.REGIONS) {
+                accountSettingsManager.selectedRegion?.displayName
+            }
+        )
+        toolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).component
+        setContent(awsTreePanel)
 
         project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, this)
     }
 
+    private fun settingSelector(defaultText: String, type: ChangeAccountSettingsActionGroupType, value: () -> String?) =
+        object : ComboBoxAction(), DumbAware {
+
+            init {
+                templatePresentation.text = defaultText
+            }
+
+            override fun createPopupActionGroup(button: JComponent?) = DefaultActionGroup(ChangeAccountSettingsActionGroup(project, type))
+
+            override fun update(e: AnActionEvent) {
+                e.presentation.text = value() ?: defaultText
+            }
+
+            override fun displayTextInToolbar(): Boolean = true
+        }
+
     override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
         runInEdt {
-            when (event.state) {
-                ConnectionState.VALID -> {
-                    invalidateTree()
-                    treePanelWrapper.setContent(awsTreePanel)
-                }
-                else -> {
-                    treePanelWrapper.setContent(errorPanel)
-                }
-            }
+            invalidateTree()
         }
     }
 

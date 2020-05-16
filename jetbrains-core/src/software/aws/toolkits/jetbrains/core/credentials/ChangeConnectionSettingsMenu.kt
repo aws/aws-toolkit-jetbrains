@@ -19,7 +19,16 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
 
-class ChangeAccountSettingsActionGroup(private val project: Project, private val showRegions: Boolean) : ComputableActionGroup(), DumbAware {
+class ChangeAccountSettingsActionGroup(project: Project, private val type: ChangeAccountSettingsActionGroupType) :
+    ComputableActionGroup(), DumbAware {
+    constructor(project: Project, showRegions: Boolean) : this(
+        project, type = if (showRegions) {
+        ChangeAccountSettingsActionGroupType.BOTH
+    } else {
+        ChangeAccountSettingsActionGroupType.CREDENTIALS
+    }
+    )
+
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
     private val partitionSelector = ChangePartitionActionGroup()
     private val regionSelector = ChangeRegionActionGroup(partitionSelector, accountSettingsManager)
@@ -28,7 +37,7 @@ class ChangeAccountSettingsActionGroup(private val project: Project, private val
     override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
         val actions = mutableListOf<AnAction>()
 
-        if (showRegions) {
+        if (type.showRegions) {
             val usedRegions = accountSettingsManager.recentlyUsedRegions()
             if (usedRegions.isEmpty()) {
                 regionSelector.isPopup = false
@@ -44,24 +53,32 @@ class ChangeAccountSettingsActionGroup(private val project: Project, private val
             }
         }
 
-        val usedCredentials = accountSettingsManager.recentlyUsedCredentials()
-        if (usedCredentials.isEmpty()) {
-            actions.add(Separator.create(message("settings.credentials")))
+        if (type.showCredentials) {
+            val usedCredentials = accountSettingsManager.recentlyUsedCredentials()
+            if (usedCredentials.isEmpty()) {
+                actions.add(Separator.create(message("settings.credentials")))
 
-            credentialSelector.isPopup = false
-            actions.add(credentialSelector)
-        } else {
-            actions.add(Separator.create(message("settings.credentials.recent")))
-            usedCredentials.forEach {
-                actions.add(ChangeCredentialsAction(it))
+                credentialSelector.isPopup = false
+                actions.add(credentialSelector)
+            } else {
+                actions.add(Separator.create(message("settings.credentials.recent")))
+                usedCredentials.forEach {
+                    actions.add(ChangeCredentialsAction(it))
+                }
+
+                credentialSelector.isPopup = true
+                actions.add(credentialSelector)
             }
-
-            credentialSelector.isPopup = true
-            actions.add(credentialSelector)
         }
 
         CachedValueProvider.Result.create(actions.toTypedArray(), accountSettingsManager)
     }
+}
+
+enum class ChangeAccountSettingsActionGroupType(internal val showRegions: Boolean, internal val showCredentials: Boolean) {
+    CREDENTIALS(false, true),
+    REGIONS(true, false),
+    BOTH(true, true);
 }
 
 private class ChangePartitionActionGroup : DefaultActionGroup(message("settings.partitions"), true), DumbAware {
@@ -117,12 +134,12 @@ private class ChangeRegionActionGroup(
         val partitionActions = partitionGroup?.let { listOf(it) } ?: emptyList<AnAction>()
 
         val actions = partitionActions +
-        regions.flatMap { (category, subRegions) ->
-            listOf(Separator.create(category)) +
-            subRegions.map {
-                ChangeRegionAction(it)
-            }
-        } as List<AnAction>
+            regions.flatMap { (category, subRegions) ->
+                listOf(Separator.create(category)) +
+                    subRegions.map {
+                        ChangeRegionAction(it)
+                    }
+            } as List<AnAction>
 
         CachedValueProvider.Result.create(actions.toTypedArray(), accountSettingsManager)
     }

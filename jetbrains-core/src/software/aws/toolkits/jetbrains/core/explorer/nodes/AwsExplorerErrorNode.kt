@@ -7,6 +7,7 @@ import com.intellij.ide.projectView.PresentationData
 import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
 import software.amazon.awssdk.awscore.exception.AwsServiceException
+import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.resources.message
 
 /**
@@ -14,6 +15,7 @@ import software.aws.toolkits.resources.message
  */
 class AwsExplorerErrorNode(project: Project, exception: Throwable) :
     AwsExplorerNode<Throwable>(project, exception, null) {
+    private val accountSettings = ProjectAccountSettingsManager.getInstance(project)
 
     override fun getChildren(): List<AwsExplorerNode<*>> = emptyList()
 
@@ -23,11 +25,13 @@ class AwsExplorerErrorNode(project: Project, exception: Throwable) :
             tooltip = value.message ?: value.javaClass.simpleName
 
             val exception = value
-            val errorDetails = if (exception is AwsServiceException) {
-                val awsErrorDetails = exception.awsErrorDetails()
-                "${awsErrorDetails.serviceName()}: ${awsErrorDetails.errorCode()}"
-            } else {
-                message("explorer.error_loading_resources_default_details")
+            val errorDetails = when {
+                exception is AwsServiceException -> {
+                    val awsErrorDetails = exception.awsErrorDetails()
+                    "${awsErrorDetails.serviceName()}: ${awsErrorDetails.errorCode()}"
+                }
+                !accountSettings.isValidConnectionSettings() -> message("explorer.error_loading_resources_not_connected")
+                else -> message("explorer.error_loading_resources_default_details")
             }
 
             addText(
