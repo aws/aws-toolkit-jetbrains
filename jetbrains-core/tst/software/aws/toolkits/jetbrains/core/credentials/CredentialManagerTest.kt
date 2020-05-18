@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.ExtensionTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
@@ -194,7 +195,7 @@ class CredentialManagerTest {
     }
 
     private fun addFactories(vararg factories: CredentialProviderFactory) {
-        CompatibilityUtils.registerExtensions(DefaultCredentialManager.EP_NAME, factories.toList(), disposableRule.disposable)
+        ExtensionTestUtil.maskExtensions(DefaultCredentialManager.EP_NAME, factories.toList(), disposableRule.disposable)
     }
 
     private fun createCredentials(id: String) = StaticCredentialsProvider.create(AwsBasicCredentials.create("${id}Access", "${id}Secret"))

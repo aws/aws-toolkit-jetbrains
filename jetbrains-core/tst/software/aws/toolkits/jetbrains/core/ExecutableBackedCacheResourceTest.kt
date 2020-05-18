@@ -19,7 +19,6 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.core.executables.Validatable
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.utils.CompatibilityUtils.registerExtension
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 

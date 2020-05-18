@@ -35,7 +35,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
         assertIconPath(handlers.first().iconId, "/resharper/PsiSymbols/Method.svg")
     }
 
-    // TODO this test only works on 2019.2. Which we don't support anymore. Fix the test
+    @Test
     @TestEnvironment(solution = "SamMultipleHandlersApp")
     fun testDetermineHandlers_MultipleHandlers() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project).sortedBy { it.handler }
