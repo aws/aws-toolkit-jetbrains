@@ -4,13 +4,8 @@
 package software.aws.toolkits.jetbrains.core.execution
 
 import com.intellij.execution.ExecutorRegistry
-import com.intellij.execution.Output
-import com.intellij.execution.OutputListener
 import com.intellij.execution.RunManager
 import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.process.ProcessEvent
-import com.intellij.execution.runners.ExecutionEnvironmentBuilder
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.jetbrains.python.run.PythonConfigurationType
 import com.jetbrains.python.run.PythonRunConfiguration
@@ -19,9 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotNull
 
 class PythonAwsConnectionRunConfigurationExtensionTest {
@@ -56,24 +50,11 @@ class PythonAwsConnectionRunConfigurationExtensionTest {
                 credential = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id
             })
 
-        VfsRootAccess.allowRootAccess(projectRule.fixture.testRootDisposable, "/usr/local/bin/python")
+        VfsRootAccess.allowRootAccess(projectRule.fixture.testRootDisposable, pythonExecutable)
 
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
         assertNotNull(executor)
-        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
 
-        val executionFuture = CompletableFuture<Output>()
-        runInEdt {
-            executionEnvironment.runner.execute(executionEnvironment) {
-                it.processHandler?.addProcessListener(object : OutputListener() {
-                    override fun processTerminated(event: ProcessEvent) {
-                        super.processTerminated(event)
-                        executionFuture.complete(this.output)
-                    }
-                })
-            }
-        }
-
-        assertThat(executionFuture.get(30, TimeUnit.SECONDS).stdout).isEqualTo(mockRegion)
+        assertThat(executeRunConfiguration(runConfiguration).stdout).isEqualToIgnoringWhitespace(mockRegion)
     }
 }
