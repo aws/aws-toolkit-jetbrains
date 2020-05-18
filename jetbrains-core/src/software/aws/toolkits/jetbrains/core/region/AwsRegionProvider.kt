@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.region
@@ -15,9 +15,8 @@ import software.aws.toolkits.core.region.ServiceEndpointResource
 import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.inputStream
-import software.aws.toolkits.core.utils.onNull
+import software.aws.toolkits.core.utils.logWhenNull
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 
 class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResourceResolverProvider) : ToolkitRegionProvider() {
@@ -50,7 +49,9 @@ class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResour
         }
 
         val regionFromChain = regionIdFromChain?.let { regionId ->
-            this[regionId].onNull { LOG.warn { "Could not find $regionId in endpoint data" } }
+            LOG.logWhenNull("Could not find $regionId in endpoint data") {
+                this[regionId]
+            }
         }
 
         return regionFromChain ?: this[DEFAULT_REGION] ?: throw IllegalStateException("Region provider data is missing default data")
