@@ -289,16 +289,21 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         val handler = tryOrNull { function.handler() }
             ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
 
-        val runtime = tryOrNull { Runtime.fromValue(function.runtime()).validOrNull }
-            ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
+        val runtime = Runtime.fromValue(function.runtime()).validOrNull.validateSupportedRuntime()
 
         return Triple(handler, runtime, SamTemplateDetails(VfsUtil.virtualToIoFile(templateFile).toPath(), functionName))
     }
 
     private fun resolveLambdaFromHandler(handler: String?, runtime: Runtime?): Triple<String, Runtime, SamTemplateDetails?> {
         handler ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
-        runtime ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
-        return Triple(handler, runtime, null)
+
+        return Triple(handler, runtime.validateSupportedRuntime(), null)
+    }
+
+    private fun Runtime?.validateSupportedRuntime(): Runtime = if (this?.runtimeGroup != null) {
+        this
+    } else {
+        throw RuntimeConfigurationError(message("lambda.run_configuration.no_runtime_specified"))
     }
 
     private fun resolveLambdaInfo(project: Project, functionOptions: FunctionOptions): Triple<String, Runtime, SamTemplateDetails?> =
