@@ -173,6 +173,39 @@ class AwsRegionProviderTest {
     }
 
     @Test
+    fun noUsEast1FallbackToFirstRegionInMetadata() {
+        val regionProvider = createRegionDataProvider(
+            """
+            {
+                "partitions": [
+                    {
+                        "defaults": {
+                            "hostname": "{service}.{region}.{dnsSuffix}",
+                            "protocols": ["https"],
+                            "signatureVersions": ["v4"]
+                        },
+                        "dnsSuffix": "amazonaws.com",
+                        "partition": "aws",
+                        "partitionName": "AWS Standard",
+                        "regionRegex": "^(us|eu|ap|sa|ca|me)\\-\\w+\\-\\d+$",
+                        "regions": {
+                            "us-region-1": {
+                                "description": "Blah"
+                            }
+                        },
+                        "services": {}
+                    }
+                ],
+                "version": 3
+            }
+            """.trimIndent()
+        )
+
+        val awsRegionProvider = AwsRegionProvider(regionProvider)
+        assertThat(awsRegionProvider.defaultRegion().id).isEqualTo("us-region-1")
+    }
+
+    @Test
     fun emptyRegionsCantHaveADefaultDueToError() {
         val regionProvider = createRegionDataProvider("")
 

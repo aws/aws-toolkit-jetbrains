@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.region
 
 import com.intellij.openapi.components.ServiceManager
+import com.jetbrains.rd.util.firstOrNull
 import org.slf4j.event.Level
 import software.amazon.awssdk.regions.providers.AwsProfileRegionProvider
 import software.amazon.awssdk.regions.providers.AwsRegionProviderChain
@@ -39,9 +40,7 @@ class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResour
 
     override fun partitionData(): Map<String, PartitionData> = partitions
 
-    override fun defaultPartition(): AwsPartition = defaultRegion().partitionId.let {
-        partitions()[it] ?: throw IllegalStateException("Could not find default partition: $it")
-    }
+    override fun defaultPartition(): AwsPartition = partitions().getValue(defaultRegion().partitionId)
 
     override fun defaultRegion(): AwsRegion {
         val regionIdFromChain = LOG.tryOrNull("Failed to find default region in chain", level = Level.WARN) {
@@ -54,7 +53,10 @@ class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResour
             }
         }
 
-        return regionFromChain ?: this[DEFAULT_REGION] ?: throw IllegalStateException("Region provider data is missing default data")
+        return regionFromChain
+            ?: this[DEFAULT_REGION]
+            ?: allRegions().firstOrNull()?.value
+            ?: throw IllegalStateException("Region provider data is missing default data")
     }
 
     companion object {
