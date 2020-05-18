@@ -30,7 +30,7 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.treeStructure.Tree
 import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsActionGroup
-import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsActionGroupType
+import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsMode
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
@@ -65,10 +65,10 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
 
         val group = DefaultActionGroup(
-            settingSelector(message("settings.credentials.none_selected"), ChangeAccountSettingsActionGroupType.CREDENTIALS) {
+            settingSelector(message("settings.credentials.none_selected"), ChangeAccountSettingsMode.CREDENTIALS) {
                 accountSettingsManager.selectedCredentialIdentifier?.displayName
             },
-            settingSelector(message("settings.regions.none_selected"), ChangeAccountSettingsActionGroupType.REGIONS) {
+            settingSelector(message("settings.regions.none_selected"), ChangeAccountSettingsMode.REGIONS) {
                 accountSettingsManager.selectedRegion?.displayName
             }
         )
@@ -78,7 +78,7 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, this)
     }
 
-    private fun settingSelector(defaultText: String, type: ChangeAccountSettingsActionGroupType, value: () -> String?) =
+    private fun settingSelector(defaultText: String, type: ChangeAccountSettingsMode, value: () -> String?) =
         object : ComboBoxAction(), DumbAware {
 
             init {

@@ -19,15 +19,7 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
 
-class ChangeAccountSettingsActionGroup(project: Project, private val type: ChangeAccountSettingsActionGroupType) :
-    ComputableActionGroup(), DumbAware {
-    constructor(project: Project, showRegions: Boolean) : this(
-        project, type = if (showRegions) {
-        ChangeAccountSettingsActionGroupType.BOTH
-    } else {
-        ChangeAccountSettingsActionGroupType.CREDENTIALS
-    }
-    )
+class ChangeAccountSettingsActionGroup(project: Project, private val mode: ChangeAccountSettingsMode) : ComputableActionGroup(), DumbAware {
 
     private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
     private val partitionSelector = ChangePartitionActionGroup()
@@ -37,7 +29,7 @@ class ChangeAccountSettingsActionGroup(project: Project, private val type: Chang
     override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
         val actions = mutableListOf<AnAction>()
 
-        if (type.showRegions) {
+        if (mode.showRegions) {
             val usedRegions = accountSettingsManager.recentlyUsedRegions()
             if (usedRegions.isEmpty()) {
                 regionSelector.isPopup = false
@@ -53,7 +45,7 @@ class ChangeAccountSettingsActionGroup(project: Project, private val type: Chang
             }
         }
 
-        if (type.showCredentials) {
+        if (mode.showCredentials) {
             val usedCredentials = accountSettingsManager.recentlyUsedCredentials()
             if (usedCredentials.isEmpty()) {
                 actions.add(Separator.create(message("settings.credentials")))
@@ -75,7 +67,7 @@ class ChangeAccountSettingsActionGroup(project: Project, private val type: Chang
     }
 }
 
-enum class ChangeAccountSettingsActionGroupType(internal val showRegions: Boolean, internal val showCredentials: Boolean) {
+enum class ChangeAccountSettingsMode(internal val showRegions: Boolean, internal val showCredentials: Boolean) {
     CREDENTIALS(false, true),
     REGIONS(true, false),
     BOTH(true, true);
@@ -145,7 +137,7 @@ private class ChangeRegionActionGroup(
     }
 }
 
-private class ChangeRegionAction(private val region: AwsRegion) : ToggleAction(region.displayName), DumbAware {
+internal class ChangeRegionAction(private val region: AwsRegion) : ToggleAction(region.displayName), DumbAware {
     override fun isSelected(e: AnActionEvent): Boolean = getAccountSetting(e).selectedRegion == region
 
     override fun setSelected(e: AnActionEvent, state: Boolean) {
@@ -155,7 +147,7 @@ private class ChangeRegionAction(private val region: AwsRegion) : ToggleAction(r
     }
 }
 
-private class ChangeCredentialsAction(private val credentialsProvider: ToolkitCredentialsIdentifier) : ToggleAction(credentialsProvider.displayName),
+internal class ChangeCredentialsAction(private val credentialsProvider: ToolkitCredentialsIdentifier) : ToggleAction(credentialsProvider.displayName),
     DumbAware {
     override fun isSelected(e: AnActionEvent): Boolean = getAccountSetting(e).selectedCredentialIdentifier == credentialsProvider
 
