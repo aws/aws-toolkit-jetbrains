@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.ssooidc.model.StartDeviceAuthorizationRequest
 import software.amazon.awssdk.services.ssooidc.model.StartDeviceAuthorizationResponse
-import software.aws.toolkits.jetbrains.utils.delegateMock
+import software.aws.toolkits.core.utils.delegateMock
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -39,7 +39,7 @@ class SsoAccessTokenProviderTest {
     private val clientId = "client123"
     private val clientSecret = "clientSecret123"
 
-    private lateinit var notifyTokenPending: NotifyTokenPending
+    private lateinit var ssoLoginCallback: SsoLoginCallback
     private lateinit var ssoOidcClient: SsoOidcClient
     private lateinit var accessTokenProvider: SsoAccessTokenProvider
     private lateinit var diskCache: DiskCache
@@ -47,10 +47,10 @@ class SsoAccessTokenProviderTest {
     @Before
     fun setUp() {
         ssoOidcClient = delegateMock()
-        notifyTokenPending = mock()
+        ssoLoginCallback = mock()
         diskCache = mock()
 
-        accessTokenProvider = SsoAccessTokenProvider(ssoUrl, ssoRegion, notifyTokenPending, ssoOidcClient, diskCache, clock)
+        accessTokenProvider = SsoAccessTokenProvider(ssoUrl, ssoRegion, ssoLoginCallback, ssoOidcClient, diskCache, clock)
     }
 
     @Test

@@ -10,10 +10,13 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
+/**
+ * Internal class that takes care of creating/refreshing the SSO access token required to fetch SSO-based credentials.
+ */
 class SsoAccessTokenProvider(
     private val ssoUrl: String,
     private val ssoRegion: String,
-    private val onPendingToken: NotifyTokenPending,
+    private val onPendingToken: SsoLoginCallback,
     private val ssoOidcClient: SsoOidcClient,
     private val cache: DiskCache = DiskCache(),
     private val clock: Clock = Clock.systemUTC()

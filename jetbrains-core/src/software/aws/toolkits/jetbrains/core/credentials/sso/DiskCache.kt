@@ -22,6 +22,9 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.util.TimeZone
 
+/**
+ * Caches the [AccessToken] to disk to allow it to be re-used with another tools such as the CLI.
+ */
 class DiskCache(
     private val cacheDir: Path = Paths.get(SystemProperties.getUserHome(), ".aws", "sso", "cache"),
     private val clock: Clock = Clock.systemUTC()

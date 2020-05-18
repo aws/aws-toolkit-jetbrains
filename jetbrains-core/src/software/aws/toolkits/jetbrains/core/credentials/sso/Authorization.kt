@@ -3,9 +3,13 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
+import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import java.time.Instant
 
-data class Authorization internal constructor(
+/**
+ * Returned by [SsoOidcClient.startDeviceAuthorization] that contains the required data to construct the user visible SSO login flow.
+ */
+data class Authorization(
     val deviceCode: String,
     val userCode: String,
     val verificationUri: String,

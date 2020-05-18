@@ -12,6 +12,11 @@ import software.amazon.awssdk.utils.cache.RefreshResult
 import java.time.Duration
 import java.time.Instant
 
+/**
+ * [AwsCredentialsProvider] that contains all the needed hooks to perform an end to end flow of an SSO-based credential.
+ *
+ * This credential provider will trigger an SSO login if required, unlike the low level SDKs.
+ */
 class SsoCredentialProvider(
     private val ssoAccount: String,
     private val ssoRole: String,

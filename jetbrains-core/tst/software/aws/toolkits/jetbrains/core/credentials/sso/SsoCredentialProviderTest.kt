@@ -16,7 +16,7 @@ import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.GetRoleCredentialsRequest
 import software.amazon.awssdk.services.sso.model.GetRoleCredentialsResponse
 import software.amazon.awssdk.services.sso.model.RoleCredentials
-import software.aws.toolkits.jetbrains.utils.delegateMock
+import software.aws.toolkits.core.utils.delegateMock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
