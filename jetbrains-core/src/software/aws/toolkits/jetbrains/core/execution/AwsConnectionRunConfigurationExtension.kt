@@ -24,7 +24,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
     private val regionProvider = AwsRegionProvider.getInstance()
     private val credentialManager = CredentialManager.getInstance()
 
-    fun addEnvironmentVariables(configuration: T, environment: MutableMap<String, String>) {
+    fun addEnvironmentVariables(configuration: T, environment: MutableMap<String, String>, runtimeString: () -> String? = { null }) {
         val credentialConfiguration = configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: return
 
         try {
@@ -45,9 +45,9 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             }
 
             connection.toEnvironmentVariables().forEach { (key, value) -> environment[key] = value }
-            AwsTelemetry.injectCredentials(configuration.project, result = SUCCEEDED)
+            AwsTelemetry.injectCredentials(configuration.project, result = SUCCEEDED, runtimestring = runtimeString())
         } catch (e: Exception) {
-            AwsTelemetry.injectCredentials(configuration.project, result = FAILED)
+            AwsTelemetry.injectCredentials(configuration.project, result = FAILED, runtimestring = runtimeString())
             LOG.error(e) { message("run_configuration_extension.inject_aws_connection_exception") }
         }
     }
@@ -75,8 +75,9 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
 
 fun <T : RunConfigurationBase<*>> AwsConnectionRunConfigurationExtension<T>.addEnvironmentVariables(
     configuration: T,
-    cmdLine: GeneralCommandLine
-) = addEnvironmentVariables(configuration, cmdLine.environment)
+    cmdLine: GeneralCommandLine,
+    runtimeString: () -> String? = { null }
+) = addEnvironmentVariables(configuration, cmdLine.environment, runtimeString)
 
 fun <T : RunConfigurationBase<*>?> connectionSettingsEditor(configuration: T): AwsConnectionRunConfigurationExtensionSettingsEditor<T>? =
     configuration?.getProject()?.let { AwsConnectionRunConfigurationExtensionSettingsEditor(it) }

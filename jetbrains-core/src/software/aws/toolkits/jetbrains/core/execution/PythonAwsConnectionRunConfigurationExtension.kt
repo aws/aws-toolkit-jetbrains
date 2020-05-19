@@ -23,7 +23,7 @@ class PythonAwsConnectionRunConfigurationExtension : PythonRunConfigurationExten
         runnerSettings: RunnerSettings?,
         cmdLine: GeneralCommandLine,
         runnerId: String
-    ) = delegate.addEnvironmentVariables(configuration, cmdLine)
+    ) = delegate.addEnvironmentVariables(configuration, cmdLine, runtimeString = { configuration.getSdk()?.versionString })
 
     override fun readExternal(runConfiguration: AbstractPythonRunConfiguration<*>, element: Element) = delegate.readExternal(runConfiguration, element)
 
