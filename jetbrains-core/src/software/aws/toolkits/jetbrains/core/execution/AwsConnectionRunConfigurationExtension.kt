@@ -8,14 +8,17 @@ import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.openapi.util.Key
 import com.intellij.util.xmlb.XmlSerializer
 import org.jdom.Element
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.activeConnection
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.Result.FAILED
+import software.aws.toolkits.telemetry.Result.SUCCEEDED
 
 class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
     private val regionProvider = AwsRegionProvider.getInstance()
@@ -24,7 +27,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
     fun addEnvironmentVariables(configuration: T, environment: MutableMap<String, String>) {
         val credentialConfiguration = configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: return
 
-        LOG.tryOrNull(message("run_configuration_extension.inject_aws_connection_exception")) {
+        try {
             val connection = if (credentialConfiguration.useCurrentConnection) {
                 configuration.project.activeConnection() ?: throw RuntimeException(message("configure.toolkit"))
             } else {
@@ -42,6 +45,10 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             }
 
             connection.toEnvironmentVariables().forEach { (key, value) -> environment[key] = value }
+            AwsTelemetry.injectCredentials(configuration.project, result = SUCCEEDED)
+        } catch (e: Exception) {
+            AwsTelemetry.injectCredentials(configuration.project, result = FAILED)
+            LOG.error(e) { message("run_configuration_extension.inject_aws_connection_exception") }
         }
     }
 
