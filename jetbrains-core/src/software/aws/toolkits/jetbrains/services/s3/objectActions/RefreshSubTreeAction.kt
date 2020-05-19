@@ -12,7 +12,7 @@ import software.aws.toolkits.resources.message
 
 class RefreshSubTreeAction(
     treeTable: S3TreeTable
-) : SingleS3ObjectAction(treeTable, message("explorer.refresh.title"), AllIcons.Actions.Refresh), DumbAware {
+) : SingleS3ObjectAction(treeTable, message("general.refresh"), AllIcons.Actions.Refresh), DumbAware {
     override fun performAction(node: S3TreeNode) {
         val state = TreeState.createOn(treeTable.tree)
         treeTable.invalidateLevel(node)

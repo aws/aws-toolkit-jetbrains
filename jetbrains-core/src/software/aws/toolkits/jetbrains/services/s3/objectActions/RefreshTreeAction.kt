@@ -15,7 +15,7 @@ import software.aws.toolkits.resources.message
 class RefreshTreeAction(
     private val treeTable: S3TreeTable,
     private val rootNode: S3TreeDirectoryNode
-) : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh), DumbAware {
+) : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         val state = TreeState.createOn(treeTable.tree)
         rootNode.removeAllChildren()
