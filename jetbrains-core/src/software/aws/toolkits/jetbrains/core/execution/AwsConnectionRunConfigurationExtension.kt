@@ -10,6 +10,7 @@ import com.intellij.util.xmlb.XmlSerializer
 import org.jdom.Element
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.activeConnection
@@ -45,9 +46,9 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             }
 
             connection.toEnvironmentVariables().forEach { (key, value) -> environment[key] = value }
-            AwsTelemetry.injectCredentials(configuration.project, result = SUCCEEDED, runtimestring = runtimeString())
+            AwsTelemetry.injectCredentials(configuration.project, result = SUCCEEDED, runtimestring = tryOrNull { runtimeString() })
         } catch (e: Exception) {
-            AwsTelemetry.injectCredentials(configuration.project, result = FAILED, runtimestring = runtimeString())
+            AwsTelemetry.injectCredentials(configuration.project, result = FAILED, runtimestring = tryOrNull { runtimeString() })
             LOG.error(e) { message("run_configuration_extension.inject_aws_connection_exception") }
         }
     }
