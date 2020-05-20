@@ -4,19 +4,12 @@
 package software.aws.toolkits.jetbrains.core.execution
 
 import com.intellij.compiler.CompilerTestUtil
-import com.intellij.execution.ExecutorRegistry
-import com.intellij.execution.Output
-import com.intellij.execution.OutputListener
 import com.intellij.execution.RunManager
 import com.intellij.execution.application.ApplicationConfiguration
 import com.intellij.execution.application.ApplicationConfigurationType
-import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.process.ProcessEvent
-import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.compiler.CompileContext
 import com.intellij.openapi.compiler.CompilerManager
@@ -41,14 +34,14 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager.Companion.DUMMY_PROVIDER_IDENTIFIER
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.utils.execute
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
-class JavaAwsConnectionRunConfigurationExtensionFunctionalTest {
+class JavaAwsConnectionRunConfigurationExtensionIntegrationTest {
 
     @Before
     fun setUp() {
@@ -87,31 +80,16 @@ class JavaAwsConnectionRunConfigurationExtensionFunctionalTest {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java)
         val runConfiguration = configuration.configuration as ApplicationConfiguration
-        runConfiguration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsConnectionRunConfigurationExtensionOptions {
-            region = mockRegion
-            credential = DUMMY_PROVIDER_IDENTIFIER.id
-        })
+        runConfiguration.putCopyableUserData(
+            AWS_CONNECTION_RUN_CONFIGURATION_KEY,
+            AwsConnectionRunConfigurationExtensionOptions {
+                region = mockRegion
+                credential = DUMMY_PROVIDER_IDENTIFIER.id
+            })
         runConfiguration.setMainClass(psiClass)
-
-        val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        assertNotNull(executor)
-        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
-
         compileModule(module)
 
-        val executionFuture = CompletableFuture<Output>()
-        runInEdt {
-            executionEnvironment.runner.execute(executionEnvironment) {
-                it.processHandler?.addProcessListener(object : OutputListener() {
-                    override fun processTerminated(event: ProcessEvent) {
-                        super.processTerminated(event)
-                        executionFuture.complete(this.output)
-                    }
-                })
-            }
-        }
-
-        assertThat(executionFuture.get(30, TimeUnit.SECONDS).stdout).isEqualToIgnoringWhitespace(mockRegion)
+        assertThat(runConfiguration.execute().stdout).isEqualToIgnoringWhitespace(mockRegion)
     }
 
     private fun compileModule(module: Module) {

@@ -14,11 +14,11 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
+import software.aws.toolkits.jetbrains.utils.execute
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import kotlin.test.assertNotNull
 
-class PythonAwsConnectionRunConfigurationExtensionTest {
+class PythonAwsConnectionRunConfigurationExtensionIntegrationTest {
 
     @Rule
     @JvmField
@@ -28,6 +28,7 @@ class PythonAwsConnectionRunConfigurationExtensionTest {
 
     @Test
     fun happyPathPythonConnectionInjection() {
+        assertThat(pythonExecutable).isNotBlank()
         val file = projectRule.fixture.addFileToProject(
             "hello.py", """ 
             import os
@@ -55,6 +56,6 @@ class PythonAwsConnectionRunConfigurationExtensionTest {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
         assertNotNull(executor)
 
-        assertThat(executeRunConfiguration(runConfiguration).stdout).isEqualToIgnoringWhitespace(mockRegion)
+        assertThat(runConfiguration.execute().stdout).isEqualToIgnoringWhitespace(mockRegion)
     }
 }
