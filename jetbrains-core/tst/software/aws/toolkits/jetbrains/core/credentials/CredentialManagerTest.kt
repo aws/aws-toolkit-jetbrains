@@ -21,7 +21,6 @@ import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.utils.CompatibilityUtils
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 

@@ -21,7 +21,6 @@ import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.fillResourceCache
 import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel
-import software.aws.toolkits.jetbrains.utils.CompatibilityUtils
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import javax.swing.tree.TreeModel
