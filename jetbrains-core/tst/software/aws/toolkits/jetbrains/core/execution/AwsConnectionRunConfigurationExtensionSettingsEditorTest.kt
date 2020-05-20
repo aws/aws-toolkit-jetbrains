@@ -48,7 +48,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
         assertThat(editor.view.region.isEnabled).isFalse()
         assertThat(editor.view.region.itemCount).isZero() // We don't want to eagerly load for every RunConfiguration
 
-        assertThat(editor).isRoundTripped {
+        assertThat(editor).isPersistedAs {
             useCurrentConnection = true
             region = null
             credential = null
@@ -73,7 +73,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
         assertThat(editor.view.credentialProvider.isEnabled).isTrue()
         assertThat(editor.view.credentialProvider.itemCount).isGreaterThan(0)
 
-        assertThat(editor).isRoundTripped {
+        assertThat(editor).isPersistedAs {
             useCurrentConnection = false
             region = "us-east-1"
             credential = "DUMMY"
@@ -96,7 +96,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
         assertThat(editor.view.region.isEnabled).isFalse()
         assertThat(editor.view.region.itemCount).isZero() // We don't want to eagerly load for every RunConfiguration
 
-        assertThat(editor).isRoundTripped {
+        assertThat(editor).isPersistedAs {
             useCurrentConnection = false
             region = null
             credential = null
@@ -121,7 +121,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
 
     private fun ApplicationConfiguration.extensionOptions() = getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)
 
-    private fun ObjectAssert<AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>>.isRoundTripped(
+    private fun ObjectAssert<AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>>.isPersistedAs(
         expected: AwsConnectionRunConfigurationExtensionOptions.() -> Unit
     ) {
         satisfies {
