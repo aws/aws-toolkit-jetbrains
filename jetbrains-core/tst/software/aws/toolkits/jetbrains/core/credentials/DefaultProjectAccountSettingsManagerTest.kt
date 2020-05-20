@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.credentials
@@ -91,7 +91,7 @@ class DefaultProjectAccountSettingsManagerTest {
             </AccountState>
         """.toElement()
 
-        val credentials = mockCredentialManager.addCredentials("Mock", region = "us-west-2")
+        val credentials = mockCredentialManager.addCredentials("Mock", regionId = "us-west-2")
         with(MockRegionProvider.getInstance()) {
             markConnectionSettingsAsValid(credentials, defaultRegion())
             addRegion(AwsRegion("us-west-2", "Oregon", "AWS"))

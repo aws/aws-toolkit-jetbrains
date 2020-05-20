@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.region
 
 import com.intellij.openapi.components.ServiceManager
-import com.jetbrains.rd.util.firstOrNull
 import org.slf4j.event.Level
 import software.amazon.awssdk.regions.providers.AwsProfileRegionProvider
 import software.amazon.awssdk.regions.providers.AwsRegionProviderChain
@@ -55,7 +54,7 @@ class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResour
 
         return regionFromChain
             ?: this[DEFAULT_REGION]
-            ?: allRegions().firstOrNull()?.value
+            ?: allRegions().values.firstOrNull()
             ?: throw IllegalStateException("Region provider data is missing default data")
     }
 

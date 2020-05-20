@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
@@ -41,7 +41,7 @@ const val DEFAULT_PROFILE_ID = "profile:default"
 
 private const val PROFILE_FACTORY_ID = "ProfileCredentialProviderFactory"
 
-private class ProfileCredentialsIdentifier(internal val profileName: String, override val defaultRegion: String?) : ToolkitCredentialsIdentifier() {
+private class ProfileCredentialsIdentifier(internal val profileName: String, override val defaultRegionId: String?) : ToolkitCredentialsIdentifier() {
     override val id = "profile:$profileName"
     override val displayName = message("credentials.profile.name", profileName)
     override val factoryId = PROFILE_FACTORY_ID

@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.credentials
@@ -554,7 +554,7 @@ class ProfileCredentialProviderFactoryTest {
     private fun profileName(expectedProfileName: String, defaultRegion: String? = null): Condition<Iterable<ToolkitCredentialsIdentifier>> =
         object : Condition<Iterable<ToolkitCredentialsIdentifier>>(expectedProfileName) {
             override fun matches(value: Iterable<ToolkitCredentialsIdentifier>): Boolean = value.any {
-                it.id == "profile:$expectedProfileName" && defaultRegion?.let { dr -> it.defaultRegion == dr } ?: true
+                it.id == "profile:$expectedProfileName" && defaultRegion?.let { dr -> it.defaultRegionId == dr } ?: true
             }
         }
 
