@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
@@ -37,11 +38,7 @@ class ExecutableBackedCacheResourceTest {
 
     @Before
     fun setUp() {
-        registerExtension(
-            ExecutableType.EP_NAME,
-            MockExecutable,
-            disposableRule.disposable
-        )
+        ExtensionTestUtil.maskExtensions(ExecutableType.EP_NAME, listOf(MockExecutable), disposableRule.disposable)
     }
 
     @After
