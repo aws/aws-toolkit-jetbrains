@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ToggleAction
+import com.intellij.openapi.actionSystem.ex.ComboBoxAction
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValueProvider
@@ -18,6 +19,7 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
+import javax.swing.JComponent
 
 class ChangeAccountSettingsActionGroup(project: Project, private val mode: ChangeAccountSettingsMode) : ComputableActionGroup(), DumbAware {
 
@@ -160,3 +162,39 @@ internal class ChangeCredentialsAction(private val credentialsProvider: ToolkitC
 
 private fun getAccountSetting(e: AnActionEvent): ProjectAccountSettingsManager =
     ProjectAccountSettingsManager.getInstance(e.getRequiredData(PlatformDataKeys.PROJECT))
+
+class SettingsSelectorComboBoxAction(
+    private val project: Project,
+    private val type: ChangeAccountSettingsMode
+) : ComboBoxAction(), DumbAware {
+    private val accountSettingsManager by lazy {
+        ProjectAccountSettingsManager.getInstance(project)
+    }
+
+    private val displayProps = when (type) {
+        ChangeAccountSettingsMode.REGIONS ->
+            DisplayProps(message("settings.regions.none_selected")) { accountSettingsManager.selectedRegion?.displayName }
+        ChangeAccountSettingsMode.CREDENTIALS ->
+            DisplayProps(message("settings.credentials.none_selected")) { accountSettingsManager.selectedCredentialIdentifier?.displayName }
+        ChangeAccountSettingsMode.BOTH ->
+            DisplayProps(message("configure.toolkit")) {
+                val creds = accountSettingsManager.selectedCredentialIdentifier?.displayName ?: message("settings.credentials.none_selected")
+                val region = accountSettingsManager.selectedRegion?.displayName ?: message("settings.regions.none_selected")
+                "$creds@$region"
+            }
+    }
+
+    init {
+        templatePresentation.text = displayProps.defaultText
+    }
+
+    override fun createPopupActionGroup(button: JComponent?) = DefaultActionGroup(ChangeAccountSettingsActionGroup(project, type))
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.text = displayProps.displayBlock(accountSettingsManager) ?: displayProps.defaultText
+    }
+
+    override fun displayTextInToolbar(): Boolean = true
+
+    private data class DisplayProps(val defaultText: String, val displayBlock: (ProjectAccountSettingsManager) -> String?)
+}
