@@ -28,14 +28,14 @@ jobs:
         java-version: 11
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-      if: ${{ matrix.os != "windows-latest" }}
+#       if: ${{ matrix.os != "windows-latest" }}
     - name: Build with Gradle
       env:
         ALTERNATIVE_IDE_PROFILE_NAME: ${{ matrix.ide }}
-      if: ${{ matrix.os != "windows-latest" }}
+#       if: ${{ matrix.os != "windows-latest" }}
       run: ./gradlew check coverageReport --info --full-stacktrace --console plain
     - name: Build with Gradle (Windows)
       env:
         ALTERNATIVE_IDE_PROFILE_NAME: ${{ matrix.ide }}
-      if: ${{ matrix.os == "windows-latest" }}
+#       if: ${{ matrix.os == "windows-latest" }}
       run: gradlew.bat check coverageReport --info --full-stacktrace --console plain
