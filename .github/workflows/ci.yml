@@ -34,7 +34,7 @@ jobs:
         ALTERNATIVE_IDE_PROFILE_NAME: ${{ matrix.ide }}
       if: ${{ matrix.os != "windows-latest" }}
       run: ./gradlew check coverageReport --info --full-stacktrace --console plain
-    - name: Build with Gradle
+    - name: Build with Gradle (Windows)
       env:
         ALTERNATIVE_IDE_PROFILE_NAME: ${{ matrix.ide }}
       if: ${{ matrix.os == "windows-latest" }}
