@@ -22,19 +22,23 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DoubleClickListener
-import com.intellij.ui.HyperlinkLabel
+import com.intellij.ui.GuiUtils
+import com.intellij.ui.JBColor
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.treeStructure.Tree
+import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsMode
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeNotifier
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
+import software.aws.toolkits.jetbrains.core.credentials.IncompleteSettings
+import software.aws.toolkits.jetbrains.core.credentials.InvalidConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
-import software.aws.toolkits.jetbrains.core.credentials.SettingsSelector
 import software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorComboBoxAction
+import software.aws.toolkits.jetbrains.core.credentials.ValidConnectionSettings
+import software.aws.toolkits.jetbrains.core.credentials.ValidatingSettings
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -49,23 +53,25 @@ import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel
 import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel
 import software.aws.toolkits.resources.message
 import java.awt.Component
+import java.awt.Insets
 import java.awt.event.MouseEvent
+import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.JTextPane
 import javax.swing.JTree
+import javax.swing.text.SimpleAttributeSet
+import javax.swing.text.StyleConstants
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
 
 class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true), ConnectionSettingsChangeNotifier {
     private val actionManager = ActionManagerEx.getInstanceEx()
     private val treePanelWrapper: Wrapper = Wrapper()
-    private val errorPanel: JPanel
     private val awsTreeModel = AwsExplorerTreeStructure(project)
     private val structureTreeModel = StructureTreeModel(awsTreeModel, project)
     private val awsTree = createTree(AsyncTreeModel(structureTreeModel, true, project))
     private val awsTreePanel = ScrollPaneFactory.createScrollPane(awsTree)
-    private val settingsSelector by lazy {
-        SettingsSelector(project)
-    }
+    private val accountSettingsManager = ProjectAccountSettingsManager.getInstance(project)
 
     init {
         val group = DefaultActionGroup(
@@ -75,34 +81,65 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
         toolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).component
 
-        val select = HyperlinkLabel(message("configure.toolkit"))
-        select.addHyperlinkListener { settingsSelector.settingsPopup(select, ChangeAccountSettingsMode.BOTH).showInCenterOf(select) }
-
-        errorPanel = JPanel()
-        errorPanel.add(select)
-
         setContent(treePanelWrapper)
 
-        if (ProjectAccountSettingsManager.getInstance(project).isValidConnectionSettings()) {
+        if (accountSettingsManager.isValidConnectionSettings()) {
             treePanelWrapper.setContent(awsTreePanel)
         } else {
-            treePanelWrapper.setContent(errorPanel)
+            toolbar?.isEnabled = false
+            treePanelWrapper.setContent(createInfoPanel(message("settings.states.initializing")))
+        }
+        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, this)
+    }
+
+    private fun createInfoPanel(text: String, error: Boolean = false): JComponent {
+        val panel = JPanel(GuiUtils.createBorderLayout())
+
+        val textPane = JTextPane().apply {
+            this.text = text
+            val center = SimpleAttributeSet().apply { StyleConstants.setAlignment(this, StyleConstants.ALIGN_CENTER) }
+            with(styledDocument) {
+                setParagraphAttributes(0, length, center, false)
+            }
+            margin = Insets(10, 10, 10, 10)
+            isEditable = false
+            if (error) {
+                foreground = JBColor.red
+            }
+            background = UIUtil.getLabelBackground()
         }
 
-        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, this)
+        panel.add(textPane)
+        return panel
     }
 
     override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
         runInEdt {
-            when (event.state) {
-                ConnectionState.VALID -> {
+            val content = when (event) {
+                is ValidConnectionSettings -> {
                     invalidateTree()
-                    treePanelWrapper.setContent(awsTreePanel)
+                    awsTreePanel
                 }
-                else -> {
-                    treePanelWrapper.setContent(errorPanel)
-                }
+                is InvalidConnectionSettings -> createInfoPanel(
+                    message(
+                        "settings.states.invalid",
+                        event.credentialsProvider.displayName,
+                        event.region.displayName,
+                        event.cause.localizedMessage
+                    ), error = true
+                )
+                is ValidatingSettings -> createInfoPanel(message("settings.states.validating"))
+                is IncompleteSettings -> createInfoPanel(
+                    when {
+                        event.regionId == null && event.toolkitCredentialsIdentifier == null -> message("settings.states.incomplete", message("settings.none_selected"))
+                        event.regionId == null -> message("settings.states.incomplete", message("settings.regions.none_selected"))
+                        event.toolkitCredentialsIdentifier == null -> message("settings.states.incomplete", message("settings.credentials.none_selected"))
+                        else -> throw IllegalStateException("Should not get here")
+                    }
+                )
             }
+            toolbar?.isEnabled = true
+            treePanelWrapper.setContent(content)
         }
     }
 

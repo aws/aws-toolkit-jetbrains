@@ -129,8 +129,9 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     private fun changeFieldsAndNotify(fieldUpdateBlock: () -> Unit) {
         incModificationCount()
 
-        connectionState = ConnectionState.VALIDATING
         validationJob?.cancel(CancellationException("Newer connection settings chosen"))
+        connectionState = ConnectionState.VALIDATING
+        broadcastChangeEvent(ValidatingSettings)
 
         // Clear existing provider
         selectedCredentialsProvider = null
@@ -138,13 +139,12 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
         fieldUpdateBlock()
 
         validationJob = GlobalScope.launch(Dispatchers.IO) {
-            broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
 
             val credentialsIdentifier = selectedCredentialIdentifier
             val region = selectedRegion
             if (credentialsIdentifier == null || region == null) {
-                connectionState = ConnectionState.INVALID
-                broadcastChangeEvent(ConnectionSettingsStateChange(connectionState))
+                connectionState = ConnectionState.INCOMPLETE
+                broadcastChangeEvent(IncompleteSettings(region?.id, credentialsIdentifier))
                 incModificationCount()
                 return@launch
             }
@@ -156,11 +156,11 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
                 connectionState = ConnectionState.VALID
                 selectedCredentialsProvider = credentialsProvider
 
-                broadcastChangeEvent(ValidConnectionSettings(connectionState))
+                broadcastChangeEvent(ValidConnectionSettings)
             } catch (e: Exception) {
                 connectionState = ConnectionState.INVALID
                 LOGGER.warn(e) { message("credentials.profile.validation_error", credentialsIdentifier.displayName) }
-                broadcastChangeEvent(InvalidConnectionSettings(credentialsIdentifier, region, e, connectionState))
+                broadcastChangeEvent(InvalidConnectionSettings(credentialsIdentifier, region, e))
             } finally {
                 incModificationCount()
                 AwsTelemetry.validateCredentials(project, success = isValidConnectionSettings())
@@ -241,6 +241,7 @@ enum class ConnectionState {
     INITIALIZING,
     VALIDATING,
     INVALID,
+    INCOMPLETE, //When either region or credential is null
     VALID
 }
 
@@ -248,17 +249,17 @@ interface ConnectionSettingsChangeNotifier {
     fun settingsChanged(event: ConnectionSettingsChangeEvent)
 }
 
-sealed class ConnectionSettingsChangeEvent(val state: ConnectionState)
-class ConnectionSettingsStateChange(state: ConnectionState) : ConnectionSettingsChangeEvent(state)
+sealed class ConnectionSettingsChangeEvent
 
 class InvalidConnectionSettings(
     val credentialsProvider: ToolkitCredentialsIdentifier,
     val region: AwsRegion,
-    val cause: Exception,
-    state: ConnectionState
-) : ConnectionSettingsChangeEvent(state)
+    val cause: Exception
+) : ConnectionSettingsChangeEvent()
 
-class ValidConnectionSettings(state: ConnectionState) : ConnectionSettingsChangeEvent(state)
+object ValidConnectionSettings : ConnectionSettingsChangeEvent()
+object ValidatingSettings: ConnectionSettingsChangeEvent()
+class IncompleteSettings(val regionId: String?, val toolkitCredentialsIdentifier: ToolkitCredentialsIdentifier?): ConnectionSettingsChangeEvent()
 
 /**
  * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
