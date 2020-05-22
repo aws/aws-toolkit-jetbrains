@@ -18,6 +18,7 @@ coverage:
       unittest:
         threshold: 1
         only_pulls: true
+        informational: true
         flags:
           - "unittest"
     patch:
@@ -28,6 +29,7 @@ coverage:
       unittest:
         threshold: 1
         only_pulls: true
+        informational: true
         flags:
           - "unittest"
     changes: no
