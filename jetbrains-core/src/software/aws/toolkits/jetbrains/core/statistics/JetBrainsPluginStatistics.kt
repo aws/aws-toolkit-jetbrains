@@ -13,7 +13,6 @@ import com.intellij.openapi.util.JDOMUtil
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.HttpRequests
 import org.jdom.JDOMException
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -25,7 +24,7 @@ import java.util.concurrent.TimeUnit
  * The editor listener to be able to collect anonymous information about plugin usages in JetBrains marketplace.
  * This code send a statistic information every day while using an IDE with AWS plugin.
  *
- * TODO: Re-write using [software.aws.toolkits.jetbrains.core.statistics.JetBrainsPluginStatisticsProvider]. FIX_WHEN_MIN_IS_201
+ * TODO: Re-write using [com.intellij.internal.statistic.fileTypes.FileTypeStatisticProvider]. FIX_WHEN_MIN_IS_201
  */
 class JetBrainsPluginStatistics : EditorFactoryListener {
 
@@ -48,11 +47,6 @@ class JetBrainsPluginStatistics : EditorFactoryListener {
     }
 
     private fun reportStatistics() {
-        AwsToolkit.plugin ?: let {
-            logger.error { "Cannot get AWS plugin with ID: '${AwsToolkit.PLUGIN_ID}'." }
-            return
-        }
-
         val pluginVersion = AwsToolkit.PLUGIN_VERSION
 
         if (!isReportRequired(pluginVersion)) return

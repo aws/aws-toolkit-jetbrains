@@ -514,8 +514,8 @@ class DotNetDebuggerSupport : DebuggerSupport() {
         }
 
         // Copy tool to detect dbgshim 'AWS.DebuggerTools'
-        val pluginBasePath = AwsToolkit.plugin?.path
-            ?: throw IllegalStateException("Unable to find AWS plugin with ID: '${AwsToolkit.PLUGIN_ID}'")
+        val pluginBasePath = AwsToolkit.plugin.path
+            ?: throw IllegalStateException("Path for AWS Toolkit plugin with ID: '${AwsToolkit.PLUGIN_ID}' is not set.")
 
         val dotnetPluginDir = File(pluginBasePath, "dotnet")
         if (!dotnetPluginDir.exists()) throw IllegalStateException("Unable to find 'dotnet' folder inside path: '$dotnetPluginDir'")

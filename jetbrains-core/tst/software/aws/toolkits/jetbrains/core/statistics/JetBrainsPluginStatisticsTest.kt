@@ -45,6 +45,7 @@ class JetBrainsPluginStatisticsTest {
 
         val isRequired = JetBrainsPluginStatistics().isReportRequired(DEFAULT_PLUGIN_VERSION)
         assertThat(isRequired).isTrue()
+        assertProperties(version = DEFAULT_PLUGIN_VERSION, isTimestampSet = true)
     }
 
     @Test
@@ -56,6 +57,7 @@ class JetBrainsPluginStatisticsTest {
 
         val isRequired = JetBrainsPluginStatistics().isReportRequired(DEFAULT_PLUGIN_VERSION)
         assertThat(isRequired).isFalse()
+        assertProperties(version = DEFAULT_PLUGIN_VERSION, isTimestampSet = true)
     }
 
     @Test
@@ -67,6 +69,7 @@ class JetBrainsPluginStatisticsTest {
 
         val isRequired = JetBrainsPluginStatistics().isReportRequired(DEFAULT_PLUGIN_VERSION)
         assertThat(isRequired).isTrue()
+        assertProperties(version = DEFAULT_PLUGIN_VERSION, isTimestampSet = true)
     }
 
     @Test
@@ -78,6 +81,7 @@ class JetBrainsPluginStatisticsTest {
 
         val isRequired = JetBrainsPluginStatistics().isReportRequired(DEFAULT_PLUGIN_VERSION)
         assertThat(isRequired).isTrue()
+        assertProperties(version = DEFAULT_PLUGIN_VERSION, isTimestampSet = true)
     }
 
     @Test
@@ -89,10 +93,18 @@ class JetBrainsPluginStatisticsTest {
 
         val isRequired = JetBrainsPluginStatistics().isReportRequired("aws.toolkit-1.16")
         assertThat(isRequired).isTrue()
+        assertProperties(version = "aws.toolkit-1.16", isTimestampSet = true)
     }
 
     private fun setProperties(version: String?, timestamp: String?) {
-        PropertiesComponent.getInstance().setValue(JetBrainsPluginStatistics.LAST_VERSION_KEY, version)
-        PropertiesComponent.getInstance().setValue(JetBrainsPluginStatistics.LAST_REPORT_TIMESTAMP_KEY, timestamp)
+        val properties = PropertiesComponent.getInstance()
+        properties.setValue(JetBrainsPluginStatistics.LAST_VERSION_KEY, version)
+        properties.setValue(JetBrainsPluginStatistics.LAST_REPORT_TIMESTAMP_KEY, timestamp)
+    }
+
+    private fun assertProperties(version: String?, isTimestampSet: Boolean) {
+        val properties = PropertiesComponent.getInstance()
+        assertThat(properties.getValue(JetBrainsPluginStatistics.LAST_VERSION_KEY)).isEqualTo(version)
+        assertThat(properties.getValue(JetBrainsPluginStatistics.LAST_REPORT_TIMESTAMP_KEY).isNullOrEmpty().not()).isEqualTo(isTimestampSet)
     }
 }

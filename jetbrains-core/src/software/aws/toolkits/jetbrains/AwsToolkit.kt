@@ -13,11 +13,12 @@ object AwsToolkit {
     const val PLUGIN_NAME = "AWS Toolkit For JetBrains"
 
     // PluginManagerCore.getPlugin Requires MIN 193.2252. However we cannot set our IDE min to that because not all JB IDEs use the same build numbers
-    val plugin: IdeaPluginDescriptor? by lazy {
+    val plugin: IdeaPluginDescriptor by lazy {
         PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))
+            ?: throw IllegalStateException("Cannot get AWS Toolkit plugin with ID: '$PLUGIN_ID'.")
     }
 
     val PLUGIN_VERSION: String by lazy {
-        plugin?.version ?: "Unknown"
+        plugin.version ?: "Unknown"
     }
 }
