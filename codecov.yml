@@ -25,7 +25,7 @@ coverage:
       default:
         threshold: 1
         only_pulls: true
-        informational: false
+        informational: true
       unittest:
         threshold: 1
         only_pulls: true
