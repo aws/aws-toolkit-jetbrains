@@ -13,7 +13,7 @@ jobs:
   build:
     name: Mac Build
 
-    runs-on: mac-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2
