@@ -31,6 +31,7 @@ import com.intellij.ui.treeStructure.Tree
 import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsMode
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeEvent
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsChangeNotifier
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.credentials.SettingsSelector
 import software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorComboBoxAction
@@ -82,8 +83,6 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
         setContent(treePanelWrapper)
 
-        setContent(awsTreePanel)
-
         if (ProjectAccountSettingsManager.getInstance(project).isValidConnectionSettings()) {
             treePanelWrapper.setContent(awsTreePanel)
         } else {
@@ -95,7 +94,15 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
     override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
         runInEdt {
-            invalidateTree()
+            when (event.state) {
+                ConnectionState.VALID -> {
+                    invalidateTree()
+                    treePanelWrapper.setContent(awsTreePanel)
+                }
+                else -> {
+                    treePanelWrapper.setContent(errorPanel)
+                }
+            }
         }
     }
 

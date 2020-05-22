@@ -69,10 +69,19 @@ class ChangeAccountSettingsActionGroup(project: Project, private val mode: Chang
     }
 }
 
-enum class ChangeAccountSettingsMode(internal val showRegions: Boolean, internal val showCredentials: Boolean) {
-    CREDENTIALS(false, true),
-    REGIONS(true, false),
-    BOTH(true, true);
+enum class ChangeAccountSettingsMode(
+    internal val showRegions: Boolean,
+    internal val showCredentials: Boolean,
+    internal val nonSelected: String,
+    internal val selectedDisplayFormat: ProjectAccountSettingsManager.() -> String?
+) {
+    CREDENTIALS(false, true, message("settings.credentials.none_selected"), { selectedCredentialIdentifier?.displayName }),
+    REGIONS(true, false, message("settings.regions.none_selected"), { selectedRegion?.displayName }),
+    BOTH(true, true, message("configure.toolkit"), {
+        val creds = selectedCredentialIdentifier?.displayName ?: message("settings.credentials.none_selected")
+        val region = selectedRegion?.displayName ?: message("settings.regions.none_selected")
+        "$creds@$region"
+    });
 }
 
 private class ChangePartitionActionGroup : DefaultActionGroup(message("settings.partitions"), true), DumbAware {
@@ -165,36 +174,21 @@ private fun getAccountSetting(e: AnActionEvent): ProjectAccountSettingsManager =
 
 class SettingsSelectorComboBoxAction(
     private val project: Project,
-    private val type: ChangeAccountSettingsMode
+    private val mode: ChangeAccountSettingsMode
 ) : ComboBoxAction(), DumbAware {
     private val accountSettingsManager by lazy {
         ProjectAccountSettingsManager.getInstance(project)
     }
 
-    private val displayProps = when (type) {
-        ChangeAccountSettingsMode.REGIONS ->
-            DisplayProps(message("settings.regions.none_selected")) { accountSettingsManager.selectedRegion?.displayName }
-        ChangeAccountSettingsMode.CREDENTIALS ->
-            DisplayProps(message("settings.credentials.none_selected")) { accountSettingsManager.selectedCredentialIdentifier?.displayName }
-        ChangeAccountSettingsMode.BOTH ->
-            DisplayProps(message("configure.toolkit")) {
-                val creds = accountSettingsManager.selectedCredentialIdentifier?.displayName ?: message("settings.credentials.none_selected")
-                val region = accountSettingsManager.selectedRegion?.displayName ?: message("settings.regions.none_selected")
-                "$creds@$region"
-            }
-    }
-
     init {
-        templatePresentation.text = displayProps.defaultText
+        templatePresentation.text = mode.nonSelected
     }
 
-    override fun createPopupActionGroup(button: JComponent?) = DefaultActionGroup(ChangeAccountSettingsActionGroup(project, type))
+    override fun createPopupActionGroup(button: JComponent?) = DefaultActionGroup(ChangeAccountSettingsActionGroup(project, mode))
 
     override fun update(e: AnActionEvent) {
-        e.presentation.text = displayProps.displayBlock(accountSettingsManager) ?: displayProps.defaultText
+        e.presentation.text = mode.selectedDisplayFormat(accountSettingsManager) ?: mode.nonSelected
     }
 
     override fun displayTextInToolbar(): Boolean = true
-
-    private data class DisplayProps(val defaultText: String, val displayBlock: (ProjectAccountSettingsManager) -> String?)
 }
