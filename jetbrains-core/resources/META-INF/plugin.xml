@@ -226,7 +226,7 @@
         
         <!-- S3 -->
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.s3.S3ViewerEditorProvider"/>
-        <!-- See this issue why order is required https://intellij-support.jetbrains.com/hc/en-us/community/posts/360003460619-fileIconProvider-is-not-showing-Icon-for-custom-LightVirtualFile -->
+        <!-- See this post why order="first" is required https://intellij-support.jetbrains.com/hc/en-us/community/posts/360003460619-fileIconProvider-is-not-showing-Icon-for-custom-LightVirtualFile -->
         <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.s3.editor.S3FileIconProvider"/>
     </extensions>
 
