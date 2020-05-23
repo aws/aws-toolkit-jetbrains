@@ -20,6 +20,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: Support longpaths
+      run: git config --system core.longpaths true
     - name: Checkout Source
       uses: actions/checkout@v1
     - name: Set up JDK 11
