@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
-        ide: [ 2019.3, 2020.2 ]
+        ide: [ 2019.3, 2020.1 ]
     runs-on: ${{ matrix.os }}
 
     steps:
