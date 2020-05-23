@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.utils
@@ -24,15 +24,12 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotNull
 
-fun executeRunConfiguration(
-    runConfiguration: RunConfiguration,
-    executorId: String = DefaultRunExecutor.EXECUTOR_ID
-): Output {
+fun RunConfiguration.execute(executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
     val executor = ExecutorRegistry.getInstance().getExecutorById(executorId)
     assertNotNull(executor)
     val executionFuture = CompletableFuture<Output>()
     runInEdt {
-        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
+        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, this).build()
         try {
             executionEnvironment.runner.execute(executionEnvironment) {
                 it.processHandler?.addProcessListener(object : OutputListener() {
@@ -59,6 +56,12 @@ fun executeRunConfiguration(
 
     return executionFuture.get(3, TimeUnit.MINUTES)
 }
+
+@Deprecated("use extension function instead", ReplaceWith("runConfiguration.execute(executorId)"))
+fun executeRunConfiguration(
+    runConfiguration: RunConfiguration,
+    executorId: String = DefaultRunExecutor.EXECUTOR_ID
+) = runConfiguration.execute(executorId)
 
 fun checkBreakPointHit(project: Project, callback: () -> Unit = {}): Ref<Boolean> {
     val debuggerIsHit = Ref(false)
