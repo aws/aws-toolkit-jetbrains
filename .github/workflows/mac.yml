@@ -29,4 +29,4 @@ jobs:
     - name: Build with Gradle
       env:
         ALTERNATIVE_IDE_PROFILE_NAME: ${{ matrix.ide }}
-      run: ./gradlew --no-daemon check coverageReport --info --full-stacktrace --console plain
+      run: ./gradlew --no-daemon check coverageReport --info --debug --full-stacktrace --console plain
