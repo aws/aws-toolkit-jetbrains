@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
-import com.intellij.util.messages.Topic
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.amazon.awssdk.services.toolkittelemetry.model.Unit.MILLISECONDS
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
@@ -16,6 +15,7 @@ import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADAT
 import software.aws.toolkits.core.telemetry.DefaultTelemetryBatcher
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
+import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccount
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -24,13 +24,25 @@ import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
-interface TelemetryService : Disposable {
+abstract class TelemetryService(private val publisher: TelemetryPublisher, private val batcher: TelemetryBatcher) : Disposable {
     data class MetricEventMetadata(
         val awsAccount: String = METADATA_NA,
         val awsRegion: String = METADATA_NA
     )
 
-    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit = {}): MetricEvent
+    private val isDisposing = AtomicBoolean(false)
+    private val startTime: Instant
+
+    init {
+        // TODO this startup stuff should be moved to a global startup task instead of in the constructor FIX_WHEN_MIN_IS_193
+        // The auto generated telemetry cannot be used here. It tries to get the instance while
+        // constructing it which causes a circular dependency issue.
+        record("session_start").also {
+            startTime = it.createTime
+        }
+
+        setTelemetryEnabled(AwsSettings.getInstance().isTelemetryEnabled)
+    }
 
     fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit = {}): CompletableFuture<MetricEvent> {
         val metricEvent = CompletableFuture<MetricEvent>()
@@ -48,57 +60,23 @@ interface TelemetryService : Disposable {
         return metricEvent
     }
 
-    suspend fun sendFeedback(sentiment: Sentiment, comment: String)
+    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit): MetricEvent {
+        val builder = DefaultMetricEvent.builder()
+        builder.awsAccount(metricEventMetadata.awsAccount)
+        builder.awsRegion(metricEventMetadata.awsRegion)
 
-    companion object {
-        @JvmStatic
-        fun getInstance(): TelemetryService = ServiceManager.getService(TelemetryService::class.java)
+        buildEvent(builder)
 
-        @JvmStatic
-        fun syncPublisher() = ApplicationManager.getApplication().messageBus.syncPublisher(TELEMETRY_TOPIC)
+        val event = builder.build()
 
-        @JvmStatic
-        fun subscribe(notifier: TelemetryEnabledChangedNotifier) {
-            ApplicationManager.getApplication().messageBus.connect().subscribe(TELEMETRY_TOPIC, notifier)
-        }
+        batcher.enqueue(event)
 
-        private val TELEMETRY_TOPIC: Topic<TelemetryEnabledChangedNotifier> = Topic.create(
-            "TELEMETRY_ENABLED_TOPIC",
-            TelemetryEnabledChangedNotifier::class.java
-        )
-    }
-}
-
-interface TelemetryEnabledChangedNotifier {
-    fun notify(isTelemetryEnabled: Boolean)
-}
-
-class DefaultTelemetryService(settings: AwsSettings) :
-    TelemetryService, TelemetryEnabledChangedNotifier {
-    private val publisher = DefaultTelemetryPublisher()
-    var batcher: TelemetryBatcher = DefaultTelemetryBatcher(publisher)
-        set(value) {
-            batcher.setBatcher(value)
-            field = value
-        }
-
-    private val isDisposing: AtomicBoolean = AtomicBoolean(false)
-    private val startTime: Instant
-
-    init {
-        TelemetryService.subscribe(this)
-        TelemetryService.syncPublisher().notify(settings.isTelemetryEnabled)
-
-        // TODO this startup stuff should be moved to a global startup task instead of in the constructor FIX_WHEN_MIN_IS_193
-        // The auto generated telemetry cannot be used here. It tries to get the instance while
-        // constructing it which causes a circular dependency issue.
-        record("session_start").also {
-            startTime = it.createTime
-        }
+        return event
     }
 
-    override fun notify(isTelemetryEnabled: Boolean) {
-        batcher.onTelemetryEnabledChanged(isTelemetryEnabled)
+    @Synchronized
+    fun setTelemetryEnabled(isEnabled: Boolean) {
+        batcher.onTelemetryEnabledChanged(isEnabled and TELEMETRY_ENABLED)
     }
 
     override fun dispose() {
@@ -119,26 +97,26 @@ class DefaultTelemetryService(settings: AwsSettings) :
         batcher.shutdown()
     }
 
-    override fun record(
-        metricEventMetadata: TelemetryService.MetricEventMetadata,
-        buildEvent: MetricEvent.Builder.() -> Unit
-    ): MetricEvent {
-        val builder = DefaultMetricEvent.builder()
-        buildEvent(builder)
-        builder.awsAccount(metricEventMetadata.awsAccount)
-        builder.awsRegion(metricEventMetadata.awsRegion)
-        val event = builder.build()
-        batcher.enqueue(event)
-        return event
-    }
-
-    override suspend fun sendFeedback(sentiment: Sentiment, comment: String) {
+    suspend fun sendFeedback(sentiment: Sentiment, comment: String) {
         publisher.sendFeedback(sentiment, comment)
     }
 
-    private fun record(event: MetricEvent.Builder.() -> Unit): MetricEvent = record(TelemetryService.MetricEventMetadata(), event)
+    private fun record(event: MetricEvent.Builder.() -> Unit): MetricEvent = record(MetricEventMetadata(), event)
 
-    private fun record(metricName: String): MetricEvent = record(TelemetryService.MetricEventMetadata()) {
+    private fun record(metricName: String): MetricEvent = record(MetricEventMetadata()) {
         this.datum(metricName)
+    }
+
+    companion object {
+        private const val TELEMETRY_KEY = "aws.toolkits.enableTelemetry"
+        private val TELEMETRY_ENABLED = System.getProperty(TELEMETRY_KEY)?.toBoolean() ?: true
+
+        fun getInstance(): TelemetryService = ServiceManager.getService(TelemetryService::class.java)
+    }
+}
+
+class DefaultTelemetryService : TelemetryService(PUBLISHER, DefaultTelemetryBatcher(PUBLISHER)) {
+    private companion object {
+        val PUBLISHER = DefaultTelemetryPublisher()
     }
 }

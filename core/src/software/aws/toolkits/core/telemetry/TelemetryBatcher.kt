@@ -4,6 +4,7 @@
 package software.aws.toolkits.core.telemetry
 
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -14,32 +15,30 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryBatcher {
-    fun enqueue(event: MetricEvent)
+    fun enqueue(event: MetricEvent) {
+        enqueue(listOf(event))
+    }
 
     fun enqueue(events: Collection<MetricEvent>)
 
     fun flush(retry: Boolean)
 
-    /**
-     * Immediately shutdown the current batcher and delegate remaining events to a new batcher
-     */
-    fun setBatcher(batcher: TelemetryBatcher)
-
-    fun onTelemetryEnabledChanged(newValue: Boolean)
+    fun onTelemetryEnabledChanged(isEnabled: Boolean)
 
     fun shutdown()
 }
 
-open class DefaultTelemetryBatcher(
+class DefaultTelemetryBatcher(
     private val publisher: TelemetryPublisher,
     private val maxBatchSize: Int = DEFAULT_MAX_BATCH_SIZE,
     maxQueueSize: Int = DEFAULT_MAX_QUEUE_SIZE,
     private val executor: ScheduledExecutorService = createDefaultExecutor()
 ) : TelemetryBatcher {
-
     private val isTelemetryEnabled: AtomicBoolean = AtomicBoolean(false)
-    protected val eventQueue: LinkedBlockingDeque<MetricEvent> = LinkedBlockingDeque(maxQueueSize)
     private val isShuttingDown: AtomicBoolean = AtomicBoolean(false)
+
+    val eventQueue: LinkedBlockingDeque<MetricEvent> = LinkedBlockingDeque(maxQueueSize)
+        @TestOnly get
 
     init {
         executor.scheduleWithFixedDelay(
@@ -67,11 +66,11 @@ open class DefaultTelemetryBatcher(
         flush(false)
     }
 
-    override fun enqueue(event: MetricEvent) {
-        enqueue(listOf(event))
-    }
-
     override fun enqueue(events: Collection<MetricEvent>) {
+        if (!isTelemetryEnabled.get()) {
+            return
+        }
+
         try {
             eventQueue.addAll(events)
         } catch (e: Exception) {
@@ -79,22 +78,10 @@ open class DefaultTelemetryBatcher(
         }
     }
 
+    @Synchronized
     override fun flush(retry: Boolean) {
-        flush(retry, isTelemetryEnabled.get())
-    }
-
-    @Synchronized
-    override fun setBatcher(batcher: TelemetryBatcher) {
-        executor.shutdown()
-        batcher.onTelemetryEnabledChanged(isTelemetryEnabled.get())
-        batcher.enqueue(eventQueue.toList())
-    }
-
-    // TODO: This should flush to disk instead of network on shutdown. User should not have to wait for network calls to exit. Also consider handling clock drift
-    @Synchronized
-    private fun flush(retry: Boolean, publish: Boolean) {
-        if (!publish || !TELEMETRY_ENABLED) {
-            eventQueue.clear()
+        if (!isTelemetryEnabled.get()) {
+            return
         }
 
         while (!eventQueue.isEmpty()) {
@@ -128,17 +115,19 @@ open class DefaultTelemetryBatcher(
         }
     }
 
-    override fun onTelemetryEnabledChanged(newValue: Boolean) = isTelemetryEnabled.set(newValue)
+    override fun onTelemetryEnabledChanged(isEnabled: Boolean) {
+        isTelemetryEnabled.set(isEnabled)
+        if (!isEnabled) {
+            eventQueue.clear()
+        }
+    }
 
     companion object {
-        private val LOG = getLogger<DefaultTelemetryBatcher>()
+        private val LOG = getLogger<TelemetryBatcher>()
         private const val DEFAULT_MAX_BATCH_SIZE = 20
         private const val DEFAULT_MAX_QUEUE_SIZE = 10000
         private const val DEFAULT_PUBLISH_INTERVAL = 5L
         private val DEFAULT_PUBLISH_INTERVAL_UNIT = TimeUnit.MINUTES
-
-        private const val TELEMETRY_KEY = "aws.toolkits.enableTelemetry"
-        val TELEMETRY_ENABLED = System.getProperty(TELEMETRY_KEY)?.toBoolean() ?: true
 
         private fun createDefaultExecutor() = Executors.newSingleThreadScheduledExecutor {
             val daemonThread = Thread(it)
