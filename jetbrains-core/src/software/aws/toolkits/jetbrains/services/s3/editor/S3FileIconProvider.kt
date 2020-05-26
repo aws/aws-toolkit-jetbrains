@@ -10,5 +10,9 @@ import icons.AwsIcons.Resources.S3_BUCKET
 import javax.swing.Icon
 
 class S3FileIconProvider : FileIconProvider {
-    override fun getIcon(file: VirtualFile, flags: Int, project: Project?): Icon? = if (file is S3VirtualBucket) { S3_BUCKET } else { null }
+    override fun getIcon(file: VirtualFile, flags: Int, project: Project?): Icon? = if (file is S3VirtualBucket) {
+        S3_BUCKET
+    } else {
+        null
+    }
 }
