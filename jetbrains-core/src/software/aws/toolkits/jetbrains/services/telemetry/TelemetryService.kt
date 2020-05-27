@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
@@ -16,12 +15,11 @@ import software.aws.toolkits.core.telemetry.DefaultTelemetryBatcher
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccount
+import software.aws.toolkits.jetbrains.core.credentials.activeAwsAccountIfKnown
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class TelemetryService(private val publisher: TelemetryPublisher, private val batcher: TelemetryBatcher) : Disposable {
@@ -31,33 +29,23 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
     )
 
     private val isDisposing = AtomicBoolean(false)
-    private val startTime: Instant
+    private val startTime = Instant.now()
 
     init {
         // TODO this startup stuff should be moved to a global startup task instead of in the constructor FIX_WHEN_MIN_IS_193
         // The auto generated telemetry cannot be used here. It tries to get the instance while
         // constructing it which causes a circular dependency issue.
-        record("session_start").also {
-            startTime = it.createTime
-        }
+        record("session_start")
 
         setTelemetryEnabled(AwsSettings.getInstance().isTelemetryEnabled)
     }
 
-    fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit = {}): CompletableFuture<MetricEvent> {
-        val metricEvent = CompletableFuture<MetricEvent>()
-        ApplicationManager.getApplication().executeOnPooledThread {
-            try {
-                val metricEventMetadata = if (project == null) MetricEventMetadata() else MetricEventMetadata(
-                    awsAccount = project.activeAwsAccount() ?: METADATA_NOT_SET,
-                    awsRegion = project.activeRegion().id
-                )
-                metricEvent.complete(record(metricEventMetadata, buildEvent))
-            } catch (e: Exception) {
-                metricEvent.completeExceptionally(e)
-            }
-        }
-        return metricEvent
+    fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit = {}) {
+        val metricEventMetadata = if (project == null) MetricEventMetadata() else MetricEventMetadata(
+            awsAccount = project.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
+            awsRegion = project.activeRegion().id
+        )
+        record(metricEventMetadata, buildEvent)
     }
 
     @Synchronized
@@ -83,27 +71,23 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
         batcher.shutdown()
     }
 
-    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit): MetricEvent {
+    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit) {
         val builder = DefaultMetricEvent.builder()
         builder.awsAccount(metricEventMetadata.awsAccount)
         builder.awsRegion(metricEventMetadata.awsRegion)
 
         buildEvent(builder)
 
-        val event = builder.build()
-
-        batcher.enqueue(event)
-
-        return event
+        batcher.enqueue(builder.build())
     }
 
     suspend fun sendFeedback(sentiment: Sentiment, comment: String) {
         publisher.sendFeedback(sentiment, comment)
     }
 
-    private fun record(event: MetricEvent.Builder.() -> Unit): MetricEvent = record(MetricEventMetadata(), event)
+    private fun record(event: MetricEvent.Builder.() -> Unit) = record(MetricEventMetadata(), event)
 
-    private fun record(metricName: String): MetricEvent = record(MetricEventMetadata()) {
+    private fun record(metricName: String) = record(MetricEventMetadata()) {
         this.datum(metricName)
     }
 

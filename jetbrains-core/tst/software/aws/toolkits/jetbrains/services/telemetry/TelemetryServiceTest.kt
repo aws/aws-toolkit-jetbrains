@@ -110,7 +110,7 @@ class TelemetryServiceTest {
 
         telemetryService.record(projectRule.project) {
             datum("Foo")
-        }.join()
+        }
         telemetryService.dispose()
 
         verify(batcher, times(3)).enqueue(eventCaptor.capture())
@@ -141,7 +141,7 @@ class TelemetryServiceTest {
 
         telemetryService.record(projectRule.project) {
             datum("Foo")
-        }.join()
+        }
         telemetryService.dispose()
 
         verify(batcher, times(3)).enqueue(eventCaptor.capture())
@@ -181,8 +181,8 @@ class TelemetryServiceTest {
     }
 
     private fun assertMetricEventsContains(events: Collection<MetricEvent>, event: String, awsAccount: String, awsRegion: String) {
-        val metricEvent = events.find {
-            it.data.find { it.name == event } != null && it.awsAccount == awsAccount && it.awsRegion == awsRegion
+        val metricEvent = events.find { e ->
+            e.data.find { it.name == event } != null && e.awsAccount == awsAccount && e.awsRegion == awsRegion
         }
 
         assertThat(metricEvent).isNotNull
