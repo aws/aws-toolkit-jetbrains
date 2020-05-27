@@ -230,6 +230,10 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     }
 }
 
+/**
+ * A state machine around the connection validation steps the toolkit goes through. Attempts to encapsulate both state, data available at each state and
+ * a consistent place to determine how to display state information (e.g. [displayMessage]).
+ */
 sealed class ConnectionState(val displayMessage: String) {
     /**
      * An optional short message to display in places where space is at a premium
@@ -252,8 +256,7 @@ sealed class ConnectionState(val displayMessage: String) {
             region == null && credentials == null -> message("settings.none_selected")
             region == null -> message("settings.regions.none_selected")
             credentials == null -> message("settings.credentials.none_selected")
-            else ->
-                throw IllegalArgumentException("At least one of regionId ($region) or toolkitCredentialsIdentifier ($credentials) must be null")
+            else -> throw IllegalArgumentException("At least one of regionId ($region) or toolkitCredentialsIdentifier ($credentials) must be null")
         }
     )
 
