@@ -15,11 +15,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface TelemetryBatcher {
-    fun enqueue(event: MetricEvent) {
-        enqueue(listOf(event))
-    }
-
-    fun enqueue(events: Collection<MetricEvent>)
+    fun enqueue(event: MetricEvent)
 
     fun flush(retry: Boolean)
 
@@ -66,13 +62,13 @@ class DefaultTelemetryBatcher(
         flush(false)
     }
 
-    override fun enqueue(events: Collection<MetricEvent>) {
+    override fun enqueue(event: MetricEvent) {
         if (!isTelemetryEnabled.get()) {
             return
         }
 
         try {
-            eventQueue.addAll(events)
+            eventQueue.add(event)
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to add metric to queue" }
         }

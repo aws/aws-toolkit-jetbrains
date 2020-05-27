@@ -54,11 +54,9 @@ class TelemetryBatcherTest {
         val publishCaptor = argumentCaptor<Collection<MetricEvent>>()
 
         val totalEvents = MAX_BATCH_SIZE + 1
-        val events = ArrayList<MetricEvent>()
         repeat(totalEvents) {
-            events.add(createEmptyMetricEvent())
+            batcher.enqueue(createEmptyMetricEvent())
         }
-        batcher.enqueue(events)
         batcher.flush(false)
 
         verifyBlocking(publisher, times(2)) { publish(publishCaptor.capture()) }
