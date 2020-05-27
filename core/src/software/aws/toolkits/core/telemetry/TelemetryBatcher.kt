@@ -119,7 +119,7 @@ class DefaultTelemetryBatcher(
     }
 
     companion object {
-        private val LOG = getLogger<TelemetryBatcher>()
+        private val LOG = getLogger<DefaultTelemetryBatcher>()
         private const val DEFAULT_MAX_BATCH_SIZE = 20
         private const val DEFAULT_MAX_QUEUE_SIZE = 10000
         private const val DEFAULT_PUBLISH_INTERVAL = 5L
