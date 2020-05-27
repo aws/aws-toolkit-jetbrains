@@ -161,8 +161,8 @@ class DefaultProjectAccountSettingsManagerTest {
         var gotNotification = false
 
         val busConnection = project.messageBus.connect()
-        busConnection.subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, object : ConnectionSettingsChangeNotifier {
-            override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
+        busConnection.subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_STATE_CHANGED, object : ConnectionSettingsStateChangeNotifier {
+            override fun settingsStateChanged(newState: ConnectionState) {
                 gotNotification = true
             }
         })
@@ -179,8 +179,8 @@ class DefaultProjectAccountSettingsManagerTest {
         var gotNotification = false
 
         val busConnection = project.messageBus.connect()
-        busConnection.subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_CHANGED, object : ConnectionSettingsChangeNotifier {
-            override fun settingsChanged(event: ConnectionSettingsChangeEvent) {
+        busConnection.subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_STATE_CHANGED, object : ConnectionSettingsStateChangeNotifier {
+            override fun settingsStateChanged(newState: ConnectionState) {
                 gotNotification = true
             }
         })
@@ -407,7 +407,9 @@ class DefaultProjectAccountSettingsManagerTest {
     }
 
     private fun waitForTerminalConnectionState() {
-        spinUntil(Duration.ofSeconds(10)) { manager.connectionState == ConnectionState.VALID || manager.connectionState == ConnectionState.INVALID }
+        spinUntil(Duration.ofSeconds(10)) {
+            manager.connectionState.let { it !is ConnectionState.InitializingToolkit && it !is ConnectionState.ValidatingConnection }
+        }
     }
 
     private fun Element?.string(): String = XMLOutputter().outputString(this)
