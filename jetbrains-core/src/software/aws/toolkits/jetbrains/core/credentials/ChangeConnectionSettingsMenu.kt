@@ -189,7 +189,7 @@ class SettingsSelectorComboBoxAction(
 
     override fun displayTextInToolbar(): Boolean = true
 
-    private fun text() = when(mode) {
+    private fun text() = when (mode) {
         CREDENTIALS -> credentialsText()
         REGIONS -> regionText()
         BOTH -> "${credentialsText()}@${regionText()}"
