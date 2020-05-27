@@ -16,6 +16,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValueProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsMode.BOTH
+import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsMode.CREDENTIALS
+import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsMode.REGIONS
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.actions.ComputableActionGroup
 import software.aws.toolkits.resources.message
@@ -71,17 +74,11 @@ class ChangeAccountSettingsActionGroup(project: Project, private val mode: Chang
 
 enum class ChangeAccountSettingsMode(
     internal val showRegions: Boolean,
-    internal val showCredentials: Boolean,
-    internal val nonSelected: String,
-    internal val selectedDisplayFormat: ProjectAccountSettingsManager.() -> String?
+    internal val showCredentials: Boolean
 ) {
-    CREDENTIALS(false, true, message("settings.credentials.none_selected"), { selectedCredentialIdentifier?.displayName }),
-    REGIONS(true, false, message("settings.regions.none_selected"), { selectedRegion?.displayName }),
-    BOTH(true, true, message("configure.toolkit"), {
-        val creds = selectedCredentialIdentifier?.displayName ?: message("settings.credentials.none_selected")
-        val region = selectedRegion?.displayName ?: message("settings.regions.none_selected")
-        "$creds@$region"
-    });
+    CREDENTIALS(false, true),
+    REGIONS(true, false),
+    BOTH(true, true)
 }
 
 private class ChangePartitionActionGroup : DefaultActionGroup(message("settings.partitions"), true), DumbAware {
@@ -181,14 +178,24 @@ class SettingsSelectorComboBoxAction(
     }
 
     init {
-        templatePresentation.text = mode.nonSelected
+        templatePresentation.text = text()
     }
 
     override fun createPopupActionGroup(button: JComponent?) = DefaultActionGroup(ChangeAccountSettingsActionGroup(project, mode))
 
     override fun update(e: AnActionEvent) {
-        e.presentation.text = mode.selectedDisplayFormat(accountSettingsManager) ?: mode.nonSelected
+        e.presentation.text = text()
     }
 
     override fun displayTextInToolbar(): Boolean = true
+
+    private fun text() = when(mode) {
+        CREDENTIALS -> credentialsText()
+        REGIONS -> regionText()
+        BOTH -> "${credentialsText()}@${regionText()}"
+    }
+
+    private fun regionText() = accountSettingsManager.selectedRegion?.displayName ?: message("settings.regions.none_selected")
+
+    private fun credentialsText() = accountSettingsManager.selectedCredentialIdentifier?.displayName ?: message("settings.credentials.none_selected")
 }
