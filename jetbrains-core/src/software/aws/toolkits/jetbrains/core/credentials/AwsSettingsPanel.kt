@@ -48,7 +48,7 @@ private class AwsSettingsPanel(private val project: Project) : StatusBarWidget,
 
     override fun install(statusBar: StatusBar) {
         this.statusBar = statusBar
-        project.messageBus.connect().subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_STATE_CHANGED, this)
+        project.messageBus.connect(this).subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_STATE_CHANGED, this)
         updateWidget()
     }
 
