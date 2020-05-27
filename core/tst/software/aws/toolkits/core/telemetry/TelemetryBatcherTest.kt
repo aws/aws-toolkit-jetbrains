@@ -119,7 +119,7 @@ class TelemetryBatcherTest {
     }
 
     @Test
-    fun testNotSendingTelemetry() {
+    fun testNotSendingWhileDisabled() {
         batcher.onTelemetryEnabledChanged(false)
 
         batcher.enqueue(createEmptyMetricEvent())

@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.testFramework.ProjectRule
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
@@ -51,7 +50,7 @@ class TelemetryServiceTest {
         val changeCountDown = CountDownLatch(1)
         val changeCaptor = argumentCaptor<Boolean>()
 
-        val batcher = createMockBatcher()
+        val batcher = mock<TelemetryBatcher>()
 
         batcher.stub {
             on(batcher.onTelemetryEnabledChanged(changeCaptor.capture()))
@@ -75,7 +74,7 @@ class TelemetryServiceTest {
         val changeCountDown = CountDownLatch(3)
         val changeCaptor = argumentCaptor<Boolean>()
 
-        val batcher = createMockBatcher()
+        val batcher = mock<TelemetryBatcher>()
 
         batcher.stub {
             on(batcher.onTelemetryEnabledChanged(changeCaptor.capture()))
@@ -104,9 +103,9 @@ class TelemetryServiceTest {
 
         accountSettings.changeCredentialProvider(null)
 
-        val eventCaptor = argumentCaptor<Collection<MetricEvent>>()
+        val eventCaptor = argumentCaptor<MetricEvent>()
 
-        val batcher = createMockBatcher()
+        val batcher = mock<TelemetryBatcher>()
         val telemetryService = TestTelemetryService(batcher)
 
         telemetryService.record(projectRule.project) {
@@ -116,9 +115,9 @@ class TelemetryServiceTest {
 
         verify(batcher, times(3)).enqueue(eventCaptor.capture())
 
-        assertMetricEventsContains(eventCaptor.allValues.flatten(), "session_start", METADATA_NA, METADATA_NA)
-        assertMetricEventsContains(eventCaptor.allValues.flatten(), "Foo", METADATA_NOT_SET, "us-east-1")
-        assertMetricEventsContains(eventCaptor.allValues.flatten(), "session_end", METADATA_NA, METADATA_NA)
+        assertMetricEventsContains(eventCaptor.allValues, "session_start", METADATA_NA, METADATA_NA)
+        assertMetricEventsContains(eventCaptor.allValues, "Foo", METADATA_NOT_SET, "us-east-1")
+        assertMetricEventsContains(eventCaptor.allValues, "session_end", METADATA_NA, METADATA_NA)
     }
 
     @Test
@@ -136,8 +135,8 @@ class TelemetryServiceTest {
 
         MockResourceCache.getInstance(projectRule.project).addValidAwsCredential("foo-region", "profile:admin", "111111111111")
 
-        val eventCaptor = argumentCaptor<Collection<MetricEvent>>()
-        val batcher = createMockBatcher()
+        val eventCaptor = argumentCaptor<MetricEvent>()
+        val batcher = mock<TelemetryBatcher>()
         val telemetryService = TestTelemetryService(batcher)
 
         telemetryService.record(projectRule.project) {
@@ -146,7 +145,7 @@ class TelemetryServiceTest {
         telemetryService.dispose()
 
         verify(batcher, times(3)).enqueue(eventCaptor.capture())
-        assertMetricEventsContains(eventCaptor.allValues.flatten(), "Foo", "111111111111", "foo-region")
+        assertMetricEventsContains(eventCaptor.allValues, "Foo", "111111111111", "foo-region")
     }
 
     @Test
@@ -162,9 +161,9 @@ class TelemetryServiceTest {
         MockRegionProvider.getInstance().addRegion(mockRegion)
         accountSettings.changeRegion(mockRegion)
 
-        val eventCaptor = argumentCaptor<Collection<MetricEvent>>()
+        val eventCaptor = argumentCaptor<MetricEvent>()
 
-        val batcher = createMockBatcher()
+        val batcher = mock<TelemetryBatcher>()
         val telemetryService = TestTelemetryService(batcher)
 
         telemetryService.record(
@@ -178,14 +177,7 @@ class TelemetryServiceTest {
         telemetryService.dispose()
 
         verify(batcher, times(3)).enqueue(eventCaptor.capture())
-        assertMetricEventsContains(eventCaptor.allValues.flatten(), "Foo", "222222222222", "bar-region")
-    }
-
-    private fun createMockBatcher() = mock<TelemetryBatcher> {
-        on { enqueue(any<MetricEvent>()) }.then {
-            mock.enqueue(listOf(it.getArgument<MetricEvent>(0)))
-            null
-        }
+        assertMetricEventsContains(eventCaptor.allValues, "Foo", "222222222222", "bar-region")
     }
 
     private fun assertMetricEventsContains(events: Collection<MetricEvent>, event: String, awsAccount: String, awsRegion: String) {

@@ -60,20 +60,6 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
         return metricEvent
     }
 
-    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit): MetricEvent {
-        val builder = DefaultMetricEvent.builder()
-        builder.awsAccount(metricEventMetadata.awsAccount)
-        builder.awsRegion(metricEventMetadata.awsRegion)
-
-        buildEvent(builder)
-
-        val event = builder.build()
-
-        batcher.enqueue(event)
-
-        return event
-    }
-
     @Synchronized
     fun setTelemetryEnabled(isEnabled: Boolean) {
         batcher.onTelemetryEnabledChanged(isEnabled and TELEMETRY_ENABLED)
@@ -95,6 +81,20 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
         }
 
         batcher.shutdown()
+    }
+
+    fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit): MetricEvent {
+        val builder = DefaultMetricEvent.builder()
+        builder.awsAccount(metricEventMetadata.awsAccount)
+        builder.awsRegion(metricEventMetadata.awsRegion)
+
+        buildEvent(builder)
+
+        val event = builder.build()
+
+        batcher.enqueue(event)
+
+        return event
     }
 
     suspend fun sendFeedback(sentiment: Sentiment, comment: String) {
