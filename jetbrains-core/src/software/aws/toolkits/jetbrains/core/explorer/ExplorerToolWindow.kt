@@ -94,7 +94,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
             with(styledDocument) {
                 setParagraphAttributes(0, length, center, false)
             }
-            margin = Insets(10, 10, 50, 10)
+            margin = Insets(10, 10, 10, 10)
             isEditable = false
             if (error) {
                 with(styledDocument) {
