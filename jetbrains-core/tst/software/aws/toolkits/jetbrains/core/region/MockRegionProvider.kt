@@ -32,7 +32,7 @@ class MockRegionProvider : ToolkitRegionProvider() {
         return combinedRegions.asSequence()
             .associate {
                 it.value.partitionId to PartitionData(
-                    "MockPartition",
+                    it.value.partitionId,
                     services,
                     combinedRegions.filterValues { regions -> regions.partitionId == it.value.partitionId }
                 )
