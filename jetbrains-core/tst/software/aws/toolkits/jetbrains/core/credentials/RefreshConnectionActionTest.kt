@@ -1,3 +1,6 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.testFramework.ProjectRule
@@ -8,7 +11,6 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.core.AwsResourceCacheTest.Companion.dummyResource
 import software.aws.toolkits.jetbrains.core.MockResourceCache
-
 
 internal class RefreshConnectionActionTest {
 
@@ -38,6 +40,4 @@ internal class RefreshConnectionActionTest {
 
         assertThat(states).hasAtLeastOneElementOfType(ConnectionState.ValidatingConnection::class.java)
     }
-
-
 }

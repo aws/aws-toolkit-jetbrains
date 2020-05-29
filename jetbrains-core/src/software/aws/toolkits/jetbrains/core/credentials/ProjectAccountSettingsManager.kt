@@ -83,7 +83,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     /**
      * Re-trigger validation of the current connection
      */
-    fun refreshConnectionState() { changeFieldsAndNotify {  } }
+    fun refreshConnectionState() { changeFieldsAndNotify { } }
 
     /**
      * Internal setter that allows for null values and is intended to set the internal state and still notify
