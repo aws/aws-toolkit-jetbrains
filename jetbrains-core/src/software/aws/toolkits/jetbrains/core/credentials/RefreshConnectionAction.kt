@@ -14,15 +14,15 @@ class RefreshConnectionAction : AnAction(message("settings.refresh.description")
 
     override fun update(e: AnActionEvent) {
         val project = e.project ?: return
-        when (ProjectAccountSettingsManager.getInstance(project).connectionState) {
-            is ConnectionState.InitializingToolkit, is ConnectionState.ValidatingConnection -> e.presentation.isEnabled = false
-            else -> e.presentation.isEnabled = true
+        e.presentation.isEnabled = when (val state = ProjectAccountSettingsManager.getInstance(project).connectionState) {
+            is ConnectionState.IncompleteConfiguration -> false
+            else -> state.isTerminal
         }
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        ProjectAccountSettingsManager.getInstance(project).refreshConnectionState()
         AwsResourceCache.getInstance(project).clear()
+        ProjectAccountSettingsManager.getInstance(project).refreshConnectionState()
     }
 }

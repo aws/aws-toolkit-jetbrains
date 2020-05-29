@@ -9,6 +9,9 @@ import com.intellij.testFramework.TestDataProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.core.credentials.aToolkitCredentialsProvider
+import software.aws.toolkits.core.region.anAwsRegion
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.AwsResourceCacheTest.Companion.dummyResource
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 
@@ -18,17 +21,14 @@ internal class RefreshConnectionActionTest {
     @JvmField
     val projectRule = ProjectRule()
 
+    private val sut = RefreshConnectionAction()
+
     @Test
     fun refreshActionClearsCacheAndUpdatesConnectionState() {
-        val sut = RefreshConnectionAction()
-        val actionEvent = TestActionEvent(TestDataProvider(projectRule.project))
+        val mockResourceCache = MockResourceCache.getInstance(projectRule.project)
+        mockResourceCache.addEntry(dummyResource(), aString())
 
         val states = mutableSetOf<ConnectionState>()
-        val mockResourceCache = MockResourceCache.getInstance(projectRule.project)
-        val resource = dummyResource()
-        mockResourceCache.addEntry(resource, resource.id)
-
-        assertThat(mockResourceCache.entryCount()).isGreaterThan(0)
         projectRule.project.messageBus.connect()
             .subscribe(ProjectAccountSettingsManager.CONNECTION_SETTINGS_STATE_CHANGED, object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
@@ -36,8 +36,42 @@ internal class RefreshConnectionActionTest {
                 }
             })
 
-        sut.actionPerformed(actionEvent)
+        sut.actionPerformed(testAction())
 
+        assertThat(mockResourceCache.entryCount()).isZero()
         assertThat(states).hasAtLeastOneElementOfType(ConnectionState.ValidatingConnection::class.java)
     }
+
+    @Test
+    fun actionIsEnabledIfConnectionStateIsInvalid() {
+        checkExpectedActionState(ConnectionState.InvalidConnection(RuntimeException("Boom")), shouldBeEnabled = true)
+    }
+
+    @Test
+    fun actionIsEnabledIfConnectionStateIsValid() {
+        checkExpectedActionState(ConnectionState.ValidConnection(aToolkitCredentialsProvider(), anAwsRegion()), shouldBeEnabled = true)
+    }
+
+    @Test
+    fun actionIsDisabledIfConnectionStateIsIncomplete() {
+        checkExpectedActionState(ConnectionState.IncompleteConfiguration(null, null), shouldBeEnabled = false)
+    }
+
+    @Test
+    fun actionIsDisabledIfConnectionStateIsNotTerminal() {
+        checkExpectedActionState(ConnectionState.InitializingToolkit, shouldBeEnabled = false)
+    }
+
+    private fun checkExpectedActionState(connectionState: ConnectionState, shouldBeEnabled: Boolean) {
+        val mockProjectAccountSettingsManager = MockProjectAccountSettingsManager.getInstance(projectRule.project)
+
+        mockProjectAccountSettingsManager.setConnectionState(connectionState)
+
+        val actionEvent = testAction()
+        sut.update(actionEvent)
+
+        assertThat(actionEvent.presentation.isEnabled).isEqualTo(shouldBeEnabled)
+    }
+
+    private fun testAction() = TestActionEvent(TestDataProvider(projectRule.project))
 }
