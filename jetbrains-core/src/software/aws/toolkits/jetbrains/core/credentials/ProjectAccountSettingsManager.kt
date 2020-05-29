@@ -104,15 +104,12 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
         }
     }
 
-    // TODO: Make this not null, few tests need to be fixed
     /**
      * Changes the credentials and then validates them. Notifies listeners of results
      */
-    fun changeCredentialProvider(identifier: ToolkitCredentialsIdentifier?) {
+    fun changeCredentialProvider(identifier: ToolkitCredentialsIdentifier) {
         changeFieldsAndNotify {
-            identifier?.let {
-                recentlyUsedProfiles.add(identifier.id)
-            }
+            recentlyUsedProfiles.add(identifier.id)
 
             selectedCredentialIdentifier = identifier
         }
@@ -123,9 +120,8 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
      */
     fun changeRegion(region: AwsRegion) {
         changeFieldsAndNotify {
-            region.let {
-                recentlyUsedRegions.add(region.id)
-            }
+            recentlyUsedRegions.add(region.id)
+            
             selectedRegion = region
             selectedPartition = regionProvider.partitions()[region.partitionId]
         }
