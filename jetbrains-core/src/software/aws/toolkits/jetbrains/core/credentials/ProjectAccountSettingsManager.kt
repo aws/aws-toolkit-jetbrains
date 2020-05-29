@@ -64,6 +64,12 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
                         changeConnectionSettings(null, selectedPartition, selectedRegion)
                     }
                 }
+
+                override fun providerModified(identifier: ToolkitCredentialsIdentifier) {
+                    if (selectedCredentialIdentifier == identifier && connectionState is ConnectionState.InvalidConnection) {
+                        refreshConnectionState()
+                    }
+                }
             })
     }
 
@@ -73,6 +79,11 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
         is ConnectionState.ValidConnection -> ConnectionSettings(state.credentials, state.region)
         else -> null
     }
+
+    /**
+     * Re-trigger validation of the current connection
+     */
+    fun refreshConnectionState() { changeFieldsAndNotify {  } }
 
     /**
      * Internal setter that allows for null values and is intended to set the internal state and still notify

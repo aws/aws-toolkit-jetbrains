@@ -14,6 +14,7 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
@@ -30,8 +31,8 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
                 // order from left to right
                 object : DumbAwareAction(message("general.refresh"), message("explorer.refresh.description"), AllIcons.Actions.Refresh) {
                     override fun actionPerformed(e: AnActionEvent) {
+                        ProjectAccountSettingsManager.getInstance(project).refreshConnectionState()
                         AwsResourceCache.getInstance(project).clear()
-                        explorer.invalidateTree()
                     }
                 },
                 Separator.create(),
