@@ -57,7 +57,7 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name-2").build()).build())
         runBlocking {
             actor.channel.send(LogActor.Message.LoadInitialFilter("name"))
-            actor.channel.send(LogActor.Message.LoadForward())
+            actor.channel.send(LogActor.Message.LoadForward)
             tableModel.waitForModelToBeAtLeast(2)
         }
         Assertions.assertThat(tableModel.items.size).isEqualTo(2)
@@ -71,8 +71,8 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name-cool").build()).build())
         runBlocking {
             actor.channel.send(LogActor.Message.LoadInitialFilter("name"))
-            actor.channel.send(LogActor.Message.LoadBackward())
-            actor.channel.send(LogActor.Message.LoadBackward())
+            actor.channel.send(LogActor.Message.LoadBackward)
+            actor.channel.send(LogActor.Message.LoadBackward)
             tableModel.waitForModelToBeAtLeast(1)
         }
         Assertions.assertThat(tableModel.items.size).isOne()
@@ -85,7 +85,7 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
         actor.dispose()
         Assertions.assertThatThrownBy {
             runBlocking {
-                channel.send(LogActor.Message.LoadBackward())
+                channel.send(LogActor.Message.LoadBackward)
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
     }
@@ -93,7 +93,7 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
     @Test
     fun loadInitialThrows() {
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial())
+            actor.channel.send(LogActor.Message.LoadInitial)
             waitForTrue { actor.channel.isClosedForSend }
         }
     }

@@ -135,7 +135,7 @@ class CloudWatchLogStream(
         } else if (previousEvent != null && duration != null) {
             logStreamTable.channel.send(LogActor.Message.LoadInitialRange(previousEvent, duration))
         } else {
-            logStreamTable.channel.send(LogActor.Message.LoadInitial())
+            logStreamTable.channel.send(LogActor.Message.LoadInitial)
         }
     }
 

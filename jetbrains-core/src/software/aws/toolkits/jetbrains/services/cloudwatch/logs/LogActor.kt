@@ -50,11 +50,11 @@ sealed class LogActor<T>(
     }
 
     sealed class Message {
-        class LoadInitial : Message()
+        object LoadInitial : Message()
         class LoadInitialRange(val previousEvent: LogStreamEntry, val duration: Duration) : Message()
         class LoadInitialFilter(val queryString: String) : Message()
-        class LoadForward : Message()
-        class LoadBackward : Message()
+        object LoadForward : Message()
+        object LoadBackward : Message()
     }
 
     init {

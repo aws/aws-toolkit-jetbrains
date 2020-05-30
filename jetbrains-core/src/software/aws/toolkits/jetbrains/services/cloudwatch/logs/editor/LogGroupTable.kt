@@ -81,7 +81,7 @@ class LogGroupTable(
         component = ScrollPaneFactory.createScrollPane(groupTable).also {
             it.bottomReached {
                 if (groupTable.rowCount != 0) {
-                    launch { logGroupActor.channel.send(LogActor.Message.LoadForward()) }
+                    launch { logGroupActor.channel.send(LogActor.Message.LoadForward) }
                 }
             }
         }

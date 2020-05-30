@@ -107,7 +107,7 @@ class CloudWatchLogGroup(
     }
 
     private fun refreshTable() {
-        launch { groupTable.channel.send(LogActor.Message.LoadInitial()) }
+        launch { groupTable.channel.send(LogActor.Message.LoadInitial) }
     }
 
     override fun dispose() {}

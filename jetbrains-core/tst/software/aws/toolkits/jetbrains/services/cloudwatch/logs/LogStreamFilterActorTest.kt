@@ -74,7 +74,7 @@ class LogStreamFilterActorTest : BaseCoroutineTest() {
             )
         runBlocking {
             actor.channel.send(LogActor.Message.LoadInitialFilter("filter query"))
-            actor.channel.send(LogActor.Message.LoadForward())
+            actor.channel.send(LogActor.Message.LoadForward)
             tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items).hasSize(2)
@@ -101,8 +101,8 @@ class LogStreamFilterActorTest : BaseCoroutineTest() {
             )
         runBlocking {
             actor.channel.send(LogActor.Message.LoadInitialFilter("filter query"))
-            actor.channel.send(LogActor.Message.LoadBackward())
-            actor.channel.send(LogActor.Message.LoadBackward())
+            actor.channel.send(LogActor.Message.LoadBackward)
+            actor.channel.send(LogActor.Message.LoadBackward)
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items).hasSize(1)
@@ -115,7 +115,7 @@ class LogStreamFilterActorTest : BaseCoroutineTest() {
         actor.dispose()
         assertThatThrownBy {
             runBlocking {
-                channel.send(LogActor.Message.LoadForward())
+                channel.send(LogActor.Message.LoadForward)
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
     }
@@ -123,7 +123,7 @@ class LogStreamFilterActorTest : BaseCoroutineTest() {
     @Test
     fun loadInitialThrows() {
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial())
+            actor.channel.send(LogActor.Message.LoadInitial)
             waitForTrue { actor.channel.isClosedForSend }
         }
     }
