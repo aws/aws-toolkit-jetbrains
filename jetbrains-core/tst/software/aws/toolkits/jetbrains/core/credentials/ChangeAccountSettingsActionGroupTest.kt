@@ -3,14 +3,12 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import kotlin.test.assertNotNull
 
 class ChangeAccountSettingsActionGroupTest {
 
@@ -61,9 +59,8 @@ class ChangeAccountSettingsActionGroupTest {
             .filterIsInstance<ChangeRegionActionGroup>().first().getChildren(null)
             .filterIsInstance<ChangePartitionActionGroup>().first().getChildren(null)
 
-        val selectedAction = partitionActions.filterIsInstance<ToggleAction>().first()
-        assertNotNull(selectedAction)
-        assertThat(selectedAction.templateText).isEqualTo(selectedRegion.partitionId)
+        val selectedAction = partitionActions.firstOrNull { it.templateText == selectedRegion.partitionId }
+        assertThat(selectedAction).isNull()
 
         val nonSelectedAction = partitionActions.filterIsInstance<ChangeRegionActionGroup>().first { it.templateText == otherPartitionRegion.partitionId }
             .getChildren(null).filterIsInstance<ChangeRegionAction>()

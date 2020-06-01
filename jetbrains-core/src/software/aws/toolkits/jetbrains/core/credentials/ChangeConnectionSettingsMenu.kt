@@ -100,14 +100,9 @@ private class ChangeCredentialsActionGroup(popup: Boolean) : ComputableActionGro
 internal class ChangePartitionActionGroup(private val accountSettingsManager: ProjectAccountSettingsManager) :
     ComputableActionGroup(message("settings.partitions"), true), DumbAware {
     override fun createChildrenProvider(actionManager: ActionManager?): CachedValueProvider<Array<AnAction>> = CachedValueProvider {
-        val actions = AwsRegionProvider.getInstance().partitions().map { (_, partition) ->
-            when (accountSettingsManager.selectedPartition?.id) {
-                partition.id -> object : ToggleAction(partition.description), DumbAware {
-                    override fun isSelected(e: AnActionEvent) = true
-                    override fun setSelected(e: AnActionEvent, state: Boolean) {}
-                }
-                else -> ChangeRegionActionGroup(partition, accountSettingsManager, name = partition.description)
-            }
+        val selectedPartitionId = accountSettingsManager.selectedPartition?.id
+        val actions = AwsRegionProvider.getInstance().partitions().values.filter { it.id != selectedPartitionId }.map { partition ->
+            ChangeRegionActionGroup(partition, accountSettingsManager, name = partition.description)
         } as List<AnAction>
 
         CachedValueProvider.Result.create(actions.toTypedArray(), accountSettingsManager)
