@@ -139,6 +139,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
         }
     }
 
+    @Synchronized
     private fun changeFieldsAndNotify(fieldUpdateBlock: () -> Unit) {
         incModificationCount()
 
@@ -151,7 +152,6 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
         fieldUpdateBlock()
 
-        if (isInitial) {
             selectedCredentialIdentifier?.let {
                 if (it.requiresUserAction) {
                     connectionState = ConnectionState.RequiresUserAction
@@ -159,6 +159,13 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
                 }
             }
         }
+
+        connectionState = ConnectionState.ValidatingConnection
+
+        // Clear existing provider
+        selectedCredentialsProvider = null
+
+        fieldUpdateBlock()
 
         validationJob = GlobalScope.launch(Dispatchers.IO) {
             val credentialsIdentifier = selectedCredentialIdentifier

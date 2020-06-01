@@ -384,7 +384,7 @@ class EcsCloudDebugRunConfigurationTest {
         }
         setFakeContainersInResourceCache(listOf("abc"))
         assertThatThrownBy {
-            config.checkConfiguration()
+            config.checkSettingsBeforeRun()
         }.isInstanceOf(RuntimeConfigurationError::class.java)
             .hasMessage(
                 message(
@@ -407,7 +407,7 @@ class EcsCloudDebugRunConfigurationTest {
             .addEntry(EcsResources.describeService("arn", "notarealservice"), defaultRegion, mockCredentials.id, future)
 
         assertThatThrownBy {
-            config.checkConfiguration()
+            config.checkSettingsBeforeRun()
         }.isInstanceOf(RuntimeConfigurationError::class.java)
             .hasMessageContaining(
                 // doesn't match real string because we're testing against a mock
