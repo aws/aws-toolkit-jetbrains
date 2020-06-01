@@ -23,9 +23,9 @@ class JavaAwsConnectionRunConfigurationExtensionTest {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
 
-        val data = AwsConnectionRunConfigurationExtensionOptions().also {
-            it.region = "abc123"
-            it.credential = "mockCredential"
+        val data = AwsConnectionRunConfigurationExtensionOptions {
+            region = "abc123"
+            credential = "mockCredential"
         }
 
         configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, data)
