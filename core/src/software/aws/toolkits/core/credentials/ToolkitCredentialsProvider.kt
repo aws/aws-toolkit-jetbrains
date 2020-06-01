@@ -33,6 +33,11 @@ abstract class ToolkitCredentialsIdentifier {
      */
     open val defaultRegionId: String? get() = null
 
+    /**
+     * Return true if the credential may require prompting users for more information
+     */
+    open val requiresUserAction: Boolean = false
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

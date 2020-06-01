@@ -13,6 +13,7 @@ import com.intellij.util.messages.Topic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
@@ -142,6 +143,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
         incModificationCount()
 
         validationJob?.cancel(CancellationException("Newer connection settings chosen"))
+        val isInitial = connectionState is ConnectionState.InitializingToolkit
         connectionState = ConnectionState.ValidatingConnection
 
         // Clear existing provider
@@ -149,8 +151,16 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
         fieldUpdateBlock()
 
-        validationJob = GlobalScope.launch(Dispatchers.IO) {
+        if (isInitial) {
+            selectedCredentialIdentifier?.let {
+                if (it.requiresUserAction) {
+                    connectionState = ConnectionState.RequiresUserAction
+                    return
+                }
+            }
+        }
 
+        validationJob = GlobalScope.launch(Dispatchers.IO) {
             val credentialsIdentifier = selectedCredentialIdentifier
             val region = selectedRegion
             if (credentialsIdentifier == null || region == null) {
@@ -209,16 +219,17 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
     /**
      * Internal method that executes the actual validation of credentials
      */
-    protected open suspend fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion): Boolean = withContext(Dispatchers.IO) {
-        // TODO: Convert the cache over to suspend methods
-        resourceCache.getResourceNow(
-            StsResources.ACCOUNT,
-            region = region,
-            credentialProvider = credentialsProvider,
-            useStale = false,
-            forceFetch = true
-        )
-        true
+    protected open suspend fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion) {
+        withContext(Dispatchers.IO) {
+            // TODO: Convert the cache over to suspend methods
+            resourceCache.getResource(
+                StsResources.ACCOUNT,
+                region = region,
+                credentialProvider = credentialsProvider,
+                useStale = false,
+                forceFetch = true
+            ).await()
+        }
     }
 
     companion object {
@@ -277,6 +288,10 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
         override val shortMessage = message("settings.states.invalid.short")
 
         override val actions = listOf(RefreshConnectionAction(message("settings.retry")))
+    }
+
+    object RequiresUserAction : ConnectionState(message("settings.states.requiresUser"), isTerminal = true) {
+        override val shortMessage = message("settings.states.requiresUser.short")
     }
 }
 

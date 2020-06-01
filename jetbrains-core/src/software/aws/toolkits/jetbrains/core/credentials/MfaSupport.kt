@@ -1,0 +1,21 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.core.credentials
+
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.ui.Messages
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.resources.message
+
+fun promptForMfaToken(name: String, mfaSerial: String): String = runBlocking {
+    withContext(getCoroutineUiContext(ModalityState.any())) {
+        Messages.showInputDialog(
+            message("credentials.profile.mfa.message", mfaSerial),
+            message("credentials.profile.mfa.title", name),
+            null
+        ) ?: throw IllegalStateException("MFA challenge is required")
+    }
+}
