@@ -63,8 +63,7 @@ class ChangeAccountSettingsActionGroupTest {
         val partitionActions = getRegionActions(group)
             .filterIsInstance<ChangePartitionActionGroup>().first().getChildren(null)
 
-        val selectedAction = partitionActions.firstOrNull { it.templateText == selectedRegion.partitionId }
-        assertThat(selectedAction).isNull()
+        assertThat(partitionActions).noneMatch { it.templateText == selectedRegion.partitionId }
 
         val nonSelectedAction = partitionActions.filterIsInstance<ChangeRegionActionGroup>().first { it.templateText == otherPartitionRegion.partitionId }
             .getChildren(null).filterIsInstance<ChangeRegionAction>()
