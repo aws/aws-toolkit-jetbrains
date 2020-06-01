@@ -16,6 +16,14 @@ class ChangeAccountSettingsActionGroupTest {
     @JvmField
     val projectRule = ProjectRule()
 
+    @Rule
+    @JvmField
+    val regionProviderRule = MockRegionProvider.RegionProviderRule(projectRule)
+
+    @Rule
+    @JvmField
+    val settingsManagerRule = MockProjectAccountSettingsManager.ProjectAccountSettingsManagerRule(projectRule)
+
     @Test
     fun `Can display both region and credentials selection`() {
         val group = ChangeAccountSettingsActionGroup(projectRule.project, ChangeAccountSettingsMode.BOTH)
@@ -45,18 +53,14 @@ class ChangeAccountSettingsActionGroupTest {
 
     @Test
     fun `Region group shows sub-regions for non-selected partitions`() {
-        val mockRegionProvider = MockRegionProvider.getInstance()
+        val selectedRegion = anAwsRegion(partitionId = "selected").also { regionProviderRule.regionProvider.addRegion(it) }
+        val otherPartitionRegion = anAwsRegion(partitionId = "nonSelected").also { regionProviderRule.regionProvider.addRegion(it) }
+        val anotherRegionInSamePartition = anAwsRegion(partitionId = otherPartitionRegion.partitionId).also { regionProviderRule.regionProvider.addRegion(it) }
 
-        val selectedRegion = anAwsRegion(partitionId = "selected").also { mockRegionProvider.addRegion(it) }
-        val otherPartitionRegion = anAwsRegion(partitionId = "nonSelected").also { mockRegionProvider.addRegion(it) }
-        val anotherRegionInSamePartition = anAwsRegion(partitionId = otherPartitionRegion.partitionId).also { mockRegionProvider.addRegion(it) }
-
-        val mockManager = MockProjectAccountSettingsManager.getInstance(projectRule.project)
-        mockManager.changeRegionAndWait(selectedRegion)
+        settingsManagerRule.settingsManager.changeRegionAndWait(selectedRegion)
 
         val group = ChangeAccountSettingsActionGroup(projectRule.project, ChangeAccountSettingsMode.REGIONS)
-        val partitionActions = group.getChildren(null)
-            .filterIsInstance<ChangeRegionActionGroup>().first().getChildren(null)
+        val partitionActions = getRegionActions(group)
             .filterIsInstance<ChangePartitionActionGroup>().first().getChildren(null)
 
         val selectedAction = partitionActions.firstOrNull { it.templateText == selectedRegion.partitionId }
@@ -71,4 +75,19 @@ class ChangeAccountSettingsActionGroupTest {
             anotherRegionInSamePartition.displayName
         )
     }
+
+    @Test
+    fun `Don't show partition selector if there is only one partition`() {
+        val selectedRegion = regionProviderRule.regionProvider.defaultRegion()
+
+        settingsManagerRule.settingsManager.changeRegionAndWait(selectedRegion)
+
+        val group = ChangeAccountSettingsActionGroup(projectRule.project, ChangeAccountSettingsMode.REGIONS)
+        val actions = getRegionActions(group)
+
+        assertThat(actions).doesNotHaveAnyElementsOfTypes(ChangePartitionActionGroup::class.java)
+    }
+
+    private fun getRegionActions(group: ChangeAccountSettingsActionGroup) = group.getChildren(null)
+        .filterIsInstance<ChangeRegionActionGroup>().first().getChildren(null)
 }

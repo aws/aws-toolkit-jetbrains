@@ -133,9 +133,9 @@ internal class ChangeRegionActionGroup(
             }
         }
 
-        partitionGroup?.let {
+        if (partitionGroup != null && regionProvider.partitions().size > 1) {
             actions.add(Separator.create())
-            actions.add(it)
+            actions.add(partitionGroup)
         }
 
         CachedValueProvider.Result.create(actions.toTypedArray(), accountSettingsManager)
