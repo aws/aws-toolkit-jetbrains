@@ -4,15 +4,11 @@
 package software.aws.toolkits.jetbrains.core.region
 
 import com.intellij.openapi.components.ServiceManager
-import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ProjectRule
 import org.junit.rules.ExternalResource
 import software.aws.toolkits.core.region.AwsPartition
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.Service
 import software.aws.toolkits.core.region.ToolkitRegionProvider
-import software.aws.toolkits.jetbrains.utils.rules.ClearableLazy
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 
 class MockRegionProvider : ToolkitRegionProvider() {
     private val overrideRegions: MutableMap<String, AwsRegion> = mutableMapOf()
