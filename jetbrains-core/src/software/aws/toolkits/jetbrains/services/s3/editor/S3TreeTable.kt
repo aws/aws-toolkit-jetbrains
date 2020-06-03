@@ -174,7 +174,7 @@ class S3TreeTable(
                             content = message("s3.upload.directory.impossible", it.name),
                             project = project
                         )
-                        S3Telemetry.uploadObject(project, Result.FAILED)
+                        S3Telemetry.uploadObject(project, Result.Failed)
                         return@forEach
                     }
 
@@ -182,16 +182,16 @@ class S3TreeTable(
                         bucket.upload(project, it.inputStream, it.length, node.getDirectoryKey() + it.name)
                         invalidateLevel(node)
                         refresh()
-                        S3Telemetry.uploadObject(project, Result.SUCCEEDED)
+                        S3Telemetry.uploadObject(project, Result.Succeeded)
                     } catch (e: Exception) {
                         e.notifyError(message("s3.upload.object.failed", it.path), project)
-                        S3Telemetry.uploadObject(project, Result.FAILED)
+                        S3Telemetry.uploadObject(project, Result.Failed)
                         throw e
                     }
                 }
-                S3Telemetry.uploadObjects(project, Result.SUCCEEDED, selectedFiles.size.toDouble())
+                S3Telemetry.uploadObjects(project, Result.Succeeded, selectedFiles.size.toDouble())
             } catch (e: Exception) {
-                S3Telemetry.uploadObjects(project, Result.FAILED, selectedFiles.size.toDouble())
+                S3Telemetry.uploadObjects(project, Result.Failed, selectedFiles.size.toDouble())
             }
         }
     }
