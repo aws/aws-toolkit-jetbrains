@@ -46,7 +46,7 @@ private fun validateProfile(profile: Profile, allProfiles: Map<String, Profile>)
 }
 
 private fun validateAssumeRoleProfile(profile: Profile, allProfiles: Map<String, Profile>) {
-    val rootProfile = traverseCredentialChain(allProfiles, profile).last()
+    val rootProfile = profile.traverseCredentialChain(allProfiles).last()
     validateProfile(rootProfile, allProfiles)
 }
 

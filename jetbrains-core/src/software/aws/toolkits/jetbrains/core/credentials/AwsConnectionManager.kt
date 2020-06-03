@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.messages.Topic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -30,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.utils.MRUList
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
-import java.util.concurrent.CancellationException
 
 abstract class AwsConnectionManager(private val project: Project) : SimpleModificationTracker() {
     private val resourceCache = AwsResourceCache.getInstance(project)
@@ -152,18 +152,9 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
         fieldUpdateBlock()
 
-            selectedCredentialIdentifier?.let {
-                if (it.requiresUserAction) {
-                    connectionState = ConnectionState.RequiresUserAction
-                    return
-                }
-            }
-        }
+        val isInitial = connectionState is ConnectionState.InitializingToolkit
 
         connectionState = ConnectionState.ValidatingConnection
-
-        // Clear existing provider
-        selectedCredentialsProvider = null
 
         fieldUpdateBlock()
 
@@ -172,6 +163,13 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
             val region = selectedRegion
             if (credentialsIdentifier == null || region == null) {
                 connectionState = ConnectionState.IncompleteConfiguration(credentialsIdentifier, region)
+                incModificationCount()
+                return@launch
+            }
+
+            if (isInitial && credentialsIdentifier is InteractiveCredential && credentialsIdentifier.userActionRequired()) {
+                connectionState = ConnectionState.RequiresUserAction(credentialsIdentifier)
+
                 incModificationCount()
                 return@launch
             }
@@ -297,8 +295,11 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
         override val actions = listOf(RefreshConnectionAction(message("settings.retry")))
     }
 
-    object RequiresUserAction : ConnectionState(message("settings.states.requiresUser"), isTerminal = true) {
-        override val shortMessage = message("settings.states.requiresUser.short")
+    class RequiresUserAction(interactiveCredentials: InteractiveCredential) :
+        ConnectionState(interactiveCredentials.userActionDisplayMessage, isTerminal = true) {
+        override val shortMessage = interactiveCredentials.userActionShortDisplayMessage
+
+        override val actions = listOf(interactiveCredentials.userAction)
     }
 }
 

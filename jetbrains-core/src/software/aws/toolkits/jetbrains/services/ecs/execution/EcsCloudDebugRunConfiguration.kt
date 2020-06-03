@@ -80,7 +80,7 @@ class EcsCloudDebugRunConfiguration(project: Project, private val configFactory:
     }
 
     override fun checkSettingsBeforeRun() {
-        val immutableSettings = resolveEcsServiceCloudDebuggingRunSettings(deepCheck= true)
+        val immutableSettings = resolveEcsServiceCloudDebuggingRunSettings(deepCheck = true)
 
         if (!EcsUtils.isInstrumented(immutableSettings.serviceArn)) {
             throw RuntimeConfigurationError(
@@ -92,7 +92,7 @@ class EcsCloudDebugRunConfiguration(project: Project, private val configFactory:
     }
 
     override fun checkConfiguration() {
-        val immutableSettings = resolveEcsServiceCloudDebuggingRunSettings(deepCheck= false)
+        val immutableSettings = resolveEcsServiceCloudDebuggingRunSettings(deepCheck = false)
         if (immutableSettings.containerOptions.isEmpty()) {
             throw RuntimeConfigurationError(message("cloud_debug.run_configuration.missing.container"))
         }

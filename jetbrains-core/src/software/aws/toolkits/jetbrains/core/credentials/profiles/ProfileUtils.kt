@@ -8,9 +8,9 @@ import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileProperty
 import software.aws.toolkits.resources.message
 
-fun traverseCredentialChain(profiles: Map<String, Profile>, topLevelProfile: Profile): Sequence<Profile> = sequence {
+fun Profile.traverseCredentialChain(profiles: Map<String, Profile>): Sequence<Profile> = sequence {
     val profileChain = linkedSetOf<String>()
-    var currentProfile = topLevelProfile
+    var currentProfile = this@traverseCredentialChain
 
     yield(currentProfile)
 
@@ -18,7 +18,7 @@ fun traverseCredentialChain(profiles: Map<String, Profile>, topLevelProfile: Pro
         val currentProfileName = currentProfile.name()
         if (!profileChain.add(currentProfileName)) {
             val chain = profileChain.joinToString("->", postfix = "->$currentProfileName")
-            throw IllegalArgumentException(message("credentials.profile.circular_profiles", topLevelProfile.name(), chain))
+            throw IllegalArgumentException(message("credentials.profile.circular_profiles", name(), chain))
         }
 
         val sourceProfile = currentProfile.requiredProperty(ProfileProperty.SOURCE_PROFILE)
@@ -38,9 +38,7 @@ fun traverseCredentialChain(profiles: Map<String, Profile>, topLevelProfile: Pro
 fun Profile.propertyExists(propertyName: String): Boolean = this.property(propertyName).isPresent
 
 fun Profile.requiredProperty(propertyName: String): String = this.property(propertyName)
-    .filter {
-        it.nullize() != null
-    }
+    .filter { it.nullize() != null }
     .orElseThrow {
         IllegalArgumentException(
             message(

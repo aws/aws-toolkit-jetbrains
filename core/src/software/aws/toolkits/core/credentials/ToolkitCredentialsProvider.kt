@@ -5,22 +5,24 @@ package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
-abstract class ToolkitCredentialsIdentifier {
+interface CredentialIdentifier {
+    /**
+     * A user friendly display name shown in the UI.
+     */
+    val displayName: String
+
+    /**
+     * An optional shortened version of the name to display in the UI where space is at a premium
+     */
+    val shortName: String get() = displayName
+}
+
+abstract class ToolkitCredentialsIdentifier : CredentialIdentifier {
     /**
      * The ID must be unique across all [ToolkitCredentialsIdentifier].
      * It is recommended to concatenate the factory ID into this field to help enforce this requirement.
      */
     abstract val id: String
-
-    /**
-     * A user friendly display name shown in the UI.
-     */
-    abstract val displayName: String
-
-    /**
-     * An optional shortened version of the name to display in the UI where space is at a premium
-     */
-    open val shortName: String get() = displayName
 
     /**
      * The ID of the corresponding [CredentialProviderFactory] so that the credential manager knows which factory to invoke in order
@@ -32,11 +34,6 @@ abstract class ToolkitCredentialsIdentifier {
      * Some ID types (e.g. Profile) have a concept of a default region, this is optional.
      */
     open val defaultRegionId: String? get() = null
-
-    /**
-     * Return true if the credential may require prompting users for more information
-     */
-    open val requiresUserAction: Boolean = false
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
