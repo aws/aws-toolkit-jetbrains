@@ -97,7 +97,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
         gridBag.defaultInsets = JBUI.insetsBottom(JBUI.scale(6))
 
         val textPane = JTextPane().apply {
-            val textColor = if(state is ConnectionState.InvalidConnection) {
+            val textColor = if (state is ConnectionState.InvalidConnection) {
                 JBColor.red
             } else {
                 UIUtil.getInactiveTextColor()
@@ -120,7 +120,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
         state.actions.forEach {
             panel.add(createActionLabel(it), gridBag.nextLine().next())
         }
-        
+
         return panel
     }
 
