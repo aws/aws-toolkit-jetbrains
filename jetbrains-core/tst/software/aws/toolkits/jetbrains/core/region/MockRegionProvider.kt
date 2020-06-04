@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.core.region
 
 import com.intellij.openapi.components.ServiceManager
-import org.junit.rules.ExternalResource
+import com.intellij.testFramework.ApplicationRule
 import software.aws.toolkits.core.region.AwsPartition
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.Service
@@ -56,7 +56,7 @@ class MockRegionProvider : ToolkitRegionProvider() {
         fun getInstance(): MockRegionProvider = ServiceManager.getService(ToolkitRegionProvider::class.java) as MockRegionProvider
     }
 
-    class RegionProviderRule : ExternalResource() {
+    class RegionProviderRule : ApplicationRule() {
         val regionProvider by lazy { getInstance() }
 
         override fun after() {

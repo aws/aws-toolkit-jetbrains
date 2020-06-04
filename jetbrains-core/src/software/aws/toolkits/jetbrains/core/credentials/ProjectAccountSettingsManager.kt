@@ -118,7 +118,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
 
             identifier.defaultRegionId?.let { regionProvider[it] }?.let { credentialRegion ->
                 selectedRegion.let {
-                    if (it == null || it.partitionId != credentialRegion.partitionId) {
+                    if (it?.partitionId != credentialRegion.partitionId) {
                         selectedRegion = credentialRegion
                     }
                 }
