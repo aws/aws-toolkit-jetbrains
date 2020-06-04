@@ -23,8 +23,8 @@ interface MfaRequiredInteractiveCredentials : InteractiveCredential {
 fun promptForMfaToken(name: String, mfaSerial: String): String = runBlocking {
     withContext(getCoroutineUiContext(ModalityState.any())) {
         Messages.showInputDialog(
-            message("credentials.profile.mfa.message", mfaSerial),
-            message("credentials.profile.mfa.title", name),
+            message("credentials.mfa.message", mfaSerial),
+            message("credentials.mfa.title", name),
             null
         ) ?: throw IllegalStateException("MFA challenge is required")
     }
