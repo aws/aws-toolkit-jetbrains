@@ -20,7 +20,6 @@ import org.jetbrains.plugins.gradle.util.GradleConstants
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.logWhenNull
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard
@@ -37,13 +36,11 @@ import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 
 class JavaSamProjectWizard : SamProjectWizard {
-    override fun createSchemaSelectionPanel(
-        generator: SamProjectGenerator
-    ): SchemaSelectionPanel =
-        SchemaResourceSelectorSelectionPanel(generator.builder, RuntimeGroup.JAVA, generator.defaultSourceCreatingProject)
+    override fun createSchemaSelectionPanel(generator: SamProjectGenerator): SchemaSelectionPanel =
+        SchemaResourceSelectorSelectionPanel(generator.builder, JavaRuntimeGroup.INSTANCE, generator.defaultSourceCreatingProject)
 
     override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
-        IntelliJSdkSelectionPanel(generator.builder, RuntimeGroup.JAVA)
+        IntelliJSdkSelectionPanel(generator.builder, JavaRuntimeGroup.INSTANCE)
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
         SamHelloWorldMaven(),

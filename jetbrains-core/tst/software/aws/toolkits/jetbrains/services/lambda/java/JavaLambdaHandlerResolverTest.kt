@@ -15,7 +15,6 @@ import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openClass
 
@@ -418,7 +417,7 @@ class JavaLambdaHandlerResolverTest {
 
     @Test
     fun handlerDisplayNames() {
-        val sut = LambdaHandlerResolver.getInstanceOrThrow(RuntimeGroup.JAVA)
+        val sut = LambdaHandlerResolver.getInstanceOrThrow(JavaRuntimeGroup.INSTANCE)
 
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler")).isEqualTo("LambdaHandler")

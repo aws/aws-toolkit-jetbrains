@@ -9,7 +9,6 @@ import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.PlatformUtils
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard
@@ -29,16 +28,13 @@ import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 
 class PythonSamProjectWizard : SamProjectWizard {
-    override fun createSchemaSelectionPanel(
-        generator: SamProjectGenerator
-    ): SchemaSelectionPanel =
-        SchemaResourceSelectorSelectionPanel(generator.builder, RuntimeGroup.PYTHON, generator.defaultSourceCreatingProject)
+    override fun createSchemaSelectionPanel(generator: SamProjectGenerator): SchemaSelectionPanel =
+        SchemaResourceSelectorSelectionPanel(generator.builder, PythonRuntimeGroup.INSTANCE, generator.defaultSourceCreatingProject)
 
-    override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
-        when {
-            PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel(generator.step)
-            else -> IntelliJSdkSelectionPanel(generator.builder, RuntimeGroup.PYTHON)
-        }
+    override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel = when {
+        PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel(generator.step)
+        else -> IntelliJSdkSelectionPanel(generator.builder, PythonRuntimeGroup.INSTANCE)
+    }
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
         SamHelloWorldPython(),

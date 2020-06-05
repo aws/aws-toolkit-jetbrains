@@ -52,7 +52,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
 
             val smartPsiElementPointer = SmartPointerManager.createPointer(element)
 
-            if (element.language in LambdaBuilder.supportedLanguages) {
+            if (element.language in LambdaBuilder.supportedLanguages()) {
                 val executorActions = ExecutorAction.getActions(1)
                 executorActions.forEach {
                     actionGroup.add(LineMarkerActionWrapper(element, it))

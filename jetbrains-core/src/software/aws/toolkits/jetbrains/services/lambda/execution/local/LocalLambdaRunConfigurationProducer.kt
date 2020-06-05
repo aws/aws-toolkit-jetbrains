@@ -52,7 +52,7 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
 
     private fun setupFromSourceFile(element: PsiElement, context: ConfigurationContext, configuration: LocalLambdaRunConfiguration): Boolean {
         val runtimeGroup = element.language.runtimeGroup ?: return false
-        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups) {
+        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups()) {
             return false
         }
         val resolver = LambdaHandlerResolver.getInstanceOrThrow(runtimeGroup)
@@ -76,7 +76,7 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
 
     private fun isFromSourceFileContext(element: PsiElement, configuration: LocalLambdaRunConfiguration): Boolean {
         val runtimeGroup = element.language.runtimeGroup ?: return false
-        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups) {
+        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups()) {
             return false
         }
         val resolver = LambdaHandlerResolver.getInstanceOrThrow(runtimeGroup)

@@ -11,6 +11,8 @@ import com.intellij.openapi.ui.ValidationInfo
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedSdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.SdkSettings
+import software.aws.toolkits.jetbrains.services.lambda.java.JavaRuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -40,9 +42,9 @@ class IntelliJSdkSelectionPanel(val builder: SamProjectBuilder, val runtimeGroup
     override fun getSdkSettings(): SdkSettings {
         currentSdkPanel.updateDataModel()
 
-        return when (runtimeGroup) {
-            RuntimeGroup.JAVA, RuntimeGroup.PYTHON -> SdkBasedSdkSettings(sdk = currentSdk)
-            RuntimeGroup.DOTNET -> object : SdkSettings {}
+        return when (runtimeGroup.id) {
+            JavaRuntimeGroup.INSTANCE.id, PythonRuntimeGroup.INSTANCE.id -> SdkBasedSdkSettings(sdk = currentSdk)
+            "DOTNET" -> object : SdkSettings {}
             else -> throw RuntimeException("Unrecognized runtime group: $runtimeGroup")
         }
     }
