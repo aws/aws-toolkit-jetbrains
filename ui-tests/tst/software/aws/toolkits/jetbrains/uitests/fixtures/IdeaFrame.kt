@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
@@ -27,7 +28,6 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     val projectName
         get() = step("Get project name") { return@step callJs<String>("component.getProject().getName()") }
 
-    @JvmOverloads
     fun dumbAware(timeout: Duration = Duration.ofMinutes(5), function: () -> Unit) {
         step("Wait for smart mode") {
             waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
@@ -42,7 +42,13 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    private fun isDumbMode(): Boolean {
-        return callJs("com.intellij.openapi. project.DumbService.isDumb(component.project);", true)
+    fun waitForBackgroundTasks(timeout: Duration = Duration.ofMinutes(5)) {
+        step("Wait for background tasks to finish") {
+            waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
+                findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isEmpty()
+            }
+        }
     }
-} 
+
+    private fun isDumbMode(): Boolean = callJs("com.intellij.openapi. project.DumbService.isDumb(component.project);", true)
+}

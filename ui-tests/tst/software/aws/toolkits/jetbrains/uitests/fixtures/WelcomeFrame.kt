@@ -30,4 +30,3 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
         find(ComponentFixture::class.java, byXpath("//div[@class='MyList']")).findText(prefName).click()
     }
 }
-

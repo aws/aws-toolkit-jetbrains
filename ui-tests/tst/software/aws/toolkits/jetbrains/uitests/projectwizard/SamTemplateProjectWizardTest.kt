@@ -5,31 +5,26 @@ package software.aws.toolkits.jetbrains.uitests.projectwizard
 
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.jetbrains.uitests.fixtures.editor
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import software.aws.toolkits.jetbrains.uitests.CoreTest
+import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.editorTab
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.newProjectWizard
 import software.aws.toolkits.jetbrains.uitests.fixtures.preferencesDialog
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
-import software.aws.toolkits.jetbrains.uitests.rules.Ide
-import software.aws.toolkits.jetbrains.uitests.rules.uiTest
+import java.nio.file.Path
 
 class SamTemplateProjectWizardTest {
     companion object {
-        @JvmField
-        @ClassRule
-        val ide = Ide(":jetbrains-core:runIdeForUiTests")
-
         @JvmStatic
-        @BeforeClass
+        @BeforeAll
         fun setUpSamCli() {
             val samPath = System.getenv("SAM_CLI_EXEC")
             if (samPath.isNullOrEmpty()) {
-                log.warn("No custom SAM set, skipping")
+                log.warn("No custom SAM set, skipping setup")
                 return
             }
 
@@ -56,11 +51,11 @@ class SamTemplateProjectWizardTest {
         }
     }
 
-    @JvmField
-    @Rule
-    val tempFolder = TemporaryFolder()
+    @TempDir
+    lateinit var tempDir: Path
 
     @Test
+    @CoreTest
     fun createSamApp() {
         uiTest {
             welcomeFrame {
@@ -73,7 +68,7 @@ class SamTemplateProjectWizardTest {
 
                         pressNext()
 
-                        setProjectLocation(tempFolder.newFolder().absolutePath)
+                        setProjectLocation(tempDir.toAbsolutePath().toString())
 
                         // TODO: Runtime
                         // TODO: Sam Template
@@ -83,8 +78,10 @@ class SamTemplateProjectWizardTest {
                 }
 
                 idea {
+                    waitForBackgroundTasks()
+
                     step("Validate Readme is opened") {
-                        editor("README.md")
+                        editorTab("README.md")
                     }
                 }
             }
