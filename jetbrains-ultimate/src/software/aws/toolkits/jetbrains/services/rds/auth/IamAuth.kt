@@ -24,6 +24,8 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
+import software.aws.toolkits.jetbrains.ui.RegionSelector
+import software.aws.toolkits.resources.message
 import java.sql.SQLException
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -32,6 +34,7 @@ import java.util.concurrent.CompletionStage
 import javax.swing.JPanel
 import javax.swing.event.DocumentListener
 
+@SuppressWarnings("@ApiStatus.Internal")
 class IamAuth : DatabaseAuthProvider {
     override fun getId(): String = "aws.iam"
 
@@ -65,6 +68,7 @@ class IamAuth : DatabaseAuthProvider {
     }
 
     private fun getCredentials(connection: DatabaseConnectionInterceptor.ProtoConnection): Credentials? {
+        val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
         val credentialsId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
             ?: throw IllegalArgumentException("TODO: Credential ID not configured")
         val urlParser = JdbcUrlParserUtil.parsed(connection.connectionPoint.dataSource)
@@ -75,14 +79,15 @@ class IamAuth : DatabaseAuthProvider {
             ?: throw IllegalArgumentException("TODO: No port specified")
         val user = connection.connectionPoint.dataSource.username
 
-        val region = extractRegionFromUrl(host)
+        val region = extractRegionFromUrl(host) ?: regionId ?: throw IllegalArgumentException("LOCALIZE no region")
+        val awsRegion = AwsRegionProvider.getInstance().allRegions()[region] ?: throw IllegalArgumentException("LOCALIZE NO REGION")
 
         val credentialManager = CredentialManager.getInstance()
         val credentialProviderId = credentialManager.getCredentialIdentifierById(credentialsId)
             ?: throw IllegalArgumentException("TODO: No credentials exist with the ID $credentialsId")
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialProviderId, region)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialProviderId, awsRegion)
 
-        val authToken = generateAuthToken(host, port, user, credentialProvider, region)
+        val authToken = generateAuthToken(host, port, user, credentialProvider, awsRegion)
 
         return Credentials(user, authToken)
     }
@@ -104,33 +109,35 @@ class IamAuth : DatabaseAuthProvider {
         val presignRequest = Aws4PresignerParams.builder()
             .expirationTime(expirationTime)
             .awsCredentials(credentialsProvider.resolveCredentials())
-            .signingName("rds-db")
+            //.signingName("rds-db")
+            .signingName("redshift")
             .signingRegion(Region.of(region.id))
             .build();
 
         return Aws4Signer.create().presign(httpRequest, presignRequest).uri.toString().removePrefix("https://")
     }
 
-    private fun extractRegionFromUrl(url: String): AwsRegion {
+    private fun extractRegionFromUrl(url: String): String? =
         // 0 is full match, 1 is the region
-        val regionId = RDS_REGION_REGEX.find(url)?.groupValues?.get(1)
-            ?: REDSHIFT_REGION_REGEX.find(url)?.groupValues?.get(1)
-            ?: throw IllegalStateException("Failed to determine AWS region from '$url'")
+        RDS_REGION_REGEX.find(url)?.groupValues?.get(1)
 
-        return AwsRegionProvider.getInstance().allRegions()[regionId]
-            ?: throw IllegalStateException("No region exists with the ID '$regionId'")
-    }
 
     class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
         private val credentialSelector = CredentialProviderSelector()
+        private val regionSelector = RegionSelector()
 
         override fun createPanel(): JPanel {
-            val panel = JPanel(GridLayoutManager(2, 6))
+            val panel = JPanel(GridLayoutManager(3, 6))
             addUserField(panel, 0)
 
-            val userLabel = JBLabel("Credentials:")
-            panel.add(userLabel, UrlPropertiesPanel.createLabelConstraints(1, 0, userLabel.preferredSize.getWidth()))
+            val credsLabel = JBLabel(message("aws_connection.credentials.label"))
+            val regionLabel = JBLabel(message("aws_connection.region.label"))
+            panel.add(credsLabel, UrlPropertiesPanel.createLabelConstraints(1, 0, credsLabel.preferredSize.getWidth()))
             panel.add(credentialSelector, UrlPropertiesPanel.createSimpleConstraints(1, 1, 3))
+            panel.add(regionLabel, UrlPropertiesPanel.createLabelConstraints(2, 0, regionLabel.preferredSize.getWidth()))
+            panel.add(regionSelector, UrlPropertiesPanel.createSimpleConstraints(2, 1, 3))
+
+            regionSelector.setRegions(AwsRegionProvider.getInstance().allRegions().values.toMutableList())
 
             return panel
         }
@@ -139,6 +146,7 @@ class IamAuth : DatabaseAuthProvider {
             super.save(dataSource, copyCredentials)
 
             DataSourceUiUtil.putOrRemove(dataSource.additionalJdbcProperties, CREDENTIAL_ID_PROPERTY, credentialSelector.getSelectedCredentialsProvider())
+            DataSourceUiUtil.putOrRemove(dataSource.additionalJdbcProperties, REGION_ID_PROPERTY, regionSelector.selectedRegion?.id)
         }
 
         override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
@@ -168,7 +176,7 @@ class IamAuth : DatabaseAuthProvider {
 
     private companion object {
         const val CREDENTIAL_ID_PROPERTY = "AWS.CredentialId"
+        const val REGION_ID_PROPERTY = "AWS.RegionId"
         val RDS_REGION_REGEX = """.*\.(.+).rds\.""".toRegex()
-        val REDSHIFT_REGION_REGEX = """.*\..*\.(.+).redshift\.""".toRegex()
     }
 }
