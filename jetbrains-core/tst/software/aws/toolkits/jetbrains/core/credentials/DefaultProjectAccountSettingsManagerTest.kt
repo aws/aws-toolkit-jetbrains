@@ -363,7 +363,7 @@ class DefaultProjectAccountSettingsManagerTest {
     }
 
     @Test
-    fun `Removal of the active credential falls back to "no credential selected" state`() {
+    fun `Removal of the active credential falls back to 'no credential selected' state`() {
         val defaultCredentials = mockCredentialManager.addCredentials("profile:default")
         val adminCredentials = mockCredentialManager.addCredentials("profile:admin")
 
