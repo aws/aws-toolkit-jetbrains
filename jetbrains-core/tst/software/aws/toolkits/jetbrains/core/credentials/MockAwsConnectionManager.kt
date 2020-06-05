@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ProjectRule
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
+import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -34,7 +34,7 @@ class MockAwsConnectionManager(project: Project) : AwsConnectionManager(project)
         waitUntilConnectionStateIsStable()
     }
 
-    fun changeCredentialProviderAndWait(identifier: ToolkitCredentialsIdentifier) {
+    fun changeCredentialProviderAndWait(identifier: CredentialIdentifier) {
         changeCredentialProvider(identifier)
         waitUntilConnectionStateIsStable()
     }

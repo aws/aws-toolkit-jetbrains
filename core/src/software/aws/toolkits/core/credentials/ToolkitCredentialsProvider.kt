@@ -7,6 +7,12 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
 interface CredentialIdentifier {
     /**
+     * The ID must be unique across all [CredentialIdentifier].
+     * It is recommended to concatenate the factory ID into this field to help enforce this requirement.
+     */
+    val id: String
+
+    /**
      * A user friendly display name shown in the UI.
      */
     val displayName: String
@@ -15,31 +21,25 @@ interface CredentialIdentifier {
      * An optional shortened version of the name to display in the UI where space is at a premium
      */
     val shortName: String get() = displayName
-}
-
-abstract class ToolkitCredentialsIdentifier : CredentialIdentifier {
-    /**
-     * The ID must be unique across all [ToolkitCredentialsIdentifier].
-     * It is recommended to concatenate the factory ID into this field to help enforce this requirement.
-     */
-    abstract val id: String
 
     /**
      * The ID of the corresponding [CredentialProviderFactory] so that the credential manager knows which factory to invoke in order
      * to resolve this into a [ToolkitCredentialsProvider]
      */
-    abstract val factoryId: String
+    val factoryId: String
 
     /**
      * Some ID types (e.g. Profile) have a concept of a default region, this is optional.
      */
-    open val defaultRegionId: String? get() = null
+    val defaultRegionId: String? get() = null
+}
 
+abstract class CredentialIdentifierBase : CredentialIdentifier {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ToolkitCredentialsIdentifier
+        other as CredentialIdentifierBase
 
         if (id != other.id) return false
 
@@ -51,7 +51,7 @@ abstract class ToolkitCredentialsIdentifier : CredentialIdentifier {
     override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
-class ToolkitCredentialsProvider(private val identifier: ToolkitCredentialsIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
+class ToolkitCredentialsProvider(private val identifier: CredentialIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
     val id: String = identifier.id
     val displayName = identifier.displayName
     val shortName = identifier.shortName

@@ -8,7 +8,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.aws.toolkits.core.utils.test.aString
 
 fun aToolkitCredentialsProvider(
-    identifier: ToolkitCredentialsIdentifier = aToolkitCredentialsIdentifier(),
+    identifier: CredentialIdentifier = aToolkitCredentialsIdentifier(),
     delegate: AwsCredentialsProvider = mock()
 ) = ToolkitCredentialsProvider(identifier, delegate)
 
@@ -17,8 +17,7 @@ fun aToolkitCredentialsIdentifier(
     displayName: String = aString(),
     factoryId: String = aString(),
     defaultRegionId: String? = null
-) = object :
-    ToolkitCredentialsIdentifier() {
+) = object : CredentialIdentifierBase() {
     override val id: String = id
     override val displayName: String = displayName
     override val factoryId: String = factoryId

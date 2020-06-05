@@ -18,10 +18,11 @@ import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 import software.aws.toolkits.core.ToolkitClientManager
+import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
-import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
@@ -38,7 +39,7 @@ const val DEFAULT_PROFILE_ID = "profile:default"
 
 private const val PROFILE_FACTORY_ID = "ProfileCredentialProviderFactory"
 
-private open class ProfileCredentialsIdentifier(internal val profileName: String, override val defaultRegionId: String?) : ToolkitCredentialsIdentifier() {
+private open class ProfileCredentialsIdentifier(internal val profileName: String, override val defaultRegionId: String?) : CredentialIdentifierBase() {
     override val id = "profile:$profileName"
     override val displayName = message("credentials.profile.name", profileName)
     override val factoryId = PROFILE_FACTORY_ID
@@ -152,7 +153,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
     override fun dispose() {}
 
     override fun createAwsCredentialProvider(
-        providerId: ToolkitCredentialsIdentifier,
+        providerId: CredentialIdentifier,
         region: AwsRegion,
         sdkHttpClientSupplier: () -> SdkHttpClient
     ): AwsCredentialsProvider {
