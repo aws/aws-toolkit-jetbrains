@@ -233,7 +233,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
         @JvmStatic
         fun getInstance(project: Project): AwsConnectionManager = ServiceManager.getService(project, AwsConnectionManager::class.java)
 
-        private val LOGGER = getLogger<DefaultAwsConnectionManager>()
+        private val LOGGER = getLogger<AwsConnectionManager>()
         private const val MAX_HISTORY = 5
     }
 }
