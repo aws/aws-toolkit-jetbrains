@@ -7,6 +7,6 @@
     </extensions>
     <extensions defaultExtensionNs="com.intellij.database">
         <!-- order="first" comes from how other instances of connectionInterceptor are implemented in DataGrip -->
-        <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth" order="first"/>
+        <!--connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth" order="first"/-->
     </extensions>
 </idea-plugin>

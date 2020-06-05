@@ -1,7 +1,11 @@
-package software.aws.toolkits.jetbrains.services.rds.auth
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.rds
 
 import com.intellij.openapi.project.Project
-import icons.AwsIcons
+import com.intellij.icons.AllIcons
+import javax.swing.Icon
 import software.amazon.awssdk.services.rds.RdsClient
 import software.amazon.awssdk.services.rds.model.DBInstance
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -11,19 +15,19 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
-import software.aws.toolkits.jetbrains.services.rds.RdsResources
 import software.aws.toolkits.resources.message
 
 class RdsExplorerParentNode(project: Project, service: AwsExplorerServiceNode) : AwsExplorerServiceRootNode(project, service) {
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = listOf(
-        RdsParentNode(nodeProject, message("rds.mysql"), RdsResources.LIST_INSTANCES_MYSQL),
-        RdsParentNode(nodeProject, message("rds.postgres"), RdsResources.LIST_INSTANCES_POSTGRES)
+        RdsParentNode(nodeProject, message("rds.mysql"), AllIcons.Providers.Mysql, RdsResources.LIST_INSTANCES_MYSQL),
+        RdsParentNode(nodeProject, message("rds.postgres"), AllIcons.Providers.Postgresql, RdsResources.LIST_INSTANCES_POSTGRES)
     )
 }
 
 class RdsParentNode(
     project: Project,
     type: String,
+    private val childIcon: Icon,
     private val method: Resource.Cached<List<DBInstance>>
 ) : AwsExplorerNode<String>(project, type, null),
     ResourceParentNode {
@@ -32,15 +36,15 @@ class RdsParentNode(
     override fun getChildren(): List<AwsExplorerNode<*>> = super.getChildren()
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = AwsResourceCache.getInstance(nodeProject)
         .getResourceNow(method)
-        .map { RdsNode(nodeProject, it) }
+        .map { RdsNode(nodeProject, childIcon, it) }
         .toMutableList()
 }
 
-class RdsNode(project: Project, private val instance: DBInstance) : AwsExplorerResourceNode<String>(
+class RdsNode(project: Project, icon: Icon, private val instance: DBInstance) : AwsExplorerResourceNode<String>(
     project,
     RdsClient.SERVICE_NAME,
     instance.dbInstanceArn(),
-    AwsIcons.Resources.Ecs.ECS_CLUSTER
+    icon
 ) {
     override fun displayName(): String = instance.dbInstanceIdentifier()
     override fun resourceArn(): String = instance.dbInstanceArn()
