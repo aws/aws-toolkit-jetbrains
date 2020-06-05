@@ -162,7 +162,7 @@
 
         <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultAwsConnectionManager"
-                        testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockProjectAccountSettingsManager"/>
+                        testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager"/>
 
         <statusBarWidgetProvider implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
 
