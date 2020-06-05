@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.rds.auth
+
 import com.intellij.credentialStore.Credentials
 import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DataSourceUiUtil
@@ -34,13 +35,14 @@ import java.util.concurrent.CompletionStage
 import javax.swing.JPanel
 import javax.swing.event.DocumentListener
 
-@SuppressWarnings("@ApiStatus.Internal")
+// This is marked as internal but is what we were told to use
 class IamAuth : DatabaseAuthProvider {
     override fun getId(): String = "aws.iam"
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean {
         val dbms = dataSource.dbms
-        return dbms.isPostgres || dbms.isMysql
+        // for now only support mysql. postgres also picks up redshift which has different auth
+        return dbms.isMysql
     }
 
     override fun getDisplayName(): String = "AWS IAM"
@@ -109,18 +111,14 @@ class IamAuth : DatabaseAuthProvider {
         val presignRequest = Aws4PresignerParams.builder()
             .expirationTime(expirationTime)
             .awsCredentials(credentialsProvider.resolveCredentials())
-            //.signingName("rds-db")
-            .signingName("redshift")
+            .signingName("rds-db")
             .signingRegion(Region.of(region.id))
             .build();
 
         return Aws4Signer.create().presign(httpRequest, presignRequest).uri.toString().removePrefix("https://")
     }
 
-    private fun extractRegionFromUrl(url: String): String? =
-        // 0 is full match, 1 is the region
-        RDS_REGION_REGEX.find(url)?.groupValues?.get(1)
-
+    private fun extractRegionFromUrl(url: String): String? = RDS_REGION_REGEX.find(url)?.groupValues?.get(1)
 
     class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
         private val credentialSelector = CredentialProviderSelector()
