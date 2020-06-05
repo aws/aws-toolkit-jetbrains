@@ -2,6 +2,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin>
+    <extensions defaultExtensionNs="aws.toolkit">
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode"/>
+    </extensions>
     <extensions defaultExtensionNs="com.intellij.database">
         <!-- order="first" comes from how other instances of connectionInterceptor are implemented in DataGrip -->
         <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth" order="first"/>
