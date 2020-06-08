@@ -10,7 +10,7 @@ import javax.swing.JComponent
 class OutputsTableView : View, OutputsListener, Disposable {
     private val table = DynamicTableView<Output>(
         DynamicTableView.Field(message("cloudformation.stack.outputs.key")) { it.outputKey() },
-        DynamicTableView.Field(message("cloudformation.stack.outputs.value")) { it.outputKey() },
+        DynamicTableView.Field(message("cloudformation.stack.outputs.value")) { it.outputValue() },
         DynamicTableView.Field(message("cloudformation.stack.outputs.description")) { it.description() },
         DynamicTableView.Field(message("cloudformation.stack.outputs.export")) { it.exportName() }
     )
