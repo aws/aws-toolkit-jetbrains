@@ -37,7 +37,7 @@ import javax.swing.event.DocumentListener
 
 // This is marked as internal but is what we were told to use
 class IamAuth : DatabaseAuthProvider {
-    override fun getId(): String = "aws.iam"
+    override fun getId(): String = providerId
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean {
         val dbms = dataSource.dbms
@@ -172,9 +172,10 @@ class IamAuth : DatabaseAuthProvider {
         override fun isPasswordChanged(): Boolean = false
     }
 
-    private companion object {
+    companion object {
+        const val providerId = "aws.iam"
         const val CREDENTIAL_ID_PROPERTY = "AWS.CredentialId"
         const val REGION_ID_PROPERTY = "AWS.RegionId"
-        val RDS_REGION_REGEX = """.*\.(.+).rds\.""".toRegex()
+        private val RDS_REGION_REGEX = """.*\.(.+).rds\.""".toRegex()
     }
 }
