@@ -8,11 +8,11 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.aws.toolkits.core.utils.test.aString
 
 fun aToolkitCredentialsProvider(
-    identifier: CredentialIdentifier = aToolkitCredentialsIdentifier(),
+    identifier: CredentialIdentifier = aCredentialsIdentifier(),
     delegate: AwsCredentialsProvider = mock()
 ) = ToolkitCredentialsProvider(identifier, delegate)
 
-fun aToolkitCredentialsIdentifier(
+fun aCredentialsIdentifier(
     id: String = aString(),
     displayName: String = aString(),
     factoryId: String = aString(),

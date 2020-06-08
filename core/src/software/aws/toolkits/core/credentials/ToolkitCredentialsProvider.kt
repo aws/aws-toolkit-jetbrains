@@ -5,9 +5,14 @@ package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
+/**
+ * Represents a possible credential provider that can be used within the toolkit.
+ *
+ * Implementers should extend [CredentialIdentifierBase] instead of directly implementing this interface.
+ */
 interface CredentialIdentifier {
     /**
-     * The ID must be unique across all [CredentialIdentifier].
+     * The ID must be unique across all [CredentialIdentifier] instances.
      * It is recommended to concatenate the factory ID into this field to help enforce this requirement.
      */
     val id: String
@@ -35,7 +40,7 @@ interface CredentialIdentifier {
 }
 
 abstract class CredentialIdentifierBase : CredentialIdentifier {
-    override fun equals(other: Any?): Boolean {
+    final override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
@@ -46,9 +51,9 @@ abstract class CredentialIdentifierBase : CredentialIdentifier {
         return true
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    final override fun hashCode(): Int = id.hashCode()
 
-    override fun toString(): String = "${this::class.simpleName}(id='$id')"
+    final override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
 class ToolkitCredentialsProvider(private val identifier: CredentialIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
