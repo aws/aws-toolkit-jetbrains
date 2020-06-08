@@ -24,6 +24,11 @@ import java.time.Instant
 @Suppress("ComponentNotRegistered")
 class CreateConfigurationAction : SingleExplorerNodeAction<RdsNode>("TODO add config"), DumbAware {
     override fun actionPerformed(selected: RdsNode, e: AnActionEvent) {
+        // show page
+        // assert iam database auth enabled
+        // add roll selector
+        // engineVersion
+        val endpoint = selected.dbInstance.endpoint()
         val source = LocalDataSourceManager.getInstance(selected.nodeProject)
         val dataSource = LocalDataSource().also {
             it.authProviderId = IamAuth.providerId
@@ -36,7 +41,9 @@ class CreateConfigurationAction : SingleExplorerNodeAction<RdsNode>("TODO add co
             it.name = "TEMP TODO ${Instant.now()}"
             // url only config
             it.isConfiguredByUrl = true
+            it.url = "jdbc:mysql://${endpoint.address()}:${endpoint.port()}/"
         }
         source.addDataSource(dataSource)
+        // now make it connect
     }
 }

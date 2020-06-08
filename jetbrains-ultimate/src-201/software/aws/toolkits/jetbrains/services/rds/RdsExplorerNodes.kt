@@ -40,13 +40,13 @@ class RdsParentNode(
         .toMutableList()
 }
 
-class RdsNode(project: Project, icon: Icon, private val instance: DBInstance) : AwsExplorerResourceNode<String>(
+class RdsNode(project: Project, icon: Icon, val dbInstance: DBInstance) : AwsExplorerResourceNode<String>(
     project,
     RdsClient.SERVICE_NAME,
-    instance.dbInstanceArn(),
+    dbInstance.dbInstanceArn(),
     icon
 ) {
-    override fun displayName(): String = instance.dbInstanceIdentifier()
-    override fun resourceArn(): String = instance.dbInstanceArn()
-    override fun resourceType(): String = instance.engine()
+    override fun displayName(): String = dbInstance.dbInstanceIdentifier()
+    override fun resourceArn(): String = dbInstance.dbInstanceArn()
+    override fun resourceType(): String = dbInstance.engine()
 }
