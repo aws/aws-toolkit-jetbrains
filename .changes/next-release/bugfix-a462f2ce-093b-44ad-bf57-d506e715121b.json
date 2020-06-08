@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix double click opening Cloud Formation stack viewer"
+  "description" : "Enable double clicking Cloud Formation node to open the stack viewer"
 }
