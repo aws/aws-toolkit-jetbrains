@@ -107,7 +107,7 @@ class UpdaterTest {
         verify(treeView, atLeast(1)).setStackStatus(StackStatus.CREATE_IN_PROGRESS)
         verify(treeView, atLeast(1)).setStackStatus(StackStatus.CREATE_COMPLETE)
         verify(treeView, atLeast(1)).fillResources(resources)
-        verify(outputTable).updatedOutputs(outputs)
+        verify(outputTable, atLeast(1)).updatedOutputs(outputs)
         verify(eventsTable, atLeast(1)).insertEvents(mockEventsGenerator.currentPage, false)
         Assert.assertEquals("Wrong button for first page", availablePages, setOf(Page.NEXT))
     }
