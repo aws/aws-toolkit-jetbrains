@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
+import software.aws.toolkits.jetbrains.services.rds.ui.CreateConfigurationDialogWrapper
 import software.aws.toolkits.resources.message
 
 // It is registered in ext-datagrip.xml FIX_WHEN_MIN_IS_201
@@ -28,24 +29,17 @@ class CreateConfigurationActionGroup : SingleExplorerNodeActionGroup<RdsNode>("T
 }
 
 class CreateIamConfigurationAction(private val node: RdsNode) : AnAction(message("rds.iam_config")) {
-    private fun getDriverId(): String = when (node.dbInstance.engine()) {
-        // For mysql there are mysql and mysql.8 (which renders as mysql). mysql is for 5.1, but the minimum
-        // version for RDS is 5.5 so always set mysql.8
-        mysqlEngineType -> "mysql.8"
-        postgresEngineType -> "postgresql"
-        else -> throw IllegalArgumentException("Engine ${node.dbInstance.engine()} is not supported!")
-    }
-
-    private fun getJdbcId(): String = when (node.dbInstance.engine()) {
-        mysqlEngineType -> jdbcMysql
-        postgresEngineType -> jdbcPostgres
-        else -> throw IllegalArgumentException("Engine ${node.dbInstance.engine()} is not supported!")
-    }
-
     override fun actionPerformed(e: AnActionEvent) {
         // show page
         // assert iam database auth enabled
         // add roll/iam user selector
+        val dialog = CreateConfigurationDialogWrapper(node.nodeProject)
+        if (!dialog.showAndGet()) {
+            return
+        }
+        // TODO get rid of nullability
+        val username = dialog.getRole()?.name ?: ""
+        val database = dialog.getDatabase()
         val endpoint = node.dbInstance.endpoint()
         val url = "${endpoint.address()}:${endpoint.port()}"
         val source = LocalDataSourceManager.getInstance(node.nodeProject)
@@ -53,14 +47,29 @@ class CreateIamConfigurationAction(private val node: RdsNode) : AnAction(message
             // turn on url only config since we don't need any additional config
             it.isConfiguredByUrl = true
             it.authProviderId = IamAuth.providerId
-            it.databaseDriver = DatabaseDriverManager.getInstance().getDriver(getDriverId())
+            // TODO add boxes
             it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY] = node.nodeProject.activeCredentialProvider().id
             it.additionalJdbcProperties[REGION_ID_PROPERTY] = node.nodeProject.activeRegion().id
-            // todo accept as argument
-            it.username = "Admin"
-            it.name = message("rds.iam_config_name", it.username, url)
-            it.url = "jdbc:${getJdbcId()}://$url/"
         }
+
+        when (node.dbInstance.engine()) {
+            mysqlEngineType -> {
+                dataSource.username = username
+                // For mysql there are mysql and mysql.8 (which renders as mysql). mysql is for 5.1, but the minimum
+                // version for RDS is 5.5 so always set mysql.8
+                dataSource.databaseDriver = DatabaseDriverManager.getInstance().getDriver("mysql.8")
+                dataSource.url = "jdbc:$jdbcMysql://$url/$database"
+            }
+            postgresEngineType -> {
+                // In postgres this is case sensitive as lower case
+                dataSource.username = username.toLowerCase()
+                dataSource.databaseDriver = DatabaseDriverManager.getInstance().getDriver("postgresql")
+                dataSource.url = "jdbc:$jdbcPostgres://$url/$database"
+            }
+            else -> throw IllegalArgumentException("Engine ${node.dbInstance.engine()} is not supported!")
+        }
+        dataSource.name = message("rds.iam_config_name", dataSource.username, url)
+
         source.addDataSource(dataSource)
     }
 }
