@@ -6,8 +6,11 @@
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode"/>
     </extensions>
     <actions>
-        <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false">
-            <action id="rds.createConfiguration" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateConfigurationAction"/>
+        <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false" >
+            <group id="rds.mysql.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateConfigurationActionGroup"/>
+        </group>
+        <group id="aws.toolkit.explorer.rds.postgres" popup="true" compact="false">
+            <group id="rds.postgres.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateConfigurationActionGroup"/>
         </group>
     </actions>
     <extensions defaultExtensionNs="com.intellij.database">

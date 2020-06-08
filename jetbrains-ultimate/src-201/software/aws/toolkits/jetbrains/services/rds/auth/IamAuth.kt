@@ -41,8 +41,8 @@ class IamAuth : DatabaseAuthProvider {
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean {
         val dbms = dataSource.dbms
-        // for now only support mysql. postgres also picks up redshift which has different auth
-        return dbms.isMysql
+        // Postgres also picks up redshift which has different auth so ignore it
+        return (dbms.isMysql || dbms.isPostgres) && !dbms.isRedshift
     }
 
     override fun getDisplayName(): String = "AWS IAM"

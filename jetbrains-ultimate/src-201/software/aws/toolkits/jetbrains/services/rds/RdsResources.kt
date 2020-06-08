@@ -12,6 +12,8 @@ import software.aws.toolkits.jetbrains.core.Resource
 // These are the member engine in DBInstance, but it is a string
 const val mysqlEngineType = "mysql"
 const val postgresEngineType = "postgres"
+const val jdbcMysql = "mysql"
+const val jdbcPostgres = "postgresql"
 // Filters are also just a string
 const val engineFilter = "engine"
 
