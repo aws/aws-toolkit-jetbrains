@@ -101,7 +101,7 @@ private class StackUI(private val project: Project, private val stackName: Strin
         )
 
         toolWindowTab = toolWindow.addTab(stackName, mainPanel, id = stackId)
-        listOf(tree, updater, animator, eventsTable, pageButtons).forEach { Disposer.register(toolWindowTab, it) }
+        listOf(tree, updater, animator, eventsTable, outputsTable, pageButtons).forEach { Disposer.register(toolWindowTab, it) }
     }
 
     fun start() {
