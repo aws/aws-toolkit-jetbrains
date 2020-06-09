@@ -41,7 +41,7 @@ object SsoPrompt : SsoLoginCallback {
     override fun tokenRetrieved() {}
 
     override fun tokenRetrievalFailure(e: Exception) {
-        e.notifyError("AWS SSO Login failed")
+        e.notifyError(message("credentials.sso.login.failed"))
     }
 }
 

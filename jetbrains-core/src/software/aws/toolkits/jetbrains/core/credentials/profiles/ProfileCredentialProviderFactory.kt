@@ -33,13 +33,13 @@ import software.aws.toolkits.core.credentials.sso.SSO_URL
 import software.aws.toolkits.core.credentials.sso.SsoAccessTokenProvider
 import software.aws.toolkits.core.credentials.sso.SsoCache
 import software.aws.toolkits.core.credentials.sso.SsoCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.SsoPrompt
-import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCredentials
-import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
 import software.aws.toolkits.jetbrains.core.credentials.MfaRequiredInteractiveCredentials
+import software.aws.toolkits.jetbrains.core.credentials.SsoPrompt
+import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCredentials
+import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.promptForMfaToken
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
@@ -200,7 +200,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
 
     private fun createSsoProvider(profile: Profile, sdkHttpClientSupplier: () -> SdkHttpClient): AwsCredentialsProvider {
         val ssoRegion = profile.requiredProperty(SSO_REGION)
-        val sdkHttpClient = sdkHttpClientSupplier.invoke()
+        val sdkHttpClient = sdkHttpClientSupplier()
         val ssoClient = ToolkitClientManager.createNewClient(
             SsoClient::class,
             sdkHttpClient,
@@ -238,7 +238,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory, Disposable {
         val sourceProfile = profileHolder.getProfile(sourceProfileName)
             ?: throw IllegalStateException("Profile $sourceProfileName looks to have been removed")
 
-        val sdkHttpClient = sdkHttpClientSupplier.invoke()
+        val sdkHttpClient = sdkHttpClientSupplier()
 
         val parentCredentialProvider = createAwsCredentialProvider(sourceProfile, region, sdkHttpClientSupplier)
 

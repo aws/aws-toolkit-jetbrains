@@ -77,7 +77,7 @@ class SsoAccessTokenProvider(
             authorizationResponse.verificationUriComplete(),
             Instant.now(clock).plusSeconds(authorizationResponse.expiresIn().toLong()),
             authorizationResponse.interval()?.toLong()
-                ?: DEFAULT_INTERVAL
+                ?: DEFAULT_INTERVAL_SECS
         )
     }
 
@@ -109,7 +109,7 @@ class SsoAccessTokenProvider(
                     expirationTime
                 )
             } catch (e: SlowDownException) {
-                backOffTime = backOffTime.plusSeconds(SLOW_DOWN_DELAY)
+                backOffTime = backOffTime.plusSeconds(SLOW_DOWN_DELAY_SECS)
             } catch (e: AuthorizationPendingException) {
                 // Do nothing, keep polling
             } catch (e: Exception) {
@@ -129,7 +129,7 @@ class SsoAccessTokenProvider(
         const val CLIENT_REGISTRATION_TYPE = "public"
         const val GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
-        const val DEFAULT_INTERVAL = 5L
-        const val SLOW_DOWN_DELAY = 5L
+        const val DEFAULT_INTERVAL_SECS = 5L
+        const val SLOW_DOWN_DELAY_SECS = 5L
     }
 }

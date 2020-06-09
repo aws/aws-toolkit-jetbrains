@@ -8,7 +8,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.readText
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.core.utils.writeText
 import java.nio.file.Path
 import java.time.Clock
@@ -25,28 +27,28 @@ class DiskCacheTest {
     private val now = Instant.now()
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
 
-    private val ssoUrl = "https://123456.awsapps.com/start"
-    private val ssoRegion = "us-west-2"
+    private val ssoUrl = aString()
+    private val ssoRegion = aRegionId()
 
     private lateinit var cacheLocation: Path
-    private lateinit var diskCache: DiskCache
+    private lateinit var sut: DiskCache
 
     @Before
     fun setUp() {
         cacheLocation = tempFolder.newFolder().toPath()
-        diskCache = DiskCache(cacheLocation, clock)
+        sut = DiskCache(cacheLocation, clock)
     }
 
     @Test
     fun nonExistentClientRegistrationReturnsNull() {
-        assertThat(diskCache.loadClientRegistration(ssoRegion)).isNull()
+        assertThat(sut.loadClientRegistration(ssoRegion)).isNull()
     }
 
     @Test
     fun corruptClientRegistrationReturnsNull() {
         cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText("badData")
 
-        assertThat(diskCache.loadClientRegistration(ssoRegion)).isNull()
+        assertThat(sut.loadClientRegistration(ssoRegion)).isNull()
     }
 
     @Test
@@ -61,7 +63,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(diskCache.loadClientRegistration(ssoRegion)).isNull()
+        assertThat(sut.loadClientRegistration(ssoRegion)).isNull()
     }
 
     @Test
@@ -77,7 +79,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(diskCache.loadClientRegistration(ssoRegion))
+        assertThat(sut.loadClientRegistration(ssoRegion))
             .usingRecursiveComparison()
             .isEqualTo(
                 ClientRegistration(
@@ -91,7 +93,7 @@ class DiskCacheTest {
     @Test
     fun clientRegistrationSavesCorrectly() {
         val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
-        diskCache.saveClientRegistration(
+        sut.saveClientRegistration(
             ssoRegion,
             ClientRegistration(
                 "DummyId",
@@ -114,14 +116,14 @@ class DiskCacheTest {
 
     @Test
     fun nonExistentAccessTokenReturnsNull() {
-        assertThat(diskCache.loadAccessToken(ssoUrl)).isNull()
+        assertThat(sut.loadAccessToken(ssoUrl)).isNull()
     }
 
     @Test
     fun corruptAccessTokenReturnsNull() {
         cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText("badData")
 
-        assertThat(diskCache.loadAccessToken(ssoUrl)).isNull()
+        assertThat(sut.loadAccessToken(ssoUrl)).isNull()
     }
 
     @Test
@@ -137,7 +139,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(diskCache.loadAccessToken(ssoUrl)).isNull()
+        assertThat(sut.loadAccessToken(ssoUrl)).isNull()
     }
 
     @Test
@@ -154,7 +156,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(diskCache.loadAccessToken(ssoUrl))
+        assertThat(sut.loadAccessToken(ssoUrl))
             .usingRecursiveComparison()
             .isEqualTo(
                 AccessToken(
@@ -179,7 +181,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(diskCache.loadAccessToken(ssoUrl))
+        assertThat(sut.loadAccessToken(ssoUrl))
             .usingRecursiveComparison()
             .isEqualTo(
                 AccessToken(
@@ -194,7 +196,7 @@ class DiskCacheTest {
     @Test
     fun accessTokenSavesCorrectly() {
         val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
-        diskCache.saveAccessToken(
+        sut.saveAccessToken(
             ssoUrl,
             AccessToken(
                 ssoUrl,

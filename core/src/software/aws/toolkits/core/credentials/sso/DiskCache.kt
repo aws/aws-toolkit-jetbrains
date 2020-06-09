@@ -34,13 +34,11 @@ class DiskCache(
     private val clock: Clock = Clock.systemUTC()
 ) : SsoCache {
     private val objectMapper = jacksonObjectMapper().also {
-        val customDateModule = SimpleModule()
-        customDateModule.addDeserializer(Instant::class.java,
-            CliCompatibleInstantDeserializer()
-        )
-
         it.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
         it.registerModule(JavaTimeModule())
+        val customDateModule = SimpleModule()
+        customDateModule.addDeserializer(Instant::class.java, CliCompatibleInstantDeserializer())
         it.registerModule(customDateModule) // Override the Instant deserializer with custom one
         it.dateFormat = StdDateFormat().withTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC))
     }
@@ -68,8 +66,6 @@ class DiskCache(
         cacheDir.resolve(clientRegistrationCacheKey(ssoRegion)).deleteIfExists()
     }
 
-    private fun clientRegistrationCacheKey(ssoRegion: String): String = "aws-toolkit-jetbrains-$ssoRegion.json"
-
     override fun loadAccessToken(ssoUrl: String): AccessToken? {
         val cacheFile = cacheDir.resolve(accessKeyCacheKey(ssoUrl))
         val inputStream = cacheFile.inputStreamIfExists() ?: return null
@@ -93,6 +89,8 @@ class DiskCache(
     override fun invalidateAccessToken(ssoUrl: String) {
         cacheDir.resolve(accessKeyCacheKey(ssoUrl)).deleteIfExists()
     }
+
+    private fun clientRegistrationCacheKey(ssoRegion: String): String = "aws-toolkit-jetbrains-$ssoRegion.json"
 
     private fun accessKeyCacheKey(ssoUrl: String): String {
         val digest = MessageDigest.getInstance("SHA-1")
