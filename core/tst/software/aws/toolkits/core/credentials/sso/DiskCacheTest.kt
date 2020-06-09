@@ -19,6 +19,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 class DiskCacheTest {
     @Rule
@@ -68,8 +69,24 @@ class DiskCacheTest {
     }
 
     @Test
+    fun clientRegistrationExpiringInLessThan15MinutesIsTreatedAsExpired() {
+        val expiationTime = now.plus(14, ChronoUnit.MINUTES)
+        cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText(
+            """
+            {
+                "clientId": "DummyId", 
+                "clientSecret": "DummySecret", 
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadClientRegistration(ssoRegion)).isNull()
+    }
+
+    @Test
     fun validClientRegistrationReturnsCorrectly() {
-        val expiationTime = now.plusSeconds(100)
+        val expiationTime = now.plus(20, ChronoUnit.MINUTES)
         cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText(
             """
             {

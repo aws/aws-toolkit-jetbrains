@@ -27,6 +27,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter.ISO_INSTANT
+import java.time.temporal.ChronoUnit
 import java.util.TimeZone
 
 /**
@@ -50,7 +51,8 @@ class DiskCache(
         val inputStream = clientRegistrationCache(ssoRegion).inputStreamIfExists() ?: return null
         return tryOrNull {
             val clientRegistration = objectMapper.readValue<ClientRegistration>(inputStream)
-            if (clientRegistration.expiresAt.isAfter(Instant.now(clock))) {
+            // If the client registration is going to expire in the next 15 mins, we must treat it as already expired
+            if (clientRegistration.expiresAt.isAfter(Instant.now(clock).plus(15, ChronoUnit.MINUTES))) {
                 clientRegistration
             } else {
                 null
