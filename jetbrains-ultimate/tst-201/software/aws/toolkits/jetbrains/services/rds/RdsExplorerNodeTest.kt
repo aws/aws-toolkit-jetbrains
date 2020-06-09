@@ -1,3 +1,6 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.services.rds
 
 import com.intellij.testFramework.ProjectRule
@@ -12,7 +15,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode
 import software.aws.toolkits.resources.message
 
-class RdsExplorerNodeTests {
+class RdsExplorerNodeTest {
     @JvmField
     @Rule
     val projectRule = ProjectRule()

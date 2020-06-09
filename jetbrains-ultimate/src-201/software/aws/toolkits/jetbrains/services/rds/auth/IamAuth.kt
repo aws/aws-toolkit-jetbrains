@@ -47,15 +47,13 @@ class IamAuth : DatabaseAuthProvider {
 
     override fun getDisplayName(): String = "AWS IAM"
 
-    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): DatabaseAuthProvider.AuthWidget? {
-        return IamAuthWidget()
-    }
+    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): DatabaseAuthProvider.AuthWidget? = IamAuthWidget()
 
     override fun intercept(
         connection: DatabaseConnectionInterceptor.ProtoConnection,
         silent: Boolean
     ): CompletionStage<DatabaseConnectionInterceptor.ProtoConnection>? {
-        println("connection = [${connection}], silent = [${silent}]")
+        println("connection = [$connection], silent = [$silent]")
         return CompletableFuture.completedFuture(DatabaseCredentialsAuthProvider.applyCredentials(connection, getCredentials(connection), true))
     }
 
@@ -65,7 +63,7 @@ class IamAuth : DatabaseAuthProvider {
         silent: Boolean,
         attempt: Int
     ): CompletionStage<DatabaseConnectionInterceptor.ProtoConnection>? {
-        println("proto = [${proto}], e = [${e}], silent = [${silent}], attempt = [${attempt}]")
+        println("proto = [$proto], e = [$e], silent = [$silent], attempt = [$attempt]")
         return super.handleConnectionFailure(proto, e, silent, attempt)
     }
 
@@ -105,7 +103,7 @@ class IamAuth : DatabaseAuthProvider {
             .encodedPath("/")
             .putRawQueryParameter("DBUser", user)
             .putRawQueryParameter("Action", "connect")
-            .build();
+            .build()
 
         val expirationTime = Instant.now().plus(15, ChronoUnit.MINUTES)
         val presignRequest = Aws4PresignerParams.builder()
@@ -113,7 +111,7 @@ class IamAuth : DatabaseAuthProvider {
             .awsCredentials(credentialsProvider.resolveCredentials())
             .signingName("rds-db")
             .signingRegion(Region.of(region.id))
-            .build();
+            .build()
 
         return Aws4Signer.create().presign(httpRequest, presignRequest).uri.toString().removePrefix("https://")
     }
