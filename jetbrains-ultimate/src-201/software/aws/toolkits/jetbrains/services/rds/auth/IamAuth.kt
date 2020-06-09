@@ -11,6 +11,8 @@ import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConne
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.JdbcUrlParserUtil
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.future.future
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.signer.Aws4Signer
 import software.amazon.awssdk.auth.signer.params.Aws4PresignerParams
@@ -18,17 +20,20 @@ import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
 import software.amazon.awssdk.regions.Region
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import java.sql.SQLException
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
 // This is marked as internal but is what we were told to use
-class IamAuth : DatabaseAuthProvider {
+class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("IamAuth") {
     override fun getId(): String = providerId
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean {
@@ -46,8 +51,11 @@ class IamAuth : DatabaseAuthProvider {
         connection: ProtoConnection,
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
-        println("connection = [$connection], silent = [$silent]")
-        return CompletableFuture.completedFuture(DatabaseCredentialsAuthProvider.applyCredentials(connection, getCredentials(connection), true))
+        LOG.info { "Intercepting db connection [$connection]" }
+        return future {
+            val credentials = getCredentials(connection)
+            DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
+        }
     }
 
     override fun handleConnectionFailure(
@@ -56,7 +64,7 @@ class IamAuth : DatabaseAuthProvider {
         silent: Boolean,
         attempt: Int
     ): CompletionStage<ProtoConnection>? {
-        println("proto = [$proto], e = [$e], silent = [$silent], attempt = [$attempt]")
+        LOG.error(e) { "proto = [$proto], silent = [$silent], attempt = [$attempt]" }
         return super.handleConnectionFailure(proto, e, silent, attempt)
     }
 
@@ -69,7 +77,7 @@ class IamAuth : DatabaseAuthProvider {
         val host = urlParser.getParameter("host")
             ?: throw IllegalArgumentException(message("rds.validation.no_host_specified"))
         val port = urlParser.getParameter("port")?.toInt()
-            ?: throw  IllegalArgumentException(message("rds.validation.no_port_specified"))
+            ?: throw IllegalArgumentException(message("rds.validation.no_port_specified"))
         val user = connection.connectionPoint.dataSource.username
 
         val region = extractRegionFromUrl(host) ?: regionId ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
@@ -113,6 +121,7 @@ class IamAuth : DatabaseAuthProvider {
 
     companion object {
         const val providerId = "aws.iam"
+        private val LOG = getLogger<IamAuth>()
         private val RDS_REGION_REGEX = """.*\.(.+).rds\.""".toRegex()
     }
 }
