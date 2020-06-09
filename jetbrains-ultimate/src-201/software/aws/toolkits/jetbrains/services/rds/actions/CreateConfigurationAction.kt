@@ -9,6 +9,7 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
+import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth.Companion.CREDENTIAL_ID_PROPERTY
@@ -18,6 +19,8 @@ import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
 import software.aws.toolkits.jetbrains.services.rds.ui.CreateConfigurationDialogWrapper
+import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 // It is registered in ext-datagrip.xml FIX_WHEN_MIN_IS_201
@@ -30,13 +33,33 @@ class CreateConfigurationActionGroup : SingleExplorerNodeActionGroup<RdsNode>("T
 
 class CreateIamConfigurationAction(private val node: RdsNode) : AnAction(message("rds.iam_config")) {
     override fun actionPerformed(e: AnActionEvent) {
-        // TODO assert iam database auth enabled
+        if (!checkPrerequisites()) {
+            return
+        }
         val dialog = CreateConfigurationDialogWrapper(node.nodeProject, node.dbInstance)
         if (!dialog.showAndGet()) {
             return
         }
-        val username = dialog.getUsername() ?: throw IllegalStateException("Username is null, but it should have already been validated!")
+        val username = dialog.getUsername() ?: throw IllegalStateException("Username is null, but it should have already been validated not null!")
         val database = dialog.getDatabaseName()
+        createDatasource(username, database)
+    }
+
+    private fun checkPrerequisites(): Boolean {
+        // Assert IAM auth enabled
+        if (!node.dbInstance.iamDatabaseAuthenticationEnabled()) {
+            notifyError(
+                project = node.nodeProject,
+                title = message("aws.notification.title"),
+                content = message("validation_error.no_iam_auth", node.dbInstance.dbName()),
+                action = OpenBrowserAction(message("rds.validation_error.guide"), null, HelpIds.RDS_SETUP_IAM_AUTH.url)
+            )
+            return false
+        }
+        return true
+    }
+
+    private fun createDatasource(username: String, database: String) {
         val endpoint = node.dbInstance.endpoint()
         val url = "${endpoint.address()}:${endpoint.port()}"
         val source = LocalDataSourceManager.getInstance(node.nodeProject)

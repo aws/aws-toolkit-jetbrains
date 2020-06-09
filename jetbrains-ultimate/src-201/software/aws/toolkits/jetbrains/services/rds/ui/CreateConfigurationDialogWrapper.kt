@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.rds.model.DBInstance
+import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
@@ -22,6 +23,7 @@ class CreateConfigurationDialogWrapper(private val project: Project, private val
     }
 
     override fun createCenterPanel(): JComponent? = panel.panel
+    override fun getHelpId(): String? = HelpIds.RDS_SETUP_IAM_AUTH.id
     override fun doValidate(): ValidationInfo? {
         if (getUsername().isNullOrBlank()) {
             return ValidationInfo(message("rds.validation.username"))

@@ -58,6 +58,11 @@ enum class HelpIds(shortId: String, val url: String) {
         "setupCredentials",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/credentials"
     ),
+    // RDS
+    RDS_SETUP_IAM_AUTH(
+        "rdsIamAuth",
+        "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html"
+    )
     ;
 
     val id = "aws.toolkit.$shortId"
