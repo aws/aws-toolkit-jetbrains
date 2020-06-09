@@ -42,7 +42,7 @@ internal class EventsTableImpl : EventsTable, Disposable {
         // CFN Resource Status does not match what we expect (StackStatus enum)
         DynamicTableView.Field(message("cloudformation.stack.status"), renderer = StatusCellRenderer()) { e -> e.resourceStatusAsString() },
         DynamicTableView.Field(message("cloudformation.stack.logical_id")) { e -> e.logicalResourceId() },
-        DynamicTableView.Field(message("cloudformation.stack.physical_id")) { e -> e.physicalResourceId() + e },
+        DynamicTableView.Field(message("cloudformation.stack.physical_id")) { e -> e.physicalResourceId() },
         DynamicTableView.Field(message("cloudformation.stack.reason")) { e -> e.resourceStatusReason() ?: "" }
     )
 
