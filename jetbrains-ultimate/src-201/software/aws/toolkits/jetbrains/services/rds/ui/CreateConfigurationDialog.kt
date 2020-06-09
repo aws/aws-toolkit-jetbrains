@@ -8,8 +8,6 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.Wrapper
-import software.amazon.awssdk.services.iam.model.User
-import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.services.iam.IamResources
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.iam.IamUser
@@ -39,7 +37,8 @@ class CreateConfigurationDialog(private val project: Project) {
             message("rds.iam_user"),
             ResourceSelector.builder(project)
                 .resource(IamResources.LIST_ALL_USERS)
-                .build())
+                .build()
+        )
 
         class Custom : ComboOption<JBTextField>(message("rds.custom_username"), JBTextField())
 
