@@ -30,16 +30,13 @@ class CreateConfigurationActionGroup : SingleExplorerNodeActionGroup<RdsNode>("T
 
 class CreateIamConfigurationAction(private val node: RdsNode) : AnAction(message("rds.iam_config")) {
     override fun actionPerformed(e: AnActionEvent) {
-        // show page
-        // assert iam database auth enabled
-        // add roll/iam user selector
-        val dialog = CreateConfigurationDialogWrapper(node.nodeProject)
+        // TODO assert iam database auth enabled
+        val dialog = CreateConfigurationDialogWrapper(node.nodeProject, node.dbInstance)
         if (!dialog.showAndGet()) {
             return
         }
-        // TODO get rid of nullability
-        val username = dialog.getRole()?.name ?: ""
-        val database = dialog.getDatabase()
+        val username = dialog.getUsername() ?: throw IllegalStateException("Username is null, but it should have already been validated!")
+        val database = dialog.getDatabaseName()
         val endpoint = node.dbInstance.endpoint()
         val url = "${endpoint.address()}:${endpoint.port()}"
         val source = LocalDataSourceManager.getInstance(node.nodeProject)

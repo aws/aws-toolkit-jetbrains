@@ -45,7 +45,7 @@ class InstrumentDialog(private val project: Project, val clusterArn: String, val
         val region = ProjectAccountSettingsManager.getInstance(project).activeRegion
 
         iamRole = ResourceSelector.builder(project)
-            .resource { IamResources.LIST_ALL }
+            .resource { IamResources.LIST_ALL_ROLES }
             .awsConnection { Pair(region, credentials) }
             .build()
 

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.iam
 
 import software.amazon.awssdk.services.iam.IamClient
+import software.amazon.awssdk.services.iam.model.User
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.services.lambda.upload.LAMBDA_PRINCIPAL
@@ -20,14 +21,22 @@ data class IamRole(val arn: String) {
     }
 }
 
+data class IamUser(val user: User) {
+    override fun toString(): String = "${user.userName()}@${user.userId()}"
+}
+
 object IamResources {
 
     private val LIST_RAW_ROLES = ClientBackedCachedResource(IamClient::class, "iam.list_roles") {
         listRolesPaginator().roles().toList()
     }
 
+    val LIST_ALL_USERS: Resource<List<IamUser>> = ClientBackedCachedResource(IamClient::class, "iam.list_users") {
+        listUsersPaginator().users().toList().map { IamUser(it) }
+    }
+
     @JvmField
-    val LIST_ALL: Resource<List<IamRole>> = Resource.View(LIST_RAW_ROLES) {
+    val LIST_ALL_ROLES: Resource<List<IamRole>> = Resource.View(LIST_RAW_ROLES) {
         map { IamRole(it.arn()) }.toList()
     }
 
