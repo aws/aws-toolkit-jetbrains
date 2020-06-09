@@ -10,7 +10,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.readText
-import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.core.utils.writeText
 import java.nio.file.Path
 import java.time.Clock
@@ -27,7 +26,7 @@ class DiskCacheTest {
     private val now = Instant.now()
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
 
-    private val ssoUrl = aString()
+    private val ssoUrl = "https://123456.awsapps.com/start"
     private val ssoRegion = aRegionId()
 
     private lateinit var cacheLocation: Path
