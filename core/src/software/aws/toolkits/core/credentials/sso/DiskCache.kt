@@ -44,8 +44,7 @@ class DiskCache(
     }
 
     override fun loadClientRegistration(ssoRegion: String): ClientRegistration? {
-        val cacheFile = cacheDir.resolve(clientRegistrationCacheKey(ssoRegion))
-        val inputStream = cacheFile.inputStreamIfExists() ?: return null
+        val inputStream = clientRegistrationCache(ssoRegion).inputStreamIfExists() ?: return null
         return tryOrNull {
             val clientRegistration = objectMapper.readValue<ClientRegistration>(inputStream)
             if (clientRegistration.expiresAt.isAfter(Instant.now(clock))) {
@@ -57,17 +56,17 @@ class DiskCache(
     }
 
     override fun saveClientRegistration(ssoRegion: String, registration: ClientRegistration) {
-        cacheDir.resolve(clientRegistrationCacheKey(ssoRegion)).outputStream().use {
+        clientRegistrationCache(ssoRegion).outputStream().use {
             objectMapper.writeValue(it, registration)
         }
     }
 
     override fun invalidateClientRegistration(ssoRegion: String) {
-        cacheDir.resolve(clientRegistrationCacheKey(ssoRegion)).deleteIfExists()
+        clientRegistrationCache(ssoRegion).deleteIfExists()
     }
 
     override fun loadAccessToken(ssoUrl: String): AccessToken? {
-        val cacheFile = cacheDir.resolve(accessKeyCacheKey(ssoUrl))
+        val cacheFile = accessKeyCache(ssoUrl)
         val inputStream = cacheFile.inputStreamIfExists() ?: return null
 
         return tryOrNull {
@@ -81,21 +80,22 @@ class DiskCache(
     }
 
     override fun saveAccessToken(ssoUrl: String, accessToken: AccessToken) {
-        cacheDir.resolve(accessKeyCacheKey(ssoUrl)).outputStream().use {
+        accessKeyCache(ssoUrl).outputStream().use {
             objectMapper.writeValue(it, accessToken)
         }
     }
 
     override fun invalidateAccessToken(ssoUrl: String) {
-        cacheDir.resolve(accessKeyCacheKey(ssoUrl)).deleteIfExists()
+        accessKeyCache(ssoUrl).deleteIfExists()
     }
 
-    private fun clientRegistrationCacheKey(ssoRegion: String): String = "aws-toolkit-jetbrains-$ssoRegion.json"
+    private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-$ssoRegion.json")
 
-    private fun accessKeyCacheKey(ssoUrl: String): String {
+    private fun accessKeyCache(ssoUrl: String): Path {
         val digest = MessageDigest.getInstance("SHA-1")
         val sha = digest.digest(ssoUrl.toByteArray(Charsets.UTF_8)).toHexString()
-        return "$sha.json"
+        val fileName = "$sha.json"
+        return cacheDir.resolve(fileName)
     }
 
     private class CliCompatibleInstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
