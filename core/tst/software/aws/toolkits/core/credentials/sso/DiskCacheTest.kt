@@ -69,7 +69,7 @@ class DiskCacheTest {
     }
 
     @Test
-    fun clientRegistrationExpiringInLessThan15MinutesIsTreatedAsExpired() {
+    fun clientRegistrationExpiringSoonIsTreatedAsExpired() {
         val expiationTime = now.plus(14, ChronoUnit.MINUTES)
         cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText(
             """
@@ -165,8 +165,25 @@ class DiskCacheTest {
     }
 
     @Test
+    fun accessTokenExpiringSoonIsTreatedAsExpired() {
+        val expiationTime = now.plus(14, ChronoUnit.MINUTES)
+        cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
+            """
+            {
+                "startUrl": "$ssoUrl", 
+                "region": "$ssoRegion",
+                "accessToken": "DummyAccessToken",
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadAccessToken(ssoUrl)).isNull()
+    }
+
+    @Test
     fun validAccessTokenReturnsCorrectly() {
-        val expiationTime = now.plusSeconds(100)
+        val expiationTime = now.plus(20, ChronoUnit.MINUTES)
         cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
             """
             {
@@ -247,5 +264,4 @@ class DiskCacheTest {
     }
 
     private fun isUnix() = !System.getProperty("os.name").toLowerCase().startsWith("windows")
-
 }

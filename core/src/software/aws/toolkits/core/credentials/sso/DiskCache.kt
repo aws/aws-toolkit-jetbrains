@@ -52,7 +52,7 @@ class DiskCache(
         return tryOrNull {
             val clientRegistration = objectMapper.readValue<ClientRegistration>(inputStream)
             // If the client registration is going to expire in the next 15 mins, we must treat it as already expired
-            if (clientRegistration.expiresAt.isAfter(Instant.now(clock).plus(15, ChronoUnit.MINUTES))) {
+            if (clientRegistration.expiresAt.isNotExpired()) {
                 clientRegistration
             } else {
                 null
@@ -80,7 +80,7 @@ class DiskCache(
 
         return tryOrNull {
             val clientRegistration = objectMapper.readValue<AccessToken>(inputStream)
-            if (clientRegistration.expiresAt.isAfter(Instant.now(clock))) {
+            if (clientRegistration.expiresAt.isNotExpired()) {
                 clientRegistration
             } else {
                 null
@@ -110,6 +110,8 @@ class DiskCache(
         val fileName = "$sha.json"
         return cacheDir.resolve(fileName)
     }
+
+    private fun Instant.isNotExpired(): Boolean = this.isAfter(Instant.now(clock).plus(15, ChronoUnit.MINUTES))
 
     private class CliCompatibleInstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
         override fun deserialize(parser: JsonParser, context: DeserializationContext): Instant {
