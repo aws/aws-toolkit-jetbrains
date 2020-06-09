@@ -15,8 +15,8 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeA
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
-import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth.Companion.CREDENTIAL_ID_PROPERTY
-import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth.Companion.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.services.rds.auth.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.services.rds.auth.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
@@ -55,7 +55,7 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
                 project = node.nodeProject,
                 title = message("aws.notification.title"),
                 content = message("validation_error.no_iam_auth", node.dbInstance.dbName()),
-                action = OpenBrowserAction(message("rds.validation_error.guide"), null, HelpIds.RDS_SETUP_IAM_AUTH.url)
+                action = OpenBrowserAction(message("rds.validation.setup_guide"), null, HelpIds.RDS_SETUP_IAM_AUTH.url)
             )
             return false
         }
@@ -70,7 +70,6 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
             // turn on url only config since we don't need any additional config
             it.isConfiguredByUrl = true
             it.authProviderId = IamAuth.providerId
-            // TODO add boxes
             it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY] = node.nodeProject.activeCredentialProvider().id
             it.additionalJdbcProperties[REGION_ID_PROPERTY] = node.nodeProject.activeRegion().id
         }
@@ -79,7 +78,7 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
             mysqlEngineType -> {
                 dataSource.username = username
                 // For mysql there are mysql and mysql.8 (which renders as mysql). mysql is for 5.1, but the minimum
-                // version for RDS is 5.5 so always set mysql.8
+                // version for RDS with IAM auth is 5.7 so always set mysql.8
                 dataSource.databaseDriver = DatabaseDriverManager.getInstance().getDriver("mysql.8")
                 dataSource.url = "jdbc:$jdbcMysql://$url/$database"
             }
