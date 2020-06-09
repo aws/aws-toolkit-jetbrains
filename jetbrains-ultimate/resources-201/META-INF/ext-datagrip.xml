@@ -7,11 +7,11 @@
     </extensions>
     <actions>
         <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false" >
-            <group id="rds.mysql.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateConfigurationActionGroup"/>
+            <group id="rds.mysql.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateDataSourceActionGroup"/>
             <separator/>
         </group>
         <group id="aws.toolkit.explorer.rds.postgres" popup="true" compact="false">
-            <group id="rds.postgres.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateConfigurationActionGroup"/>
+            <group id="rds.postgres.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateDataSourceActionGroup"/>
             <separator/>
         </group>
     </actions>

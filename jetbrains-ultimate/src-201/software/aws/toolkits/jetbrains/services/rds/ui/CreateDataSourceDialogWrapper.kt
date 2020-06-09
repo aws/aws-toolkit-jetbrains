@@ -12,8 +12,8 @@ import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
-class CreateConfigurationDialogWrapper(private val project: Project, private val dbInstance: DBInstance) : DialogWrapper(project) {
-    private val panel = CreateConfigurationDialog(project)
+class CreateDataSourceDialogWrapper(project: Project, private val dbInstance: DBInstance) : DialogWrapper(project) {
+    private val panel = CreateDataSourcePanel(project)
 
     init {
         title = message("rds.configure_source")

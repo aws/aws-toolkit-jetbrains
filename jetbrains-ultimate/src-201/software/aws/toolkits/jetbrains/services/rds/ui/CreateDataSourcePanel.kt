@@ -19,7 +19,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class CreateConfigurationDialog(private val project: Project) {
+class CreateDataSourcePanel(private val project: Project) {
     lateinit var panel: JPanel
     lateinit var databaseName: JTextField
     lateinit var authSelector: ComboBox<ComboOption<*>>

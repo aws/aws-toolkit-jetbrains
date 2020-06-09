@@ -18,25 +18,25 @@ import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
-import software.aws.toolkits.jetbrains.services.rds.ui.CreateConfigurationDialogWrapper
+import software.aws.toolkits.jetbrains.services.rds.ui.CreateDataSourceDialogWrapper
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 // It is registered in ext-datagrip.xml FIX_WHEN_MIN_IS_201
 @Suppress("ComponentNotRegistered")
-class CreateConfigurationActionGroup : SingleExplorerNodeActionGroup<RdsNode>("TODO add config"), DumbAware {
+class CreateDataSourceActionGroup : SingleExplorerNodeActionGroup<RdsNode>("TODO add config"), DumbAware {
     override fun getChildren(selected: RdsNode, e: AnActionEvent): List<AnAction> = listOf(
-        CreateIamConfigurationAction(selected)
+        CreateIamDataSourceAction(selected)
     )
 }
 
-class CreateIamConfigurationAction(private val node: RdsNode) : AnAction(message("rds.iam_config")) {
+class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("rds.iam_config")) {
     override fun actionPerformed(e: AnActionEvent) {
         if (!checkPrerequisites()) {
             return
         }
-        val dialog = CreateConfigurationDialogWrapper(node.nodeProject, node.dbInstance)
+        val dialog = CreateDataSourceDialogWrapper(node.nodeProject, node.dbInstance)
         if (!dialog.showAndGet()) {
             return
         }
