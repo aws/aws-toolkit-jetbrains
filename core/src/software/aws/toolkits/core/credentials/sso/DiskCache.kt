@@ -13,12 +13,15 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import software.aws.toolkits.core.utils.deleteIfExists
+import software.aws.toolkits.core.utils.filePermissions
 import software.aws.toolkits.core.utils.inputStreamIfExists
 import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.toHexString
+import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryOrNull
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.attribute.PosixFilePermission
 import java.security.MessageDigest
 import java.time.Clock
 import java.time.Instant
@@ -56,7 +59,11 @@ class DiskCache(
     }
 
     override fun saveClientRegistration(ssoRegion: String, registration: ClientRegistration) {
-        clientRegistrationCache(ssoRegion).outputStream().use {
+        val registrationCache = clientRegistrationCache(ssoRegion)
+        registrationCache.touch()
+        registrationCache.filePermissions(setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE))
+
+        registrationCache.outputStream().use {
             objectMapper.writeValue(it, registration)
         }
     }
@@ -66,7 +73,7 @@ class DiskCache(
     }
 
     override fun loadAccessToken(ssoUrl: String): AccessToken? {
-        val cacheFile = accessKeyCache(ssoUrl)
+        val cacheFile = accessTokenCache(ssoUrl)
         val inputStream = cacheFile.inputStreamIfExists() ?: return null
 
         return tryOrNull {
@@ -80,18 +87,22 @@ class DiskCache(
     }
 
     override fun saveAccessToken(ssoUrl: String, accessToken: AccessToken) {
-        accessKeyCache(ssoUrl).outputStream().use {
+        val accessTokenCache = accessTokenCache(ssoUrl)
+        accessTokenCache.touch()
+        accessTokenCache.filePermissions(setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE))
+
+        accessTokenCache.outputStream().use {
             objectMapper.writeValue(it, accessToken)
         }
     }
 
     override fun invalidateAccessToken(ssoUrl: String) {
-        accessKeyCache(ssoUrl).deleteIfExists()
+        accessTokenCache(ssoUrl).deleteIfExists()
     }
 
     private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-$ssoRegion.json")
 
-    private fun accessKeyCache(ssoUrl: String): Path {
+    private fun accessTokenCache(ssoUrl: String): Path {
         val digest = MessageDigest.getInstance("SHA-1")
         val sha = digest.digest(ssoUrl.toByteArray(Charsets.UTF_8)).toHexString()
         val fileName = "$sha.json"

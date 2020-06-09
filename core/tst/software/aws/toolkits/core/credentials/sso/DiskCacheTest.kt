@@ -11,7 +11,9 @@ import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.core.utils.writeText
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermission
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -101,7 +103,11 @@ class DiskCacheTest {
             )
         )
 
-        assertThat(cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").readText())
+        val clientRegistration = cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json")
+        if (isUnix()) {
+            assertThat(Files.getPosixFilePermissions(clientRegistration)).containsOnly(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
+        }
+        assertThat(clientRegistration.readText())
             .isEqualToIgnoringWhitespace(
                 """
                 {
@@ -205,7 +211,12 @@ class DiskCacheTest {
             )
         )
 
-        assertThat(cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").readText())
+        val accessTokenCache = cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json")
+        if (isUnix()) {
+            assertThat(Files.getPosixFilePermissions(accessTokenCache)).containsOnly(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
+        }
+
+        assertThat(accessTokenCache.readText())
             .isEqualToIgnoringWhitespace(
                 """
                 {
@@ -217,4 +228,7 @@ class DiskCacheTest {
                 """.trimIndent()
             )
     }
+
+    private fun isUnix() = !System.getProperty("os.name").toLowerCase().startsWith("windows")
+
 }
