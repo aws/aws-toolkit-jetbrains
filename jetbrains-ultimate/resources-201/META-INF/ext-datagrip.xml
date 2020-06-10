@@ -5,4 +5,7 @@
     <extensions defaultExtensionNs="aws.toolkit">
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode"/>
     </extensions>
+    <extensions defaultExtensionNs="com.intellij.database">
+        <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth"/>
+    </extensions>
 </idea-plugin>
