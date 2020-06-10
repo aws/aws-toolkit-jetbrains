@@ -16,6 +16,7 @@ import software.aws.toolkits.core.credentials.aCredentialsIdentifier
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider.RegionProviderRule
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 import software.aws.toolkits.jetbrains.settings.UseAwsCredentialRegion
 
 class CredentialsRegionHandlerTest {
@@ -30,6 +31,10 @@ class CredentialsRegionHandlerTest {
 
     private lateinit var sut: DefaultCredentialsRegionHandler
     private val notifications = mutableListOf<Notification>()
+
+    @Rule
+    @JvmField
+    val settingsRule = AwsSettingsRule()
 
     @Before
     fun setup() {
@@ -90,7 +95,7 @@ class CredentialsRegionHandlerTest {
 
     @Test
     fun `Do not use credential region if setting is set to Never, even if the partition is different`() {
-        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Never
+        settingsRule.settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Never
         val defaultRegion = regionProviderRule.createAwsRegion()
         val selectedRegion = regionProviderRule.createAwsRegion()
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
@@ -100,7 +105,7 @@ class CredentialsRegionHandlerTest {
 
     @Test
     fun `Do not use credential region if setting is set to Never, even if the region is null`() {
-        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Never
+        settingsRule.settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Never
         val defaultRegion = regionProviderRule.createAwsRegion()
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
 
@@ -109,7 +114,7 @@ class CredentialsRegionHandlerTest {
 
     @Test
     fun `Prompt appears when setting is set to prompt, selected region remains active`() {
-        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+        settingsRule.settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
 
         val defaultRegion = regionProviderRule.createAwsRegion()
         val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
@@ -125,7 +130,7 @@ class CredentialsRegionHandlerTest {
 
     @Test
     fun `Prompt only appears when region is different than default`() {
-        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+        settingsRule.settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
 
         val defaultRegion = regionProviderRule.createAwsRegion()
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
@@ -138,7 +143,7 @@ class CredentialsRegionHandlerTest {
 
     @Test
     fun `Selecting Never at the prompt sets setting to Never`() {
-        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+        settingsRule.settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
 
         val defaultRegion = regionProviderRule.createAwsRegion()
         val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
@@ -159,7 +164,7 @@ class CredentialsRegionHandlerTest {
 
     @Test
     fun `Selecting Always at the prompt sets setting to Always`() {
-        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+        settingsRule.settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
 
         val defaultRegion = regionProviderRule.createAwsRegion()
         val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
