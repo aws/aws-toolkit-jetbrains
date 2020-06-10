@@ -38,15 +38,15 @@ internal open class DefaultCredentialsRegionHandler(private val project: Project
             selectedRegion == defaultCredentialRegion -> return defaultCredentialRegion
             selectedRegion?.partitionId != defaultCredentialRegion.partitionId -> return defaultCredentialRegion
             settings.useDefaultCredentialRegion == UseAwsCredentialRegion.Always -> return defaultCredentialRegion
-            settings.useDefaultCredentialRegion == UseAwsCredentialRegion.Prompt -> promptForRegionChange(identifier, defaultCredentialRegion)
+            settings.useDefaultCredentialRegion == UseAwsCredentialRegion.Prompt -> promptForRegionChange(defaultCredentialRegion)
         }
         return selectedRegion
     }
 
-    private fun promptForRegionChange(identifier: CredentialIdentifier, defaultCredentialRegion: AwsRegion) {
+    private fun promptForRegionChange(defaultCredentialRegion: AwsRegion) {
         notifyInfo(
             message("aws.notification.title"),
-            message("settings.credentials.prompt_for_default_region_switch", identifier.displayName),
+            message("settings.credentials.prompt_for_default_region_switch", defaultCredentialRegion.id),
             project = project,
             notificationActions = listOf(
                 NotificationAction.create(message("settings.credentials.prompt_for_default_region_switch.yes")) { event, _ ->
