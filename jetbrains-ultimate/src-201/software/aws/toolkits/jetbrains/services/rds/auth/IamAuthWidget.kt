@@ -26,7 +26,9 @@ const val REGION_ID_PROPERTY = "AWS.RegionId"
 
 class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     private val credentialSelector = CredentialProviderSelector()
-    private val regionSelector = RegionSelector()
+    private val regionSelector = RegionSelector().also {
+        it.setRegions(AwsRegionProvider.getInstance().allRegions().values.toMutableList())
+    }
 
     override fun createPanel(): JPanel {
         val panel = JPanel(GridLayoutManager(3, 6))
@@ -38,8 +40,6 @@ class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
         panel.add(credentialSelector, UrlPropertiesPanel.createSimpleConstraints(1, 1, 3))
         panel.add(regionLabel, UrlPropertiesPanel.createLabelConstraints(2, 0, regionLabel.preferredSize.getWidth()))
         panel.add(regionSelector, UrlPropertiesPanel.createSimpleConstraints(2, 1, 3))
-
-        regionSelector.setRegions(AwsRegionProvider.getInstance().allRegions().values.toMutableList())
 
         return panel
     }
@@ -72,12 +72,12 @@ class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     override fun isPasswordChanged(): Boolean = false
 
     override fun updateFromUrl(holder: ParametersHolder) {
-        // Try to get region from url
+        // Try to get region from url and set the region box on a best effort basis
         val url = (holder as? UrlEditorModel)?.url
         val regionId = RdsResources.extractRegionFromUrl(url)
         val region = AwsRegionProvider.getInstance().allRegions()[regionId]
         region?.let {
-            regionSelector.selectedRegion = region
+            regionSelector.selectedRegion = it
         }
         super.updateFromUrl(holder)
     }
