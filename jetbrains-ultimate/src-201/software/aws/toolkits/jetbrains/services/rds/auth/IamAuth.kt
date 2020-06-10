@@ -59,7 +59,12 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
-            val credentials = getCredentials(connection)
+            val credentials = try {
+                getCredentials(connection)
+            } catch (e: Exception) {
+                notifyError(title = message("rds.validation.failed"), content = e.message ?: "")
+                null
+            }
             DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
         }
     }
@@ -91,11 +96,11 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
         val credentialsId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("rds.validation.no_profile_selected"))
-        val urlParser = JdbcUrlParserUtil.parsed(connection.connectionPoint.dataSource)
+        val parsedUrl = JdbcUrlParserUtil.parsed(connection.connectionPoint.dataSource)
             ?: throw IllegalArgumentException(message("rds.validation.failed_to_parse_url"))
-        val host = urlParser.getParameter("host")
+        val host = parsedUrl.getParameter("host")
             ?: throw IllegalArgumentException(message("rds.validation.no_host_specified"))
-        val port = urlParser.getParameter("port")?.toInt()
+        val port = parsedUrl.getParameter("port")?.toInt()
             ?: throw IllegalArgumentException(message("rds.validation.no_port_specified"))
         val user = connection.connectionPoint.dataSource.username
 
