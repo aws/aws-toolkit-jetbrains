@@ -67,6 +67,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
 
     private fun getCredentials(connection: ProtoConnection): Credentials? {
         val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
+            ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
         val credentialsId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("rds.validation.no_profile_selected"))
         val urlParser = JdbcUrlParserUtil.parsed(connection.connectionPoint.dataSource)
@@ -77,16 +78,15 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             ?: throw IllegalArgumentException(message("rds.validation.no_port_specified"))
         val user = connection.connectionPoint.dataSource.username
 
-        val region = extractRegionFromUrl(host) ?: regionId ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
-        val awsRegion = AwsRegionProvider.getInstance().allRegions()[region]
-            ?: throw IllegalArgumentException(message("rds.validation.invalid_region_specified", region))
+        val region = AwsRegionProvider.getInstance().allRegions()[regionId]
+            ?: throw IllegalArgumentException(message("rds.validation.invalid_region_specified", regionId))
 
         val credentialManager = CredentialManager.getInstance()
         val credentialProviderId = credentialManager.getCredentialIdentifierById(credentialsId)
             ?: throw IllegalArgumentException(message("rds.validation.invalid_credential_specified", credentialsId))
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialProviderId, awsRegion)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialProviderId, region)
 
-        val authToken = generateAuthToken(host, port, user, credentialProvider, awsRegion)
+        val authToken = generateAuthToken(host, port, user, credentialProvider, region)
 
         return Credentials(user, authToken)
     }
@@ -114,11 +114,8 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         return Aws4Signer.create().presign(httpRequest, presignRequest).uri.toString().removePrefix("https://")
     }
 
-    private fun extractRegionFromUrl(url: String): String? = RDS_REGION_REGEX.find(url)?.groupValues?.get(1)
-
     companion object {
         const val providerId = "aws.rds.iam"
         private val LOG = getLogger<IamAuth>()
-        private val RDS_REGION_REGEX = """.*\.(.+).rds\.""".toRegex()
     }
 }
