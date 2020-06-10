@@ -7,7 +7,7 @@
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.RedshiftExplorerRootNode"/>
     </extensions>
     <actions>
-        <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false" >
+        <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false">
             <group id="rds.mysql.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateDataSourceActionGroup"/>
             <separator/>
         </group>

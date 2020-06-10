@@ -58,6 +58,10 @@ enum class HelpIds(shortId: String, val url: String) {
         "setupCredentials",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/credentials"
     ),
+    SAM_CLI_INSTALL(
+        "sam.install",
+        "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html"
+    ),
     // RDS
     RDS_SETUP_IAM_AUTH(
         "rdsIamAuth",
