@@ -36,6 +36,14 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletionStage
 
+data class RdsAuthInformation(
+    val hostname: String,
+    val port: Int,
+    val user: String,
+    val credentialProvider: AwsCredentialsProvider,
+    val region: AwsRegion
+)
+
 // This is marked as internal but is what we were told to use
 class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RdsIamAuth") {
     override fun getId(): String = providerId
@@ -73,6 +81,12 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     }
 
     private fun getCredentials(connection: ProtoConnection): Credentials? {
+        val authInformation = validateConnection(connection)
+        val authToken = generateAuthToken(authInformation)
+        return Credentials(authInformation.user, authToken)
+    }
+
+    internal fun validateConnection(connection: ProtoConnection): RdsAuthInformation {
         val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
         val credentialsId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
@@ -85,6 +99,10 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             ?: throw IllegalArgumentException(message("rds.validation.no_port_specified"))
         val user = connection.connectionPoint.dataSource.username
 
+        if (user.isBlank()) {
+            throw IllegalArgumentException(message("rds.validation.no_username"))
+        }
+
         val region = AwsRegionProvider.getInstance().allRegions()[regionId]
             ?: throw IllegalArgumentException(message("rds.validation.invalid_region_specified", regionId))
 
@@ -93,29 +111,33 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             ?: throw IllegalArgumentException(message("rds.validation.invalid_credential_specified", credentialsId))
         val credentialProvider = credentialManager.getAwsCredentialProvider(credentialProviderId, region)
 
-        val authToken = generateAuthToken(host, port, user, credentialProvider, region)
-
-        return Credentials(user, authToken)
+        return RdsAuthInformation(
+            host,
+            port,
+            user,
+            credentialProvider,
+            region
+        )
     }
 
-    private fun generateAuthToken(hostname: String, port: Int, user: String, credentialsProvider: AwsCredentialsProvider, region: AwsRegion): String {
+    private fun generateAuthToken(authInformation: RdsAuthInformation): String {
         // TODO: Replace when SDK V2 backfills the pre-signer for rds auth token
         val httpRequest = SdkHttpFullRequest.builder()
             .method(SdkHttpMethod.GET)
             .protocol("https")
-            .host(hostname)
-            .port(port)
+            .host(authInformation.hostname)
+            .port(authInformation.port)
             .encodedPath("/")
-            .putRawQueryParameter("DBUser", user)
+            .putRawQueryParameter("DBUser", authInformation.user)
             .putRawQueryParameter("Action", "connect")
             .build()
 
         val expirationTime = Instant.now().plus(15, ChronoUnit.MINUTES)
         val presignRequest = Aws4PresignerParams.builder()
             .expirationTime(expirationTime)
-            .awsCredentials(credentialsProvider.resolveCredentials())
+            .awsCredentials(authInformation.credentialProvider.resolveCredentials())
             .signingName("rds-db")
-            .signingRegion(Region.of(region.id))
+            .signingRegion(Region.of(authInformation.region.id))
             .build()
 
         return Aws4Signer.create().presign(httpRequest, presignRequest).uri.toString().removePrefix("https://")
