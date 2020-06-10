@@ -100,7 +100,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         val user = connection.connectionPoint.dataSource.username
 
         if (user.isBlank()) {
-            throw IllegalArgumentException(message("rds.validation.no_username"))
+            throw IllegalArgumentException(message("rds.validation.username"))
         }
 
         val region = AwsRegionProvider.getInstance().allRegions()[regionId]
