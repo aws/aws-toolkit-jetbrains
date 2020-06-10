@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.rds.auth
 
 import com.intellij.credentialStore.Credentials
+import com.intellij.database.Dbms
 import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DatabaseAuthProvider
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
@@ -36,11 +37,7 @@ import java.util.concurrent.CompletionStage
 class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("IamAuth") {
     override fun getId(): String = providerId
 
-    override fun isApplicable(dataSource: LocalDataSource): Boolean {
-        val dbms = dataSource.dbms
-        // Postgres also picks up redshift which has different auth so ignore it
-        return (dbms.isMysql || dbms.isPostgres) && !dbms.isRedshift
-    }
+    override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES
 
     override fun getDisplayName(): String = message("rds.iam_connection_display_name")
 
@@ -120,7 +117,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     private fun extractRegionFromUrl(url: String): String? = RDS_REGION_REGEX.find(url)?.groupValues?.get(1)
 
     companion object {
-        const val providerId = "aws.iam"
+        const val providerId = "aws.rds.iam"
         private val LOG = getLogger<IamAuth>()
         private val RDS_REGION_REGEX = """.*\.(.+).rds\.""".toRegex()
     }
