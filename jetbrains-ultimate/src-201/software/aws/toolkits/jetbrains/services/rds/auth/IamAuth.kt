@@ -62,6 +62,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             val credentials = try {
                 getCredentials(connection)
             } catch (e: Exception) {
+                LOG.error(e) { "An exception was thrown creating the db credentials" }
                 notifyError(title = message("rds.validation.failed"), content = e.message ?: "")
                 null
             }
