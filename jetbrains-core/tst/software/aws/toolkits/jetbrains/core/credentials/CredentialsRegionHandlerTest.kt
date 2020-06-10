@@ -1,0 +1,175 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.core.credentials
+
+import com.intellij.notification.Notification
+import com.intellij.notification.Notifications
+import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.TestDataProvider
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import software.aws.toolkits.core.credentials.aCredentialsIdentifier
+import software.aws.toolkits.core.region.anAwsRegion
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider.RegionProviderRule
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.UseAwsCredentialRegion
+
+class CredentialsRegionHandlerTest {
+
+    @Rule
+    @JvmField
+    val projectRule = ProjectRule()
+
+    @Rule
+    @JvmField
+    val regionProviderRule = RegionProviderRule()
+
+    private lateinit var sut: DefaultCredentialsRegionHandler
+    private val notifications = mutableListOf<Notification>()
+
+    @Before
+    fun setup() {
+        sut = DefaultCredentialsRegionHandler(projectRule.project)
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Always
+        notifications.clear()
+        with(projectRule.project.messageBus.connect(projectRule.project)) {
+            setDefaultHandler { _, params ->
+                notifications.add(params[0] as Notification)
+            }
+            subscribe(Notifications.TOPIC)
+        }
+    }
+
+    @Test
+    fun `Credential with no default region returns selected region`() {
+        val identifier = aCredentialsIdentifier(defaultRegionId = null)
+        val region = anAwsRegion()
+
+        assertThat(sut.determineSelectedRegion(identifier, region)).isEqualTo(region)
+    }
+
+    @Test
+    fun `When selected region is null always use credential region`() {
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = null)).isEqualTo(defaultRegion)
+    }
+
+    @Test
+    fun `Always use credential region if its partition is different from the selected region`() {
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = regionProviderRule.createAwsRegion())).isEqualTo(defaultRegion)
+    }
+
+    @Test
+    fun `Always use credential region if setting is set to Always`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Always
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(defaultRegion)
+    }
+
+    @Test
+    fun `Do not use credential region if setting is set to Never`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Never
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(selectedRegion)
+    }
+
+    @Test
+    fun `Do not use credential region if setting is set to Never, even if the partition is different`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Never
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val selectedRegion = regionProviderRule.createAwsRegion()
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(selectedRegion)
+    }
+
+    @Test
+    fun `Do not use credential region if setting is set to Never, even if the region is null`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Never
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = null)).isNull()
+    }
+
+    @Test
+    fun `Prompt appears when setting is set to prompt, selected region remains active`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        val newSelected = sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)
+
+        assertThat(newSelected).isEqualTo(selectedRegion)
+        assertThat(notifications).hasSize(1).hasOnlyOneElementSatisfying {
+            assertThat(it.actions).hasSize(3)
+        }
+    }
+
+    @Test
+    fun `Prompt only appears when region is different than default`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        val newSelected = sut.determineSelectedRegion(identifier, selectedRegion = defaultRegion)
+
+        assertThat(newSelected).isEqualTo(defaultRegion)
+        assertThat(notifications).isEmpty()
+    }
+
+    @Test
+    fun `Selecting Never at the prompt sets setting to Never`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)
+
+        assertThat(notifications).hasSize(1)
+
+        val notification = notifications.first()
+
+        Notification.fire(notification, notification.actions.first { it.templateText == "Never" })
+
+        assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Never)
+    }
+
+    @Test
+    fun `Selecting Always at the prompt sets setting to Always`() {
+        AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+
+        val defaultRegion = regionProviderRule.createAwsRegion()
+        val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
+        val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
+
+        sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)
+
+        assertThat(notifications).hasSize(1)
+
+        val notification = notifications.first()
+
+        Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, TestDataProvider(projectRule.project))
+
+        assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Always)
+    }
+}

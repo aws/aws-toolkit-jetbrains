@@ -5,8 +5,9 @@ package software.aws.toolkits.jetbrains.settings
 
 import java.util.UUID
 
-class MockAwsSettings(
-    override var isTelemetryEnabled: Boolean,
-    override var promptedForTelemetry: Boolean,
-    override val clientId: UUID
-) : AwsSettings
+class MockAwsSettings : AwsSettings {
+    override var isTelemetryEnabled: Boolean = false
+    override var promptedForTelemetry: Boolean = false
+    override var useDefaultCredentialRegion: UseAwsCredentialRegion = UseAwsCredentialRegion.Prompt
+    override val clientId: UUID = UUID.randomUUID()
+}
