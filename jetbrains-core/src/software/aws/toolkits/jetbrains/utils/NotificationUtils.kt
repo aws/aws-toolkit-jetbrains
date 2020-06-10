@@ -8,7 +8,6 @@ import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationListener
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications.Bus.notify
-import com.intellij.notification.NotificationsManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -44,17 +43,9 @@ fun Throwable.notifyError(title: String = "", project: Project? = null) {
 
 private fun notify(type: NotificationType, title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
     val notification = Notification(GROUP_DISPLAY_ID, title, content, type)
-    project?.let {
-        NotificationsManager.getNotificationsManager()
-            .getNotificationsOfType(Notification::class.java, project)
-            .filter { it.title == title }
-            .forEach { it.hideBalloon() }
-    }
-
     notificationActions.forEach {
         notification.addAction(if (it !is NotificationAction) createNotificationExpiringAction(it) else it)
     }
-
     notify(notification, project)
 }
 

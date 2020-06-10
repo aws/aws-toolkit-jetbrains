@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.notification.Notification
-import com.intellij.notification.Notifications
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestDataProvider
 import com.intellij.testFramework.runInEdtAndWait
@@ -18,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProvider.RegionProv
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 import software.aws.toolkits.jetbrains.settings.UseAwsCredentialRegion
+import software.aws.toolkits.jetbrains.utils.NotificationListenerRule
 
 class CredentialsRegionHandlerTest {
 
@@ -29,8 +29,11 @@ class CredentialsRegionHandlerTest {
     @JvmField
     val regionProviderRule = RegionProviderRule()
 
+    @Rule
+    @JvmField
+    val notificationListener = NotificationListenerRule(projectRule)
+
     private lateinit var sut: DefaultCredentialsRegionHandler
-    private val notifications = mutableListOf<Notification>()
 
     @Rule
     @JvmField
@@ -40,13 +43,6 @@ class CredentialsRegionHandlerTest {
     fun setup() {
         sut = DefaultCredentialsRegionHandler(projectRule.project)
         AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Always
-        notifications.clear()
-        with(projectRule.project.messageBus.connect(projectRule.project)) {
-            setDefaultHandler { _, params ->
-                notifications.add(params[0] as Notification)
-            }
-            subscribe(Notifications.TOPIC)
-        }
     }
 
     @Test
@@ -123,7 +119,7 @@ class CredentialsRegionHandlerTest {
         val newSelected = sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)
 
         assertThat(newSelected).isEqualTo(selectedRegion)
-        assertThat(notifications).hasSize(1).hasOnlyOneElementSatisfying {
+        assertThat(notificationListener.notifications).hasSize(1).hasOnlyOneElementSatisfying {
             assertThat(it.actions).hasSize(3)
         }
     }
@@ -138,7 +134,7 @@ class CredentialsRegionHandlerTest {
         val newSelected = sut.determineSelectedRegion(identifier, selectedRegion = defaultRegion)
 
         assertThat(newSelected).isEqualTo(defaultRegion)
-        assertThat(notifications).isEmpty()
+        assertThat(notificationListener.notifications).isEmpty()
     }
 
     @Test
@@ -151,9 +147,9 @@ class CredentialsRegionHandlerTest {
 
         sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)
 
-        assertThat(notifications).hasSize(1)
+        assertThat(notificationListener.notifications).hasSize(1)
 
-        val notification = notifications.first()
+        val notification = notificationListener.notifications.first()
 
         runInEdtAndWait {
             Notification.fire(notification, notification.actions.first { it.templateText == "Never" })
@@ -172,9 +168,9 @@ class CredentialsRegionHandlerTest {
 
         sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)
 
-        assertThat(notifications).hasSize(1)
+        assertThat(notificationListener.notifications).hasSize(1)
 
-        val notification = notifications.first()
+        val notification = notificationListener.notifications.first()
 
         runInEdtAndWait {
             Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, TestDataProvider(projectRule.project))
