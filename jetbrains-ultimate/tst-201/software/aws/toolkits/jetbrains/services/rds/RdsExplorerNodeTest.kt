@@ -9,9 +9,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.rds.model.DBInstance
+import software.amazon.awssdk.utils.CompletableFutureUtils
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode
 import software.aws.toolkits.resources.message
 
@@ -76,13 +78,19 @@ class RdsExplorerNodeTest {
         val serviceRootNode = rootNode.buildServiceRootNode(projectRule.project)
         assertThat(serviceRootNode.children).isNotEmpty
         serviceRootNode.children.forEach { node ->
-            assertThat(node.children).hasSize(1)
-            assertThat(node.children).allMatch { it is AwsExplorerEmptyNode }
+            assertThat(node.children).hasOnlyOneElementSatisfying { it is AwsExplorerEmptyNode }
         }
     }
 
     @Test
     fun exceptionMakesErrorNodes() {
+        resourceCache().addEntry(RdsResources.LIST_INSTANCES_MYSQL, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
+        resourceCache().addEntry(RdsResources.LIST_INSTANCES_POSTGRES, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
+        val serviceRootNode = rootNode.buildServiceRootNode(projectRule.project)
+        assertThat(serviceRootNode.children).isNotEmpty
+        serviceRootNode.children.forEach { node ->
+            assertThat(node.children).hasOnlyOneElementSatisfying { it is AwsExplorerErrorNode }
+        }
     }
 
     private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
