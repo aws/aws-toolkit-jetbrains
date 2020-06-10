@@ -7,6 +7,7 @@ import com.intellij.notification.Notification
 import com.intellij.notification.Notifications
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestDataProvider
+import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -149,7 +150,9 @@ class CredentialsRegionHandlerTest {
 
         val notification = notifications.first()
 
-        Notification.fire(notification, notification.actions.first { it.templateText == "Never" })
+        runInEdtAndWait {
+            Notification.fire(notification, notification.actions.first { it.templateText == "Never" })
+        }
 
         assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Never)
     }
@@ -168,7 +171,9 @@ class CredentialsRegionHandlerTest {
 
         val notification = notifications.first()
 
-        Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, TestDataProvider(projectRule.project))
+        runInEdtAndWait {
+            Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, TestDataProvider(projectRule.project))
+        }
 
         assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Always)
     }
