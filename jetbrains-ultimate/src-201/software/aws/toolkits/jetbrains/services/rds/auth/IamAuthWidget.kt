@@ -12,6 +12,7 @@ import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.text.nullize
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.rds.RdsResources

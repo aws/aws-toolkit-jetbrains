@@ -25,8 +25,11 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.sql.SQLException
 import java.time.Instant
@@ -34,15 +37,13 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletionStage
 
 // This is marked as internal but is what we were told to use
-class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("IamAuth") {
+class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RdsIamAuth") {
     override fun getId(): String = providerId
+    override fun getDisplayName(): String = message("rds.iam_connection_display_name")
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES
 
-    override fun getDisplayName(): String = message("rds.iam_connection_display_name")
-
-    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? =
-        IamAuthWidget()
+    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
 
     override fun intercept(
         connection: ProtoConnection,
@@ -62,7 +63,13 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         attempt: Int
     ): CompletionStage<ProtoConnection>? {
         LOG.error(e) { "proto = [$proto], silent = [$silent], attempt = [$attempt]" }
-        return super.handleConnectionFailure(proto, e, silent, attempt)
+        notifyError(
+            title = message("aws.notification.title"),
+            content = message("rds.connection_Failed"),
+            action = OpenBrowserAction(message("rds.validation.setup_guide"), null, HelpIds.RDS_SETUP_IAM_AUTH.url)
+        )
+        // return null because we don't attempt to do anything further
+        return null
     }
 
     private fun getCredentials(connection: ProtoConnection): Credentials? {
