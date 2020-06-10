@@ -36,8 +36,8 @@ class RdsExplorerNodeTest {
             )
         )
         val serviceRootNode = rootNode.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).anyMatch { it.value == message("rds.mysql") }
-        val mySqlNode = serviceRootNode.children.first { it.value == message("rds.mysql") }
+        assertThat(serviceRootNode.children).anyMatch { it.displayName() == message("rds.mysql") }
+        val mySqlNode = serviceRootNode.children.first { it.displayName() == message("rds.mysql") }
         assertThat(mySqlNode.children).hasSize(2)
         assertThat(mySqlNode.children).anyMatch {
             (it as RdsNode).dbInstance.dbName() == name
@@ -58,8 +58,8 @@ class RdsExplorerNodeTest {
             )
         )
         val serviceRootNode = rootNode.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).anyMatch { it.value == message("rds.postgres") }
-        val mySqlNode = serviceRootNode.children.first { it.value == message("rds.postgres") }
+        assertThat(serviceRootNode.children).anyMatch { it.displayName() == message("rds.postgres") }
+        val mySqlNode = serviceRootNode.children.first { it.displayName() == message("rds.postgres") }
         assertThat(mySqlNode.children).hasSize(2)
         assertThat(mySqlNode.children).anyMatch {
             (it as RdsNode).dbInstance.dbName() == name

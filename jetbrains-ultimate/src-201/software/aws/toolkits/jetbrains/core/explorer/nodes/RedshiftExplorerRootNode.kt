@@ -14,4 +14,3 @@ class RedshiftExplorerRootNode : AwsExplorerServiceNode {
 
     override fun buildServiceRootNode(project: Project) = RedshiftExplorerParentNode(project, this)
 }
-
