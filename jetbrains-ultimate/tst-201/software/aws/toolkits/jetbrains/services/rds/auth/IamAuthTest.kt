@@ -65,7 +65,7 @@ class IamAuthTest {
     fun validateConnectionNoPort() {
         iamAuth.validateConnection(buildConnection(hasPort = false))
     }
-    
+
     @Test(expected = IllegalArgumentException::class)
     fun validateConnectionNoHost() {
         iamAuth.validateConnection(buildConnection(hasHost = false))
@@ -80,7 +80,11 @@ class IamAuthTest {
         hasPort: Boolean = true
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
-            on { url } doReturn if (hasUrl) "jdbc:postgresql://${if (hasHost) "coolpostgresdb" else ""}.555555.us-west-2.rds.amazonaws.com${if (hasPort) ":5432" else ""}/dev" else null
+            on { url } doReturn if (hasUrl) {
+                "jdbc:postgresql://${if (hasHost) "coolpostgresdb.555555.us-west-2.rds.amazonaws.com" else ""}${if (hasPort) ":5432" else ""}/dev"
+            } else {
+                null
+            }
             on { databaseDriver } doReturn null
             on { driverClass } doReturn "org.postgresql.Driver"
             on { username } doReturn if (hasUsername) RuleUtils.randomName() else ""
