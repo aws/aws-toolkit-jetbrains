@@ -51,7 +51,6 @@ class DiskCache(
         val inputStream = clientRegistrationCache(ssoRegion).inputStreamIfExists() ?: return null
         return tryOrNull {
             val clientRegistration = objectMapper.readValue<ClientRegistration>(inputStream)
-            // If the client registration is going to expire in the next 15 mins, we must treat it as already expired
             if (clientRegistration.expiresAt.isNotExpired()) {
                 clientRegistration
             } else {
@@ -80,6 +79,8 @@ class DiskCache(
 
         return tryOrNull {
             val clientRegistration = objectMapper.readValue<AccessToken>(inputStream)
+            // Use same expiration logic as client registration even though RFC/SEP does not specify it.
+            // This prevents a cache entry being returned as valid and then expired when we go to use it.
             if (clientRegistration.expiresAt.isNotExpired()) {
                 clientRegistration
             } else {
@@ -102,7 +103,7 @@ class DiskCache(
         accessTokenCache(ssoUrl).deleteIfExists()
     }
 
-    private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-$ssoRegion.json")
+    private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
 
     private fun accessTokenCache(ssoUrl: String): Path {
         val digest = MessageDigest.getInstance("SHA-1")
@@ -111,6 +112,7 @@ class DiskCache(
         return cacheDir.resolve(fileName)
     }
 
+    // If the item is going to expire in the next 15 mins, we must treat it as already expired
     private fun Instant.isNotExpired(): Boolean = this.isAfter(Instant.now(clock).plus(15, ChronoUnit.MINUTES))
 
     private class CliCompatibleInstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {

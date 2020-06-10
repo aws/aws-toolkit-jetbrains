@@ -48,14 +48,14 @@ class DiskCacheTest {
 
     @Test
     fun corruptClientRegistrationReturnsNull() {
-        cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText("badData")
+        cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json").writeText("badData")
 
         assertThat(sut.loadClientRegistration(ssoRegion)).isNull()
     }
 
     @Test
     fun expiredClientRegistrationReturnsNull() {
-        cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText(
+        cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json").writeText(
             """
             {
                 "clientId": "DummyId", 
@@ -71,7 +71,7 @@ class DiskCacheTest {
     @Test
     fun clientRegistrationExpiringSoonIsTreatedAsExpired() {
         val expiationTime = now.plus(14, ChronoUnit.MINUTES)
-        cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText(
+        cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json").writeText(
             """
             {
                 "clientId": "DummyId", 
@@ -87,7 +87,7 @@ class DiskCacheTest {
     @Test
     fun validClientRegistrationReturnsCorrectly() {
         val expiationTime = now.plus(20, ChronoUnit.MINUTES)
-        cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json").writeText(
+        cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json").writeText(
             """
             {
                 "clientId": "DummyId", 
@@ -120,7 +120,7 @@ class DiskCacheTest {
             )
         )
 
-        val clientRegistration = cacheLocation.resolve("aws-toolkit-jetbrains-$ssoRegion.json")
+        val clientRegistration = cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
         if (isUnix()) {
             assertThat(Files.getPosixFilePermissions(clientRegistration)).containsOnly(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
         }

@@ -40,7 +40,7 @@ class SsoAccessTokenProvider(
             return it
         }
 
-        // Based on botocore: https://github.com/boto/botocore/blame/5dc8ee27415dc97cfff75b5bcfa66d410424e665/botocore/utils.py#L1753
+        // Based on botocore: https://github.com/boto/botocore/blob/5dc8ee27415dc97cfff75b5bcfa66d410424e665/botocore/utils.py#L1753
         val registerResponse = client.registerClient {
             it.clientType(CLIENT_REGISTRATION_TYPE)
             it.clientName("aws-toolkit-jetbrains-${Instant.now(clock)}")
