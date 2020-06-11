@@ -5,6 +5,19 @@
     <extensions defaultExtensionNs="aws.toolkit">
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode"/>
     </extensions>
+    <actions>
+        <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false">
+            <group id="rds.mysql.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateDataSourceActionGroup"/>
+            <separator/>
+        </group>
+        <group id="aws.toolkit.explorer.rds.postgres" popup="true" compact="false">
+            <group id="rds.postgres.actions" compact="true" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateDataSourceActionGroup"/>
+            <separator/>
+        </group>
+    </actions>
+    <extensions defaultExtensionNs="com.intellij.database">
+        <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth"/>
+    </extensions>
     <extensions defaultExtensionNs="com.intellij.database">
         <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth"/>
     </extensions>
