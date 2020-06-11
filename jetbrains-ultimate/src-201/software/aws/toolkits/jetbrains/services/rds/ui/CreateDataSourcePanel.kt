@@ -51,7 +51,7 @@ class CreateDataSourcePanel(private val project: Project) {
     fun getUsername(): String? = authSelector.selected().getUsername()
 }
 
-private class CacheBackedJBTextField(project: Project) : JBTextField(), CoroutineScope by ApplicationThreadPoolScope("CacheBackedJBLabel") {
+class CacheBackedJBTextField(project: Project) : JBTextField(), CoroutineScope by ApplicationThreadPoolScope("CacheBackedJBLabel") {
     var valid: Boolean = false
 
     init {
@@ -99,6 +99,6 @@ fun ComboOption<*>?.getUsername() = when (this) {
     is ComboOption.CurrentUser -> (component as? CacheBackedJBTextField)?.let { if (it.valid) it.text.substringAfter(':') else null }
     is ComboOption.User -> component.selected()?.user?.userName()
     is ComboOption.Role -> component.selected()?.name
-    is ComboOption.Custom -> component.text
+    is ComboOption.Custom -> if (component.text.isNullOrBlank()) null else component.text
     else -> throw IllegalStateException("Combo box is set to null!")
 }

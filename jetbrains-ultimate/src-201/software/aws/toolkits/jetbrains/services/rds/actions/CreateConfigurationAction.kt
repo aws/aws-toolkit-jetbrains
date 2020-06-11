@@ -12,7 +12,6 @@ import com.intellij.openapi.progress.PerformInBackgroundOption
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
-import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
@@ -67,7 +66,6 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
         }.queue()
     }
 
-    @TestOnly
     internal fun checkPrerequisites(): Boolean {
         // Assert IAM auth enabled
         if (!node.dbInstance.iamDatabaseAuthenticationEnabled()) {
@@ -82,7 +80,6 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
         return true
     }
 
-    @TestOnly
     internal fun createDatasource(registry: DataSourceRegistry, username: String, database: String) {
         val endpoint = node.dbInstance.endpoint()
         val url = "${endpoint.address()}:${endpoint.port()}"
