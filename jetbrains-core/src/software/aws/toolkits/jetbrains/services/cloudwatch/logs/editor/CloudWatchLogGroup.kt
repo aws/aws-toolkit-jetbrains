@@ -89,7 +89,7 @@ class CloudWatchLogGroup(
                     oldTable?.let { launch { Disposer.dispose(it) } }
                 }
                 launch {
-                    table.channel.send(LogActor.Message.LOAD_INITIAL_FILTER(searchField.text))
+                    table.channel.send(LogActor.Message.LoadInitialFilter(searchField.text))
                 }
             }
         }
@@ -97,7 +97,7 @@ class CloudWatchLogGroup(
 
     private fun addToolbar() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.addAction(object : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh), DumbAware {
+        actionGroup.addAction(object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
             override fun actionPerformed(e: AnActionEvent) {
                 CloudwatchlogsTelemetry.refreshGroup(project)
                 refreshTable()
@@ -107,7 +107,7 @@ class CloudWatchLogGroup(
     }
 
     private fun refreshTable() {
-        launch { groupTable.channel.send(LogActor.Message.LOAD_INITIAL()) }
+        launch { groupTable.channel.send(LogActor.Message.LoadInitial) }
     }
 
     override fun dispose() {}

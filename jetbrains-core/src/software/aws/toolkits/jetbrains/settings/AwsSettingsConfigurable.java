@@ -34,9 +34,8 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager;
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType;
 import software.aws.toolkits.jetbrains.core.executables.CfnLintExecutable;
+import software.aws.toolkits.jetbrains.core.help.HelpIds;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryEnabledChangedNotifier;
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService;
 
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String CLOUDDEBUG = "clouddebug";
@@ -62,8 +61,6 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private JPanel remoteDebugSettings;
     private JPanel applicationLevelSettings;
 
-    private final TelemetryEnabledChangedNotifier publisher;
-
     public AwsSettingsConfigurable(Project project) {
         this.project = project;
 
@@ -71,8 +68,6 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         serverlessSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.serverless_label")));
         cfnLintSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.cfnlint_label")));
         remoteDebugSettings.setBorder(IdeBorderFactory.createTitledBorder(message("aws.settings.remote_debug_label")));
-
-        publisher = TelemetryService.syncPublisher();
 
         SwingHelper.setPreferredWidth(cfnLintExecutablePath, this.panel.getWidth());
         SwingHelper.setPreferredWidth(samExecutablePath, this.panel.getWidth());
@@ -87,14 +82,11 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     }
 
     private void createUIComponents() {
-        cloudDebugHelp = createHelpLink("aws.settings.clouddebug.help_url");
-        cloudDebugHelp.setEnabled(true);
+        cloudDebugHelp = createHelpLink(HelpIds.CLOUD_DEBUG_ENABLE);
         cloudDebugExecutablePath = createCliConfigurationElement(getCloudDebugExecutableInstance(), CLOUDDEBUG);
-        samHelp = createHelpLink("lambda.sam.cli.install_url");
-        samHelp.setEnabled(true);
+        samHelp = createHelpLink(HelpIds.SAM_CLI_INSTALL);
         samExecutablePath = createCliConfigurationElement(getSamExecutableInstance(), SAM);
         cfnLintHelp = createHelpLink("cloudformation.linter.install_url");
-        cfnLintHelp.setEnabled(true);
         cfnLintExecutablePath = createCliConfigurationElement(getCfnLintExecutableInstance(), CFNLINT);
     }
 
@@ -187,8 +179,8 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     }
 
     @NotNull
-    private LinkLabel createHelpLink(String helpMessageKey) {
-        return LinkLabel.create(message("aws.settings.learn_more"), () -> BrowserUtil.browse(message(helpMessageKey)));
+    private LinkLabel createHelpLink(HelpIds helpId) {
+        return LinkLabel.create(message("aws.settings.learn_more"), () -> BrowserUtil.browse(helpId.getUrl()));
     }
 
     @NotNull
@@ -290,15 +282,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
 
     private void saveTelemetrySettings() {
         AwsSettings awsSettings = AwsSettings.getInstance();
-        boolean oldSetting = awsSettings.isTelemetryEnabled();
-        try {
-            awsSettings.setTelemetryEnabled(enableTelemetry.isSelected());
-        } finally {
-            boolean newSetting = awsSettings.isTelemetryEnabled();
-            if (newSetting != oldSetting) {
-                publisher.notify(newSetting);
-            }
-        }
+        awsSettings.setTelemetryEnabled(enableTelemetry.isSelected());
     }
 
     private void saveLambdaSettings() {
