@@ -48,7 +48,6 @@ class CreateDataSourcePanel(private val project: Project) {
                 }
             }
         }
-
     }
 
     sealed class ComboOption<T : JComponent>(val label: String, val component: T) {
