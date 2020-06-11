@@ -62,6 +62,10 @@ enum class HelpIds(shortId: String, val url: String) {
         "sam.install",
         "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html"
     ),
+    CFN_LINT(
+        "cloudformation.linter",
+        "https://github.com/aws-cloudformation/cfn-python-lint/blob/master/README.md"
+    )
     ;
 
     val id = "aws.toolkit.$shortId"

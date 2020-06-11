@@ -86,7 +86,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         cloudDebugExecutablePath = createCliConfigurationElement(getCloudDebugExecutableInstance(), CLOUDDEBUG);
         samHelp = createHelpLink(HelpIds.SAM_CLI_INSTALL);
         samExecutablePath = createCliConfigurationElement(getSamExecutableInstance(), SAM);
-        cfnLintHelp = createHelpLink("cloudformation.linter.install_url");
+        cfnLintHelp = createHelpLink(HelpIds.CFN_LINT);
         cfnLintExecutablePath = createCliConfigurationElement(getCfnLintExecutableInstance(), CFNLINT);
     }
 
