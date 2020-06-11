@@ -22,7 +22,7 @@ data class IamRole(val arn: String) {
 }
 
 data class IamUser(val user: User) {
-    override fun toString(): String = "${user.userName()}@${user.userId()}"
+    override fun toString(): String = "${user.userId()}:${user.userName()}"
 }
 
 object IamResources {
@@ -31,7 +31,8 @@ object IamResources {
         listRolesPaginator().roles().toList()
     }
 
-    val LIST_ALL_USERS: Resource<List<IamUser>> = ClientBackedCachedResource(IamClient::class, "iam.list_users") {
+    @JvmField
+    val LIST_ALL_USERS = ClientBackedCachedResource(IamClient::class, "iam.list_users") {
         listUsersPaginator().users().toList().map { IamUser(it) }
     }
 

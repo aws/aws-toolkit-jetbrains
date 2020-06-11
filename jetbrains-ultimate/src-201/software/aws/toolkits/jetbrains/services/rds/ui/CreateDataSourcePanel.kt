@@ -31,49 +31,6 @@ class CreateDataSourcePanel(private val project: Project) {
     lateinit var usernameWrapper: Wrapper
     lateinit var authType: JLabel
 
-    private class CacheBackedJBTextField(project: Project) : JBTextField(), CoroutineScope by ApplicationThreadPoolScope("CacheBackedJBLabel") {
-        var valid: Boolean = false
-
-        init {
-            isEditable = false
-            text = message("loading_resource.loading")
-            launch {
-                try {
-                    val user = AwsResourceCache.getInstance(project).getResourceNow(StsResources.USER)
-                    text = user
-                    valid = true
-                } catch (e: Exception) {
-                    text = message("rds.validation.iam_userid_failed")
-                    valid = false
-                }
-            }
-        }
-    }
-
-    sealed class ComboOption<T : JComponent>(val label: String, val component: T) {
-        class CurrentUser(project: Project) : ComboOption<JBTextField>(
-            message("rds.iam_user_current"),
-            CacheBackedJBTextField(project)
-        )
-
-        class Role(project: Project) : ComboOption<ResourceSelector<IamRole>>(
-            message("rds.iam_role"),
-            ResourceSelector.builder(project)
-                .resource { IamResources.LIST_ALL_ROLES }
-                .build())
-
-        class User(project: Project) : ComboOption<ResourceSelector<IamUser>>(
-            message("rds.iam_user"),
-            ResourceSelector.builder(project)
-                .resource(IamResources.LIST_ALL_USERS)
-                .build()
-        )
-
-        class Custom : ComboOption<JBTextField>(message("rds.custom_username"), JBTextField())
-
-        override fun toString() = label
-    }
-
     private fun createUIComponents() {
         authSelector = ComboBox(arrayOf(ComboOption.CurrentUser(project), ComboOption.Role(project), ComboOption.User(project), ComboOption.Custom()))
         authType = JBLabel()
@@ -91,11 +48,57 @@ class CreateDataSourcePanel(private val project: Project) {
         }
     }
 
-    fun getUsername(): String? = when (val selected = authSelector.selected()) {
-        is ComboOption.CurrentUser -> (selected.component as? CacheBackedJBTextField)?.let { if (it.valid) it.text.substringAfter(':') else null }
-        is ComboOption.User -> selected.component.selected()?.user?.userName()
-        is ComboOption.Role -> selected.component.selected()?.name
-        is ComboOption.Custom -> selected.component.text
-        null -> throw IllegalStateException("Configuration combo box is null!")
+    fun getUsername(): String? = authSelector.selected().getUsername()
+}
+
+private class CacheBackedJBTextField(project: Project) : JBTextField(), CoroutineScope by ApplicationThreadPoolScope("CacheBackedJBLabel") {
+    var valid: Boolean = false
+
+    init {
+        isEditable = false
+        text = message("loading_resource.loading")
+        launch {
+            try {
+                val user = AwsResourceCache.getInstance(project).getResourceNow(StsResources.USER)
+                text = user
+                valid = true
+            } catch (e: Exception) {
+                text = message("rds.validation.iam_userid_failed")
+                valid = false
+            }
+        }
     }
+}
+
+sealed class ComboOption<T : JComponent>(val label: String, val component: T) {
+    class CurrentUser(project: Project) : ComboOption<JBTextField>(
+        message("rds.iam_user_current"),
+        CacheBackedJBTextField(project)
+    )
+
+    class Role(project: Project) : ComboOption<ResourceSelector<IamRole>>(
+        message("rds.iam_role"),
+        ResourceSelector.builder(project)
+            .resource { IamResources.LIST_ALL_ROLES }
+            .build())
+
+    class User(project: Project) : ComboOption<ResourceSelector<IamUser>>(
+        message("rds.iam_user"),
+        ResourceSelector.builder(project)
+            .resource(IamResources.LIST_ALL_USERS)
+            .build()
+    )
+
+    class Custom : ComboOption<JBTextField>(message("rds.custom_username"), JBTextField())
+
+    override fun toString() = label
+}
+
+// Extension function to accept null. Also when it wasn't an extension function it cause the Kotlin compiler to throw?
+fun ComboOption<*>?.getUsername() = when (this) {
+    is ComboOption.CurrentUser -> (component as? CacheBackedJBTextField)?.let { if (it.valid) it.text.substringAfter(':') else null }
+    is ComboOption.User -> component.selected()?.user?.userName()
+    is ComboOption.Role -> component.selected()?.name
+    is ComboOption.Custom -> component.text
+    else -> throw IllegalStateException("Combo box is set to null!")
 }
