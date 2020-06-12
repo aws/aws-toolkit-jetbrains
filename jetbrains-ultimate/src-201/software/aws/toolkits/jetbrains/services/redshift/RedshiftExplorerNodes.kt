@@ -25,6 +25,7 @@ class RedshiftExplorerNode(project: Project, private val cluster: Cluster) : Aws
     cluster,
     AllIcons.Providers.Redshift
 ) {
+    override fun displayName(): String = cluster.clusterIdentifier()
     override fun resourceType(): String = "cluster"
-    override fun resourceArn(): String = "arn:${region.partitionId}:redshift:${region.id}::cluster:${cluster.clusterIdentifier()}"
+    override fun resourceArn(): String = clusterArn(cluster, region)
 }
