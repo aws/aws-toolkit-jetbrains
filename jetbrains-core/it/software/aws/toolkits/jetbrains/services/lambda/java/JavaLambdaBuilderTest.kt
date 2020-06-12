@@ -11,6 +11,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -27,12 +28,19 @@ class JavaLambdaBuilderTest : BaseLambdaBuilderTest() {
     @JvmField
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
 
+    @Rule
+    @JvmField
+    val envVarsRule = EnvironmentVariableHelper()
+
     override val lambdaBuilder: LambdaBuilder
         get() = JavaLambdaBuilder()
 
     @Before
     override fun setUp() {
         super.setUp()
+
+        envVarsRule.remove("JAVA_HOME")
+
         projectRule.fixture.addModule("main")
         projectRule.setUpJdk()
     }
