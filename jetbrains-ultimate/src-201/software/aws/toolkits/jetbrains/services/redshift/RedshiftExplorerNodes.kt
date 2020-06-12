@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.redshift
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
-import icons.AwsIcons
 import software.amazon.awssdk.services.redshift.RedshiftClient
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
@@ -19,15 +19,12 @@ class RedshiftExplorerParentNode(
     override fun toNode(child: Cluster): AwsExplorerNode<*> = RedshiftExplorerNode(nodeProject, child)
 }
 
-class RedshiftExplorerNode(project: Project, val cluster: Cluster) : AwsExplorerResourceNode<Cluster>(
+class RedshiftExplorerNode(project: Project, private val cluster: Cluster) : AwsExplorerResourceNode<Cluster>(
     project,
     RedshiftClient.SERVICE_NAME,
     cluster,
-    AwsIcons.Logos.AWS
-
+    AllIcons.Providers.Redshift
 ) {
     override fun resourceType(): String = "cluster"
-
-    // TODO finish this
-    override fun resourceArn(): String = "arn:aws:redshift:${region.id}:<account>:cluster:${cluster.clusterIdentifier()}"
+    override fun resourceArn(): String = "arn:${region.partitionId}:redshift:${region.id}::cluster:${cluster.clusterIdentifier()}"
 }
