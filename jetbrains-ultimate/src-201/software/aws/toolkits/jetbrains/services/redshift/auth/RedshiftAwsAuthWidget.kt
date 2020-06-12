@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.redshift.auth
 
+import com.intellij.database.dataSource.DataSourceUiUtil
+import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
@@ -13,6 +15,8 @@ import software.aws.toolkits.jetbrains.services.redshift.extractRegionFromUrl
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
+
+const val CLUSTER_ID_PROPERTY = "AWS.RedshiftClusterId"
 
 class RedshiftAwsAuthWidget : AwsAuthWidget() {
     private val clusterIdSelector = JBTextField()
@@ -26,6 +30,21 @@ class RedshiftAwsAuthWidget : AwsAuthWidget() {
         panel.add(regionLabel, UrlPropertiesPanel.createLabelConstraints(3, 0, regionLabel.preferredSize.getWidth()))
         panel.add(clusterIdSelector, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
         return panel
+    }
+
+    override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
+        super.save(dataSource, copyCredentials)
+
+        DataSourceUiUtil.putOrRemove(
+            dataSource.additionalJdbcProperties,
+            CLUSTER_ID_PROPERTY,
+            clusterIdSelector.text
+        )
+    }
+
+    override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
+        super.reset(dataSource, resetCredentials)
+        clusterIdSelector.text = dataSource.additionalJdbcProperties[CLUSTER_ID_PROPERTY]
     }
 
     override fun updateFromUrl(holder: ParametersHolder) {
