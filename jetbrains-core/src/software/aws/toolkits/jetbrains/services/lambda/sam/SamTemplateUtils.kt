@@ -9,6 +9,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.io.createFile
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.core.utils.writeText
@@ -60,7 +61,9 @@ object SamTemplateUtils {
         memorySize: Int,
         envVars: Map<String, String> = emptyMap()
     ) {
-        tempFile.createFile()
+        if (!tempFile.exists()) {
+            tempFile.createFile()
+        }
         tempFile.writeText(yamlWriter {
             mapping("Resources") {
                 mapping(logicalId) {
