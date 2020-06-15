@@ -7,15 +7,27 @@ import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConne
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.testFramework.ProjectRule
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.stub
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.services.redshift.RedshiftClient
+import software.amazon.awssdk.services.redshift.model.Cluster
+import software.amazon.awssdk.services.redshift.model.DescribeClustersRequest
+import software.amazon.awssdk.services.redshift.model.DescribeClustersResponse
+import software.amazon.awssdk.services.redshift.model.GetClusterCredentialsRequest
+import software.amazon.awssdk.services.redshift.model.GetClusterCredentialsResponse
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.ui.CREDENTIAL_ID_PROPERTY
@@ -26,62 +38,116 @@ class RedshiftApiAuthTest {
     @JvmField
     val projectRule = ProjectRule()
 
+    @Rule
+    @JvmField
+    val mockClientManager = MockClientManagerRule { projectRule.project }
+
+    private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+
     private val apiAuth = ApiAuth()
     private val credentialId = RuleUtils.randomName()
     private val defaultRegion = RuleUtils.randomName()
+    private val region = AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName())
     private val clusterId = RuleUtils.randomName()
 
-    private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+    private val redshiftSettings = RedshiftSettings(
+        clusterId = clusterId,
+        username = RuleUtils.randomName(),
+        credentials = mock(),
+        region = region
+    )
 
     @Before
     fun setUp() {
         MockCredentialsManager.getInstance().addCredentials(credentialId, mockCreds)
-        MockRegionProvider.getInstance().addRegion(AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName()))
+        MockRegionProvider.getInstance().addRegion(region)
     }
 
     @Test
-    fun validateConnection() {
+    fun `Validate connection`() {
         apiAuth.validateConnection(buildConnection())
     }
 
     @Test
     // We actually don't need the URL at all for Redshift. It's nice for getting things off
     // of, but we don't need to directly use it
-    fun validateConnectionNoUrl() {
+    fun `No URL`() {
         apiAuth.validateConnection(buildConnection(hasUrl = true))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoUsername() {
+    fun `No username`() {
         apiAuth.validateConnection(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoRegion() {
+    fun `No region`() {
         apiAuth.validateConnection(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoCredentials() {
+    fun `No credentials`() {
         apiAuth.validateConnection(buildConnection(hasCredentials = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoClusterId() {
+    fun `No cluster ID`() {
         apiAuth.validateConnection(buildConnection(hasClusterId = false))
     }
 
     @Test
-    // We actually don't need the URL at all for Redshift. It's nice for getting things off
-    // of, but we don't need to directly use it
-    fun validateConnectionNoHost() {
+    // We  don't need the URL at all for Redshift.
+    fun `No host`() {
         apiAuth.validateConnection(buildConnection(hasHost = false))
     }
 
     @Test
-    // We actually don't need the port either
-    fun validateConnectionNoPort() {
+    // We don't need the port either
+    fun `No port`() {
         apiAuth.validateConnection(buildConnection(hasPort = false))
+    }
+
+    @Test
+    fun `Get credentials succeeds`() {
+        val password = RuleUtils.randomName()
+        val redshiftMock = mockClientManager.create<RedshiftClient>()
+        val createCaptor = argumentCaptor<GetClusterCredentialsRequest>()
+        redshiftMock.stub {
+            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder()
+                .clusters(Cluster.builder().clusterIdentifier(clusterId).build())
+                .build()
+            on { getClusterCredentials(createCaptor.capture()) } doReturn GetClusterCredentialsResponse.builder()
+                .dbUser(redshiftSettings.username)
+                .dbPassword(password)
+                .build()
+        }
+        val creds = apiAuth.getCredentials(redshiftSettings, redshiftMock)
+        assertThat(creds?.userName).isEqualTo(redshiftSettings.username)
+        assertThat(creds?.password).isEqualTo(password)
+        assertThat(createCaptor.firstValue.autoCreate()).isFalse()
+        assertThat(createCaptor.firstValue.dbUser()).isEqualTo(redshiftSettings.username)
+        assertThat(createCaptor.firstValue.clusterIdentifier()).isEqualTo(clusterId)
+    }
+
+    @Test(expected = Exception::class)
+    fun `Get credentials fails`() {
+        val redshiftMock = mockClientManager.create<RedshiftClient>()
+        redshiftMock.stub {
+            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder().clusters(mutableListOf()).build()
+        }
+        apiAuth.getCredentials(redshiftSettings, redshiftMock)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun `Get credentials cluster does not exist`() {
+        val redshiftMock = mockClientManager.create<RedshiftClient>()
+        redshiftMock.stub {
+            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder()
+                .clusters(Cluster.builder().clusterIdentifier(clusterId).build())
+                .build()
+            on { getClusterCredentials(any<GetClusterCredentialsRequest>()) } doThrow IllegalStateException("Something wrong with creds")
+        }
+        apiAuth.getCredentials(redshiftSettings, redshiftMock)
     }
 
     private fun buildConnection(

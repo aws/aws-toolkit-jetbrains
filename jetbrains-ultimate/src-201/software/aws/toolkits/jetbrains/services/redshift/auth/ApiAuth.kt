@@ -78,7 +78,7 @@ class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     }
 
     internal fun getCredentials(settings: RedshiftSettings, client: RedshiftClient): Credentials? {
-        if (client.describeClusters { it.clusterIdentifier(settings.clusterId) }.clusters().isEmpty()) {
+        if (client.describeClusters { it.clusterIdentifier(settings.clusterId).build() }.clusters().isEmpty()) {
             throw IllegalArgumentException(message("redshift.validation.cluster_does_not_exist", settings.clusterId, settings.region.id))
         }
         val creds = client.getClusterCredentials {
