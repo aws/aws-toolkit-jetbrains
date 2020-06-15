@@ -37,37 +37,37 @@ class IamAuthTest {
     }
 
     @Test
-    fun validateConnection() {
+    fun `Valid connection`() {
         iamAuth.validateConnection(buildConnection())
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoUrl() {
+    fun `No url`() {
         iamAuth.validateConnection(buildConnection(hasUrl = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoUsername() {
+    fun `No username`() {
         iamAuth.validateConnection(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoRegion() {
+    fun `No region`() {
         iamAuth.validateConnection(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoCredentials() {
+    fun `No credentials`() {
         iamAuth.validateConnection(buildConnection(hasCredentials = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoPort() {
+    fun `No port`() {
         iamAuth.validateConnection(buildConnection(hasPort = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateConnectionNoHost() {
+    fun `No host`() {
         iamAuth.validateConnection(buildConnection(hasHost = false))
     }
 
