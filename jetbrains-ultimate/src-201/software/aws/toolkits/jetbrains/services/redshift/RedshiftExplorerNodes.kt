@@ -19,7 +19,7 @@ class RedshiftExplorerParentNode(
     override fun toNode(child: Cluster): AwsExplorerNode<*> = RedshiftExplorerNode(nodeProject, child)
 }
 
-class RedshiftExplorerNode(project: Project, private val cluster: Cluster) : AwsExplorerResourceNode<Cluster>(
+class RedshiftExplorerNode(project: Project, val cluster: Cluster) : AwsExplorerResourceNode<Cluster>(
     project,
     RedshiftClient.SERVICE_NAME,
     cluster,
