@@ -6,45 +6,108 @@ package software.aws.toolkits.jetbrains.services.rds.auth
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.testFramework.ProjectRule
+import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 
 class IamAuthWidgetTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
 
-    @Test
-    fun setsRegionFromUrl() {
-        val widget = IamAuthWidget()
-        val region = AwsRegionProvider.getInstance().allRegions().keys.first()
-        val endpointUrl = "jdbc:postgresql://abc.host.$region.rds.amazonaws.com:5432/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        assertThat(widget.getRegionFromWidget()).isEqualTo(region)
+    private lateinit var widget: IamAuthWidget
+    private val credentialId = RuleUtils.randomName()
+    private val defaultRegion = RuleUtils.randomName()
+    private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+
+    @Before
+    fun setUp() {
+        widget = IamAuthWidget()
+        MockCredentialsManager.getInstance().addCredentials(credentialId, mockCreds)
+        MockRegionProvider.getInstance().addRegion(AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName()))
     }
 
     @Test
-    fun doesNotUnsetRegionInvalidUrl() {
-        val widget = IamAuthWidget()
-        val region = AwsRegionProvider.getInstance().allRegions().keys.first()
-        val endpointUrl = "jdbc:postgresql://abc.host.$region.rds.amazonaws.com:5432/dev"
+    fun `Reset sets region if valid`() {
+        widget.reset(buildDataSource(hasRegion = true), false)
+        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+    }
+
+    @Test
+    fun `Reset does not set region if invalid`() {
+        widget.reset(buildDataSource(hasRegion = true), false)
+        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+        widget.reset(buildDataSource(hasRegion = false), false)
+        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+    }
+
+    @Test
+    fun `Reset sets credentials if valid`() {
+        widget.reset(buildDataSource(hasCredentials = true), false)
+        assertThat(widget.getCredentialsFromWidget()).isEqualTo(credentialId)
+    }
+
+    @Test
+    fun `Reset does not set credentials if invalid`() {
+        widget.reset(buildDataSource(hasCredentials = true), false)
+        assertThat(widget.getCredentialsFromWidget()).isEqualTo(credentialId)
+        widget.reset(buildDataSource(hasCredentials = false), false)
+        assertThat(widget.getCredentialsFromWidget()).isEqualTo(credentialId)
+    }
+
+    @Test
+    fun `Sets region from URL`() {
+        widget.reset(mock(), false)
+        val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
+        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
+        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+    }
+
+    @Test
+    fun `Does not unset region on invalid url`() {
+        widget.reset(mock(), false)
+        val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         val badUrl = "jdbc:postgresql://abc.host.1000000%invalidregion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn badUrl })
-        assertThat(widget.getRegionFromWidget()).isEqualTo(region)
+        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
     }
 
-    // Get region out of widget by saving settings
-    private fun IamAuthWidget.getRegionFromWidget(): String? {
-        val dataSource = mock<LocalDataSource> {
-            val map = mutableMapOf<String, String>()
-            on { additionalJdbcProperties } doReturn map
+    private fun buildDataSource(
+        hasCredentials: Boolean = true,
+        hasRegion: Boolean = true
+    ): LocalDataSource = mock {
+        on { additionalJdbcProperties } doAnswer {
+            val m = mutableMapOf<String, String>()
+            if (hasCredentials) {
+                m[CREDENTIAL_ID_PROPERTY] = credentialId
+            }
+            if (hasRegion) {
+                m[REGION_ID_PROPERTY] = defaultRegion
+            }
+            m
         }
+    }
+
+    // Get settings out of widget by saving settings
+    private fun IamAuthWidget.getRegionFromWidget(): String? {
+        val dataSource = buildDataSource()
         save(dataSource, false)
         return dataSource.additionalJdbcProperties[REGION_ID_PROPERTY]
+    }
+
+    private fun IamAuthWidget.getCredentialsFromWidget(): String? {
+        val dataSource = buildDataSource()
+        save(dataSource, false)
+        return dataSource.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
     }
 }
