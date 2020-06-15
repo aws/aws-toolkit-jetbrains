@@ -34,12 +34,12 @@ data class RedshiftSettings(
 )
 
 // This is marked as internal but is what we were told to use
-class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RedshiftIamAuth") {
+class AwsAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RedshiftIamAuth") {
     override fun getId(): String = providerId
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms.isRedshift
-    override fun getDisplayName(): String = message("redshift.auth")
+    override fun getDisplayName(): String = message("redshift.auth.aws")
 
-    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = RedshiftAwsAuthWidget()
+    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = AwsAuthWidget()
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
@@ -92,6 +92,6 @@ class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
 
     companion object {
         const val providerId = "aws.redshift.api"
-        private val LOG = getLogger<ApiAuth>()
+        private val LOG = getLogger<AwsAuth>()
     }
 }

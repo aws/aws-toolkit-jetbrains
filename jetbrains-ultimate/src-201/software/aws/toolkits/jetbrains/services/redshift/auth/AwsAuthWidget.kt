@@ -18,7 +18,7 @@ import javax.swing.JPanel
 
 const val CLUSTER_ID_PROPERTY = "AWS.RedshiftClusterId"
 
-class RedshiftAwsAuthWidget : AwsAuthWidget() {
+class AwsAuthWidget : AwsAuthWidget() {
     private val clusterIdSelector = JBTextField()
 
     override val rowCount = 4
