@@ -21,6 +21,8 @@ class RedshiftExplorerNodeTest {
     @Rule
     val projectRule = ProjectRule()
 
+    private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
+
     @Before
     fun setUp() {
         resourceCache().clear()
@@ -55,8 +57,6 @@ class RedshiftExplorerNodeTest {
             it is AwsExplorerErrorNode
         }
     }
-
-    private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
 
     private companion object {
         val rootNode = RedshiftExplorerRootNode()
