@@ -37,7 +37,7 @@ class CreateDataSourceActionGroup : SingleExplorerNodeActionGroup<RdsNode>("rds.
     )
 }
 
-class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("rds.iam_config")) {
+class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("rds.iam_config")), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         if (!checkPrerequisites()) {
             return
