@@ -23,9 +23,7 @@ const val REGION_ID_PROPERTY = "AWS.RegionId"
 
 abstract class AwsAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     private val credentialSelector = CredentialProviderSelector()
-    private val regionSelector = RegionSelector().also {
-        it.setRegions(AwsRegionProvider.getInstance().allRegions().values.toMutableList())
-    }
+    private val regionSelector = RegionSelector()
 
     abstract fun getRegionFromUrl(url: String?): String?
     open val rowCount: Int = 3
@@ -60,18 +58,25 @@ abstract class AwsAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
         super.reset(dataSource, resetCredentials)
 
+        val regionProvider = AwsRegionProvider.getInstance()
+        val allRegions = regionProvider.allRegions()
+        regionSelector.setRegions(allRegions.values.toMutableList())
+        val regionId = dataSource.additionalJdbcProperties[REGION_ID_PROPERTY]?.nullize()
+        regionId?.let {
+            allRegions[regionId]?.let {
+                regionSelector.selectedRegion = it
+            }
+        }
+
         val credentialManager = CredentialManager.getInstance()
         credentialSelector.setCredentialsProviders(credentialManager.getCredentialIdentifiers())
-
         val credentialId = dataSource.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
-
         credentialId?.let {
             credentialManager.getCredentialIdentifierById(credentialId)?.let {
                 credentialSelector.setSelectedCredentialsProvider(it)
                 return
             }
         }
-
         credentialSelector.setSelectedInvalidCredentialsProvider(credentialId)
     }
 

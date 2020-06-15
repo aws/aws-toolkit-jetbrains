@@ -13,6 +13,8 @@ import com.intellij.database.dataSource.LocalDataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.services.redshift.RedshiftClient
+import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -24,6 +26,13 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletionStage
 
+data class RedshiftSettings(
+    val clusterId: String,
+    val username: String,
+    val credentials: ToolkitCredentialsProvider,
+    val region: AwsRegion
+)
+
 // This is marked as internal but is what we were told to use
 class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RedshiftIamAuth") {
     override fun getId(): String = providerId
@@ -34,35 +43,48 @@ class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
-            val credentials = getCredentials(connection)
+            val project = connection.runConfiguration.project
+            val auth = validateConnection(connection)
+            val client = project.awsClient<RedshiftClient>(auth.credentials, auth.region)
+            val credentials = getCredentials(auth, client)
             DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
         }
     }
 
-    private fun getCredentials(connection: ProtoConnection): Credentials? {
-        val project = connection.runConfiguration.project
+    internal fun validateConnection(connection: ProtoConnection): RedshiftSettings {
         val credentialManager = CredentialManager.getInstance()
-        val clusterIdentifier = connection.connectionPoint.additionalJdbcProperties[CLUSTER_ID_PROPERTY] ?: throw IllegalArgumentException("TODO ")
-        val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]?.let {
+        val clusterIdentifier = connection.connectionPoint.additionalJdbcProperties[CLUSTER_ID_PROPERTY]
+            ?: throw IllegalArgumentException(message("redshift.validation.no_cluster_id"))
+        val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
+        val region = regionId?.let {
             AwsRegionProvider.getInstance().allRegions()[it]
-        } ?: throw IllegalArgumentException("TODO ")
-        val credentials = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]?.let {
-            credentialManager.getCredentialIdentifierById(it)?.let {
-                credentialManager.getAwsCredentialProvider(it, regionId)
+        } ?: throw IllegalArgumentException(message("redshift.validation.invalid_region_specified", regionId.toString()))
+        val credentialId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
+        val credentials = credentialId?.let { id ->
+            credentialManager.getCredentialIdentifierById(id)?.let {
+                credentialManager.getAwsCredentialProvider(it, region)
             }
-        } ?: throw IllegalArgumentException("TODO ")
-        val client: RedshiftClient = project.awsClient(credentials, regionId)
+        } ?: throw IllegalArgumentException(message("redshift.validation.invalid_credential_specified", credentialId.toString()))
         val username = connection.connectionPoint.dataSource.username
-        if (client.describeClusters { it.clusterIdentifier(clusterIdentifier) }.clusters().isEmpty()) {
-            throw IllegalArgumentException("LOCALIZE specified cluster does not exist")
-        }
         if (username.isEmpty()) {
-            throw IllegalArgumentException("LOCALIZE username is empty")
+            throw IllegalArgumentException(message("redshift.validation.username"))
+        }
+        return RedshiftSettings(
+            clusterIdentifier,
+            username,
+            credentials,
+            region
+        )
+    }
+
+    internal fun getCredentials(settings: RedshiftSettings, client: RedshiftClient): Credentials? {
+        if (client.describeClusters { it.clusterIdentifier(settings.clusterId) }.clusters().isEmpty()) {
+            throw IllegalArgumentException(message("redshift.validation.cluster_does_not_exist", settings.clusterId, settings.region.id))
         }
         val creds = client.getClusterCredentials {
-            it.clusterIdentifier(clusterIdentifier)
-            it.dbUser(username)
-            // By default it auto-creates the user if it doesn't exist, which we don't want
+            it.clusterIdentifier(settings.clusterId)
+            it.dbUser(settings.username)
+            // By default it auto-creates the user if it doesn't exist, which we don't want?
             it.autoCreate(false)
         }
         return Credentials(creds.dbUser(), creds.dbPassword())
