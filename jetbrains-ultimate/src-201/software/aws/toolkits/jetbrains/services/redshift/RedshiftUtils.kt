@@ -3,8 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.redshift
 
+import com.intellij.database.autoconfig.DataSourceRegistry
+import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
+import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.services.redshift.auth.ApiAuth
+import software.aws.toolkits.jetbrains.ui.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.ui.REGION_ID_PROPERTY
 
 private val REDSHIFT_REGION_REGEX = """.*\..*\.(.+).redshift\.""".toRegex()
 private val REDSHIFT_IDENTIFIER_REGEX = """.*//(.+)\..*\..*.redshift\..""".toRegex()
@@ -12,3 +19,17 @@ private val REDSHIFT_IDENTIFIER_REGEX = """.*//(.+)\..*\..*.redshift\..""".toReg
 fun clusterArn(cluster: Cluster, region: AwsRegion) = "arn:${region.partitionId}:redshift:${region.id}::cluster:${cluster.clusterIdentifier()}"
 fun extractRegionFromUrl(url: String?): String? = url?.let { REDSHIFT_REGION_REGEX.find(url)?.groupValues?.get(1) }
 fun extractClusterIdFromUrl(url: String?): String? = url?.let { REDSHIFT_IDENTIFIER_REGEX.find(url)?.groupValues?.get(1) }
+
+fun DataSourceRegistry.createDatasource(project: Project, cluster: Cluster) {
+    builder
+        .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, project.activeCredentialProvider().id)
+        .withJdbcAdditionalProperty(REGION_ID_PROPERTY, project.activeRegion().id)
+        .withUrl(cluster.clusterIdentifier())
+        .withUser(cluster.masterUsername())
+        .withUrl("jdbc:redshift://${cluster.endpoint().address()}:${cluster.endpoint().port()}/${cluster.dbName()}")
+        .commit()
+    // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder
+    newDataSources.firstOrNull()?.let {
+        it.authProviderId = ApiAuth.providerId
+    } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
+}
