@@ -5,15 +5,13 @@ package software.aws.toolkits.jetbrains.services.redshift.auth
 
 import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DatabaseAuthProvider
-import com.intellij.database.dataSource.DatabaseConnectionInterceptor
-import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
+import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
+import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.LocalDataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
-import software.amazon.awssdk.services.redshift.RedshiftClient
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletionStage
@@ -23,18 +21,15 @@ class SecretsManagerAuth : DatabaseAuthProvider, CoroutineScope by ApplicationTh
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms.isRedshift
     override fun getDisplayName(): String = message("redshift.auth.secrets_manager")
 
-    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): DatabaseAuthProvider.AuthWidget? = RedshiftAwsAuthWidget()
+    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = SecretsManagerAuthWidget()
     override fun intercept(
-        connection: DatabaseConnectionInterceptor.ProtoConnection,
+        connection: ProtoConnection,
         silent: Boolean
-    ): CompletionStage<DatabaseConnectionInterceptor.ProtoConnection>? {
+    ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
             val project = connection.runConfiguration.project
-            val auth = validateConnection(connection)
-            val client = project.awsClient<RedshiftClient>(auth.credentials, auth.region)
-            val credentials = getCredentials(auth, client)
-            DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
+            null
         }
     }
 
