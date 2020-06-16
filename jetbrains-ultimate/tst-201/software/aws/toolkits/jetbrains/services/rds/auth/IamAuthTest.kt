@@ -19,6 +19,7 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import java.util.concurrent.ExecutionException
 
 class IamAuthTest {
     @Rule
@@ -38,6 +39,26 @@ class IamAuthTest {
     fun setUp() {
         MockCredentialsManager.getInstance().addCredentials(credentialId, mockCreds)
         MockRegionProvider.getInstance().addRegion(AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName()))
+    }
+
+    @Test
+    fun `Intercept credentials succeeds`() {
+        val connection = iamAuth.intercept(buildConnection(), false)?.toCompletableFuture()?.get()
+        assertThat(connection).isNotNull
+        assertThat(connection!!.connectionProperties).containsKey("user")
+        assertThat(connection.connectionProperties["user"]).isEqualTo(username)
+        assertThat(connection.connectionProperties).containsKey("password")
+        assertThat(connection.connectionProperties["password"])
+            .contains("X-Amz-Signature")
+            .contains("connect")
+            .contains(username)
+            .contains(dbHost)
+            .doesNotStartWith("https://")
+    }
+
+    @Test(expected = ExecutionException::class)
+    fun `Intercept credentials fails`() {
+        iamAuth.intercept(buildConnection(hasHost = false), false)!!.toCompletableFuture().get()
     }
 
     @Test
@@ -83,11 +104,12 @@ class IamAuthTest {
     fun `Generate pre-signed auth token request succeeds`() {
         val connection = iamAuth.getAuthInformation(buildConnection())
         val request = iamAuth.generateAuthToken(connection)
-        assertThat(request).contains("X-Amz-Signature")
-        assertThat(request).contains("connect")
-        assertThat(request).contains(username)
-        assertThat(request).contains(dbHost)
-        assertThat(request).doesNotStartWith("https://")
+        assertThat(request)
+            .contains("X-Amz-Signature")
+            .contains("connect")
+            .contains(username)
+            .contains(dbHost)
+            .doesNotStartWith("https://")
     }
 
     private fun buildConnection(
@@ -122,7 +144,14 @@ class IamAuthTest {
             on { dataSource } doReturn mockConnection
         }
         return mock {
+            val m = mutableMapOf<String, String>()
             on { connectionPoint } doReturn dbConnectionPoint
+            on { runConfiguration } doAnswer {
+                mock {
+                    on { project } doAnswer { projectRule.project }
+                }
+            }
+            on { connectionProperties } doReturn m
         }
     }
 }
