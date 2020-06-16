@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.redshift.model.GetClusterCredentialsRespo
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.ui.CREDENTIAL_ID_PROPERTY
@@ -53,8 +54,7 @@ class RedshiftAwsAuthTest {
     private val redshiftSettings = RedshiftSettings(
         clusterId = clusterId,
         username = RuleUtils.randomName(),
-        credentials = mock(),
-        region = region
+        connectionSettings = ConnectionSettings(mock(), region)
     )
 
     @Before
