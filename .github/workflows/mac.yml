@@ -25,6 +25,8 @@ jobs:
         java-version: 11
         architecture: x64  
         jdkFile: ./amazon-corretto-11-x64-macos-jdk.tar.gz
+    - name: Install mono
+      run: brew install mono
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
