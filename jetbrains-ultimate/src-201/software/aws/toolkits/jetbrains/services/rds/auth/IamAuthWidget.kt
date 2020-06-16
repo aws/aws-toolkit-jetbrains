@@ -26,9 +26,7 @@ const val REGION_ID_PROPERTY = "AWS.RegionId"
 
 class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     private val credentialSelector = CredentialProviderSelector()
-    private val regionSelector = RegionSelector().also {
-        it.setRegions(AwsRegionProvider.getInstance().allRegions().values.toMutableList())
-    }
+    private val regionSelector = RegionSelector()
 
     override fun createPanel(): JPanel {
         val panel = JPanel(GridLayoutManager(3, 6))
@@ -54,11 +52,19 @@ class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
         super.reset(dataSource, resetCredentials)
 
+        val regionProvider = AwsRegionProvider.getInstance()
+        val allRegions = regionProvider.allRegions()
+        regionSelector.setRegions(allRegions.values.toMutableList())
+        val regionId = dataSource.additionalJdbcProperties[REGION_ID_PROPERTY]?.nullize()
+        regionId?.let {
+            allRegions[regionId]?.let {
+                regionSelector.selectedRegion = it
+            }
+        }
+
         val credentialManager = CredentialManager.getInstance()
         credentialSelector.setCredentialsProviders(credentialManager.getCredentialIdentifiers())
-
         val credentialId = dataSource.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
-
         credentialId?.let {
             credentialManager.getCredentialIdentifierById(credentialId)?.let {
                 credentialSelector.setSelectedCredentialsProvider(it)

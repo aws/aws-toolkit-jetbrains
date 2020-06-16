@@ -87,12 +87,12 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     }
 
     private fun getCredentials(connection: ProtoConnection): Credentials? {
-        val authInformation = validateConnection(connection)
+        val authInformation = getAuthInformation(connection)
         val authToken = generateAuthToken(authInformation)
         return Credentials(authInformation.user, authToken)
     }
 
-    internal fun validateConnection(connection: ProtoConnection): RdsAuthInformation {
+    internal fun getAuthInformation(connection: ProtoConnection): RdsAuthInformation {
         val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
         val credentialsId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
@@ -126,7 +126,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         )
     }
 
-    private fun generateAuthToken(authInformation: RdsAuthInformation): String {
+    internal fun generateAuthToken(authInformation: RdsAuthInformation): String {
         // TODO: Replace when SDK V2 backfills the pre-signer for rds auth token
         val httpRequest = SdkHttpFullRequest.builder()
             .method(SdkHttpMethod.GET)
@@ -138,6 +138,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             .putRawQueryParameter("Action", "connect")
             .build()
 
+        // TODO consider configurable expiration time
         val expirationTime = Instant.now().plus(15, ChronoUnit.MINUTES)
         val presignRequest = Aws4PresignerParams.builder()
             .expirationTime(expirationTime)
