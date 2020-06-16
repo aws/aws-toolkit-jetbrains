@@ -13,11 +13,10 @@ import com.intellij.database.dataSource.LocalDataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.services.redshift.RedshiftClient
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
-import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.ui.CREDENTIAL_ID_PROPERTY
@@ -29,23 +28,22 @@ import java.util.concurrent.CompletionStage
 data class RedshiftSettings(
     val clusterId: String,
     val username: String,
-    val credentials: ToolkitCredentialsProvider,
-    val region: AwsRegion
+    val connectionSettings: ConnectionSettings
 )
 
-// This is marked as internal but is what we were told to use
-class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RedshiftIamAuth") {
+// [DatabaseAuthProvider] is marked as internal, but JetBrains advised this was a correct usage
+class AwsAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RedshiftIamAuth") {
     override fun getId(): String = providerId
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms.isRedshift
-    override fun getDisplayName(): String = message("redshift.auth")
+    override fun getDisplayName(): String = message("redshift.auth.aws")
 
-    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = RedshiftAwsAuthWidget()
+    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = AwsAuthWidget()
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
             val project = connection.runConfiguration.project
             val auth = validateConnection(connection)
-            val client = project.awsClient<RedshiftClient>(auth.credentials, auth.region)
+            val client = project.awsClient<RedshiftClient>(auth.connectionSettings.credentials, auth.connectionSettings.region)
             val credentials = getCredentials(auth, client)
             DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
         }
@@ -72,14 +70,13 @@ class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         return RedshiftSettings(
             clusterIdentifier,
             username,
-            credentials,
-            region
+            ConnectionSettings(credentials, region)
         )
     }
 
     internal fun getCredentials(settings: RedshiftSettings, client: RedshiftClient): Credentials? {
         if (client.describeClusters { it.clusterIdentifier(settings.clusterId).build() }.clusters().isEmpty()) {
-            throw IllegalArgumentException(message("redshift.validation.cluster_does_not_exist", settings.clusterId, settings.region.id))
+            throw IllegalArgumentException(message("redshift.validation.cluster_does_not_exist", settings.clusterId, settings.connectionSettings.region.id))
         }
         val creds = client.getClusterCredentials {
             it.clusterIdentifier(settings.clusterId)
@@ -92,6 +89,6 @@ class ApiAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
 
     companion object {
         const val providerId = "aws.redshift.api"
-        private val LOG = getLogger<ApiAuth>()
+        private val LOG = getLogger<AwsAuth>()
     }
 }

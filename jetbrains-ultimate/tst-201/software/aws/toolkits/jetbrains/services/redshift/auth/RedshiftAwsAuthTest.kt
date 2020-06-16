@@ -28,12 +28,13 @@ import software.amazon.awssdk.services.redshift.model.GetClusterCredentialsRespo
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.ui.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.ui.REGION_ID_PROPERTY
 
-class RedshiftApiAuthTest {
+class RedshiftAwsAuthTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
@@ -44,17 +45,17 @@ class RedshiftApiAuthTest {
 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
-    private val apiAuth = ApiAuth()
+    private val apiAuth = AwsAuth()
     private val credentialId = RuleUtils.randomName()
     private val defaultRegion = RuleUtils.randomName()
     private val region = AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName())
     private val clusterId = RuleUtils.randomName()
+    private val username = RuleUtils.randomName()
 
     private val redshiftSettings = RedshiftSettings(
         clusterId = clusterId,
-        username = RuleUtils.randomName(),
-        credentials = mock(),
-        region = region
+        username = username,
+        connectionSettings = ConnectionSettings(mock(), region)
     )
 
     @Before
@@ -138,6 +139,33 @@ class RedshiftApiAuthTest {
         apiAuth.getCredentials(redshiftSettings, redshiftMock)
     }
 
+    @Test
+    fun `Intercept credentials succeeds`() {
+        val password = RuleUtils.randomName()
+        val redshiftMock = mockClientManager.create<RedshiftClient>()
+        val createCaptor = argumentCaptor<GetClusterCredentialsRequest>()
+        redshiftMock.stub {
+            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder()
+                .clusters(Cluster.builder().clusterIdentifier(clusterId).build())
+                .build()
+            on { getClusterCredentials(createCaptor.capture()) } doReturn GetClusterCredentialsResponse.builder()
+                .dbUser(redshiftSettings.username)
+                .dbPassword(password)
+                .build()
+        }
+        val connection = apiAuth.intercept(buildConnection(), false)?.toCompletableFuture()?.get()
+        assertThat(connection).isNotNull
+        assertThat(connection!!.connectionProperties).containsKey("user")
+        assertThat(connection.connectionProperties["user"]).isEqualTo(username)
+        assertThat(connection.connectionProperties).containsKey("password")
+        assertThat(connection.connectionProperties["password"]).isEqualTo(password)
+    }
+
+    @Test(expected = Exception::class)
+    fun `Intercept credentials fails`() {
+        apiAuth.intercept(buildConnection(hasUrl = false), false)?.toCompletableFuture()?.get()
+    }
+
     @Test(expected = IllegalStateException::class)
     fun `Get credentials cluster does not exist`() {
         val redshiftMock = mockClientManager.create<RedshiftClient>()
@@ -167,7 +195,7 @@ class RedshiftApiAuthTest {
             }
             on { databaseDriver } doReturn null
             on { driverClass } doReturn "org.postgresql.Driver"
-            on { username } doReturn if (hasUsername) RuleUtils.randomName() else ""
+            on { username } doReturn if (hasUsername) username else ""
         }
         val dbConnectionPoint = mock<DatabaseConnectionPoint> {
             on { additionalJdbcProperties } doAnswer {
@@ -186,7 +214,14 @@ class RedshiftApiAuthTest {
             on { dataSource } doReturn mockConnection
         }
         return mock {
+            val m = mutableMapOf<String, String>()
             on { connectionPoint } doReturn dbConnectionPoint
+            on { runConfiguration } doAnswer {
+                mock {
+                    on { project } doAnswer { projectRule.project }
+                }
+            }
+            on { connectionProperties } doReturn m
         }
     }
 }
