@@ -13,19 +13,18 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.text.nullize
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
-
-// TODO put these somewhere else
-const val CREDENTIAL_ID_PROPERTY = "AWS.CredentialId"
-const val REGION_ID_PROPERTY = "AWS.RegionId"
 
 abstract class AwsAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     private val credentialSelector = CredentialProviderSelector()
     private val regionSelector = RegionSelector()
 
     abstract fun getRegionFromUrl(url: String?): String?
+
     open val rowCount: Int = 3
     open val columnCount: Int = 6
 
