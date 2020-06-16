@@ -21,6 +21,7 @@ class RdsExplorerNodeTest {
     @Rule
     val projectRule = ProjectRule()
 
+    @JvmField
     @Rule
     val resourceCache = MockResourceCacheRule(projectRule)
 
