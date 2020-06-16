@@ -7,13 +7,12 @@ import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockResourceCache
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 
 class RedshiftUtilsTest {
@@ -21,7 +20,9 @@ class RedshiftUtilsTest {
     @Rule
     val projectRule = ProjectRule()
 
-    private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
+    @JvmField
+    @Rule
+    val resourceCache = MockResourceCacheRule(projectRule)
 
     private val defaultRegion = RuleUtils.randomName()
     private val region = AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName())
@@ -31,14 +32,9 @@ class RedshiftUtilsTest {
         on { clusterIdentifier() } doReturn clusterId
     }
 
-    @Before
-    fun setUp() {
-        resourceCache().clear()
-    }
-
     @Test
     fun `Account ID ARN`() {
-        resourceCache().addEntry(StsResources.ACCOUNT, accountId)
+        resourceCache.get().addEntry(StsResources.ACCOUNT, accountId)
         val arn = projectRule.project.clusterArn(mockCluster, region)
         assertThat(arn).isEqualTo("arn:${region.partitionId}:redshift:${region.id}:$accountId:cluster:$clusterId")
     }
