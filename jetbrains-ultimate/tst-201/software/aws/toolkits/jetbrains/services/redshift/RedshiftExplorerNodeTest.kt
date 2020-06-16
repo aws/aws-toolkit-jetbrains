@@ -5,13 +5,12 @@ package software.aws.toolkits.jetbrains.services.redshift
 
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.amazon.awssdk.utils.CompletableFutureUtils
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockResourceCache
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.RedshiftExplorerRootNode
@@ -21,20 +20,17 @@ class RedshiftExplorerNodeTest {
     @Rule
     val projectRule = ProjectRule()
 
-    private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
-
-    @Before
-    fun setUp() {
-        resourceCache().clear()
-    }
+    @JvmField
+    @Rule
+    val resourceCache = MockResourceCacheRule(projectRule)
 
     @Test
     fun `Redshift resources are listed`() {
         val name = RuleUtils.randomName()
-        resourceCache().addEntry(
+        resourceCache.get().addEntry(
             RedshiftResources.LIST_CLUSTERS, listOf(Cluster.builder().clusterIdentifier(name).build())
         )
-        val serviceRootNode = rootNode.buildServiceRootNode(projectRule.project)
+        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
         assertThat(serviceRootNode.children).hasOnlyOneElementSatisfying {
             it.displayName() == name
         }
@@ -42,8 +38,8 @@ class RedshiftExplorerNodeTest {
 
     @Test
     fun `No resources makes empty node`() {
-        resourceCache().addEntry(RedshiftResources.LIST_CLUSTERS, listOf())
-        val serviceRootNode = rootNode.buildServiceRootNode(projectRule.project)
+        resourceCache.get().addEntry(RedshiftResources.LIST_CLUSTERS, listOf())
+        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
         assertThat(serviceRootNode.children).hasOnlyOneElementSatisfying {
             it is AwsExplorerEmptyNode
         }
@@ -51,14 +47,14 @@ class RedshiftExplorerNodeTest {
 
     @Test
     fun `Exception thrown makes error node`() {
-        resourceCache().addEntry(RedshiftResources.LIST_CLUSTERS, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
-        val serviceRootNode = rootNode.buildServiceRootNode(projectRule.project)
+        resourceCache.get().addEntry(RedshiftResources.LIST_CLUSTERS, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
+        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
         assertThat(serviceRootNode.children).hasOnlyOneElementSatisfying {
             it is AwsExplorerErrorNode
         }
     }
 
     private companion object {
-        val rootNode = RedshiftExplorerRootNode()
+        val sut = RedshiftExplorerRootNode()
     }
 }
