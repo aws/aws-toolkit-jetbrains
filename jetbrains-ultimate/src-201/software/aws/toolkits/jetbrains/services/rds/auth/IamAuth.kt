@@ -23,9 +23,8 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -49,7 +48,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES
 
-    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
+    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = RdsAwsAuthWidget()
 
     override fun intercept(
         connection: ProtoConnection,
@@ -91,10 +90,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     }
 
     internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
-        val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
-            ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
-        val credentialsId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
-            ?: throw IllegalArgumentException(message("rds.validation.no_profile_selected"))
+        val awsConnection = connection.getAwsConnectionSettings()
         val parsedUrl = JdbcUrlParserUtil.parsed(connection.connectionPoint.dataSource)
             ?: throw IllegalArgumentException(message("rds.validation.failed_to_parse_url"))
         val host = parsedUrl.getParameter("host")
@@ -107,19 +103,11 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             throw IllegalArgumentException(message("rds.validation.username"))
         }
 
-        val region = AwsRegionProvider.getInstance().allRegions()[regionId]
-            ?: throw IllegalArgumentException(message("rds.validation.invalid_region_specified", regionId))
-
-        val credentialManager = CredentialManager.getInstance()
-        val credentialProviderId = credentialManager.getCredentialIdentifierById(credentialsId)
-            ?: throw IllegalArgumentException(message("rds.validation.invalid_credential_specified", credentialsId))
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialProviderId, region)
-
         return RdsAuth(
             host,
             port,
             user,
-            ConnectionSettings(credentialProvider, region)
+            awsConnection
         )
     }
 

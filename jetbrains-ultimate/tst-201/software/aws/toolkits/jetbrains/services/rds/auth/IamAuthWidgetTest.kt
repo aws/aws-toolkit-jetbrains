@@ -17,6 +17,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 
 class IamAuthWidgetTest {
@@ -24,14 +26,14 @@ class IamAuthWidgetTest {
     @JvmField
     val projectRule = ProjectRule()
 
-    private lateinit var widget: IamAuthWidget
+    private lateinit var widget: RdsAwsAuthWidget
     private val credentialId = RuleUtils.randomName()
     private val defaultRegion = RuleUtils.randomName()
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     @Before
     fun setUp() {
-        widget = IamAuthWidget()
+        widget = RdsAwsAuthWidget()
         MockCredentialsManager.getInstance().addCredentials(credentialId, mockCreds)
         MockRegionProvider.getInstance().addRegion(AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName()))
     }
@@ -99,13 +101,13 @@ class IamAuthWidgetTest {
     }
 
     // Get settings out of widget by saving settings
-    private fun IamAuthWidget.getRegionFromWidget(): String? {
+    private fun RdsAwsAuthWidget.getRegionFromWidget(): String? {
         val dataSource = buildDataSource()
         save(dataSource, false)
         return dataSource.additionalJdbcProperties[REGION_ID_PROPERTY]
     }
 
-    private fun IamAuthWidget.getCredentialsFromWidget(): String? {
+    private fun RdsAwsAuthWidget.getCredentialsFromWidget(): String? {
         val dataSource = buildDataSource()
         save(dataSource, false)
         return dataSource.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]

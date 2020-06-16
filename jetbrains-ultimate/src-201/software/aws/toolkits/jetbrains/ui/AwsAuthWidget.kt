@@ -1,7 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.rds.auth
+package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.database.dataSource.DataSourceUiUtil
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
@@ -13,25 +13,24 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.text.nullize
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkits.jetbrains.services.rds.RdsResources
-import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
-import software.aws.toolkits.jetbrains.ui.RegionSelector
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 
-// TODO put these somewhere else
-const val CREDENTIAL_ID_PROPERTY = "AWS.CredentialId"
-const val REGION_ID_PROPERTY = "AWS.RegionId"
-
-class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
+abstract class AwsAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     private val credentialSelector = CredentialProviderSelector()
     private val regionSelector = RegionSelector()
 
-    override fun createPanel(): JPanel {
-        val panel = JPanel(GridLayoutManager(3, 6))
-        addUserField(panel, 0)
+    abstract fun getRegionFromUrl(url: String?): String?
 
+    open val rowCount: Int = 3
+    open val columnCount: Int = 6
+
+    override fun createPanel(): JPanel {
+        val panel = JPanel(GridLayoutManager(rowCount, columnCount))
+        addUserField(panel, 0)
         val credsLabel = JBLabel(message("aws_connection.credentials.label"))
         val regionLabel = JBLabel(message("aws_connection.region.label"))
         panel.add(credsLabel, UrlPropertiesPanel.createLabelConstraints(1, 0, credsLabel.preferredSize.getWidth()))
@@ -45,8 +44,14 @@ class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
         super.save(dataSource, copyCredentials)
 
-        DataSourceUiUtil.putOrRemove(dataSource.additionalJdbcProperties, CREDENTIAL_ID_PROPERTY, credentialSelector.getSelectedCredentialsProvider())
-        DataSourceUiUtil.putOrRemove(dataSource.additionalJdbcProperties, REGION_ID_PROPERTY, regionSelector.selectedRegion?.id)
+        DataSourceUiUtil.putOrRemove(
+            dataSource.additionalJdbcProperties,
+            CREDENTIAL_ID_PROPERTY, credentialSelector.getSelectedCredentialsProvider()
+        )
+        DataSourceUiUtil.putOrRemove(
+            dataSource.additionalJdbcProperties,
+            REGION_ID_PROPERTY, regionSelector.selectedRegion?.id
+        )
     }
 
     override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
@@ -71,7 +76,6 @@ class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
                 return
             }
         }
-
         credentialSelector.setSelectedInvalidCredentialsProvider(credentialId)
     }
 
@@ -80,7 +84,7 @@ class IamAuthWidget : DatabaseCredentialsAuthProvider.UserWidget() {
     override fun updateFromUrl(holder: ParametersHolder) {
         // Try to get region from url and set the region box on a best effort basis
         val url = (holder as? UrlEditorModel)?.url
-        val regionId = RdsResources.extractRegionFromUrl(url)
+        val regionId = getRegionFromUrl(url)
         val region = AwsRegionProvider.getInstance().allRegions()[regionId]
         region?.let {
             regionSelector.selectedRegion = it
