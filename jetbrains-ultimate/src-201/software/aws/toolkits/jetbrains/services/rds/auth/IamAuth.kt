@@ -14,16 +14,15 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.JdbcUrlParserUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.signer.Aws4Signer
 import software.amazon.awssdk.auth.signer.params.Aws4PresignerParams
 import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
 import software.amazon.awssdk.regions.Region
-import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -36,12 +35,11 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletionStage
 
-data class RdsAuthInformation(
+data class RdsAuth(
     val hostname: String,
     val port: Int,
     val user: String,
-    val credentialProvider: AwsCredentialsProvider,
-    val region: AwsRegion
+    val connectionSettings: ConnectionSettings
 )
 
 // [DatabaseAuthProvider] is marked as internal, but JetBrains advised this was a correct usage
@@ -92,7 +90,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         return Credentials(authInformation.user, authToken)
     }
 
-    internal fun getAuthInformation(connection: ProtoConnection): RdsAuthInformation {
+    internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
         val regionId = connection.connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("rds.validation.no_region_specified"))
         val credentialsId = connection.connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
@@ -117,24 +115,23 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             ?: throw IllegalArgumentException(message("rds.validation.invalid_credential_specified", credentialsId))
         val credentialProvider = credentialManager.getAwsCredentialProvider(credentialProviderId, region)
 
-        return RdsAuthInformation(
+        return RdsAuth(
             host,
             port,
             user,
-            credentialProvider,
-            region
+            ConnectionSettings(credentialProvider, region)
         )
     }
 
-    internal fun generateAuthToken(authInformation: RdsAuthInformation): String {
+    internal fun generateAuthToken(auth: RdsAuth): String {
         // TODO: Replace when SDK V2 backfills the pre-signer for rds auth token
         val httpRequest = SdkHttpFullRequest.builder()
             .method(SdkHttpMethod.GET)
             .protocol("https")
-            .host(authInformation.hostname)
-            .port(authInformation.port)
+            .host(auth.hostname)
+            .port(auth.port)
             .encodedPath("/")
-            .putRawQueryParameter("DBUser", authInformation.user)
+            .putRawQueryParameter("DBUser", auth.user)
             .putRawQueryParameter("Action", "connect")
             .build()
 
@@ -142,9 +139,9 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         val expirationTime = Instant.now().plus(15, ChronoUnit.MINUTES)
         val presignRequest = Aws4PresignerParams.builder()
             .expirationTime(expirationTime)
-            .awsCredentials(authInformation.credentialProvider.resolveCredentials())
+            .awsCredentials(auth.connectionSettings.credentials.resolveCredentials())
             .signingName("rds-db")
-            .signingRegion(Region.of(authInformation.region.id))
+            .signingRegion(Region.of(auth.connectionSettings.region.id))
             .build()
 
         return Aws4Signer.create().presign(httpRequest, presignRequest).uri.toString().removePrefix("https://")

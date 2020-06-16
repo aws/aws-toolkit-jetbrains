@@ -45,7 +45,7 @@ class IamAuthTest {
         val authInformation = iamAuth.getAuthInformation(buildConnection())
         assertThat(authInformation.port).isEqualTo(port)
         assertThat(authInformation.user).isEqualTo(username)
-        assertThat(authInformation.region.id).isEqualTo(defaultRegion)
+        assertThat(authInformation.connectionSettings.region.id).isEqualTo(defaultRegion)
         assertThat(authInformation.hostname).isEqualTo(dbHost)
     }
 
