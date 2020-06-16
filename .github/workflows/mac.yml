@@ -17,6 +17,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    # Using Amazon Corretto JDK instead of Azul's Zulu JDK
     - run: curl -OL "https://corretto.aws/downloads/latest/amazon-corretto-11-x64-macos-jdk.tar.gz"
     - name: jdk11
       uses: actions/setup-java@v1
