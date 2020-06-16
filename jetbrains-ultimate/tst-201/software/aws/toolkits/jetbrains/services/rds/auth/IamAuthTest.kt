@@ -10,6 +10,7 @@ import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,6 +28,9 @@ class IamAuthTest {
     private val iamAuth = IamAuth()
     private val credentialId = RuleUtils.randomName()
     private val defaultRegion = RuleUtils.randomName()
+    private val username = RuleUtils.randomName()
+    private val dbHost = "${RuleUtils.randomName()}.555555.us-west-2.rds.amazonaws.com"
+    private val port = 5432
 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
@@ -38,37 +42,52 @@ class IamAuthTest {
 
     @Test
     fun `Valid connection`() {
-        iamAuth.validateConnection(buildConnection())
+        val authInformation = iamAuth.getAuthInformation(buildConnection())
+        assertThat(authInformation.port).isEqualTo(port)
+        assertThat(authInformation.user).isEqualTo(username)
+        assertThat(authInformation.region.id).isEqualTo(defaultRegion)
+        assertThat(authInformation.hostname).isEqualTo(dbHost)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No url`() {
-        iamAuth.validateConnection(buildConnection(hasUrl = false))
+        iamAuth.getAuthInformation(buildConnection(hasUrl = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No username`() {
-        iamAuth.validateConnection(buildConnection(hasUsername = false))
+        iamAuth.getAuthInformation(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No region`() {
-        iamAuth.validateConnection(buildConnection(hasUsername = false))
+        iamAuth.getAuthInformation(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No credentials`() {
-        iamAuth.validateConnection(buildConnection(hasCredentials = false))
+        iamAuth.getAuthInformation(buildConnection(hasCredentials = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No port`() {
-        iamAuth.validateConnection(buildConnection(hasPort = false))
+        iamAuth.getAuthInformation(buildConnection(hasPort = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No host`() {
-        iamAuth.validateConnection(buildConnection(hasHost = false))
+        iamAuth.getAuthInformation(buildConnection(hasHost = false))
+    }
+
+    @Test
+    fun `Generate pre-signed auth token request succeeds`() {
+        val connection = iamAuth.getAuthInformation(buildConnection())
+        val request = iamAuth.generateAuthToken(connection)
+        assertThat(request).contains("X-Amz-Signature")
+        assertThat(request).contains("connect")
+        assertThat(request).contains(username)
+        assertThat(request).contains(dbHost)
+        assertThat(request).doesNotStartWith("https://")
     }
 
     private fun buildConnection(
@@ -81,13 +100,13 @@ class IamAuthTest {
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doReturn if (hasUrl) {
-                "jdbc:postgresql://${if (hasHost) "coolpostgresdb.555555.us-west-2.rds.amazonaws.com" else ""}${if (hasPort) ":5432" else ""}/dev"
+                "jdbc:postgresql://${if (hasHost) dbHost else ""}${if (hasPort) ":${port}" else ""}/dev"
             } else {
                 null
             }
             on { databaseDriver } doReturn null
             on { driverClass } doReturn "org.postgresql.Driver"
-            on { username } doReturn if (hasUsername) RuleUtils.randomName() else ""
+            on { username } doReturn if (hasUsername) username else ""
         }
         val dbConnectionPoint = mock<DatabaseConnectionPoint> {
             on { additionalJdbcProperties } doAnswer {
