@@ -56,31 +56,9 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
-            val credentials = try {
-                getCredentials(connection)
-            } catch (e: Exception) {
-                LOG.error(e) { "An exception was thrown creating the db credentials" }
-                notifyError(title = message("rds.validation.failed"), content = e.message ?: "")
-                null
-            }
+            val credentials = getCredentials(connection)
             DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
         }
-    }
-
-    override fun handleConnectionFailure(
-        proto: ProtoConnection,
-        e: SQLException,
-        silent: Boolean,
-        attempt: Int
-    ): CompletionStage<ProtoConnection>? {
-        LOG.error(e) { "proto = [$proto], silent = [$silent], attempt = [$attempt]" }
-        notifyError(
-            title = message("aws.notification.title"),
-            content = message("rds.connection_Failed"),
-            action = OpenBrowserAction(message("rds.validation.setup_guide"), null, HelpIds.RDS_SETUP_IAM_AUTH.url)
-        )
-        // return null because we don't attempt to do anything further
-        return null
     }
 
     private fun getCredentials(connection: ProtoConnection): Credentials? {
