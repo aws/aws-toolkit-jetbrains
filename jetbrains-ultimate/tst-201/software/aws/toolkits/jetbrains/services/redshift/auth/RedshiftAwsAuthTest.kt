@@ -50,10 +50,11 @@ class RedshiftAwsAuthTest {
     private val defaultRegion = RuleUtils.randomName()
     private val region = AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName())
     private val clusterId = RuleUtils.randomName()
+    private val username = RuleUtils.randomName()
 
     private val redshiftSettings = RedshiftSettings(
         clusterId = clusterId,
-        username = RuleUtils.randomName(),
+        username = username,
         connectionSettings = ConnectionSettings(mock(), region)
     )
 
@@ -138,6 +139,33 @@ class RedshiftAwsAuthTest {
         apiAuth.getCredentials(redshiftSettings, redshiftMock)
     }
 
+    @Test
+    fun `Intercept credentials succeeds`() {
+        val password = RuleUtils.randomName()
+        val redshiftMock = mockClientManager.create<RedshiftClient>()
+        val createCaptor = argumentCaptor<GetClusterCredentialsRequest>()
+        redshiftMock.stub {
+            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder()
+                .clusters(Cluster.builder().clusterIdentifier(clusterId).build())
+                .build()
+            on { getClusterCredentials(createCaptor.capture()) } doReturn GetClusterCredentialsResponse.builder()
+                .dbUser(redshiftSettings.username)
+                .dbPassword(password)
+                .build()
+        }
+        val connection = apiAuth.intercept(buildConnection(), false)?.toCompletableFuture()?.get()
+        assertThat(connection).isNotNull
+        assertThat(connection!!.connectionProperties).containsKey("user")
+        assertThat(connection.connectionProperties["user"]).isEqualTo(username)
+        assertThat(connection.connectionProperties).containsKey("password")
+        assertThat(connection.connectionProperties["password"]).isEqualTo(password)
+    }
+
+    @Test(expected = Exception::class)
+    fun `Intercept credentials fails`() {
+        apiAuth.intercept(buildConnection(hasUrl = false), false)?.toCompletableFuture()?.get()
+    }
+
     @Test(expected = IllegalStateException::class)
     fun `Get credentials cluster does not exist`() {
         val redshiftMock = mockClientManager.create<RedshiftClient>()
@@ -167,7 +195,7 @@ class RedshiftAwsAuthTest {
             }
             on { databaseDriver } doReturn null
             on { driverClass } doReturn "org.postgresql.Driver"
-            on { username } doReturn if (hasUsername) RuleUtils.randomName() else ""
+            on { username } doReturn if (hasUsername) username else ""
         }
         val dbConnectionPoint = mock<DatabaseConnectionPoint> {
             on { additionalJdbcProperties } doAnswer {
@@ -186,7 +214,14 @@ class RedshiftAwsAuthTest {
             on { dataSource } doReturn mockConnection
         }
         return mock {
+            val m = mutableMapOf<String, String>()
             on { connectionPoint } doReturn dbConnectionPoint
+            on { runConfiguration } doAnswer {
+                mock {
+                    on { project } doAnswer { projectRule.project }
+                }
+            }
+            on { connectionProperties } doReturn m
         }
     }
 }
