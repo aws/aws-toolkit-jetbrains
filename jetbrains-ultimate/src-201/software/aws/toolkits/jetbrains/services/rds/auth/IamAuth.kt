@@ -44,7 +44,7 @@ data class RdsAuthInformation(
     val region: AwsRegion
 )
 
-// This is marked as internal but is what we were told to use
+// [DatabaseAuthProvider] is marked as internal, but JetBrains advised this was a correct usage
 class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RdsIamAuth") {
     override fun getId(): String = providerId
     override fun getDisplayName(): String = message("rds.iam_connection_display_name")
