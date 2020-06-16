@@ -12,6 +12,8 @@ import com.intellij.openapi.progress.PerformInBackgroundOption
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
+import software.amazon.awssdk.services.rds.model.Endpoint
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
@@ -24,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
-import software.aws.toolkits.jetbrains.services.rds.ui.CreateDataSourceDialogWrapper
+import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -37,14 +39,17 @@ class CreateDataSourceActionGroup : SingleExplorerNodeActionGroup<RdsNode>("rds.
     )
 }
 
+data class RdsDatasourceConfiguration(
+    val regionId: String,
+    val credentialId: String,
+    val dbEngine: String,
+    val endpoint: Endpoint,
+    val username: String
+)
+
 class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("rds.iam_config")) {
     override fun actionPerformed(e: AnActionEvent) {
         if (!checkPrerequisites()) {
-            return
-        }
-        val dialog = CreateDataSourceDialogWrapper(node.nodeProject, node.dbInstance)
-        val ok = dialog.showAndGet()
-        if (!ok) {
             return
         }
         object : Task.Backgroundable(
@@ -54,10 +59,18 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
             PerformInBackgroundOption.ALWAYS_BACKGROUND
         ) {
             override fun run(indicator: ProgressIndicator) {
-                val username = dialog.getUsername() ?: throw IllegalStateException("Username is null, but it should have already been validated not null!")
-                val database = dialog.getDatabaseName()
+                // use current STS user as username. Split on : because it comes back id:username
+                val username = AwsResourceCache.getInstance(node.nodeProject).getResourceNow(StsResources.USER).substringAfter(':')
                 val registry = DataSourceRegistry(node.nodeProject)
-                createDatasource(registry, username, database)
+                registry.createDatasource(
+                    RdsDatasourceConfiguration(
+                        regionId = node.nodeProject.activeRegion().id,
+                        credentialId = node.nodeProject.activeCredentialProvider().id,
+                        dbEngine = node.dbInstance.engine(),
+                        endpoint = node.dbInstance.endpoint(),
+                        username = username
+                    )
+                )
                 // Asynchronously show the user the configuration dialog to let them save/edit/test the profile
                 runInEdt {
                     registry.showDialog()
@@ -79,33 +92,32 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
         }
         return true
     }
+}
 
-    internal fun createDatasource(registry: DataSourceRegistry, username: String, database: String) {
-        val endpoint = node.dbInstance.endpoint()
-        val url = "${endpoint.address()}:${endpoint.port()}"
+internal fun DataSourceRegistry.createDatasource(config: RdsDatasourceConfiguration) {
+    val url = "${config.endpoint.address()}:${config.endpoint.port()}"
 
-        val builder = registry.builder
-            .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, node.nodeProject.activeCredentialProvider().id)
-            .withJdbcAdditionalProperty(REGION_ID_PROPERTY, node.nodeProject.activeRegion().id)
-        when (node.dbInstance.engine()) {
-            mysqlEngineType -> {
-                builder
-                    .withUrl("jdbc:$jdbcMysql://$url/$database")
-                    .withUser(username)
-            }
-            postgresEngineType -> {
-                builder
-                    .withUrl("jdbc:$jdbcPostgres://$url/$database")
-                    // In postgres this is case sensitive as lower case. If you add a db user for
-                    // IAM role "Admin", it is inserted as "admin"
-                    .withUser(username.toLowerCase())
-            }
-            else -> throw IllegalArgumentException("Engine ${node.dbInstance.engine()} is not supported!")
+    val builder = builder
+        .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, config.credentialId)
+        .withJdbcAdditionalProperty(REGION_ID_PROPERTY, config.regionId)
+    when (config.dbEngine) {
+        mysqlEngineType -> {
+            builder
+                .withUrl("jdbc:$jdbcMysql://$url/")
+                .withUser(config.username)
         }
-        builder.commit()
-        // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder
-        registry.newDataSources.firstOrNull()?.let {
-            it.authProviderId = IamAuth.providerId
-        } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
+        postgresEngineType -> {
+            builder
+                .withUrl("jdbc:$jdbcPostgres://$url/")
+                // In postgres this is case sensitive as lower case. If you add a db user for
+                // IAM role "Admin", it is inserted as "admin"
+                .withUser(config.username.toLowerCase())
+        }
+        else -> throw IllegalArgumentException("Engine ${config.dbEngine} is not supported for IAM auth!")
     }
+    builder.commit()
+    // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder
+    newDataSources.firstOrNull()?.let {
+        it.authProviderId = IamAuth.providerId
+    } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
 }

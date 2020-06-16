@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import software.amazon.awssdk.services.rds.model.DBInstance
 import software.amazon.awssdk.services.rds.model.Endpoint
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
@@ -26,6 +27,9 @@ class CreateConfigurationActionTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
+    val port = RuleUtils.randomNumber()
+    val address = RuleUtils.randomName()
+    val username = "${RuleUtils.randomName()}CAPITAL"
 
     @Test
     fun `Prerequisites fails when IAM authentication is disabled`() {
@@ -42,12 +46,17 @@ class CreateConfigurationActionTest {
     // This tests common properties. The ones below test driver specific properties
     @Test
     fun `Add data source`() {
-        val port = RuleUtils.randomNumber()
-        val address = RuleUtils.randomName()
-        val username = RuleUtils.randomName() + "CAPITAL"
-        val action = createSourceAction(address = address, port = port)
+        val instance = createDbInstance(address = address, port = port)
         val registry = DataSourceRegistry(projectRule.project)
-        action.createDatasource(registry, username, "username")
+        registry.createDatasource(
+            RdsDatasourceConfiguration(
+                endpoint = instance.endpoint(),
+                username = username,
+                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                dbEngine = instance.engine()
+            )
+        )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
             assertThat(it.isTemporary).isFalse()
             assertThat(it.url).contains(port.toString())
@@ -60,12 +69,17 @@ class CreateConfigurationActionTest {
 
     @Test
     fun `Add postgres data source`() {
-        val port = RuleUtils.randomNumber()
-        val address = RuleUtils.randomName()
-        val username = RuleUtils.randomName() + "CAPITAL"
-        val action = createSourceAction(address = address, port = port)
+        val instance = createDbInstance(port = port, address = address, engineType = postgresEngineType)
         val registry = DataSourceRegistry(projectRule.project)
-        action.createDatasource(registry, username, "username")
+        registry.createDatasource(
+            RdsDatasourceConfiguration(
+                endpoint = instance.endpoint(),
+                username = username,
+                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                dbEngine = instance.engine()
+            )
+        )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
             assertThat(it.username).isLowerCase().isEqualTo(username.toLowerCase())
             assertThat(it.driverClass).contains("postgres")
@@ -75,12 +89,17 @@ class CreateConfigurationActionTest {
 
     @Test
     fun `Add mysql data source`() {
-        val port = RuleUtils.randomNumber()
-        val address = RuleUtils.randomName()
-        val username = RuleUtils.randomName() + "CAPITAL"
-        val action = createSourceAction(address = address, port = port, engineType = mysqlEngineType)
+        val instance = createDbInstance(address = address, port = port, engineType = mysqlEngineType)
         val registry = DataSourceRegistry(projectRule.project)
-        action.createDatasource(registry, username, "username")
+        registry.createDatasource(
+            RdsDatasourceConfiguration(
+                endpoint = instance.endpoint(),
+                username = username,
+                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                dbEngine = instance.engine()
+            )
+        )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
             assertThat(it.username).isEqualTo(username)
             assertThat(it.driverClass).contains("mysql")
@@ -90,9 +109,17 @@ class CreateConfigurationActionTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `Bad engine throws`() {
-        val action = createSourceAction(engineType = "NOT SUPPORTED")
+        val instance = createDbInstance(engineType = "NOT SUPPORTED")
         val registry = DataSourceRegistry(projectRule.project)
-        action.createDatasource(registry, "username", "username")
+        registry.createDatasource(
+            RdsDatasourceConfiguration(
+                endpoint = instance.endpoint(),
+                username = username,
+                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                dbEngine = instance.engine()
+            )
+        )
     }
 
     private fun createSourceAction(
@@ -104,14 +131,22 @@ class CreateConfigurationActionTest {
     ) = CreateIamDataSourceAction(mock {
         on { nodeProject } doAnswer { projectRule.project }
         on { dbInstance } doAnswer {
-            mock {
-                on { iamDatabaseAuthenticationEnabled() } doAnswer { iamAuthEnabled }
-                on { endpoint() } doAnswer {
-                    Endpoint.builder().address(address).port(port).build()
-                }
-                on { engine() } doAnswer { engineType }
-                on { dbName() } doAnswer { dbName }
-            }
+            createDbInstance(address, port, dbName, iamAuthEnabled, engineType)
         }
     })
+
+    private fun createDbInstance(
+        address: String = RuleUtils.randomName(),
+        port: Int = RuleUtils.randomNumber(),
+        dbName: String = RuleUtils.randomName(),
+        iamAuthEnabled: Boolean = true,
+        engineType: String = postgresEngineType
+    ): DBInstance = mock {
+        on { iamDatabaseAuthenticationEnabled() } doAnswer { iamAuthEnabled }
+        on { endpoint() } doAnswer {
+            Endpoint.builder().address(address).port(port).build()
+        }
+        on { engine() } doAnswer { engineType }
+        on { dbName() } doAnswer { dbName }
+    }
 }

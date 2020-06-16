@@ -12,6 +12,7 @@ import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConne
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.JdbcUrlParserUtil
+import com.intellij.database.dataSource.url.template.TemplateJdbcUrlParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
@@ -99,9 +100,9 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             ?: throw IllegalArgumentException(message("rds.validation.no_profile_selected"))
         val parsedUrl = JdbcUrlParserUtil.parsed(connection.connectionPoint.dataSource)
             ?: throw IllegalArgumentException(message("rds.validation.failed_to_parse_url"))
-        val host = parsedUrl.getParameter("host")
+        val host = parsedUrl.getParameter(TemplateJdbcUrlParser.HOST_PARAMETER)
             ?: throw IllegalArgumentException(message("rds.validation.no_host_specified"))
-        val port = parsedUrl.getParameter("port")?.toInt()
+        val port = parsedUrl.getParameter(TemplateJdbcUrlParser.PORT_PARAMETER)?.toInt()
             ?: throw IllegalArgumentException(message("rds.validation.no_port_specified"))
         val user = connection.connectionPoint.dataSource.username
 
