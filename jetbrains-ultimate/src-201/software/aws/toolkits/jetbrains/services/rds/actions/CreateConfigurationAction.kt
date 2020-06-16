@@ -13,6 +13,8 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
 import software.amazon.awssdk.services.rds.model.Endpoint
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
@@ -59,8 +61,13 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
             PerformInBackgroundOption.ALWAYS_BACKGROUND
         ) {
             override fun run(indicator: ProgressIndicator) {
-                // use current STS user as username. Split on : because it comes back id:username
-                val username = AwsResourceCache.getInstance(node.nodeProject).getResourceNow(StsResources.USER).substringAfter(':')
+                val username = try {
+                    // use current STS user as username. Split on : because it comes back id:username
+                    AwsResourceCache.getInstance(node.nodeProject).getResourceNow(StsResources.USER).substringAfter(':')
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Getting username from STS failed, falling back to master username" }
+                    node.dbInstance.masterUsername()
+                }
                 val registry = DataSourceRegistry(node.nodeProject)
                 registry.createDatasource(
                     RdsDatasourceConfiguration(
@@ -91,6 +98,10 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
             return false
         }
         return true
+    }
+
+    private companion object {
+        val LOG = getLogger<CreateIamDataSourceAction>()
     }
 }
 
