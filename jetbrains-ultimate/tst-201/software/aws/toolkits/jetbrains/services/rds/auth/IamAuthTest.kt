@@ -100,7 +100,7 @@ class IamAuthTest {
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doReturn if (hasUrl) {
-                "jdbc:postgresql://${if (hasHost) dbHost else ""}${if (hasPort) ":${port}" else ""}/dev"
+                "jdbc:postgresql://${if (hasHost) dbHost else ""}${if (hasPort) ":$port" else ""}/dev"
             } else {
                 null
             }
