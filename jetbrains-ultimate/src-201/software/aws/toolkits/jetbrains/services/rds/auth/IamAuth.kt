@@ -19,17 +19,12 @@ import software.amazon.awssdk.auth.signer.params.Aws4PresignerParams
 import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
 import software.amazon.awssdk.regions.Region
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.datagrip.getAwsConnectionSettings
-import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import java.sql.SQLException
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletionStage
