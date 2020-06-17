@@ -127,7 +127,10 @@ internal fun DataSourceRegistry.createDatasource(config: RdsDatasourceConfigurat
         else -> throw IllegalArgumentException("Engine ${config.dbEngine} is not supported for IAM auth!")
     }
     builder.commit()
-    // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder
+    // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder. There is no way to set it in the builder,
+    // so we have to set it after the fact. However, that means we need to pull it out after it is built.
+    // The builder doesn't return a reference to it, so we have to pull it out of the committed data sources.
+    // newDataSources contains the list of ones added just now, so add it to that
     newDataSources.firstOrNull()?.let {
         it.authProviderId = IamAuth.providerId
     } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")

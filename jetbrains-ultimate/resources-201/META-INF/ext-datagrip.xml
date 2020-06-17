@@ -19,7 +19,4 @@
             <separator/>
         </group>
     </actions>
-    <extensions defaultExtensionNs="com.intellij.database">
-        <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth"/>
-    </extensions>
 </idea-plugin>
