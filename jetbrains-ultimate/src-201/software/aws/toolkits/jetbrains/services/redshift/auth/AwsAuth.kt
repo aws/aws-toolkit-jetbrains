@@ -37,7 +37,7 @@ class AwsAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms.isRedshift
     override fun getDisplayName(): String = message("redshift.auth.aws")
 
-    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = AwsAuthWidget()
+    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = RedshiftAwsAuthWidget()
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
