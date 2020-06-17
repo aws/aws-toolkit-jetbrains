@@ -10,7 +10,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.text.nullize
 import software.aws.toolkits.jetbrains.services.rds.RdsResources
-import software.aws.toolkits.jetbrains.services.redshift.RedshiftResources
+import software.aws.toolkits.jetbrains.services.redshift.RedshiftUtils
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
@@ -21,7 +21,7 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userField = false) {
     private val secretIdSelector = JBTextField()
 
     override val rowCount = 4
-    override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url) ?: RedshiftResources.
+    override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url) ?: RedshiftUtils.extractRegionFromUrl(url)
 
     override fun createPanel(): JPanel {
         val panel = super.createPanel()

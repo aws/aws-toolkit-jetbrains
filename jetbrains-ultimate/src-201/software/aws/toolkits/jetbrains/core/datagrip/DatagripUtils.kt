@@ -15,14 +15,15 @@ const val REGION_ID_PROPERTY = "AWS.RegionId"
 fun ProtoConnection.getAwsConnectionSettings(): ConnectionSettings {
     val credentialManager = CredentialManager.getInstance()
     val regionId = connectionPoint.additionalJdbcProperties[REGION_ID_PROPERTY]
-    val region = regionId?.let {
-        AwsRegionProvider.getInstance().allRegions()[it]
-    } ?: throw IllegalArgumentException(message("datagrip.validation.invalid_region_specified", regionId.toString()))
+        ?: throw IllegalArgumentException(message("datagrip.validation.no_region_specified"))
+    val region = AwsRegionProvider.getInstance().allRegions()[regionId]
+        ?: throw IllegalArgumentException(
+            message("datagrip.validation.invalid_region_specified", regionId)
+        )
     val credentialId = connectionPoint.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
-    val credentials = credentialId?.let { id ->
-        credentialManager.getCredentialIdentifierById(id)?.let {
-            credentialManager.getAwsCredentialProvider(it, region)
-        }
-    } ?: throw IllegalArgumentException(message("datagrip.validation.invalid_credential_specified", credentialId.toString()))
+        ?: throw IllegalArgumentException(message("datagrip.validation.no_credentials_specified"))
+    val credentials = credentialManager.getCredentialIdentifierById(credentialId)?.let {
+        credentialManager.getAwsCredentialProvider(it, region)
+    } ?: throw IllegalArgumentException(message("datagrip.validation.invalid_credential_specified", credentialId))
     return ConnectionSettings(credentials, region)
 }
