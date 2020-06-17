@@ -16,4 +16,3 @@ data class SecretsManagerDbSecret(
     // for RDS
     val dbInstanceIdentifier: String?
 )
-
