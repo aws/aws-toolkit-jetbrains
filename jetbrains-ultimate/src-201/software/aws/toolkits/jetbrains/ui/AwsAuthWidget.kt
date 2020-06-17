@@ -12,10 +12,12 @@ import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.text.nullize
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 import javax.swing.event.DocumentListener
@@ -106,4 +108,10 @@ abstract class AwsAuthWidget(private val userField: Boolean = true) : DatabaseCr
         }
         super.updateFromUrl(holder)
     }
+
+    @TestOnly
+    internal fun getSelectedCredential() = credentialSelector.getSelectedCredentialsProvider()
+
+    @TestOnly
+    internal fun getSelectedRegion() = regionSelector.selected()
 }

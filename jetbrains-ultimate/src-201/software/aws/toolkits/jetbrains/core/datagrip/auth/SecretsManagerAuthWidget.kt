@@ -9,6 +9,7 @@ import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.text.nullize
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.rds.RdsResources
 import software.aws.toolkits.jetbrains.services.redshift.RedshiftUtils
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
@@ -47,4 +48,7 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userField = false) {
             secretIdSelector.text = it
         }
     }
+
+    @TestOnly
+    internal fun getSecretId() = secretIdSelector.text
 }

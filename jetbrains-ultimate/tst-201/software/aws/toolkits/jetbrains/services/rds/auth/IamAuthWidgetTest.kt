@@ -41,29 +41,29 @@ class IamAuthWidgetTest {
     @Test
     fun `Reset sets region if valid`() {
         widget.reset(buildDataSource(hasRegion = true), false)
-        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
     @Test
     fun `Reset does not set region if invalid`() {
         widget.reset(buildDataSource(hasRegion = true), false)
-        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
         widget.reset(buildDataSource(hasRegion = false), false)
-        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
     @Test
     fun `Reset sets credentials if valid`() {
         widget.reset(buildDataSource(hasCredentials = true), false)
-        assertThat(widget.getCredentialsFromWidget()).isEqualTo(credentialId)
+        assertThat(widget.getSelectedCredential()).isEqualTo(credentialId)
     }
 
     @Test
     fun `Reset does not set credentials if invalid`() {
         widget.reset(buildDataSource(hasCredentials = true), false)
-        assertThat(widget.getCredentialsFromWidget()).isEqualTo(credentialId)
+        assertThat(widget.getSelectedCredential()).isEqualTo(credentialId)
         widget.reset(buildDataSource(hasCredentials = false), false)
-        assertThat(widget.getCredentialsFromWidget()).isEqualTo(credentialId)
+        assertThat(widget.getSelectedCredential()).isEqualTo(null)
     }
 
     @Test
@@ -71,7 +71,7 @@ class IamAuthWidgetTest {
         widget.reset(mock(), false)
         val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
     @Test
@@ -81,7 +81,7 @@ class IamAuthWidgetTest {
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         val badUrl = "jdbc:postgresql://abc.host.1000000%invalidregion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn badUrl })
-        assertThat(widget.getRegionFromWidget()).isEqualTo(defaultRegion)
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
     private fun buildDataSource(
@@ -98,18 +98,5 @@ class IamAuthWidgetTest {
             }
             m
         }
-    }
-
-    // Get settings out of widget by saving settings
-    private fun RdsAwsAuthWidget.getRegionFromWidget(): String? {
-        val dataSource = buildDataSource()
-        save(dataSource, false)
-        return dataSource.additionalJdbcProperties[REGION_ID_PROPERTY]
-    }
-
-    private fun RdsAwsAuthWidget.getCredentialsFromWidget(): String? {
-        val dataSource = buildDataSource()
-        save(dataSource, false)
-        return dataSource.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]
     }
 }

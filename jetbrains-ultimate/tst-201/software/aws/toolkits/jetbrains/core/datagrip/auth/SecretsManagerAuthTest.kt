@@ -4,5 +4,5 @@
 package software.aws.toolkits.jetbrains.core.datagrip.auth
 
 class SecretsManagerAuthTest {
-    
+
 }
