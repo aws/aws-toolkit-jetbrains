@@ -23,12 +23,12 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueReques
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkits.core.utils.unwrap
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import java.util.concurrent.ExecutionException
 
 class SecretsManagerAuthTest {
     @Rule
@@ -67,32 +67,32 @@ class SecretsManagerAuthTest {
         Assertions.assertThat(connection.connectionProperties["password"]).isEqualTo(password)
     }
 
-    @Test(expected = ExecutionException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun `No secret fails`() {
-        sAuth.intercept(buildConnection(hasSecret = false), false)!!.toCompletableFuture().get()
+        sAuth.intercept(buildConnection(hasSecret = false), false)!!.unwrap()
     }
 
-    @Test(expected = ExecutionException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun `Bad AWS connection fails`() {
-        sAuth.intercept(buildConnection(hasCredentials = false), false)!!.toCompletableFuture().get()
+        sAuth.intercept(buildConnection(hasCredentials = false), false)!!.unwrap()
     }
 
-    @Test(expected = ExecutionException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun `No username in credentials fails`() {
         createSecretsManagerClient(hasUsername = false)
-        sAuth.intercept(buildConnection(), false)!!.toCompletableFuture().get()
+        sAuth.intercept(buildConnection(), false)!!.unwrap()
     }
 
-    @Test(expected = ExecutionException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun `No password in credentials fails`() {
         createSecretsManagerClient(hasPassword = false)
-        sAuth.intercept(buildConnection(), false)!!.toCompletableFuture().get()
+        sAuth.intercept(buildConnection(), false)!!.unwrap()
     }
 
-    @Test(expected = ExecutionException::class)
+    @Test(expected = RuntimeException::class)
     fun `Secrets Manager client throws fails`() {
         createSecretsManagerClient(succeeds = false)
-        sAuth.intercept(buildConnection(), false)!!.toCompletableFuture().get()
+        sAuth.intercept(buildConnection(), false)!!.unwrap()
     }
 
     private fun createSecretsManagerClient(
@@ -105,7 +105,7 @@ class SecretsManagerAuthTest {
             if (succeeds) {
                 on { getSecretValue(any<GetSecretValueRequest>()) } doAnswer {
                     GetSecretValueResponse.builder().name(secret)
-                        .secretString("{${if (hasUsername) "\"username\":\"$username\"," else ""} ${if (hasPassword) "\"password\":\"$password\"}" else ""}}")
+                        .secretString("{${if (hasUsername) "\"username\":\"$username\"" else ""}${if (hasPassword && hasUsername) "," else ""} ${if (hasPassword) "\"password\":\"$password\"}" else ""}}")
                         .build()
                 }
             } else {
