@@ -10,6 +10,7 @@ import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
 import org.assertj.core.api.Assertions
@@ -20,26 +21,19 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse
-import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.services.secretsmanager.SecretsManagerResources
 import java.util.concurrent.ExecutionException
 
 class SecretsManagerAuthTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
-
-    @Rule
-    @JvmField
-    val resourceCache = MockResourceCacheRule(projectRule)
 
     @Rule
     @JvmField
@@ -64,13 +58,7 @@ class SecretsManagerAuthTest {
 
     @Test
     fun `Intercept credentials succeeds`() {
-        resourceCache.get().addEntry(SecretsManagerResources.secrets, listOf(SecretListEntry.builder().name(secret).build()))
-        val client = clientManager.create<SecretsManagerClient>()
-        client.stub {
-            on { getSecretValue(any<GetSecretValueRequest>()) } doAnswer {
-                GetSecretValueResponse.builder().name(secret).secretString("""{"username":"$username","password":"$password"}""").build()
-            }
-        }
+        createSecretsManagerClient()
         val connection = sAuth.intercept(buildConnection(), false)?.toCompletableFuture()?.get()
         Assertions.assertThat(connection).isNotNull
         Assertions.assertThat(connection!!.connectionProperties).containsKey("user")
@@ -80,8 +68,51 @@ class SecretsManagerAuthTest {
     }
 
     @Test(expected = ExecutionException::class)
-    fun `Intercept credentials fails`() {
+    fun `No secret fails`() {
         sAuth.intercept(buildConnection(hasSecret = false), false)!!.toCompletableFuture().get()
+    }
+
+    @Test(expected = ExecutionException::class)
+    fun `Bad AWS connection fails`() {
+        sAuth.intercept(buildConnection(hasCredentials = false), false)!!.toCompletableFuture().get()
+    }
+
+    @Test(expected = ExecutionException::class)
+    fun `No username in credentials fails`() {
+        createSecretsManagerClient(hasUsername = false)
+        sAuth.intercept(buildConnection(), false)!!.toCompletableFuture().get()
+    }
+
+    @Test(expected = ExecutionException::class)
+    fun `No password in credentials fails`() {
+        createSecretsManagerClient(hasPassword = false)
+        sAuth.intercept(buildConnection(), false)!!.toCompletableFuture().get()
+    }
+
+    @Test(expected = ExecutionException::class)
+    fun `Secrets Manager client throws fails`() {
+        createSecretsManagerClient(succeeds = false)
+        sAuth.intercept(buildConnection(), false)!!.toCompletableFuture().get()
+    }
+
+    private fun createSecretsManagerClient(
+        succeeds: Boolean = true,
+        hasUsername: Boolean = true,
+        hasPassword: Boolean = true
+    ): SecretsManagerClient {
+        val client = clientManager.create<SecretsManagerClient>()
+        client.stub {
+            if (succeeds) {
+                on { getSecretValue(any<GetSecretValueRequest>()) } doAnswer {
+                    GetSecretValueResponse.builder().name(secret)
+                        .secretString("{${if (hasUsername) "\"username\":\"$username\"," else ""} ${if (hasPassword) "\"password\":\"$password\"}" else ""}}")
+                        .build()
+                }
+            } else {
+                on { getSecretValue(any<GetSecretValueRequest>()) } doThrow RuntimeException("Terrible exception")
+            }
+        }
+        return client
     }
 
     private fun buildConnection(
