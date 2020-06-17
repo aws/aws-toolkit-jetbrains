@@ -9,8 +9,7 @@ import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.core.credentials.connectionSettings
 import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth
@@ -31,9 +30,10 @@ fun Project.clusterArn(cluster: Cluster, region: AwsRegion): String {
 }
 
 fun DataSourceRegistry.createDatasource(project: Project, cluster: Cluster) {
+    val connectionSettings = project.connectionSettings()
     builder
-        .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, project.activeCredentialProvider().id)
-        .withJdbcAdditionalProperty(REGION_ID_PROPERTY, project.activeRegion().id)
+        .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, connectionSettings?.credentials?.id)
+        .withJdbcAdditionalProperty(REGION_ID_PROPERTY, connectionSettings?.region?.id)
         .withUrl(cluster.clusterIdentifier())
         .withUser(cluster.masterUsername())
         .withUrl("jdbc:redshift://${cluster.endpoint().address()}:${cluster.endpoint().port()}/${cluster.dbName()}")
