@@ -35,7 +35,7 @@ import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 
-class RedshiftAwsAuthTest {
+class IamAuthTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
@@ -46,7 +46,7 @@ class RedshiftAwsAuthTest {
 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
-    private val apiAuth = AwsAuth()
+    private val apiAuth = IamAuth()
     private val credentialId = RuleUtils.randomName()
     private val defaultRegion = RuleUtils.randomName()
     private val region = AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName())

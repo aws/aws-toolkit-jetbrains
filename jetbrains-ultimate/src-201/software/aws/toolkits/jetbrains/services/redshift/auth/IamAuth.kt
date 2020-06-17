@@ -32,12 +32,12 @@ data class RedshiftSettings(
 )
 
 // [DatabaseAuthProvider] is marked as internal, but JetBrains advised this was a correct usage
-class AwsAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RedshiftIamAuth") {
+class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolScope("RedshiftIamAuth") {
     override fun getId(): String = providerId
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms.isRedshift
     override fun getDisplayName(): String = message("redshift.auth.aws")
 
-    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = RedshiftAwsAuthWidget()
+    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = IamAwsAuthWidget()
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
@@ -89,6 +89,6 @@ class AwsAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
 
     companion object {
         const val providerId = "aws.redshift.api"
-        private val LOG = getLogger<AwsAuth>()
+        private val LOG = getLogger<IamAuth>()
     }
 }
