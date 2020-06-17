@@ -11,11 +11,11 @@ import org.junit.Test
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.services.redshift.auth.AwsAuth
+import software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.redshift.createDatasource
-import software.aws.toolkits.jetbrains.ui.CREDENTIAL_ID_PROPERTY
-import software.aws.toolkits.jetbrains.ui.REGION_ID_PROPERTY
 
 class CreateDataSourceActionTest {
     @Rule
@@ -41,7 +41,7 @@ class CreateDataSourceActionTest {
             assertThat(it.url).startsWith("jdbc:redshift://")
             assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.displayName)
             assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(MockRegionProvider.getInstance().defaultRegion().id)
-            assertThat(it.authProviderId).isEqualTo(AwsAuth.providerId)
+            assertThat(it.authProviderId).isEqualTo(IamAuth.providerId)
         }
     }
 }
