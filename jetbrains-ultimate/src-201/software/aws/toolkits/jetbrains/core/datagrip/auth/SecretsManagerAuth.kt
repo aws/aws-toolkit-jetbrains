@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.credentialStore.Credentials
+import com.intellij.database.Dbms
 import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DatabaseAuthProvider
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
@@ -35,7 +36,11 @@ class SecretsManagerAuth : DatabaseAuthProvider, CoroutineScope by ApplicationTh
     private val objectMapper = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
     override fun getId(): String = providerId
-    override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms.isRedshift || dataSource.dbms.isMysql || dataSource.dbms.isPostgres
+    override fun isApplicable(dataSource: LocalDataSource): Boolean {
+        val dbms = dataSource.dbms
+        return dbms == Dbms.MYSQL || dbms == Dbms.POSTGRES || dbms == Dbms.POSTGRES
+    }
+
     override fun getDisplayName(): String = message("datagrip.auth.secrets_manager")
 
     override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = SecretsManagerAuthWidget()
