@@ -36,6 +36,14 @@ fun DataSourceRegistry.createDatasource(project: Project, cluster: Cluster) {
     } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
 }
 
+object RedshiftUtils {
+    private val REDSHIFT_REGION_REGEX = """.*\..*\.(.+).redshift\.""".toRegex()
+    private val REDSHIFT_IDENTIFIER_REGEX = """.*//(.+)\..*\..*.redshift\..""".toRegex()
+
+    fun extractRegionFromUrl(url: String?): String? = url?.let { REDSHIFT_REGION_REGEX.find(url)?.groupValues?.get(1) }
+    fun extractClusterIdFromUrl(url: String?): String? = url?.let { REDSHIFT_IDENTIFIER_REGEX.find(url)?.groupValues?.get(1) }
+}
+
 fun Project.clusterArn(cluster: Cluster, region: AwsRegion): String {
     // Attempt to get account out of the cache. If not, it's empty so, it is still a valid arn
     val account = tryOrNull { AwsResourceCache.getInstance(this).getResourceIfPresent(StsResources.ACCOUNT) } ?: ""
