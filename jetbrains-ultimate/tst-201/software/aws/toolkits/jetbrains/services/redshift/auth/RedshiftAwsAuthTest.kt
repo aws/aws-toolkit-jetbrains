@@ -7,6 +7,7 @@ import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConne
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.testFramework.ProjectRule
+import com.nhaarman.mockitokotlin2.KArgumentCaptor
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doAnswer
@@ -30,9 +31,9 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.ui.CREDENTIAL_ID_PROPERTY
-import software.aws.toolkits.jetbrains.ui.REGION_ID_PROPERTY
 
 class RedshiftAwsAuthTest {
     @Rule
@@ -111,17 +112,7 @@ class RedshiftAwsAuthTest {
     @Test
     fun `Get credentials succeeds`() {
         val password = RuleUtils.randomName()
-        val redshiftMock = mockClientManager.create<RedshiftClient>()
-        val createCaptor = argumentCaptor<GetClusterCredentialsRequest>()
-        redshiftMock.stub {
-            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder()
-                .clusters(Cluster.builder().clusterIdentifier(clusterId).build())
-                .build()
-            on { getClusterCredentials(createCaptor.capture()) } doReturn GetClusterCredentialsResponse.builder()
-                .dbUser(redshiftSettings.username)
-                .dbPassword(password)
-                .build()
-        }
+        val (createCaptor, redshiftMock) = getWorkingRedshiftMock(password)
         val creds = apiAuth.getCredentials(redshiftSettings, redshiftMock)
         assertThat(creds?.userName).isEqualTo(redshiftSettings.username)
         assertThat(creds?.password).isEqualTo(password)
@@ -142,17 +133,7 @@ class RedshiftAwsAuthTest {
     @Test
     fun `Intercept credentials succeeds`() {
         val password = RuleUtils.randomName()
-        val redshiftMock = mockClientManager.create<RedshiftClient>()
-        val createCaptor = argumentCaptor<GetClusterCredentialsRequest>()
-        redshiftMock.stub {
-            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder()
-                .clusters(Cluster.builder().clusterIdentifier(clusterId).build())
-                .build()
-            on { getClusterCredentials(createCaptor.capture()) } doReturn GetClusterCredentialsResponse.builder()
-                .dbUser(redshiftSettings.username)
-                .dbPassword(password)
-                .build()
-        }
+        val (createCaptor, redshiftMock) = getWorkingRedshiftMock(password)
         val connection = apiAuth.intercept(buildConnection(), false)?.toCompletableFuture()?.get()
         assertThat(connection).isNotNull
         assertThat(connection!!.connectionProperties).containsKey("user")
@@ -223,5 +204,20 @@ class RedshiftAwsAuthTest {
             }
             on { connectionProperties } doReturn m
         }
+    }
+
+    private fun getWorkingRedshiftMock(password: String): Pair<KArgumentCaptor<GetClusterCredentialsRequest>, RedshiftClient> {
+        val redshiftMock = mockClientManager.create<RedshiftClient>()
+        val createCaptor = argumentCaptor<GetClusterCredentialsRequest>()
+        redshiftMock.stub {
+            on { describeClusters(any<DescribeClustersRequest>()) } doReturn DescribeClustersResponse.builder()
+                .clusters(Cluster.builder().clusterIdentifier(clusterId).build())
+                .build()
+            on { getClusterCredentials(createCaptor.capture()) } doReturn GetClusterCredentialsResponse.builder()
+                .dbUser(redshiftSettings.username)
+                .dbPassword(password)
+                .build()
+        }
+        return Pair(createCaptor, redshiftMock)
     }
 }
