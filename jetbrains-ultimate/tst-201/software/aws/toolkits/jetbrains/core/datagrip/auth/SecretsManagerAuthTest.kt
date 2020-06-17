@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.datagrip.auth
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
@@ -38,6 +39,8 @@ class SecretsManagerAuthTest {
     @Rule
     @JvmField
     val clientManager = MockClientManagerRule(projectRule)
+
+    private val objectMapper = jacksonObjectMapper()
 
     private val sAuth = SecretsManagerAuth()
     private val username = RuleUtils.randomName()
@@ -101,12 +104,18 @@ class SecretsManagerAuthTest {
         hasPassword: Boolean = true
     ): SecretsManagerClient {
         val client = clientManager.create<SecretsManagerClient>()
+        val secretMap = mutableMapOf<String, String>()
+        if (hasUsername) {
+            secretMap["username"] = username
+        }
+        if (hasPassword) {
+            secretMap["password"] = password
+        }
+
         client.stub {
             if (succeeds) {
                 on { getSecretValue(any<GetSecretValueRequest>()) } doAnswer {
-                    GetSecretValueResponse.builder().name(secret)
-                        .secretString("{${if (hasUsername) "\"username\":\"$username\"" else ""}${if (hasPassword && hasUsername) "," else ""} ${if (hasPassword) "\"password\":\"$password\"}" else ""}}")
-                        .build()
+                    GetSecretValueResponse.builder().name(secret).secretString(objectMapper.writeValueAsString(secretMap)).build()
                 }
             } else {
                 on { getSecretValue(any<GetSecretValueRequest>()) } doThrow RuntimeException("Terrible exception")
