@@ -14,10 +14,10 @@ import software.amazon.awssdk.services.rds.model.DBInstance
 import software.amazon.awssdk.services.rds.model.Endpoint
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.services.rds.auth.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
-import software.aws.toolkits.jetbrains.services.rds.auth.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType

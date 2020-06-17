@@ -18,12 +18,12 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
-import software.aws.toolkits.jetbrains.services.rds.auth.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
-import software.aws.toolkits.jetbrains.services.rds.auth.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
