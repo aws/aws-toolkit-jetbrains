@@ -21,7 +21,7 @@ import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 
-class SecretsManagerWidgetAuthTest {
+class SecretsManagerAuthWidgetTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
@@ -77,23 +77,15 @@ class SecretsManagerWidgetAuthTest {
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
-    private fun buildDataSource(
-        hasCredentials: Boolean = true,
-        hasRegion: Boolean = true,
-        hasSecret: Boolean = true
-    ): LocalDataSource = mock {
+    private fun buildDataSource(hasSecret: Boolean = true): LocalDataSource = mock {
         on { additionalJdbcProperties } doAnswer {
-            val m = mutableMapOf<String, String>()
-            if (hasCredentials) {
-                m[CREDENTIAL_ID_PROPERTY] = credentialId
+            mutableMapOf<String, String>().also {
+                it[CREDENTIAL_ID_PROPERTY] = credentialId
+                it[REGION_ID_PROPERTY] = defaultRegion
+                if (hasSecret) {
+                    it[SECRET_ID_PROPERTY] = defaultSecretId
+                }
             }
-            if (hasRegion) {
-                m[REGION_ID_PROPERTY] = defaultRegion
-            }
-            if (hasSecret) {
-                m[SECRET_ID_PROPERTY] = defaultSecretId
-            }
-            m
         }
     }
 }
