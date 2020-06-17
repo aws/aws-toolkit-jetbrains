@@ -9,7 +9,8 @@ import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.text.nullize
-import software.aws.toolkits.jetbrains.services.redshift.extractRegionFromUrl
+import software.aws.toolkits.jetbrains.services.rds.RdsResources
+import software.aws.toolkits.jetbrains.services.redshift.RedshiftResources
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
@@ -20,11 +21,11 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userField = false) {
     private val secretIdSelector = JBTextField()
 
     override val rowCount = 4
-    override fun getRegionFromUrl(url: String?): String? = extractRegionFromUrl(url)
+    override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url) ?: RedshiftResources.
 
     override fun createPanel(): JPanel {
         val panel = super.createPanel()
-        val label = JBLabel(message("redshift.secret_id"))
+        val label = JBLabel(message("datagrip.secret_id"))
         panel.add(label, UrlPropertiesPanel.createLabelConstraints(3, 0, label.preferredSize.getWidth()))
         panel.add(secretIdSelector, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
         return panel
@@ -42,7 +43,7 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userField = false) {
 
     override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
         super.reset(dataSource, resetCredentials)
-        dataSource.additionalJdbcProperties[SECRET_ID_PROPERTY]?.let {
+        dataSource.additionalJdbcProperties[SECRET_ID_PROPERTY]?.nullize()?.let {
             secretIdSelector.text = it
         }
     }
