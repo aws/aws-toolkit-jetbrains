@@ -10,8 +10,7 @@ import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
-import software.aws.toolkits.jetbrains.services.redshift.extractClusterIdFromUrl
-import software.aws.toolkits.jetbrains.services.redshift.extractRegionFromUrl
+import software.aws.toolkits.jetbrains.services.redshift.RedshiftUtils
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
@@ -22,7 +21,7 @@ class AwsAuthWidget : AwsAuthWidget() {
     private val clusterIdSelector = JBTextField()
 
     override val rowCount = 4
-    override fun getRegionFromUrl(url: String?): String? = extractRegionFromUrl(url)
+    override fun getRegionFromUrl(url: String?): String? = RedshiftUtils.extractRegionFromUrl(url)
 
     override fun createPanel(): JPanel {
         val panel = super.createPanel()
@@ -50,7 +49,7 @@ class AwsAuthWidget : AwsAuthWidget() {
     override fun updateFromUrl(holder: ParametersHolder) {
         super.updateFromUrl(holder)
         val url = (holder as? UrlEditorModel)?.url
-        val clusterId = extractClusterIdFromUrl(url)
+        val clusterId = RedshiftUtils.extractClusterIdFromUrl(url)
         clusterId?.let { clusterIdSelector.text = it }
     }
 }
