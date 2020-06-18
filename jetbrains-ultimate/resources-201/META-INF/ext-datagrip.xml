@@ -11,4 +11,10 @@
         <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth"/>
         <connectionInterceptor implementation="software.aws.toolkits.jetbrains.core.datagrip.auth.SecretsManagerAuth"/>
     </extensions>
+    <actions>
+        <group id="aws.toolkit.explorer.rds" popup="true" compact="false">
+            <action id="rds.mysql.actions" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
+            <separator/>
+        </group>
+    </actions>
 </idea-plugin>
