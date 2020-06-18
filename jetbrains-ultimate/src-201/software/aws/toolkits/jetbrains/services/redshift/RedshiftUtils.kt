@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.redshift
 
 import com.intellij.database.autoconfig.DataSourceRegistry
+import com.intellij.database.dataSource.DataSourceSslConfiguration
+import com.intellij.database.remote.jdbc.helpers.JdbcSettings
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.core.region.AwsRegion
@@ -12,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.connectionSettings
 import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.services.redshift.auth.CLUSTER_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 
@@ -34,12 +37,14 @@ fun DataSourceRegistry.createDatasource(project: Project, cluster: Cluster) {
     builder
         .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, connectionSettings?.credentials?.id)
         .withJdbcAdditionalProperty(REGION_ID_PROPERTY, connectionSettings?.region?.id)
-        .withUrl(cluster.clusterIdentifier())
+        .withJdbcAdditionalProperty(CLUSTER_ID_PROPERTY, cluster.clusterIdentifier())
         .withUser(cluster.masterUsername())
         .withUrl("jdbc:redshift://${cluster.endpoint().address()}:${cluster.endpoint().port()}/${cluster.dbName()}")
         .commit()
     // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder
     newDataSources.firstOrNull()?.let {
         it.authProviderId = IamAuth.providerId
+        // Force SSL on
+        it.sslCfg = DataSourceSslConfiguration("", "", "", true, JdbcSettings.SslMode.VERIFY_FULL)
     } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
 }
