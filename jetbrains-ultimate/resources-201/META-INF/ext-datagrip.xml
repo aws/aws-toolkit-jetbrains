@@ -13,7 +13,7 @@
     </extensions>
     <actions>
         <group id="aws.toolkit.explorer.rds" popup="true" compact="false">
-            <action id="rds.mysql.actions" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
+            <action id="rds.secretsmanager" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
     </actions>
