@@ -14,7 +14,7 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -63,11 +63,11 @@ class SecretsManagerAuthTest {
     fun `Intercept credentials succeeds`() {
         createSecretsManagerClient()
         val connection = sAuth.intercept(buildConnection(), false)?.toCompletableFuture()?.get()
-        Assertions.assertThat(connection).isNotNull
-        Assertions.assertThat(connection!!.connectionProperties).containsKey("user")
-        Assertions.assertThat(connection.connectionProperties["user"]).isEqualTo(username)
-        Assertions.assertThat(connection.connectionProperties).containsKey("password")
-        Assertions.assertThat(connection.connectionProperties["password"]).isEqualTo(password)
+        assertThat(connection).isNotNull
+        assertThat(connection!!.connectionProperties).containsKey("user")
+        assertThat(connection.connectionProperties["user"]).isEqualTo(username)
+        assertThat(connection.connectionProperties).containsKey("password")
+        assertThat(connection.connectionProperties["password"]).isEqualTo(password)
     }
 
     @Test(expected = IllegalArgumentException::class)

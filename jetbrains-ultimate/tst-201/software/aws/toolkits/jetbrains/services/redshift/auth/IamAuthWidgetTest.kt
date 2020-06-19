@@ -9,7 +9,7 @@ import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -17,9 +17,9 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 
 class IamAuthWidgetTest {
     @Rule
@@ -42,13 +42,13 @@ class IamAuthWidgetTest {
     @Test
     fun `No cluster id set is empty in widget`() {
         widget.reset(buildDataSource(hasCluster = false), false)
-        Assertions.assertThat(widget.getClusterId()).isEmpty()
+        assertThat(widget.getClusterId()).isEmpty()
     }
 
     @Test
     fun `Cluster id set from widget`() {
         widget.reset(buildDataSource(hasCluster = true), false)
-        Assertions.assertThat(widget.getClusterId()).isEqualTo(defaultClusterId)
+        assertThat(widget.getClusterId()).isEqualTo(defaultClusterId)
     }
 
     @Test
@@ -56,7 +56,7 @@ class IamAuthWidgetTest {
         widget.reset(mock(), false)
         val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        Assertions.assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
     @Test
@@ -66,7 +66,7 @@ class IamAuthWidgetTest {
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         val badUrl = "jdbc:redshift://redshift-cluster.host.100000%InvalidRegion.redshift.amazonaws.com:5439/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn badUrl })
-        Assertions.assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
     private fun buildDataSource(hasCluster: Boolean = true): LocalDataSource = mock {
