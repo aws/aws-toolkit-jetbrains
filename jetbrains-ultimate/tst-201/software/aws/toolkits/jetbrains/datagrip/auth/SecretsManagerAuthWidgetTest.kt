@@ -52,17 +52,17 @@ class SecretsManagerAuthWidgetTest {
     }
 
     @Test
-    fun `Sets region from RDS URL`() {
+    fun `Sets region from Redshift URL`() {
         widget.reset(mock(), false)
-        val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
+        val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
     @Test
-    fun `Sets region from Redshift URL`() {
+    fun `Sets region from RDS URL`() {
         widget.reset(mock(), false)
-        val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
+        val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
