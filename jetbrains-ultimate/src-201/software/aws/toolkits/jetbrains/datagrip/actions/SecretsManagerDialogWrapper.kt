@@ -1,14 +1,14 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.datagrip.actions
+package software.aws.toolkits.jetbrains.datagrip.actions
 
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry
-import software.aws.toolkits.jetbrains.core.datagrip.SecretManager
-import software.aws.toolkits.jetbrains.core.datagrip.auth.SecretsManagerDbSecret
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
+import software.aws.toolkits.jetbrains.datagrip.SecretManager
+import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerDbSecret
 import software.aws.toolkits.jetbrains.services.secretsmanager.SecretsManagerResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message

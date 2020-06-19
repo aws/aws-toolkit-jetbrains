@@ -13,24 +13,24 @@
     </extensions>
     <actions>
         <group id="aws.toolkit.explorer.rds" popup="true" compact="false">
-            <action id="rds.secretsmanager" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
+            <action id="rds.secretsmanager" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
         <group id="aws.toolkit.explorer.redshift" popup="true" compact="false">
-            <action id="redshift.secretsmanager" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
+            <action id="redshift.secretsmanager" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
         <group id="aws.toolkit.explorer.redshift.cluster" popup="true" compact="false">
             <action id="redshift.awsauth" class="software.aws.toolkits.jetbrains.services.redshift.actions.CreateDataSourceAction"/>
-            <action id="redshift.secretsmanager.cluster" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
+            <action id="redshift.secretsmanager.cluster" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
         <group id="aws.toolkit.explorer.rds.postgres" popup="true" compact="false">
-            <action id="rds.secretsmanager.postgres" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
+            <action id="rds.secretsmanager.postgres" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
         <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false">
-            <action id="rds.secretsmanager.mysql" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
+            <action id="rds.secretsmanager.mysql" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
     </actions>

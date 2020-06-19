@@ -1,7 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.datagrip.actions
+package software.aws.toolkits.jetbrains.datagrip.actions
 
 import com.intellij.database.autoconfig.DataSourceRegistry
 import com.intellij.database.dataSource.DataSourceSslConfiguration
@@ -11,14 +11,14 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.core.credentials.connectionSettings
-import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
-import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
-import software.aws.toolkits.jetbrains.core.datagrip.auth.SECRET_ID_PROPERTY
-import software.aws.toolkits.jetbrains.core.datagrip.auth.SecretsManagerAuth
-import software.aws.toolkits.jetbrains.core.datagrip.auth.SecretsManagerDbSecret
-import software.aws.toolkits.jetbrains.core.datagrip.jdbcAdapterFromRuntime
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
+import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.auth.SECRET_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerAuth
+import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerDbSecret
+import software.aws.toolkits.jetbrains.datagrip.jdbcAdapterFromRuntime
 import software.aws.toolkits.resources.message
 
 class AddSecretsManagerConnection : SingleExplorerNodeAction<AwsExplorerNode<*>>(message("datagrip.secretsmanager.action")), DumbAware {
