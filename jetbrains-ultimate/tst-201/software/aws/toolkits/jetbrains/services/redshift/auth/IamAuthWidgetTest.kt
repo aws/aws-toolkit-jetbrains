@@ -52,20 +52,20 @@ class IamAuthWidgetTest {
     }
 
     @Test
-    fun `Sets region from URL`() {
-        widget.reset(mock(), false)
-        val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
-    }
-
-    @Test
     fun `Does not unset region on invalid url`() {
         widget.reset(mock(), false)
         val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         val badUrl = "jdbc:redshift://redshift-cluster.host.100000%InvalidRegion.redshift.amazonaws.com:5439/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn badUrl })
+        assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
+    }
+
+    @Test
+    fun `Sets region from URL`() {
+        widget.reset(mock(), false)
+        val endpointUrl = "jdbc:redshift://redshift-cluster.host.$defaultRegion.redshift.amazonaws.com:5439/dev"
+        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
