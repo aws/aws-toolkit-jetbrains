@@ -1,7 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.datagrip.auth
+package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor
@@ -27,9 +27,9 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.unwrap
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
-import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 
 class SecretsManagerAuthTest {
     @Rule

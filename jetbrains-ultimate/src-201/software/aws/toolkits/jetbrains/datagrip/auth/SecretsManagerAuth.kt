@@ -1,7 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.datagrip.auth
+package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -22,7 +22,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.datagrip.getAwsConnectionSettings
+import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletionStage
@@ -43,7 +43,8 @@ class SecretsManagerAuth : DatabaseAuthProvider, CoroutineScope by ApplicationTh
 
     override fun getDisplayName(): String = message("datagrip.auth.secrets_manager")
 
-    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = SecretsManagerAuthWidget()
+    override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? =
+        SecretsManagerAuthWidget()
 
     override fun intercept(
         connection: ProtoConnection,

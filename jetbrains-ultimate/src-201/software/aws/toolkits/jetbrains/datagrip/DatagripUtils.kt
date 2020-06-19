@@ -1,7 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.datagrip
+package software.aws.toolkits.jetbrains.datagrip
 
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
