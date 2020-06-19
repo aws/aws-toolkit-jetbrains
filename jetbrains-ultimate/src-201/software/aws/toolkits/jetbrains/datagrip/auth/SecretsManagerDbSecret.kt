@@ -1,7 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.datagrip.auth
+package software.aws.toolkits.jetbrains.datagrip.auth
 
 // Data class that represents the schema used for DB secrets in secretsmanger
 // used by RDS and Redshift

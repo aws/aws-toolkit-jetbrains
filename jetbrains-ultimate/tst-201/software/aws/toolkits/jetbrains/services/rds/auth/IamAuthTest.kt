@@ -18,8 +18,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.datagrip.CREDENTIAL_ID_PROPERTY
-import software.aws.toolkits.jetbrains.core.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import java.util.concurrent.ExecutionException
 

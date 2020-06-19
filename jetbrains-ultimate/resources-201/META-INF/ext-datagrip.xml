@@ -9,7 +9,7 @@
     <extensions defaultExtensionNs="com.intellij.database">
         <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.rds.auth.IamAuth"/>
         <connectionInterceptor implementation="software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth"/>
-        <connectionInterceptor implementation="software.aws.toolkits.jetbrains.core.datagrip.auth.SecretsManagerAuth"/>
+        <connectionInterceptor implementation="software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerAuth"/>
     </extensions>
     <actions>
         <group id="aws.toolkit.explorer.rds" popup="true" compact="false">
@@ -21,6 +21,7 @@
             <separator/>
         </group>
         <group id="aws.toolkit.explorer.redshift.cluster" popup="true" compact="false">
+            <action id="redshift.awsauth" class="software.aws.toolkits.jetbrains.services.redshift.actions.CreateDataSourceAction"/>
             <action id="redshift.secretsmanager.cluster" class="software.aws.toolkits.jetbrains.core.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
