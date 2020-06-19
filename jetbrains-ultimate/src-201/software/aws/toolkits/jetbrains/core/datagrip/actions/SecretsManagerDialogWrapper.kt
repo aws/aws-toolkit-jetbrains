@@ -3,9 +3,12 @@
 
 package software.aws.toolkits.jetbrains.core.datagrip.actions
 
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry
+import software.aws.toolkits.jetbrains.core.datagrip.SecretManager
+import software.aws.toolkits.jetbrains.core.datagrip.auth.SecretsManagerDbSecret
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.services.secretsmanager.SecretsManagerResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message
@@ -13,8 +16,12 @@ import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class SecretsManagerDialogWrapper(private val project: Project) : DialogWrapper(project) {
+class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : DialogWrapper(selected.nodeProject) {
     private lateinit var secrets: ResourceSelector<SecretListEntry>
+    var dbSecret: SecretsManagerDbSecret? = null
+        private set
+    var dbSecretArn: String? = null
+        private set
 
     init {
         title = message("datagrip.secretsmanager.action.title")
@@ -23,7 +30,7 @@ class SecretsManagerDialogWrapper(private val project: Project) : DialogWrapper(
     }
 
     override fun createCenterPanel(): JComponent? {
-        secrets = ResourceSelector.builder(project)
+        secrets = ResourceSelector.builder(selected.nodeProject)
             .resource(SecretsManagerResources.secrets)
             .customRenderer { entry, renderer -> renderer.append(entry.name()); renderer }
             .build()
@@ -32,5 +39,11 @@ class SecretsManagerDialogWrapper(private val project: Project) : DialogWrapper(
         return panel
     }
 
-    fun selected() = secrets.selected()
+    override fun doValidate(): ValidationInfo? {
+        val manager = SecretManager(selected)
+        val response = manager.getSecret(secrets.selected()) ?: return ValidationInfo("TODO localize")
+        dbSecret = response.first
+        dbSecretArn = response.second
+        return manager.validateSecret(response.first, response.second)
+    }
 }
