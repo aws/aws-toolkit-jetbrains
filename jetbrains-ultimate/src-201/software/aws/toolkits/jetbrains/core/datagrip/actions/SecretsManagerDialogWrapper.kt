@@ -33,7 +33,12 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
         secrets = ResourceSelector.builder(selected.nodeProject)
             .resource(SecretsManagerResources.secrets)
             .customRenderer { entry, renderer -> renderer.append(entry.name()); renderer }
-            .build()
+            .build().also {
+                // When it is changed, make sure the OK button is re-enabled
+                it.addActionListener {
+                    isOKActionEnabled = true
+                }
+            }
         val panel = JPanel(BorderLayout())
         panel.add(secrets)
         return panel
@@ -41,7 +46,12 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
 
     override fun doValidate(): ValidationInfo? {
         val manager = SecretManager(selected)
-        val response = manager.getSecret(secrets.selected()) ?: return ValidationInfo("TODO localize")
+        val response = manager.getSecret(secrets.selected()) ?: return ValidationInfo(
+            message(
+                "datagrip.secretsmanager.validation.failed_to_get",
+                secrets.selected()?.arn().toString()
+            )
+        )
         dbSecret = response.first
         dbSecretArn = response.second
         return manager.validateSecret(response.first, response.second)

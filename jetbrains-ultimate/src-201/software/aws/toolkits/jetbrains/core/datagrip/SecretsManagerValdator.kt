@@ -26,9 +26,9 @@ class SecretManager(private val selected: AwsExplorerNode<*>) {
             val value = AwsClientManager.getInstance(selected.nodeProject).getClient<SecretsManagerClient>().getSecretValue { it.secretId(secret.arn()) }
             val dbSecret = objectMapper.readValue<SecretsManagerDbSecret>(value.secretString())
             Pair(dbSecret, secret.arn())
-        } catch(e: Exception) {
-            // TODO fixup
+        } catch (e: Exception) {
             notifyError(
+                title = message("datagrip.secretsmanager.validation.failed_to_get", secret.name()),
                 content = e.message ?: ""
             )
             null
@@ -42,13 +42,31 @@ class SecretManager(private val selected: AwsExplorerNode<*>) {
         // If it is a resource node, validate that it is the same resource
         when (selected) {
             is RdsNode -> {
-                if (selected.dbInstance.engine() != dbSecret.engine) return ValidationInfo("TODO localize")
-                if (selected.dbInstance.endpoint().address() != dbSecret.host) return ValidationInfo("TODO localize")
+                if (selected.dbInstance.engine() != dbSecret.engine) return ValidationInfo(
+                    message(
+                        "datagrip.secretsmanager.validation.different_engine",
+                        secretName,
+                        dbSecret.engine.toString()
+                    )
+                )
+                if (selected.dbInstance.endpoint().address() != dbSecret.host) return ValidationInfo(
+                    message("datagrip.secretsmanager.validation.different_address", secretName, dbSecret.host.toString())
+                )
             }
             is RedshiftExplorerNode -> {
-                if (dbSecret.engine != redshiftEngineType) return ValidationInfo("TODO localize")
-                if (selected.cluster.clusterIdentifier() != dbSecret.dbClusterIdentifier) return ValidationInfo("TODO localize")
-                if (selected.cluster.endpoint().address() != dbSecret.host) return ValidationInfo("TODO localize")
+                if (dbSecret.engine != redshiftEngineType) return ValidationInfo(
+                    message(
+                        "datagrip.secretsmanager.validation.different_engine",
+                        secretName,
+                        dbSecret.engine.toString()
+                    )
+                )
+                if (selected.cluster.clusterIdentifier() != dbSecret.dbClusterIdentifier) return ValidationInfo(
+                    message("datagrip.secretsmanager.validation.different_cluster_id", secretName, dbSecret.dbClusterIdentifier.toString())
+                )
+                if (selected.cluster.endpoint().address() != dbSecret.host) return ValidationInfo(
+                    message("datagrip.secretsmanager.validation.different_address", secretName, dbSecret.host.toString())
+                )
             }
         }
         return null

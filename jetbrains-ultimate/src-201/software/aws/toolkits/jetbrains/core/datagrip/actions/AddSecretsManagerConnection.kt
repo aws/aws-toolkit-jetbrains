@@ -33,7 +33,8 @@ class AddSecretsManagerConnection : SingleExplorerNodeAction<AwsExplorerNode<*>>
         val secretArn = dialogWrapper.dbSecretArn ?: throw IllegalStateException("DBSecret ARN is null, but should have been set by the dialog")
 
         val registry = DataSourceRegistry(selected.nodeProject)
-        val adapter = jdbcAdapterFromRuntime(secret.engine) ?: throw IllegalStateException("TODO localize")
+        val adapter = jdbcAdapterFromRuntime(secret.engine)
+            ?: throw IllegalStateException(message("datagrip.secretsmanager.validation.unkown_engine", secret.engine.toString()))
         registry.createDatasource(selected.nodeProject, secret, secretArn, adapter)
         // Show the user the configuration dialog to let them save/edit/test the profile
         runInEdt {

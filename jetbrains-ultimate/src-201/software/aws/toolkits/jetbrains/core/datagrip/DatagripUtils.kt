@@ -41,4 +41,3 @@ fun jdbcAdapterFromRuntime(runtime: String?): String? = when (runtime) {
     redshiftEngineType -> jdbcRedshift
     else -> null
 }
-
