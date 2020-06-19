@@ -23,8 +23,7 @@ class LogUtilsTest {
     @Test
     fun exceptionIsLoggedAndSuppressedInTryOrNull() {
         val expectedException = RuntimeException("Boom")
-        val result = log.tryOrNull("message", level = Level.WARN) { throw expectedException }
-
+        log.tryOrNull("message", level = Level.WARN) { throw expectedException }
         verify(log).warn(any(), eq(expectedException))
     }
 
@@ -148,7 +147,7 @@ class LogUtilsTest {
 
     @Test
     fun logWhenNull() {
-        val result = log.logWhenNull("message", level = Level.WARN) { null }
+        log.logWhenNull("message", level = Level.WARN) { null }
         verify(log).warn("message", null)
     }
 

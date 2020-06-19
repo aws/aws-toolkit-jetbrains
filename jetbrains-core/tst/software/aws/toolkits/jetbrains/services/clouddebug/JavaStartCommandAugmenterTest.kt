@@ -12,21 +12,22 @@ import software.aws.toolkits.resources.message
 
 class JavaStartCommandAugmenterTest {
     private val augmenter = JvmDebuggerSupport()
+    private val basicRun = "java -jar x.jar"
 
     @Test
     fun augmenterAddsEnivronmentVariable() {
-        assertThat(augmenter.augmentStatement("java -jar x.jar", listOf(123), "")).contains("${CloudDebugConstants.REMOTE_DEBUG_PORT_ENV}=123", "")
+        assertThat(augmenter.augmentStatement(basicRun, listOf(123), "")).contains("${CloudDebugConstants.REMOTE_DEBUG_PORT_ENV}=123", "")
     }
 
     @Test
     fun augmenterAddsPort() {
-        val augmentedStatement = augmenter.augmentStatement("java -jar x.jar", listOf(123), "")
+        val augmentedStatement = augmenter.augmentStatement(basicRun, listOf(123), "")
         assertThat(augmentedStatement).contains("address=123").contains("-agentlib:jdwp")
     }
 
     @Test
     fun augmenterEmptyPortsArray() {
-        assertThatThrownBy { augmenter.augmentStatement("java -jar x.jar", listOf(), "") }
+        assertThatThrownBy { augmenter.augmentStatement(basicRun, listOf(), "") }
             .isInstanceOf(IllegalStateException::class.java)
             .hasMessage(message("cloud_debug.step.augment_statement.missing_debug_port"))
     }
@@ -39,14 +40,13 @@ class JavaStartCommandAugmenterTest {
 
     @Test
     fun augmenterDoesNotAddAdditionalDebugger() {
-        val augmentedStatement = augmenter.augmentStatement("java -jar x.jar", listOf(123), "")
+        val augmentedStatement = augmenter.augmentStatement(basicRun, listOf(123), "")
         assertThat(augmentedStatement).contains("java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=123 -jar x.jar")
     }
 
     @Test
     fun augmenterDetectsAlreadyAugmentable() {
-        val statement = "java -jar x.jar"
-        assertThat(augmenter.automaticallyAugmentable(statement)).isTrue()
+        assertThat(augmenter.automaticallyAugmentable(basicRun)).isTrue()
     }
 
     @Test

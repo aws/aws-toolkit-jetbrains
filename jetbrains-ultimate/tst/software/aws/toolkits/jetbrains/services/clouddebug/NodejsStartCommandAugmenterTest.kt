@@ -10,11 +10,12 @@ import software.aws.toolkits.jetbrains.services.clouddebug.nodejs.NodeJsDebugger
 import software.aws.toolkits.resources.message
 
 class NodejsStartCommandAugmenterTest {
-    val augmenter = NodeJsDebuggerSupport()
+    private val augmenter = NodeJsDebuggerSupport()
+    private val nodeRun = "node abc.js"
 
     @Test
     fun augmenterAddsEnvironmentVariable() {
-        assertThat(augmenter.augmentStatement("node abc.js", listOf(123), ""))
+        assertThat(augmenter.augmentStatement(nodeRun, listOf(123), ""))
             .contains("${CloudDebugConstants.REMOTE_DEBUG_PORT_ENV}=123")
         assertThat(augmenter.augmentStatement("nodejs abc.js", listOf(123), ""))
             .contains("${CloudDebugConstants.REMOTE_DEBUG_PORT_ENV}=123")
@@ -22,7 +23,7 @@ class NodejsStartCommandAugmenterTest {
 
     @Test
     fun augmenterAddsPort() {
-        assertThat(augmenter.augmentStatement("node abc.js", listOf(123), ""))
+        assertThat(augmenter.augmentStatement(nodeRun, listOf(123), ""))
             .contains("--inspect-brk=localhost:123")
         assertThat(augmenter.augmentStatement("nodejs abc.js", listOf(123), ""))
             .contains("--inspect-brk=localhost:123")
@@ -30,7 +31,7 @@ class NodejsStartCommandAugmenterTest {
 
     @Test
     fun augmenterEmptyPortsArray() {
-        assertThatThrownBy { augmenter.augmentStatement("node abc.js", listOf(), "") }
+        assertThatThrownBy { augmenter.augmentStatement(nodeRun, listOf(), "") }
             .isInstanceOf(IllegalStateException::class.java)
             .hasMessage(message("cloud_debug.step.augment_statement.missing_debug_port"))
     }
