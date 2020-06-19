@@ -11,6 +11,8 @@ import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
+import software.aws.toolkits.jetbrains.services.redshift.RedshiftResources.jdbcRedshift
+import software.aws.toolkits.jetbrains.services.redshift.RedshiftResources.redshiftEngineType
 import software.aws.toolkits.resources.message
 
 const val CREDENTIAL_ID_PROPERTY = "AWS.CredentialId"
@@ -31,9 +33,6 @@ fun ProtoConnection.getAwsConnectionSettings(): ConnectionSettings {
     } ?: throw IllegalArgumentException(message("datagrip.validation.invalid_credential_specified", credentialId))
     return ConnectionSettings(credentials, region)
 }
-
-const val redshiftEngineType = "redshift"
-const val jdbcRedshift = "redshift"
 
 fun jdbcAdapterFromRuntime(runtime: String?): String? = when (runtime) {
     postgresEngineType -> jdbcPostgres
