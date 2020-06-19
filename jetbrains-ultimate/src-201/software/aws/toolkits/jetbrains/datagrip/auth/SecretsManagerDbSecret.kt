@@ -10,9 +10,5 @@ data class SecretsManagerDbSecret(
     val password: String?,
     val engine: String?,
     val host: String?,
-    val port: String?,
-    // For RedShift
-    val dbClusterIdentifier: String?,
-    // for RDS
-    val dbInstanceIdentifier: String?
+    val port: String?
 )
