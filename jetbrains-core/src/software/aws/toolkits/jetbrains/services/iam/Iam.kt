@@ -27,7 +27,7 @@ object IamResources {
     }
 
     @JvmField
-    val LIST_ALL_ROLES: Resource<List<IamRole>> = Resource.View(LIST_RAW_ROLES) {
+    val LIST_ALL: Resource<List<IamRole>> = Resource.View(LIST_RAW_ROLES) {
         map { IamRole(it.arn()) }.toList()
     }
 
