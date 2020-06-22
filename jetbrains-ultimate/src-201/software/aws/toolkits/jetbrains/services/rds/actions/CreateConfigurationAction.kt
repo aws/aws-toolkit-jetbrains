@@ -12,7 +12,6 @@ import com.intellij.openapi.progress.PerformInBackgroundOption
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
-import software.amazon.awssdk.services.rds.model.Endpoint
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -22,6 +21,7 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeA
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
@@ -41,14 +41,6 @@ class CreateDataSourceActionGroup : SingleExplorerNodeActionGroup<RdsNode>("rds.
     )
 }
 
-data class RdsDatasourceConfiguration(
-    val regionId: String,
-    val credentialId: String,
-    val dbEngine: String,
-    val endpoint: Endpoint,
-    val username: String
-)
-
 class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("rds.iam_config")), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         if (!checkPrerequisites()) {
@@ -61,23 +53,8 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
             PerformInBackgroundOption.ALWAYS_BACKGROUND
         ) {
             override fun run(indicator: ProgressIndicator) {
-                val username = try {
-                    // use current STS user as username. Split on : because it comes back id:username
-                    AwsResourceCache.getInstance(node.nodeProject).getResourceNow(StsResources.USER).substringAfter(':')
-                } catch (e: Exception) {
-                    LOG.warn(e) { "Getting username from STS failed, falling back to master username" }
-                    node.dbInstance.masterUsername()
-                }
                 val registry = DataSourceRegistry(node.nodeProject)
-                registry.createDatasource(
-                    RdsDatasourceConfiguration(
-                        regionId = node.nodeProject.activeRegion().id,
-                        credentialId = node.nodeProject.activeCredentialProvider().id,
-                        dbEngine = node.dbInstance.engine(),
-                        endpoint = node.dbInstance.endpoint(),
-                        username = username
-                    )
-                )
+                createDatasource(registry)
                 // Asynchronously show the user the configuration dialog to let them save/edit/test the profile
                 runInEdt {
                     registry.showDialog()
@@ -100,12 +77,31 @@ class CreateIamDataSourceAction(private val node: RdsNode) : AnAction(message("r
         return true
     }
 
+    internal fun createDatasource(registry: DataSourceRegistry) {
+        val username = try {
+            // use current STS user as username. Split on : because it comes back id:username
+            AwsResourceCache.getInstance(node.nodeProject).getResourceNow(StsResources.USER).substringAfter(':')
+        } catch (e: Exception) {
+            LOG.warn(e) { "Getting username from STS failed, falling back to master username" }
+            node.dbInstance.masterUsername()
+        }
+        registry.createRdsDatasource(
+            RdsDatasourceConfiguration(
+                regionId = node.nodeProject.activeRegion().id,
+                credentialId = node.nodeProject.activeCredentialProvider().id,
+                dbEngine = node.dbInstance.engine(),
+                endpoint = node.dbInstance.endpoint(),
+                username = username
+            )
+        )
+    }
+
     private companion object {
         val LOG = getLogger<CreateIamDataSourceAction>()
     }
 }
 
-internal fun DataSourceRegistry.createDatasource(config: RdsDatasourceConfiguration) {
+fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
     val url = "${config.endpoint.address()}:${config.endpoint.port()}"
 
     val builder = builder

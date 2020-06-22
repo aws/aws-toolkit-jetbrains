@@ -13,23 +13,32 @@ import org.junit.Test
 import software.amazon.awssdk.services.rds.model.DBInstance
 import software.amazon.awssdk.services.rds.model.Endpoint
 import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
+import software.aws.toolkits.jetbrains.services.sts.StsResources
 
 class CreateConfigurationActionTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
+
+    @Rule
+    @JvmField
+    val resourceCache = MockResourceCacheRule(projectRule)
+
     val port = RuleUtils.randomNumber()
     val address = RuleUtils.randomName()
     val username = "${RuleUtils.randomName()}CAPITAL"
+    val masterUsername = "${RuleUtils.randomName()}C"
 
     @Test
     fun `Prerequisites fails when IAM authentication is disabled`() {
@@ -43,12 +52,35 @@ class CreateConfigurationActionTest {
         assertThat(action.checkPrerequisites()).isTrue()
     }
 
+    @Test
+    fun `Create data source gets user`() {
+        resourceCache.get().addEntry(StsResources.USER, username)
+        val action = createSourceAction()
+        val registry = DataSourceRegistry(projectRule.project)
+        action.createDatasource(registry)
+        assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
+            assertThat(it.isTemporary).isFalse()
+            assertThat(it.username).isEqualTo(username)
+        }
+    }
+
+    @Test
+    fun `Create data source falls back to master username`() {
+        val action = createSourceAction()
+        val registry = DataSourceRegistry(projectRule.project)
+        action.createDatasource(registry)
+        assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
+            assertThat(it.isTemporary).isFalse()
+            assertThat(it.username).isEqualTo(masterUsername)
+        }
+    }
+
     // This tests common properties. The ones below test driver specific properties
     @Test
     fun `Add data source`() {
         val instance = createDbInstance(address = address, port = port)
         val registry = DataSourceRegistry(projectRule.project)
-        registry.createDatasource(
+        registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 endpoint = instance.endpoint(),
                 username = username,
@@ -71,7 +103,7 @@ class CreateConfigurationActionTest {
     fun `Add postgres data source`() {
         val instance = createDbInstance(port = port, address = address, engineType = postgresEngineType)
         val registry = DataSourceRegistry(projectRule.project)
-        registry.createDatasource(
+        registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 endpoint = instance.endpoint(),
                 username = username,
@@ -91,7 +123,7 @@ class CreateConfigurationActionTest {
     fun `Add mysql data source`() {
         val instance = createDbInstance(address = address, port = port, engineType = mysqlEngineType)
         val registry = DataSourceRegistry(projectRule.project)
-        registry.createDatasource(
+        registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 endpoint = instance.endpoint(),
                 username = username,
@@ -111,7 +143,7 @@ class CreateConfigurationActionTest {
     fun `Bad engine throws`() {
         val instance = createDbInstance(engineType = "NOT SUPPORTED")
         val registry = DataSourceRegistry(projectRule.project)
-        registry.createDatasource(
+        registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 endpoint = instance.endpoint(),
                 username = username,
@@ -127,7 +159,7 @@ class CreateConfigurationActionTest {
         port: Int = RuleUtils.randomNumber(),
         dbName: String = RuleUtils.randomName(),
         iamAuthEnabled: Boolean = true,
-        engineType: String = postgresEngineType
+        engineType: String = mysqlEngineType
     ) = CreateIamDataSourceAction(mock {
         on { nodeProject } doAnswer { projectRule.project }
         on { dbInstance } doAnswer {
@@ -148,5 +180,6 @@ class CreateConfigurationActionTest {
         }
         on { engine() } doAnswer { engineType }
         on { dbName() } doAnswer { dbName }
+        on { masterUsername() } doAnswer { masterUsername }
     }
 }
