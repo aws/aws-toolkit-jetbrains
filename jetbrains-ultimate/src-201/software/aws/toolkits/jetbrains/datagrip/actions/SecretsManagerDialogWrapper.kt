@@ -3,6 +3,10 @@
 
 package software.aws.toolkits.jetbrains.datagrip.actions
 
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.progress.PerformInBackgroundOption
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.ui.DialogWrapper
 import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
@@ -48,24 +52,44 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
         if (!okAction.isEnabled) {
             return
         }
-        val selectedSecret = secrets.selected()
-        val manager = SecretManager(selected)
-        val response = manager.getSecret(selectedSecret)
-        if (response == null) {
-            notifyError(content = message("datagrip.secretsmanager.validation.failed_to_get", selectedSecret?.arn().toString()))
-            return
-        }
-        // Save content and arn so we don't have to retrieve them again
-        dbSecret = response.first
-        dbSecretArn = response.second
-        // validate the content of the secret
-        val validationInfo = manager.validateSecret(response.first, selectedSecret?.name() ?: "")
-        if (validationInfo != null) {
-            val ok = ConfirmCredentialsDialogWrapper(selected.nodeProject, validationInfo).showAndGet()
-            if (!ok) {
-                return
+        val doOk = { super.doOKAction() }
+        object : Backgroundable(
+            selected.nodeProject,
+            message("datagrip.secretsmanager.validating"),
+            false,
+            PerformInBackgroundOption.ALWAYS_BACKGROUND
+        ) {
+            override fun run(indicator: ProgressIndicator) {
+                try {
+                    runInternal()
+                } catch (e: Exception) {
+                    notifyError(content = e.message ?: "")
+                }
             }
-        }
-        super.doOKAction()
+
+            fun runInternal() {
+                val selectedSecret = secrets.selected()
+                val manager = SecretManager(selected)
+                val response = manager.getSecret(selectedSecret)
+                if (response == null) {
+                    notifyError(content = message("datagrip.secretsmanager.validation.failed_to_get", selectedSecret?.arn().toString()))
+                    return
+                }
+                // Cache content and arn so we don't have to retrieve them again
+                dbSecret = response.first
+                dbSecretArn = response.second
+                // validate the content of the secret
+                val validationInfo = manager.validateSecret(response.first, selectedSecret?.name() ?: "")
+                runInEdt {
+                    if (validationInfo != null) {
+                        val ok = ConfirmCredentialsDialogWrapper(selected.nodeProject, validationInfo).showAndGet()
+                        if (!ok) {
+                            return@runInEdt
+                        }
+                    }
+                    doOk()
+                }
+            }
+        }.queue()
     }
 }
