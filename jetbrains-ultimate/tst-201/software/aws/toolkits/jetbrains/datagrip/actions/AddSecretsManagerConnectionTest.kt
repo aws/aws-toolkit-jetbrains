@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.datagrip.actions
 
 import com.intellij.database.autoconfig.DataSourceRegistry
 import com.intellij.testFramework.ProjectRule
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.utils.RuleUtils
@@ -38,14 +38,14 @@ class AddSecretsManagerConnectionTest {
             secretArn,
             "adapter"
         )
-        Assertions.assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
-            Assertions.assertThat(it.isTemporary).isFalse()
-            Assertions.assertThat(it.sslCfg?.myEnabled).isTrue()
-            Assertions.assertThat(it.url).isEqualTo("jdbc:adapter://$address:$port")
-            Assertions.assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.displayName)
-            Assertions.assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(MockRegionProvider.getInstance().defaultRegion().id)
-            Assertions.assertThat(it.additionalJdbcProperties[SECRET_ID_PROPERTY]).isEqualTo(secretArn)
-            Assertions.assertThat(it.authProviderId).isEqualTo(SecretsManagerAuth.providerId)
+        assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
+            assertThat(it.isTemporary).isFalse()
+            assertThat(it.sslCfg?.myEnabled).isTrue()
+            assertThat(it.url).isEqualTo("jdbc:adapter://$address:$port")
+            assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.displayName)
+            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(MockRegionProvider.getInstance().defaultRegion().id)
+            assertThat(it.additionalJdbcProperties[SECRET_ID_PROPERTY]).isEqualTo(secretArn)
+            assertThat(it.authProviderId).isEqualTo(SecretsManagerAuth.providerId)
         }
     }
 }
