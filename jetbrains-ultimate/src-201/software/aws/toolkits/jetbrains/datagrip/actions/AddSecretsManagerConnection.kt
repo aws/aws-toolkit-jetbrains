@@ -29,8 +29,8 @@ class AddSecretsManagerConnection : SingleExplorerNodeAction<AwsExplorerNode<*>>
         if (!ok) {
             return
         }
-        val secret = dialogWrapper.dbSecret ?: throw IllegalStateException("DBSecret is null, but should have been set by the dialog")
-        val secretArn = dialogWrapper.dbSecretArn ?: throw IllegalStateException("DBSecret ARN is null, but should have been set by the dialog")
+        val secret = dialogWrapper.dbSecret
+        val secretArn = dialogWrapper.dbSecretArn
 
         val registry = DataSourceRegistry(selected.nodeProject)
         val adapter = jdbcAdapterFromRuntime(secret.engine)

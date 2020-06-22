@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.PerformInBackgroundOption
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.datagrip.DatabaseSecret
@@ -24,9 +25,9 @@ import javax.swing.JPanel
 
 class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : DialogWrapper(selected.nodeProject) {
     private lateinit var secrets: ResourceSelector<SecretListEntry>
-    var dbSecret: SecretsManagerDbSecret? = null
+    lateinit var dbSecret: SecretsManagerDbSecret
         private set
-    var dbSecretArn: String? = null
+    lateinit var dbSecretArn: String
         private set
 
     init {
@@ -64,7 +65,11 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
                 try {
                     validateConfiguration()
                 } catch (e: Exception) {
-                    notifyError(content = e.message ?: "")
+                    notifyError(
+                        project = selected.nodeProject,
+                        title = message("datagrip.secretsmanager.validation.exception"),
+                        content = e.message ?: e.toString()
+                    )
                 }
             }
         }.queue()
@@ -89,8 +94,15 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
             if (validationInfo == null) {
                 super.doOKAction()
             } else {
-                val ok = ConfirmCredentialsDialogWrapper(selected.nodeProject, validationInfo).showAndGet()
-                if (ok) {
+                val result = Messages.showOkCancelDialog(
+                    selected.nodeProject,
+                    message("datagrip.secretsmanager.action.confirm_continue", validationInfo.message),
+                    message("datagrip.secretsmanager.action.confirm_continue_title"),
+                    Messages.getOkButton(),
+                    Messages.getCancelButton(),
+                    Messages.getWarningIcon()
+                )
+                if (result == Messages.OK) {
                     super.doOKAction()
                 }
             }

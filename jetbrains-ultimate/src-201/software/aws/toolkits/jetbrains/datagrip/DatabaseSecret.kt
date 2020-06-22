@@ -31,7 +31,7 @@ object DatabaseSecret {
         } catch (e: Exception) {
             notifyError(
                 title = message("datagrip.secretsmanager.validation.failed_to_get", secret.name()),
-                content = e.message ?: ""
+                content = e.message ?: e.toString()
             )
             null
         }
