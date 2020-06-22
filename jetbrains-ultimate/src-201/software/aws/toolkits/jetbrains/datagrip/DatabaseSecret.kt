@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.datagrip
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry
@@ -18,13 +19,13 @@ import software.aws.toolkits.jetbrains.services.redshift.RedshiftResources.redsh
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
-class SecretManager(private val selected: AwsExplorerNode<*>) {
+object DatabaseSecret {
     private val objectMapper = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
-    fun getSecret(secret: SecretListEntry?): Pair<SecretsManagerDbSecret, String>? {
+    fun getSecret(project: Project, secret: SecretListEntry?): Pair<SecretsManagerDbSecret, String>? {
         secret ?: return null
         return try {
-            val value = AwsClientManager.getInstance(selected.nodeProject).getClient<SecretsManagerClient>().getSecretValue { it.secretId(secret.arn()) }
+            val value = AwsClientManager.getInstance(project).getClient<SecretsManagerClient>().getSecretValue { it.secretId(secret.arn()) }
             val dbSecret = objectMapper.readValue<SecretsManagerDbSecret>(value.secretString())
             Pair(dbSecret, secret.arn())
         } catch (e: Exception) {
@@ -36,21 +37,21 @@ class SecretManager(private val selected: AwsExplorerNode<*>) {
         }
     }
 
-    fun validateSecret(dbSecret: SecretsManagerDbSecret, secretName: String): ValidationInfo? {
+    fun validateSecret(node: AwsExplorerNode<*>, dbSecret: SecretsManagerDbSecret, secretName: String): ValidationInfo? {
         // Validate the secret has the bare minimum
         dbSecret.username ?: return ValidationInfo(message("datagrip.secretsmanager.validation.no_username", secretName))
         dbSecret.password ?: return ValidationInfo(message("datagrip.secretsmanager.validation.no_password", secretName))
         // If it is a resource node, validate that it is the same resource
-        when (selected) {
+        when (node) {
             is RdsNode -> {
-                if (selected.dbInstance.engine() != dbSecret.engine) return ValidationInfo(
+                if (node.dbInstance.engine() != dbSecret.engine) return ValidationInfo(
                     message(
                         "datagrip.secretsmanager.validation.different_engine",
                         secretName,
                         dbSecret.engine.toString()
                     )
                 )
-                if (selected.dbInstance.endpoint().address() != dbSecret.host) return ValidationInfo(
+                if (node.dbInstance.endpoint().address() != dbSecret.host) return ValidationInfo(
                     message("datagrip.secretsmanager.validation.different_address", secretName, dbSecret.host.toString())
                 )
             }
@@ -62,7 +63,7 @@ class SecretManager(private val selected: AwsExplorerNode<*>) {
                         dbSecret.engine.toString()
                     )
                 )
-                if (selected.cluster.endpoint().address() != dbSecret.host) return ValidationInfo(
+                if (node.cluster.endpoint().address() != dbSecret.host) return ValidationInfo(
                     message("datagrip.secretsmanager.validation.different_address", secretName, dbSecret.host.toString())
                 )
             }

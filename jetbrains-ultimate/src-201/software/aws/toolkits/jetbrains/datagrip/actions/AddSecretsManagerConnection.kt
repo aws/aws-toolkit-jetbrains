@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.datagrip.actions
 
 import com.intellij.database.autoconfig.DataSourceRegistry
-import com.intellij.database.dataSource.DataSourceSslConfiguration
-import com.intellij.database.remote.jdbc.helpers.JdbcSettings
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
@@ -14,6 +12,7 @@ import software.aws.toolkits.jetbrains.core.credentials.connectionSettings
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.FullSslValidation
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.auth.SECRET_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerAuth
@@ -56,6 +55,6 @@ fun DataSourceRegistry.createDatasource(project: Project, secret: SecretsManager
     // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder
     newDataSources.firstOrNull()?.let {
         it.authProviderId = SecretsManagerAuth.providerId
-        it.sslCfg = DataSourceSslConfiguration("", "", "", true, JdbcSettings.SslMode.REQUIRE)
+        it.sslCfg = FullSslValidation
     }
 }

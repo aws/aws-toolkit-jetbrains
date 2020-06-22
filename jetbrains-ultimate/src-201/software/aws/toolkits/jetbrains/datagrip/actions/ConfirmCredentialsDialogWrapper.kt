@@ -13,7 +13,7 @@ import javax.swing.JComponent
 
 class ConfirmCredentialsDialogWrapper(project: Project, private val errorMessage: ValidationInfo) : DialogWrapper(project) {
     init {
-        title = "TODO localize confirm"
+        title = message("datagrip.secretsmanager.action.confirm_continue_title")
         init()
     }
 
