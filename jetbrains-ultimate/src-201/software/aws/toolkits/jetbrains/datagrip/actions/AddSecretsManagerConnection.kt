@@ -20,8 +20,9 @@ import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerDbSecret
 import software.aws.toolkits.jetbrains.datagrip.jdbcAdapterFromRuntime
 import software.aws.toolkits.resources.message
 
+// It is registered in ext-datagrip.xml FIX_WHEN_MIN_IS_201
+@Suppress("ComponentNotRegistered")
 class AddSecretsManagerConnection : SingleExplorerNodeAction<AwsExplorerNode<*>>(message("datagrip.secretsmanager.action")), DumbAware {
-
     override fun actionPerformed(selected: AwsExplorerNode<*>, e: AnActionEvent) {
         val dialogWrapper = SecretsManagerDialogWrapper(selected)
         val ok = dialogWrapper.showAndGet()
