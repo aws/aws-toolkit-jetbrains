@@ -38,7 +38,7 @@ class CreateConfigurationActionTest {
     val port = RuleUtils.randomNumber()
     val address = RuleUtils.randomName()
     val username = "${RuleUtils.randomName()}CAPITAL"
-    val masterUsername = ${RuleUtils.randomName()}
+    val masterUsername = RuleUtils.randomName()
 
     @Test
     fun `Prerequisites fails when IAM authentication is disabled`() {
