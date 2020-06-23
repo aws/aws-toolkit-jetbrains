@@ -25,6 +25,10 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.DatabaseCredentials.SecretsManager
+import software.aws.toolkits.telemetry.RdsTelemetry
+import software.aws.toolkits.telemetry.RedshiftTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.util.concurrent.CompletionStage
 
 data class SecretsManagerConfiguration(
@@ -52,9 +56,26 @@ class SecretsManagerAuth : DatabaseAuthProvider, CoroutineScope by ApplicationTh
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
-            val connectionSettings = getConfiguration(connection)
-            val credentials = getCredentials(connection.runConfiguration.project, connectionSettings)
-            DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
+            var result = Result.Succeeded
+            val project = connection.runConfiguration.project
+            try {
+                val connectionSettings = getConfiguration(connection)
+                val credentials = getCredentials(connection.runConfiguration.project, connectionSettings)
+                DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
+            } catch (e: Throwable) {
+                result = Result.Failed
+                throw e
+            } finally {
+                // We don't have access to service information here. What we do have access to is the database driver
+                // which matches up with the engine field for mysql, postgres, and redshift which is what we currently
+                // support. TODO find a more direct way to do this
+                val driver = connection.connectionPoint.databaseDriver.id
+                if (driver == "redshift") {
+                    RedshiftTelemetry.getCredentials(project, result, SecretsManager)
+                } else {
+                    RdsTelemetry.getCredentials(project, result, SecretsManager, driver)
+                }
+            }
         }
     }
 

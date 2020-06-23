@@ -63,8 +63,9 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
                 result = Result.Failed
                 throw e
             } finally {
-                // TODO fix
-                RdsTelemetry.getCredentials(project, result, IAM, "mysql")
+                // TODO find a more direct way to do this
+                val driver = connection.connectionPoint.databaseDriver.id
+                RdsTelemetry.getCredentials(project, result, IAM, driver)
             }
         }
     }
