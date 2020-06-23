@@ -70,7 +70,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         }
     }
 
-    private fun getCredentials(connection: ProtoConnection): Credentials? {
+    private fun getCredentials(connection: ProtoConnection): Credentials {
         val authInformation = getAuthInformation(connection)
         val authToken = generateAuthToken(authInformation)
         return Credentials(authInformation.user, authToken)
