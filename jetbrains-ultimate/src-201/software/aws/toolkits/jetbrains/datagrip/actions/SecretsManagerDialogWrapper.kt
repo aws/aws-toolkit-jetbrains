@@ -79,7 +79,7 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
         val selectedSecret = secrets.selected()
         val response = DatabaseSecret.getSecret(selected.nodeProject, selectedSecret)
         if (response == null) {
-            runInEdt {
+            runInEdt(ModalityState.any()) {
                 super.doCancelAction()
                 notifyError(content = message("datagrip.secretsmanager.validation.failed_to_get", selectedSecret?.arn().toString()))
             }
@@ -91,10 +91,10 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
         // validate the content of the secret
         val validationInfo = DatabaseSecret.validateSecret(selected, response.first, response.second.arnToName())
 
-        if (validationInfo == null) {
-            runInEdt { super.doOKAction() }
-        } else {
-            runInEdt(ModalityState.any()) {
+        runInEdt(ModalityState.any()) {
+            if (validationInfo == null) {
+                super.doOKAction()
+            } else {
                 val result = Messages.showOkCancelDialog(
                     selected.nodeProject,
                     message("datagrip.secretsmanager.action.confirm_continue", validationInfo.message),
@@ -104,7 +104,7 @@ class SecretsManagerDialogWrapper(private val selected: AwsExplorerNode<*>) : Di
                     Messages.getWarningIcon()
                 )
                 if (result == Messages.OK) {
-                    runInEdt { super.doOKAction() }
+                    super.doOKAction()
                 }
             }
         }
