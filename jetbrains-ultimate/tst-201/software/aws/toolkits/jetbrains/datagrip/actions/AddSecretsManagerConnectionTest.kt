@@ -24,7 +24,7 @@ class AddSecretsManagerConnectionTest {
 
     @Test
     fun `Add data source`() {
-        val port = 999
+        val port = RuleUtils.randomNumber()
         val address = RuleUtils.randomName()
         val username = RuleUtils.randomName()
         val password = RuleUtils.randomName()
