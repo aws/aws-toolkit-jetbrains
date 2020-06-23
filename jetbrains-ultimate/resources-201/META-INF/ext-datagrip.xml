@@ -20,17 +20,19 @@
             <action id="redshift.secretsmanager" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
-        <group id="aws.toolkit.explorer.redshift.cluster" popup="true" compact="false">
-            <action id="redshift.awsauth" class="software.aws.toolkits.jetbrains.services.redshift.actions.CreateDataSourceAction"/>
-            <action id="redshift.secretsmanager.cluster" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
+        <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false">
+            <action id="rds.mysql.actions" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateIamDataSourceAction"/>
+            <action id="redshift.cluster.secretsmanager" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
         <group id="aws.toolkit.explorer.rds.postgres" popup="true" compact="false">
-            <action id="rds.secretsmanager.postgres" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
+            <action id="rds.mysql.actions" class="software.aws.toolkits.jetbrains.services.rds.actions.CreateIamDataSourceAction"/>
+            <action id="redshift.cluster.secretsmanager" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
-        <group id="aws.toolkit.explorer.rds.mysql" popup="true" compact="false">
-            <action id="rds.secretsmanager.mysql" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
+        <group id="aws.toolkit.explorer.redshift.cluster" popup="true" compact="false">
+            <action id="redshift.cluster.awsauth" class="software.aws.toolkits.jetbrains.services.redshift.actions.CreateDataSourceAction"/>
+            <action id="redshift.cluster.secretsmanager" class="software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection"/>
             <separator/>
         </group>
     </actions>
