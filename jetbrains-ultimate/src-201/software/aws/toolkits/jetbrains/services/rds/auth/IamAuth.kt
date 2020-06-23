@@ -25,6 +25,9 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.DatabaseCredentials.IAM
+import software.aws.toolkits.telemetry.RdsTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletionStage
@@ -51,8 +54,18 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         return future {
-            val credentials = getCredentials(connection)
-            DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
+            var result = Result.Succeeded
+            val project = connection.runConfiguration.project
+            try {
+                val credentials = getCredentials(connection)
+                DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
+            } catch (e: Throwable) {
+                result = Result.Failed
+                throw e
+            } finally {
+                // TODO fix
+                RdsTelemetry.getCredentials(project, result, IAM, "mysql")
+            }
         }
     }
 
