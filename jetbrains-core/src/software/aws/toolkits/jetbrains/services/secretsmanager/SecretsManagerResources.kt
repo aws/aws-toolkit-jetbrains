@@ -12,4 +12,4 @@ object SecretsManagerResources {
     }
 }
 
-fun String.arnToName() = this.split(':').last()
+fun String.arnToName() = this.substringAfterLast(':')
