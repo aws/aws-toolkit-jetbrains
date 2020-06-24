@@ -23,6 +23,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
+import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DatabaseCredentials.IAM
@@ -63,9 +64,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
                 result = Result.Failed
                 throw e
             } finally {
-                // TODO find a more direct way to do this
-                val driver = connection.connectionPoint.databaseDriver.id
-                RdsTelemetry.getCredentials(project, result, IAM, driver)
+                RdsTelemetry.getCredentials(project, result, IAM, connection.getDatabaseEngine())
             }
         }
     }

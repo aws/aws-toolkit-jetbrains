@@ -23,6 +23,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
+import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DatabaseCredentials.SecretsManager
@@ -66,14 +67,11 @@ class SecretsManagerAuth : DatabaseAuthProvider, CoroutineScope by ApplicationTh
                 result = Result.Failed
                 throw e
             } finally {
-                // We don't have access to service information here. What we do have access to is the database driver
-                // which matches up with the engine field for mysql, postgres, and redshift which is what we currently
-                // support. TODO find a more direct way to do this
-                val driver = connection.connectionPoint.databaseDriver.id
-                if (driver == "redshift") {
+                val engine = connection.getDatabaseEngine()
+                if (engine == "redshift") {
                     RedshiftTelemetry.getCredentials(project, result, SecretsManager)
                 } else {
-                    RdsTelemetry.getCredentials(project, result, SecretsManager, driver)
+                    RdsTelemetry.getCredentials(project, result, SecretsManager, engine)
                 }
             }
         }
