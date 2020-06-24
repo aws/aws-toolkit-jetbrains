@@ -25,13 +25,13 @@ import software.aws.toolkits.jetbrains.services.clouddebug.CliOutputParser
 import software.aws.toolkits.jetbrains.services.clouddebug.asLogEvent
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.CloudDebugCliValidate
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import software.aws.toolkits.telemetry.Result
 
 abstract class Step {
     protected abstract val stepName: String
@@ -122,7 +122,7 @@ abstract class CliBasedStep : Step() {
         ignoreCancellation: Boolean
     ) {
         val startTime = Instant.now()
-        var result = Result.SUCCEEDED
+        var result = Result.Succeeded
         val commandLine = getCli(context)
 
         constructCommandLine(context, commandLine)
@@ -149,12 +149,12 @@ abstract class CliBasedStep : Step() {
             try {
                 handleErrorResult(processCapture.output.stdout, messageEmitter)
             } catch (e: Exception) {
-                result = Result.FAILED
+                result = Result.Failed
                 throw e
             }
         } catch (e: ProcessCanceledException) {
             LOG.warn(e) { "Step \"$stepName\" cancelled!" }
-            result = Result.CANCELLED
+            result = Result.Cancelled
         } finally {
             recordTelemetry(context, startTime, result)
         }
@@ -199,6 +199,8 @@ abstract class CliBasedStep : Step() {
                 messageEmitter.emitMessage(logEvent.text, level == Level.ERROR)
                 logEvent.level?.let { previousLevel.set(it) }
             }
+            // output to the log for diagnostic and integrations tests
+            LOG.debug { event.text.trim() }
         }
     }
 

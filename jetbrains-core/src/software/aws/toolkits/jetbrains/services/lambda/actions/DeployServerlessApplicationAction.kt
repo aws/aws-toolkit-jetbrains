@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
@@ -21,11 +22,12 @@ import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsMa
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
-import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
+import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateLambdaRuntimes
+import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
@@ -80,26 +82,28 @@ class DeployServerlessApplicationAction : AnAction(
                 return@thenAccept
             }
 
-            // Force save before we deploy
-            FileDocumentManager.getInstance().saveAllDocuments()
+            runInEdt {
+                // Force save before we deploy
+                FileDocumentManager.getInstance().saveAllDocuments()
 
-            val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
-            stackDialog.show()
-            if (!stackDialog.isOK) {
-                SamTelemetry.deploy(project, Result.CANCELLED)
-                return@thenAccept
-            }
+                val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
+                stackDialog.show()
+                if (!stackDialog.isOK) {
+                    SamTelemetry.deploy(project, Result.Cancelled)
+                    return@runInEdt
+                }
 
-            saveSettings(project, templateFile, stackDialog)
+                saveSettings(project, templateFile, stackDialog)
 
-            val stackName = stackDialog.stackName
-            val stackId = stackDialog.stackId
+                val stackName = stackDialog.stackName
+                val stackId = stackDialog.stackId
 
-            if (stackId == null) {
-                continueDeployment(project, stackName, templateFile, stackDialog)
-            } else {
-                warnResourceOperationAgainstCodePipeline(project, stackName, stackId, TaggingResourceType.CLOUDFORMATION_STACK, Operation.DEPLOY) {
+                if (stackId == null) {
                     continueDeployment(project, stackName, templateFile, stackDialog)
+                } else {
+                    warnResourceOperationAgainstCodePipeline(project, stackName, stackId, TaggingResourceType.CLOUDFORMATION_STACK, Operation.DEPLOY) {
+                        continueDeployment(project, stackName, templateFile, stackDialog)
+                    }
                 }
             }
         }
@@ -113,7 +117,8 @@ class DeployServerlessApplicationAction : AnAction(
             stackDialog.parameters,
             stackDialog.bucket,
             stackDialog.autoExecute,
-            stackDialog.useContainer
+            stackDialog.useContainer,
+            stackDialog.capabilities
         )
 
         deployDialog.show()
@@ -136,10 +141,10 @@ class DeployServerlessApplicationAction : AnAction(
                     message("cloudformation.execute_change_set.success", stackName),
                     project
                 )
-                SamTelemetry.deploy(project, Result.SUCCEEDED)
+                SamTelemetry.deploy(project, Result.Succeeded)
             } catch (e: Exception) {
                 e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
-                SamTelemetry.deploy(project, Result.FAILED)
+                SamTelemetry.deploy(project, Result.Failed)
             }
         }
     }
@@ -147,18 +152,23 @@ class DeployServerlessApplicationAction : AnAction(
     override fun update(e: AnActionEvent) {
         super.update(e)
 
-        e.presentation.isVisible = getSamTemplateFile(e) != null
+        // If there are no supported runtime groups, it will never succeed so don't show it
+        e.presentation.isVisible = if (LambdaHandlerResolver.supportedRuntimeGroups.isEmpty()) {
+            false
+        } else {
+            getSamTemplateFile(e) != null
+        }
     }
 
     /**
      * Determines the relevant Sam Template, returns null if one can't be found.
      */
-    private fun getSamTemplateFile(e: AnActionEvent): VirtualFile? {
-        val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return null
-        val virtualFile = virtualFiles.singleOrNull() ?: return null
+    private fun getSamTemplateFile(e: AnActionEvent): VirtualFile? = runReadAction {
+        val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return@runReadAction null
+        val virtualFile = virtualFiles.singleOrNull() ?: return@runReadAction null
 
         if (templateYamlRegex.matches(virtualFile.name)) {
-            return virtualFile
+            return@runReadAction virtualFile
         }
 
         // If the module node was selected, see if there is a template file in the top level folder
@@ -170,11 +180,11 @@ class DeployServerlessApplicationAction : AnAction(
             }
 
             if (childTemplateFiles.size == 1) {
-                return childTemplateFiles.single()
+                return@runReadAction childTemplateFiles.single()
             }
         }
 
-        return null
+        return@runReadAction null
     }
 
     private fun saveSettings(project: Project, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
@@ -185,6 +195,7 @@ class DeployServerlessApplicationAction : AnAction(
                     setSamBucketName(samPath, stackDialog.bucket)
                     setSamAutoExecute(samPath, stackDialog.autoExecute)
                     setSamUseContainer(samPath, stackDialog.useContainer)
+                    setEnabledCapabilities(samPath, stackDialog.capabilities)
                 }
             }
         }

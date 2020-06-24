@@ -1,13 +1,14 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-@file:Suppress("DEPRECATION") // TODO: Investigate AsyncTreeModel FIX_WHEN_MIN_IS_192
+@file:Suppress("DEPRECATION") // TODO: Investigate AsyncTreeModel FIX_WHEN_MIN_IS_201
 package software.aws.toolkits.jetbrains.core.explorer
 
 import com.intellij.execution.Location
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.ide.util.treeView.NodeRenderer
+import com.intellij.ide.util.treeView.TreeState
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DataKey
@@ -56,7 +57,7 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     private val errorPanel: JPanel
     private val awsTreeModel = AwsExplorerTreeStructure(project)
     private val structureTreeModel = StructureTreeModel(awsTreeModel, project)
-    private var awsTree = createTree(AsyncTreeModel(structureTreeModel, true, project))
+    private val awsTree = createTree(AsyncTreeModel(structureTreeModel, true, project))
     private val awsTreePanel = ScrollPaneFactory.createScrollPane(awsTree)
     private val settingsSelector by lazy {
         SettingsSelector(project)
@@ -95,18 +96,22 @@ class ExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     }
 
     /**
-     * Invalidates tree nodes, causing IntelliJ to redraw the tree
+     * Invalidates tree nodes, causing IntelliJ to redraw the tree. Preserves node state.
      * Provide an AbstractTreeNode in order to redraw the tree from that point downwards
-     * Otherwise redraws (and collapses) the entire tree
+     * Otherwise redraws the entire tree
      *
      * @param selectedNode AbstractTreeNode to redraw the tree from
      */
     fun invalidateTree(selectedNode: AbstractTreeNode<*>? = null) {
+        // Save the state and reapply it after we invalidate (which is the point where the state is wiped).
+        // Items are expanded again if their user object is unchanged (.equals()).
+        val state = TreeState.createOn(awsTree)
         if (selectedNode != null) {
             structureTreeModel.invalidate(selectedNode, true)
         } else {
             structureTreeModel.invalidate()
         }
+        state.applyTo(awsTree)
     }
 
     private fun createTree(model: TreeModel): Tree {
@@ -231,10 +236,12 @@ object ExplorerDataKeys {
      * Returns all the selected resource nodes. getData() will return null if not all selected items are same type
      */
     val SELECTED_RESOURCE_NODES = DataKey.create<List<AwsExplorerResourceNode<*>>>("aws.explorer.resourceNodes")
+
     /**
      * Returns the selected Service node. getData() will return null if more than one item is selected
      */
     val SELECTED_SERVICE_NODE = DataKey.create<AwsExplorerNode<*>>("aws.explorer.serviceNode")
+
     /**
      * Returns all the explorer nodes. getData() will return null if not all selected items are same type
      */

@@ -41,16 +41,18 @@ import javax.swing.tree.DefaultMutableTreeNode
 
 class S3TreeTable(
     private val treeTableModel: S3TreeTableModel,
+    val rootNode: S3TreeDirectoryNode,
     val bucket: S3VirtualBucket,
     private val project: Project
 ) : TreeTable(treeTableModel) {
 
     private val dropTargetListener = object : DropTargetAdapter() {
         override fun drop(dropEvent: DropTargetDropEvent) {
-            val node = rowAtPoint(dropEvent.location).takeIf { it >= 0 }?.let { getNodeForRow(it) } ?: getRootNode()
+            val node = rowAtPoint(dropEvent.location).takeIf { it >= 0 }?.let { getNodeForRow(it) } ?: rootNode
             val data = try {
                 dropEvent.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE)
-                dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<File>
+                val list = dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+                list.filterIsInstance<File>()
             } catch (e: UnsupportedFlavorException) {
                 // When the drag and drop data is not what we expect (like when it is text) this is thrown and can be safey ignored
                 LOG.info(e) { "Unsupported flavor attempted to be dragged and dropped" }
@@ -121,7 +123,7 @@ class S3TreeTable(
                     FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@runInEdt
                     // set virtual file to read only
                     FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
-                        notifyError(message("s3.open.viewer.failed"))
+                        notifyError(project = project, content = message("s3.open.viewer.failed"))
                     }
                 }
             }
@@ -172,7 +174,6 @@ class S3TreeTable(
                             content = message("s3.upload.directory.impossible", it.name),
                             project = project
                         )
-                        S3Telemetry.uploadObject(project, Result.FAILED)
                         return@forEach
                     }
 
@@ -180,16 +181,14 @@ class S3TreeTable(
                         bucket.upload(project, it.inputStream, it.length, node.getDirectoryKey() + it.name)
                         invalidateLevel(node)
                         refresh()
-                        S3Telemetry.uploadObject(project, Result.SUCCEEDED)
                     } catch (e: Exception) {
                         e.notifyError(message("s3.upload.object.failed", it.path), project)
-                        S3Telemetry.uploadObject(project, Result.FAILED)
                         throw e
                     }
                 }
-                S3Telemetry.uploadObjects(project, Result.SUCCEEDED, selectedFiles.size.toDouble())
+                S3Telemetry.uploadObjects(project, Result.Succeeded, selectedFiles.size.toDouble())
             } catch (e: Exception) {
-                S3Telemetry.uploadObjects(project, Result.FAILED, selectedFiles.size.toDouble())
+                S3Telemetry.uploadObjects(project, Result.Failed, selectedFiles.size.toDouble())
             }
         }
     }
@@ -205,8 +204,6 @@ class S3TreeTable(
         val path = tree.getPathForRow(convertRowIndexToModel(row))
         return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
-
-    fun getRootNode(): S3TreeDirectoryNode = (tableModel.root as DefaultMutableTreeNode).userObject as S3TreeDirectoryNode
 
     fun getSelectedNodes(): List<S3TreeNode> = selectedRows.map { getNodeForRow(it) }.filterNotNull()
 

@@ -23,8 +23,8 @@ class MockProjectAccountSettingsManager(project: Project) : ProjectAccountSettin
     fun reset() {
         recentlyUsedRegions.clear()
         recentlyUsedProfiles.clear()
-
-        changeConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER, AwsRegionProvider.getInstance().defaultRegion())
+        val regionProvider = AwsRegionProvider.getInstance()
+        changeConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER, regionProvider.defaultPartition(), regionProvider.defaultRegion())
 
         waitUntilStable()
     }
@@ -59,17 +59,17 @@ fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
     val manager = MockProjectAccountSettingsManager.getInstance(project)
     val credentialsManager = MockCredentialsManager.getInstance()
     val oldActive = manager.connectionSettings()?.credentials
+    val realCredentialsProvider = credentialsManager.addCredentials("RealCredentials", credentials)
     try {
         println("Running using real credentials")
 
-        val realCredentialsProvider = credentialsManager.addCredentials("RealCredentials", credentials)
         manager.changeCredentialProviderAndWait(realCredentialsProvider)
 
         return block.invoke()
     } finally {
-        credentialsManager.reset()
         oldActive?.let {
             manager.changeCredentialProviderAndWait(credentialsManager.getCredentialIdentifierById(oldActive.id))
         }
+        credentialsManager.removeCredentials(realCredentialsProvider)
     }
 }

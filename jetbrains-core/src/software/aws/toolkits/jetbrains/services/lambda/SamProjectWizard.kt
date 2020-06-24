@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
@@ -115,9 +116,12 @@ abstract class SamProjectTemplate {
     }
 
     private fun openReadmeFile(contentRoot: VirtualFile, project: Project) {
-        VfsUtil.findRelativeFile(contentRoot, "README.md")?.let {
+        VfsUtil.findRelativeFile(contentRoot, "README.md")?.let { readme ->
+            // it's only available since the first non-EAP version of intellij, so it is fine
+            readme.putUserData(TextEditorWithPreview.DEFAULT_LAYOUT_FOR_FILE, TextEditorWithPreview.Layout.SHOW_PREVIEW)
+
             val fileEditorManager = FileEditorManager.getInstance(project)
-            fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) ?: LOG.warn { "Failed to open README.md" }
+            fileEditorManager.openTextEditor(OpenFileDescriptor(project, readme), true) ?: LOG.warn { "Failed to open README.md" }
         }
     }
 

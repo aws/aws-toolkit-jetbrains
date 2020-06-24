@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.nio.file.Files
+import java.nio.file.Paths
 
 buildscript {
     repositories {
@@ -18,9 +20,12 @@ buildscript {
 
 apply from: 'intellijJVersions.gradle'
 
+def ideVersion = shortenVersion(resolveIdeProfileName())
+
 group 'software.aws.toolkits'
 // please check changelog generation logic if this format is changed
-version toolkitVersion + "-" + shortenVersion(resolveIdeProfileName())
+version "$toolkitVersion-$ideVersion".toString()
+
 
 repositories {
     maven { url "https://www.jetbrains.com/intellij-repository/snapshots/" }
@@ -45,7 +50,6 @@ allprojects {
     }
 
     tasks.withType(org.jetbrains.intellij.tasks.RunIdeTask) {
-        systemProperty("aws.toolkits.enableTelemetry", false)
         intellij {
             if (System.env.ALTERNATIVE_IDE) {
                 if(file(System.env.ALTERNATIVE_IDE).exists()) {
@@ -94,19 +98,21 @@ subprojects {
     }
 
     sourceSets {
-        main.java.srcDir 'src'
-        main.resources.srcDir 'resources'
-        test.java.srcDir 'tst'
-        test.resources.srcDir 'tst-resources'
+        main.java.srcDirs = ['src', "src-$ideVersion"]
+        main.resources.srcDirs = ['resources', "resources-$ideVersion"]
+        test.java.srcDirs = ['tst', "tst-$ideVersion"]
+        test.resources.srcDirs = ['tst-resources', "tst-resources-$ideVersion"]
         integrationTest {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            java.srcDir 'it'
-            resources.srcDir 'it-resources'
+            java.srcDirs = ['it', "it-$ideVersion"]
+            resources.srcDirs = ['it-resources', "it-resources-$ideVersion"]
         }
     }
 
     configurations {
+        testArtifacts
+
         integrationTestImplementation.extendsFrom testImplementation
         integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     }
@@ -131,7 +137,7 @@ subprojects {
         jacoco {
             // don't instrument sdk, icons, ktlint, etc.
             includes = ["software.aws.toolkits.*"]
-            excludes = ["software.aws.toolkits.ktlint"]
+            excludes = ["software.aws.toolkits.ktlint.*"]
         }
 
         reports {
@@ -142,11 +148,18 @@ subprojects {
 
     idea {
         module {
+            sourceDirs += file("src-$ideVersion")
+            resourceDirs += file("resources-$ideVersion")
+            testSourceDirs += file("tst-$ideVersion")
+            testResourceDirs += file("tst-resources-$ideVersion")
+
             sourceDirs -= file("it")
             testSourceDirs += file("it")
+            testSourceDirs += file("it-$ideVersion")
 
             resourceDirs -= file("it-resources")
             testResourceDirs += file("it-resources")
+            testResourceDirs += file("it-resources-$ideVersion")
         }
     }
 
@@ -157,7 +170,13 @@ subprojects {
         classpath = sourceSets.integrationTest.runtimeClasspath
 
         jacoco {
-            excludes = ["com.sun.*"] // See https://groups.google.com/forum/#!topic/jacoco/H0gDwxNuhK4
+            // don't instrument sdk, icons, ktlint, etc.
+            includes = ["software.aws.toolkits.*"]
+            excludes = ["software.aws.toolkits.ktlint.*"]
+        }
+
+        project.plugins.withId("org.jetbrains.intellij") {
+            systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
         }
 
         mustRunAfter tasks.test
@@ -169,6 +188,16 @@ subprojects {
 
     // Force us to compile the integration tests even during check even though we don't run them
     check.dependsOn(integrationTestClasses)
+
+    task testJar (type: Jar) {
+        baseName = "${project.name}-test"
+        from sourceSets.test.output
+        from sourceSets.integrationTest.output
+    }
+
+    artifacts {
+        testArtifacts testJar
+    }
 
     // Remove the tasks added in by gradle-intellij-plugin so that we don't publish/verify multiple times
     project.afterEvaluate {
@@ -213,7 +242,7 @@ prepareSandbox {
 
 publishPlugin {
     token publishToken
-    channels publishChannel
+    channels publishChannel ? publishChannel.split(',').collect{ it.trim() } : []
 }
 
 generateChangeLog {
@@ -241,7 +270,36 @@ task ktlint(type: JavaExec, group: "verification") {
     inputs.files(project.fileTree(dir: ".", include: "**/*.kt"))
     outputs.dir("${project.buildDir}/reports/ktlint/")
 }
+
+task validateLocalizedMessages(group: "verification") {
+    doLast {
+        BufferedReader files = Files.newBufferedReader(Paths.get("${project.rootDir}/resources/resources/software/aws/toolkits/resources/localized_messages.properties"))
+        files
+            .lines()
+            .map({ item ->
+                if (item == null || item.isEmpty()) {
+                    return ""
+                }
+                String[] chunks = item.split("=")
+                if (chunks.length <= 1) {
+                    return ""
+                } else {
+                    return chunks[0]
+                }
+            })
+            .filter({ item -> !item.isEmpty() })
+            .reduce({ item1, item2 ->
+                if (item1 > item2) {
+                    throw new GradleException("localization file is not sorted:" + item1 + " > " + item2)
+                }
+
+                return item2
+            })
+    }
+}
+
 check.dependsOn ktlint
+check.dependsOn validateLocalizedMessages
 check.dependsOn verifyPlugin
 
 task coverageReport(type: JacocoReport) {

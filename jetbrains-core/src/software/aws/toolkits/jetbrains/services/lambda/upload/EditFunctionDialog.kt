@@ -32,11 +32,13 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.NEW
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CODE
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CONFIGURATION
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
+import software.aws.toolkits.jetbrains.utils.lambdaTracingConfigIsAvailable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
@@ -114,6 +116,7 @@ class EditFunctionDialog(
         if (mode == UPDATE_CONFIGURATION) {
             view.name.isEnabled = false
             view.deploySettings.isVisible = false
+            view.buildSettings.isVisible = false
         } else {
             view.createBucket.addActionListener {
                 val bucketDialog = CreateS3BucketDialog(
@@ -144,7 +147,7 @@ class EditFunctionDialog(
 
         val regionProvider = AwsRegionProvider.getInstance()
         val settings = ProjectAccountSettingsManager.getInstance(project)
-        view.setXrayControlVisibility(mode != UPDATE_CODE && regionProvider.isServiceSupported(settings.activeRegion, "xray"))
+        view.setXrayControlVisibility(mode != UPDATE_CODE && lambdaTracingConfigIsAvailable(settings.activeRegion))
 
         view.iamRole.selectedItem = role
 
@@ -188,7 +191,7 @@ class EditFunctionDialog(
     override fun getOKAction(): Action = action
 
     override fun doCancelAction() {
-        LambdaTelemetry.editFunction(project, result = Result.CANCELLED)
+        LambdaTelemetry.editFunction(project, result = Result.Cancelled)
         super.doCancelAction()
     }
 
@@ -204,41 +207,42 @@ class EditFunctionDialog(
         }
 
     private fun upsertLambdaCode() {
-        if (okAction.isEnabled) {
-            val functionDetails = viewToFunctionDetails()
-            val element = findPsiElementsForHandler(project, functionDetails.runtime, functionDetails.handler).first()
-            val psiFile = element.containingFile
-            val module = ModuleUtil.findModuleForFile(psiFile) ?: throw IllegalStateException("Failed to locate module for $psiFile")
+        if (!okAction.isEnabled) {
+            return
+        }
+        val functionDetails = viewToFunctionDetails()
+        val element = findPsiElementsForHandler(project, functionDetails.runtime, functionDetails.handler).first()
+        val psiFile = element.containingFile
+        val module = ModuleUtil.findModuleForFile(psiFile) ?: throw IllegalStateException("Failed to locate module for $psiFile")
 
-            val s3Bucket = view.sourceBucket.selectedItem as String
+        val s3Bucket = view.sourceBucket.selectedItem as String
 
-            val lambdaBuilder = psiFile.language.runtimeGroup?.let { LambdaBuilder.getInstance(it) } ?: return
-            val lambdaCreator = LambdaCreatorFactory.create(AwsClientManager.getInstance(project), lambdaBuilder)
+        val lambdaBuilder = psiFile.language.runtimeGroup?.let { LambdaBuilder.getInstance(it) } ?: return
+        val lambdaCreator = LambdaCreatorFactory.create(AwsClientManager.getInstance(project), lambdaBuilder)
 
-            FileDocumentManager.getInstance().saveAllDocuments()
+        FileDocumentManager.getInstance().saveAllDocuments()
 
-            val (future, message) = if (mode == UPDATE_CODE) {
-                lambdaCreator.updateLambda(module, element, functionDetails, s3Bucket, configurationChanged()) to
-                    message("lambda.function.code_updated.notification", functionDetails.name)
-            } else {
-                lambdaCreator.createLambda(module, element, functionDetails, s3Bucket) to
-                    message("lambda.function.created.notification", functionDetails.name)
-            }
+        val (future, message) = if (mode == UPDATE_CODE) {
+            lambdaCreator.updateLambda(module, element, functionDetails, s3Bucket, configurationChanged()) to
+                message("lambda.function.code_updated.notification", functionDetails.name)
+        } else {
+            lambdaCreator.createLambda(module, element, functionDetails, s3Bucket) to
+                message("lambda.function.created.notification", functionDetails.name)
+        }
 
-            future.whenComplete { _, error ->
-                when (error) {
-                    null -> {
-                        notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
-                        LambdaTelemetry.editFunction(project, update = false, result = Result.SUCCEEDED)
-                    }
-                    is Exception -> {
-                        error.notifyError(title = NOTIFICATION_TITLE)
-                        LambdaTelemetry.editFunction(project, update = false, result = Result.FAILED)
-                    }
+        future.whenComplete { _, error ->
+            when (error) {
+                null -> {
+                    notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
+                    LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+                }
+                is Exception -> {
+                    error.notifyError(title = NOTIFICATION_TITLE)
+                    LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
                 }
             }
-            close(OK_EXIT_CODE)
         }
+        close(OK_EXIT_CODE)
     }
 
     private fun updateConfiguration() {
@@ -255,10 +259,10 @@ class EditFunctionDialog(
                             content = message("lambda.function.configuration_updated.notification", functionDetails.name)
                         )
                         runInEdt(ModalityState.any()) { close(OK_EXIT_CODE) }
-                        LambdaTelemetry.editFunction(project, update = true, result = Result.SUCCEEDED)
+                        LambdaTelemetry.editFunction(project, update = true, result = Result.Succeeded)
                     }.exceptionally { error ->
                         setErrorText(ExceptionUtil.getNonEmptyMessage(error, error.toString()))
-                        LambdaTelemetry.editFunction(project, update = true, result = Result.FAILED)
+                        LambdaTelemetry.editFunction(project, update = true, result = Result.Failed)
                         null
                     }
             }
@@ -274,7 +278,10 @@ class EditFunctionDialog(
         envVars = view.envVars.envVars,
         timeout = view.timeoutSlider.value,
         memorySize = view.memorySlider.value,
-        xrayEnabled = view.xrayEnabled.isSelected
+        xrayEnabled = view.xrayEnabled.isSelected,
+        samOptions = SamOptions(
+            buildInContainer = view.buildInContainer.isSelected
+        )
     )
 
     private inner class CreateNewLambdaOkAction : OkAction() {

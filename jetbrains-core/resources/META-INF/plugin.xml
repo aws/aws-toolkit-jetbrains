@@ -64,8 +64,8 @@
 </ul>
     ]]></description>
 
-    <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://aws.amazon.com/">Amazon Web Services</vendor>
-    <idea-version since-build="192" until-build="193.*"/>
+    <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://aws.amazon.com/">AWS</vendor>
+    <idea-version since-build="193" until-build="201.*"/>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
@@ -88,12 +88,9 @@
         <xi:fallback/>
     </xi:include>
 
-    <application-components>
-        <component>
-            <interface-class>software.aws.toolkits.jetbrains.components.telemetry.TelemetryComponent</interface-class>
-            <implementation-class>software.aws.toolkits.jetbrains.components.telemetry.DefaultTelemetryComponent</implementation-class>
-        </component>
-    </application-components>
+    <xi:include href="/META-INF/plugin-extra.xml" xpointer="xpointer(/idea-plugin/*)">
+        <xi:fallback/>
+    </xi:include>
 
     <extensionPoints>
         <extensionPoint name="credentialProviderFactory" interface="software.aws.toolkits.core.credentials.CredentialProviderFactory"/>
@@ -219,7 +216,11 @@
         <projectTemplatesFactory implementation="software.aws.toolkits.jetbrains.ui.wizard.SamProjectGeneratorIntelliJAdapter" />
 
         <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
+        
+        <!-- S3 -->
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.s3.S3ViewerEditorProvider"/>
+        <!-- See this post why order="first" is required https://intellij-support.jetbrains.com/hc/en-us/community/posts/360003460619-fileIconProvider-is-not-showing-Icon-for-custom-LightVirtualFile -->
+        <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.s3.editor.S3FileIconProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">
@@ -239,6 +240,7 @@
         <notice implementation="software.aws.toolkits.jetbrains.core.notification.JetBrainsMinimumVersionChange"/>
 
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerRootNode"/>
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudWatchRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.LambdaExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.S3ExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.EcsExplorerRootNode"/>
@@ -247,6 +249,10 @@
     </extensions>
 
     <actions>
+        <group id="aws.toolkit.explorer.ecs.cluster" popup="true" compact="false">
+            <action id="ecs.service.showLogGroup" class="software.aws.toolkits.jetbrains.services.ecs.actions.EcsLogGroupAction"/>
+            <separator/>
+        </group>
 
         <group id="aws.toolkit.explorer.ecs.service" popup="true" compact="false">
             <reference ref="RunContextGroupInner"/>
@@ -271,6 +277,8 @@
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.UpdateFunctionConfigurationAction"/>
             <action id="lambda.function.updateCode" class="software.aws.toolkits.jetbrains.services.lambda.actions.UpdateFunctionCodeAction"/>
             <separator/>
+            <action id="lambda.function.viewLogStream" class="software.aws.toolkits.jetbrains.services.lambda.actions.LambdaLogGroupAction"/>
+            <separator/>
             <action id="lambda.function.delete"
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.DeleteFunctionAction"/>
         </group>
@@ -281,6 +289,14 @@
             <separator/>
             <action id="cloudformation.stack.delete"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.actions.DeleteStackAction"/>
+        </group>
+
+        <group id="aws.toolkit.explorer.logs.group" popup="true" compact="false">
+            <action id="cloudwatch.logs.open"
+                    class="software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogGroupAction"/>
+            <separator/>
+            <action id="cloudwatch.logs.delete.group"
+                    class="software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.DeleteGroupAction"/>
         </group>
 
         <group id="aws.toolkit.explorer.s3" popup="false" compact="false">

@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.telemetry.Result
 import java.io.File
 
 class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
@@ -66,7 +67,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
             val runtimeGroup = runtimeValue?.runtimeGroup ?: return false
 
             return SamDebugSupport.supportedRuntimeGroups.contains(runtimeGroup) &&
-                SamDebugSupport.getInstance(runtimeGroup)?.isSupported() ?: false
+                SamDebugSupport.getInstance(runtimeGroup)?.isSupported(runtimeValue) ?: false
         }
 
         return false
@@ -125,11 +126,11 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                                 awsRegion = lambdaSettings.region.id
                             )
                         ) {
-                            val type = if (environment.isDebug()) "Debug" else "Run"
-                            datum("SamInvoke.$type") {
+                            datum("lambda_invokeLocal") {
                                 count()
                                 // exception can be null but is not annotated as nullable
-                                metadata("hasException", exception != null)
+                                metadata("debug", environment.isDebug())
+                                metadata("result", if (exception == null) Result.Succeeded.value else Result.Failed.value)
                                 metadata("runtime", lambdaSettings.runtime.name)
                                 metadata("samVersion", SamCommon.getVersionString())
                                 metadata("templateBased", buildRequest is BuildLambdaFromTemplate)

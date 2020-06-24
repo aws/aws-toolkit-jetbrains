@@ -27,8 +27,8 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.SamTelemetry
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -44,14 +44,15 @@ class SamDeployDialog(
     private val parameters: Map<String, String>,
     private val s3Bucket: String,
     private val autoExecute: Boolean,
-    private val useContainer: Boolean
+    private val useContainer: Boolean,
+    private val capabilities: List<CreateCapabilities>
 ) : DialogWrapper(project) {
     private val progressIndicator = ProgressIndicatorBase()
     private val view = SamDeployView(project, progressIndicator)
     private var currentStep = 0
     private val credentialsProvider = ProjectAccountSettingsManager.getInstance(project).activeCredentialProvider
     private val region = ProjectAccountSettingsManager.getInstance(project).activeRegion
-    private val changeSetRegex = "(arn:aws:cloudformation:.*changeSet/[^\\s]*)".toRegex()
+    private val changeSetRegex = "(arn:${region.partitionId}:cloudformation:.*changeSet/[^\\s]*)".toRegex()
     val deployFuture: CompletableFuture<String>
     lateinit var changeSetName: String
         private set
@@ -135,15 +136,18 @@ class SamDeployDialog(
     private fun runSamDeploy(packagedTemplateFile: Path): CompletionStage<String> {
         advanceStep()
         return createBaseCommand().thenApply { it ->
-            it
-                .withParameters("deploy")
+            it.withParameters("deploy")
                 .withParameters("--template-file")
                 .withParameters(packagedTemplateFile.toString())
                 .withParameters("--stack-name")
                 .withParameters(stackName)
-                .withParameters("--capabilities")
-                .withParameters("CAPABILITY_IAM", "CAPABILITY_NAMED_IAM")
-                .withParameters("--no-execute-changeset")
+
+            if (capabilities.isNotEmpty()) {
+                it.withParameters("--capabilities")
+                    .withParameters(capabilities.map { it.capability })
+            }
+
+            it.withParameters("--no-execute-changeset")
 
             if (parameters.isNotEmpty()) {
                 it.withParameters("--parameter-overrides")
@@ -173,6 +177,12 @@ class SamDeployDialog(
                 doOKAction()
             }
         }
+
+        SamTelemetry.deploy(
+            project = project,
+            success = true,
+            version = SamCommon.getVersionString()
+        )
     }
 
     private fun handleError(error: Throwable): String {
@@ -184,6 +194,12 @@ class SamDeployDialog(
             ExceptionUtil.getMessage(error) ?: message("general.unknown_error")
         }
         setErrorText(message)
+
+        SamTelemetry.deploy(
+            project = project,
+            success = false,
+            version = SamCommon.getVersionString()
+        )
 
         progressIndicator.cancel()
         cancelAction.isEnabled = true
@@ -236,16 +252,7 @@ class SamDeployDialog(
             }
         }
 
-        return future.whenComplete { _, exception ->
-            TelemetryService.getInstance().record(project) {
-                datum("SamDeploy.$title") {
-                    count()
-                    // exception can be null but is not annotated as nullable
-                    metadata("hasException", exception != null)
-                    metadata("samVersion", SamCommon.getVersionString())
-                }
-            }
-        }
+        return future
     }
 
     private fun createProcess(command: GeneralCommandLine): OSProcessHandler =

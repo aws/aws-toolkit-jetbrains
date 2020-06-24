@@ -18,8 +18,10 @@ import javax.swing.Icon
 import javax.swing.JComponent
 
 interface ToolkitToolWindow {
-    fun addTab(title: String, component: JComponent, activate: Boolean = false, id: String = title): ToolkitToolWindowTab
+    fun addTab(title: String, component: JComponent, activate: Boolean = false, id: String = title, disposable: Disposable? = null): ToolkitToolWindowTab
     fun find(id: String): ToolkitToolWindowTab?
+    // prefix is prefix of the id. Assumes the window is using id composed of paths, like: "loggroup/logstream"
+    fun findPrefix(prefix: String): List<ToolkitToolWindowTab>
 }
 
 interface ToolkitToolWindowTab : Disposable {
@@ -33,7 +35,7 @@ class ToolkitToolWindowManager(private val project: Project) {
     inner class ManagedToolkitToolWindow(private val type: ToolkitToolWindowType) : ToolkitToolWindow {
         private val tabs = mutableMapOf<String, ManagedToolkitToolWindowTab>()
 
-        override fun addTab(title: String, component: JComponent, activate: Boolean, id: String): ToolkitToolWindowTab {
+        override fun addTab(title: String, component: JComponent, activate: Boolean, id: String, disposable: Disposable?): ToolkitToolWindowTab {
             val content = ContentImpl(component, title, true)
             val toolWindow = windowManager.getToolWindow(type.id)
                 ?: windowManager.registerToolWindow(type.id, true, type.anchor, project, true).also {
@@ -41,6 +43,7 @@ class ToolkitToolWindowManager(private val project: Project) {
                     it.stripeTitle = type.title
                 }
             Disposer.register(content, Disposable { closeWindowIfEmpty(toolWindow, type.id) })
+            disposable?.let { Disposer.register(content, it) }
             toolWindow.contentManager.addContent(content)
             return ManagedToolkitToolWindowTab(toolWindow, content).also {
                 tabs[id] = it
@@ -58,6 +61,17 @@ class ToolkitToolWindowManager(private val project: Project) {
             }
             return tab
         }
+
+        override fun findPrefix(prefix: String): List<ToolkitToolWindowTab> = tabs
+            .filter { it.key.startsWith("$prefix/") || it.key == prefix }
+            .mapNotNull {
+                if (Disposer.isDisposed(it.value.content)) {
+                    tabs.remove(it.key)
+                    null
+                } else {
+                    it.value
+                }
+            }
     }
 
     inner class ManagedToolkitToolWindowTab(private val toolWindow: ToolWindow, internal val content: Content) : ToolkitToolWindowTab {

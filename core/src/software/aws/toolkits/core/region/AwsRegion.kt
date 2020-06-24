@@ -7,6 +7,7 @@ import software.amazon.awssdk.regions.Region
 
 data class AwsRegion(val id: String, val name: String, val partitionId: String) {
     val category: String? = when {
+        id.startsWith("af") -> "Africa"
         id.startsWith("us") -> "North America"
         id.startsWith("ca") -> "North America"
         id.startsWith("eu") -> "Europe"
@@ -18,7 +19,7 @@ data class AwsRegion(val id: String, val name: String, val partitionId: String) 
     }
 
     val displayName: String = when {
-        category == "Europe" -> "${name.trimPrefixAndRemoveBrackets("EU")} ($id)"
+        category == "Europe" -> "${name.removePrefix("Europe").trimPrefixAndRemoveBrackets("EU")} ($id)"
         category == "North America" -> "${name.removePrefix("US West").trimPrefixAndRemoveBrackets("US East")} ($id)"
         category != null && name.startsWith(category) -> "${name.trimPrefixAndRemoveBrackets(category)} ($id)"
         else -> name

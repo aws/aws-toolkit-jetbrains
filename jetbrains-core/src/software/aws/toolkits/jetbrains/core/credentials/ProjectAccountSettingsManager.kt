@@ -18,9 +18,9 @@ import software.aws.toolkits.core.credentials.CredentialProviderNotFoundExceptio
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
+import software.aws.toolkits.core.region.AwsPartition
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -32,6 +32,7 @@ import java.util.concurrent.CancellationException
 
 abstract class ProjectAccountSettingsManager(private val project: Project) : SimpleModificationTracker() {
     private val resourceCache = AwsResourceCache.getInstance(project)
+    private val regionProvider = AwsRegionProvider.getInstance()
 
     @Volatile
     private var validationJob: Job? = null
@@ -44,6 +45,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
 
     // Internal state is visible for AwsSettingsPanel and ChangeAccountSettingsActionGroup
     internal var selectedCredentialIdentifier: ToolkitCredentialsIdentifier? = null
+    internal var selectedPartition: AwsPartition? = null
     internal var selectedRegion: AwsRegion? = null
 
     private var selectedCredentialsProvider: ToolkitCredentialsProvider? = null
@@ -53,7 +55,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             .subscribe(CredentialManager.CREDENTIALS_CHANGED, object : ToolkitCredentialsChangeListener {
                 override fun providerRemoved(identifier: ToolkitCredentialsIdentifier) {
                     if (selectedCredentialIdentifier == identifier) {
-                        changeConnectionSettings(null, selectedRegion)
+                        changeConnectionSettings(null, selectedPartition, selectedRegion)
                     }
                 }
             })
@@ -70,7 +72,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     /**
      * Internal setter that allows for null values and is intended to set the internal state and still notify
      */
-    protected fun changeConnectionSettings(identifier: ToolkitCredentialsIdentifier?, region: AwsRegion?) {
+    protected fun changeConnectionSettings(identifier: ToolkitCredentialsIdentifier?, partition: AwsPartition?, region: AwsRegion?) {
         changeFieldsAndNotify {
             identifier?.let {
                 recentlyUsedProfiles.add(it.id)
@@ -81,6 +83,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             }
 
             selectedCredentialIdentifier = identifier
+            selectedPartition = partition
             selectedRegion = region
         }
     }
@@ -107,8 +110,18 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             region.let {
                 recentlyUsedRegions.add(region.id)
             }
-
             selectedRegion = region
+            selectedPartition = regionProvider.partitions()[region.partitionId]
+        }
+    }
+
+    /**
+     * Changes the partition and then validates them. Notifies listeners of results
+     */
+    fun changePartition(partition: AwsPartition) {
+        changeFieldsAndNotify {
+            selectedRegion = null
+            selectedPartition = partition
         }
     }
 
@@ -150,6 +163,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
             } finally {
                 incModificationCount()
                 AwsTelemetry.validateCredentials(project, success = isValidConnectionSettings())
+                validationJob = null
             }
         }
     }
@@ -174,10 +188,7 @@ abstract class ProjectAccountSettingsManager(private val project: Project) : Sim
     /**
      * Returns the list of recently used [AwsRegion]
      */
-    fun recentlyUsedRegions(): List<AwsRegion> {
-        val regionProvider = AwsRegionProvider.getInstance()
-        return recentlyUsedRegions.elements().mapNotNull { regionProvider.regions()[it] }
-    }
+    fun recentlyUsedRegions(): List<AwsRegion> = recentlyUsedRegions.elements().mapNotNull { regionProvider.allRegions()[it] }
 
     /**
      * Returns the list of recently used [ToolkitCredentialsIdentifier]
@@ -257,10 +268,3 @@ fun Project.activeRegion(): AwsRegion = ProjectAccountSettingsManager.getInstanc
  * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
  */
 fun Project.activeCredentialProvider(): ToolkitCredentialsProvider = ProjectAccountSettingsManager.getInstance(this).activeCredentialProvider
-
-/**
- * The underlying AWS account for current active credential provider of the project. Return null if credential provider is not set.
- * Calls of this member should be in non-UI thread since it makes network call using an STS client for retrieving the
- * underlying AWS account.
- */
-fun Project.activeAwsAccount(): String? = tryOrNull { AwsResourceCache.getInstance(this).getResourceNow(StsResources.ACCOUNT) }
