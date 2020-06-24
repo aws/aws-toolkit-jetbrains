@@ -4,7 +4,6 @@
 package toolkits.gradle.sdk
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
@@ -16,7 +15,6 @@ import software.amazon.awssdk.codegen.model.service.ServiceModel
 import software.amazon.awssdk.codegen.utils.ModelLoaderUtils
 import java.io.File
 
-/* ktlint-disable custom-ktlint-rules:log-not-lazy */
 open class GenerateSdk : DefaultTask() {
     @InputDirectory
     lateinit var c2jFolder: File
@@ -28,7 +26,7 @@ open class GenerateSdk : DefaultTask() {
     fun generate() {
         outputDir.deleteRecursively()
 
-        LOG.info("Generating SDK from $c2jFolder")
+        logger.info("Generating SDK from $c2jFolder")
         val models = C2jModels.builder()
             .serviceModel(loadServiceModel())
             .paginatorsModel(loadPaginatorsModel())
@@ -57,8 +55,4 @@ open class GenerateSdk : DefaultTask() {
         CustomizationConfig::class.java,
         File(c2jFolder, "customization.config")
     ).orElse(CustomizationConfig.create())
-
-    private companion object {
-        private val LOG = Logging.getLogger(GenerateSdk::class.java)
-    }
 }

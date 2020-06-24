@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
+import toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -243,7 +243,7 @@ def removeTask(tasks, taskName) {
 }
 
 apply plugin: 'org.jetbrains.intellij'
-apply plugin: ChangeLogPlugin
+apply plugin: 'toolkit-change-log'
 
 intellij {
     version ideSdkVersion("IC")
@@ -265,9 +265,8 @@ publishPlugin {
     channels publishChannel ? publishChannel.split(',').collect { it.trim() } : []
 }
 
-generateChangeLog {
-    generateJetbrains = false
-    generateGithub = true
+tasks.register('generateChangeLog', GenerateGithubChangeLog) {
+    changeLogFile = project.file("CHANGELOG.md")
 }
 
 task ktlint(type: JavaExec, group: "verification") {
