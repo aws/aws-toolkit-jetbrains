@@ -18,27 +18,68 @@ import software.aws.toolkits.jetbrains.datagrip.auth.SECRET_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerAuth
 import software.aws.toolkits.jetbrains.datagrip.auth.SecretsManagerDbSecret
 import software.aws.toolkits.jetbrains.datagrip.jdbcAdapterFromRuntime
+import software.aws.toolkits.jetbrains.services.rds.RdsNode
+import software.aws.toolkits.jetbrains.services.redshift.RedshiftExplorerNode
+import software.aws.toolkits.jetbrains.services.redshift.RedshiftExplorerParentNode
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.DatabaseCredentials
+import software.aws.toolkits.telemetry.RdsTelemetry
+import software.aws.toolkits.telemetry.RedshiftTelemetry
+import software.aws.toolkits.telemetry.Result
 
 // It is registered in ext-datagrip.xml FIX_WHEN_MIN_IS_201
 @Suppress("ComponentNotRegistered")
 class AddSecretsManagerConnection : SingleExplorerNodeAction<AwsExplorerNode<*>>(message("datagrip.secretsmanager.action")), DumbAware {
     override fun actionPerformed(selected: AwsExplorerNode<*>, e: AnActionEvent) {
-        val dialogWrapper = SecretsManagerDialogWrapper(selected)
-        val ok = dialogWrapper.showAndGet()
-        if (!ok) {
-            return
-        }
-        val secret = dialogWrapper.dbSecret
-        val secretArn = dialogWrapper.dbSecretArn
+        var result = Result.Succeeded
+        var engine: String? = null
+        try {
+            val dialogWrapper = SecretsManagerDialogWrapper(selected)
+            val ok = dialogWrapper.showAndGet()
+            if (!ok) {
+                result = Result.Cancelled
+                return
+            }
+            val secret = dialogWrapper.dbSecret
+            val secretArn = dialogWrapper.dbSecretArn
 
-        val registry = DataSourceRegistry(selected.nodeProject)
-        val adapter = jdbcAdapterFromRuntime(secret.engine)
-            ?: throw IllegalStateException(message("datagrip.secretsmanager.validation.unkown_engine", secret.engine.toString()))
-        registry.createDatasource(selected.nodeProject, secret, secretArn, adapter)
-        // Show the user the configuration dialog to let them save/edit/test the profile
-        runInEdt {
-            registry.showDialog()
+            engine = secret.engine
+            val registry = DataSourceRegistry(selected.nodeProject)
+            val adapter = jdbcAdapterFromRuntime(engine)
+                ?: throw IllegalStateException(message("datagrip.secretsmanager.validation.unkown_engine", secret.engine.toString()))
+            registry.createDatasource(selected.nodeProject, secret, secretArn, adapter)
+            // Show the user the configuration dialog to let them save/edit/test the profile
+            runInEdt {
+                registry.showDialog()
+            }
+        } catch (e: Throwable) {
+            result = Result.Failed
+            throw e
+        } finally {
+            recordTelemetry(selected, result, engine)
+        }
+    }
+
+    private fun recordTelemetry(selected: AwsExplorerNode<*>, result: Result, engine: String? = null) {
+        val dbEngine = engine ?: if (selected is RdsNode) {
+            selected.dbInstance.engine()
+        } else {
+            null
+        }
+        if (selected is RedshiftExplorerParentNode || selected is RedshiftExplorerNode) {
+            RedshiftTelemetry.createConnectionConfiguration(
+                selected.nodeProject,
+                result,
+                DatabaseCredentials.SecretsManager
+            )
+        } else {
+            RdsTelemetry.createConnectionConfiguration(
+                selected.nodeProject,
+                result,
+                DatabaseCredentials.SecretsManager,
+                // TODO make this optional so that we can just not include it
+                dbEngine ?: "unknown"
+            )
         }
     }
 }
