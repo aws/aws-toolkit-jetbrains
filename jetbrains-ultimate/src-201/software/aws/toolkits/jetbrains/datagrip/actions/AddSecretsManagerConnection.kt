@@ -77,8 +77,7 @@ class AddSecretsManagerConnection : SingleExplorerNodeAction<AwsExplorerNode<*>>
                 selected.nodeProject,
                 result,
                 DatabaseCredentials.SecretsManager,
-                // TODO make this optional so that we can just not include it
-                dbEngine ?: "unknown"
+                dbEngine
             )
         }
     }
