@@ -90,14 +90,6 @@ subprojects {
 
     apply plugin: 'java'
     apply plugin: 'idea'
-    apply plugin: 'signing'
-
-    def isReleaseVersion = !version.endsWith("SNAPSHOT")
-
-    signing {
-        required { isReleaseVersion && gradle.startParameter.taskNames.contains("publishPlugin") }
-        sign configurations.archives
-    }
 
     sourceSets {
         main.java.srcDirs = SourceUtils.findFolders(project, "src", ideVersion)
@@ -224,9 +216,6 @@ subprojects {
         removeTask(tasks, 'publishPlugin')
         removeTask(tasks, 'verifyPlugin')
         removeTask(tasks, 'buildSearchableOptions')
-        if (!isReleaseVersion) {
-            removeTask(tasks, "signArchives")
-        }
     }
 }
 
