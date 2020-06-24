@@ -213,9 +213,9 @@ subprojects {
 
     // Remove the tasks added in by gradle-intellij-plugin so that we don't publish/verify multiple times
     project.afterEvaluate {
-        removeTask(tasks, 'publishPlugin')
-        removeTask(tasks, 'verifyPlugin')
-        removeTask(tasks, 'buildSearchableOptions')
+        removeTask(tasks, org.jetbrains.intellij.tasks.PublishTask)
+        removeTask(tasks, org.jetbrains.intellij.tasks.VerifyPluginTask)
+        removeTask(tasks, org.jetbrains.intellij.tasks.BuildSearchableOptionsTask)
     }
 }
 
@@ -223,11 +223,9 @@ configurations {
     ktlint
 }
 
-def removeTask(tasks, taskName) {
-    def task = tasks.findByName("$taskName")
-
-    if (task != null) {
-        task.setEnabled(false)
+def removeTask(TaskContainer tasks, Class<? extends Task> takeType) {
+    tasks.withType(takeType).configureEach {
+        setEnabled(false)
     }
 }
 
