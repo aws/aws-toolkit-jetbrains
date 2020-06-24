@@ -44,3 +44,8 @@ fun jdbcAdapterFromRuntime(runtime: String?): String? = when (runtime) {
     redshiftEngineType -> jdbcRedshift
     else -> null
 }
+
+// We don't have access to service information when we need this. What we do have access to is the database driver
+// which matches up with the engine field for mysql, postgres, and redshift which is what we currently
+// support. TODO find a more direct way to do this
+fun ProtoConnection.getDatabaseEngine() = connectionPoint.databaseDriver.id
