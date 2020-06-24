@@ -9,7 +9,8 @@ import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -43,11 +44,11 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name-cool").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL_FILTER("name"))
+            actor.channel.send(LogActor.Message.LoadInitialFilter("name"))
             tableModel.waitForModelToBeAtLeast(1)
         }
-        Assertions.assertThat(tableModel.items.size).isOne()
-        Assertions.assertThat(tableModel.items.first().logStreamName()).isEqualTo("name-cool")
+        assertThat(tableModel.items.size).isOne()
+        assertThat(tableModel.items.first().logStreamName()).isEqualTo("name-cool")
     }
 
     @Test
@@ -56,13 +57,13 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name-cool").build()).nextToken("token").build())
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name-2").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL_FILTER("name"))
-            actor.channel.send(LogActor.Message.LOAD_FORWARD())
+            actor.channel.send(LogActor.Message.LoadInitialFilter("name"))
+            actor.channel.send(LogActor.Message.LoadForward)
             tableModel.waitForModelToBeAtLeast(2)
         }
-        Assertions.assertThat(tableModel.items.size).isEqualTo(2)
-        Assertions.assertThat(tableModel.items.first().logStreamName()).isEqualTo("name-cool")
-        Assertions.assertThat(tableModel.items[1].logStreamName()).isEqualTo("name-2")
+        assertThat(tableModel.items.size).isEqualTo(2)
+        assertThat(tableModel.items.first().logStreamName()).isEqualTo("name-cool")
+        assertThat(tableModel.items[1].logStreamName()).isEqualTo("name-2")
     }
 
     @Test
@@ -70,22 +71,22 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name-cool").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL_FILTER("name"))
-            actor.channel.send(LogActor.Message.LOAD_BACKWARD())
-            actor.channel.send(LogActor.Message.LOAD_BACKWARD())
+            actor.channel.send(LogActor.Message.LoadInitialFilter("name"))
+            actor.channel.send(LogActor.Message.LoadBackward)
+            actor.channel.send(LogActor.Message.LoadBackward)
             tableModel.waitForModelToBeAtLeast(1)
         }
-        Assertions.assertThat(tableModel.items.size).isOne()
-        Assertions.assertThat(tableModel.items.first().logStreamName()).isEqualTo("name-cool")
+        assertThat(tableModel.items.size).isOne()
+        assertThat(tableModel.items.first().logStreamName()).isEqualTo("name-cool")
     }
 
     @Test
     fun writeChannelAndCoroutineIsDisposed() {
         val channel = actor.channel
         actor.dispose()
-        Assertions.assertThatThrownBy {
+        assertThatThrownBy {
             runBlocking {
-                channel.send(LogActor.Message.LOAD_BACKWARD())
+                channel.send(LogActor.Message.LoadBackward)
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
     }
@@ -93,7 +94,7 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
     @Test
     fun loadInitialThrows() {
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL())
+            actor.channel.send(LogActor.Message.LoadInitial)
             waitForTrue { actor.channel.isClosedForSend }
         }
     }
@@ -101,7 +102,7 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
     @Test
     fun loadInitialRangeThrows() {
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL_RANGE(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
+            actor.channel.send(LogActor.Message.LoadInitialRange(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
             waitForTrue { actor.channel.isClosedForSend }
         }
     }
@@ -110,12 +111,12 @@ class LogGroupSearchActorTest : BaseCoroutineTest() {
     fun emptyTableOnExceptionThrown() {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>())).thenThrow(IllegalStateException("network broke"))
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL_FILTER("name"))
+            actor.channel.send(LogActor.Message.LoadInitialFilter("name"))
             waitForTrue {
                 println(table.emptyText.text)
                 table.emptyText.text == message("cloudwatch.logs.failed_to_load_streams", "abc")
             }
         }
-        Assertions.assertThat(tableModel.items).isEmpty()
+        assertThat(tableModel.items).isEmpty()
     }
 }

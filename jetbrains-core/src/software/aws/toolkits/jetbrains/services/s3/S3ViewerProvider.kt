@@ -50,7 +50,7 @@ class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : UserDataHolder
 
     override fun getName(): String = "S3 Bucket Panel"
 
-    override fun getPreferredFocusedComponent(): JComponent = s3Panel.focusComponent
+    override fun getPreferredFocusedComponent(): JComponent = s3Panel.treeTable
 
     override fun isValid(): Boolean = true
 
@@ -83,10 +83,10 @@ fun openEditor(project: Project, bucket: Bucket): Editor? = try {
         ),
         true
     ).also {
-        S3Telemetry.openEditor(project, Result.SUCCEEDED)
+        S3Telemetry.openEditor(project, Result.Succeeded)
     }
 } catch (e: Exception) {
     e.notifyError(message("s3.open.viewer.bucket.failed"))
-    S3Telemetry.openEditor(project, Result.FAILED)
+    S3Telemetry.openEditor(project, Result.Failed)
     null
 }

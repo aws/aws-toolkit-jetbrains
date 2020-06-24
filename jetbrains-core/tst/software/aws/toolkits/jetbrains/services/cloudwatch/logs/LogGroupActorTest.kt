@@ -9,7 +9,8 @@ import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -42,21 +43,21 @@ class LogGroupActorTest : BaseCoroutineTest() {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL())
+            actor.channel.send(LogActor.Message.LoadInitial)
             tableModel.waitForModelToBeAtLeast(1)
         }
-        Assertions.assertThat(tableModel.items.size).isOne()
-        Assertions.assertThat(tableModel.items.first().logStreamName()).isEqualTo("name")
+        assertThat(tableModel.items.size).isOne()
+        assertThat(tableModel.items.first().logStreamName()).isEqualTo("name")
     }
 
     @Test
     fun emptyTableOnExceptionThrown() {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>())).then { throw IllegalStateException("network broke") }
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL())
+            actor.channel.send(LogActor.Message.LoadInitial)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.failed_to_load_streams", "abc") }
         }
-        Assertions.assertThat(tableModel.items).isEmpty()
+        assertThat(tableModel.items).isEmpty()
     }
 
     @Test
@@ -65,22 +66,22 @@ class LogGroupActorTest : BaseCoroutineTest() {
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name").build()).nextToken("1").build())
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name2").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LOAD_INITIAL())
-            actor.channel.send(LogActor.Message.LOAD_FORWARD())
+            actor.channel.send(LogActor.Message.LoadInitial)
+            actor.channel.send(LogActor.Message.LoadForward)
             tableModel.waitForModelToBeAtLeast(2)
         }
-        Assertions.assertThat(tableModel.items.size).isEqualTo(2)
-        Assertions.assertThat(tableModel.items.first().logStreamName()).isEqualTo("name")
-        Assertions.assertThat(tableModel.items[1].logStreamName()).isEqualTo("name2")
+        assertThat(tableModel.items.size).isEqualTo(2)
+        assertThat(tableModel.items.first().logStreamName()).isEqualTo("name")
+        assertThat(tableModel.items[1].logStreamName()).isEqualTo("name2")
     }
 
     @Test
     fun writeChannelAndCoroutineIsDisposed() {
         val channel = actor.channel
         actor.dispose()
-        Assertions.assertThatThrownBy {
+        assertThatThrownBy {
             runBlocking {
-                channel.send(LogActor.Message.LOAD_FORWARD())
+                channel.send(LogActor.Message.LoadForward)
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
     }

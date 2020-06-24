@@ -106,7 +106,7 @@ class CloudWatchLogStream(
                     oldTable?.let { launch { Disposer.dispose(it) } }
                 }
                 launch {
-                    table.channel.send(LogActor.Message.LOAD_INITIAL_FILTER(searchField.text))
+                    table.channel.send(LogActor.Message.LoadInitialFilter(searchField.text))
                 }
             }
         }
@@ -114,7 +114,7 @@ class CloudWatchLogStream(
 
     private fun addActionToolbar() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.addAction(object : AnAction(message("explorer.refresh.title"), null, AllIcons.Actions.Refresh), DumbAware {
+        actionGroup.addAction(object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
             override fun actionPerformed(e: AnActionEvent) {
                 refreshTable()
                 CloudwatchlogsTelemetry.refreshStream(project)
@@ -131,11 +131,11 @@ class CloudWatchLogStream(
 
     private fun refreshTable() = launch {
         if (searchField.text.isNotEmpty() && searchStreamTable != null) {
-            searchStreamTable?.channel?.send(LogActor.Message.LOAD_INITIAL_FILTER(searchField.text.trim()))
+            searchStreamTable?.channel?.send(LogActor.Message.LoadInitialFilter(searchField.text.trim()))
         } else if (previousEvent != null && duration != null) {
-            logStreamTable.channel.send(LogActor.Message.LOAD_INITIAL_RANGE(previousEvent, duration))
+            logStreamTable.channel.send(LogActor.Message.LoadInitialRange(previousEvent, duration))
         } else {
-            logStreamTable.channel.send(LogActor.Message.LOAD_INITIAL())
+            logStreamTable.channel.send(LogActor.Message.LoadInitial)
         }
     }
 

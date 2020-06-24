@@ -3,8 +3,7 @@
 
 package software.aws.toolkits.core.region
 
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.MatcherAssert.assertThat
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -19,6 +18,7 @@ class AwsRegionTest(private val region: AwsRegion, private val expectedCategory:
             arrayOf(AwsRegion("ap-northeast-1", "Asia Pacific (Tokyo)", "aws"), "Asia Pacific", "Tokyo (ap-northeast-1)"),
             arrayOf(AwsRegion("ca-central-1", "Canada (Central)", "aws"), "North America", "Canada Central (ca-central-1)"),
             arrayOf(AwsRegion("eu-central-1", "EU (Frankfurt)", "aws"), "Europe", "Frankfurt (eu-central-1)"),
+            arrayOf(AwsRegion("eu-south-1", "Europe (Milan)", "aws"), "Europe", "Milan (eu-south-1)"),
             arrayOf(AwsRegion("sa-east-1", "South America (Sao Paulo)", "aws"), "South America", "Sao Paulo (sa-east-1)"),
             arrayOf(AwsRegion("us-east-1", "US East (N. Virginia)", "aws"), "North America", "N. Virginia (us-east-1)"),
             arrayOf(AwsRegion("us-west-1", "US West (N. California)", "aws"), "North America", "N. California (us-west-1)"),
@@ -31,11 +31,11 @@ class AwsRegionTest(private val region: AwsRegion, private val expectedCategory:
 
     @Test
     fun displayNameShouldMatch() {
-        assertThat(region.displayName, equalTo(expectedDisplayName))
+        assertThat(region.displayName).isEqualTo(expectedDisplayName)
     }
 
     @Test
     fun categoryShouldMatch() {
-        assertThat(region.category, equalTo(expectedCategory))
+        assertThat(region.category).isEqualTo(expectedCategory)
     }
 }

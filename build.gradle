@@ -50,7 +50,6 @@ allprojects {
     }
 
     tasks.withType(org.jetbrains.intellij.tasks.RunIdeTask) {
-        systemProperty("aws.toolkits.enableTelemetry", false)
         intellij {
             if (System.env.ALTERNATIVE_IDE) {
                 if(file(System.env.ALTERNATIVE_IDE).exists()) {
@@ -177,7 +176,7 @@ subprojects {
         }
 
         project.plugins.withId("org.jetbrains.intellij") {
-            systemProperty("log.dir", "${org.jetbrains.intellij.Utils.systemDir(project.intellij.sandboxDirectory, true)}/logs")
+            systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
         }
 
         mustRunAfter tasks.test
@@ -243,7 +242,7 @@ prepareSandbox {
 
 publishPlugin {
     token publishToken
-    channels publishChannel
+    channels publishChannel ? publishChannel.split(',').collect{ it.trim() } : []
 }
 
 generateChangeLog {
