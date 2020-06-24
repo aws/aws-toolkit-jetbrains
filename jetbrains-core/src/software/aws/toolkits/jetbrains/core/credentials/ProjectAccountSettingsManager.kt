@@ -268,3 +268,8 @@ fun Project.activeRegion(): AwsRegion = ProjectAccountSettingsManager.getInstanc
  * Legacy method, should be considered deprecated and avoided since it loads defaults out of band
  */
 fun Project.activeCredentialProvider(): ToolkitCredentialsProvider = ProjectAccountSettingsManager.getInstance(this).activeCredentialProvider
+
+/**
+ * Currently active region/credential pair, or null if not connected.
+ */
+fun Project.activeConnection(): ConnectionSettings? = ProjectAccountSettingsManager.getInstance(this).connectionSettings()
