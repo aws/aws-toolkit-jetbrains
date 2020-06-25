@@ -14,6 +14,7 @@ import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.uiDesigner.core.GridConstraints
 import com.intellij.uiDesigner.core.GridLayoutManager
+import com.intellij.util.ui.JBUI
 import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -111,6 +112,8 @@ private class StackUI(private val project: Project, private val stackName: Strin
                             null
                         )
                     )
+                    tabComponentInsets = JBUI.emptyInsets()
+                    border = JBUI.Borders.empty()
                 })
 
                 this.add(message("cloudformation.stack.tab_labels.outputs"), JPanel().apply {

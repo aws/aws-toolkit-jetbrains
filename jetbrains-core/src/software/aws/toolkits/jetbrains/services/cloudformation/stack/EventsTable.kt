@@ -3,6 +3,8 @@
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
 import com.intellij.openapi.Disposable
+import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.SideBorder
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
 import software.aws.toolkits.jetbrains.utils.ui.WrappingCellRenderer
 import software.aws.toolkits.resources.message
@@ -50,7 +52,7 @@ internal class EventsTableImpl : EventsTable, Disposable {
         ) { e -> e.resourceStatusReason() ?: "" }
     )
 
-    override val component: JComponent = table.component
+    override val component: JComponent = table.component.apply { border = IdeBorderFactory.createBorder(SideBorder.BOTTOM) }
 
     override fun showBusyIcon() {
         table.showBusy(true)
