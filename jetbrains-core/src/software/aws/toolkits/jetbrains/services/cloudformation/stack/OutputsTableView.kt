@@ -14,9 +14,9 @@ class OutputsTableView : View, OutputsListener, Disposable {
         DynamicTableView.Field(message("cloudformation.stack.outputs.value")) { it.outputValue() },
         DynamicTableView.Field(message("cloudformation.stack.outputs.description")) { it.description() },
         DynamicTableView.Field(message("cloudformation.stack.outputs.export")) { it.exportName() }
-    )
+    ).apply { component.border = JBUI.Borders.empty() }
 
-    override val component: JComponent = table.component.apply { border = JBUI.Borders.empty() }
+    override val component: JComponent = table.component
 
     override fun updatedOutputs(outputs: List<Output>) = table.updateItems(outputs.sortedBy { it.outputKey() }, clearExisting = true)
 

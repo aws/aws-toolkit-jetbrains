@@ -50,9 +50,9 @@ internal class EventsTableImpl : EventsTable, Disposable {
             message("cloudformation.stack.reason"),
             WrappingCellRenderer(wrapOnSelection = true, toggleableWrap = false)
         ) { e -> e.resourceStatusReason() ?: "" }
-    )
+    ).apply { component.border = IdeBorderFactory.createBorder(SideBorder.BOTTOM) }
 
-    override val component: JComponent = table.component.apply { border = IdeBorderFactory.createBorder(SideBorder.BOTTOM) }
+    override val component: JComponent = table.component
 
     override fun showBusyIcon() {
         table.showBusy(true)
