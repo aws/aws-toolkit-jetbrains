@@ -18,8 +18,8 @@ import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.Result.FAILED
-import software.aws.toolkits.telemetry.Result.SUCCEEDED
+import software.aws.toolkits.telemetry.Result.Failed
+import software.aws.toolkits.telemetry.Result.Succeeded
 
 class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
     private val regionProvider = AwsRegionProvider.getInstance()
@@ -46,9 +46,9 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             }
 
             connection.toEnvironmentVariables().forEach { (key, value) -> environment[key] = value }
-            AwsTelemetry.injectCredentials(configuration.project, result = SUCCEEDED, runtimestring = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = Succeeded, runtimestring = tryOrNull { runtimeString() })
         } catch (e: Exception) {
-            AwsTelemetry.injectCredentials(configuration.project, result = FAILED, runtimestring = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = Failed, runtimestring = tryOrNull { runtimeString() })
             LOG.error(e) { message("run_configuration_extension.inject_aws_connection_exception") }
         }
     }
