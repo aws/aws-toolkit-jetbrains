@@ -197,4 +197,3 @@ class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val tog
         return component
     }
 }
-
