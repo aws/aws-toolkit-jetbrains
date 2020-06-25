@@ -3,6 +3,7 @@
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
 import com.intellij.openapi.Disposable
+import com.intellij.util.ui.JBUI
 import software.amazon.awssdk.services.cloudformation.model.Output
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
@@ -15,7 +16,7 @@ class OutputsTableView : View, OutputsListener, Disposable {
         DynamicTableView.Field(message("cloudformation.stack.outputs.export")) { it.exportName() }
     )
 
-    override val component: JComponent = table.component
+    override val component: JComponent = table.component.apply { border = JBUI.Borders.empty() }
 
     override fun updatedOutputs(outputs: List<Output>) = table.updateItems(outputs.sortedBy { it.outputKey() }, clearExisting = true)
 
