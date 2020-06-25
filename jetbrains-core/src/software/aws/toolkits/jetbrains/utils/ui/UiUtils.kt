@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.utils.formatText
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Component
-import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Shape
@@ -170,6 +169,8 @@ private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JCompo
     }
 }
 
+// TODO for some reason this breaks the cloudwatch one so we can't just use it for cloudwatch. If you scroll too far,
+// it springs back up as the cells render which makes it look like it scrolls back.
 class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val toggleableWrap: Boolean) : DefaultTableCellRenderer() {
     var wrap: Boolean = false
 
