@@ -42,6 +42,10 @@ object AwsIcons {
             @JvmField val ECS_SERVICE = IconLoader.getIcon("/icons/resources/ecs/EcsService.svg")
             @JvmField val ECS_TASK_DEFINITION = IconLoader.getIcon("/icons/resources/ecs/EcsTaskDefinition.svg")
         }
+        object Rds {
+            @JvmField val MYSQL = IconLoader.getIcon("/icons/resources/rds/Mysql.svg")
+            @JvmField val POSTGRES = IconLoader.getIcon("/icons/resources/rds/Postgres.svg")
+        }
     }
 
     object Actions {
