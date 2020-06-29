@@ -12,6 +12,7 @@ import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConne
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.JdbcUrlParserUtil
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.auth.signer.Aws4Signer
@@ -19,8 +20,10 @@ import software.amazon.awssdk.auth.signer.params.Aws4PresignerParams
 import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.rds.RdsClient
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
@@ -37,6 +40,7 @@ data class RdsAuth(
     val hostname: String,
     val port: Int,
     val user: String,
+    val dbInstanceIdentifier: String,
     val connectionSettings: ConnectionSettings
 )
 
@@ -58,7 +62,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             var result = Result.Succeeded
             val project = connection.runConfiguration.project
             try {
-                val credentials = getCredentials(connection)
+                val credentials = getCredentials(project, connection)
                 DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
             } catch (e: Throwable) {
                 result = Result.Failed
@@ -69,9 +73,9 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         }
     }
 
-    private fun getCredentials(connection: ProtoConnection): Credentials {
+    private fun getCredentials(project: Project, connection: ProtoConnection): Credentials {
         val authInformation = getAuthInformation(connection)
-        val authToken = generateAuthToken(authInformation)
+        val authToken = generateAuthToken(project, authInformation)
         return Credentials(authInformation.user, authToken)
     }
 
@@ -83,6 +87,8 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             ?: throw IllegalArgumentException(message("rds.validation.no_host_specified"))
         val port = parsedUrl.getParameter("port")?.toInt()
             ?: throw IllegalArgumentException(message("rds.validation.no_port_specified"))
+        val instanceId = connection.connectionPoint.additionalJdbcProperties[INSTANCE_ID_PROPERTY]
+            ?: throw IllegalArgumentException(message("rds.validation.no_instance_id"))
         val user = connection.connectionPoint.dataSource.username
 
         if (user.isBlank()) {
@@ -93,17 +99,24 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             host,
             port,
             user,
+            instanceId,
             awsConnection
         )
     }
 
-    internal fun generateAuthToken(auth: RdsAuth): String {
+    internal fun generateAuthToken(project: Project, auth: RdsAuth): String {
+        // Get the endpoint so that we can get the correct URL
+        val endpoint = project.awsClient<RdsClient>(auth.connectionSettings)
+            .describeDBInstances { it.dbInstanceIdentifier(auth.dbInstanceIdentifier) }
+            .dbInstances()
+            .first()
+            .endpoint()
         // TODO: Replace when SDK V2 backfills the pre-signer for rds auth token
         val httpRequest = SdkHttpFullRequest.builder()
             .method(SdkHttpMethod.GET)
             .protocol("https")
-            .host(auth.hostname)
-            .port(auth.port)
+            .host(endpoint.address())
+            .port(endpoint.port())
             .encodedPath("/")
             .putRawQueryParameter("DBUser", auth.user)
             .putRawQueryParameter("Action", "connect")
