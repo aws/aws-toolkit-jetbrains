@@ -97,7 +97,7 @@ class IamAuthWidgetTest {
         widget.reset(mock(), false)
         val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        val badUrl = "jdbc:postgresql://abc.host.1000000%invalidregion.rds.amazonaws.com:5432/dev"
+        val badUrl = "jdbc:postgresql://abcdefg/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn badUrl })
         assertThat(widget.getInstanceId()).isEqualTo("abc")
     }
