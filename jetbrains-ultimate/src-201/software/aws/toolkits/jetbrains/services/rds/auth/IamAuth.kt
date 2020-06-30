@@ -11,7 +11,6 @@ import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
 import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.database.dataSource.url.JdbcUrlParserUtil
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
@@ -37,10 +36,10 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletionStage
 
 data class RdsAuth(
-    val hostname: String,
+    val address: String,
     val port: Int,
     val user: String,
-    val dbInstanceIdentifier: String,
+    val dbIdentifier: String,
     val connectionSettings: ConnectionSettings
 )
 
@@ -74,19 +73,13 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     }
 
     private fun getCredentials(project: Project, connection: ProtoConnection): Credentials {
-        val authInformation = getAuthInformation(connection)
-        val authToken = generateAuthToken(project, authInformation)
+        val authInformation = getAuthInformation(project, connection)
+        val authToken = generateAuthToken(authInformation)
         return Credentials(authInformation.user, authToken)
     }
 
-    internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
+    internal fun getAuthInformation(project: Project, connection: ProtoConnection): RdsAuth {
         val awsConnection = connection.getAwsConnectionSettings()
-        val parsedUrl = JdbcUrlParserUtil.parsed(connection.connectionPoint.dataSource)
-            ?: throw IllegalArgumentException(message("rds.validation.failed_to_parse_url"))
-        val host = parsedUrl.getParameter("host")
-            ?: throw IllegalArgumentException(message("rds.validation.no_host_specified"))
-        val port = parsedUrl.getParameter("port")?.toInt()
-            ?: throw IllegalArgumentException(message("rds.validation.no_port_specified"))
         val instanceId = connection.connectionPoint.additionalJdbcProperties[INSTANCE_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_id"))
         val user = connection.connectionPoint.dataSource.username
@@ -95,28 +88,30 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             throw IllegalArgumentException(message("rds.validation.username"))
         }
 
+        // Get the endpoint so that we can get the correct URL and port. If a proxy is used,
+        // or ip is used, we need to get the port and address the service expects
+        val endpoint = project.awsClient<RdsClient>(awsConnection)
+            .describeDBInstances { it.dbInstanceIdentifier(instanceId) }
+            .dbInstances()
+            .first()
+            .endpoint()
+
         return RdsAuth(
-            host,
-            port,
+            endpoint.address(),
+            endpoint.port(),
             user,
             instanceId,
             awsConnection
         )
     }
 
-    internal fun generateAuthToken(project: Project, auth: RdsAuth): String {
-        // Get the endpoint so that we can get the correct URL
-        val endpoint = project.awsClient<RdsClient>(auth.connectionSettings)
-            .describeDBInstances { it.dbInstanceIdentifier(auth.dbInstanceIdentifier) }
-            .dbInstances()
-            .first()
-            .endpoint()
+    internal fun generateAuthToken(auth: RdsAuth): String {
         // TODO: Replace when SDK V2 backfills the pre-signer for rds auth token
         val httpRequest = SdkHttpFullRequest.builder()
             .method(SdkHttpMethod.GET)
             .protocol("https")
-            .host(endpoint.address())
-            .port(endpoint.port())
+            .host(auth.address)
+            .port(auth.port)
             .encodedPath("/")
             .putRawQueryParameter("DBUser", auth.user)
             .putRawQueryParameter("Action", "connect")

@@ -69,7 +69,7 @@ class IamAuthTest {
         assertThat(authInformation.port).isEqualTo(port)
         assertThat(authInformation.user).isEqualTo(username)
         assertThat(authInformation.connectionSettings.region.id).isEqualTo(defaultRegion)
-        assertThat(authInformation.hostname).isEqualTo(dbHost)
+        assertThat(authInformation.address).isEqualTo(dbHost)
     }
 
     @Test(expected = IllegalArgumentException::class)
