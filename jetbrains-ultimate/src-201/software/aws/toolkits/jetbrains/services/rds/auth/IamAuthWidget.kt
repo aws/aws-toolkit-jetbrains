@@ -10,6 +10,7 @@ import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.rds.RdsResources
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
@@ -18,7 +19,7 @@ import javax.swing.JPanel
 const val INSTANCE_ID_PROPERTY = "AWS.RdsInstanceId"
 
 class RdsAwsAuthWidget : AwsAuthWidget() {
-    private val instanceIdSelector = JBTextField()
+    private val instanceIdTextField = JBTextField()
 
     override val rowCount = 4
     override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url)
@@ -27,7 +28,7 @@ class RdsAwsAuthWidget : AwsAuthWidget() {
         val panel = super.createPanel()
         val regionLabel = JBLabel(message("rds.instance_id"))
         panel.add(regionLabel, UrlPropertiesPanel.createLabelConstraints(3, 0, regionLabel.preferredSize.getWidth()))
-        panel.add(instanceIdSelector, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
+        panel.add(instanceIdTextField, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
         return panel
     }
 
@@ -37,19 +38,22 @@ class RdsAwsAuthWidget : AwsAuthWidget() {
         DataSourceUiUtil.putOrRemove(
             dataSource.additionalJdbcProperties,
             INSTANCE_ID_PROPERTY,
-            instanceIdSelector.text
+            instanceIdTextField.text
         )
     }
 
     override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
         super.reset(dataSource, resetCredentials)
-        instanceIdSelector.text = dataSource.additionalJdbcProperties[INSTANCE_ID_PROPERTY]
+        instanceIdTextField.text = dataSource.additionalJdbcProperties[INSTANCE_ID_PROPERTY]
     }
 
     override fun updateFromUrl(holder: ParametersHolder) {
         super.updateFromUrl(holder)
         val url = (holder as? UrlEditorModel)?.url
         val clusterId = RdsResources.extractIdentifierFromUrl(url)
-        clusterId?.let { instanceIdSelector.text = it }
+        clusterId?.let { instanceIdTextField.text = it }
     }
+
+    @TestOnly
+    internal fun getInstanceId() = instanceIdTextField.text
 }
