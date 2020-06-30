@@ -50,7 +50,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES
 
-    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = RdsAwsAuthWidget()
+    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
 
     override fun intercept(
         connection: ProtoConnection,

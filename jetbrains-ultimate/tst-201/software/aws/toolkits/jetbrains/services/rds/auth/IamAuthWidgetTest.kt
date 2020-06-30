@@ -26,14 +26,14 @@ class IamAuthWidgetTest {
     @JvmField
     val projectRule = ProjectRule()
 
-    private lateinit var widget: RdsAwsAuthWidget
+    private lateinit var widget: IamAuthWidget
     private val credentialId = RuleUtils.randomName()
     private val defaultRegion = RuleUtils.randomName()
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     @Before
     fun setUp() {
-        widget = RdsAwsAuthWidget()
+        widget = IamAuthWidget()
         MockCredentialsManager.getInstance().addCredentials(credentialId, mockCreds)
         MockRegionProvider.getInstance().addRegion(AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName()))
     }

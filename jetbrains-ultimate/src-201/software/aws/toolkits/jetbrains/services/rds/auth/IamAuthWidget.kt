@@ -18,7 +18,7 @@ import javax.swing.JPanel
 
 const val INSTANCE_ID_PROPERTY = "AWS.RdsInstanceId"
 
-class RdsAwsAuthWidget : AwsAuthWidget() {
+class IamAuthWidget : AwsAuthWidget() {
     private val instanceIdTextField = JBTextField()
 
     override val rowCount = 4
