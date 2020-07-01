@@ -17,9 +17,12 @@ dependencies {
 }
 
 // don't run UI tests as part of check by default
-//test.enabled = false
+test.enabled = false
 
 task uiTestCore(type: Test) {
+    // we don't want to cache the results of this
+    outputs.upToDateWhen { false }
+
     systemProperty "robot-server.port", remoteRobotPort
     systemProperty "junit.jupiter.extensions.autodetection.enabled", true
 
