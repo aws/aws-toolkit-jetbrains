@@ -85,6 +85,8 @@
     <depends optional="true" config-file="ext-rider.xml">com.intellij.modules.rider</depends>
     <depends optional="true" config-file="ext-json.xml">com.intellij.modules.json</depends>
     <depends optional="true" config-file="ext-yaml.xml">org.jetbrains.plugins.yaml</depends>
+    <!--TODO enable to enable RDS/Redshift features-->
+    <!--depends optional="true" config-file="ext-datagrip.xml">com.intellij.database</depends-->
 
     <xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
