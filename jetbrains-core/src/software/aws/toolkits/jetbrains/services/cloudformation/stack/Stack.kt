@@ -7,9 +7,14 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.OnePixelSplitter
+import com.intellij.ui.components.JBTabbedPane
+import com.intellij.uiDesigner.core.GridConstraints
+import com.intellij.uiDesigner.core.GridLayoutManager
+import com.intellij.util.ui.JBUI
 import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -37,6 +42,7 @@ class StackWindowManager(private val project: Project) {
     fun openStack(stackName: String, stackId: String) {
         assert(SwingUtilities.isEventDispatchThread())
         toolWindow.find(stackId)?.run { show() } ?: StackUI(project, stackName, stackId, toolWindow).start()
+        CloudformationTelemetry.open(project)
     }
 
     companion object {
@@ -44,10 +50,9 @@ class StackWindowManager(private val project: Project) {
     }
 }
 
-class OpenStackUiAction : SingleResourceNodeAction<CloudFormationStackNode>(message("cloudformation.stack.view")) {
+class OpenStackUiAction : SingleResourceNodeAction<CloudFormationStackNode>(message("cloudformation.stack.view")), DumbAware {
     override fun actionPerformed(selected: CloudFormationStackNode, e: AnActionEvent) {
         StackWindowManager.getInstance(e.getRequiredData(LangDataKeys.PROJECT)).openStack(selected.stackName, selected.stackId)
-        CloudformationTelemetry.open(e.project)
     }
 }
 
@@ -59,12 +64,13 @@ private class StackUI(private val project: Project, private val stackName: Strin
     private val notificationGroup: NotificationGroup
     private val pageButtons: PageButtons
 
-    private val table: TableViewImpl
+    private val eventsTable: EventsTableImpl
+    private val outputsTable = OutputsTableView()
 
     init {
         val tree = TreeViewImpl(project, stackName)
         animator = IconAnimator(REDRAW_ANIMATED_ICON_INTERVAL, tree)
-        table = TableViewImpl()
+        eventsTable = EventsTableImpl()
         pageButtons = PageButtons(this::onPageButtonClick)
 
         notificationGroup = NotificationGroup.findRegisteredGroup(STACK_TOOL_WINDOW.id)
@@ -72,16 +78,55 @@ private class StackUI(private val project: Project, private val stackName: Strin
 
         val mainPanel = OnePixelSplitter(false, TREE_TABLE_INITIAL_PROPORTION).apply {
             firstComponent = tree.component
-            secondComponent = JPanel().apply {
-                layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                add(table.component)
-                add(pageButtons.component)
+            secondComponent = JBTabbedPane().apply {
+                this.add(message("cloudformation.stack.tab_labels.events"), JPanel(GridLayoutManager(2, 1)).apply {
+                    add(
+                        eventsTable.component,
+                        GridConstraints(
+                            0,
+                            0,
+                            1,
+                            1,
+                            0,
+                            GridConstraints.FILL_BOTH,
+                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                            null,
+                            null,
+                            null
+                        )
+                    )
+                    add(
+                        pageButtons.component,
+                        GridConstraints(
+                            1,
+                            0,
+                            1,
+                            1,
+                            0,
+                            GridConstraints.FILL_HORIZONTAL,
+                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                            null,
+                            null,
+                            null
+                        )
+                    )
+                    tabComponentInsets = JBUI.emptyInsets()
+                    border = JBUI.Borders.empty()
+                })
+
+                this.add(message("cloudformation.stack.tab_labels.outputs"), JPanel().apply {
+                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                    add(outputsTable.component)
+                })
             }
         }
 
         updater = Updater(
             tree,
-            eventsTableView = table,
+            eventsTable = eventsTable,
+            outputsTable = outputsTable,
             stackName = stackName,
             updateEveryMs = UPDATE_STACK_STATUS_INTERVAL,
             listener = this,
@@ -90,7 +135,7 @@ private class StackUI(private val project: Project, private val stackName: Strin
         )
 
         toolWindowTab = toolWindow.addTab(stackName, mainPanel, id = stackId)
-        listOf(tree, updater, animator, table, pageButtons).forEach { Disposer.register(toolWindowTab, it) }
+        listOf(tree, updater, animator, eventsTable, outputsTable, pageButtons).forEach { Disposer.register(toolWindowTab, it) }
     }
 
     fun start() {
@@ -118,7 +163,7 @@ private class StackUI(private val project: Project, private val stackName: Strin
     }
 
     fun onPageButtonClick(page: Page) {
-        table.showBusyIcon()
+        eventsTable.showBusyIcon()
         // To prevent double click, we disable buttons. They will be enabled by Updater when data fetched
         pageButtons.setPagesAvailable(emptySet())
         updater.switchPage(page)
