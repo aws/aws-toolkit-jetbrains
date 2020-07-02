@@ -54,3 +54,5 @@ open class PreferencesDialog(
         }
     }
 }
+
+fun RemoteRobot.preferencesTitle() = if (this.isMac()) "Preferences" else "Settings"
