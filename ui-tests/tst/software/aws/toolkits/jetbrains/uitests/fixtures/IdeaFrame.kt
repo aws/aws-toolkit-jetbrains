@@ -10,6 +10,7 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
@@ -61,5 +62,40 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
             keyboard { this.hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_S) }
         }
         find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Project Structure']")).click()
+    }
+
+    fun toggleAwsExplorer() {
+        find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
+    }
+
+    // TODO make this more flexable
+    fun setCredentials() {
+        find<ComponentFixture>(
+            byXpath(
+                "//div[@accessiblename='AWS: Profile:default@US West (Oregon)' "
+                    + "or @accessiblename='AWS: No credentials selected' "
+                    + "or @accessiblename='AWS: No region selected']"
+            )
+        ).click()
+        // This will grab both the region and credentials
+        val settingsPanel = findAll<JListFixture>(byXpath("//div[@class='MyList']"))
+        settingsPanel.forEach {
+            if (it.items.contains("Profile:default")) {
+                it.selectItem("Profile:default")
+            }
+        }
+        find<ComponentFixture>(
+            byXpath(
+                "//div[@accessiblename='AWS: Profile:default@US West (Oregon)' "
+                    + "or @accessiblename='AWS: No credentials selected' "
+                    + "or @accessiblename='AWS: No region selected']"
+            )
+        ).click()
+        val settingsPanel2 = findAll<JListFixture>(byXpath("//div[@class='MyList']"))
+        settingsPanel2.forEach {
+            if (it.items.contains("Oregon (us-west-2)")) {
+                it.selectItem("Oregon (us-west-2)")
+            }
+        }
     }
 }
