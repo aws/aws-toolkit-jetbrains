@@ -25,6 +25,9 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit5Version")
 }
 
+// don't run gui tests as part of check
+tasks["test"].enabled = false
+
 tasks.register<Test>("uiTestCore") {
     // we don't want to cache the results of this.
     outputs.upToDateWhen { false }
