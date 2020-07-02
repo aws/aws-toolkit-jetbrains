@@ -119,8 +119,8 @@ private class GradleProcess {
 
     init {
         val cwd = Paths.get(".").toAbsolutePath()
-        if (!Files.exists(cwd.resolve("build.gradle"))) {
-            throw IllegalStateException("Failed to locate build.gradle in $cwd}")
+        if (!Files.exists(cwd.resolve("build.gradle.kts"))) {
+            throw IllegalStateException("Failed to locate build.gradle.kts in $cwd}")
         }
 
         gradleConnection = GradleConnector.newConnector()
