@@ -20,7 +20,7 @@ dependencies {
 test.enabled = false
 
 task uiTestCore(type: Test) {
-    // we don't want to cache the results of this
+    // we don't want to cache the results of this.
     outputs.upToDateWhen { false }
 
     systemProperty "robot-server.port", remoteRobotPort

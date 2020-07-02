@@ -26,8 +26,6 @@ fun RemoteRobot.preferencesDialog(
     }
 }
 
-private fun RemoteRobot.preferencesTitle() = if (this.isMac()) "Preferences" else "Settings"
-
 @FixtureName("Preferences")
 open class PreferencesDialog(
     remoteRobot: RemoteRobot,

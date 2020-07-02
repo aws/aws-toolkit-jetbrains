@@ -12,7 +12,9 @@ import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
+import java.awt.event.KeyEvent
 import java.time.Duration
 
 fun RemoteRobot.idea(function: IdeaFrame.() -> Unit) {
@@ -51,4 +53,13 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     }
 
     private fun isDumbMode(): Boolean = callJs("com.intellij.openapi. project.DumbService.isDumb(component.project);", true)
+
+    fun openProjectStructure() = step("Open Project Structure dialog") {
+        if (remoteRobot.isMac()) {
+            keyboard { this.hotKey(KeyEvent.VK_META, KeyEvent.VK_SEMICOLON) }
+        } else {
+            keyboard { this.hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_S) }
+        }
+        find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Project Structure']")).click()
+    }
 }

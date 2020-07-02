@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.uitests.projectwizard
 
+import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -14,6 +16,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.editorTab
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.newProjectWizard
 import software.aws.toolkits.jetbrains.uitests.fixtures.preferencesDialog
+import software.aws.toolkits.jetbrains.uitests.fixtures.projectStructureDialog
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 
@@ -76,12 +79,21 @@ class SamTemplateProjectWizardTest {
                         pressFinish()
                     }
                 }
+            }
 
-                idea {
-                    waitForBackgroundTasks()
+            idea {
+                waitForBackgroundTasks()
 
-                    step("Validate Readme is opened") {
-                        editorTab("README.md")
+                step("Validate Readme is opened") {
+                    editorTab("README.md")
+                }
+
+                step("Validate project structure") {
+                    openProjectStructure()
+                    projectStructureDialog {
+                        val fixture = comboBox(byXpath("//div[@class='JdkComboBox']"))
+                        // TODO set based on Runtime
+                        assertThat(fixture.selectedText()).isEqualTo("11")
                     }
                 }
             }

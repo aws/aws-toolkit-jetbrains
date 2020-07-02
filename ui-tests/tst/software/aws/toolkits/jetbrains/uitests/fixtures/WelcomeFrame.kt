@@ -25,8 +25,8 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     fun openPreferences() {
         actionLink("Configure").click()
 
-        val prefName = if (remoteRobot.isMac()) "Preferences" else "Settings"
-
-        find(ComponentFixture::class.java, byXpath("//div[@class='MyList']")).findText(prefName).click()
+        find(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
+            .findText(remoteRobot.preferencesTitle())
+            .click()
     }
 }
