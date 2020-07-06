@@ -32,9 +32,9 @@ open class AwsExplorer(
 
     fun expandExplorerNode(vararg path: String) {
         findExplorerTree().clickPath(*path)
-        // We can't find the carrot to expand, so use enter to expand
+        // We can't find the carrot to expand with the robot, so use enter to expand
         keyboard { key(KeyEvent.VK_ENTER) }
-        // TODO clean this up
+        // TODO clean this up, base on when it loads the child nodes (think of a method to do it)
         Thread.sleep(5000)
     }
 
