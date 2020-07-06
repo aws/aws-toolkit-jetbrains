@@ -35,6 +35,9 @@ open class AwsExplorer(
         findExplorerTree().clickPath(nodeName)
         // We can't find the carrot to expand, so use enter to expand
         keyboard { key(KeyEvent.VK_ENTER) }
+        // wait for the node to load
+        // TODO clean this up
+        Thread.sleep(5000)
     }
 
     fun doubleClickExplorer(nodeName: String) {
