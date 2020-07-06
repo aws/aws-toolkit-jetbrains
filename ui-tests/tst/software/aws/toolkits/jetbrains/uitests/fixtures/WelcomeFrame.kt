@@ -10,6 +10,7 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
+import java.nio.file.Path
 
 fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
     find(WelcomeFrame::class.java).apply(function)
@@ -28,5 +29,16 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
         find(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
             .findText(remoteRobot.preferencesTitle())
             .click()
+    }
+
+    // Make a new project, not caring what it creates
+    fun newProject(path: Path) {
+        openNewProjectWizard()
+        remoteRobot.newProjectWizard {
+            pressNext()
+            pressNext()
+            setProjectLocation(path.toAbsolutePath().toString())
+            pressFinish()
+        }
     }
 }

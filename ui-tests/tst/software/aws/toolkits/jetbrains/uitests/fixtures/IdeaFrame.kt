@@ -19,7 +19,9 @@ import java.awt.event.KeyEvent
 import java.time.Duration
 
 fun RemoteRobot.idea(function: IdeaFrame.() -> Unit) {
-    find<IdeaFrame>().apply(function)
+    val frame = find<IdeaFrame>()
+    frame.apply { tryCloseTips() }
+    frame.apply(function)
 }
 
 @FixtureName("Idea frame")
@@ -57,9 +59,9 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
     fun openProjectStructure() = step("Open Project Structure dialog") {
         if (remoteRobot.isMac()) {
-            keyboard { this.hotKey(KeyEvent.VK_META, KeyEvent.VK_SEMICOLON) }
+            keyboard { hotKey(KeyEvent.VK_META, KeyEvent.VK_SEMICOLON) }
         } else {
-            keyboard { this.hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_S) }
+            keyboard { hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_S) }
         }
         find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Project Structure']")).click()
     }
@@ -68,34 +70,47 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
     }
 
-    // TODO make this more flexable
-    fun setCredentials() {
-        find<ComponentFixture>(
-            byXpath(
-                "//div[@accessiblename='AWS: Profile:default@US West (Oregon)' "
-                    + "or @accessiblename='AWS: No credentials selected' "
-                    + "or @accessiblename='AWS: No region selected']"
-            )
-        ).click()
+    fun setCredentials(profile: String, region: String) {
+        openCredentialsPanel()
         // This will grab both the region and credentials
-        val settingsPanel = findAll<JListFixture>(byXpath("//div[@class='MyList']"))
-        settingsPanel.forEach {
-            if (it.items.contains("Profile:default")) {
-                it.selectItem("Profile:default")
+        findAll<JListFixture>(byXpath("//div[@class='MyList']")).forEach {
+            if (it.items.contains(profile)) {
+                it.selectItem(profile)
             }
         }
-        find<ComponentFixture>(
-            byXpath(
-                "//div[@accessiblename='AWS: Profile:default@US West (Oregon)' "
-                    + "or @accessiblename='AWS: No credentials selected' "
-                    + "or @accessiblename='AWS: No region selected']"
-            )
-        ).click()
-        val settingsPanel2 = findAll<JListFixture>(byXpath("//div[@class='MyList']"))
-        settingsPanel2.forEach {
-            if (it.items.contains("Oregon (us-west-2)")) {
-                it.selectItem("Oregon (us-west-2)")
+        openCredentialsPanel()
+        findAll<JListFixture>(byXpath("//div[@class='MyList']")).forEach {
+            if (it.items.contains(region)) {
+                it.selectItem(region)
             }
         }
+    }
+
+    fun openCredentialsPanel() {
+        find<ComponentFixture>(byXpath("//div[@class='MultipleTextValues']")).click()
+    }
+
+    fun tryCloseTips() {
+        try {
+            find<ComponentFixture>(byXpath("//div[@accessiblename='Close' and @class='JButton' and @text='Close']")).click()
+        } catch (e: Exception) {
+        }
+    }
+
+    fun openExplorerActionMenu(nodeName: String) {
+        selectExplorerNode(nodeName).rightClick()
+    }
+
+    fun expandExplorerNode(nodeName: String) {
+        selectExplorerNode(nodeName)
+        // We can't find the carrot to expand, so use enter to expand
+        keyboard { key(KeyEvent.VK_ENTER) }
+    }
+
+    private fun selectExplorerNode(nodeName: String): JTreeFixture {
+        val tree = find<JTreeFixture>(byXpath("//div[@class='Tree']"), Duration.ofSeconds(10))
+        tree.selectPath(nodeName)
+        tree.click()
+        return tree
     }
 }
