@@ -26,22 +26,20 @@ open class AwsExplorer(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : DialogFixture(remoteRobot, remoteComponent) {
-
-    fun openExplorerActionMenu(nodeName: String) {
-        findExplorerTree().rightClickPath(nodeName)
+    fun openExplorerActionMenu(vararg path: String) {
+        findExplorerTree().rightClickPath(*path)
     }
 
-    fun expandExplorerNode(nodeName: String) {
-        findExplorerTree().clickPath(nodeName)
+    fun expandExplorerNode(vararg path: String) {
+        findExplorerTree().clickPath(*path)
         // We can't find the carrot to expand, so use enter to expand
         keyboard { key(KeyEvent.VK_ENTER) }
-        // wait for the node to load
         // TODO clean this up
         Thread.sleep(5000)
     }
 
-    fun doubleClickExplorer(nodeName: String) {
-        findExplorerTree().doubleClickPath(nodeName)
+    fun doubleClickExplorer(vararg nodeElements: String) {
+        findExplorerTree().doubleClickPath(*nodeElements)
     }
 
     private fun findExplorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']"), Duration.ofSeconds(10))

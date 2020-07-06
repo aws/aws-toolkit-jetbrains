@@ -66,8 +66,13 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Project Structure']")).click()
     }
 
-    fun toggleAwsExplorer() {
-        find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
+    // Show AWS Explorer, or leave it open if it is already open
+    fun showAwsExplorer() {
+        try {
+            find<AwsExplorer>(byXpath("//div[@class='ExplorerToolWindow']"))
+        } catch (e: Exception) {
+            find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
+        }
     }
 
     fun setCredentials(profile: String, region: String) {
@@ -86,14 +91,14 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    fun openCredentialsPanel() {
-        find<ComponentFixture>(byXpath("//div[@class='MultipleTextValues']")).click()
-    }
-
     fun tryCloseTips() {
         try {
             find<ComponentFixture>(byXpath("//div[@accessiblename='Close' and @class='JButton' and @text='Close']")).click()
         } catch (e: Exception) {
         }
+    }
+
+    private fun openCredentialsPanel() {
+        find<ComponentFixture>(byXpath("//div[@class='MultipleTextValues']")).click()
     }
 }
