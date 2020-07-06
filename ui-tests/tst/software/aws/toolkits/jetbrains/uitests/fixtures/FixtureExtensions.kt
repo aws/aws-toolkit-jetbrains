@@ -3,9 +3,22 @@
 
 package software.aws.toolkits.jetbrains.uitests.fixtures
 
+import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
+import com.intellij.remoterobot.fixtures.JTextFieldFixture
+import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import java.time.Duration
 
 fun ComponentFixture.rightClick() = step("Right click") {
     runJs("robot.rightClick(component);")
+}
+
+fun CommonContainerFixture.pressOk() = findAndClick("//div[@text='OK']")
+
+fun CommonContainerFixture.findAndClick(xPath: String) = findByXpath(xPath).click()
+fun CommonContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
+
+fun CommonContainerFixture.fillSingleTextField(text: String) {
+    find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
 }

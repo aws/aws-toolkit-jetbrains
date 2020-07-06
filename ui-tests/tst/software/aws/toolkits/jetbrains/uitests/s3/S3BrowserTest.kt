@@ -13,11 +13,15 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.io.TempDir
+import software.aws.toolkits.jetbrains.uitests.BaseUiTest
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
+import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
+import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
+import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 import java.time.Duration
@@ -26,18 +30,19 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @TestInstance(Lifecycle.PER_CLASS)
-class S3BrowserTest {
+class S3BrowserTest : BaseUiTest() {
     private val profile = "default"
     private val credential = "Profile:$profile"
     private val region = "Oregon (us-west-2)"
     private val date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
     private val bucket = "uitest-$date-${UUID.randomUUID()}"
+    private val folder = UUID.randomUUID().toString()
 
+    private val S3 = "S3"
     private val createBucketText = "Create S3 Bucket"
     private val deleteBucketText = "Delete S3 Bucket"
     private val upload = "Upload..."
-
-    private val S3 = "S3"
+    private val jsonFile = "hello.json"
 
     @TempDir
     lateinit var tempDir: Path
@@ -71,29 +76,28 @@ class S3BrowserTest {
                 }
             }
 
-
-            s3Tree {
-
-            }
-
-            /* TODO
             step("Upload object to top-level") {
+                findAndClick("//div[@accessiblename='$upload' and @class='ActionButton']")
+                fillSingleTextField(testDataPath.resolve("testFiles").resolve(jsonFile).toString())
+                pressOk()
+                // Wait for the item to be uploaded
+                Thread.sleep(1000)
+                s3Tree {
+                    findText(jsonFile)
+                }
             }
-            */
 
             step("Create folder") {
-                rightClick()
-                clickMenuItem { it.text.contains(NEW_FOLDER_ACTION) }
-                dialog(NEW_FOLDER_ACTION) {
-                    textfield(null).setText(FOLDER)
-                    button(OK_BUTTON).clickWhenEnabled()
+                findAndClick("//div[@accessiblename='New folder...' and @class='ActionButton']")
+                fillSingleTextField(folder)
+                pressOk()
+                // Wait for the folder to be created
+                Thread.sleep(1000)
+                s3Tree {
+                    findText(folder)
                 }
-
-                waitAMoment()
-
-                assertNotNull(findPath(FOLDER))
             }
-
+/*
             step("Upload object to folder") {
                 rightClick(0, FOLDER)
                 clickMenuItem { it.text.contains(UPLOAD_ACTION) }
@@ -142,7 +146,7 @@ class S3BrowserTest {
                 assertNotNull(FileEditorManager.getInstance(project).allEditors.mapNotNull { it.file }.find {
                     it.name.contains(JSON_FILE) && it.fileType::class.simpleName?.contains("JsonFileType") == true
                 })
-            }*/
+            } */
         }
     }
 
