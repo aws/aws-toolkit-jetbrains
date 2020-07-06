@@ -14,6 +14,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
@@ -45,15 +46,25 @@ class S3BrowserTest {
             setCredentials("Profile:default", "Oregon (us-west-2)")
             toggleAwsExplorer()
             step("Create bucket named $bucket") {
-                openExplorerActionMenu(S3)
+                awsExplorer {
+                    openExplorerActionMenu(S3)
+                }
                 find<ComponentFixture>(byXpath("//div[@text='Create S3 Bucket']")).click()
                 find<JTextFieldFixture>(byXpath("//div[@class='JTextField']")).text = bucket
                 find<ComponentFixture>(byXpath("//div[@text='Create']")).click()
             }
 
-            step("Open editor for bucket $bucket") {
-                expandExplorerNode(S3)
+            // Wait for the bucket to be created
+            Thread.sleep(10000)
+
+            awsExplorer {
+                step("Open editor for bucket $bucket") {
+                    expandExplorerNode(S3)
+                    doubleClickExplorer("$S3/$bucket")
+                }
             }
+
+            Thread.sleep(2000)
         }
     }
 

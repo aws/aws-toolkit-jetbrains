@@ -13,13 +13,37 @@ class JTreeFixture(
     remoteComponent: RemoteComponent
 ) : ComponentFixture(remoteRobot, remoteComponent) {
 
-    fun selectPath(vararg paths: String) {
+    fun clickPath(vararg paths: String) {
         val path = paths.joinToString("/")
         step("select $path") {
             runJs(
                 """
                 const jTreeFixture = JTreeFixture(robot, component);
                 jTreeFixture.clickPath('$path') 
+                """.trimIndent()
+            )
+        }
+    }
+
+    fun rightClickPath(vararg paths: String) {
+        val path = paths.joinToString("/")
+        step("select $path") {
+            runJs(
+                """
+                const jTreeFixture = JTreeFixture(robot, component);
+                jTreeFixture.rightClickPath('$path') 
+                """.trimIndent()
+            )
+        }
+    }
+
+    fun doubleClickPath(vararg paths: String) {
+        val path = paths.joinToString("/")
+        step("select $path") {
+            runJs(
+                """
+                const jTreeFixture = JTreeFixture(robot, component);
+                jTreeFixture.doubleClickPath('$path') 
                 """.trimIndent()
             )
         }

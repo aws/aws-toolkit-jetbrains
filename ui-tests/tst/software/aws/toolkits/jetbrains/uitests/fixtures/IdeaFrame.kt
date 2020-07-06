@@ -96,21 +96,4 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         } catch (e: Exception) {
         }
     }
-
-    fun openExplorerActionMenu(nodeName: String) {
-        selectExplorerNode(nodeName).rightClick()
-    }
-
-    fun expandExplorerNode(nodeName: String) {
-        selectExplorerNode(nodeName)
-        // We can't find the carrot to expand, so use enter to expand
-        keyboard { key(KeyEvent.VK_ENTER) }
-    }
-
-    private fun selectExplorerNode(nodeName: String): JTreeFixture {
-        val tree = find<JTreeFixture>(byXpath("//div[@class='Tree']"), Duration.ofSeconds(10))
-        tree.selectPath(nodeName)
-        tree.click()
-        return tree
-    }
 }
