@@ -22,13 +22,16 @@ phases:
     commands:
       - apt-get update
       - apt-get install -y xvfb icewm procps ffmpeg libswt-gtk-3-java mono-complete
+      - export KEY_ID=`jq -r '.Credentials.AccessKeyId' creds.json`
+      - export SECRET=`jq -r '.Credentials.SecretAccessKey' creds.json`
+      - export TOKEN=`jq -r '.Credentials.SessionToken' creds.json`
       - mkdir -p /tmp/.aws
       - aws sts assume-role --role-arn $ASSUME_ROLE_ARN --role-session-name ui-test > /tmp/.aws/creds.json
       - |
         >/tmp/.aws/credentials echo "[default]
-        aws_access_key_id=`jq -r '.Credentials.AccessKeyId' /tmp/.aws/creds.json`
-        aws_secret_access_key=`jq -r '.Credentials.SecretAccessKey' /tmp/.aws/creds.json`
-        aws_session_token=`jq -r '.Credentials.SessionToken' /tmp/.aws/creds.json`"
+        aws_access_key_id=$KEY_ID
+        aws_secret_access_key=$SECRET
+        aws_session_token=$TOKEN"
       - pip3 install --user --upgrade  aws-sam-cli
 
   build:
@@ -46,7 +49,7 @@ phases:
         if [ "$RECORD_UI" ]; then
         ffmpeg -loglevel warning -f x11grab -video_size 1920x1080 -i :99 -codec:v libx264 -r 12 /tmp/screen_recording.mp4 &
         fi
-      - ./gradlew guiTest coverageReport --console plain --info
+      - env AWS_ACCESS_KEY_ID=$KEY_ID AWS_SECRET_ACCESS_KEY=$SECRET AWS_SESSION_TOKEN=$TOKEN ./gradlew uiTestCore coverageReport --console plain --info
 
   post_build:
     commands:
