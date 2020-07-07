@@ -189,7 +189,6 @@ subprojects {
         tasks.withType(org.jetbrains.intellij.tasks.RunIdeForUiTestTask).all {
             systemProperty "robot-server.port", remoteRobotPort
             systemProperty "ide.mac.file.chooser.native", "false"
-            systemProperty "jb.consents.confirmation.enabled", "false"
             if (System.getenv("CI") != null) {
                 systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
             }
