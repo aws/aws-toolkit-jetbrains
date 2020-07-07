@@ -31,15 +31,9 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
             .click()
     }
 
-    // Make a new project, not caring what it creates
-    // TODO change based off of IDE
-    fun newProject(path: Path) {
-        openNewProjectWizard()
-        remoteRobot.newProjectWizard {
-            pressNext()
-            pressNext()
-            setProjectLocation(path.toAbsolutePath().toString())
-            pressFinish()
-        }
+    fun openFolder(path: Path) {
+        actionLink("Open").click()
+        fillSingleTextField(path.toAbsolutePath().toString())
+        pressOk()
     }
 }

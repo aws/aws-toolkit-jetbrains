@@ -30,8 +30,14 @@ open class AwsExplorer(
 
     fun expandExplorerNode(vararg path: String) {
         findExplorerTree().expandPath(*path)
-        // TODO clean this up, base on when it loads the child nodes (think of a method to do it)
-        Thread.sleep(5000)
+        // wait for loading to disappear
+        try {
+            while (true) {
+                findText("loading...")
+                Thread.sleep(100)
+            }
+        } catch (e: Exception) {;
+        }
     }
 
     fun doubleClickExplorer(vararg nodeElements: String) {

@@ -12,15 +12,15 @@ class JTreeFixture(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : ComponentFixture(remoteRobot, remoteComponent) {
-    fun clickPath(vararg paths: String) = runPath("clickPath", *paths)
-    fun expandPath(vararg paths: String) = runPath("expandPath", *paths)
-    fun rightClickPath(vararg paths: String) = runPath("rightClickPath", *paths)
-    fun doubleClickPath(vararg paths: String) = runPath("doubleClickPath", *paths)
+    fun clickPath(vararg paths: String) = runJsPathMethod("clickPath", *paths)
+    fun expandPath(vararg paths: String) = runJsPathMethod("expandPath", *paths)
+    fun rightClickPath(vararg paths: String) = runJsPathMethod("rightClickPath", *paths)
+    fun doubleClickPath(vararg paths: String) = runJsPathMethod("doubleClickPath", *paths)
 
-    fun clickRow(row: Int) = runRow("clickRow", row)
-    fun expandRow(row: Int) = runRow("expandRow", row)
+    fun clickRow(row: Int) = runJsRowMethod("clickRow", row)
+    fun expandRow(row: Int) = runJsRowMethod("expandRow", row)
 
-    private fun runPath(name: String, vararg paths: String) {
+    private fun runJsPathMethod(name: String, vararg paths: String) {
         val path = paths.joinToString("/")
         step("$name $path") {
             runJs(
@@ -32,7 +32,7 @@ class JTreeFixture(
         }
     }
 
-    private fun runRow(name: String, row: Int) {
+    private fun runJsRowMethod(name: String, row: Int) {
         step("$name $row") {
             runJs(
                 """

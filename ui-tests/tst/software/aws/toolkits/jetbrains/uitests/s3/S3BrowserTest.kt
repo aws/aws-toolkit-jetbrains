@@ -61,7 +61,7 @@ class S3BrowserTest {
     @CoreTest
     fun testS3Browser() = uiTest {
         welcomeFrame {
-            newProject(tempDir)
+            openFolder(tempDir)
         }
         idea {
             waitForBackgroundTasks()
@@ -93,7 +93,8 @@ class S3BrowserTest {
 
             step("Upload object to top-level") {
                 findAndClick("//div[@accessiblename='$upload' and @class='ActionButton']")
-                // Wait for the file selector to load, on 193 if we don't we try to upload the folder
+                // Wait for the file selector to load. if we don't wait, On 193, we try to upload the folder instead
+                // of the file. The file selection is messed up in some way.
                 // TODO FIX_WHEN_MIN_IS_201 don't need to wait on 201+
                 Thread.sleep(2000)
                 fillSingleTextField(testDataPath.resolve("testFiles").resolve(jsonFile).toString())
