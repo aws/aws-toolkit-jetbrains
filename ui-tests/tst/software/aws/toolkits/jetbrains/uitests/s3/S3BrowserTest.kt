@@ -7,6 +7,7 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -14,9 +15,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.io.TempDir
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.S3Exception
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
+import software.aws.toolkits.jetbrains.uitests.fixtures.actionButton
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
@@ -78,8 +82,7 @@ class S3BrowserTest {
                 find<ComponentFixture>(byXpath("//div[@text='Create']")).click()
             }
 
-            // Wait for the bucket to be created
-            Thread.sleep(10000)
+            waitForS3BucketCreation()
 
             awsExplorer {
                 step("Open editor for bucket $bucket") {
@@ -123,7 +126,7 @@ class S3BrowserTest {
                 s3Tree {
                     findText(folder).click()
                 }
-                findAndClick("//div[@accessiblename='$upload' and @class='ActionButton']")
+                actionButton(upload).click()
                 fillSingleTextField(testDataPath.resolve("testFiles").resolve(jsonFile2).toString())
                 pressOk()
                 // Wait for the item to be uploaded
@@ -138,7 +141,7 @@ class S3BrowserTest {
                 s3Tree {
                     findText(jsonFile).click()
                 }
-                findAndClick("//div[@accessiblename='$rename' and @class='ActionButton']")
+                actionButton(rename).click()
                 fillSingleTextField(newJsonName)
                 pressOk()
                 // Wait for the item to be renamed
@@ -154,7 +157,7 @@ class S3BrowserTest {
                     findText(folder).doubleClick()
                     findText(jsonFile2).click()
                 }
-                findAndClick("//div[@accessiblename='$delete' and @class='ActionButton']")
+                actionButton(delete).click()
                 pressDelete()
                 // Wait for the item to be deleted
                 Thread.sleep(1000)
@@ -187,11 +190,55 @@ class S3BrowserTest {
                     awsExplorer {
                         openExplorerActionMenu(S3, bucket)
                     }
-                    find<ComponentFixture>(byXpath("//div[@text='$deleteBucketText']")).click()
-                    find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = bucket
-                    find<ComponentFixture>(byXpath("//div[@accessiblename='OK' and @class='JButton' and @text='OK']")).click()
+                    findAndClick("//div[@text='$deleteBucketText']")
+                    fillSingleTextField(bucket)
+                    pressOk()
+                    waitForS3BucketDeletion()
                 }
             }
+        }
+    }
+
+    private fun waitForS3BucketDeletion() {
+        retryableS3 { client ->
+            try {
+                client.headBucket { it.bucket(bucket) }
+                log.info("The S3 bucket is not deleted yet, retrying")
+                false
+            } catch (e: S3Exception) {
+                log.info("The S3 bucket was deleted successfully")
+                true
+            }
+        }
+    }
+
+    private fun waitForS3BucketCreation() {
+        retryableS3 { client ->
+            try {
+                client.headBucket { it.bucket(bucket) }
+                log.info("The S3 bucket was created successfully")
+                true
+            } catch (e: S3Exception) {
+                log.info("The S3 bucket does not exist yet, checking again")
+                false
+            }
+        }
+    }
+
+    private fun retryableS3(block: (S3Client) -> Boolean) {
+        var client: S3Client? = null
+        try {
+            client = S3Client.create()
+            for (i in 1..15) {
+                if (block(client)) {
+                    break
+                }
+                Thread.sleep(250)
+            }
+        } catch (e: Exception) {
+            log.error("Unable to verify the S3 bucket was created, continuing!", e)
+        } finally {
+            client?.close()
         }
     }
 
