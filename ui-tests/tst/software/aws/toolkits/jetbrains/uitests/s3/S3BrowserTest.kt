@@ -173,7 +173,7 @@ class S3BrowserTest {
                 // Wait for the item to download and open
                 Thread.sleep(1000)
                 // Find the title bar
-                find<ComponentFixture>(byXpath("//div[@accessiblename='$newJsonName' and @class='NavBarItem']"))
+                assertThat(findAll<ComponentFixture>(byXpath("//div[@accessiblename='$newJsonName']"))).isNotEmpty
             }
         }
     }
