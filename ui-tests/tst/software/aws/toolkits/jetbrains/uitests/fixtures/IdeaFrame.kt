@@ -99,7 +99,11 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    private fun openCredentialsPanel() {
-        find<ComponentFixture>(byXpath("//div[@class='MultipleTextValues']")).click()
+    private fun openCredentialsPanel() = try {
+        // 2020.1
+        findAndClick("//div[@class='MultipleTextValues']")
+    } catch (e: Exception) {
+        // 2019.3
+        findAndClick("//div[@class='MultipleTextValuesPresentationWrapper']")
     }
 }
