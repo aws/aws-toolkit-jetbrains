@@ -88,8 +88,14 @@ class S3BrowserTest {
                 }
             }
 
+            // Click on the tree to make sure it's there + we aren't selecting anything else
+            s3Tree { click() }
+
             step("Upload object to top-level") {
                 findAndClick("//div[@accessiblename='$upload' and @class='ActionButton']")
+                // Wait for the file selector to load, on 193 if we don't we try to upload the folder
+                // TODO FIX_WHEN_MIN_IS_201 don't need to wait on 201+
+                Thread.sleep(2000)
                 fillSingleTextField(testDataPath.resolve("testFiles").resolve(jsonFile).toString())
                 pressOk()
                 // Wait for the item to be uploaded

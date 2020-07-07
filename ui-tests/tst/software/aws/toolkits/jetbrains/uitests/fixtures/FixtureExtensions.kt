@@ -20,6 +20,8 @@ fun CommonContainerFixture.pressDelete() = findAndClick("//div[@text='Delete']")
 fun CommonContainerFixture.findAndClick(xPath: String) = findByXpath(xPath).click()
 fun CommonContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
 
-fun CommonContainerFixture.fillSingleTextField(text: String) {
+fun CommonContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
+    // Wait for whatever changed to populate (enable OK button etc), otherwise we might continue too quickly
+    Thread.sleep(1000)
 }
