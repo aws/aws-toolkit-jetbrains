@@ -12,38 +12,32 @@ class JTreeFixture(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : ComponentFixture(remoteRobot, remoteComponent) {
+    fun clickPath(vararg paths: String) = runPath("clickPath", *paths)
+    fun expandPath(vararg paths: String) = runPath("expandPath", *paths)
+    fun rightClickPath(vararg paths: String) = runPath("rightClickPath", *paths)
+    fun doubleClickPath(vararg paths: String) = runPath("doubleClickPath", *paths)
 
-    fun clickPath(vararg paths: String) {
+    fun clickRow(row: Int) = runRow("clickRow", row)
+    fun expandRow(row: Int) = runRow("expandRow", row)
+
+    private fun runPath(name: String, vararg paths: String) {
         val path = paths.joinToString("/")
-        step("select $path") {
+        step("$name $path") {
             runJs(
                 """
                 const jTreeFixture = JTreeFixture(robot, component);
-                jTreeFixture.clickPath('$path') 
+                jTreeFixture.$name('$path') 
                 """.trimIndent()
             )
         }
     }
 
-    fun rightClickPath(vararg paths: String) {
-        val path = paths.joinToString("/")
-        step("select $path") {
+    private fun runRow(name: String, row: Int) {
+        step("$name $row") {
             runJs(
                 """
                 const jTreeFixture = JTreeFixture(robot, component);
-                jTreeFixture.rightClickPath('$path') 
-                """.trimIndent()
-            )
-        }
-    }
-
-    fun doubleClickPath(vararg paths: String) {
-        val path = paths.joinToString("/")
-        step("select $path") {
-            runJs(
-                """
-                const jTreeFixture = JTreeFixture(robot, component);
-                jTreeFixture.doubleClickPath('$path') 
+                jTreeFixture.$name($row) 
                 """.trimIndent()
             )
         }

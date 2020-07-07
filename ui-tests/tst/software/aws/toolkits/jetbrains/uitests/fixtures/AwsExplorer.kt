@@ -8,8 +8,6 @@ import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import com.intellij.remoterobot.utils.keyboard
-import java.awt.event.KeyEvent
 import java.time.Duration
 
 fun RemoteRobot.awsExplorer(
@@ -31,9 +29,7 @@ open class AwsExplorer(
     }
 
     fun expandExplorerNode(vararg path: String) {
-        findExplorerTree().clickPath(*path)
-        // We can't find the carrot to expand with the robot, so use enter to expand
-        keyboard { key(KeyEvent.VK_ENTER) }
+        findExplorerTree().expandPath(*path)
         // TODO clean this up, base on when it loads the child nodes (think of a method to do it)
         Thread.sleep(5000)
     }

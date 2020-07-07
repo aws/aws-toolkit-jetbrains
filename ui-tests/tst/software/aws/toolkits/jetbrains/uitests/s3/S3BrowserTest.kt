@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
+import software.aws.toolkits.jetbrains.uitests.fixtures.pressDelete
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
@@ -108,23 +109,25 @@ class S3BrowserTest : BaseUiTest() {
             }
 
             step("Upload object to folder") {
+                // TODO have to use findText instead of the reasonable clickRow or clickPath because
+                // it can't find anything for some reason
                 s3Tree {
-                    rightClickPath("$folder/")
+                    findText(folder).click()
                 }
                 findAndClick("//div[@accessiblename='$upload' and @class='ActionButton']")
-                fillSingleTextField(testDataPath.resolve("testFiles").resolve(jsonFile).toString())
+                fillSingleTextField(testDataPath.resolve("testFiles").resolve(jsonFile2).toString())
                 pressOk()
                 // Wait for the item to be uploaded
                 Thread.sleep(1000)
                 s3Tree {
-                    doubleClickPath("$folder/")
+                    findText(folder).doubleClick()
                     findText(jsonFile2)
                 }
             }
 
             step("Rename a file") {
                 s3Tree {
-                    clickPath(jsonFile)
+                    findText(jsonFile).click()
                 }
                 findAndClick("//div[@accessiblename='$rename' and @class='ActionButton']")
                 fillSingleTextField(newJsonName)
@@ -138,26 +141,30 @@ class S3BrowserTest : BaseUiTest() {
 
             step("Delete a file") {
                 s3Tree {
-                    clickPath(newJsonName)
+                    // Reopen the folder
+                    findText(folder).doubleClick()
+                    findText(jsonFile2).click()
                 }
                 findAndClick("//div[@accessiblename='$delete' and @class='ActionButton']")
-                findAndClick("//div[@accessiblename='Delete' and @class='JButton' and @name='Delete' and @text='Delete']")
+                pressDelete()
                 // Wait for the item to be deleted
                 Thread.sleep(1000)
                 // make sure it's gone
                 s3Tree {
-                    assertThat(findAllText(newJsonName)).isEmpty()
+                    // Attempt to reopen the folder
+                    findText(folder).doubleClick()
+                    assertThat(findAllText(jsonFile2)).isEmpty()
                 }
             }
 
             step("Open known file-types") {
                 s3Tree {
-                    doubleClickPath(jsonFile)
+                    findText(newJsonName).doubleClick()
                 }
                 // Wait for the item to download and open
                 Thread.sleep(1000)
                 // Find the title bar
-                find<ComponentFixture>(byXpath("//div[@accessiblename='$jsonFile' and @class='NavBarItem']"))
+                find<ComponentFixture>(byXpath("//div[@accessiblename='$newJsonName' and @class='NavBarItem']"))
             }
         }
     }
@@ -180,6 +187,6 @@ class S3BrowserTest : BaseUiTest() {
     }
 
     private fun RemoteRobot.s3Tree(func: (JTreeFixture.() -> Unit)) {
-        find<JTreeFixture>(byXpath("//div[@class='S3TreeTable']")).apply(func)
+        find<JTreeFixture>(byXpath("//div[@class='S3TreeTable']"), Duration.ofSeconds(5)).apply(func)
     }
 }

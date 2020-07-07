@@ -15,6 +15,7 @@ fun ComponentFixture.rightClick() = step("Right click") {
 }
 
 fun CommonContainerFixture.pressOk() = findAndClick("//div[@text='OK']")
+fun CommonContainerFixture.pressDelete() = findAndClick("//div[@text='Delete']")
 
 fun CommonContainerFixture.findAndClick(xPath: String) = findByXpath(xPath).click()
 fun CommonContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
