@@ -32,7 +32,13 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     }
 
     fun openFolder(path: Path) {
-        actionLink("Open").click()
+        try {
+            // 2020.1
+            actionLink("Open or Import").click()
+        } catch (e: Exception) {
+            // 2019.3
+            actionLink("Open").click()
+        }
         fillSingleTextField(path.toAbsolutePath().toString())
         pressOk()
     }
