@@ -139,7 +139,6 @@ private class GradleProcess {
             .setColorOutput(false)
             .setStandardOutput(OutputWrapper(true))
             .setStandardError(OutputWrapper(false))
-            .addArguments("-Djb.consents.confirmation.enabled=false", "-Djb.privacy.policy.text=<!--999.999-->")
             .run(object : ResultHandler<Any> {
                 override fun onFailure(failure: GradleConnectionException) {
                     isRunning.set(false)
