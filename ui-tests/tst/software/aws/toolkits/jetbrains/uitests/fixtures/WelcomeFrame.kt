@@ -32,6 +32,7 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     }
 
     // Make a new project, not caring what it creates
+    // TODO change based off of IDE
     fun newProject(path: Path) {
         openNewProjectWizard()
         remoteRobot.newProjectWizard {
