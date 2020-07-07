@@ -21,7 +21,7 @@ fun CommonContainerFixture.pressDelete() = findAndClick("//div[@text='Delete']")
 fun CommonContainerFixture.findAndClick(@Language("XPath") xPath: String) = findByXpath(xPath).click()
 fun CommonContainerFixture.findByXpath(@Language("XPath") xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
 
-fun CommonContainerFixture.actionButton(buttonText: String ) = actionButton(byXpath("//div[@accessiblename='$buttonText' and @class='ActionButton']"))
+fun CommonContainerFixture.actionButton(buttonText: String) = actionButton(byXpath("//div[@accessiblename='$buttonText' and @class='ActionButton']"))
 
 fun CommonContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
