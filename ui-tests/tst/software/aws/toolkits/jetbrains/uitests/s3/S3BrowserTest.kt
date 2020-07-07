@@ -8,6 +8,7 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -42,7 +43,13 @@ class S3BrowserTest : BaseUiTest() {
     private val createBucketText = "Create S3 Bucket"
     private val deleteBucketText = "Delete S3 Bucket"
     private val upload = "Upload..."
+    private val newFolder = "New folder..."
+    private val rename = "Rename..."
+    private val delete = "Delete..."
+
     private val jsonFile = "hello.json"
+    private val jsonFile2 = "hello2.json"
+    private val newJsonName = "helloooooooooo.json"
 
     @TempDir
     lateinit var tempDir: Path
@@ -57,6 +64,8 @@ class S3BrowserTest : BaseUiTest() {
             waitForBackgroundTasks()
             setCredentials(credential, region)
             showAwsExplorer()
+        }
+        idea {
             step("Create bucket named $bucket") {
                 awsExplorer {
                     openExplorerActionMenu(S3)
@@ -88,7 +97,7 @@ class S3BrowserTest : BaseUiTest() {
             }
 
             step("Create folder") {
-                findAndClick("//div[@accessiblename='New folder...' and @class='ActionButton']")
+                findAndClick("//div[@accessiblename='$newFolder' and @class='ActionButton']")
                 fillSingleTextField(folder)
                 pressOk()
                 // Wait for the folder to be created
@@ -97,56 +106,59 @@ class S3BrowserTest : BaseUiTest() {
                     findText(folder)
                 }
             }
-/*
+
             step("Upload object to folder") {
-                rightClick(0, FOLDER)
-                clickMenuItem { it.text.contains(UPLOAD_ACTION) }
-                fileChooserDialog {
-                    setPath(testDataPath.resolve("testFiles").resolve(JSON_FILE).toString())
-                    clickOk()
+                s3Tree {
+                    rightClickPath("$folder/")
                 }
-
-                waitAMoment()
-
-                doubleClick(0, FOLDER)
-
-                assertNotNull(findPath(FOLDER, JSON_FILE))
+                findAndClick("//div[@accessiblename='$upload' and @class='ActionButton']")
+                fillSingleTextField(testDataPath.resolve("testFiles").resolve(jsonFile).toString())
+                pressOk()
+                // Wait for the item to be uploaded
+                Thread.sleep(1000)
+                s3Tree {
+                    doubleClickPath("$folder/")
+                    findText(jsonFile2)
+                }
             }
 
             step("Rename a file") {
-                rightClick(0, FOLDER, JSON_FILE)
-                clickMenuItem { it.text.contains(RENAME_ACTION) }
-
-                dialog(RENAME_ACTION) {
-                    textfield(null).setText(NEW_JSON_FILE_NAME)
-                    button(OK_BUTTON).clickWhenEnabled()
+                s3Tree {
+                    clickPath(jsonFile)
                 }
-
-                waitAMoment()
-
-                assertNotNull(findPath(FOLDER, NEW_JSON_FILE_NAME))
+                findAndClick("//div[@accessiblename='$rename' and @class='ActionButton']")
+                fillSingleTextField(newJsonName)
+                pressOk()
+                // Wait for the item to be renamed
+                Thread.sleep(1000)
+                s3Tree {
+                    findText(newJsonName)
+                }
             }
 
             step("Delete a file") {
-                rightClick(0, FOLDER, NEW_JSON_FILE_NAME)
-                clickMenuItem { it.text.contains(DELETE_ACTION) }
-
-                findMessageDialog(DELETE_ACTION).click(DELETE_PREFIX)
-
-                waitAMoment()
-
-                assertNull(findPath(FOLDER, NEW_JSON_FILE_NAME))
+                s3Tree {
+                    clickPath(newJsonName)
+                }
+                findAndClick("//div[@accessiblename='$delete' and @class='ActionButton']")
+                findAndClick("//div[@accessiblename='Delete' and @class='JButton' and @name='Delete' and @text='Delete']")
+                // Wait for the item to be deleted
+                Thread.sleep(1000)
+                // make sure it's gone
+                s3Tree {
+                    assertThat(findAllText(newJsonName)).isEmpty()
+                }
             }
 
             step("Open known file-types") {
-                doubleClick(0, JSON_FILE)
-
-                waitAMoment()
-
-                assertNotNull(FileEditorManager.getInstance(project).allEditors.mapNotNull { it.file }.find {
-                    it.name.contains(JSON_FILE) && it.fileType::class.simpleName?.contains("JsonFileType") == true
-                })
-            } */
+                s3Tree {
+                    doubleClickPath(jsonFile)
+                }
+                // Wait for the item to download and open
+                Thread.sleep(1000)
+                // Find the title bar
+                find<ComponentFixture>(byXpath("//div[@accessiblename='$jsonFile' and @class='NavBarItem']"))
+            }
         }
     }
 
