@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.io.TempDir
-import software.aws.toolkits.jetbrains.uitests.BaseUiTest
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
@@ -26,13 +25,16 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.pressDelete
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @TestInstance(Lifecycle.PER_CLASS)
-class S3BrowserTest : BaseUiTest() {
+class S3BrowserTest {
+    private val testDataPath: Path = Paths.get(System.getProperty("testDataPath"))
+
     private val profile = "default"
     private val credential = "Profile:$profile"
     private val region = "Oregon (us-west-2)"
