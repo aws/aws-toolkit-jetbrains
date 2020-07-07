@@ -36,7 +36,7 @@ open class AwsExplorer(
                 findText("loading...")
                 Thread.sleep(100)
             }
-        } catch (e: Exception) {;
+        } catch (e: Exception) {
         }
     }
 
