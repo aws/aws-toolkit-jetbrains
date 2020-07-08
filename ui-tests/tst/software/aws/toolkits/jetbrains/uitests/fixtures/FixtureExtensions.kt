@@ -9,6 +9,7 @@ import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitFor
 import org.intellij.lang.annotations.Language
 import java.time.Duration
 
@@ -28,6 +29,17 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
     // Wait for whatever changed to populate (enable OK button etc), otherwise we might continue too quickly
     Thread.sleep(1000)
+}
+
+fun ContainerFixture.waitForFileExplorerToLoad(file: String) = step("Wait for file explorer to load file $file") {
+    waitFor(duration = Duration.ofSeconds(10), interval = Duration.ofSeconds(1)) {
+        try {
+            find<JTreeFixture>(byXpath("//div[@class='Tree']")).findText(file)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
 
 fun CommonContainerFixture.actionButton(buttonText: String) = actionButton(byXpath("//div[@accessiblename='$buttonText' and @class='ActionButton']"))
