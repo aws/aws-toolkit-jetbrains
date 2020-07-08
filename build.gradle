@@ -190,8 +190,7 @@ subprojects {
             systemProperty "robot-server.port", remoteRobotPort
             systemProperty "ide.mac.file.chooser.native", "false"
             systemProperty "jb.consents.confirmation.enabled", "false"
-            // The two below does some magic in EndUserAgreement.java to make it not show the privacy policy
-            systemProperty "JetBrains.privacy_policy.accepted_version", "999.999"
+            // This does some magic in EndUserAgreement.java to make it not show the privacy policy
             systemProperty "jb.privacy.policy.text", "<!--999.999-->"
             if (System.getenv("CI") != null) {
                 systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
