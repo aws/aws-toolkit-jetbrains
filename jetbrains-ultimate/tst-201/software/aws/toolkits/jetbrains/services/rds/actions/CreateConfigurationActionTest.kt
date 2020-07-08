@@ -87,11 +87,10 @@ class CreateConfigurationActionTest {
         val registry = DataSourceRegistry(projectRule.project)
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
-                endpoint = instance.endpoint(),
                 username = username,
                 credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
                 regionId = MockRegionProvider.getInstance().defaultRegion().id,
-                dbEngine = instance.engine()
+                dbInstance = instance
             )
         )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
@@ -110,11 +109,10 @@ class CreateConfigurationActionTest {
         val registry = DataSourceRegistry(projectRule.project)
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
-                endpoint = instance.endpoint(),
                 username = username,
                 credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
                 regionId = MockRegionProvider.getInstance().defaultRegion().id,
-                dbEngine = instance.engine()
+                dbInstance = instance
             )
         )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
@@ -130,11 +128,10 @@ class CreateConfigurationActionTest {
         val registry = DataSourceRegistry(projectRule.project)
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
-                endpoint = instance.endpoint(),
                 username = username,
                 credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
                 regionId = MockRegionProvider.getInstance().defaultRegion().id,
-                dbEngine = instance.engine()
+                dbInstance = instance
             )
         )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
@@ -150,11 +147,10 @@ class CreateConfigurationActionTest {
         val registry = DataSourceRegistry(projectRule.project)
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
-                endpoint = instance.endpoint(),
                 username = username,
                 credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
                 regionId = MockRegionProvider.getInstance().defaultRegion().id,
-                dbEngine = instance.engine()
+                dbInstance = instance
             )
         )
     }

@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auroraMysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.auroraPostgresEngineType
+import software.aws.toolkits.jetbrains.services.rds.auth.INSTANCE_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
@@ -98,8 +99,7 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
             RdsDatasourceConfiguration(
                 regionId = node.nodeProject.activeRegion().id,
                 credentialId = node.nodeProject.activeCredentialProvider().id,
-                dbEngine = node.dbInstance.engine(),
-                endpoint = node.dbInstance.endpoint(),
+                dbInstance = node.dbInstance,
                 username = username
             )
         )
@@ -111,12 +111,13 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
 }
 
 fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
-    val url = "${config.endpoint.address()}:${config.endpoint.port()}"
+    val dbEngine = config.dbInstance.engine()
+    val url = "${config.dbInstance.endpoint().address()}:${config.dbInstance.endpoint().port()}"
 
     val builder = builder
         .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, config.credentialId)
         .withJdbcAdditionalProperty(REGION_ID_PROPERTY, config.regionId)
-    when (config.dbEngine) {
+    when (dbEngine) {
         mysqlEngineType, auroraMysqlEngineType -> {
             builder
                 .withUrl("jdbc:$jdbcMysql://$url/")
@@ -129,7 +130,11 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
                 // IAM role "Admin", it is inserted as "admin"
                 .withUser(config.username.toLowerCase())
         }
-        else -> throw IllegalArgumentException("Engine ${config.dbEngine} is not supported for IAM auth!")
+        else -> throw IllegalArgumentException("Engine $dbEngine is not supported for IAM auth!")
+    }
+    // For Aurora engines, also set the instance id as cluster ID, not from the url
+    if (dbEngine == auroraPostgresEngineType || dbEngine == auroraMysqlEngineType) {
+        builder.withJdbcAdditionalProperty(INSTANCE_ID_PROPERTY, config.dbInstance.dbClusterIdentifier())
     }
     builder.commit()
     // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder. There is no way to set it in the builder,
