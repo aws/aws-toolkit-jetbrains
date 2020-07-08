@@ -22,6 +22,8 @@ import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
+import software.aws.toolkits.jetbrains.services.rds.auroraMysqlEngineType
+import software.aws.toolkits.jetbrains.services.rds.auroraPostgresEngineType
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
@@ -115,12 +117,12 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
         .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, config.credentialId)
         .withJdbcAdditionalProperty(REGION_ID_PROPERTY, config.regionId)
     when (config.dbEngine) {
-        mysqlEngineType -> {
+        mysqlEngineType, auroraMysqlEngineType -> {
             builder
                 .withUrl("jdbc:$jdbcMysql://$url/")
                 .withUser(config.username)
         }
-        postgresEngineType -> {
+        postgresEngineType, auroraPostgresEngineType -> {
             builder
                 .withUrl("jdbc:$jdbcPostgres://$url/")
                 // In postgres this is case sensitive as lower case. If you add a db user for
