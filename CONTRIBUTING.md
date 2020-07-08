@@ -106,10 +106,9 @@ To test your changes locally, you can run the project from IntelliJ or gradle.
   ./gradlew uiTestCore
   ```
   - To debug GUI tests,
-    1. Set `runIde.debugOptions.enabled=true` in the gradle file.
-    2. Start the IDE that will be debugged `./gradlew runIdeForUiTests`
-    3. Attach your (IntelliJ) debugger to port 5005.
-	4. Run `./gradlew uiTestCore`
+    1. Start the IDE that will be debugged `./gradlew runIdeForUiTests --debug-jvm`
+	2. In your running Intellij instance `Run -> Attach to process` attach to the ide test debug process.
+    4. Run `./gradlew uiTestCore`. This will attach to the running debug IDE instance and run tests.
 
 ### Logging
 
