@@ -12,7 +12,6 @@ import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
@@ -63,7 +62,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         if (remoteRobot.isMac()) {
             keyboard { hotKey(KeyEvent.VK_META, KeyEvent.VK_SEMICOLON) }
         } else {
-            keyboard { hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_S) }
+            keyboard { hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_SHIFT, KeyEvent.VK_S) }
         }
         find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Project Structure']")).click()
     }
