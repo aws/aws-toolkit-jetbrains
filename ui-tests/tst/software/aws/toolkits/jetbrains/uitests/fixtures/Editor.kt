@@ -12,12 +12,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 
 fun ContainerFixture.editorTab(title: String, function: EditorTab.() -> Unit = {}): EditorTab {
     val editorTabb = find<EditorTab>(byXpath("//div[@class='EditorTabs']//div[@accessiblename='$title' and @class='SingleHeightLabel']"))
-
-    // Single click opens a menu on Linux, so double click it which on all platforms hides the project menu
-    // Double click it again to show it again.
-    editorTabb.doubleClick()
-    editorTabb.doubleClick()
-
+    editorTabb.click()
     return editorTabb.apply(function)
 }
 

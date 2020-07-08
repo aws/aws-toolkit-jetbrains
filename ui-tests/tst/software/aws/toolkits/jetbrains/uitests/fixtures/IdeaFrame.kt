@@ -54,8 +54,6 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
             waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
                 findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isEmpty()
             }
-            log.info("Background tasks finished, waiting two more seconds to make sure credential profiles are loaded")
-            Thread.sleep(2000)
         }
     }
 
@@ -65,7 +63,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         if (remoteRobot.isMac()) {
             keyboard { hotKey(KeyEvent.VK_META, KeyEvent.VK_SEMICOLON) }
         } else {
-            keyboard { hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_S) }
+            keyboard { hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_S) }
         }
         find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Project Structure']")).click()
     }
