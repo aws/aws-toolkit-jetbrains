@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
+import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
@@ -15,16 +16,18 @@ fun ComponentFixture.rightClick() = step("Right click") {
     runJs("robot.rightClick(component);")
 }
 
-fun CommonContainerFixture.pressOk() = findAndClick("//div[@text='OK']")
-fun CommonContainerFixture.pressDelete() = findAndClick("//div[@text='Delete']")
+fun ContainerFixture.pressOk() = findAndClick("//div[@text='OK']")
+fun ContainerFixture.pressDelete() = findAndClick("//div[@text='Delete']")
+fun ContainerFixture.pressCancel() = findAndClick("//div[@text='Cancel']")
+fun ContainerFixture.pressClose() = findAndClick("//div[@text='Close']")
 
-fun CommonContainerFixture.findAndClick(@Language("XPath") xPath: String) = findByXpath(xPath).click()
-fun CommonContainerFixture.findByXpath(@Language("XPath") xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
+fun ContainerFixture.findAndClick(@Language("XPath") xPath: String) = findByXpath(xPath).click()
+fun ContainerFixture.findByXpath(@Language("XPath") xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
 
-fun CommonContainerFixture.actionButton(buttonText: String) = actionButton(byXpath("//div[@accessiblename='$buttonText' and @class='ActionButton']"))
-
-fun CommonContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
+fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
     // Wait for whatever changed to populate (enable OK button etc), otherwise we might continue too quickly
     Thread.sleep(1000)
 }
+
+fun CommonContainerFixture.actionButton(buttonText: String) = actionButton(byXpath("//div[@accessiblename='$buttonText' and @class='ActionButton']"))

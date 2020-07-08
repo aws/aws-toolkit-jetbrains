@@ -92,10 +92,10 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    // Tips sometimes open when running locally, close it if it opens
+    // Tips sometimes open when running, close it if it opens
     fun tryCloseTips() {
         try {
-            find<ComponentFixture>(byXpath("//div[@accessiblename='Close' and @class='JButton' and @text='Close']")).click()
+            pressClose()
         } catch (e: Exception) {
         }
     }
