@@ -55,7 +55,6 @@ phases:
     commands:
       - TEST_ARTIFACTS="/tmp/testArtifacts"
       - mkdir -p $TEST_ARTIFACTS/test-reports
-      - rsync -r guitest.log $TEST_ARTIFACTS/gui/ || true
       - rsync -rmq --include='*/' --include '**/build/idea-sandbox/system*/log/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/build/reports/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/test-results/**/*.xml' --exclude='*' . $TEST_ARTIFACTS/test-reports || true
