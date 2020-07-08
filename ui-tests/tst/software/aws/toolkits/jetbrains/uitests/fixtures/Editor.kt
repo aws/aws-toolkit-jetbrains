@@ -9,21 +9,14 @@ import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.stepsProcessing.log
-import com.intellij.remoterobot.stepsProcessing.step
 
 fun ContainerFixture.editorTab(title: String, function: EditorTab.() -> Unit = {}): EditorTab {
     val editorTabb = find<EditorTab>(byXpath("//div[@class='EditorTabs']//div[@accessiblename='$title' and @class='SingleHeightLabel']"))
-    editorTabb.click()
-    // On Linux this also opens a "save context menu", so close that if it is open
-    step("Close save context menu (if it opens)") {
-        try {
-            pressCancel()
-            log.info("Closed the menu")
-        } catch (e: Exception) {
-            log.info("No save context menu opened")
-        }
-    }
+
+    // Single click opens a menu on Linux, so double click it which on all platforms hides the project menu
+    // Double click it again to show it again.
+    editorTabb.doubleClick()
+    editorTabb.doubleClick()
 
     return editorTabb.apply(function)
 }

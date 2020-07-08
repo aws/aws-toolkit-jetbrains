@@ -12,6 +12,7 @@ import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
@@ -53,6 +54,8 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
             waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
                 findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isEmpty()
             }
+            log.info("Background tasks finished, waiting two more seconds to make sure credential profiles are loaded")
+            Thread.sleep(2000)
         }
     }
 
