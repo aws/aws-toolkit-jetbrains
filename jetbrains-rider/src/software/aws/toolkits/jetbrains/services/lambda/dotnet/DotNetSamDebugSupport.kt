@@ -62,7 +62,7 @@ import kotlin.concurrent.schedule
  *
  * Workflow:
  * 1. Find the correct container by filtering `docker ps` for one of the published port of the debugger
- * 2. Use `docker exec` and pgrep to locate the dotnet PID of the runtime.
+ * 2. Use `docker exec` and a shell script to locate the dotnet PID of the runtime.
  * 3. Launch the Debugger worker in server mode using `docker exec`
  * 4. Send the command to the worker to attach to the correct PID.
  */
@@ -253,8 +253,9 @@ class DotNetSamDebugSupport : SamDebugSupport {
                 "exec",
                 "-i",
                 dockerContainer,
-                "/usr/bin/pgrep",
-                "dotnet"
+                "/bin/sh",
+                "-c",
+                """find /proc -mindepth 2 -maxdepth 2 -name exe -exec ls -l {} \; 2>/dev/null | grep dotnet | sed -n 's/.*\/proc\/\(.*\)\/exe.*/\1/p'"""
             )
         ).stdout.trim().nullize()
     }.toInt()
