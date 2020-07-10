@@ -21,18 +21,13 @@ import com.jetbrains.rider.run.IDebuggerOutputListener
 import java.io.File
 
 object DotNetDebuggerUtils {
+    val debuggerName = DebuggerWorkerPlatform.AnyCpu.assemblyName
 
-    val debuggerAssemblyFile: File = RiderEnvironment.getBundledFile(DebuggerWorkerPlatform.AnyCpu.assemblyName)
+    val debuggerAssemblyFile: File = RiderEnvironment.getBundledFile(debuggerName)
 
     val debuggerBinDir: File = debuggerAssemblyFile.parentFile
 
-    val cloudDebuggerTempDirName = "aws_rider_debugger_files"
-
-    // This tool is used to detect dbgshim inside a remote container to replace Rider dbgshim autodetection logic
-    // that works not correctly in 192 Rider. It is fixed in 193 and should not be used.
-    val cloudDebuggerToolsName = "AWS.DebuggerTools"
-
-    val dotnetCoreDebuggerLauncherName = "JetBrains.Rider.Debugger.Launcher"
+    const val cloudDebuggerTempDirName = "aws_rider_debugger_files"
 
     fun createAndStartSession(
         executionConsole: ExecutionConsole,
@@ -43,23 +38,22 @@ object DotNetDebuggerUtils {
         sessionModel: DotNetDebuggerSessionModel,
         outputEventsListener: IDebuggerOutputListener
     ): XDebugProcessStarter {
-
         val fireInitializedManually = env.getUserData(DotNetDebugRunner.FIRE_INITIALIZED_MANUALLY) ?: false
 
         return object : XDebugProcessStarter() {
-            override fun start(session: XDebugSession): XDebugProcess =
-                // TODO: Update to use 'sessionId' parameter in ctr when min SDK version is 193 FIX_WHEN_MIN_IS_193.
-                DotNetDebugProcess(
-                    sessionLifetime = sessionLifetime,
-                    session = session,
-                    debuggerWorkerProcessHandler = processHandler,
-                    console = executionConsole,
-                    protocol = protocol,
-                    sessionProxy = sessionModel,
-                    fireInitializedManually = fireInitializedManually,
-                    customListener = outputEventsListener,
-                    debugKind = OptionsUtil.toDebugKind(sessionModel.sessionProperties.debugKind.valueOrNull),
-                    project = env.project)
+            override fun start(session: XDebugSession): XDebugProcess = DotNetDebugProcess(
+                sessionLifetime = sessionLifetime,
+                session = session,
+                sessionId = env.executionId,
+                debuggerWorkerProcessHandler = processHandler,
+                console = executionConsole,
+                protocol = protocol,
+                sessionProxy = sessionModel,
+                fireInitializedManually = fireInitializedManually,
+                customListener = outputEventsListener,
+                debugKind = OptionsUtil.toDebugKind(sessionModel.sessionProperties.debugKind.valueOrNull),
+                project = env.project
+            )
         }
     }
 }
