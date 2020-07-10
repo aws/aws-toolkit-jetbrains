@@ -11,6 +11,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.waitFor
 import org.intellij.lang.annotations.Language
+import java.nio.file.Path
 import java.time.Duration
 
 fun ComponentFixture.rightClick() = step("Right click") {
@@ -31,15 +32,29 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
     Thread.sleep(1000)
 }
 
-fun ContainerFixture.waitForFileExplorerToLoad(file: String) = step("Wait for file explorer to load file $file") {
-    waitFor(duration = Duration.ofSeconds(10), interval = Duration.ofSeconds(1)) {
-        try {
-            find<JTreeFixture>(byXpath("//div[@class='Tree']")).findText(file)
-            true
-        } catch (e: Exception) {
-            false
+/*
+ * Fill in file explorer with a path then press OK
+ */
+fun ContainerFixture.fillFileExplorer(path: Path) = step("File explorer") {
+    step("Fill file explorer with ${path.toAbsolutePath()}") {
+        fillSingleTextField(path.toAbsolutePath().toString())
+    }
+    val file = path.fileName.toString()
+    step("Wait for file explorer to load file $file") {
+        waitFor(duration = Duration.ofSeconds(10), interval = Duration.ofSeconds(1)) {
+            try {
+                return@waitFor findAll<JTreeFixture>(byXpath("//div[@class='Tree']")).any {
+                    it.findAllText(file).isNotEmpty()
+                }
+            } catch (e: Exception) {
+                false
+            }
         }
     }
+    pressOk()
 }
 
+/*
+ * Find an action button by button text instead of by xPath
+ */
 fun CommonContainerFixture.actionButton(buttonText: String) = actionButton(byXpath("//div[@accessiblename='$buttonText' and @class='ActionButton']"))
