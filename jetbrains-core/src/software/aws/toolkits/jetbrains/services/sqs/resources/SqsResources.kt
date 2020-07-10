@@ -5,9 +5,10 @@ package software.aws.toolkits.jetbrains.services.sqs.resources
 
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkits.jetbrains.core.Resource
 
 object SqsResources {
-    val LIST_QUEUES = ClientBackedCachedResource(SqsClient::class, "sqs.list_queues") {
+    val LIST_QUEUE_URLS : Resource.Cached<List<String>> = ClientBackedCachedResource(SqsClient::class, "sqs.list_queues") {
         listQueuesPaginator().queueUrls().toList()
     }
 }

@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplore
 import software.aws.toolkits.jetbrains.services.sqs.resources.SqsResources
 
 class SqsServiceNode(project: Project, service: AwsExplorerServiceNode) :
-    CacheBackedAwsExplorerServiceRootNode<String>(project, service, SqsResources.LIST_QUEUES) {
+    CacheBackedAwsExplorerServiceRootNode<String>(project, service, SqsResources.LIST_QUEUE_URLS) {
     override fun toNode(child: String): AwsExplorerNode<*> = SqsQueueNode(nodeProject, child)
 }
 
@@ -26,7 +26,7 @@ class SqsQueueNode(
     queueUrl,
     AwsIcons.Resources.S3_BUCKET //TODO: Get & change icons
 ) {
-    private val queue = queueProperties(queueUrl)
+    private val queue = Queue(queueUrl)
 
     override fun resourceType() = "queue"
 
