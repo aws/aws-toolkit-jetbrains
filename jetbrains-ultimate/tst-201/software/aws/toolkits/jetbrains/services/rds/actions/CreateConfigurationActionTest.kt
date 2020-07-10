@@ -20,7 +20,10 @@ import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
+import software.aws.toolkits.jetbrains.services.rds.auroraMysqlEngineType
+import software.aws.toolkits.jetbrains.services.rds.auroraPostgresEngineType
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
+import software.aws.toolkits.jetbrains.services.rds.jdbcMariadb
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
@@ -123,6 +126,25 @@ class CreateConfigurationActionTest {
     }
 
     @Test
+    fun `Add Aurora PostgreSQL data source`() {
+        val instance = createDbInstance(port = port, address = address, engineType = auroraPostgresEngineType)
+        val registry = DataSourceRegistry(projectRule.project)
+        registry.createRdsDatasource(
+            RdsDatasourceConfiguration(
+                username = username,
+                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                dbInstance = instance
+            )
+        )
+        assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
+            assertThat(it.username).isLowerCase().isEqualTo(username.toLowerCase())
+            assertThat(it.driverClass).contains("postgres")
+            assertThat(it.url).contains(jdbcPostgres)
+        }
+    }
+
+    @Test
     fun `Add mysql data source`() {
         val instance = createDbInstance(address = address, port = port, engineType = mysqlEngineType)
         val registry = DataSourceRegistry(projectRule.project)
@@ -138,6 +160,25 @@ class CreateConfigurationActionTest {
             assertThat(it.username).isEqualTo(username)
             assertThat(it.driverClass).contains("mysql")
             assertThat(it.url).contains(jdbcMysql)
+        }
+    }
+
+    @Test
+    fun `Add Aurora MySQL data source`() {
+        val instance = createDbInstance(address = address, port = port, engineType = auroraMysqlEngineType)
+        val registry = DataSourceRegistry(projectRule.project)
+        registry.createRdsDatasource(
+            RdsDatasourceConfiguration(
+                username = username,
+                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                dbInstance = instance
+            )
+        )
+        assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
+            assertThat(it.username).isEqualTo(username)
+            assertThat(it.driverClass).contains("mariadb")
+            assertThat(it.url).contains(jdbcMariadb)
         }
     }
 
