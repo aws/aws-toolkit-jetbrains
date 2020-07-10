@@ -3,12 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
-import software.aws.toolkits.core.region.AwsRegion
-
-class queueProperties(queueUrl: String, region: AwsRegion) {
+class queueProperties(queueUrl: String) {
+    val regionId = queueUrl.substringAfter("sqs.").substringBefore('.')
     val accountId = queueUrl.substringAfter("amazonaws.com/").substringBefore('/')
     val queueName = queueUrl.substringAfter("${accountId}/")
-    val arn = "arn:aws:sqs:${region.id}:${accountId}:$queueName"
+    val arn = "arn:aws:sqs:${regionId}:${accountId}:$queueName"
 }
 
 /*

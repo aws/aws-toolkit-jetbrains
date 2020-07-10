@@ -7,9 +7,7 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 
 object SqsResources {
-    @JvmField
     val LIST_QUEUES = ClientBackedCachedResource(SqsClient::class, "sqs.list_queues") {
-            listQueues().queueUrls().toList()
+        listQueuesPaginator().queueUrls().toList()
     }
-
 }
