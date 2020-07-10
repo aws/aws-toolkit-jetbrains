@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.openapi.project.Project
-import icons.AwsIcons
+import com.intellij.util.ui.EmptyIcon
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
@@ -24,7 +24,7 @@ class SqsQueueNode(
     project,
     SqsClient.SERVICE_NAME,
     queueUrl,
-    AwsIcons.Resources.S3_BUCKET // TODO: Get & change icons
+    EmptyIcon.ICON_0 // TODO: Get & change icons
 ) {
     private val queue = Queue(queueUrl)
 
