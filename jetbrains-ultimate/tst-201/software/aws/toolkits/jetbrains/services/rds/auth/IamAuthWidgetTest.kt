@@ -103,7 +103,7 @@ class IamAuthWidgetTest {
     }
 
     @Test
-    fun `Does not unset instance on editing url`() {
+    fun `Does not change instance on editing url`() {
         widget.reset(mock(), false)
         val endpointUrl = "jdbc:postgresql://def.host.$defaultRegion.rds.amazonaws.com:5432/dev"
         widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
