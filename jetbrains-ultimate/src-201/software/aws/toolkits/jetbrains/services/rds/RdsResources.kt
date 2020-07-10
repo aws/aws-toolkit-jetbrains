@@ -22,6 +22,7 @@ fun String.getEngineFromAuroraEngine(): String = when (this) {
 }
 
 const val jdbcMysql = "mysql"
+const val jdbcMariadb = "mariadb"
 const val jdbcPostgres = "postgresql"
 
 // Filters are also just a string

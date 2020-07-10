@@ -24,8 +24,8 @@ import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auroraMysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.auroraPostgresEngineType
-import software.aws.toolkits.jetbrains.services.rds.auth.INSTANCE_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
+import software.aws.toolkits.jetbrains.services.rds.jdbcMariadb
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
@@ -118,7 +118,7 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
         .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, config.credentialId)
         .withJdbcAdditionalProperty(REGION_ID_PROPERTY, config.regionId)
     when (dbEngine) {
-        mysqlEngineType, auroraMysqlEngineType -> {
+        mysqlEngineType -> {
             builder
                 .withUrl("jdbc:$jdbcMysql://$url/")
                 .withUser(config.username)
@@ -130,11 +130,14 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
                 // IAM role "Admin", it is inserted as "admin"
                 .withUser(config.username.toLowerCase())
         }
+        auroraMysqlEngineType -> {
+            builder
+                // The docs recommend using MariaDB instead of MySQL to connect to MySQL Aurora DBs:
+                // https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Connecting.html#Aurora.Connecting.AuroraMySQL
+                .withUrl("jdbc:$jdbcMariadb://$url/")
+                .withUser(config.username)
+        }
         else -> throw IllegalArgumentException("Engine $dbEngine is not supported for IAM auth!")
-    }
-    // For Aurora engines, also set the instance id as cluster ID, not from the url
-    if (dbEngine == auroraPostgresEngineType || dbEngine == auroraMysqlEngineType) {
-        builder.withJdbcAdditionalProperty(INSTANCE_ID_PROPERTY, config.dbInstance.dbClusterIdentifier())
     }
     builder.commit()
     // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder. There is no way to set it in the builder,
