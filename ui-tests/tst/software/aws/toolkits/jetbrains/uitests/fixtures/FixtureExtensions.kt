@@ -50,6 +50,9 @@ fun ContainerFixture.fillFileExplorer(path: Path) = step("File explorer") {
                 false
             }
         }
+        // even at this point we can get some file explorer jumping on slow machines (like a dual core Macbook)
+        // so we still have to wait :(
+        Thread.sleep(1000)
     }
     pressOk()
 }
