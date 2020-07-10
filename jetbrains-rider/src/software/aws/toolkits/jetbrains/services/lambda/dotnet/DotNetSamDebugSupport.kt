@@ -255,7 +255,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
                 dockerContainer,
                 "/bin/sh",
                 "-c",
-                """find /proc -mindepth 2 -maxdepth 2 -name exe -exec ls -l {} \; 2>/dev/null | grep dotnet | sed -n 's/.*\/proc\/\(.*\)\/exe.*/\1/p'"""
+                """find /proc -mindepth 2 -maxdepth 2 -name exe -exec ls -l {} \; 2>/dev/null | grep -e '/dotnet$' | sed -n 's/.*\/proc\/\(.*\)\/exe.*/\1/p'"""
             )
         ).stdout.trim().nullize()
     }.toInt()
