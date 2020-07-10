@@ -8,7 +8,7 @@ import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
 
 object SqsResources {
-    val LIST_QUEUE_URLS : Resource.Cached<List<String>> = ClientBackedCachedResource(SqsClient::class, "sqs.list_queues") {
+    val LIST_QUEUE_URLS: Resource.Cached<List<String>> = ClientBackedCachedResource(SqsClient::class, "sqs.list_queues") {
         listQueuesPaginator().queueUrls().toList()
     }
 }

@@ -24,17 +24,17 @@ class SqsQueueNode(
     project,
     SqsClient.SERVICE_NAME,
     queueUrl,
-    AwsIcons.Resources.S3_BUCKET //TODO: Get & change icons
+    AwsIcons.Resources.S3_BUCKET // TODO: Get & change icons
 ) {
     private val queue = Queue(queueUrl)
 
     override fun resourceType() = "queue"
 
-    override fun resourceArn() : String = queue.arn
+    override fun resourceArn(): String = queue.arn
 
     override fun displayName(): String = queue.queueName
 
     override fun onDoubleClick() {
-        //TODO: create SQS tool window
+        // TODO: create SQS tool window
     }
 }

@@ -37,12 +37,13 @@ class SqsServiceNodeTest {
         val children = SqsServiceNode(projectRule.project, SQS_EXPLORER_NODE).children
 
         assertThat(children).allMatch { it is SqsQueueNode }
-        assertThat(children.filterIsInstance<SqsQueueNode>().map {Queue(it.queueUrl).queueName}).containsExactlyInAnyOrder("test4", "test3", "test2", "test1")
-        assertThat(children.filterIsInstance<SqsQueueNode>().map {Queue(it.queueUrl).arn}).containsExactlyInAnyOrder(
+        assertThat(children.filterIsInstance<SqsQueueNode>().map { Queue(it.queueUrl).queueName }).containsExactlyInAnyOrder("test4", "test3", "test2", "test1")
+        assertThat(children.filterIsInstance<SqsQueueNode>().map { Queue(it.queueUrl).arn }).containsExactlyInAnyOrder(
             "arn:aws:sqs:us-east-1:123456789012:test1",
             "arn:aws:sqs:us-east-1:123456789012:test2",
             "arn:aws:sqs:us-east-1:123456789012:test3",
-            "arn:aws:sqs:us-east-1:123456789012:test4")
+            "arn:aws:sqs:us-east-1:123456789012:test4"
+        )
     }
 
     @Test
@@ -64,13 +65,13 @@ class SqsServiceNodeTest {
         assertThat(children).allMatch { it is AwsExplorerErrorNode }
     }
 
-
     private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
 
     private fun MockResourceCache.sqsQueues(queueUrls: List<String>) {
         this.addEntry(
             SqsResources.LIST_QUEUE_URLS,
-            CompletableFuture.completedFuture(queueUrls.map{it}))
+            CompletableFuture.completedFuture(queueUrls.map { it })
+        )
     }
 
     private companion object {
