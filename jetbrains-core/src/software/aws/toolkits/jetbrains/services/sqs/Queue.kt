@@ -3,9 +3,24 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
-class Queue(queueUrl: String) {
-    val regionId = queueUrl.substringAfter("sqs.").substringBefore('.')
-    val accountId = queueUrl.substringAfter("amazonaws.com/").substringBefore('/')
-    val queueName = queueUrl.substringAfter("$accountId/")
-    val arn = "arn:aws:sqs:$regionId:$accountId:$queueName"
+import software.aws.toolkits.core.region.AwsRegion
+import java.lang.IllegalArgumentException
+
+/* This does not support Federal Information Processing Standard (FIPS) */
+class Queue(queueUrl: String, region: AwsRegion) {
+    val accountId = queueUrl.substringAfter("${region.id}")
+        ?.substringAfter("/")
+        ?.substringBefore("/")
+        ?: throw IllegalArgumentException()
+    val queueName = queueUrl.substringAfter("$accountId/") ?: throw IllegalArgumentException()
+    val arn = "arn:${region.partitionId}:sqs:${region.id}:$accountId:$queueName"
+
+    fun String.substringAfter(delimiter: String): String? {
+        val str = substringAfter(delimiter, this)
+        return if (str == this) {
+            null
+        } else {
+            str
+        }
+    }
 }
