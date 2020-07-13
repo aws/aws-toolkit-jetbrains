@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
@@ -72,10 +73,17 @@ class CloudFormationBrowserTest {
                 }
             }
             step("Check events") {
-
+                clickOnEvents()
+                step("Assert that there are two CREATE_COMPLETE events shown") {
+                    val createComplete = findAllText("CREATE_COMPLETE")
+                    assertThat(createComplete).hasSize(2)
+                }
             }
             step("Check outputs") {
-
+                clickOnOutputs()
+                step("Assert that the stack output is there") {
+                    findText("Cool description")
+                }
             }
             step("Delete stack $stack") {
                 showAwsExplorer()
@@ -106,6 +114,14 @@ class CloudFormationBrowserTest {
             log.error("Delete stack threw an exception", e)
         }
         waitForStackDeletion()
+    }
+
+    private fun IdeaFrame.clickOnOutputs() {
+        findAndClick("//div[@accessiblename='Outputs' and @class='JLabel' and @text='Outputs']")
+    }
+
+    private fun IdeaFrame.clickOnEvents() {
+        findAndClick("//div[@accessiblename='Events' and @class='JLabel' and @text='Events']")
     }
 
     private fun waitForStackDeletion() {
