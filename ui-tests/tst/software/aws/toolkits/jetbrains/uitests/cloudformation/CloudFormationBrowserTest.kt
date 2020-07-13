@@ -5,7 +5,9 @@ package software.aws.toolkits.jetbrains.uitests.cloudformation
 
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitFor
 import com.intellij.remoterobot.utils.waitForIgnoringError
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
@@ -83,9 +86,13 @@ class CloudFormationBrowserTest {
                 fillSingleTextField(stack)
                 pressOk()
             }
+
             waitForStackDeletion()
+
             step("Check for the stack deletion notification") {
-                findText("Deleted Stack '$stack'")
+                // Sometimes the toast takes a while to show up so give it a longer timeout
+                val toast = findToast(Duration.ofSeconds(10))
+                assertThat(toast.hasText { it.text.contains("Deleted Stack '$stack'") })
             }
         }
     }
@@ -103,9 +110,13 @@ class CloudFormationBrowserTest {
 
     private fun waitForStackDeletion() {
         log.info("Waiting for the deletion of stack $stack")
-        waitForIgnoringError(Duration.ofSeconds(180), Duration.ofSeconds(5)) {
+        waitFor(duration = Duration.ofSeconds(180), interval = Duration.ofSeconds(5)) {
             // wait until the stack is gone
-            cloudFormationClient.describeStacks { it.stackName(stack) }.stacks().first().stackStatus() == StackStatus.DELETE_COMPLETE
+            try {
+                cloudFormationClient.describeStacks { it.stackName(stack) }.stacks().first().stackStatus() == StackStatus.DELETE_COMPLETE
+            } catch (e: Exception) {
+                e is CloudFormationException && e.awsErrorDetails().errorCode() == "ValidationError"
+            }
         }
         log.info("Finished deleting stack $stack")
     }
