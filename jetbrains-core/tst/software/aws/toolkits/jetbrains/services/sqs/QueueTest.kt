@@ -9,6 +9,8 @@ import software.aws.toolkits.core.region.AwsRegion
 import kotlin.test.assertFailsWith
 
 class QueueTest {
+    private val defaultRegion = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")
+
     @Test
     fun `China region endpoint parsed`() {
         val queueRegion = AwsRegion("cn-northwest-1", "China (Ningxia)", "aws-cn")
@@ -41,19 +43,16 @@ class QueueTest {
 
     @Test
     fun `Throw exception with non-url`() {
-        val queueRegion = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")
-        assertFailsWith<IllegalArgumentException> { Queue("Not a URL", queueRegion) }
+        assertFailsWith<IllegalArgumentException> { Queue("Not a URL", defaultRegion) }
     }
 
     @Test
     fun `Throw exception with no name`() {
-        val queueRegion = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")
-        assertFailsWith<IllegalArgumentException> { Queue("https://sqs.us-east-1.amazonaws.com/123456789012/", queueRegion) }
+        assertFailsWith<IllegalArgumentException> { Queue("https://sqs.us-east-1.amazonaws.com/123456789012/", defaultRegion) }
     }
 
     @Test
     fun `Throw exception with invalid account ID`() {
-        val queueRegion = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")
-        assertFailsWith<IllegalArgumentException> { Queue("https://sqs.us-east-1.amazonaws.com/123/test-4", queueRegion) }
+        assertFailsWith<IllegalArgumentException> { Queue("https://sqs.us-east-1.amazonaws.com/123/test-4", defaultRegion) }
     }
 }
