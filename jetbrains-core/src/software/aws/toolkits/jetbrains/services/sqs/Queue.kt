@@ -7,25 +7,24 @@ import software.aws.toolkits.core.region.AwsRegion
 import java.lang.IllegalArgumentException
 import software.aws.toolkits.resources.message
 
-/* This does not support Federal Information Processing Standard (FIPS) */
 class Queue(val queueUrl: String, val region: AwsRegion) {
-    val accountId: String = queueUrl.substringAfter("${region.id}").substringAfter("/").substringBefore("/")
-        get() {
-            if ((field == queueUrl) || (field.length != 12) || field.isBlank()) {
+    val accountId: String by lazy {
+        val id = queueUrl.substringAfter("${region.id}").substringAfter("/").substringBefore("/")
+        if ((id == queueUrl) || (id.length != 12) || id.isBlank()) {
                 throw IllegalArgumentException(message("sqs.url.parse_error"))
-            } else {
-                return field
-            }
+        } else {
+            id
         }
+    }
 
-    val queueName: String = queueUrl.substringAfter("$accountId/")
-        get() {
-            if (field == queueUrl || field.isBlank()) {
-                throw IllegalArgumentException(message("sqs.url.parse_error"))
-            } else {
-                return field
-            }
+    val queueName: String by lazy {
+        val name = queueUrl.substringAfter("$accountId/")
+        if (name == queueUrl || name.isBlank()) {
+            throw IllegalArgumentException(message("sqs.url.parse_error"))
+        } else {
+            name
         }
+    }
 
     val arn = "arn:${region.partitionId}:sqs:${region.id}:$accountId:$queueName"
 }
