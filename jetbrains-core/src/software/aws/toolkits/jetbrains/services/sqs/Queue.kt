@@ -7,6 +7,7 @@ import software.aws.toolkits.core.region.AwsRegion
 import java.lang.IllegalArgumentException
 import software.aws.toolkits.resources.message
 
+/*This does not support FIPS*/
 class Queue(val queueUrl: String, val region: AwsRegion) {
     val accountId: String by lazy {
         val id = queueUrl.substringAfter("${region.id}").substringAfter("/").substringBefore("/")
