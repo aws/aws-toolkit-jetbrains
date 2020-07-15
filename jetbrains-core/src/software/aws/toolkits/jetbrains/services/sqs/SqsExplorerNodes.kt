@@ -42,6 +42,6 @@ class SqsQueueNode(
     override fun displayName(): String = queue.queueName
 
     override fun onDoubleClick() {
-        // TODO: create SQS tool window
+        SqsWindow.getInstance(nodeProject)?.openQueue(queueUrl)
     }
 }
