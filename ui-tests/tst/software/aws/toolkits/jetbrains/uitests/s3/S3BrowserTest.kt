@@ -97,7 +97,7 @@ class S3BrowserTest {
 
             step("Upload object to top-level") {
                 actionButton(upload).click()
-                fileBrowser {
+                fileBrowser("Select") {
                     selectFile(testDataPath.resolve("testFiles").resolve(jsonFile))
                 }
                 // Wait for the item to be uploaded
@@ -125,7 +125,7 @@ class S3BrowserTest {
                     findText(folder).click()
                 }
                 actionButton(upload).click()
-                fileBrowser {
+                fileBrowser("Select") {
                     selectFile(testDataPath.resolve("testFiles").resolve(jsonFile2))
                 }
                 // Wait for the item to be uploaded

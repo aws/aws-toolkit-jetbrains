@@ -12,12 +12,12 @@ import java.nio.file.Path
 import java.time.Duration
 
 fun ContainerFixture.fileBrowser(
-    title: String = "",
+    partialTitle: String,
     timeout: Duration = Duration.ofSeconds(20),
     function: FileBrowserFixture.() -> Unit = {}
 ) {
-    step("Search for file explorer with title matching $title") {
-        val dialog = find<FileBrowserFixture>(DialogFixture.byTitleContains(title), timeout)
+    step("Search for file explorer with title matching $partialTitle") {
+        val dialog = find<FileBrowserFixture>(DialogFixture.byTitleContains(partialTitle), timeout)
 
         dialog.apply(function)
 
@@ -35,6 +35,8 @@ class FileBrowserFixture(
     remoteComponent: RemoteComponent
 ) : DialogFixture(remoteRobot, remoteComponent) {
     fun selectFile(path: Path) = step("File explorer") {
+        // Wait for file explorer to load
+        Thread.sleep(1000)
         step("Fill file explorer with ${path.toAbsolutePath()}") {
             fillSingleTextField(path.toAbsolutePath().toString())
         }
