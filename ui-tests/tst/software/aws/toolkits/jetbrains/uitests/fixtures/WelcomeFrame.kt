@@ -34,6 +34,8 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
 
     fun openFolder(path: Path) {
         actionLink(ActionLinkFixture.byTextContains("Open")).click()
-        fillFileExplorer(path)
+        fileBrowser {
+            selectFile(path)
+        }
     }
 }

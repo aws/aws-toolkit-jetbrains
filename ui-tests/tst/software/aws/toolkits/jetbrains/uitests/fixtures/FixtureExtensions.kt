@@ -33,31 +33,6 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
 }
 
 /*
- * Fill in file explorer with a path then press OK
- */
-fun ContainerFixture.fillFileExplorer(path: Path) = step("File explorer") {
-    step("Fill file explorer with ${path.toAbsolutePath()}") {
-        fillSingleTextField(path.toAbsolutePath().toString())
-    }
-    val file = path.fileName.toString()
-    step("Wait for file explorer to load file $file") {
-        waitFor(duration = Duration.ofSeconds(10), interval = Duration.ofSeconds(1)) {
-            try {
-                return@waitFor findAll<JTreeFixture>(byXpath("//div[@class='Tree']")).any {
-                    it.findAllText(file).isNotEmpty()
-                }
-            } catch (e: Exception) {
-                false
-            }
-        }
-        // even at this point we can get some file explorer jumping on slow machines (like a dual core Macbook)
-        // so we still have to wait :(
-        Thread.sleep(1000)
-    }
-    pressOk()
-}
-
-/*
  * Find an action button by button text instead of by xPath
  */
 fun CommonContainerFixture.actionButton(buttonText: String) = actionButton(byXpath("//div[@accessiblename='$buttonText' and @class='ActionButton']"))
