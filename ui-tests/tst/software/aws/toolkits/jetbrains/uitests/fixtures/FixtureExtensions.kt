@@ -26,8 +26,6 @@ fun ContainerFixture.findByXpath(@Language("XPath") xPath: String) = find<Compon
 
 fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
-    // Wait for whatever changed to populate (enable OK button etc), otherwise we might continue too quickly
-    Thread.sleep(1000)
 }
 
 /*

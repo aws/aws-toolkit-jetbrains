@@ -34,7 +34,7 @@ class FileBrowserFixture(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : DialogFixture(remoteRobot, remoteComponent) {
-    fun selectFile(path: Path) = step("File explorer") {
+    fun selectFile(path: Path) = step("Select ${path.toAbsolutePath()}") {
         // Wait for file explorer to load
         Thread.sleep(1000)
         step("Fill file explorer with ${path.toAbsolutePath()}") {
