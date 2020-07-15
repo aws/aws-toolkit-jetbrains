@@ -11,12 +11,7 @@ import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 
 fun ContainerFixture.editorTab(title: String, function: EditorTab.() -> Unit = {}): EditorTab {
-    val editorTabb = find<EditorTab>(
-        byXpath(
-            // FIX_WHEN_MIN_IS_202 remove the SingleHeightLabel one
-            "//div[@accessiblename='$title' and @class='SingleHeightLabel']|//div[@accessiblename='$title' and @class='SimpleColoredComponent']"
-        )
-    )
+    val editorTabb = find<EditorTab>(byXpath("//div[@accessiblename='$title' and @class='SingleHeightLabel']"))
     editorTabb.click()
     return editorTabb.apply(function)
 }
