@@ -24,6 +24,7 @@ phases:
     commands:
       - chmod +x gradlew
       - ./gradlew check coverageReport --info --full-stacktrace --console plain
+      - ./gradlew buildPlugin
       - VCS_COMMIT_ID="${CODEBUILD_RESOLVED_SOURCE_VERSION}"
       - CI_BUILD_URL=$(echo $CODEBUILD_BUILD_URL | sed 's/#/%23/g') # Encode `#` in the URL because otherwise the url is clipped in the Codecov.io site
       - CI_BUILD_ID="${CODEBUILD_BUILD_ID}"
@@ -49,3 +50,8 @@ artifacts:
   files:
     - "**/*"
   base-directory: /tmp/testArtifacts
+  secondary-artifacts:
+    package:
+      base_directory: $CODEBUILD_SRC_DIR/build/distributions
+      files:
+        - "*"
