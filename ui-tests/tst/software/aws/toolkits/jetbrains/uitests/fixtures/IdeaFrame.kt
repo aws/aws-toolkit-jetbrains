@@ -53,7 +53,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
             waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
                 // TODO FIX_WHEN_MIN_IS_202 remove the background process one
                 findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isEmpty() &&
-                    // search for the pause button
+                    // search for the progress bar
                     findAll<ComponentFixture>(byXpath("//div[@class='JProgressBar']")).isEmpty()
             }
         }

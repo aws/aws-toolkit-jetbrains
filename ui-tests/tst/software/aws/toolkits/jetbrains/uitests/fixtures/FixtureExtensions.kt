@@ -9,9 +9,7 @@ import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import com.intellij.remoterobot.utils.waitFor
 import org.intellij.lang.annotations.Language
-import java.nio.file.Path
 import java.time.Duration
 
 fun ComponentFixture.rightClick() = step("Right click") {
