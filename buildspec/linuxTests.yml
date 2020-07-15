@@ -33,11 +33,14 @@ phases:
 
   post_build:
     commands:
+      - BUILD_ARTIFACTS="/tmp/buildArtifacts"
       - TEST_ARTIFACTS="/tmp/testArtifacts"
       - mkdir -p $TEST_ARTIFACTS/test-reports
+      - mkdir -p $BUILD_ARTIFACTS/
       - rsync -rmq --include='*/' --include '**/build/idea-sandbox/system*/log/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/build/reports/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/test-results/**/*.xml' --exclude='*' . $TEST_ARTIFACTS/test-reports || true
+      - rsync -rmq --include='*/' --include '**/build/distributions/*.zip' --exclude='*' . $BUILD_ARTIFACTS || true
 
 reports:
   unit-test:
@@ -52,6 +55,7 @@ artifacts:
   base-directory: /tmp/testArtifacts
   secondary-artifacts:
     package:
-      base_directory: $CODEBUILD_SRC_DIR/build/distributions
+      base_directory: /tmp/buildArtifacts
       files:
         - "*"
+      discard-paths: yes
