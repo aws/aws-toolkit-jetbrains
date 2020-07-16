@@ -7,11 +7,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.sqs.SqsQueueNode
-import software.aws.toolkits.jetbrains.services.sqs.SqsWindow
+import software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow
 import software.aws.toolkits.resources.message
 
 class OpenQueueAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.queue.open")), DumbAware {
     override fun actionPerformed(selected: SqsQueueNode, e: AnActionEvent) {
-        SqsWindow.getInstance(selected.nodeProject)?.openQueue(selected.queueUrl)
+        SqsWindow.getInstance(selected.nodeProject)?.openQueue(selected.queue)
     }
 }

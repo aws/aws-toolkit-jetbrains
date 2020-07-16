@@ -1,44 +1,40 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.sqs
+package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
-import com.intellij.ui.components.JBTabbedPane
-import com.intellij.util.ui.EmptyIcon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
+import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
-import javax.swing.JPanel
 
-class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("openQueue") {
-    private val toolWindow = ToolkitToolWindowManager.getInstance(project, SQS_TOOL_WINDOW)
+class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("SqsWindow") {
+    private val toolWindow = ToolkitToolWindowManager.getInstance(project,
+        SQS_TOOL_WINDOW
+    )
     private val edtContext = getCoroutineUiContext()
 
-    fun openQueue(queueUrl: String) {
-        showQueue(queueUrl, SqsWindowUI(project))
+    fun openQueue(queue: Queue) {
+        showQueue(queue, SqsWindowUI(project, queue).openMessage())
     }
 
-    fun sendMessage(queueUrl: String) {
-        val component = SqsWindowUI(project)
-        component.mainPanel.selectedIndex = 1
-        showQueue(queueUrl, component)
+    fun sendMessage(queue: Queue) {
+        showQueue(queue, SqsWindowUI(project, queue).sendMessage())
     }
 
-    private fun showQueue(queueUrl: String, component: SqsWindowUI) = launch {
-        val queue = Queue(queueUrl, project.activeRegion())
-
+    private fun showQueue(queue: Queue, component: SqsWindowUI) = launch {
         try {
-            val existingWindow = toolWindow.find(queueUrl)
+            val existingWindow = toolWindow.find(queue.queueUrl)
             if (existingWindow != null) {
                 withContext(edtContext) {
                     existingWindow.dispose()
@@ -46,7 +42,7 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
             }
 
             withContext(edtContext) {
-                toolWindow.addTab(queue.queueName, component.mainPanel, true, queueUrl)
+                toolWindow.addTab(queue.queueName, component.mainPanel, activate = true, id = queue.queueUrl)
             }
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while trying to open queue '${queue.queueName}'" }
@@ -58,18 +54,10 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
         internal val SQS_TOOL_WINDOW = ToolkitToolWindowType(
             "AWS.Sqs",
             message("sqs.toolwindow"),
-            EmptyIcon.ICON_0 // TODO: Get and change icons
+            AllIcons.Nodes.EmptyNode // TODO: Get and change icons
         )
 
         fun getInstance(project: Project) = ServiceManager.getService(project, SqsWindow::class.java)
         private val LOG = getLogger<SqsWindow>()
-    }
-}
-
-// Will add more parameters once window is populated
-class SqsWindowUI(private val project: Project) {
-    val mainPanel = JBTabbedPane().apply {
-        this.add(message("sqs.toolwindow.tab_labels.message.sampling"), JPanel())
-        this.add(message("sqs.toolwindow.tab_labels.send.message"), JPanel())
     }
 }
