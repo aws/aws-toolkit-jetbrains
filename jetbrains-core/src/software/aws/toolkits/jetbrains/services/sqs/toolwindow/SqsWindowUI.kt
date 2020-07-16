@@ -26,8 +26,8 @@ class SqsWindowUI(private val project: Project, val queue: Queue) {
         return this
     }
 
-    private companion object {
-        internal const val OPEN_MESSAGE_PANE = 0
-        internal const val SEND_MESSAGE_PANE = 1
+    companion object {
+        const val OPEN_MESSAGE_PANE = 0
+        const val SEND_MESSAGE_PANE = 1
     }
 }
