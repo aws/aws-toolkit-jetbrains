@@ -32,7 +32,6 @@ class SqsQueueNode(
     SqsClient.SERVICE_NAME,
     queueUrl,
     AwsIcons.Resources.Sqs.SQS_QUEUE
-
 ) {
     private val queue = Queue(queueUrl, nodeProject.activeRegion())
 
