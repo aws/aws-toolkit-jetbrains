@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 import javax.swing.JPanel
 
 class PollMessagePane {
-    var component = JPanel()
+    lateinit var component: JPanel
 }

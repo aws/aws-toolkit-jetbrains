@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 import javax.swing.JPanel
 
 class SendMessagePane {
-    var component = JPanel()
+    lateinit var component: JPanel
 }
