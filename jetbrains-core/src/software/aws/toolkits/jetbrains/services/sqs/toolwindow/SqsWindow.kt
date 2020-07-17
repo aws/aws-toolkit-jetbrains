@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
@@ -22,12 +22,12 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, SQS_TOOL_WINDOW)
     private val edtContext = getCoroutineUiContext()
 
-    fun openQueue(queue: Queue) {
-        showQueue(queue, SqsWindowUI(project, queue).openMessage())
+    fun pollMessage(queue: Queue) {
+        showQueue(queue, SqsWindowUI(project, queue).apply { pollMessage() })
     }
 
     fun sendMessage(queue: Queue) {
-        showQueue(queue, SqsWindowUI(project, queue).sendMessage())
+        showQueue(queue, SqsWindowUI(project, queue).apply { sendMessage() })
     }
 
     private fun showQueue(queue: Queue, component: SqsWindowUI) = launch {
@@ -52,7 +52,7 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
         internal val SQS_TOOL_WINDOW = ToolkitToolWindowType(
             "AWS.Sqs",
             message("sqs.toolwindow"),
-            AllIcons.Nodes.EmptyNode // TODO: Get and change icons
+            AwsIcons.Resources.Sqs.SQS_TOOL_WINDOW
         )
 
         fun getInstance(project: Project) = ServiceManager.getService(project, SqsWindow::class.java)

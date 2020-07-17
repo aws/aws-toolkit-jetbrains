@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="software.aws.toolkits.jetbrains.services.sqs.toolwindow.ViewMessagePane">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="software.aws.toolkits.jetbrains.services.sqs.toolwindow.PollMessagePane">
   <grid id="27dc6" row-count="1" column-count="1" layout-manager="GridLayoutManager">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>

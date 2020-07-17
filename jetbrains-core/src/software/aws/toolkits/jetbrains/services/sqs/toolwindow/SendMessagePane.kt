@@ -2,4 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-class SendMessagePane
+import javax.swing.JPanel
+
+class SendMessagePane {
+    var component = JPanel()
+}

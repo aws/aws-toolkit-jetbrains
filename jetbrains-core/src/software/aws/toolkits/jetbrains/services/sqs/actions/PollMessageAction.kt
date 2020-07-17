@@ -10,8 +10,8 @@ import software.aws.toolkits.jetbrains.services.sqs.SqsQueueNode
 import software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow
 import software.aws.toolkits.resources.message
 
-class OpenQueueAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.queue.open")), DumbAware {
+class PollMessageAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.poll.message")), DumbAware {
     override fun actionPerformed(selected: SqsQueueNode, e: AnActionEvent) {
-        SqsWindow.getInstance(selected.nodeProject)?.openQueue(selected.queue)
+        SqsWindow.getInstance(selected.nodeProject)?.pollMessage(selected.queue)
     }
 }

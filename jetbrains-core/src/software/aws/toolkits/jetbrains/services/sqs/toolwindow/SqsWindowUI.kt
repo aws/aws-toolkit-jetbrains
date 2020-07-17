@@ -7,27 +7,24 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBTabbedPane
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.resources.message
-import javax.swing.JPanel
 
 // Will add more parameters once window is populated
 class SqsWindowUI(private val project: Project, val queue: Queue) {
     val mainPanel = JBTabbedPane().apply {
-        this.add(message("sqs.queue.message.sampling"), JPanel())
-        this.add(message("sqs.queue.send.message"), JPanel())
+        this.add(message("sqs.queue.polled.messages"), PollMessagePane().component)
+        this.add(message("sqs.send.message"), SendMessagePane().component)
     }
 
-    fun openMessage(): SqsWindowUI {
-        mainPanel.selectedIndex = OPEN_MESSAGE_PANE
-        return this
+    fun pollMessage() {
+        mainPanel.selectedIndex = POLL_MESSAGE_PANE
     }
 
-    fun sendMessage(): SqsWindowUI {
+    fun sendMessage() {
         mainPanel.selectedIndex = SEND_MESSAGE_PANE
-        return this
     }
 
     companion object {
-        const val OPEN_MESSAGE_PANE = 0
+        const val POLL_MESSAGE_PANE = 0
         const val SEND_MESSAGE_PANE = 1
     }
 }
