@@ -19,9 +19,7 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
 class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("SqsWindow") {
-    private val toolWindow = ToolkitToolWindowManager.getInstance(project,
-        SQS_TOOL_WINDOW
-    )
+    private val toolWindow = ToolkitToolWindowManager.getInstance(project, SQS_TOOL_WINDOW)
     private val edtContext = getCoroutineUiContext()
 
     fun openQueue(queue: Queue) {
