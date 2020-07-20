@@ -121,7 +121,6 @@ class ProfileWatcherTest {
         val sut = DefaultProfileWatcher()
 
         spinUntil(Duration.ofSeconds(10)) {
-            println(fileWatcher.isSettingRoots)
             !fileWatcher.isSettingRoots
         }
 

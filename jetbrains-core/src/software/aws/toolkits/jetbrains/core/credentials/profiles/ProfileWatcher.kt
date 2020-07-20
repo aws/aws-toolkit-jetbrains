@@ -31,11 +31,10 @@ class DefaultProfileWatcher : AsyncFileListener, Disposable, ProfileWatcher {
     private val listeners = ContainerUtil.createLockFreeCopyOnWriteList<() -> Unit>()
     private val watchRoots = mutableSetOf<LocalFileSystem.WatchRequest>()
     private val watchPointers = mutableMapOf<String, VirtualFilePointer>()
-    private var onUpdate: (() -> Unit)? = null
 
     private val watchLocationsStrings = setOf(
-        ProfileFileLocation.configurationFilePath().toAbsolutePath().toString(),
-        ProfileFileLocation.credentialsFilePath().toAbsolutePath().toString()
+        FileUtil.normalize(ProfileFileLocation.configurationFilePath().toAbsolutePath().toString()),
+        FileUtil.normalize(ProfileFileLocation.credentialsFilePath().toAbsolutePath().toString())
     )
 
     init {
@@ -44,12 +43,14 @@ class DefaultProfileWatcher : AsyncFileListener, Disposable, ProfileWatcher {
         val localFileSystem = LocalFileSystem.getInstance()
 
         val watchLocationParents = watchLocationsStrings.map {
+            val path = Paths.get(FileUtil.toSystemDependentName(it))
+
             // Make VFS aware of it
-            localFileSystem.refreshAndFindFileByPath(FileUtil.normalize((it)))
+            localFileSystem.refreshAndFindFileByIoFile(path.toFile())
 
             // Use the parent as the watch root in case file does not exist yet
             // Note: This system requires that the parent folder already exists
-            FileUtil.normalize(Paths.get(it).parent.toString())
+            FileUtil.normalize(path.parent.toString())
         }.toSet()
 
         watchRoots.addAll(localFileSystem.addRootsToWatch(watchLocationParents, true))
