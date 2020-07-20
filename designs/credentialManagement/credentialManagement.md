@@ -132,7 +132,17 @@ indicates that the toolkit either was built incorrectly, or has a severe bug in 
 ![StateFlow]
 
 ### Retrieving AWS Credentials
-TODO 
+When another section of the toolkit needs to retrieve AWS credentials, it must request an `AwsCredentialProvider` using 
+`CredentialManager.getAwsCredentialProvider(CredentialIdentifier, AwsRegion)`. The `CredentialIdentifier` represents the credential profile we are trying to
+resolve, and the region parameter is required so that we can determine the correct STS endpoint to call.
+
+`CredentialManager` returns a `ToolkitCredentialsProvider` which is an immutable class which exposes its underlying `CredentialIdentifier` while implementing the 
+`AwsCredentialsProvider` interface so that it can be given transparently to the SDKs. The `AwsCredentialsProvider.resolveCredentials` method call is proxied
+over to a `AwsCredentialProviderProxy`.
+
+`AwsCredentialProviderProxy` acts as a "pointer" to the real `AwsCredentialProvider` created by the `CredentialProviderFactory` while also keeping track of the 
+region that was used to create it. This allows us to keep references to the `ToolkitCredentialsProvider` to keep resolving credentials even when the underlying 
+source has been updated, such as when the shared credentials files has been modified by an external process.
 
 [AwsCredentialsProvider]: https://github.com/aws/aws-sdk-java-v2/blob/master/core/auth/src/main/java/software/amazon/awssdk/auth/credentials/AwsCredentialsProvider.java
 [ClassDiagram]: images/classDiagram.svg

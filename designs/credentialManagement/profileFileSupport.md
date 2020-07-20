@@ -35,7 +35,7 @@ If file location logic returns an invalid path, the files must be treated as not
 ### Profile File Modification Detection
 
 An Application Service (`ProfileWatcher`) is registered by the toolkit. The service instructs the IDE to notify it when the parent directory of the `config` 
-and/or `credentials` files are modified. We monitor the parent in folder in case the files do not exist yet.
+and/or `credentials` files are modified. The Toolkit monitors the parent of the folder in case the files do not exist yet.
 
 When the `ProfileCredentialProviderFactory` is created, it registers itself as a listener on the `ProfileWatcher`.
 

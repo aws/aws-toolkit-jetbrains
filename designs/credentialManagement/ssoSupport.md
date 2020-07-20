@@ -17,10 +17,10 @@ having to re-do the SSO login flow whenever their assumed role session credentia
 
 ### Disk Cache
 The disk cache is is written to allow interop of the Toolkit with other tools (e.g. AWS CLI) meaning that if they perform an SSO login in the terminal before
-starting the IDE, they do not need to perform it again and vice versa. The long lived tokens are cached in the `~/.aws/sso/` folder with `0600` permissions.
+starting the IDE, they do not need to perform it again and vice versa. The long lived tokens are cached in the `~/.aws/sso/cache/` folder with `0600` permissions.
 
 ## Profile keys
-SSO support adds the following keys to the AWS shared credential files:
+The AWS shared credential file added new standard keys to support SSO:
 
 * `sso_start_url` - The URL that points to the organization's AWS SSO user portal.
 * `sso_region` - The AWS Region that contains the AWS SSO portal host. This is separate from, and can be a different region than the default region parameter. 
