@@ -5,14 +5,16 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBTabbedPane
+import software.amazon.awssdk.services.sqs.SqsClient
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.resources.message
 
 // Will add more parameters once window is populated
-class SqsWindowUI(private val project: Project, val queue: Queue) {
+class SqsWindowUI(private val client: SqsClient, val queue: Queue) {
     val mainPanel = JBTabbedPane().apply {
-        this.add(message("sqs.queue.polled.messages"), PollMessagePane().component)
-        this.add(message("sqs.send.message"), SendMessagePane().component)
+        this.add(message("sqs.queue.polled.messages"), PollMessagePane(client, queue).component)
+        this.add(message("sqs.send.message"), SendMessagePane(client, queue).component)
     }
 
     fun pollMessage() {
