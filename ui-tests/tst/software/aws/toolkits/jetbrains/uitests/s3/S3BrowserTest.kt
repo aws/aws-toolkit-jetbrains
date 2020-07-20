@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.actionButton
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
-import software.aws.toolkits.jetbrains.uitests.fixtures.fillFileExplorer
+import software.aws.toolkits.jetbrains.uitests.fixtures.fileBrowser
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
@@ -70,7 +70,6 @@ class S3BrowserTest {
         }
         idea {
             waitForBackgroundTasks()
-            setCredentials(credential, region)
             showAwsExplorer()
         }
         idea {
@@ -97,7 +96,9 @@ class S3BrowserTest {
 
             step("Upload object to top-level") {
                 actionButton(upload).click()
-                fillFileExplorer(testDataPath.resolve("testFiles").resolve(jsonFile))
+                fileBrowser("Select") {
+                    selectFile(testDataPath.resolve("testFiles").resolve(jsonFile))
+                }
                 // Wait for the item to be uploaded
                 Thread.sleep(1000)
                 s3Tree {
@@ -123,7 +124,9 @@ class S3BrowserTest {
                     findText(folder).click()
                 }
                 actionButton(upload).click()
-                fillFileExplorer(testDataPath.resolve("testFiles").resolve(jsonFile2))
+                fileBrowser("Select") {
+                    selectFile(testDataPath.resolve("testFiles").resolve(jsonFile2))
+                }
                 // Wait for the item to be uploaded
                 Thread.sleep(1000)
                 s3Tree {
@@ -220,6 +223,7 @@ class S3BrowserTest {
         }
     }
 
+    // TODO when the Java SDK v2 supports waiters this can be removed
     private fun retryableS3(block: (S3Client) -> Boolean) {
         var client: S3Client? = null
         try {
