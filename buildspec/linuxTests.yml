@@ -5,7 +5,6 @@ cache:
     - '/root/.gradle/caches/**/*'
     - '/root/.gradle/wrapper/**/*'
 
-
 env:
   variables:
     CI: true
