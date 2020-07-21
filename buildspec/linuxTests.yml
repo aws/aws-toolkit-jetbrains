@@ -54,7 +54,7 @@ artifacts:
     - "**/*"
   base-directory: /tmp/testArtifacts
   secondary-artifacts:
-    package:
+    plugin:
       files:
         - /tmp/buildArtifacts/*
       discard-paths: yes
