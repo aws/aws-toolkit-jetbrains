@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
-import toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
+import toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 
 apply plugin: 'org.jetbrains.intellij'
 
@@ -50,7 +50,7 @@ test {
     systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
 }
 
-tasks.register('pluginChangeLog', GenerateGithubChangeLog) {
+tasks.register('pluginChangeLog', GeneratePluginChangeLog) {
     includeUnreleased = true
     changeLogFile = project.file("$buildDir/changelog/change-notes.xml")
 }
