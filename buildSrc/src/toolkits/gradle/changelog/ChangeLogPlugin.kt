@@ -6,9 +6,9 @@ package toolkits.gradle.changelog
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import toolkits.gradle.changelog.tasks.CreateRelease
-import toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import toolkits.gradle.changelog.tasks.NewChange
 
+@Suppress("unused") // Plugin is created by buildSrc/build.gradle
 class ChangeLogPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.tasks.register("createRelease", CreateRelease::class.java) {
