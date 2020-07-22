@@ -3,9 +3,12 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.fasterxml.jackson.core.JsonParseException
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.intellij.lang.annotations.Language
 import org.junit.Test
+import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import java.time.Instant
 
 class CredentialProcessOutputParserTest {
@@ -28,6 +31,16 @@ class CredentialProcessOutputParserTest {
         """{"Version":1, "AccessKeyId":"foo", "SecretAccessKey":"bar", "SessionToken":"session"}""",
         CredentialProcessOutput("foo", "bar", "session", null)
     )
+
+    @Test
+    fun `non JSON throws`() {
+        assertThatThrownBy { sut.parse("hello") }.isInstanceOf<JsonParseException>()
+    }
+
+    @Test
+    fun `valid JSON missing required properties fails`() {
+        assertThatThrownBy { sut.parse("""{"AccessKeyId": "foo"}""") }.hasMessageContaining("secretAccessKey")
+    }
 
     private fun runTest(@Language("JSON") input: String, expected: CredentialProcessOutput) {
         assertThat(sut.parse(input)).isEqualTo(expected)
