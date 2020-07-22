@@ -138,7 +138,7 @@ class ToolkitCredentialProcessProviderTest {
         val file = File(folderWithSpaceInItsName, "foo")
         file.writeText("bar")
 
-        val sut = createSut("$cmd \"${folderWithSpaceInItsName.absolutePath}\"")
+        val sut = createSut("""$cmd ${folder.root.absolutePath}${File.separator}"hello world"""")
         stubParser()
 
         sut.resolveCredentials()
@@ -156,7 +156,7 @@ class ToolkitCredentialProcessProviderTest {
 
         val sut = createSut("$cmd non-existing-folder")
 
-        assertThatThrownBy { sut.resolveCredentials() }.hasMessageContaining("non-existing-folder")
+        assertThatThrownBy { sut.resolveCredentials() }.hasMessageContaining("Failed to execute credential_process ($cmd)")
         verifyZeroInteractions(parser)
     }
 
@@ -182,7 +182,7 @@ class ToolkitCredentialProcessProviderTest {
     @ExperimentalTime
     @Test
     fun `command times out after specified period`() {
-        val cmd = if (SystemInfo.isWindows) { "timeout 5" } else { "sleep 5" }
+        val cmd = if (SystemInfo.isWindows) { "ping -n 10 127.0.0.1" } else { "sleep 5" }
         Registry.get("aws.credentialProcess.timeout").setValue(200)
         val time = measureTime {
             assertThatThrownBy { createSut(cmd).resolveCredentials() }.hasMessageContaining("timed out")
