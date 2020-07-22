@@ -62,7 +62,7 @@ Example of usage:
 
 ### Deep Credential Validation
 
-In order to validate the credentials returned by the `ToolkitCredentialsProvider` are able to mak AWS calls, we make a call to `sts::getCallerIdentity`. 
+In order to validate the credentials returned by the `ToolkitCredentialsProvider` are able to make AWS calls, we make a call to `sts::getCallerIdentity`. 
 If the call fails, we consider the credentials to be invalid.
 
 ## Connection Settings Management
