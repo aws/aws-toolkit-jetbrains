@@ -26,4 +26,8 @@ class AwsExplorerRootNode(private val nodeProject: Project) : AbstractTreeNode<A
     }
 
     override fun update(presentation: PresentationData) { }
+
+    companion object {
+        private val EP_NAME = ExtensionPointName<AwsExplorerServiceNode>("aws.toolkit.explorer.serviceNode")
+    }
 }
