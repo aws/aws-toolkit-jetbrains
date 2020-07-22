@@ -24,6 +24,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.writeChild
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
+import org.mockito.Mockito
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import java.nio.file.Paths
@@ -54,11 +55,22 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
     }
 
     override fun starting(description: Description) {
-        appRule.before()
+        // TODO: Make this extend AppRule and remove reflection FIX_WHEN_MIN_IS_202
+        val beforeMethod = appRule.javaClass.declaredMethods.first { it.name == "before" }
+        beforeMethod.trySetAccessible()
+        if (beforeMethod.parameterCount == 1) {
+            beforeMethod.invoke(appRule, description)
+        } else {
+            beforeMethod.invoke(appRule)
+        }
         this.description = description
     }
 
     override fun finished(description: Description?) {
+        // Hack: Runs often enough that we keep our leaks down. https://github.com/mockito/mockito/pull/1619
+        // TODO: Investigate Mockk and remove this
+        Mockito.framework().clearInlineMocks()
+
         lazyFixture.ifSet {
             try {
                 fixture.tearDown()
