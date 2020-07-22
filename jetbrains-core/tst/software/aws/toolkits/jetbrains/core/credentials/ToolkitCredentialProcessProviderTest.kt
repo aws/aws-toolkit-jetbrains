@@ -188,7 +188,7 @@ class ToolkitCredentialProcessProviderTest {
             assertThatThrownBy { createSut(cmd).resolveCredentials() }.hasMessageContaining("timed out")
         }
 
-        assertThat(time.toJavaDuration()).isLessThan(Duration.ofMillis(500))
+        assertThat(time.toJavaDuration()).isLessThan(Duration.ofMillis(2000))
     }
 
     private fun stubParser(output: CredentialProcessOutput = CredentialProcessOutput("foo", "bar", null, null)) {

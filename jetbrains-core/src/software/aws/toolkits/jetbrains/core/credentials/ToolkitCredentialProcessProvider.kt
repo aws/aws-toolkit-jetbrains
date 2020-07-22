@@ -11,6 +11,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.util.ExecUtil
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.execution.ParametersListUtil
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -31,22 +32,30 @@ class ToolkitCredentialProcessProvider internal constructor(
 ) : AwsCredentialsProvider {
     constructor(command: String) : this(command, DefaultCredentialProcessOutputParser)
 
+    private val entrypoint by lazy {
+        ParametersListUtil.parse(command).first()
+    }
+    private val cmd by lazy {
+        if (SystemInfo.isWindows) {
+            GeneralCommandLine("cmd", "/C", command)
+        } else {
+            GeneralCommandLine("sh", "-c", command)
+        }
+    }
     private val processCredentialCache = CachedSupplier.builder { refresh() }.build()
 
     override fun resolveCredentials(): AwsCredentials = processCredentialCache.get()
 
     private fun refresh(): RefreshResult<AwsCredentials> {
-        val cmd = GeneralCommandLine(ParametersListUtil.parse(command))
-
         val timeout = Registry.intValue("aws.credentialProcess.timeout", DEFAULT_TIMEOUT)
         val output = ExecUtil.execAndGetOutput(cmd, timeout)
 
         if (output.isTimeout) {
-            handleException(message("credentials.profile.credential_process.timeout_exception_prefix", cmd.exePath), output)
+            handleException(message("credentials.profile.credential_process.timeout_exception_prefix", entrypoint), output)
         }
 
         if (output.exitCode != 0) {
-            handleException(message("credentials.profile.credential_process.execution_exception_prefix", cmd.exePath), output)
+            handleException(message("credentials.profile.credential_process.execution_exception_prefix", entrypoint), output)
         }
 
         val result = try {
