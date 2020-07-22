@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.core.execution
 import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.credentials.ToolkitCredentialsIdentifier
+import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.activeConnection
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
 import software.aws.toolkits.jetbrains.ui.RegionSelector
@@ -50,7 +50,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditor<T : RunConfigurationB
                     view.region.isEnabled = true
                     view.credentialProvider.isEnabled = true
 
-                    view.region.selectedRegion = config.region?.let { regionProvider.lookupRegionById(it) }
+                    view.region.selectedRegion = config.region?.let { regionProvider[it] }
                     when (val credential = config.credential) {
                         is String -> view.credentialProvider.setSelectedCredential(credential)
                         else -> view.credentialProvider.selectedItem = null
@@ -85,7 +85,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditor<T : RunConfigurationB
             populateRegionsIfRequired()
             populateCredentialsIfRequired()
             if (view.region.selectedRegion == null || view.credentialProvider.selectedItem == null) {
-                project.activeConnection()?.run {
+                AwsConnectionManager.getInstance(project).connectionSettings()?.run {
                     if (view.region.selectedRegion == null) {
                         view.region.selectedRegion = region
                     }
@@ -113,7 +113,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditor<T : RunConfigurationB
 
     private fun CredentialProviderSelector.setSelectedCredential(id: String) {
         when (val identifier = credentialManager.getCredentialIdentifierById(id)) {
-            is ToolkitCredentialsIdentifier -> setSelectedCredentialsProvider(identifier)
+            is CredentialIdentifier -> setSelectedCredentialsProvider(identifier)
             else -> setSelectedInvalidCredentialsProvider(id)
         }
     }
