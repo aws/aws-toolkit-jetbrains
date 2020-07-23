@@ -12,7 +12,7 @@ import com.intellij.ui.TableUtil
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.StatusText
 
-abstract class AddRemoveLogs<T>(emptyTableMainText: String, addNewEntryText: String): ListTableWithButtons<T>() {
+abstract class AddRemoveLogs<T>(emptyTableMainText: String, addNewEntryText: String) : ListTableWithButtons<T>() {
     init {
         tableView.apply {
             emptyText.text = emptyTableMainText
