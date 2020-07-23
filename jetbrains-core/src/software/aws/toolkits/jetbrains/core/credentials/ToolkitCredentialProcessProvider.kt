@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -20,9 +21,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.RefreshResult
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.resources.message
 import java.time.Instant
 
@@ -61,7 +59,7 @@ class ToolkitCredentialProcessProvider internal constructor(
         val result = try {
             parser.parse(output.stdout)
         } catch (e: Exception) {
-            handleException(message("credentials.profile.credential_process.parse_exception_prefix"), output, e)
+            handleException(message("credentials.profile.credential_process.parse_exception_prefix"), output)
         }
         val credentials = when (val token = result.sessionToken) {
             null -> AwsBasicCredentials.create(result.accessKeyId, result.secretAccessKey)
@@ -70,17 +68,13 @@ class ToolkitCredentialProcessProvider internal constructor(
         return RefreshResult.builder(credentials).staleTime(result.expiration ?: Instant.MAX).build()
     }
 
-    private fun handleException(msgPrefix: String, process: ProcessOutput, exception: Exception? = null): Nothing {
+    private fun handleException(msgPrefix: String, process: ProcessOutput): Nothing {
         val errorOutput = process.stderr.takeIf { it.isNotBlank() }
-        val details = errorOutput ?: exception?.message?.takeIf { it.isNotBlank() } ?: exception?.cause?.message?.takeIf { it.isNotBlank() }
-        val msg = "$msgPrefix${details?.let { ": $it" } ?: ""}"
-        LOG.debug { process.stdout }
-        LOG.error(exception) { msg }
-        throw RuntimeException(msg, exception)
+        val msg = "$msgPrefix${errorOutput?.let { ": $it" } ?: ""}"
+        throw RuntimeException(msg)
     }
 
     internal companion object {
-        private val LOG = getLogger<ToolkitCredentialProcessProvider>()
         private const val DEFAULT_TIMEOUT = 30000
     }
 }
@@ -97,5 +91,10 @@ internal object DefaultCredentialProcessOutputParser : CredentialProcessOutputPa
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .registerModule(JavaTimeModule())
 
-    override fun parse(input: String): CredentialProcessOutput = mapper.readValue(input)
+    override fun parse(input: String): CredentialProcessOutput = try {
+        mapper.readValue(input)
+    } catch (e: JsonProcessingException) {
+        e.clearLocation()
+        throw e
+    }
 }

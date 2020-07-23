@@ -133,7 +133,11 @@ class ToolkitCredentialProcessProviderTest {
 
     @Test
     fun `spaces in commands are handled`() {
-        val cmd = if (SystemInfo.isWindows) { "dir" } else { "ls" }
+        val cmd = if (SystemInfo.isWindows) {
+            "dir"
+        } else {
+            "ls"
+        }
         val folderWithSpaceInItsName = folder.newFolder("hello world")
         val file = File(folderWithSpaceInItsName, "foo")
         file.writeText("bar")
@@ -152,7 +156,11 @@ class ToolkitCredentialProcessProviderTest {
 
     @Test
     fun `handles non-zero exit codes appropriately`() {
-        val cmd = if (SystemInfo.isWindows) { "dir" } else { "ls" }
+        val cmd = if (SystemInfo.isWindows) {
+            "dir"
+        } else {
+            "ls"
+        }
 
         val sut = createSut("$cmd non-existing-folder")
 
@@ -162,7 +170,11 @@ class ToolkitCredentialProcessProviderTest {
 
     @Test
     fun `has path`() {
-        val cmd = if (SystemInfo.isWindows) { "SET" } else { "env" }
+        val cmd = if (SystemInfo.isWindows) {
+            "SET"
+        } else {
+            "env"
+        }
         val sut = createSut(cmd)
         stubParser()
         sut.resolveCredentials()
@@ -176,13 +188,19 @@ class ToolkitCredentialProcessProviderTest {
 
     @Test
     fun `can handle parse exception`() {
-        assertThatThrownBy { ToolkitCredentialProcessProvider("echo hello").resolveCredentials() }.hasMessageContaining("Unrecognized token 'hello'")
+        assertThatThrownBy {
+            ToolkitCredentialProcessProvider("echo hello").resolveCredentials()
+        }.hasMessage("Failed to parse credential_process response")
     }
 
     @ExperimentalTime
     @Test
     fun `command times out after specified period`() {
-        val cmd = if (SystemInfo.isWindows) { "ping -n 10 127.0.0.1" } else { "sleep 5" }
+        val cmd = if (SystemInfo.isWindows) {
+            "ping -n 10 127.0.0.1"
+        } else {
+            "sleep 5"
+        }
         Registry.get("aws.credentialProcess.timeout").setValue(200)
         val time = measureTime {
             assertThatThrownBy { createSut(cmd).resolveCredentials() }.hasMessageContaining("timed out")

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.core.JsonProcessingException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.intellij.lang.annotations.Language
@@ -40,6 +41,13 @@ class CredentialProcessOutputParserTest {
     @Test
     fun `valid JSON missing required properties fails`() {
         assertThatThrownBy { sut.parse("""{"AccessKeyId": "foo"}""") }.hasMessageContaining("secretAccessKey")
+    }
+
+    @Test
+    fun `exception does not contain raw JSON data`() {
+        assertThatThrownBy { sut.parse("""{"hello": "world"}""") }.isInstanceOfSatisfying(JsonProcessingException::class.java) {
+            assertThat(it.message).doesNotContain("hello")
+        }
     }
 
     private fun runTest(@Language("JSON") input: String, expected: CredentialProcessOutput) {
