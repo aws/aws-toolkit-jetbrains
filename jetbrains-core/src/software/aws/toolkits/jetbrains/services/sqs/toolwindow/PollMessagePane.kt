@@ -65,7 +65,7 @@ class PollMessagePane(
                 it.attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
             }.attributes().getValue(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
 
-            messagesAvailableLabel.text += numMessages
+            messagesAvailableLabel.text = MESSAGES_AVAILABLE + numMessages
         } catch (e: Exception) {
             messagesAvailableLabel.text = message("sqs.failed_to_load_total")
         }
@@ -83,15 +83,18 @@ class PollMessagePane(
 
     private fun refreshTable() {
         messagesTable.showBusy(busy = true)
-        for (x in 0 until messagesTable.tableModel.rowCount) {
-            messagesTable.tableModel.removeRow(x)
+        // Remove all entries
+        while (messagesTable.tableModel.rowCount != 0) {
+            messagesTable.tableModel.removeRow(0)
         }
         requestMessages()
+        addTotal()
     }
 
     override fun dispose() {}
 
     private companion object {
         const val MAX_NUMBER_OF_MESSAGES = 10
+        const val MESSAGES_AVAILABLE = "Messages Available: "
     }
 }
