@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.openapi.Disposable
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
@@ -37,12 +38,17 @@ class MessagesTable : CoroutineScope by ApplicationThreadPoolScope("MessagesTabl
             emptyText.text = message("loading_resource.loading")
         }
 
-        // TableSpeedSearch(table)
+        TableSpeedSearch(table)
         component = ScrollPaneFactory.createScrollPane(table)
     }
 
     fun showBusy(busy: Boolean) {
         table.setPaintBusy(busy)
+        if (busy) {
+            table.emptyText.text = message("loading_resource.loading")
+        } else {
+            table.emptyText.text = message("sqs.message.no_messages")
+        }
     }
 
     override fun dispose() {}

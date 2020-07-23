@@ -3,13 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
+import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
-import software.aws.toolkits.resources.message
 
-class MessagesTableTest {
+class PollMessageUtilsTest {
+    @JvmField
+    @Rule
+    val projectRule = ProjectRule()
+
     @Test
     fun `Message mapped to columns as expected`() {
         val table = MessagesTable().apply {
@@ -35,16 +40,6 @@ class MessagesTableTest {
         assertThat(column1?.length).isEqualTo(message1.body().length)
         assertThat(column2?.length).isEqualTo(MAX_LENGTH)
         assertThat(column3?.length).isEqualTo(MAX_LENGTH)
-    }
-
-    @Test
-    fun `No messages polled`() {
-        val table = MessagesTable().apply {
-            tableModel.addRow()
-        }
-
-        assertThat(table.tableModel.items.size).isZero()
-        assertThat(table.table.emptyText.text).isEqualTo(message("loading_resource.loading"))
     }
 
     private companion object {

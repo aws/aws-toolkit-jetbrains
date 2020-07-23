@@ -12,7 +12,7 @@ import software.aws.toolkits.resources.message
 class SqsWindowUI(private val project: Project, val queue: Queue) {
     val mainPanel = JBTabbedPane().apply {
         this.add(message("sqs.queue.polled.messages"), PollMessagePane(project, queue).component)
-        this.add(message("sqs.send.message"), SendMessagePane(project, queue).component)
+        this.add(message("sqs.send.message"), SendMessagePane().component)
     }
 
     fun pollMessage() {

@@ -44,23 +44,31 @@ class PollMessagePane(
     }
 
     private fun requestMessages() {
-        val polledMessages: List<Message> = client.receiveMessage {
-            it.queueUrl(queue.queueUrl)
-            it.attributeNames(QueueAttributeName.ALL)
-            it.maxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
-        }.messages()
+        try {
+            val polledMessages: List<Message> = client.receiveMessage {
+                it.queueUrl(queue.queueUrl)
+                it.attributeNames(QueueAttributeName.ALL)
+                it.maxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
+            }.messages()
 
-        polledMessages.forEach { messagesTable.tableModel.addRow(it) }
-        messagesTable.showBusy(busy = false)
+            polledMessages.forEach { messagesTable.tableModel.addRow(it) }
+            messagesTable.showBusy(busy = false)
+        } catch (e: Exception) {
+            messagesTable.table.emptyText.text = message("sqs.failed_to_poll_messages")
+        }
     }
 
     private fun addTotal() {
-        val numMessages = client.getQueueAttributes {
-            it.queueUrl(queue.queueUrl)
-            it.attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
-        }.attributes().getValue(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
+        try {
+            val numMessages = client.getQueueAttributes {
+                it.queueUrl(queue.queueUrl)
+                it.attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
+            }.attributes().getValue(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
 
-        messagesAvailableLabel.text += numMessages
+            messagesAvailableLabel.text += numMessages
+        } catch (e: Exception) {
+            messagesAvailableLabel.text = message("sqs.failed_to_load_total")
+        }
     }
 
     private fun addToolbar() {
@@ -74,6 +82,7 @@ class PollMessagePane(
     }
 
     private fun refreshTable() {
+        messagesTable.showBusy(busy = true)
         for (x in 0 until messagesTable.tableModel.rowCount) {
             messagesTable.tableModel.removeRow(x)
         }
