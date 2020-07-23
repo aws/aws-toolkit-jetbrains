@@ -1,44 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="software.aws.toolkits.jetbrains.services.sqs.toolwindow.PollMessagePane">
   <grid id="27dc6" binding="component" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="10" left="10" bottom="10" right="10"/>
+    <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="20" width="784" height="470"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <scrollpane id="14d1a">
-        <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <enabled value="false"/>
-        </properties>
-        <border type="none">
-          <font/>
-          <title-color color="-4473925"/>
-        </border>
-        <children>
-          <component id="75715" class="javax.swing.JTable" binding="messagesTable">
-            <constraints/>
-            <properties>
-              <autoCreateRowSorter value="true"/>
-              <enabled value="true"/>
-              <fillsViewportHeight value="true"/>
-            </properties>
-            <clientProperties>
-              <JTable.autoStartsEdit class="java.lang.Boolean" value="false"/>
-            </clientProperties>
-          </component>
-        </children>
-      </scrollpane>
       <component id="ae7d4" class="javax.swing.JLabel" binding="messagesAvailableLabel">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Messages Available: "/>
+        </properties>
+      </component>
+      <component id="874f5" class="com.intellij.openapi.ui.SimpleToolWindowPanel" binding="tablePanel" custom-create="true">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <vertical value="false"/>
         </properties>
       </component>
     </children>
