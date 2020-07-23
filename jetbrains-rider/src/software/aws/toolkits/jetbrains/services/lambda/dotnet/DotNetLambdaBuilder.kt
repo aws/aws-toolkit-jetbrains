@@ -19,7 +19,5 @@ class DotNetLambdaBuilder : LambdaBuilder() {
             ?: throw IllegalStateException(message("lambda.run.configuration.handler_root_not_found"))
     }
 
-    override fun getBuildDirectory(module: Module): Path {
-        return Paths.get(module.project.solutionDirectory.path, ".aws-sam", "build")
-    }
+    override fun getBuildDirectory(module: Module): Path = Paths.get(module.project.solutionDirectory.path, ".aws-sam", "build")
 }
