@@ -25,8 +25,7 @@ class QueryingLogGroupsTest {
     @Rule
     val projectRule = JavaCodeInsightTestFixtureRule()
     private val qEditorValidator=QueryEditorValidator()
-
-    private lateinit var view: Queryeditor
+    private lateinit var view: QueryEditor
 
     @Before
     fun setup() {
@@ -37,12 +36,10 @@ class QueryingLogGroupsTest {
                 ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
                 ProjectRootManager.getInstance(projectRule.project).projectSdk = sdk
             }
-            view=Queryeditor(project)
-
+            view=QueryEditor(project)
         }
-
-
     }
+
     @Test
     fun absoluteOrRelativeTimeSelected(){
         view.absoluteTimeRadioButton.isSelected=false
@@ -53,25 +50,25 @@ class QueryingLogGroupsTest {
     @Test
     fun startDateNotSelected(){
         view.absoluteTimeRadioButton.isSelected=true
-        view.qstartDate.date=null
+        view.qStartDate.date=null
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start Date must be specified")
     }
 
     @Test
     fun endDateNotSelected(){
         view.absoluteTimeRadioButton.isSelected=true
-        view.qstartDate.date= Calendar.getInstance().time
-        view.qendDate.date=null
+        view.qStartDate.date= Calendar.getInstance().time
+        view.qEndDate.date=null
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("End Date must be specified")
     }
 
     @Test
     fun startDateBeforeEndDate(){
         view.absoluteTimeRadioButton.isSelected=true
-        view.qstartDate.date= Calendar.getInstance().time
+        view.qStartDate.date= Calendar.getInstance().time
         val cal=Calendar.getInstance()
         cal.add(Calendar.DATE,-1)
-        view.qendDate.date=cal.time
+        view.qEndDate.date=cal.time
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start date must be before End date")
     }
 
@@ -83,30 +80,29 @@ class QueryingLogGroupsTest {
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Number must be specified")
     }
 
-
     @Test
     fun searchOrQuerySelected(){
         view.relativeTimeRadioButton.isSelected=true
-        view.qstartDate.date=null
-        view.qendDate.date=null
+        view.qStartDate.date=null
+        view.qEndDate.date=null
         view.absoluteTimeRadioButton.isSelected=false
         view.RelativeTimeUnit.selectedItem="Minutes"
         view.RelativeTimeNumber.text="1"
         view.queryLogGroupsRadioButton.isSelected=false
-        view.searchterm.isSelected=false
+        view.searchTerm.isSelected=false
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be entered")
     }
 
     @Test
     fun searchTermSpecified(){
         view.relativeTimeRadioButton.isSelected=true
-        view.qstartDate.date=null
-        view.qendDate.date=null
+        view.qStartDate.date=null
+        view.qEndDate.date=null
         view.absoluteTimeRadioButton.isSelected=false
         view.RelativeTimeUnit.selectedItem="Minutes"
         view.RelativeTimeNumber.text="1"
         view.queryLogGroupsRadioButton.isSelected=false
-        view.searchterm.isSelected=true
+        view.searchTerm.isSelected=true
         view.querySearchTerm.text=""
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Search Term must be specified")
     }
@@ -114,16 +110,14 @@ class QueryingLogGroupsTest {
     @Test
     fun querySpecified(){
         view.relativeTimeRadioButton.isSelected=true
-        view.qstartDate.date=null
-        view.qendDate.date=null
+        view.qStartDate.date=null
+        view.qEndDate.date=null
         view.absoluteTimeRadioButton.isSelected=false
         view.RelativeTimeUnit.selectedItem="Minutes"
         view.RelativeTimeNumber.text="1"
         view.queryLogGroupsRadioButton.isSelected=true
-        view.searchterm.isSelected=false
+        view.searchTerm.isSelected=false
         view.queryBox.text=""
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be specified")
     }
-
-
 }

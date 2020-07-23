@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
-import com.intellij.ui.table.TableView
 import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.openapi.project.Project
 import com.intellij.util.ui.ListTableModel
 import software.aws.toolkits.resources.message
 import javax.swing.table.TableCellEditor
 
-class AddRemoveLogGroupTable(project: Project): ARLogGroupTable<SelectedLogGroups> (emptyTableMainText = "No log groups found",
+class AddRemoveLogGroupTable(project: Project) : AddRemoveLogs<SelectedLogGroups> (emptyTableMainText = "No log groups found",
     addNewEntryText = "Add log groups") {
     override fun cloneElement(variable: SelectedLogGroups): SelectedLogGroups = variable.copy()
     override fun createElement(): SelectedLogGroups = SelectedLogGroups()
@@ -40,11 +39,8 @@ class AddRemoveLogGroupTable(project: Project): ARLogGroupTable<SelectedLogGroup
 
         override fun isCellEditable(item: SelectedLogGroups?): Boolean = false
         override fun getDescription(element: SelectedLogGroups?): String? = null
-
     }
 
-    override fun canDeleteElement(selection: SelectedLogGroups?): Boolean =true
+    override fun canDeleteElement(selection: SelectedLogGroups?): Boolean = true
     override fun isEmpty(element: SelectedLogGroups): Boolean = element.log_groups.isNullOrEmpty()
-
 }
-

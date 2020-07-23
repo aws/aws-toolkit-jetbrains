@@ -15,19 +15,19 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-public class Queryeditor {
+public class QueryEditor {
     public JRadioButton absoluteTimeRadioButton;
     public JRadioButton relativeTimeRadioButton;
-    public JRadioButton searchterm;
+    public JRadioButton searchTerm;
     public JTextField querySearchTerm;
     public JRadioButton queryLogGroupsRadioButton;
     private JButton saveQueryButton;
     private JButton retrieveSavedQueriesButton;
     private SimpleToolWindowPanel tablePanel;
     public JTextArea queryBox;
-    private JLabel Loggrouplabel;
-    public JXDatePicker qstartDate;
-    public JXDatePicker qendDate;
+    private JLabel LogGroupLabel;
+    public JXDatePicker qStartDate;
+    public JXDatePicker qEndDate;
     public JPanel qpanel;
     public JComboBox RelativeTimeUnit;
     public JTextField RelativeTimeNumber;
@@ -35,14 +35,14 @@ public class Queryeditor {
     public ButtonGroup TimeRange;
     AddRemoveLogGroupTable a;
 
-    Queryeditor(Project project){
+    QueryEditor(Project project){
         this.project=project;
         RelativeTimeUnit.addItem("Minutes");
         RelativeTimeUnit.addItem("Hours");
         RelativeTimeUnit.addItem("Days");
         RelativeTimeUnit.addItem("Weeks");
-        qstartDate.setEnabled(false);
-        qendDate.setEnabled(false);
+        qStartDate.setEnabled(false);
+        qEndDate.setEnabled(false);
         RelativeTimeNumber.setEnabled(false);
         RelativeTimeUnit.setEnabled(false);
         querySearchTerm.setEnabled(false);
