@@ -8,17 +8,14 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
-import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.services.sqs.model.Message
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JTable
 
-class MessagesTable : CoroutineScope by ApplicationThreadPoolScope("MessagesTable"), Disposable {
+class MessagesTable : Disposable {
     val component: JComponent
     val table: TableView<Message>
-
     val tableModel = ListTableModel<Message>(
         arrayOf(
             MessageIdColumn(),

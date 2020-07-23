@@ -22,16 +22,12 @@ class MessageIdColumn : ColumnInfo<Message, String>(message("sqs.message.message
 
 class MessageBodyColumn : ColumnInfo<Message, String>(message("sqs.message.message_body")) {
     private val renderer = WrappingCellRenderer(wrapOnSelection = true, toggleableWrap = false)
-    fun wrap() {
-        renderer.wrap = true
-    }
-
     override fun valueOf(item: Message?): String? = StringUtils.abbreviate(item?.body(), MAX_LENGTH_OF_MESSAGES)
     override fun isCellEditable(item: Message?): Boolean = false
     override fun getRenderer(item: Message?): TableCellRenderer? = renderer
 
     private companion object {
-        // Truncated the message body to show up to 1KB, as it can be up to 256KB in size. Cannot limit the size through API.
+        // Truncated the message body to show up to 1KB, as it can be up to 256KB in size. Cannot limit the retrieved message size through API.
         const val MAX_LENGTH_OF_MESSAGES = 1024
     }
 }
@@ -47,7 +43,7 @@ class MessageDateColumn : ColumnInfo<Message, String>(message("sqs.message.times
     private val renderer = ResizingColumnRenderer(showSeconds = true)
     override fun valueOf(item: Message): String {
         if (item !is Message) {
-            throw IllegalArgumentException(message("sqs.message.polling.error"))
+            throw IllegalArgumentException(message("sqs.failed_to_poll_messages"))
         }
         return item.attributes().getValue(MessageSystemAttributeName.SENT_TIMESTAMP)
     }

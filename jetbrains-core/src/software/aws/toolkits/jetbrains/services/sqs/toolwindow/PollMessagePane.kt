@@ -81,6 +81,8 @@ class PollMessagePane(
         tablePanel.toolbar = ActionManager.getInstance().createActionToolbar("PollMessagePane", actionGroup, false).component
     }
 
+    // TODO: Add message table actions
+
     private fun refreshTable() {
         messagesTable.showBusy(busy = true)
         // Remove all entries
