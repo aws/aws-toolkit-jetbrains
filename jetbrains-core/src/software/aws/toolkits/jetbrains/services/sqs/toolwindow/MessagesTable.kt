@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.openapi.Disposable
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.table.TableView
@@ -13,7 +12,7 @@ import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JTable
 
-class MessagesTable : Disposable {
+class MessagesTable {
     val component: JComponent
     val table: TableView<Message>
     val tableModel = ListTableModel<Message>(
@@ -47,6 +46,4 @@ class MessagesTable : Disposable {
             table.emptyText.text = message("sqs.message.no_messages")
         }
     }
-
-    override fun dispose() {}
 }

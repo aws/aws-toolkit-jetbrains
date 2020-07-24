@@ -3,7 +3,6 @@
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -14,7 +13,6 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
@@ -22,13 +20,12 @@ import javax.swing.JPanel
 
 class PollMessagePane(
     private val project: Project,
+    private val client: SqsClient,
     private val queue: Queue
-) : Disposable {
+) {
     lateinit var component: JPanel
     lateinit var messagesAvailableLabel: JLabel
     lateinit var tablePanel: SimpleToolWindowPanel
-
-    private val client: SqsClient = project.awsClient()
     val messagesTable = MessagesTable()
 
     private fun createUIComponents() {
@@ -65,7 +62,7 @@ class PollMessagePane(
                 it.attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
             }.attributes().getValue(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
 
-            messagesAvailableLabel.text = MESSAGES_AVAILABLE + numMessages
+            messagesAvailableLabel.text = message("sqs.messages.available.text") + numMessages
         } catch (e: Exception) {
             messagesAvailableLabel.text = message("sqs.failed_to_load_total")
         }
@@ -93,10 +90,7 @@ class PollMessagePane(
         addTotal()
     }
 
-    override fun dispose() {}
-
     private companion object {
         const val MAX_NUMBER_OF_MESSAGES = 10
-        const val MESSAGES_AVAILABLE = "Messages Available: "
     }
 }

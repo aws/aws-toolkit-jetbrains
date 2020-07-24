@@ -43,13 +43,13 @@ class PollMessageUtilsTest {
     }
 
     private companion object {
-        private val MAX_LENGTH = 1024
-        private val message1: Message = Message.builder()
+        val MAX_LENGTH = 1024
+        val message1: Message = Message.builder()
             .body("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             .messageId("AAAAAAAAAAA")
             .attributes(mapOf(Pair(MessageSystemAttributeName.SENDER_ID, "1234567890:test1"), Pair(MessageSystemAttributeName.SENT_TIMESTAMP, "111111111")))
             .build()
-        private val message2: Message = Message.builder()
+        val message2: Message = Message.builder()
             .body("VJBIGiHnyegmcoGOEqS7EfHB8xU2CTyUHuJOPDap1ThwWFJ3WbdBlj73YGJtWQM8FWYeBxxUzeZOq7kW9WuYQGoFZ923Gm1jz78N9RnX8Z7V8mLMbA32CjBopsmUYKACH3" +
                 "rOFr4bGwduwTJNfbVrmOy1hENDXNf1j2sHU6XtP9SQ5hDbk6AFp4CRTVnvShYH8n9zEZ3Y02pjNUSuW4kasF3PG9It8uanGHkjjUzNQIBifk4GH0JLkXJPAK3ecn3snKRaZzeVoCQ9" +
                 "rhJishhmXiG9nsPCN98lwcaNJs5BCcVlOrqpzvSi7xS6k2XTzVoF22itZ571QBecnv2Nlz2GC4W88hdnzX51SZs034yxOqCIFRNldqhXh7JDl5hAzkQ99CqgRnJbCszJsstPkUF0Ro" +
@@ -61,7 +61,7 @@ class PollMessageUtilsTest {
             .messageId("BBBBBBBBBBB")
             .attributes(mapOf(Pair(MessageSystemAttributeName.SENDER_ID, "1234567890:test2"), Pair(MessageSystemAttributeName.SENT_TIMESTAMP, "222222222")))
             .build()
-        private val message3: Message = Message.builder()
+        val message3: Message = Message.builder()
             .body("FVJBIGiHnyegmcoGOEqS7EfHB8xU2CTyUHuJOPDap1ThwWFJ3WbdBlj73YGJtWQM8FWYeBxxUzeZOq7kW9WuYQGoFZ923Gm1jz78N9RnX8Z7V8mLMbA32CjBopsmUYKACH" +
                 "3rOFr4bGwduwTJNfbVrmOy1hENDXNf1j2sHU6XtP9SQ5hDbk6AFp4CRTVnvShYH8n9zEZ3Y02pjNUSuW4kasF3PG9It8uanGHkjjUzNQIBifk4GH0JLkXJPAK3ecn3snKRaZzeVoCQ" +
                 "9rhJishhmXiG9nsPCN98lwcaNJs5BCcVlOrqpzvSi7xS6k2XTzVoF22itZ571QBecnv2Nlz2GC4W88hdnzX51SZs034yxOqCIFRNldqhXh7JDl5hAzkQ99CqgRnJbCszJsstPkUF0R" +

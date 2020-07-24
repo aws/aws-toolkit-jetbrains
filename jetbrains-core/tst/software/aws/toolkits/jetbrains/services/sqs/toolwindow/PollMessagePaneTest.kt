@@ -43,7 +43,7 @@ class PollMessagePaneTest {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
             ReceiveMessageResponse.builder().messages(message).build()
         )
-        val pane = PollMessagePane(projectRule.project, queue)
+        val pane = PollMessagePane(projectRule.project, client, queue)
         val model = pane.messagesTable.tableModel
 
         assertThat(model.items.size).isOne()
@@ -58,7 +58,7 @@ class PollMessagePaneTest {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
             ReceiveMessageResponse.builder().build()
         )
-        val pane = PollMessagePane(projectRule.project, queue)
+        val pane = PollMessagePane(projectRule.project, client, queue)
 
         assertThat(pane.messagesTable.tableModel.items.size).isZero()
         assertThat(pane.messagesTable.table.emptyText.text).isEqualTo(message("sqs.message.no_messages"))
@@ -69,7 +69,7 @@ class PollMessagePaneTest {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).then {
             throw IllegalStateException("Network Error")
         }
-        val pane = PollMessagePane(projectRule.project, queue)
+        val pane = PollMessagePane(projectRule.project, client, queue)
 
         assertThat(pane.messagesTable.tableModel.items.size).isZero()
         assertThat(pane.messagesTable.table.emptyText.text).isEqualTo(message("sqs.failed_to_poll_messages"))
@@ -80,7 +80,7 @@ class PollMessagePaneTest {
         whenever(client.getQueueAttributes(Mockito.any<GetQueueAttributesRequest>())).thenReturn(
             GetQueueAttributesResponse.builder().attributes(mutableMapOf(Pair(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES, "10"))).build()
         )
-        val pane = PollMessagePane(projectRule.project, queue)
+        val pane = PollMessagePane(projectRule.project, client, queue)
 
         assertThat(pane.messagesAvailableLabel.text).isEqualTo("Messages Available: 10")
     }
@@ -90,7 +90,7 @@ class PollMessagePaneTest {
         whenever(client.getQueueAttributes(Mockito.any<GetQueueAttributesRequest>())).then {
             throw IllegalStateException("Network Error")
         }
-        val pane = PollMessagePane(projectRule.project, queue)
+        val pane = PollMessagePane(projectRule.project, client, queue)
 
         assertThat(pane.messagesAvailableLabel.text).isEqualTo(message("sqs.failed_to_load_total"))
     }

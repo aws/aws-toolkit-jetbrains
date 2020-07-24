@@ -205,16 +205,13 @@ class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val tog
     }
 }
 
-// Generalized the renderer
 class ResizingColumnRenderer(showSeconds: Boolean? = null) : TableCellRenderer {
     private val defaultRenderer = DefaultTableCellRenderer()
     private val formatter: SyncDateFormat? =
-        if (showSeconds != null) {
-            if (showSeconds) {
-                SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
-            } else {
-                DateFormatUtil.getDateTimeFormat()
-            }
+        if (showSeconds == true) {
+            SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+        } else if (showSeconds == false) {
+            DateFormatUtil.getDateTimeFormat()
         } else {
             null
         }
