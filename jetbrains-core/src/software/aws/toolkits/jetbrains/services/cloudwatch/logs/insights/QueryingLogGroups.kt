@@ -22,5 +22,6 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
             .build()
         val response = client.startQuery(request)
         val qid = response.queryId()
+        // TODO: Get the results of the query with qid
     }
 }

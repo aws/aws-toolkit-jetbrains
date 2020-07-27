@@ -22,7 +22,7 @@ class QueryingLogGroupsTest {
     @JvmField
     @Rule
     val projectRule = JavaCodeInsightTestFixtureRule()
-    private val qEditorValidator = QueryEditorValidator()
+    private val qEditorValidator = QueryEditorValidator
     private lateinit var view: QueryEditor
 
     @Before
@@ -73,8 +73,8 @@ class QueryingLogGroupsTest {
     @Test
     fun relativeTimeUnitSelected() {
         view.relativeTimeRadioButton.isSelected = true
-        view.RelativeTimeUnit.selectedItem = "Minutes"
-        view.RelativeTimeNumber.text = ""
+        view.relativeTimeUnit.selectedItem = "Minutes"
+        view.relativeTimeNumber.text = ""
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Number must be specified")
     }
 
@@ -84,8 +84,8 @@ class QueryingLogGroupsTest {
         view.qStartDate.date = null
         view.qEndDate.date = null
         view.absoluteTimeRadioButton.isSelected = false
-        view.RelativeTimeUnit.selectedItem = "Minutes"
-        view.RelativeTimeNumber.text = "1"
+        view.relativeTimeUnit.selectedItem = "Minutes"
+        view.relativeTimeNumber.text = "1"
         view.queryLogGroupsRadioButton.isSelected = false
         view.searchTerm.isSelected = false
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be entered")
@@ -97,8 +97,8 @@ class QueryingLogGroupsTest {
         view.qStartDate.date = null
         view.qEndDate.date = null
         view.absoluteTimeRadioButton.isSelected = false
-        view.RelativeTimeUnit.selectedItem = "Minutes"
-        view.RelativeTimeNumber.text = "1"
+        view.relativeTimeUnit.selectedItem = "Minutes"
+        view.relativeTimeNumber.text = "1"
         view.queryLogGroupsRadioButton.isSelected = false
         view.searchTerm.isSelected = true
         view.querySearchTerm.text = ""
@@ -111,11 +111,41 @@ class QueryingLogGroupsTest {
         view.qStartDate.date = null
         view.qEndDate.date = null
         view.absoluteTimeRadioButton.isSelected = false
-        view.RelativeTimeUnit.selectedItem = "Minutes"
-        view.RelativeTimeNumber.text = "1"
+        view.relativeTimeUnit.selectedItem = "Minutes"
+        view.relativeTimeNumber.text = "1"
         view.queryLogGroupsRadioButton.isSelected = true
         view.searchTerm.isSelected = false
         view.queryBox.text = ""
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be specified")
+    }
+
+    @Test
+    fun completePath1() {
+        view.relativeTimeRadioButton.isSelected = true
+        view.qStartDate.date = null
+        view.qEndDate.date = null
+        view.absoluteTimeRadioButton.isSelected = false
+        view.relativeTimeUnit.selectedItem = "Minutes"
+        view.relativeTimeNumber.text = "1"
+        view.queryLogGroupsRadioButton.isSelected = true
+        view.searchTerm.isSelected = false
+        view.queryBox.text = "fields @timestamp"
+        assertThat(qEditorValidator.validateEditorEntries(view)?.message).isNull()
+    }
+
+    @Test
+    fun completePath2() {
+        view.relativeTimeRadioButton.isSelected = false
+        view.qEndDate.date = Calendar.getInstance().time
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DATE, -1)
+        view.qStartDate.date = cal.time
+        view.absoluteTimeRadioButton.isSelected = true
+        view.relativeTimeUnit.selectedItem = "Minutes"
+        view.relativeTimeNumber.text = ""
+        view.queryLogGroupsRadioButton.isSelected = false
+        view.searchTerm.isSelected = true
+        view.querySearchTerm.text = "Error"
+        assertThat(qEditorValidator.validateEditorEntries(view)?.message).isNull()
     }
 }

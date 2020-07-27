@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import org.jdesktop.swingx.JXDatePicker;
+import com.michaelbaranov.microba.calendar.DatePicker;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -15,48 +15,51 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+
 public class QueryEditor {
     public JRadioButton absoluteTimeRadioButton;
     public JRadioButton relativeTimeRadioButton;
     public JRadioButton searchTerm;
     public JTextField querySearchTerm;
     public JRadioButton queryLogGroupsRadioButton;
-    private JButton saveQueryButton;
+    public JButton saveQueryButton;
     private JButton retrieveSavedQueriesButton;
     private SimpleToolWindowPanel tablePanel;
     public JTextArea queryBox;
     private JLabel LogGroupLabel;
-    public JXDatePicker qStartDate;
-    public JXDatePicker qEndDate;
-    public JPanel qpanel;
-    public JComboBox RelativeTimeUnit;
-    public JTextField RelativeTimeNumber;
+    public DatePicker qEndDate;
+    public JPanel queryEditorBasePanel;
+    public JComboBox relativeTimeUnit;
+    public JTextField relativeTimeNumber;
+    public DatePicker qStartDate;
     private final Project project;
     public ButtonGroup TimeRange;
-    AddRemoveLogGroupTable a;
+    AddRemoveLogGroupTable showLogGroupTable;
 
-    QueryEditor(Project project){
-        this.project=project;
-        RelativeTimeUnit.addItem("Minutes");
-        RelativeTimeUnit.addItem("Hours");
-        RelativeTimeUnit.addItem("Days");
-        RelativeTimeUnit.addItem("Weeks");
+
+    QueryEditor(Project project) {
+        this.project = project;
+        relativeTimeUnit.addItem("Minutes");
+        relativeTimeUnit.addItem("Hours");
+        relativeTimeUnit.addItem("Days");
+        relativeTimeUnit.addItem("Weeks");
         qStartDate.setEnabled(false);
         qEndDate.setEnabled(false);
-        RelativeTimeNumber.setEnabled(false);
-        RelativeTimeUnit.setEnabled(false);
+        relativeTimeNumber.setEnabled(false);
+        relativeTimeUnit.setEnabled(false);
         querySearchTerm.setEnabled(false);
         queryBox.setEnabled(false);
+
     }
     private void initArLogGroupTable(){
-        a.getTableView().getListTableModel();
-        a.getSelLogGroups();
+        showLogGroupTable.getTableView().getListTableModel();
+        showLogGroupTable.getSelLogGroups();
     }
     private void createUIComponents() {
         // TODO: place custom component creation code here
-        tablePanel=new SimpleToolWindowPanel(false,true);
-        this.a=new AddRemoveLogGroupTable(project);
+        tablePanel = new SimpleToolWindowPanel(false,true);
+        this.showLogGroupTable = new AddRemoveLogGroupTable(project);
         initArLogGroupTable();
-        tablePanel.setContent(a.getComponent());
+        tablePanel.setContent(showLogGroupTable.getComponent());
     }
 }

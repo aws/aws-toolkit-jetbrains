@@ -8,16 +8,15 @@ import com.intellij.util.ui.ListTableModel
 import software.aws.toolkits.resources.message
 import javax.swing.table.TableCellEditor
 
-class AddRemoveLogGroupTable(project: Project) : AddRemoveLogs<SelectedLogGroups> (emptyTableMainText = "No log groups found",
-    addNewEntryText = "Add log groups") {
+class AddRemoveLogGroupTable(project: Project) : AddRemoveLogs<SelectedLogGroups> () {
     override fun cloneElement(variable: SelectedLogGroups): SelectedLogGroups = variable.copy()
     override fun createElement(): SelectedLogGroups = SelectedLogGroups()
     fun getSelLogGroups(): List<SelectedLogGroups> = elements.toList()
     override fun createListModel(): ListTableModel<*> = ListTableModel<SelectedLogGroups>(
         StringColInfo(
-            message("cloudwatch.logs.loggq"),
-            { it.log_groups },
-            { mapping, value -> mapping.log_groups = value }
+            message("cloudwatch.logs.selected_log_groups"),
+            { it.logGroups },
+            { mapping, value -> mapping.logGroups = value }
         )
     )
 
@@ -42,5 +41,5 @@ class AddRemoveLogGroupTable(project: Project) : AddRemoveLogs<SelectedLogGroups
     }
 
     override fun canDeleteElement(selection: SelectedLogGroups?): Boolean = true
-    override fun isEmpty(element: SelectedLogGroups): Boolean = element.log_groups.isNullOrEmpty()
+    override fun isEmpty(element: SelectedLogGroups): Boolean = element.logGroups.isNullOrEmpty()
 }
