@@ -207,14 +207,11 @@ class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val tog
 
 class ResizingColumnRenderer(showSeconds: Boolean? = null) : TableCellRenderer {
     private val defaultRenderer = DefaultTableCellRenderer()
-    private val formatter: SyncDateFormat? =
-        if (showSeconds == true) {
-            SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
-        } else if (showSeconds == false) {
-            DateFormatUtil.getDateTimeFormat()
-        } else {
-            null
-        }
+    private val formatter: SyncDateFormat? = when (showSeconds) {
+        true -> SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+        false -> DateFormatUtil.getDateTimeFormat()
+        else -> null
+    }
 
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         // This wrapper will let us force the component to be at the top instead of in the middle for linewraps
