@@ -8,7 +8,7 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="64a37" class="javax.swing.JLabel" binding="LogGroupLabel">
+      <component id="64a37" class="javax.swing.JLabel" binding="logGroupLabel">
         <constraints>
           <grid row="0" column="1" row-span="1" col-span="7" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -152,13 +152,13 @@
         </constraints>
         <properties/>
       </component>
-      <component id="3a2cb" class="com.michaelbaranov.microba.calendar.DatePicker" binding="StartDate">
+      <component id="3a2cb" class="com.michaelbaranov.microba.calendar.DatePicker" binding="startDate">
         <constraints>
           <grid row="3" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
       </component>
-      <component id="c0994" class="com.michaelbaranov.microba.calendar.DatePicker" binding="EndDate">
+      <component id="c0994" class="com.michaelbaranov.microba.calendar.DatePicker" binding="endDate">
         <constraints>
           <grid row="3" column="6" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>

@@ -31,14 +31,14 @@ class QueryEditorDialog(
         super.init()
         title = "Query Log Groups"
         view.absoluteTimeRadioButton.addActionListener {
-            view.StartDate.isEnabled = true
-            view.EndDate.isEnabled = true
+            view.startDate.isEnabled = true
+            view.endDate.isEnabled = true
             view.relativeTimeNumber.isEnabled = false
             view.relativeTimeUnit.setEnabled(false)
         }
         view.relativeTimeRadioButton.addActionListener {
-            view.StartDate.isEnabled = false
-            view.EndDate.isEnabled = false
+            view.startDate.isEnabled = false
+            view.endDate.isEnabled = false
             view.relativeTimeNumber.isEnabled = true
             view.relativeTimeUnit.setEnabled(true)
         }
@@ -106,8 +106,8 @@ class QueryEditorDialog(
     private fun getFunctionDetails(): QueryDetails = QueryDetails(
         logGroupName = lGroupName,
         absoluteTimeSelected = view.absoluteTimeRadioButton.isSelected,
-        qStartDateAbsolute = view.StartDate.date,
-        qEndDateAbsolute = view.EndDate.date,
+        qStartDateAbsolute = view.startDate.date,
+        qEndDateAbsolute = view.endDate.date,
         relativeTimeSelected = view.relativeTimeRadioButton.isSelected,
         qRelativeTimeUnit = view.relativeTimeUnit.selectedItem.toString(),
         qRelativeTimeNumber = view.relativeTimeNumber.text,
@@ -133,14 +133,14 @@ object QueryEditorValidator {
     fun validateEditorEntries(view: QueryEditor): ValidationInfo? {
         if (!view.absoluteTimeRadioButton.isSelected && !view.relativeTimeRadioButton.isSelected) {
         return ValidationInfo(message("cloudwatch.logs.validation.timerange"), view.absoluteTimeRadioButton) }
-        if (view.absoluteTimeRadioButton.isSelected && view.StartDate.date == null) {
-            return ValidationInfo(message("cloudwatch.logs.no_start_date"), view.StartDate) }
-        if (view.absoluteTimeRadioButton.isSelected && view.EndDate.date == null) {
-            return ValidationInfo(message("cloudwatch.logs.no_end_date"), view.EndDate) }
+        if (view.absoluteTimeRadioButton.isSelected && view.startDate.date == null) {
+            return ValidationInfo(message("cloudwatch.logs.no_start_date"), view.startDate) }
+        if (view.absoluteTimeRadioButton.isSelected && view.endDate.date == null) {
+            return ValidationInfo(message("cloudwatch.logs.no_end_date"), view.endDate) }
         if (view.relativeTimeRadioButton.isSelected && view.relativeTimeNumber.text.isEmpty()) {
             return ValidationInfo(message("cloudwatch.logs.no_relative_time_number"), view.relativeTimeNumber) }
-        if (view.absoluteTimeRadioButton.isSelected && view.StartDate.date > view.EndDate.date) {
-            return ValidationInfo(message("cloudwatch.logs.compare.start.end.date"), view.StartDate) }
+        if (view.absoluteTimeRadioButton.isSelected && view.startDate.date > view.endDate.date) {
+            return ValidationInfo(message("cloudwatch.logs.compare.start.end.date"), view.startDate) }
         if (!view.queryLogGroupsRadioButton.isSelected && !view.searchTerm.isSelected) {
             return ValidationInfo(message("cloudwatch.logs.no_query_selected"), view.searchTerm) }
         if (view.queryLogGroupsRadioButton.isSelected && view.queryBox.text.isEmpty()) {

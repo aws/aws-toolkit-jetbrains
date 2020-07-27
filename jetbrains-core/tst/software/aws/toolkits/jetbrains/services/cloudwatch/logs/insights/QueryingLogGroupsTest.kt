@@ -48,25 +48,25 @@ class QueryingLogGroupsTest {
     @Test
     fun startDateNotSelected() {
         view.absoluteTimeRadioButton.isSelected = true
-        view.StartDate.date = null
+        view.startDate.date = null
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start Date must be specified")
     }
 
     @Test
     fun endDateNotSelected() {
         view.absoluteTimeRadioButton.isSelected = true
-        view.StartDate.date = Calendar.getInstance().time
-        view.EndDate.date = null
+        view.startDate.date = Calendar.getInstance().time
+        view.endDate.date = null
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("End Date must be specified")
     }
 
     @Test
     fun startDateBeforeEndDate() {
         view.absoluteTimeRadioButton.isSelected = true
-        view.StartDate.date = Calendar.getInstance().time
+        view.startDate.date = Calendar.getInstance().time
         val cal = Calendar.getInstance()
         cal.add(Calendar.DATE, -1)
-        view.EndDate.date = cal.time
+        view.endDate.date = cal.time
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start date must be before End date")
     }
 
@@ -81,8 +81,8 @@ class QueryingLogGroupsTest {
     @Test
     fun searchOrQuerySelected() {
         view.relativeTimeRadioButton.isSelected = true
-        view.StartDate.date = null
-        view.EndDate.date = null
+        view.startDate.date = null
+        view.endDate.date = null
         view.absoluteTimeRadioButton.isSelected = false
         view.relativeTimeUnit.selectedItem = "Minutes"
         view.relativeTimeNumber.text = "1"
@@ -94,8 +94,8 @@ class QueryingLogGroupsTest {
     @Test
     fun searchTermSpecified() {
         view.relativeTimeRadioButton.isSelected = true
-        view.StartDate.date = null
-        view.EndDate.date = null
+        view.startDate.date = null
+        view.endDate.date = null
         view.absoluteTimeRadioButton.isSelected = false
         view.relativeTimeUnit.selectedItem = "Minutes"
         view.relativeTimeNumber.text = "1"
@@ -108,8 +108,8 @@ class QueryingLogGroupsTest {
     @Test
     fun querySpecified() {
         view.relativeTimeRadioButton.isSelected = true
-        view.StartDate.date = null
-        view.EndDate.date = null
+        view.startDate.date = null
+        view.endDate.date = null
         view.absoluteTimeRadioButton.isSelected = false
         view.relativeTimeUnit.selectedItem = "Minutes"
         view.relativeTimeNumber.text = "1"
@@ -122,8 +122,8 @@ class QueryingLogGroupsTest {
     @Test
     fun completePath1() {
         view.relativeTimeRadioButton.isSelected = true
-        view.StartDate.date = null
-        view.EndDate.date = null
+        view.startDate.date = null
+        view.endDate.date = null
         view.absoluteTimeRadioButton.isSelected = false
         view.relativeTimeUnit.selectedItem = "Minutes"
         view.relativeTimeNumber.text = "1"
@@ -136,10 +136,10 @@ class QueryingLogGroupsTest {
     @Test
     fun completePath2() {
         view.relativeTimeRadioButton.isSelected = false
-        view.EndDate.date = Calendar.getInstance().time
+        view.endDate.date = Calendar.getInstance().time
         val cal = Calendar.getInstance()
         cal.add(Calendar.DATE, -1)
-        view.StartDate.date = cal.time
+        view.startDate.date = cal.time
         view.absoluteTimeRadioButton.isSelected = true
         view.relativeTimeUnit.selectedItem = "Minutes"
         view.relativeTimeNumber.text = ""
