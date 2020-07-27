@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.michaelbaranov.microba.calendar.DatePicker;
 import javax.swing.ButtonGroup;
@@ -27,29 +28,23 @@ public class QueryEditor {
     private SimpleToolWindowPanel tablePanel;
     public JTextArea queryBox;
     private JLabel LogGroupLabel;
-    public DatePicker qEndDate;
+    public DatePicker EndDate;
     public JPanel queryEditorBasePanel;
     public JComboBox relativeTimeUnit;
     public JTextField relativeTimeNumber;
-    public DatePicker qStartDate;
+    public DatePicker StartDate;
     private final Project project;
     public ButtonGroup TimeRange;
     AddRemoveLogGroupTable showLogGroupTable;
 
-
     QueryEditor(Project project) {
         this.project = project;
-        relativeTimeUnit.addItem("Minutes");
-        relativeTimeUnit.addItem("Hours");
-        relativeTimeUnit.addItem("Days");
-        relativeTimeUnit.addItem("Weeks");
-        qStartDate.setEnabled(false);
-        qEndDate.setEnabled(false);
+        StartDate.setEnabled(false);
+        EndDate.setEnabled(false);
         relativeTimeNumber.setEnabled(false);
         relativeTimeUnit.setEnabled(false);
         querySearchTerm.setEnabled(false);
         queryBox.setEnabled(false);
-
     }
     private void initArLogGroupTable(){
         showLogGroupTable.getTableView().getListTableModel();
@@ -61,5 +56,7 @@ public class QueryEditor {
         this.showLogGroupTable = new AddRemoveLogGroupTable(project);
         initArLogGroupTable();
         tablePanel.setContent(showLogGroupTable.getComponent());
+        String[] TimeUnits = new String[] {"Minutes", "Hours", "Days", "Weeks"};
+        relativeTimeUnit = new ComboBox(TimeUnits);
     }
 }
