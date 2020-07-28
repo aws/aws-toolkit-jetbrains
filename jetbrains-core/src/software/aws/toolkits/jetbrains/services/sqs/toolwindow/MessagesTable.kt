@@ -38,7 +38,7 @@ class MessagesTable {
         component = ScrollPaneFactory.createScrollPane(table)
     }
 
-    fun showBusy(busy: Boolean) {
+    fun setBusy(busy: Boolean) {
         table.setPaintBusy(busy)
         if (busy) {
             table.emptyText.text = message("loading_resource.loading")

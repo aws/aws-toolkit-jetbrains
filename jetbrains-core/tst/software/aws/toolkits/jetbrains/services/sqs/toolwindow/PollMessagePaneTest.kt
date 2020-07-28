@@ -3,11 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
 import software.amazon.awssdk.services.sqs.SqsClient
@@ -19,23 +18,32 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.services.sqs.Queue
+import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.resources.message
+import javax.swing.JLabel
 
-class PollMessagePaneTest {
+class PollMessagePaneTest : BaseCoroutineTest() {
     private lateinit var client: SqsClient
-    @JvmField
-    @Rule
-    val projectRule = ProjectRule()
+    private lateinit var region: AwsRegion
+    private lateinit var table: MessagesTable
+    private lateinit var label: JLabel
+    private lateinit var queue: Queue
 
-    @JvmField
-    @Rule
-    val mockClientManagerRule = MockClientManagerRule(projectRule)
+    private val message: Message = Message.builder()
+        .body("ABC")
+        .messageId("XYZ")
+        .attributes(mapOf(Pair(MessageSystemAttributeName.SENDER_ID, "1234567890:test1"), Pair(MessageSystemAttributeName.SENT_TIMESTAMP, "111111111")))
+        .build()
 
     @Before
-    fun setUp() {
+    fun loadVariables() {
         client = mockClientManagerRule.create()
+        region = MockRegionProvider.getInstance().defaultRegion()
+        table = MessagesTable()
+        queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test1", region)
+        label = JLabel()
     }
 
     @Test
@@ -43,14 +51,15 @@ class PollMessagePaneTest {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
             ReceiveMessageResponse.builder().messages(message).build()
         )
-        val pane = PollMessagePane(projectRule.project, client, queue)
-        val model = pane.messagesTable.tableModel
+        runInEdtAndWait {
+            table = PollMessagePane(client, queue).messagesTable
+        }
 
-        assertThat(model.items.size).isOne()
-        assertThat(model.items.first().messageId()).isEqualTo("AAAAAAAAAAA")
-        assertThat(model.items.first().body()).isEqualTo("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-        assertThat(model.items.first().attributes().getValue(MessageSystemAttributeName.SENDER_ID)).isEqualTo("1234567890:test1")
-        assertThat(model.items.first().attributes().getValue(MessageSystemAttributeName.SENT_TIMESTAMP)).isEqualTo("111111111")
+        assertThat(table.tableModel.items.size).isOne()
+        assertThat(table.tableModel.items.first().messageId()).isEqualTo("XYZ")
+        assertThat(table.tableModel.items.first().body()).isEqualTo("ABC")
+        assertThat(table.tableModel.items.first().attributes().getValue(MessageSystemAttributeName.SENDER_ID)).isEqualTo("1234567890:test1")
+        assertThat(table.tableModel.items.first().attributes().getValue(MessageSystemAttributeName.SENT_TIMESTAMP)).isEqualTo("111111111")
     }
 
     @Test
@@ -58,10 +67,12 @@ class PollMessagePaneTest {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
             ReceiveMessageResponse.builder().build()
         )
-        val pane = PollMessagePane(projectRule.project, client, queue)
+        runInEdtAndWait {
+            table = PollMessagePane(client, queue).messagesTable
+        }
 
-        assertThat(pane.messagesTable.tableModel.items.size).isZero()
-        assertThat(pane.messagesTable.table.emptyText.text).isEqualTo(message("sqs.message.no_messages"))
+        assertThat(table.tableModel.items.size).isZero()
+        assertThat(table.table.emptyText.text).isEqualTo(message("sqs.message.no_messages"))
     }
 
     @Test
@@ -69,20 +80,24 @@ class PollMessagePaneTest {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).then {
             throw IllegalStateException("Network Error")
         }
-        val pane = PollMessagePane(projectRule.project, client, queue)
+        runInEdtAndWait {
+            table = PollMessagePane(client, queue).messagesTable
+        }
 
-        assertThat(pane.messagesTable.tableModel.items.size).isZero()
-        assertThat(pane.messagesTable.table.emptyText.text).isEqualTo(message("sqs.failed_to_poll_messages"))
+        assertThat(table.tableModel.items.size).isZero()
+        assertThat(table.table.emptyText.text).isEqualTo(message("sqs.failed_to_poll_messages"))
     }
 
     @Test
-    fun `Messages available displayed`() {
+    fun `Available messages are displayed`() {
         whenever(client.getQueueAttributes(Mockito.any<GetQueueAttributesRequest>())).thenReturn(
             GetQueueAttributesResponse.builder().attributes(mutableMapOf(Pair(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES, "10"))).build()
         )
-        val pane = PollMessagePane(projectRule.project, client, queue)
+        runInEdtAndWait {
+            label = PollMessagePane(client, queue).messagesAvailableLabel
+        }
 
-        assertThat(pane.messagesAvailableLabel.text).isEqualTo("Messages Available: 10")
+        assertThat(label.text).isEqualTo("Messages Available: 10")
     }
 
     @Test
@@ -90,18 +105,10 @@ class PollMessagePaneTest {
         whenever(client.getQueueAttributes(Mockito.any<GetQueueAttributesRequest>())).then {
             throw IllegalStateException("Network Error")
         }
-        val pane = PollMessagePane(projectRule.project, client, queue)
+        runInEdtAndWait {
+            label = PollMessagePane(client, queue).messagesAvailableLabel
+        }
 
-        assertThat(pane.messagesAvailableLabel.text).isEqualTo(message("sqs.failed_to_load_total"))
-    }
-
-    private companion object {
-        private val defaultRegion = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")
-        private val queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test1", defaultRegion)
-        private val message: Message = Message.builder()
-            .body("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-            .messageId("AAAAAAAAAAA")
-            .attributes(mapOf(Pair(MessageSystemAttributeName.SENDER_ID, "1234567890:test1"), Pair(MessageSystemAttributeName.SENT_TIMESTAMP, "111111111")))
-            .build()
+        assertThat(label.text).isEqualTo(message("sqs.failed_to_load_total"))
     }
 }

@@ -8,21 +8,23 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.DumbAware
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
+import software.aws.toolkits.jetbrains.services.sqs.MAX_NUMBER_OF_MESSAGES
 import software.aws.toolkits.jetbrains.services.sqs.Queue
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
 import javax.swing.JPanel
 
 class PollMessagePane(
-    private val project: Project,
     private val client: SqsClient,
     private val queue: Queue
-) {
+) : CoroutineScope by ApplicationThreadPoolScope("PollMessagesPane") {
     lateinit var component: JPanel
     lateinit var messagesAvailableLabel: JLabel
     lateinit var tablePanel: SimpleToolWindowPanel
@@ -40,7 +42,7 @@ class PollMessagePane(
         addToolbar()
     }
 
-    private fun requestMessages() {
+    private fun requestMessages() = launch {
         try {
             val polledMessages: List<Message> = client.receiveMessage {
                 it.queueUrl(queue.queueUrl)
@@ -49,7 +51,7 @@ class PollMessagePane(
             }.messages()
 
             polledMessages.forEach { messagesTable.tableModel.addRow(it) }
-            messagesTable.showBusy(busy = false)
+            messagesTable.setBusy(busy = false)
         } catch (e: Exception) {
             messagesTable.table.emptyText.text = message("sqs.failed_to_poll_messages")
         }
@@ -80,17 +82,13 @@ class PollMessagePane(
 
     // TODO: Add message table actions
 
-    private fun refreshTable() {
-        messagesTable.showBusy(busy = true)
+    private fun refreshTable() = launch {
+        messagesTable.setBusy(busy = true)
         // Remove all entries
         while (messagesTable.tableModel.rowCount != 0) {
             messagesTable.tableModel.removeRow(0)
         }
         requestMessages()
         addTotal()
-    }
-
-    private companion object {
-        const val MAX_NUMBER_OF_MESSAGES = 10
     }
 }
