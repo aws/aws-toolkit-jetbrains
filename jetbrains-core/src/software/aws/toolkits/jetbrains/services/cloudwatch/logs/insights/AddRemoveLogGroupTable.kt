@@ -9,8 +9,10 @@ import software.aws.toolkits.resources.message
 import javax.swing.table.TableCellEditor
 
 class AddRemoveLogGroupTable(project: Project) : ListTableWithButtons<SelectedLogGroups> () {
-    // Currently shows a sample table
-    // TODO Display log entries, Add and Remove log groups
+    init {
+        // Currently shows a sample table
+        // TODO Display log entries, Add and Remove log groups
+    }
     override fun cloneElement(variable: SelectedLogGroups): SelectedLogGroups = variable.copy()
     override fun createElement(): SelectedLogGroups = SelectedLogGroups()
     fun getSelLogGroups(): List<SelectedLogGroups> = elements.toList()

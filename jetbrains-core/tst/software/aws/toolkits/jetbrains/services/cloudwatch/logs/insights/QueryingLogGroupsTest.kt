@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRul
 import org.assertj.core.api.Assertions.assertThat
 import software.aws.toolkits.resources.message
 import java.util.Calendar
+import java.util.Date
 
 @RunsInEdt
 class QueryingLogGroupsTest {
@@ -39,113 +40,78 @@ class QueryingLogGroupsTest {
     }
 
     @Test
-    fun absoluteOrRelativeTimeSelected() {
-        view.absoluteTimeRadioButton.isSelected = false
-        view.relativeTimeRadioButton.isSelected = false
+    fun `Absolute or relative time selected`() {
+        getViewDetails(absoluteTime = false, relativeTime = false)
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.validation.timerange"))
     }
 
     @Test
-    fun startDateNotSelected() {
-        view.absoluteTimeRadioButton.isSelected = true
-        view.startDate.date = null
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start Date must be specified")
-    }
-
-    @Test
-    fun endDateNotSelected() {
-        view.absoluteTimeRadioButton.isSelected = true
-        view.startDate.date = Calendar.getInstance().time
-        view.endDate.date = null
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("End Date must be specified")
-    }
-
-    @Test
-    fun startDateBeforeEndDate() {
-        view.absoluteTimeRadioButton.isSelected = true
-        view.startDate.date = Calendar.getInstance().time
+    fun `Start date must be before end date`() {
         val cal = Calendar.getInstance()
         cal.add(Calendar.DATE, -1)
-        view.endDate.date = cal.time
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start date must be before End date")
+        getViewDetails(absoluteTime = true, startDate = Calendar.getInstance().time, endDate = cal.time)
+        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start date must be before end date")
     }
 
     @Test
-    fun relativeTimeUnitSelected() {
-        view.relativeTimeRadioButton.isSelected = true
-        view.relativeTimeUnit.selectedItem = "Minutes"
-        view.relativeTimeNumber.text = ""
+    fun `Number of time units not selected`() {
+        getViewDetails(relativeTime = true, relativeTimeNumber = "")
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Number must be specified")
     }
 
     @Test
-    fun searchOrQuerySelected() {
-        view.relativeTimeRadioButton.isSelected = true
-        view.startDate.date = null
-        view.endDate.date = null
-        view.absoluteTimeRadioButton.isSelected = false
-        view.relativeTimeUnit.selectedItem = "Minutes"
-        view.relativeTimeNumber.text = "1"
-        view.queryLogGroupsRadioButton.isSelected = false
-        view.searchTerm.isSelected = false
+    fun `Neither Search Term nor Querying through log groups selected`() {
+        getViewDetails(relativeTime = true)
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be entered")
     }
 
     @Test
-    fun searchTermSpecified() {
-        view.relativeTimeRadioButton.isSelected = true
-        view.startDate.date = null
-        view.endDate.date = null
-        view.absoluteTimeRadioButton.isSelected = false
-        view.relativeTimeUnit.selectedItem = "Minutes"
-        view.relativeTimeNumber.text = "1"
-        view.queryLogGroupsRadioButton.isSelected = false
-        view.searchTerm.isSelected = true
-        view.querySearchTerm.text = ""
+    fun `No search term entered`() {
+        getViewDetails(relativeTime = true, querySearch = true, searchTerm = "")
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Search Term must be specified")
     }
 
     @Test
-    fun querySpecified() {
-        view.relativeTimeRadioButton.isSelected = true
-        view.startDate.date = null
-        view.endDate.date = null
-        view.absoluteTimeRadioButton.isSelected = false
-        view.relativeTimeUnit.selectedItem = "Minutes"
-        view.relativeTimeNumber.text = "1"
-        view.queryLogGroupsRadioButton.isSelected = true
-        view.searchTerm.isSelected = false
-        view.queryBox.text = ""
+    fun `No query entered`() {
+        getViewDetails(relativeTime = true, queryLogs = true, query = "")
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be specified")
     }
 
     @Test
-    fun completePath1() {
-        view.relativeTimeRadioButton.isSelected = true
-        view.startDate.date = null
-        view.endDate.date = null
-        view.absoluteTimeRadioButton.isSelected = false
-        view.relativeTimeUnit.selectedItem = "Minutes"
-        view.relativeTimeNumber.text = "1"
-        view.queryLogGroupsRadioButton.isSelected = true
-        view.searchTerm.isSelected = false
-        view.queryBox.text = "fields @timestamp"
+    fun `Complete Path Test 1`() {
+        getViewDetails(relativeTime = true, queryLogs = true, query = "fields @timestamp")
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).isNull()
     }
 
     @Test
-    fun completePath2() {
-        view.relativeTimeRadioButton.isSelected = false
-        view.endDate.date = Calendar.getInstance().time
+    fun `Complete Path Test 2`() {
         val cal = Calendar.getInstance()
         cal.add(Calendar.DATE, -1)
-        view.startDate.date = cal.time
-        view.absoluteTimeRadioButton.isSelected = true
-        view.relativeTimeUnit.selectedItem = "Minutes"
-        view.relativeTimeNumber.text = ""
-        view.queryLogGroupsRadioButton.isSelected = false
-        view.searchTerm.isSelected = true
-        view.querySearchTerm.text = "Error"
+        getViewDetails(absoluteTime = true, endDate = Calendar.getInstance().time, startDate = cal.time, querySearch = true, searchTerm = "Error")
         assertThat(qEditorValidator.validateEditorEntries(view)?.message).isNull()
+    }
+
+    private fun getViewDetails(
+        absoluteTime: Boolean = false,
+        relativeTime: Boolean = false,
+        startDate: Date = Calendar.getInstance().time,
+        endDate: Date = Calendar.getInstance().time,
+        relativeTimeUnit: String = "Minutes",
+        relativeTimeNumber: String = "1",
+        querySearch: Boolean = false,
+        queryLogs: Boolean = false,
+        searchTerm: String = "Example",
+        query: String = "Example Query"
+    ) {
+        view.relativeTimeRadioButton.isSelected = relativeTime
+        view.endDate.date = endDate
+        view.startDate.date = startDate
+        view.absoluteTimeRadioButton.isSelected = absoluteTime
+        view.relativeTimeUnit.selectedItem = relativeTimeUnit
+        view.relativeTimeNumber.text = relativeTimeNumber
+        view.queryLogGroupsRadioButton.isSelected = queryLogs
+        view.searchTerm.isSelected = querySearch
+        view.querySearchTerm.text = searchTerm
+        view.queryBox.text = query
     }
 }

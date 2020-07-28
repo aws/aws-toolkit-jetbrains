@@ -15,15 +15,15 @@ data class SelectedLogGroups(
 data class QueryDetails(
     val logGroupName: String,
     val absoluteTimeSelected: Boolean,
-    val qStartDateAbsolute: Date,
-    val qEndDateAbsolute: Date,
+    val startDateAbsolute: Date,
+    val endDateAbsolute: Date,
     val relativeTimeSelected: Boolean,
-    val qRelativeTimeUnit: String,
-    val qRelativeTimeNumber: String,
+    val relativeTimeUnit: String,
+    val relativeTimeNumber: String,
     val searchTermSelected: Boolean,
-    val qSearchTerm: String,
+    val searchTerm: String,
     val queryingLogsSelected: Boolean,
-    val qQuery: String
+    val query: String
 )
 
 data class StartEndDate(
