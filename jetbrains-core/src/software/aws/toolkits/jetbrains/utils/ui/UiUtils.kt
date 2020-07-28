@@ -25,7 +25,6 @@ import com.intellij.util.ui.UIUtil
 import software.aws.toolkits.jetbrains.utils.formatText
 import java.awt.AlphaComposite
 import java.awt.Color
-import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -37,14 +36,11 @@ import javax.swing.AbstractButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
-import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.JTextArea
 import javax.swing.JTextField
 import javax.swing.ListModel
-import javax.swing.border.CompoundBorder
 import javax.swing.table.DefaultTableCellRenderer
-import javax.swing.table.TableCellRenderer
 import javax.swing.text.Highlighter
 import javax.swing.text.JTextComponent
 
@@ -205,46 +201,21 @@ class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val tog
     }
 }
 
-class ResizingColumnRenderer(showSeconds: Boolean? = null) : TableCellRenderer {
-    private val defaultRenderer = DefaultTableCellRenderer()
-    private val formatter: SyncDateFormat? = when (showSeconds) {
-        true -> SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
-        false -> DateFormatUtil.getDateTimeFormat()
-        else -> null
+class ResizingDateColumnRenderer(showSeconds: Boolean) : ResizingColumnRenderer() {
+    private val formatter: SyncDateFormat = if (showSeconds) {
+        SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+    } else {
+        DateFormatUtil.getDateTimeFormat()
     }
 
-    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
-        // This wrapper will let us force the component to be at the top instead of in the middle for linewraps
-        val wrapper = JPanel(BorderLayout())
-        val defaultComponent = defaultRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
-        if (table == null) {
-            return defaultComponent
+    override fun getText(value: Any?): String? {
+        val text = (value as? String)?.toLongOrNull()?.let {
+            formatter.format(it)
         }
-        val component = defaultComponent as? JLabel ?: return defaultComponent
-
-        // This will set the text accordingly
-        if (formatter == null) {
-            component.text = (value as? String)?.trim()
-        } else {
-            component.text = (value as? String)?.toLongOrNull()?.let {
-                formatter.format(it)
-            }
-        }
-
-        if (component.preferredSize.width > table.columnModel.getColumn(column).preferredWidth) {
-            // add 3 pixels of padding. No padding makes it go into ... mode cutting off the end
-            table.columnModel.getColumn(column).preferredWidth = component.preferredSize.width + 3
-            table.columnModel.getColumn(column).maxWidth = component.preferredSize.width + 3
-        }
-        wrapper.add(component, BorderLayout.NORTH)
-        // Make sure the background matches for selection
-        wrapper.background = component.background
-        // if a component is selected, it puts a border on it, move the border to the wrapper instead
-        if (isSelected) {
-            // this border has an outside and inside border, take only the outside border
-            wrapper.border = (component.border as? CompoundBorder)?.outsideBorder
-        }
-        component.border = null
-        return wrapper
+        return text
     }
+}
+
+class ResizingTextColumnRenderer() : ResizingColumnRenderer() {
+    override fun getText(value: Any?): String? = (value as? String)?.trim()
 }

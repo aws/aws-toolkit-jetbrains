@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.utils.ui.WrappingCellRenderer
 import software.aws.toolkits.jetbrains.utils.ui.setSelectionHighlighting
-import software.aws.toolkits.jetbrains.utils.ui.ResizingColumnRenderer
+import software.aws.toolkits.jetbrains.utils.ui.ResizingDateColumnRenderer
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JTable
@@ -42,7 +42,7 @@ class LogStreamsStreamColumnRenderer() : TableCellRenderer {
 }
 
 class LogStreamsDateColumn : ColumnInfo<LogStream, String>(message("cloudwatch.logs.last_event_time")) {
-    private val renderer = ResizingColumnRenderer(showSeconds = false)
+    private val renderer = ResizingDateColumnRenderer(showSeconds = false)
     override fun valueOf(item: LogStream?): String? = item?.lastEventTimestamp()?.toString()
 
     override fun isCellEditable(item: LogStream?): Boolean = false
@@ -66,7 +66,7 @@ class LogGroupFilterTableSorter(model: ListTableModel<LogStream>) : TableRowSort
 }
 
 class LogStreamDateColumn : ColumnInfo<LogStreamEntry, String>(message("general.time")) {
-    private val renderer = ResizingColumnRenderer(showSeconds = true)
+    private val renderer = ResizingDateColumnRenderer(showSeconds = true)
     override fun valueOf(item: LogStreamEntry?): String? = item?.timestamp?.toString()
 
     override fun isCellEditable(item: LogStreamEntry?): Boolean = false

@@ -8,14 +8,15 @@ import org.apache.commons.lang.StringUtils
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
 import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_MESSAGES
-import software.aws.toolkits.jetbrains.utils.ui.ResizingColumnRenderer
+import software.aws.toolkits.jetbrains.utils.ui.ResizingDateColumnRenderer
+import software.aws.toolkits.jetbrains.utils.ui.ResizingTextColumnRenderer
 import software.aws.toolkits.jetbrains.utils.ui.WrappingCellRenderer
 import software.aws.toolkits.resources.message
 import java.lang.IllegalArgumentException
 import javax.swing.table.TableCellRenderer
 
 class MessageIdColumn : ColumnInfo<Message, String>(message("sqs.message.message_id")) {
-    private val renderer = ResizingColumnRenderer()
+    private val renderer = ResizingTextColumnRenderer()
     override fun valueOf(item: Message?): String? = item?.messageId()
     override fun isCellEditable(item: Message?): Boolean = false
     override fun getRenderer(item: Message?): TableCellRenderer? = renderer
@@ -30,14 +31,14 @@ class MessageBodyColumn : ColumnInfo<Message, String>(message("sqs.message.messa
 }
 
 class MessageSenderIdColumn : ColumnInfo<Message, String>(message("sqs.message.sender_id")) {
-    private val renderer = ResizingColumnRenderer()
+    private val renderer = ResizingTextColumnRenderer()
     override fun valueOf(item: Message?): String? = item?.attributes()?.getValue(MessageSystemAttributeName.SENDER_ID)
     override fun isCellEditable(item: Message?): Boolean = false
     override fun getRenderer(item: Message?): TableCellRenderer? = renderer
 }
 
 class MessageDateColumn : ColumnInfo<Message, String>(message("sqs.message.timestamp")) {
-    private val renderer = ResizingColumnRenderer(showSeconds = true)
+    private val renderer = ResizingDateColumnRenderer(showSeconds = true)
     override fun valueOf(item: Message): String {
         if (item !is Message) {
             throw IllegalArgumentException(message("sqs.failed_to_poll_messages"))

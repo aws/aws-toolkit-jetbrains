@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.jetbrains.services.sqs.MAX_NUMBER_OF_MESSAGES
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -29,6 +30,7 @@ class PollMessagePane(
     lateinit var messagesAvailableLabel: JLabel
     lateinit var tablePanel: SimpleToolWindowPanel
     val messagesTable = MessagesTable()
+    private val edtContext = getCoroutineUiContext()
 
     private fun createUIComponents() {
         tablePanel = SimpleToolWindowPanel(false, true)
@@ -36,7 +38,6 @@ class PollMessagePane(
 
     init {
         tablePanel.setContent(messagesTable.component)
-
         requestMessages()
         addTotal()
         addToolbar()
@@ -55,9 +56,11 @@ class PollMessagePane(
         } catch (e: Exception) {
             messagesTable.table.emptyText.text = message("sqs.failed_to_poll_messages")
         }
+
+        addTotal()
     }
 
-    private fun addTotal() {
+    private fun addTotal() = launch {
         try {
             val numMessages = client.getQueueAttributes {
                 it.queueUrl(queue.queueUrl)
