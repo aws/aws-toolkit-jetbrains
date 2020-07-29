@@ -96,14 +96,12 @@ class QueryEditorDialog(
         } else {
             getRelativeTime(relativeTimeUnit[funDetails.relativeTimeUnit], funDetails.relativeTimeNumber.toLong())
         })
-        val queryStartDate = queryStartEndDate.startDate
-        val queryEndDate = queryStartEndDate.endDate
         val query = if (funDetails.enterQuery) {
             funDetails.query } else {
             getFilterQuery(funDetails.searchTerm)
         }
         close(OK_EXIT_CODE)
-        queryingLogGroupApiCall.executeStartQuery(queryStartDate, queryEndDate, funDetails.logGroupName, query)
+        queryingLogGroupApiCall.executeStartQuery(queryStartEndDate, funDetails.logGroupName, query)
     }
 
     private fun getFunctionDetails(): QueryDetails = QueryDetails(

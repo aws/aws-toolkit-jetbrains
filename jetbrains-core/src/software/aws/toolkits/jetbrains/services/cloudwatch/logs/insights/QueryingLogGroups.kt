@@ -14,12 +14,12 @@ import java.time.Instant
 
 class QueryingLogGroups(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("ExecutingQuery") {
     private var client: CloudWatchLogsClient = project.awsClient()
-    fun executeStartQuery(startDate: Instant, endDate: Instant, logGroupNames: MutableList<String>, query: String) = launch {
+    fun executeStartQuery(queryStartEndDate: StartEndDate, logGroupNames: MutableList<String>, query: String) = launch {
         val request = StartQueryRequest.builder()
-            .endTime(endDate.epochSecond)
+            .endTime(queryStartEndDate.endDate.epochSecond)
             .logGroupName(logGroupNames[0])
             .queryString(query)
-            .startTime(startDate.epochSecond)
+            .startTime(queryStartEndDate.startDate.epochSecond)
             .build()
         val response = client.startQuery(request)
         val queryId = response.queryId()
