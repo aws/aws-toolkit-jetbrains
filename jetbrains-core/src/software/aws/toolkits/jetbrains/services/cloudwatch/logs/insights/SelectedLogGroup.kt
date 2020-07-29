@@ -11,7 +11,7 @@ data class SelectedLogGroups(
 )
 
 data class QueryDetails(
-    val logGroupName: ArrayList<String>,
+    val logGroupName: MutableList<String>,
     val absoluteTimeSelected: Boolean,
     val startDateAbsolute: Date,
     val endDateAbsolute: Date,

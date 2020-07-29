@@ -33,7 +33,8 @@ class QueryEditorDialog(
     private val queryingLogGroupApiCall = QueryingLogGroups(project)
     private val action: OkAction = QueryLogGroupOkAction()
     private val validator = QueryEditorValidator
-    private val logGroupNames = ArrayList<String>()
+    private val logGroupNames = mutableListOf(lGroupName)
+
     init {
         super.init()
         title = message("cloudwatch.logs.query_editor_title")
@@ -57,7 +58,6 @@ class QueryEditorDialog(
             view.queryBox.isEnabled = false
             view.querySearchTerm.isEnabled = true
         }
-        logGroupNames.add(lGroupName)
     }
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
     override fun doValidate(): ValidationInfo? = validator.validateEditorEntries(view)
@@ -105,6 +105,7 @@ class QueryEditorDialog(
         close(OK_EXIT_CODE)
         queryingLogGroupApiCall.executeStartQuery(queryStartDate, queryEndDate, funDetails.logGroupName, query)
     }
+
     private fun getFunctionDetails(): QueryDetails = QueryDetails(
         logGroupName = logGroupNames,
         absoluteTimeSelected = view.absoluteTimeRadioButton.isSelected,
