@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.whenever
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -22,14 +22,12 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.resources.message
-import javax.swing.JLabel
 
 class PollMessagePaneTest : BaseCoroutineTest() {
     private lateinit var client: SqsClient
     private lateinit var region: AwsRegion
-    private lateinit var table: MessagesTable
-    private lateinit var label: JLabel
     private lateinit var queue: Queue
+    private lateinit var pane: PollMessagePane
 
     private val message: Message = Message.builder()
         .body("ABC")
@@ -41,9 +39,8 @@ class PollMessagePaneTest : BaseCoroutineTest() {
     fun loadVariables() {
         client = mockClientManagerRule.create()
         region = MockRegionProvider.getInstance().defaultRegion()
-        table = MessagesTable()
         queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test1", region)
-        label = JLabel()
+        pane = PollMessagePane(client, queue)
     }
 
     @Test
@@ -51,15 +48,16 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
             ReceiveMessageResponse.builder().messages(message).build()
         )
-        runInEdtAndWait {
-            table = PollMessagePane(client, queue).messagesTable
+        runBlocking {
+            pane.requestMessages()
         }
+        val tableModel = pane.messagesTable.tableModel
 
-        assertThat(table.tableModel.items.size).isOne()
-        assertThat(table.tableModel.items.first().messageId()).isEqualTo("XYZ")
-        assertThat(table.tableModel.items.first().body()).isEqualTo("ABC")
-        assertThat(table.tableModel.items.first().attributes().getValue(MessageSystemAttributeName.SENDER_ID)).isEqualTo("1234567890:test1")
-        assertThat(table.tableModel.items.first().attributes().getValue(MessageSystemAttributeName.SENT_TIMESTAMP)).isEqualTo("111111111")
+        assertThat(tableModel.items.size).isOne()
+        assertThat(tableModel.items.first().messageId()).isEqualTo("XYZ")
+        assertThat(tableModel.items.first().body()).isEqualTo("ABC")
+        assertThat(tableModel.items.first().attributes().getValue(MessageSystemAttributeName.SENDER_ID)).isEqualTo("1234567890:test1")
+        assertThat(tableModel.items.first().attributes().getValue(MessageSystemAttributeName.SENT_TIMESTAMP)).isEqualTo("111111111")
     }
 
     @Test
@@ -67,9 +65,10 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
             ReceiveMessageResponse.builder().build()
         )
-        runInEdtAndWait {
-            table = PollMessagePane(client, queue).messagesTable
+        runBlocking {
+            pane.requestMessages()
         }
+        val table = pane.messagesTable
 
         assertThat(table.tableModel.items.size).isZero()
         assertThat(table.table.emptyText.text).isEqualTo(message("sqs.message.no_messages"))
@@ -80,9 +79,10 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).then {
             throw IllegalStateException("Network Error")
         }
-        runInEdtAndWait {
-            table = PollMessagePane(client, queue).messagesTable
+        runBlocking {
+            pane.requestMessages()
         }
+        val table = pane.messagesTable
 
         assertThat(table.tableModel.items.size).isZero()
         assertThat(table.table.emptyText.text).isEqualTo(message("sqs.failed_to_poll_messages"))
@@ -93,9 +93,10 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         whenever(client.getQueueAttributes(Mockito.any<GetQueueAttributesRequest>())).thenReturn(
             GetQueueAttributesResponse.builder().attributes(mutableMapOf(Pair(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES, "10"))).build()
         )
-        runInEdtAndWait {
-            label = PollMessagePane(client, queue).messagesAvailableLabel
+        runBlocking {
+            pane.addTotal()
         }
+        val label = pane.messagesAvailableLabel
 
         assertThat(label.text).isEqualTo("Messages Available: 10")
     }
@@ -105,9 +106,10 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         whenever(client.getQueueAttributes(Mockito.any<GetQueueAttributesRequest>())).then {
             throw IllegalStateException("Network Error")
         }
-        runInEdtAndWait {
-            label = PollMessagePane(client, queue).messagesAvailableLabel
+        runBlocking {
+            pane.addTotal()
         }
+        val label = pane.messagesAvailableLabel
 
         assertThat(label.text).isEqualTo(message("sqs.failed_to_load_total"))
     }
