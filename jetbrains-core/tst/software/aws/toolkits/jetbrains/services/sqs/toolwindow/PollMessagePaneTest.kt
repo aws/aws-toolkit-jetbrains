@@ -21,13 +21,18 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
+import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
+import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
+import javax.swing.JLabel
 
 class PollMessagePaneTest : BaseCoroutineTest() {
     private lateinit var client: SqsClient
     private lateinit var region: AwsRegion
     private lateinit var queue: Queue
     private lateinit var pane: PollMessagePane
+    private lateinit var table: MessagesTable
+    private lateinit var label: JLabel
 
     private val message: Message = Message.builder()
         .body("ABC")
@@ -41,6 +46,8 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         region = MockRegionProvider.getInstance().defaultRegion()
         queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test1", region)
         pane = PollMessagePane(client, queue)
+        table = pane.messagesTable
+        label = pane.messagesAvailableLabel
     }
 
     @Test
@@ -48,12 +55,12 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
             ReceiveMessageResponse.builder().messages(message).build()
         )
+        val tableModel = table.tableModel
         runBlocking {
-            pane.requestMessages()
+            pane.setUp()
+            tableModel.waitForModelToBeAtLeast(1)
         }
-        val tableModel = pane.messagesTable.tableModel
 
-        assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().messageId()).isEqualTo("XYZ")
         assertThat(tableModel.items.first().body()).isEqualTo("ABC")
         assertThat(tableModel.items.first().attributes().getValue(MessageSystemAttributeName.SENDER_ID)).isEqualTo("1234567890:test1")
@@ -66,12 +73,11 @@ class PollMessagePaneTest : BaseCoroutineTest() {
             ReceiveMessageResponse.builder().build()
         )
         runBlocking {
-            pane.requestMessages()
+            pane.setUp()
+            waitForTrue { table.table.emptyText.text == message("sqs.message.no_messages") }
         }
-        val table = pane.messagesTable
 
         assertThat(table.tableModel.items.size).isZero()
-        assertThat(table.table.emptyText.text).isEqualTo(message("sqs.message.no_messages"))
     }
 
     @Test
@@ -81,11 +87,10 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         }
         runBlocking {
             pane.requestMessages()
+            waitForTrue { table.table.emptyText.text == message("sqs.failed_to_poll_messages") }
         }
-        val table = pane.messagesTable
 
         assertThat(table.tableModel.items.size).isZero()
-        assertThat(table.table.emptyText.text).isEqualTo(message("sqs.failed_to_poll_messages"))
     }
 
     @Test
@@ -96,9 +101,8 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         runBlocking {
             pane.addTotal()
         }
-        val label = pane.messagesAvailableLabel
 
-        assertThat(label.text).isEqualTo("Messages Available: 10")
+        assertThat(label.text).isEqualTo(message("sqs.messages.available.text") + "10")
     }
 
     @Test
@@ -109,7 +113,6 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         runBlocking {
             pane.addTotal()
         }
-        val label = pane.messagesAvailableLabel
 
         assertThat(label.text).isEqualTo(message("sqs.failed_to_load_total"))
     }
