@@ -3,10 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
-import com.intellij.openapi.application.runWriteAction
-import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.RunsInEdt
 import com.intellij.testFramework.runInEdtAndWait
 import org.junit.Before
@@ -23,18 +19,13 @@ class QueryingLogGroupsTest {
     @JvmField
     @Rule
     val projectRule = JavaCodeInsightTestFixtureRule()
-    private val qEditorValidator = QueryEditorValidator
+    private val validator = QueryEditorValidator
     private lateinit var view: QueryEditor
 
     @Before
     fun setup() {
         val project = projectRule.project
-        val sdk = IdeaTestUtil.getMockJdk18()
         runInEdtAndWait {
-            runWriteAction {
-                ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
-                ProjectRootManager.getInstance(projectRule.project).projectSdk = sdk
-            }
             view = QueryEditor(project)
         }
     }
@@ -42,7 +33,7 @@ class QueryingLogGroupsTest {
     @Test
     fun `Absolute or relative time selected`() {
         getViewDetails(absoluteTime = false, relativeTime = false)
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.validation.timerange"))
+        assertThat(validator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.validation.timerange"))
     }
 
     @Test
@@ -50,45 +41,45 @@ class QueryingLogGroupsTest {
         val cal = Calendar.getInstance()
         cal.add(Calendar.DATE, -1)
         getViewDetails(absoluteTime = true, startDate = Calendar.getInstance().time, endDate = cal.time)
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Start date must be before end date")
+        assertThat(validator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.compare.start.end.date"))
     }
 
     @Test
-    fun `Number of time units not selected`() {
+    fun `Relative Time, no time entered`() {
         getViewDetails(relativeTime = true, relativeTimeNumber = "")
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Number must be specified")
+        assertThat(validator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.no_relative_time_number"))
     }
 
     @Test
     fun `Neither Search Term nor Querying through log groups selected`() {
         getViewDetails(relativeTime = true)
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be entered")
+        assertThat(validator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.no_query_selected"))
     }
 
     @Test
     fun `No search term entered`() {
         getViewDetails(relativeTime = true, querySearch = true, searchTerm = "")
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Search Term must be specified")
+        assertThat(validator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.no_term_entered"))
     }
 
     @Test
     fun `No query entered`() {
         getViewDetails(relativeTime = true, queryLogs = true, query = "")
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).contains("Query must be specified")
+        assertThat(validator.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.no_query_entered"))
     }
 
     @Test
-    fun `Complete Path Test 1`() {
+    fun `All form entries validated Variant1`() {
         getViewDetails(relativeTime = true, queryLogs = true, query = "fields @timestamp")
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).isNull()
+        assertThat(validator.validateEditorEntries(view)?.message).isNull()
     }
 
     @Test
-    fun `Complete Path Test 2`() {
+    fun `All form entries validated Variant2`() {
         val cal = Calendar.getInstance()
         cal.add(Calendar.DATE, -1)
         getViewDetails(absoluteTime = true, endDate = Calendar.getInstance().time, startDate = cal.time, querySearch = true, searchTerm = "Error")
-        assertThat(qEditorValidator.validateEditorEntries(view)?.message).isNull()
+        assertThat(validator.validateEditorEntries(view)?.message).isNull()
     }
 
     private fun getViewDetails(

@@ -3,17 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
-import com.intellij.util.xmlb.annotations.Tag
 import java.time.Instant
 import java.util.Date
 
-@Tag("SelectedLogGroups")
 data class SelectedLogGroups(
     var logGroups: String? = null
 )
 
 data class QueryDetails(
-    val logGroupName: String,
+    val logGroupName: ArrayList<String>,
     val absoluteTimeSelected: Boolean,
     val startDateAbsolute: Date,
     val endDateAbsolute: Date,
@@ -22,7 +20,7 @@ data class QueryDetails(
     val relativeTimeNumber: String,
     val searchTermSelected: Boolean,
     val searchTerm: String,
-    val queryingLogsSelected: Boolean,
+    val enterQuery: Boolean,
     val query: String
 )
 

@@ -14,10 +14,11 @@ import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Date
 
-const val relativeTimeMinutes: String = "Minutes"
-const val relativeTimeHours: String = "Hours"
-const val relativeTimeDays: String = "Days"
-const val relativeTimeWeeks: String = "Weeks"
+val relativeTimeUnit = mapOf(
+    message("cloudwatch.logs.time_minutes") to ChronoUnit.MINUTES,
+    message("cloudwatch.logs.time_hours") to ChronoUnit.HOURS,
+    message("cloudwatch.logs.time_days") to ChronoUnit.DAYS,
+    message("cloudwatch.logs.time_weeks") to ChronoUnit.WEEKS)
 
 class QueryEditorDialog(
     private val project: Project,
@@ -32,9 +33,10 @@ class QueryEditorDialog(
     private val queryingLogGroupApiCall = QueryingLogGroups(project)
     private val action: OkAction = QueryLogGroupOkAction()
     private val validator = QueryEditorValidator
+    private val logGroupNames = ArrayList<String>()
     init {
         super.init()
-        title = "Query Log Groups"
+        title = message("cloudwatch.logs.query_editor_title")
         view.absoluteTimeRadioButton.addActionListener {
             view.startDate.isEnabled = true
             view.endDate.isEnabled = true
@@ -55,6 +57,7 @@ class QueryEditorDialog(
             view.queryBox.isEnabled = false
             view.querySearchTerm.isEnabled = true
         }
+        logGroupNames.add(lGroupName)
     }
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
     override fun doValidate(): ValidationInfo? = validator.validateEditorEntries(view)
@@ -67,17 +70,11 @@ class QueryEditorDialog(
         // Do nothing, close logic is handled separately
     }
 
-    private fun getRelativeTime(unitOfTime: String, relTimeNumber: Long): StartEndDate {
-        val endDate = Calendar.getInstance().toInstant()
-        val startDate = when (unitOfTime) {
-            relativeTimeMinutes -> endDate.minus(relTimeNumber, ChronoUnit.MINUTES)
-            relativeTimeHours -> endDate.minus(relTimeNumber, ChronoUnit.HOURS)
-            relativeTimeDays -> endDate.minus(relTimeNumber, ChronoUnit.DAYS)
-            relativeTimeWeeks -> endDate.minus(relTimeNumber, ChronoUnit.WEEKS)
-            else -> endDate
-        }
-        return StartEndDate(startDate, endDate)
-    }
+    private fun getCurrentTime() = Calendar.getInstance().toInstant()
+
+    private fun getRelativeTime(unitOfTime: ChronoUnit?, relTimeNumber: Long): StartEndDate = StartEndDate(getCurrentTime().minus(relTimeNumber, unitOfTime),
+        getCurrentTime())
+
     private fun getAbsoluteTime(startDate: Date, endDate: Date): StartEndDate = StartEndDate(startDate.toInstant(), endDate.toInstant())
 
     private fun getFilterQuery(searchTerm: String): String {
@@ -97,19 +94,19 @@ class QueryEditorDialog(
         queryStartEndDate = (if (funDetails.absoluteTimeSelected) {
             getAbsoluteTime(funDetails.startDateAbsolute, funDetails.endDateAbsolute)
         } else {
-            getRelativeTime(funDetails.relativeTimeUnit, funDetails.relativeTimeNumber.toLong())
+            getRelativeTime(relativeTimeUnit[funDetails.relativeTimeUnit], funDetails.relativeTimeNumber.toLong())
         })
-        val queryStartDate = queryStartEndDate.startDate.toEpochMilli() / 1000
-        val queryEndDate = queryStartEndDate.endDate.toEpochMilli() / 1000
-        val query = if (funDetails.queryingLogsSelected) {
+        val queryStartDate = queryStartEndDate.startDate
+        val queryEndDate = queryStartEndDate.endDate
+        val query = if (funDetails.enterQuery) {
             funDetails.query } else {
             getFilterQuery(funDetails.searchTerm)
         }
         close(OK_EXIT_CODE)
-        queryingLogGroupApiCall.executeStartQuery(queryEndDate, funDetails.logGroupName, query, queryStartDate)
+        queryingLogGroupApiCall.executeStartQuery(queryStartDate, queryEndDate, funDetails.logGroupName, query)
     }
     private fun getFunctionDetails(): QueryDetails = QueryDetails(
-        logGroupName = lGroupName,
+        logGroupName = logGroupNames,
         absoluteTimeSelected = view.absoluteTimeRadioButton.isSelected,
         startDateAbsolute = view.startDate.date,
         endDateAbsolute = view.endDate.date,
@@ -118,13 +115,13 @@ class QueryEditorDialog(
         relativeTimeNumber = view.relativeTimeNumber.text,
         searchTermSelected = view.searchTerm.isSelected,
         searchTerm = view.querySearchTerm.text,
-        queryingLogsSelected = view.queryLogGroupsRadioButton.isSelected,
+        enterQuery = view.queryLogGroupsRadioButton.isSelected,
         query = view.queryBox.text
     )
 
     private inner class QueryLogGroupOkAction : OkAction() {
         init {
-            putValue(Action.NAME, "Apply")
+            putValue(Action.NAME, message("cloudwatch.logs.query.form.ok_Button"))
         }
         override fun doAction(e: ActionEvent?) {
             super.doAction(e)

@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.michaelbaranov.microba.calendar.DatePicker
+import software.aws.toolkits.resources.message
 import javax.swing.JComboBox
 import javax.swing.JPanel
 import javax.swing.JRadioButton
@@ -43,7 +44,11 @@ class QueryEditor internal constructor(private val project: Project) {
         showLogGroupTable = AddRemoveLogGroupTable(project)
         initArLogGroupTable()
         tablePanel.setContent(showLogGroupTable.component)
-        val timeUnits = arrayOf("Minutes", "Hours", "Days", "Weeks")
+        val timeUnits = arrayOf(
+            message("cloudwatch.logs.time_minutes"),
+            message("cloudwatch.logs.time_hours"),
+            message("cloudwatch.logs.time_days"),
+            message("cloudwatch.logs.time_weeks"))
         relativeTimeUnit = ComboBox<String>(timeUnits)
     }
 
