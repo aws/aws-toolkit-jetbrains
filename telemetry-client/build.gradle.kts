@@ -14,7 +14,7 @@ dependencies {
 val generatedSources = "$buildDir/generated-src"
 
 sourceSets {
-    getByName("main").java.srcDir(generatedSources)
+    main.get().java.srcDir(generatedSources)
 }
 
 idea {
