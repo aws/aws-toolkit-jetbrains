@@ -4,7 +4,8 @@
 import de.undercouch.gradle.tasks.download.Download
 
 plugins {
-    id("de.undercouch.download") version "4.1.1"
+    // Cannot include version or else we get the error "already on the classpath must not include a version"
+    id("de.undercouch.download")
 }
 
 sourceSets {
