@@ -11,6 +11,11 @@ object RuleUtils {
         return "${prefix.toLowerCase()}-${userName.toLowerCase()}-${Random().nextInt(10000)}".take(length)
     }
 
+    fun randomName(length: Int): String {
+        val characters = ('0'..'9') + ('A'..'Z') + ('a'..'Z')
+        return List(length) { characters.random() }.joinToString("")
+    }
+
     fun prefixFromCallingClass(): String {
         val callingClass = Thread.currentThread().stackTrace[3].className
         return callingClass.substringAfterLast(".")

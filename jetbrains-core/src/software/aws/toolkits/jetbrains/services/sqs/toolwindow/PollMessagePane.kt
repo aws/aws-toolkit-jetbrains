@@ -2,12 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,10 +10,11 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
-import software.aws.toolkits.jetbrains.services.sqs.MAX_NUMBER_OF_MESSAGES
+import software.aws.toolkits.jetbrains.services.sqs.MAX_NUMBER_OF_POLLED_MESSAGES
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
+import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 
@@ -30,22 +25,28 @@ class PollMessagePane(
     lateinit var component: JPanel
     lateinit var messagesAvailableLabel: JLabel
     lateinit var tablePanel: SimpleToolWindowPanel
+    lateinit var pollButton: JButton
     val messagesTable = MessagesTable()
-    var isSetup = false
 
     private fun createUIComponents() {
         tablePanel = SimpleToolWindowPanel(false, true)
     }
 
     init {
-        tablePanel.setContent(messagesTable.component)
-        addToolbar()
+        tablePanel.setContent(PollWarning(this).content)
+        pollButton.isVisible = false
+        pollButton.addActionListener {
+            poll()
+        }
     }
 
-    fun setUp() = launch {
-        isSetup = true
-        requestMessages()
-        addTotal()
+    fun startPolling() {
+        tablePanel.setContent(messagesTable.component)
+        pollButton.isVisible = true
+        launch {
+            requestMessages()
+            addTotal()
+        }
     }
 
     suspend fun requestMessages() {
@@ -54,7 +55,7 @@ class PollMessagePane(
                 val polledMessages: List<Message> = client.receiveMessage {
                     it.queueUrl(queue.queueUrl)
                     it.attributeNames(QueueAttributeName.ALL)
-                    it.maxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
+                    it.maxNumberOfMessages(MAX_NUMBER_OF_POLLED_MESSAGES)
                 }.messages()
 
                 polledMessages.forEach {
@@ -82,24 +83,16 @@ class PollMessagePane(
         }
     }
 
-    private fun addToolbar() {
-        val actionGroup = DefaultActionGroup()
-        actionGroup.addAction(object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
-            override fun actionPerformed(e: AnActionEvent) {
-                refreshTable()
-            }
-        })
-        tablePanel.toolbar = ActionManager.getInstance().createActionToolbar("PollMessagePane", actionGroup, false).component
-    }
-
     // TODO: Add message table actions
 
-    private fun refreshTable() = launch {
+    private fun poll() = launch {
+        // TODO: Add debounce
         messagesTable.setBusy(busy = true)
         // Remove all entries
         while (messagesTable.tableModel.rowCount != 0) {
             messagesTable.tableModel.removeRow(0)
         }
+
         requestMessages()
         addTotal()
     }

@@ -57,7 +57,7 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         )
         val tableModel = table.tableModel
         runBlocking {
-            pane.setUp()
+            pane.requestMessages()
             tableModel.waitForModelToBeAtLeast(1)
         }
 
@@ -73,7 +73,7 @@ class PollMessagePaneTest : BaseCoroutineTest() {
             ReceiveMessageResponse.builder().build()
         )
         runBlocking {
-            pane.setUp()
+            pane.requestMessages()
             waitForTrue { table.table.emptyText.text == message("sqs.message.no_messages") }
         }
 

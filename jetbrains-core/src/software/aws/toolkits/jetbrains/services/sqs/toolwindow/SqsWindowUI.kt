@@ -8,33 +8,21 @@ import com.intellij.util.ui.JBUI
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.resources.message
-import javax.swing.event.ChangeListener
 
 // Will add more parameters once window is populated
 class SqsWindowUI(
     private val client: SqsClient,
     val queue: Queue
 ) {
-    private val pane = PollMessagePane(client, queue)
-    // This makes sure that PollMessagePane is properly set up when switched to the Poll Message tab
-    private val changeListener = ChangeListener { e ->
-        val selected = e?.source as JBTabbedPane
-        if ((selected.selectedIndex == POLL_MESSAGE_PANE) && (!pane.isSetup)) {
-            pane.setUp()
-        }
-    }
-
     val mainPanel = JBTabbedPane().apply {
         tabComponentInsets = JBUI.emptyInsets()
         border = JBUI.Borders.empty()
-        add(message("sqs.queue.polled.messages"), pane.component)
+        add(message("sqs.queue.polled.messages"), PollMessagePane(client, queue).component)
         add(message("sqs.send.message"), SendMessagePane().component)
-        addChangeListener(changeListener)
     }
 
     fun pollMessage() {
         mainPanel.selectedIndex = POLL_MESSAGE_PANE
-        pane.setUp()
     }
 
     fun sendMessage() {

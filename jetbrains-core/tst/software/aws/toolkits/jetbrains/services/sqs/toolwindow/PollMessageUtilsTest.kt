@@ -9,24 +9,13 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
-import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_MESSAGES
+import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_POLLED_MESSAGES
 
 class PollMessageUtilsTest {
-    private val message1 = buildMessage("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-    private val message2 = buildMessage("""VJBIGiHnyegmcoGOEqS7EfHB8xU2CTyUHuJOPDap1ThwWFJ3WbdBlj73YGJtWQM8FWYeBxxUzeZOq7kW9WuYQGoFZ923Gm1jz78N9RnX
-                                        bA32CjBopsmUYKACH3rOFr4bGwduwTJNfbVrmOy1hENDXNf1j2sHU6XtP9SQ5hDbk6AFp4CRTVnvShYH8n9zEZ3Y02pjNUSuW4kasF3PG9It8uanG
-                                        HkjjUzNQIBifk4GH0JLkXJPAK3ecn3snKRaZzeVoCQ9rhJishhmXiG9nsPCN98lwcaNJs5BCcVlOrqpzvSi7xS6k2XTzVoF22itZ571QBecnv2Nlz
-                                        2GC4W88hdnzX51SZs034yxOqCIFRNldqhXh7JDl5hAzkQ99CqgRnJbCszJsstPkUF0Ro5ZNHVXncJxkzW8Std9r5BxdET9QUw0nUCEQvElOWJhb9E
-                                        DZtMHB3EtQMFJqsVIoYz79tW2exBP6ZRPMeemXXE2kdCj3aQBdlPTMF1aH6FBim6xJOFPuUVJIq6lKJEe3Gzk4Ssw9OSLuPN2xkvg5Hr8V4CfI2su
-                                        9l4sgKKmXa4MYrzKkBXbvsEqBvUW6gVYNowoVczA1rkPoRsi9VEeIly3TQYXoLPcZVUY0ViUFKFsSYMlgLlv8wLqW2hGeqEiEc8EN4YnuZDO1Nc4d
-                                        rBf0QMjj8DvyN6otEUXBGJ7Xj0cBQ7VnRXxv4WNe37Nlsrvi7tgCAmBok3Zf318D2m7tfaszh0onSNP4sCyXj1J9srlwMI5rzh2UE8Z7V8mLM""")
-    private val message3 = buildMessage("""FVJBIGiHnyegmcoGOEqS7EfHB8xU2CTyUHuJOPDap1ThwWFJ3WbdBlj73YGJtWQM8FWYeBxxUzeZOq7kW9WuYQGoFZ923Gm1jz78N9Rn
-                                        bA32CjBopsmUYKACH3rOFr4bGwduwTJNfbVrmOy1hENDXNf1j2sHU6XtP9SQ5hDbk6AFp4CRTVnvShYH8n9zEZ3Y02pjNUSuW4kasF3PG9It8uanG
-                                        HkjjUzNQIBifk4GH0JLkXJPAK3ecn3snKRaZzeVoCQ9rhJishhmXiG9nsPCN98lwcaNJs5BCcVlOrqpzvSi7xS6k2XTzVoF22itZ571QBecnv2Nlz
-                                        2GC4W88hdnzX51SZs034yxOqCIFRNldqhXh7JDl5hAzkQ99CqgRnJbCszJsstPkUF0Ro5ZNHVXncJxkzW8Std9r5BxdET9QUw0nUCEQvElOWJhb9E
-                                        DZtMHB3EtQMFJqsVIoYz79tW2exBP6ZRPMeemXXE2kdCj3aQBdlPTMF1aH6FBim6xJOFPuUVJIq6lKJEe3Gzk4Ssw9OSLuPN2xkvg5Hr8V4CfI2su
-                                        9l4sgKKmXa4MYrzKkBXbvsEqBvUW6gVYNowoVczA1rkPoRsi9VEeIly3TQYXoLPcZVUY0ViUFKFsSYMlgLlv8wLqW2hGeqEiEc8EN4YnuZDO1Nc4d
-                                        rBf0QMjj8DvyN6otEUXBGJ7Xj0cBQ7VnRXxv4WNe37Nlsrvi7tgCAmBok3Zf318D2m7tfaszh0onSNP4sCyXj1J9srlwMI5rzh2UEX8Z7V8mLM""")
+    private val message1 = buildMessage(RuleUtils.randomName(10))
+    private val message2 = buildMessage(RuleUtils.randomName(1024))
+    private val message3 = buildMessage(RuleUtils.randomName(1025))
 
     @JvmField
     @Rule
@@ -54,9 +43,9 @@ class PollMessageUtilsTest {
         // Message 3 has length of 1025
         val column3 = MessageBodyColumn().valueOf(message3)
 
-        assertThat(column1?.length).isEqualTo(message1.body().length)
-        assertThat(column2?.length).isEqualTo(MAX_LENGTH_OF_MESSAGES)
-        assertThat(column3?.length).isEqualTo(MAX_LENGTH_OF_MESSAGES)
+        assertThat(column1?.length).isEqualTo(10)
+        assertThat(column2?.length).isEqualTo(MAX_LENGTH_OF_POLLED_MESSAGES)
+        assertThat(column3?.length).isEqualTo(MAX_LENGTH_OF_POLLED_MESSAGES)
     }
 
     private fun buildMessage(body: String): Message {

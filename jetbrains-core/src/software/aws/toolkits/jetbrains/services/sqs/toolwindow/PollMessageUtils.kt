@@ -7,7 +7,7 @@ import com.intellij.util.ui.ColumnInfo
 import org.apache.commons.lang.StringUtils
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
-import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_MESSAGES
+import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_POLLED_MESSAGES
 import software.aws.toolkits.jetbrains.utils.ui.ResizingDateColumnRenderer
 import software.aws.toolkits.jetbrains.utils.ui.ResizingTextColumnRenderer
 import software.aws.toolkits.jetbrains.utils.ui.WrappingCellRenderer
@@ -25,7 +25,7 @@ class MessageIdColumn : ColumnInfo<Message, String>(message("sqs.message.message
 class MessageBodyColumn : ColumnInfo<Message, String>(message("sqs.message.message_body")) {
     private val renderer = WrappingCellRenderer(wrapOnSelection = true, toggleableWrap = false)
     // Truncated the message body to show up to 1KB, as it can be up to 256KB in size. Cannot limit the retrieved message size through API.
-    override fun valueOf(item: Message?): String? = StringUtils.abbreviate(item?.body(), MAX_LENGTH_OF_MESSAGES)
+    override fun valueOf(item: Message?): String? = StringUtils.abbreviate(item?.body(), MAX_LENGTH_OF_POLLED_MESSAGES)
     override fun isCellEditable(item: Message?): Boolean = false
     override fun getRenderer(item: Message?): TableCellRenderer? = renderer
 }
