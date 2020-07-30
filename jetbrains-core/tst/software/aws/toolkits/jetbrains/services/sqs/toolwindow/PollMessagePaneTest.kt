@@ -41,7 +41,7 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         .build()
 
     @Before
-    fun loadVariables() {
+    fun reset() {
         client = mockClientManagerRule.create()
         region = MockRegionProvider.getInstance().defaultRegion()
         queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test1", region)

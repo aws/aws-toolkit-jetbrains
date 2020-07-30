@@ -16,9 +16,9 @@ class ECSTemporaryServiceRule(val ecsClient: EcsClient) : ExternalResource() {
     /**
      * Creates a temporary service. A random name with the generated prefix will be generated if a name is not provided in the request.
      */
-    fun createService(prefix: String = RuleUtils.prefixFromCallingClass(), serviceBuilder: (CreateServiceRequest.Builder) -> Unit): Service {
+    fun createService(serviceBuilder: (CreateServiceRequest.Builder) -> Unit): Service {
         val service = ecsClient.createService {
-            it.serviceName(RuleUtils.randomName(prefix))
+            it.serviceName(RuleUtils.randomName())
             serviceBuilder(it)
         }.service()
 

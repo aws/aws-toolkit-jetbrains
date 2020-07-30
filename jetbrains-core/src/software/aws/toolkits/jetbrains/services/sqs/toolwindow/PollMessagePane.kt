@@ -88,11 +88,7 @@ class PollMessagePane(
     private fun poll() = launch {
         // TODO: Add debounce
         messagesTable.setBusy(busy = true)
-        // Remove all entries
-        while (messagesTable.tableModel.rowCount != 0) {
-            messagesTable.tableModel.removeRow(0)
-        }
-
+        messagesTable.reset()
         requestMessages()
         addTotal()
     }

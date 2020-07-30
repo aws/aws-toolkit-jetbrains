@@ -6,12 +6,7 @@ package software.aws.toolkits.core.utils
 import java.util.Random
 
 object RuleUtils {
-    fun randomName(prefix: String = "a", length: Int = 63): String {
-        val userName = System.getProperty("user.name", "unknown")
-        return "${prefix.toLowerCase()}-${userName.toLowerCase()}-${Random().nextInt(10000)}".take(length)
-    }
-
-    fun randomName(length: Int): String {
+    fun randomName(length: Int = 63): String {
         val characters = ('0'..'9') + ('A'..'Z') + ('a'..'Z')
         return List(length) { characters.random() }.joinToString("")
     }

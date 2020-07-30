@@ -38,6 +38,12 @@ class MessagesTable {
         component = ScrollPaneFactory.createScrollPane(table)
     }
 
+    fun reset() {
+        while (tableModel.rowCount != 0) {
+            tableModel.removeRow(0)
+        }
+    }
+
     fun setBusy(busy: Boolean) {
         table.setPaintBusy(busy)
         if (busy) {
