@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.aws.toolkits.jetbrains.core.awsClient
 import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.JComponent
@@ -23,17 +25,16 @@ val relativeTimeUnit = mapOf(
 class QueryEditorDialog(
     private val project: Project,
     private val lGroupName: String,
-    private val absoluteTimeSelected: Boolean = false
-
+    private val client: CloudWatchLogsClient
 ) : DialogWrapper(project) {
     constructor(project: Project, logGroupName: String) :
-        this(project = project, lGroupName = logGroupName)
+        this(project = project, lGroupName = logGroupName, client = project.awsClient())
 
     private val view = QueryEditor(project)
     private val queryingLogGroupApiCall = QueryingLogGroups(project)
     private val action: OkAction = QueryLogGroupOkAction()
-    private val logGroupNames = mutableListOf(lGroupName)
-    private val validator = QueryEditorValidator
+    private val logGroupNames = listOf(lGroupName)
+
     init {
         super.init()
         title = message("cloudwatch.logs.query_editor_title")
@@ -59,7 +60,7 @@ class QueryEditorDialog(
         }
     }
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
-    override fun doValidate(): ValidationInfo? = validator.validateEditorEntries(view)
+    override fun doValidate(): ValidationInfo? = validateEditorEntries(view)
     override fun getOKAction(): Action = action
     override fun doCancelAction() {
         super.doCancelAction()
@@ -100,7 +101,7 @@ class QueryEditorDialog(
             getFilterQuery(funDetails.searchTerm)
         }
         close(OK_EXIT_CODE)
-        queryingLogGroupApiCall.executeStartQuery(queryStartEndDate, funDetails.logGroupName, query)
+        queryingLogGroupApiCall.executeStartQuery(queryStartEndDate, funDetails.logGroupName, query, client)
     }
 
     private fun getFunctionDetails(): QueryDetails = QueryDetails(
@@ -127,10 +128,8 @@ class QueryEditorDialog(
             beginQuerying()
         }
     }
-}
 
-object QueryEditorValidator {
-    fun validateEditorEntries(view: QueryEditor): ValidationInfo? {
+    public fun validateEditorEntries(view: QueryEditor): ValidationInfo? {
         if (!view.absoluteTimeRadioButton.isSelected && !view.relativeTimeRadioButton.isSelected) {
             return ValidationInfo(message("cloudwatch.logs.validation.timerange"), view.absoluteTimeRadioButton)
         }

@@ -8,12 +8,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.StartQueryRequest
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
 class QueryingLogGroups(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("ExecutingQuery") {
-    private var client: CloudWatchLogsClient = project.awsClient()
-    fun executeStartQuery(queryStartEndDate: StartEndDate, logGroupNames: List<String>, query: String) = launch {
+    fun executeStartQuery(queryStartEndDate: StartEndDate, logGroupNames: List<String>, query: String, client: CloudWatchLogsClient) = launch {
         // TODO: Multiple log groups queried (currently only a single log group can be selected and queried)
         val request = StartQueryRequest.builder()
             .endTime(queryStartEndDate.endDate.epochSecond)

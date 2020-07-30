@@ -7,7 +7,8 @@ import java.time.Instant
 import java.util.Date
 
 data class SelectedLogGroups(
-    var logGroups: String? = TODO()
+    // TODO Will be changed to List of string in future implementation
+    var logGroups: String? = null
 )
 
 data class QueryDetails(
