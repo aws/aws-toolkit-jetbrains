@@ -13,9 +13,9 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_POLLED_MESSAGES
 
 class PollMessageUtilsTest {
-    private val message1 = buildMessage(RuleUtils.randomName(10))
-    private val message2 = buildMessage(RuleUtils.randomName(1024))
-    private val message3 = buildMessage(RuleUtils.randomName(1025))
+    private val message1 = buildMessage(RuleUtils.randomName(length = 10))
+    private val message2 = buildMessage(RuleUtils.randomName(length = 1024))
+    private val message3 = buildMessage(RuleUtils.randomName(length = 1025))
 
     @JvmField
     @Rule

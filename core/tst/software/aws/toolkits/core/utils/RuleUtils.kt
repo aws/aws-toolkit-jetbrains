@@ -6,9 +6,10 @@ package software.aws.toolkits.core.utils
 import java.util.Random
 
 object RuleUtils {
-    fun randomName(length: Int = 63): String {
+    fun randomName(prefix: String = "a", length: Int = 63): String {
         val characters = ('0'..'9') + ('A'..'Z') + ('a'..'Z')
-        return List(length) { characters.random() }.joinToString("")
+        val userName = System.getProperty("user.name", "unknown")
+        return "${prefix.toLowerCase()}-${userName.toLowerCase()}-${List(length) { characters.random() }.joinToString("")}".take(length)
     }
 
     fun prefixFromCallingClass(): String {
