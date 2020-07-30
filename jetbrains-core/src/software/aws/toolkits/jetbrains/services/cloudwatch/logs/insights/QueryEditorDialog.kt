@@ -32,9 +32,8 @@ class QueryEditorDialog(
     private val view = QueryEditor(project)
     private val queryingLogGroupApiCall = QueryingLogGroups(project)
     private val action: OkAction = QueryLogGroupOkAction()
-    private val validator = QueryEditorValidator
     private val logGroupNames = mutableListOf(lGroupName)
-
+    private val validator = QueryEditorValidator
     init {
         super.init()
         title = message("cloudwatch.logs.query_editor_title")
@@ -133,13 +132,17 @@ class QueryEditorDialog(
 object QueryEditorValidator {
     fun validateEditorEntries(view: QueryEditor): ValidationInfo? {
         if (!view.absoluteTimeRadioButton.isSelected && !view.relativeTimeRadioButton.isSelected) {
-        return ValidationInfo(message("cloudwatch.logs.validation.timerange"), view.absoluteTimeRadioButton) }
+            return ValidationInfo(message("cloudwatch.logs.validation.timerange"), view.absoluteTimeRadioButton)
+        }
         if (view.relativeTimeRadioButton.isSelected && view.relativeTimeNumber.text.isEmpty()) {
-            return ValidationInfo(message("cloudwatch.logs.no_relative_time_number"), view.relativeTimeNumber) }
+            return ValidationInfo(message("cloudwatch.logs.no_relative_time_number"), view.relativeTimeNumber)
+        }
         if (view.absoluteTimeRadioButton.isSelected && view.startDate.date > view.endDate.date) {
-            return ValidationInfo(message("cloudwatch.logs.compare.start.end.date"), view.startDate) }
+            return ValidationInfo(message("cloudwatch.logs.compare.start.end.date"), view.startDate)
+        }
         if (!view.queryLogGroupsRadioButton.isSelected && !view.searchTerm.isSelected) {
-            return ValidationInfo(message("cloudwatch.logs.no_query_selected"), view.searchTerm) }
+            return ValidationInfo(message("cloudwatch.logs.no_query_selected"), view.searchTerm)
+        }
         if (view.queryLogGroupsRadioButton.isSelected && view.queryBox.text.isEmpty()) {
             return ValidationInfo(message("cloudwatch.logs.no_query_entered"), view.queryBox)
         }

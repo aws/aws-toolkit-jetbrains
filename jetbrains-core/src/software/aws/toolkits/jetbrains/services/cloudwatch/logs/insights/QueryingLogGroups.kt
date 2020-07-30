@@ -13,7 +13,8 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
 class QueryingLogGroups(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("ExecutingQuery") {
     private var client: CloudWatchLogsClient = project.awsClient()
-    fun executeStartQuery(queryStartEndDate: StartEndDate, logGroupNames: MutableList<String>, query: String) = launch {
+    fun executeStartQuery(queryStartEndDate: StartEndDate, logGroupNames: List<String>, query: String) = launch {
+        // TODO: Multiple log groups queried (currently only a single log group can be selected and queried)
         val request = StartQueryRequest.builder()
             .endTime(queryStartEndDate.endDate.epochSecond)
             .logGroupName(logGroupNames[0])
@@ -22,7 +23,6 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
             .build()
         val response = client.startQuery(request)
         val queryId = response.queryId()
-
         // TODO: Get the results of the query with qid
     }
 }

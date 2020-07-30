@@ -7,11 +7,11 @@ import java.time.Instant
 import java.util.Date
 
 data class SelectedLogGroups(
-    var logGroups: String? = null
+    var logGroups: String? = TODO()
 )
 
 data class QueryDetails(
-    val logGroupName: MutableList<String>,
+    val logGroupName: List<String>,
     val absoluteTimeSelected: Boolean,
     val startDateAbsolute: Date,
     val endDateAbsolute: Date,

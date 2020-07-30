@@ -69,13 +69,13 @@ class QueryingLogGroupsTest {
     }
 
     @Test
-    fun `All form entries validated Variant1`() {
+    fun `Path with relative time and queries correctly entered gets executed`() {
         getViewDetails(relativeTime = true, queryLogs = true, query = "fields @timestamp")
         assertThat(validator.validateEditorEntries(view)?.message).isNull()
     }
 
     @Test
-    fun `All form entries validated Variant2`() {
+    fun `Path with absolute time and a search term entered gets executed`() {
         val cal = Calendar.getInstance()
         cal.add(Calendar.DATE, -1)
         getViewDetails(absoluteTime = true, endDate = Calendar.getInstance().time, startDate = cal.time, querySearch = true, searchTerm = "Error")
