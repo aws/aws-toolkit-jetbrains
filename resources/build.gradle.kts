@@ -4,7 +4,7 @@
 import de.undercouch.gradle.tasks.download.Download
 
 plugins {
-    id("de.undercouch.download")
+    id("de.undercouch.download") version "4.1.1"
 }
 
 sourceSets {
