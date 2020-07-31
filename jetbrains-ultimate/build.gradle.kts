@@ -26,10 +26,10 @@ extensions.configure<IntelliJPluginExtension>("intellij") {
     downloadSources = parentIntellijTask.downloadSources
 }
 
-tasks.withType(Test::class.java) {
+tasks.test {
     systemProperty("log.dir", "${(project.extensions["intellij"] as IntelliJPluginExtension).sandboxDirectory}-test/logs")
 }
 
-tasks.withType(Jar::class.java) {
+tasks.jar {
     archiveBaseName.set("aws-intellij-toolkit-ultimate")
 }
