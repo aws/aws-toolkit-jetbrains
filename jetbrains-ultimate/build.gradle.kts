@@ -4,10 +4,11 @@
 import groovy.lang.Closure
 import org.jetbrains.intellij.IntelliJPluginExtension
 
-val ideSdkVersion: Closure<String> by ext
-val idePlugins: Closure<Array<String>> by ext
-
+apply(from = "../intellijJVersions.gradle")
 apply(plugin = "org.jetbrains.intellij")
+
+val ideSdkVersion: Closure<String> by ext
+val idePlugins: Closure<ArrayList<String>> by ext
 
 dependencies {
     api(project(":jetbrains-core"))
@@ -16,17 +17,17 @@ dependencies {
     integrationTestImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
 }
 
-configure<IntelliJPluginExtension> {
-    val parentIntellijTask = project(":jetbrains-core").task("intellij") as IntelliJPluginExtension
+extensions.configure<IntelliJPluginExtension>("intellij") {
+    val parentIntellijTask = project(":jetbrains-core").extensions["intellij"] as IntelliJPluginExtension
     version = ideSdkVersion("IU")
-    plugins = idePlugins("IU")
+    setPlugins(*(idePlugins("IU").toArray()))
     pluginName = parentIntellijTask.pluginName
     updateSinceUntilBuild = parentIntellijTask.updateSinceUntilBuild
     downloadSources = parentIntellijTask.downloadSources
 }
 
 tasks.withType(Test::class.java) {
-    systemProperty("log.dir", "${(project.task("intellij") as IntelliJPluginExtension).sandboxDirectory}-test/logs")
+    systemProperty("log.dir", "${(project.extensions["intellij"] as IntelliJPluginExtension).sandboxDirectory}-test/logs")
 }
 
 tasks.withType(Jar::class.java) {
