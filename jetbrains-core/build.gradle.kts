@@ -64,7 +64,7 @@ sourceSets {
     main.get().java.srcDir("${project.buildDir}/generated-src")
 }
 
-tasks.withType(Test::class.java) {
+tasks.test {
     systemProperty("log.dir", "${project.intellij().sandboxDirectory}-test/logs")
 }
 
@@ -73,10 +73,12 @@ val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
 }
 
-jar.dependsOn(changelog)
-jar.archiveBaseName.set("aws-intellij-toolkit-core")
-jar.from(changelog.get().changeLogFile) {
-    into("META-INF")
+tasks.jar {
+    dependsOn(changelog)
+    archiveBaseName.set("aws-intellij-toolkit-core")
+    from(changelog.get().changeLogFile) {
+        into("META-INF")
+    }
 }
 
 dependencies {
