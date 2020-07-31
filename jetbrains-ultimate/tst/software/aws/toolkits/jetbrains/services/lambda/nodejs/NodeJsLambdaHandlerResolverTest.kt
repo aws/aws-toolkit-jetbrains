@@ -10,7 +10,9 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.utils.rules.NodeJsCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addLambdaHandler
 import software.aws.toolkits.jetbrains.utils.rules.addPackageJsonFile
@@ -274,7 +276,7 @@ class NodeJsLambdaHandlerResolverTest {
     }
 
     private fun assertDetermineHandler(handlerElement: PsiElement, expectedHandlerFullName: String?) {
-        val resolver = LambdaHandlerResolver.getInstanceOrThrow(NodeJsRuntimeGroup.INSTANCE)
+        val resolver = LambdaHandlerResolver.getInstanceOrThrow(RuntimeGroup.getById(BuiltInRuntimeGroups.NodeJs))
 
         runInEdtAndWait {
             if (expectedHandlerFullName != null) {
@@ -286,7 +288,7 @@ class NodeJsLambdaHandlerResolverTest {
     }
 
     private fun assertFindPsiElements(handler: String, shouldBeFound: Boolean) {
-        val resolver = LambdaHandlerResolver.getInstanceOrThrow(NodeJsRuntimeGroup.INSTANCE)
+        val resolver = LambdaHandlerResolver.getInstanceOrThrow(RuntimeGroup.getById(BuiltInRuntimeGroups.NodeJs))
         runInEdtAndWait {
             val project = projectRule.fixture.project
             val lambdas = resolver.findPsiElements(project, handler, GlobalSearchScope.allScope(project))

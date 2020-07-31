@@ -26,7 +26,8 @@ import com.jetbrains.rider.ui.themes.RiderTheme
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
-import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetRuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 import software.aws.toolkits.resources.message
@@ -56,7 +57,7 @@ class DotNetSamProjectGenerator(
     private val generator = SamProjectGenerator()
     private val samPanel = SamInitSelectionPanel(generator) {
         // Only show templates for DotNet in Rider
-        DotNetRuntimeGroup.INSTANCE.runtimes.contains(it)
+        RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).runtimes.contains(it)
     }
 
     private val projectStructurePanel: JTabbedPane

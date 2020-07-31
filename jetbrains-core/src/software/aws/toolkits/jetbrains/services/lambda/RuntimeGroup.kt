@@ -20,6 +20,16 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint
 
 /**
+ * IDs for built-in runtime groups that ship with toolkit
+ */
+object BuiltInRuntimeGroups {
+    const val Python = "PYTHON"
+    const val Dotnet = "DOTNET"
+    const val Java = "JAVA"
+    const val NodeJs = "NODEJS"
+}
+
+/**
  * Grouping of Lambda [Runtime] by parent language.
  *
  * A Lambda [Runtime] belongs to a single [RuntimeGroup], a [RuntimeGroup] may have several Lambda [Runtime]s, [Language]s or [Sdk]s.
@@ -41,7 +51,9 @@ interface RuntimeGroup {
         @JvmStatic
         fun find(predicate: (RuntimeGroup) -> Boolean): RuntimeGroup? = registeredRuntimeGroups().firstOrNull(predicate)
 
-        fun finById(id: String) = find { it.id == id }
+        fun findById(id: String): RuntimeGroup? = find { it.id == id }
+
+        fun getById(id: String): RuntimeGroup = findById(id) ?: throw IllegalStateException("No RuntimeGroup with $id is registered")
 
         fun determineRuntime(project: Project?): Runtime? = project?.let { _ ->
             registeredRuntimeGroups().asSequence().mapNotNull { it.determineRuntime(project) }.firstOrNull()

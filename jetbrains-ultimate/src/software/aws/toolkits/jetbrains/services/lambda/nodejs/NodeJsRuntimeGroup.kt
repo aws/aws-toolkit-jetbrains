@@ -12,14 +12,11 @@ import com.intellij.openapi.module.WebModuleTypeBase
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 
 class NodeJsRuntimeGroup : SdkBasedRuntimeGroup() {
-    companion object {
-        val INSTANCE = NodeJsRuntimeGroup()
-    }
-
-    override val id: String = "NODEJS"
+    override val id: String = BuiltInRuntimeGroups.NodeJs
 
     override val runtimes: Set<Runtime> = setOf(
         Runtime.NODEJS10_X,

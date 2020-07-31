@@ -12,14 +12,11 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 
 class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
-    companion object {
-        val INSTANCE = JavaRuntimeGroup()
-    }
-
-    override val id: String = "JAVA"
+    override val id: String = BuiltInRuntimeGroups.Java
     override val runtimes = setOf(Runtime.JAVA8, Runtime.JAVA11)
     override val languageIds = setOf(JavaLanguage.INSTANCE.id)
 

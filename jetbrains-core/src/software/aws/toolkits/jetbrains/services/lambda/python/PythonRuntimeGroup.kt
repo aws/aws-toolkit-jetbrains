@@ -11,14 +11,11 @@ import com.jetbrains.python.PythonModuleTypeBase
 import com.jetbrains.python.psi.LanguageLevel
 import com.jetbrains.python.sdk.PythonSdkType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 
 class PythonRuntimeGroup : SdkBasedRuntimeGroup() {
-    companion object {
-        val INSTANCE = PythonRuntimeGroup()
-    }
-
-    override val id: String = "PYTHON"
+    override val id: String = BuiltInRuntimeGroups.Python
     override val runtimes: Set<Runtime> = setOf(
         Runtime.PYTHON2_7,
         Runtime.PYTHON3_6,

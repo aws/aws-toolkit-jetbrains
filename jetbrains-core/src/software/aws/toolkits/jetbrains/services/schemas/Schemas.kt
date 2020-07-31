@@ -5,8 +5,7 @@ package software.aws.toolkits.jetbrains.services.schemas
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import software.amazon.awssdk.services.schemas.model.SchemaSummary
-import software.aws.toolkits.jetbrains.services.lambda.java.JavaRuntimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.resources.message
 
 enum class SchemaCodeLangs(
@@ -15,9 +14,9 @@ enum class SchemaCodeLangs(
     val extension: String,
     val runtimeGroupId: String
 ) {
-    JAVA8("Java8", message("schemas.schema.SchemaCodeLangs.JAVA8"), "java", JavaRuntimeGroup.INSTANCE.id),
-    PYTHON3_6("Python36", message("schemas.schema.SchemaCodeLangs.PYTHON3_6"), "py", PythonRuntimeGroup.INSTANCE.id),
-    TYPESCRIPT("TypeScript3", message("schemas.schema.SchemaCodeLangs.TYPESCRIPT"), "ts", "NODEJS");
+    JAVA8("Java8", message("schemas.schema.SchemaCodeLangs.JAVA8"), "java", BuiltInRuntimeGroups.Java),
+    PYTHON3_6("Python36", message("schemas.schema.SchemaCodeLangs.PYTHON3_6"), "py", BuiltInRuntimeGroups.Python),
+    TYPESCRIPT("TypeScript3", message("schemas.schema.SchemaCodeLangs.TYPESCRIPT"), "ts", BuiltInRuntimeGroups.NodeJs);
 
     override fun toString() = text
 }
