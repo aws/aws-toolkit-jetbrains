@@ -139,7 +139,7 @@
         </constraints>
         <properties>
           <foreground color="-567206"/>
-          <text value="Please enter a message body."/>
+          <text value="Please enter message body."/>
         </properties>
       </component>
       <component id="3e10a" class="com.intellij.ui.components.panels.NonOpaquePanel" binding="confirmationPanel">
