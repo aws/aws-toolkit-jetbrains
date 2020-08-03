@@ -53,10 +53,17 @@ class QueryEditorDialog(
         view.queryLogGroupsRadioButton.addActionListener {
             view.queryBox.isEnabled = true
             view.querySearchTerm.isEnabled = false
+            view.saveQueryButton.isEnabled =true
         }
         view.searchTerm.addActionListener {
             view.queryBox.isEnabled = false
             view.querySearchTerm.isEnabled = true
+        }
+
+        view.saveQueryButton.addActionListener {
+            if(view.queryBox.text.isNotBlank()){
+                SaveQueryDialog(project,view.queryBox.text,logGroupNames).show()
+            }
         }
     }
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
