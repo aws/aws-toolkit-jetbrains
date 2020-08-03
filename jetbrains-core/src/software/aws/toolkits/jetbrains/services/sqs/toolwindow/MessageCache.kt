@@ -9,7 +9,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
 @State(name = "sqs", storages = [Storage("aws.xml")])
-class MessageCache: PersistentStateComponent<RecentMessage> {
+class MessageCache : PersistentStateComponent<RecentMessage> {
     private var state = RecentMessage()
     override fun getState(): RecentMessage = state
     override fun loadState(state: RecentMessage) {
@@ -17,7 +17,8 @@ class MessageCache: PersistentStateComponent<RecentMessage> {
     }
 
     fun getMessage(value: String?): String? {
-        return state.savedMessage?.get(value)
+        val message = state.savedMessage?.get(value)
+        return message
     }
     fun setMessage(value: String, key: String) {
         state.savedMessage?.put(value, key)

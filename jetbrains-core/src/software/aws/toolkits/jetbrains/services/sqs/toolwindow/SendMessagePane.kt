@@ -2,20 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.openapi.ui.ComponentValidator
-import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.icons.AllIcons
+import com.intellij.ide.HelpTooltip
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.NonOpaquePanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.ui.validationInfo
+import software.aws.toolkits.resources.message
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -27,16 +26,18 @@ class SendMessagePane(
     lateinit var component: JPanel
     lateinit var inputText: JBTextArea
     lateinit var fifoComponent: JPanel
-    lateinit var deduplicationID: JBTextField
-    lateinit var groupID: JBTextField
+    lateinit var deduplicationId: JBTextField
+    lateinit var groupId: JBTextField
     lateinit var sendButton: JButton
     lateinit var clearButton: JButton
     lateinit var emptyBodyLabel: JLabel
     lateinit var emptyDeduplicationLabel: JLabel
     lateinit var emptyGroupLabel: JLabel
-    lateinit var successPanel: NonOpaquePanel
-    var isFifo = true
+    lateinit var confirmationPanel: NonOpaquePanel
+    lateinit var deduplicationContextHelp: JLabel
+    lateinit var groupContextHelp: JLabel
     var statusLabel = JLabel()
+    private var isFifo = true
     private val cache = MessageCache.getInstance()
 
     init {
@@ -46,8 +47,8 @@ class SendMessagePane(
         }
         clearButton.addActionListener {
             inputText.text = ""
-            deduplicationID.text = ""
-            groupID.text = ""
+            deduplicationId.text = ""
+            groupId.text = ""
             cache.setMessage(queue.queueUrl, inputText.text)
         }
     }
@@ -60,20 +61,25 @@ class SendMessagePane(
         emptyDeduplicationLabel.isVisible = false
         emptyGroupLabel.isVisible = false
         emptyBodyLabel.isVisible = false
-
-        inputText.apply {
-            emptyText.text = "Enter message body"
-        }
-        deduplicationID.apply {
-            emptyText.text = "(Required)"
-        }
-        groupID.apply {
-            emptyText.text = "(Required)"
-        }
-        successPanel.apply {
+        confirmationPanel.apply {
             isVisible = false
             setContent(statusLabel)
         }
+
+        deduplicationContextHelp.icon = AllIcons.General.ContextHelp
+        HelpTooltip().apply {
+            setDescription(message("sqs.message.deduplication_id.tooltip"))
+            installOn(deduplicationContextHelp)
+        }
+        groupContextHelp.icon = AllIcons.General.ContextHelp
+        HelpTooltip().apply {
+            setDescription(message("sqs.message.group_id.tooltip"))
+            installOn(groupContextHelp)
+        }
+
+        inputText.emptyText.text = message("sqs.send.message.body.empty.text")
+        deduplicationId.emptyText.text = message("sqs.send.message.required.empty.text")
+        groupId.emptyText.text = message("sqs.send.message.required.empty.text")
 
         inputText.text = cache.getMessage(queue.queueUrl)
     }
@@ -81,22 +87,22 @@ class SendMessagePane(
     suspend fun sendMessage() {
         if (validateFields()) {
             try {
+                var messageId: String? = null
                 withContext(Dispatchers.IO) {
-                    client.sendMessage {
+                    messageId = client.sendMessage {
                         it.queueUrl(queue.queueUrl)
                         it.messageBody(inputText.text)
                         if (isFifo) {
-                            it.messageDeduplicationId(deduplicationID.text)
-                            it.messageGroupId(groupID.text)
+                            it.messageDeduplicationId(deduplicationId.text)
+                            it.messageGroupId(groupId.text)
                         }
-                    }
+                    }.messageId()
                 }
-                // TODO: Display success of message sent
-                showSuccess(true)
-                println("SUCCESS")
+
+                showSuccess(true, messageId)
                 cache.setMessage(queue.queueUrl, inputText.text)
             } catch (e: Exception) {
-                showSuccess(false)
+                showSuccess(false, null)
             }
         }
     }
@@ -104,24 +110,20 @@ class SendMessagePane(
     private fun validateFields(): Boolean {
         emptyBodyLabel.isVisible = inputText.text.isEmpty()
         if (isFifo) {
-            emptyDeduplicationLabel.isVisible = deduplicationID.text.isEmpty()
-            emptyGroupLabel.isVisible = groupID.text.isEmpty()
+            emptyDeduplicationLabel.isVisible = deduplicationId.text.isEmpty()
+            emptyGroupLabel.isVisible = groupId.text.isEmpty()
         }
 
         return (!emptyBodyLabel.isVisible && !emptyDeduplicationLabel.isVisible && !emptyGroupLabel.isVisible)
     }
 
-    private suspend fun showSuccess(sent: Boolean) {
+    private fun showSuccess(sent: Boolean, id: String?) {
         if (sent) {
-            statusLabel.text = "Message sent"
+            statusLabel.text = id?.let { message("sqs.send.message.success", it) }
         } else {
-            statusLabel.text = "Error sending message"
+            statusLabel.text = message("sqs.send.message.error")
         }
 
-        launch {
-            successPanel.isVisible = true
-            delay(2000)
-            successPanel.isVisible = false
-        }
+        confirmationPanel.isVisible = true
     }
 }
