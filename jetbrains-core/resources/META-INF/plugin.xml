@@ -160,6 +160,7 @@
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CloudDebugSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.sqs.toolwindow.MessageCache"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 

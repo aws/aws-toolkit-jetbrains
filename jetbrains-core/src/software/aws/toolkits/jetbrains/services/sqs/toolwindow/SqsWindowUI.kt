@@ -18,7 +18,7 @@ class SqsWindowUI(
         tabComponentInsets = JBUI.emptyInsets()
         border = JBUI.Borders.empty()
         add(message("sqs.queue.polled.messages"), PollMessagePane(client, queue).component)
-        add(message("sqs.send.message"), SendMessagePane().component)
+        add(message("sqs.send.message"), SendMessagePane(client, queue).component)
     }
 
     fun pollMessage() {
