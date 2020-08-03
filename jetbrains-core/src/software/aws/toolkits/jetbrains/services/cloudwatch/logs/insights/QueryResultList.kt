@@ -1,0 +1,36 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
+
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.SimpleToolWindowPanel
+import kotlinx.coroutines.CoroutineScope
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
+import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import javax.swing.JButton
+import javax.swing.JLabel
+import javax.swing.JPanel
+
+class QueryResultList(
+    private val project: Project,
+    private val response: List<MutableList<ResultField>>
+) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
+    lateinit var resultsPanel: JPanel
+    private lateinit var tablePanel: SimpleToolWindowPanel
+    private lateinit var openQueryEditor: JButton
+    private lateinit var resultsTitle: JLabel
+    private val edtContext = getCoroutineUiContext(disposable = this)
+    val client: CloudWatchLogsClient = project.awsClient()
+    private val resultsTable: QueryResultsTable = QueryResultsTable(project, response, client)
+    private fun createUIComponents() {
+        // TODO: place custom component creation code here
+        tablePanel = SimpleToolWindowPanel(false, true)
+    }
+
+    override fun dispose() {
+    }
+}
