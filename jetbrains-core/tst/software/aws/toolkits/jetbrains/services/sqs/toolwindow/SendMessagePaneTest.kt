@@ -106,7 +106,7 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             }
         }
 
-        assertThat(standardPane.statusLabel.text).isEqualTo(message("sqs.send.message.error"))
+        assertThat(standardPane.statusLabel.text).isEqualTo(message("sqs.failed_to_send_message"))
     }
 
     @Test

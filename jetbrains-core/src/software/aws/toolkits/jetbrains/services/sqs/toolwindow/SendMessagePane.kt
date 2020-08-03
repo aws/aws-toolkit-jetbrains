@@ -50,6 +50,7 @@ class SendMessagePane(
             deduplicationId.text = ""
             groupId.text = ""
             cache.setMessage(queue.queueUrl, inputText.text)
+            confirmationPanel.isVisible = false
         }
     }
 
@@ -78,8 +79,8 @@ class SendMessagePane(
         }
 
         inputText.emptyText.text = message("sqs.send.message.body.empty.text")
-        deduplicationId.emptyText.text = message("sqs.send.message.required.empty.text")
-        groupId.emptyText.text = message("sqs.send.message.required.empty.text")
+        deduplicationId.emptyText.text = message("sqs.required.empty.text")
+        groupId.emptyText.text = message("sqs.required.empty.text")
 
         inputText.text = cache.getMessage(queue.queueUrl)
     }
@@ -87,9 +88,8 @@ class SendMessagePane(
     suspend fun sendMessage() {
         if (validateFields()) {
             try {
-                var messageId: String? = null
                 withContext(Dispatchers.IO) {
-                    messageId = client.sendMessage {
+                    val messageId = client.sendMessage {
                         it.queueUrl(queue.queueUrl)
                         it.messageBody(inputText.text)
                         if (isFifo) {
@@ -97,13 +97,14 @@ class SendMessagePane(
                             it.messageGroupId(groupId.text)
                         }
                     }.messageId()
-                }
 
-                showSuccess(true, messageId)
+                    statusLabel.text = message("sqs.send.message.success", messageId)
+                }
                 cache.setMessage(queue.queueUrl, inputText.text)
             } catch (e: Exception) {
-                showSuccess(false, null)
+                statusLabel.text = message("sqs.failed_to_send_message")
             }
+            confirmationPanel.isVisible = true
         }
     }
 
@@ -114,16 +115,6 @@ class SendMessagePane(
             emptyGroupLabel.isVisible = groupId.text.isEmpty()
         }
 
-        return (!emptyBodyLabel.isVisible && !emptyDeduplicationLabel.isVisible && !emptyGroupLabel.isVisible)
-    }
-
-    private fun showSuccess(sent: Boolean, id: String?) {
-        if (sent) {
-            statusLabel.text = id?.let { message("sqs.send.message.success", it) }
-        } else {
-            statusLabel.text = message("sqs.send.message.error")
-        }
-
-        confirmationPanel.isVisible = true
+        return !(emptyBodyLabel.isVisible || emptyDeduplicationLabel.isVisible || emptyGroupLabel.isVisible)
     }
 }

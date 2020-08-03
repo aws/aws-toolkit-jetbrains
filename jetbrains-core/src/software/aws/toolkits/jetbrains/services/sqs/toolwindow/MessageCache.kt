@@ -16,12 +16,9 @@ class MessageCache : PersistentStateComponent<RecentMessage> {
         this.state = state
     }
 
-    fun getMessage(value: String?): String? {
-        val message = state.savedMessage?.get(value)
-        return message
-    }
+    fun getMessage(value: String?): String? = state.savedMessage[value]
     fun setMessage(value: String, key: String) {
-        state.savedMessage?.put(value, key)
+        state.savedMessage[value] = key
     }
 
     companion object {
@@ -31,5 +28,5 @@ class MessageCache : PersistentStateComponent<RecentMessage> {
 }
 
 data class RecentMessage(
-    var savedMessage: MutableMap<String, String>? = mutableMapOf()
+    var savedMessage: MutableMap<String, String> = mutableMapOf()
 )
