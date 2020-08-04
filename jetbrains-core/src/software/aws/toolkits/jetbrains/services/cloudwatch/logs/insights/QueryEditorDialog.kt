@@ -53,16 +53,19 @@ class QueryEditorDialog(
         view.queryLogGroupsRadioButton.addActionListener {
             view.queryBox.isEnabled = true
             view.querySearchTerm.isEnabled = false
-            view.saveQueryButton.isEnabled =true
+            view.saveQueryButton.isEnabled = true
         }
         view.searchTerm.addActionListener {
             view.queryBox.isEnabled = false
             view.querySearchTerm.isEnabled = true
+            view.saveQueryButton.isEnabled = false
         }
 
         view.saveQueryButton.addActionListener {
-            if(view.queryBox.text.isNotBlank()){
-                SaveQueryDialog(project,view.queryBox.text,logGroupNames).show()
+            if (view.queryBox.text.isNotEmpty()) {
+                SaveQueryDialog(project, view.queryBox.text, logGroupNames).show()
+            } else {
+                SaveQueryDialog(project, message("cloudwatch.logs.default_query"), logGroupNames).show()
             }
         }
     }

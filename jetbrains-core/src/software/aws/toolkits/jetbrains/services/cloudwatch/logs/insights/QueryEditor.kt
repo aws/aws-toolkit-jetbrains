@@ -60,5 +60,6 @@ class QueryEditor internal constructor(private val project: Project) {
         querySearchTerm.isEnabled = false
         queryBox.isEnabled = false
         saveQueryButton.isEnabled = false
+        queryBox.text = message("cloudwatch.logs.default_query")
     }
 }

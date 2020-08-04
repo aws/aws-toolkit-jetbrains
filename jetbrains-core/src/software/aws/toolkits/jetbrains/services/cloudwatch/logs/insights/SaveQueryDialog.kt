@@ -17,13 +17,17 @@ import javax.swing.JComponent
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
-class SaveQueryDialog(private val project: Project, private val query: String, private val logGroups:List<String>, private val client: CloudWatchLogsClient)
-    : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("SavingQuery") {
+class SaveQueryDialog(
+    private val project: Project,
+    private val query: String,
+    private val logGroups: List<String>,
+    private val client: CloudWatchLogsClient
+) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("SavingQuery") {
     constructor(project: Project, queryText: String, logGroup: List<String>) :
-        this(project = project, query = queryText, logGroups= logGroup, client = project.awsClient())
+        this(project = project, query = queryText, logGroups = logGroup, client = project.awsClient())
     private val view = EnterQueryName(project)
     private val action: OkAction = SaveQueryOkAction()
-    init{
+    init {
         super.init()
         title = "Enter Query Name"
     }
@@ -49,12 +53,11 @@ class SaveQueryDialog(private val project: Project, private val query: String, p
     fun saveQuery() = launch {
         val request = PutQueryDefinitionRequest.builder().logGroupNames(logGroups).name(view.queryName.text).queryString(query).build()
         val response = client.putQueryDefinition(request)
-        println(response.queryDefinitionId())
     }
 
     fun validateQueryName(view: EnterQueryName): ValidationInfo? {
-        if(view.queryName.text.isEmpty()){
-            return ValidationInfo(message("cloudwatch.logs.query_name"),view.queryName)
+        if (view.queryName.text.isEmpty()) {
+            return ValidationInfo(message("cloudwatch.logs.query_name"), view.queryName)
         }
         return null
     }
