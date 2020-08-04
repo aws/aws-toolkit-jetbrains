@@ -1,153 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="software.aws.toolkits.jetbrains.services.sqs.toolwindow.SendMessagePane">
-  <grid id="27dc6" binding="component" layout-manager="GridLayoutManager" row-count="6" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="component" layout-manager="GridLayoutManager" row-count="5" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="804" height="480"/>
+      <xy x="20" y="20" width="910" height="480"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
       <component id="94dd3" class="javax.swing.JLabel">
         <constraints>
-          <grid row="0" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="1" row-span="1" col-span="4" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Message Body:"/>
+          <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.send.message.body"/>
         </properties>
-      </component>
-      <grid id="64b6c" binding="fifoComponent" layout-manager="GridLayoutManager" row-count="4" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints>
-          <grid row="4" column="1" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
-        <border type="none"/>
-        <children>
-          <component id="e22ea" class="javax.swing.JLabel">
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Message Deduplication ID:"/>
-            </properties>
-          </component>
-          <component id="ddff3" class="javax.swing.JLabel">
-            <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Message Group ID:"/>
-            </properties>
-          </component>
-          <component id="95c7a" class="com.intellij.ui.components.JBTextField" binding="deduplicationId">
-            <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                <preferred-size width="400" height="-1"/>
-                <maximum-size width="400" height="-1"/>
-              </grid>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="334e2" class="com.intellij.ui.components.JBTextField" binding="groupId">
-            <constraints>
-              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                <preferred-size width="400" height="-1"/>
-                <maximum-size width="400" height="-1"/>
-              </grid>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="27608" class="javax.swing.JLabel" binding="emptyDeduplicationLabel">
-            <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <foreground color="-567206"/>
-              <text value="Please enter deduplication ID."/>
-            </properties>
-          </component>
-          <component id="2bbd1" class="javax.swing.JLabel" binding="emptyGroupLabel">
-            <constraints>
-              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <foreground color="-567206"/>
-              <text value="Please enter group ID."/>
-            </properties>
-          </component>
-          <component id="59b13" class="javax.swing.JLabel" binding="deduplicationContextHelp">
-            <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value=""/>
-              <verticalAlignment value="0"/>
-            </properties>
-          </component>
-          <hspacer id="70f23">
-            <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-          </hspacer>
-          <component id="f7a6d" class="javax.swing.JLabel" binding="groupContextHelp">
-            <constraints>
-              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value=""/>
-              <verticalAlignment value="0"/>
-            </properties>
-          </component>
-        </children>
-      </grid>
-      <hspacer id="9ce73">
-        <constraints>
-          <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-      </hspacer>
-      <component id="7165c" class="javax.swing.JButton" binding="clearButton">
-        <constraints>
-          <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text value="Clear"/>
-        </properties>
-      </component>
-      <component id="b1af5" class="com.intellij.ui.components.JBTextArea" binding="inputText">
-        <constraints>
-          <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
       </component>
       <vspacer id="96f1e">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>
       </vspacer>
+      <component id="8ca44" class="javax.swing.JLabel" binding="bodyErrorLabel">
+        <constraints>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <foreground color="-567206"/>
+          <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.message.validation.empty.message.body"/>
+        </properties>
+      </component>
+      <scrollpane id="2e16e">
+        <constraints>
+          <grid row="1" column="1" row-span="1" col-span="4" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <minimum-size width="-1" height="100"/>
+            <preferred-size width="-1" height="100"/>
+          </grid>
+        </constraints>
+        <properties>
+          <horizontalScrollBarPolicy value="31"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <component id="a4316" class="com.intellij.ui.components.JBTextArea" binding="inputText">
+            <constraints/>
+            <properties>
+              <lineWrap value="true"/>
+              <wrapStyleWord value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <nested-form id="a0a90" form-file="software/aws/toolkits/jetbrains/services/sqs/toolwindow/FifoPanel.form" binding="fifoFields">
+        <constraints>
+          <grid row="3" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </nested-form>
+      <hspacer id="81607">
+        <constraints>
+          <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </hspacer>
       <component id="6d3df" class="javax.swing.JButton" binding="sendButton">
         <constraints>
-          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="4" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="2" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Send"/>
         </properties>
       </component>
-      <component id="8ca44" class="javax.swing.JLabel" binding="emptyBodyLabel">
+      <component id="7165c" class="javax.swing.JButton" binding="clearButton">
         <constraints>
-          <grid row="2" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="4" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="2" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <foreground color="-567206"/>
-          <text value="Please enter message body."/>
+          <text value="Clear"/>
         </properties>
       </component>
-      <component id="3e10a" class="com.intellij.ui.components.panels.NonOpaquePanel" binding="confirmationPanel">
+      <component id="780da" class="javax.swing.JLabel" binding="confirmationLabel">
         <constraints>
-          <grid row="5" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <enabled value="false"/>
+          <text value=""/>
         </properties>
       </component>
     </children>

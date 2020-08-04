@@ -160,7 +160,6 @@
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CloudDebugSettings"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.sqs.toolwindow.MessageCache"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
@@ -350,10 +349,8 @@
         <group id="aws.toolkit.explorer.sqs.queue" popup="true" compact="false">
             <action id="sqs.poll.message"
                     class="software.aws.toolkits.jetbrains.services.sqs.actions.PollMessageAction"/>
-            <separator/>
             <action id="sqs.send.message"
                     class="software.aws.toolkits.jetbrains.services.sqs.actions.SendMessageAction"/>
-            <separator/>
         </group>
 
         <action class="software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>

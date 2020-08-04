@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
+import com.intellij.ide.util.PropertiesComponent
 import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -13,7 +14,9 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_FIFO_ID
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.jetbrains.utils.waitForTrue
@@ -28,6 +31,7 @@ class SendMessagePaneTest : BaseCoroutineTest() {
     private lateinit var fifoQueue: Queue
     private lateinit var standardPane: SendMessagePane
     private lateinit var fifoPane: SendMessagePane
+    private lateinit var cache: PropertiesComponent
 
     @Before
     fun reset() {
@@ -35,8 +39,9 @@ class SendMessagePaneTest : BaseCoroutineTest() {
         region = MockRegionProvider.getInstance().defaultRegion()
         standardQueue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/standard", region)
         fifoQueue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/fifo.fifo", region)
-        standardPane = SendMessagePane(client, standardQueue)
-        fifoPane = SendMessagePane(client, fifoQueue)
+        cache = PropertiesComponent.getInstance(projectRule.project)
+        standardPane = SendMessagePane(client, standardQueue, cache)
+        fifoPane = SendMessagePane(client, fifoQueue, cache)
     }
 
     @Test
@@ -46,50 +51,65 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertTrue { standardPane.emptyBodyLabel.isVisible }
-        assertFalse { standardPane.fifoComponent.isVisible }
+        assertTrue { standardPane.bodyErrorLabel.isVisible }
+        assertFalse { standardPane.fifoFields.component.isVisible }
     }
 
     @Test
     fun `No input fails to send for fifo`() {
         fifoPane.apply {
             inputText.text = ""
-            deduplicationId.text = ""
-            groupId.text = ""
+            fifoFields.deduplicationId.text = ""
+            fifoFields.groupId.text = ""
             runBlocking { sendMessage() }
         }
 
-        assertTrue { fifoPane.emptyBodyLabel.isVisible }
-        assertTrue { fifoPane.emptyDeduplicationLabel.isVisible }
-        assertTrue { fifoPane.emptyGroupLabel.isVisible }
+        assertTrue { fifoPane.bodyErrorLabel.isVisible }
+        assertTrue { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
+        assertTrue { fifoPane.fifoFields.groupErrorLabel.isVisible }
     }
 
     @Test
     fun `No deduplication ID fails to send for fifo`() {
         fifoPane.apply {
             inputText.text = MESSAGE
-            deduplicationId.text = ""
-            groupId.text = GROUP_ID
+            fifoFields.deduplicationId.text = ""
+            fifoFields.groupId.text = GROUP_ID
             runBlocking { sendMessage() }
         }
 
-        assertFalse { fifoPane.emptyBodyLabel.isVisible }
-        assertTrue { fifoPane.emptyDeduplicationLabel.isVisible }
-        assertFalse { fifoPane.emptyGroupLabel.isVisible }
+        assertFalse { fifoPane.bodyErrorLabel.isVisible }
+        assertTrue { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
+        assertFalse { fifoPane.fifoFields.groupErrorLabel.isVisible }
     }
 
     @Test
     fun `No group ID fails to send for fifo`() {
         fifoPane.apply {
             inputText.text = MESSAGE
-            deduplicationId.text = DEDUPLICATION_ID
-            groupId.text = ""
+            fifoFields.deduplicationId.text = DEDUPLICATION_ID
+            fifoFields.groupId.text = ""
             runBlocking { sendMessage() }
         }
 
-        assertFalse { fifoPane.emptyBodyLabel.isVisible }
-        assertFalse { fifoPane.emptyDeduplicationLabel.isVisible }
-        assertTrue { fifoPane.emptyGroupLabel.isVisible }
+        assertFalse { fifoPane.bodyErrorLabel.isVisible }
+        assertFalse { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
+        assertTrue { fifoPane.fifoFields.groupErrorLabel.isVisible }
+    }
+
+    @Test
+    fun `Too long ID fails to send for fifo`() {
+        fifoPane.apply {
+            inputText.text = MESSAGE
+            fifoFields.deduplicationId.text = RuleUtils.randomName(length = MAX_LENGTH_OF_FIFO_ID + 1)
+            fifoFields.groupId.text = GROUP_ID
+            runBlocking { sendMessage() }
+        }
+
+        assertFalse { fifoPane.bodyErrorLabel.isVisible }
+        assertTrue { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
+        assertFalse { fifoPane.fifoFields.groupErrorLabel.isVisible }
+        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.text).isEqualTo(message("sqs.message.validation.long_id"))
     }
 
     @Test
@@ -102,11 +122,11 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             inputText.text = MESSAGE
             runBlocking {
                 sendMessage()
-                waitForTrue { standardPane.confirmationPanel.isVisible }
+                waitForTrue { standardPane.confirmationLabel.isVisible }
             }
         }
 
-        assertThat(standardPane.statusLabel.text).isEqualTo(message("sqs.failed_to_send_message"))
+        assertThat(standardPane.confirmationLabel.text).isEqualTo(message("sqs.failed_to_send_message"))
     }
 
     @Test
@@ -118,11 +138,11 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             inputText.text = MESSAGE
             runBlocking {
                 sendMessage()
-                waitForTrue { standardPane.confirmationPanel.isVisible }
+                waitForTrue { standardPane.confirmationLabel.isVisible }
             }
         }
 
-        assertThat(standardPane.statusLabel.text).isEqualTo(message("sqs.send.message.success", MESSAGE_ID))
+        assertThat(standardPane.confirmationLabel.text).isEqualTo(message("sqs.send.message.success", MESSAGE_ID))
     }
 
     @Test
@@ -132,15 +152,15 @@ class SendMessagePaneTest : BaseCoroutineTest() {
         )
         fifoPane.apply {
             inputText.text = MESSAGE
-            deduplicationId.text = DEDUPLICATION_ID
-            groupId.text = GROUP_ID
+            fifoFields.deduplicationId.text = DEDUPLICATION_ID
+            fifoFields.groupId.text = GROUP_ID
             runBlocking {
                 sendMessage()
-                waitForTrue { fifoPane.confirmationPanel.isVisible }
+                waitForTrue { fifoPane.confirmationLabel.isVisible }
             }
         }
 
-        assertThat(fifoPane.statusLabel.text).isEqualTo(message("sqs.send.message.success", MESSAGE_ID))
+        assertThat(fifoPane.confirmationLabel.text).isEqualTo(message("sqs.send.message.success", MESSAGE_ID))
     }
 
     private companion object {
