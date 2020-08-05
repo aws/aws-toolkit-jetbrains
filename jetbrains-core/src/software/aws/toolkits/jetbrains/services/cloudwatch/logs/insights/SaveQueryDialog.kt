@@ -15,19 +15,21 @@ import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.JComponent
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeQueryDefinitionsRequest
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import javax.swing.JOptionPane
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 
 class SaveQueryDialog(
     private val project: Project,
     private val query: String,
     private val logGroups: List<String>,
-    private val client: CloudWatchLogsClient
+    private val client: CloudWatchLogsClient = project.awsClient()
 ) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("SavingQuery") {
-    constructor(project: Project, queryText: String, logGroup: List<String>) :
-        this(project = project, query = queryText, logGroups = logGroup, client = project.awsClient())
-    private val view = EnterQueryName(project)
+
+    val view = EnterQueryName(project)
+
     private val action: OkAction = object : OkAction() {
         init {
             putValue(Action.NAME, message("cloudwatch.logs.save_query"))
@@ -41,16 +43,14 @@ class SaveQueryDialog(
     }
     init {
         super.init()
-        title = "Enter Query Name"
+        title = message("cloudwatch.logs.save_query_dialog_name")
     }
 
     override fun createCenterPanel(): JComponent? = view.saveQueryPanel
     override fun doValidate(): ValidationInfo? = validateQueryName(view)
     override fun getOKAction(): Action = action
-    override fun doCancelAction() {
-        super.doCancelAction()
-    }
-    fun checkQueryName(queryName: String): Boolean {
+
+    private fun checkQueryName(queryName: String): Boolean {
         val request = DescribeQueryDefinitionsRequest.builder().queryDefinitionNamePrefix(queryName).build()
         val response = client.describeQueryDefinitions(request)
         if (response.queryDefinitions().isEmpty()) {
@@ -59,20 +59,16 @@ class SaveQueryDialog(
         return false
     }
     fun saveQuery() = launch {
-        if (checkQueryName(view.queryName.text)) {
-            val request = PutQueryDefinitionRequest.builder().logGroupNames(logGroups).name(view.queryName.text).queryString(query).build()
-            val response = client.putQueryDefinition(request)
-            JOptionPane.showInternalMessageDialog(
-                view.saveQueryPanel,
-                message("cloudwatch.logs.query_saved_successfully"),
-                message("cloudwatch.logs.saved_query_status"),
-                JOptionPane.INFORMATION_MESSAGE)
-        } else {
-            JOptionPane.showInternalMessageDialog(
-                view.saveQueryPanel,
-                message("cloudwatch.logs.query_not_saved"),
-                message("cloudwatch.logs.saved_query_status"),
-                JOptionPane.ERROR_MESSAGE)
+        try {
+            if (checkQueryName(view.queryName.text)) {
+                val request = PutQueryDefinitionRequest.builder().logGroupNames(logGroups).name(view.queryName.text).queryString(query).build()
+                val response = client.putQueryDefinition(request)
+                notifyInfo(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_saved_successfully"), project)
+            } else {
+                notifyError(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_not_saved"))
+            }
+        } catch (e: Exception) {
+            notifyError(message("cloudwatch.logs.saved_query_status"), e.toString())
         }
     }
 
@@ -81,5 +77,10 @@ class SaveQueryDialog(
             return ValidationInfo(message("cloudwatch.logs.query_name"), view.queryName)
         }
         return null
+    }
+
+    @TestOnly
+    fun createSaveQueryRequest() {
+        client.putQueryDefinition { request -> request.name(view.queryName.text).queryString(query) }
     }
 }

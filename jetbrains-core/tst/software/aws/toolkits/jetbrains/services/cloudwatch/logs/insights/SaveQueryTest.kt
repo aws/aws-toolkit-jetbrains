@@ -5,12 +5,18 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
 import com.intellij.testFramework.RunsInEdt
 import com.intellij.testFramework.runInEdtAndWait
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.stub
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import org.assertj.core.api.Assertions.assertThat
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionResponse
+import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 
 @RunsInEdt
@@ -38,7 +44,7 @@ class SaveQueryTest {
     }
 
     @Test
-    fun `Query name entered, Save Query clicked, Query saved`() {
+    fun `Path with correctly entered Query name returns no validation error`() {
         runInEdtAndWait {
             val project = projectRule.project
             view = EnterQueryName(project)
@@ -47,5 +53,22 @@ class SaveQueryTest {
             view.queryName.text = "TrialQuery"
             assertThat(validator.validateQueryName(view)?.message).isNull()
         }
+    }
+
+    @Test
+    fun `Save query API Call test`() {
+        val putQueryDefinitionCaptor = argumentCaptor<PutQueryDefinitionRequest>()
+        val apiTestClient = delegateMock<CloudWatchLogsClient>()
+        apiTestClient.stub {
+            on { putQueryDefinition(putQueryDefinitionCaptor.capture()) } doReturn PutQueryDefinitionResponse.builder().build()
+        }
+        lateinit var dialog: SaveQueryDialog
+        runInEdtAndWait {
+            dialog = SaveQueryDialog(project = projectRule.project, query = "fields @timestamp", logGroups = listOf("log1"), client = apiTestClient)
+            dialog.view.queryName.text = "SampleQuery"
+            dialog.createSaveQueryRequest()
+        }
+        assertThat(putQueryDefinitionCaptor.firstValue.name()).isEqualTo("SampleQuery")
+        assertThat(putQueryDefinitionCaptor.firstValue.queryString()).isEqualTo("fields @timestamp")
     }
 }
