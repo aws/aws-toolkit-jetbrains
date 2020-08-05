@@ -25,42 +25,32 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
         val response = client.startQuery(request)
         var queryId: String = response.queryId()
         val fieldList= getFields(query)
-        println(fieldList)
-        getQueryResults(queryId, client)
+        getQueryResults(queryId, client, fieldList)
     }
 
     private fun getFields(query: String) : List<String> {
-        return if(query.contains("fields", ignoreCase = true)){
+        return if (query.contains("fields", ignoreCase = true)) {
             var fields = query.substring(query.indexOf("fields", ignoreCase = true)+7)
             if (fields.contains("|")) {
                 fields = fields.substring(0,fields.indexOf("|"))
             }
             fields.split(",").map{it.trim()}
-        }
-        else{
+        } else {
             listOf<String>("@message","@timestamp")
         }
     }
-    private fun getQueryResults(queryId: String, client: CloudWatchLogsClient) = launch {
+
+    private fun getQueryResults(queryId: String, client: CloudWatchLogsClient, fieldList: List<String>) = launch {
         var status = ""
-        lateinit var a : MutableList<ResultField>
         while(status!="Complete"){
             val requestCheckQueryCompletion=GetQueryResultsRequest.builder().queryId(queryId).build()
             val responseCheckQueryCompletion=client.getQueryResults(requestCheckQueryCompletion)
+            val resultList = responseCheckQueryCompletion.results()
+            println(resultList[0])
             status= responseCheckQueryCompletion.statusAsString()
-            println()
-            println(responseCheckQueryCompletion.results())
-
-            /*if(status=="Complete"){
-                var queryList = responseCheckQueryCompletion.results()
-                for (item in queryList){
-                    for (item1 in item){
-                        println(item1.field())
-                    }
-
-                }
-                //QueryResultsWindow.getInstance(project).showResults(queryList, queryId)
-            }*/
+            if(responseCheckQueryCompletion.results().size!=0){
+                //QueryResultsWindow.getInstance(project).showResults(resultList, queryId, fieldList)
+            }
 
         }
         println("Done")

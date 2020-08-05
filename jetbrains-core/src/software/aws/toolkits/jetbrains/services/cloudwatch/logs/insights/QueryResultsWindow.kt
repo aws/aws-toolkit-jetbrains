@@ -18,7 +18,7 @@ import software.aws.toolkits.resources.message
 class QueryResultsWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("openResultsWindow") {
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, QueryResultsWindow.INSIGHTS_RESULTS_TOOL_WINDOW)
     private val edtContext = getCoroutineUiContext()
-    fun showResults (resultList: List<MutableList<ResultField>>, queryId: String) = launch {
+    fun showResults (resultList: List<MutableList<ResultField>>, queryId: String, fieldList: List<String>) = launch {
         val existingWindow = toolWindow.find(queryId)
         if (existingWindow != null) {
             withContext(edtContext) {
@@ -26,7 +26,7 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
             }
             return@launch
         }
-        val group = QueryResultList(project,resultList)
+        val group = QueryResultList(project, resultList, fieldList)
         val title = message("cloudwatch.logs.query_results_title")
         withContext(edtContext) {
             toolWindow.addTab(title, group.resultsPanel, activate = true, id = queryId, disposable = group)
