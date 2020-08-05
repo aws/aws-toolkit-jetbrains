@@ -82,7 +82,7 @@ class FifoPanel {
         override fun changedUpdate(e: DocumentEvent?) {}
         override fun insertUpdate(e: DocumentEvent?) {
             if (textField.text.length > MAX_LENGTH_OF_FIFO_ID) {
-                errorLabel.text = message("sqs.message.validation.long_id")
+                errorLabel.text = message("sqs.message.validation.long.id")
                 errorLabel.isVisible = true
             } else {
                 errorLabel.isVisible = false

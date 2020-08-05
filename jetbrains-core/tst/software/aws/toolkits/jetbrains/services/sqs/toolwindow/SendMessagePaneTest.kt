@@ -109,7 +109,7 @@ class SendMessagePaneTest : BaseCoroutineTest() {
         assertFalse { fifoPane.bodyErrorLabel.isVisible }
         assertTrue { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
         assertFalse { fifoPane.fifoFields.groupErrorLabel.isVisible }
-        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.text).isEqualTo(message("sqs.message.validation.long_id"))
+        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.text).isEqualTo(message("sqs.message.validation.long.id"))
     }
 
     @Test
