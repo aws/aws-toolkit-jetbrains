@@ -21,8 +21,6 @@ import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class SendMessagePaneTest : BaseCoroutineTest() {
     private lateinit var client: SqsClient
@@ -51,8 +49,8 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertTrue { standardPane.bodyErrorLabel.isVisible }
-        assertFalse { standardPane.fifoFields.component.isVisible }
+        assertThat(standardPane.bodyErrorLabel.isVisible).isTrue()
+        assertThat(standardPane.fifoFields.component.isVisible).isFalse()
     }
 
     @Test
@@ -64,9 +62,9 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertTrue { fifoPane.bodyErrorLabel.isVisible }
-        assertTrue { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
-        assertTrue { fifoPane.fifoFields.groupErrorLabel.isVisible }
+        assertThat(fifoPane.bodyErrorLabel.isVisible).isTrue()
+        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isTrue()
+        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isTrue()
     }
 
     @Test
@@ -78,9 +76,9 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertFalse { fifoPane.bodyErrorLabel.isVisible }
-        assertTrue { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
-        assertFalse { fifoPane.fifoFields.groupErrorLabel.isVisible }
+        assertThat(fifoPane.bodyErrorLabel.isVisible).isFalse()
+        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isTrue()
+        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isFalse()
     }
 
     @Test
@@ -92,13 +90,13 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertFalse { fifoPane.bodyErrorLabel.isVisible }
-        assertFalse { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
-        assertTrue { fifoPane.fifoFields.groupErrorLabel.isVisible }
+        assertThat(fifoPane.bodyErrorLabel.isVisible).isFalse()
+        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isFalse()
+        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isTrue()
     }
 
     @Test
-    fun `Too long ID fails to send for fifo`() {
+    fun `ID too long fails`() {
         fifoPane.apply {
             inputText.text = MESSAGE
             fifoFields.deduplicationId.text = RuleUtils.randomName(length = MAX_LENGTH_OF_FIFO_ID + 1)
@@ -106,9 +104,9 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertFalse { fifoPane.bodyErrorLabel.isVisible }
-        assertTrue { fifoPane.fifoFields.deduplicationErrorLabel.isVisible }
-        assertFalse { fifoPane.fifoFields.groupErrorLabel.isVisible }
+        assertThat(fifoPane.bodyErrorLabel.isVisible).isFalse()
+        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isTrue()
+        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isFalse()
         assertThat(fifoPane.fifoFields.deduplicationErrorLabel.text).isEqualTo(message("sqs.message.validation.long.id"))
     }
 

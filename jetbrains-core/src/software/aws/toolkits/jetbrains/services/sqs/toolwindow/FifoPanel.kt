@@ -59,17 +59,20 @@ class FifoPanel {
         var groupIsValid = true
 
         if (deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID) {
+            deduplicationErrorLabel.text = message("sqs.message.validation.long.id")
+            deduplicationErrorLabel.isVisible = true
             deduplicationIsValid = false
-        }
-        if (deduplicationId.text.isEmpty()) {
+        } else if (deduplicationId.text.isEmpty()) {
             deduplicationErrorLabel.text = message("sqs.message.validation.empty.deduplication_id")
             deduplicationErrorLabel.isVisible = true
             deduplicationIsValid = false
         }
+
         if (groupId.text.length > MAX_LENGTH_OF_FIFO_ID) {
+            groupErrorLabel.text = message("sqs.message.validation.long.id")
+            groupErrorLabel.isVisible = true
             groupIsValid = false
-        }
-        if (groupId.text.isEmpty()) {
+        } else if (groupId.text.isEmpty()) {
             groupErrorLabel.text = message("sqs.message.validation.empty.group_id")
             groupErrorLabel.isVisible = true
             groupIsValid = false

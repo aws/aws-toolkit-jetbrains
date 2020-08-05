@@ -28,5 +28,5 @@ class Queue(val queueUrl: String, val region: AwsRegion) {
     }
 
     val arn = "arn:${region.partitionId}:sqs:${region.id}:$accountId:$queueName"
-    val isFifo = queueName.endsWith(".fifo")
+    val isFifo: Boolean by lazy { queueName.endsWith(".fifo") }
 }
