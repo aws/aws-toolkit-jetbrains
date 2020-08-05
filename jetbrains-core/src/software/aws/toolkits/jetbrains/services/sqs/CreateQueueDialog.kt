@@ -3,10 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.sqs.SqsClient
+import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
+import software.aws.toolkits.jetbrains.services.sqs.resources.SqsResources
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent
@@ -19,9 +23,10 @@ class CreateQueueDialog(
     val view = CreateQueuePanel()
 
     init {
-        super.init()
         title = message("sqs.create.queue.title")
         setOKButtonText(message("sqs.create.queue.create"))
+
+        init()
     }
 
     override fun createCenterPanel(): JComponent? = view.component
@@ -33,26 +38,52 @@ class CreateQueueDialog(
     // TODO: Override cancel action when telemetry added
 
     override fun doOKAction() {
-        println("OK")
+        if (isOKActionEnabled) {
+            setOKButtonText(message("sqs.create.queue.in_progress"))
+            isOKActionEnabled = false
+
+            ApplicationManager.getApplication().executeOnPooledThread {
+                try {
+                    client.createQueue {
+                        it.queueName(view.queueName.text)
+                    }
+                    ApplicationManager.getApplication().invokeLater({
+                        close(OK_EXIT_CODE)
+                    }, ModalityState.stateForComponent(view.component))
+                    project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
+                } catch (e: Exception) {
+                    setErrorText(e.message)
+                    setOKButtonText(message("sqs.create.queue.create"))
+                    isOKActionEnabled = true
+                }
+            }
+        }
     }
 
     private fun validateFields(): ValidationInfo? {
         if (view.queueName.text.isEmpty()) {
-            return ValidationInfo("Please enter a queue name", view.queueName)
+            return ValidationInfo(message("sqs.create.validation.empty.queue.name"), view.queueName)
         }
-
+        if (view.queueName.text.length > MAX_LENGTH_OF_QUEUE_NAME) {
+            return ValidationInfo(message("sqs.create.validation.long.queue.name", MAX_LENGTH_OF_QUEUE_NAME), view.queueName)
+        }
         if (view.fifoType.isSelected) {
             if (!view.queueName.text.endsWith(".fifo")) {
-                return ValidationInfo("FIFO queue must end with '.fifo'", view.queueName)
+                return ValidationInfo(message("sqs.create.validation.fifo"), view.queueName)
+            }
+            if (!validateCharacters(view.queueName.text.substringBefore(".fifo"))) {
+                return ValidationInfo(message("sqs.create.validation.queue.name.invalid", "before '.fifo'"), view.queueName)
             }
         }
 
         if (view.standardType.isSelected) {
-            if (view.queueName.text.endsWith(".fifo")) {
-                return ValidationInfo("Standard queue cannot end with '.fifo'", view.queueName)
+            if (!validateCharacters(view.queueName.text)) {
+                return ValidationInfo(message("sqs.create.validation.queue.name.invalid", ""), view.queueName)
             }
         }
 
         return null
     }
+
+    private fun validateCharacters(queueName: String): Boolean = queueName.matches("^[-a-zA-Z0-9_]*$".toRegex())
 }
