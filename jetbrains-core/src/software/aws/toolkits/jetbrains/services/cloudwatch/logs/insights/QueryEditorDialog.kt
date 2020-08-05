@@ -15,7 +15,7 @@ import software.aws.toolkits.resources.message
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Date
-
+const val default_query = "fields @timestamp, @message| sort @timestamp desc| limit 20"
 val relativeTimeUnit = mapOf(
     message("cloudwatch.logs.time_minutes") to ChronoUnit.MINUTES,
     message("cloudwatch.logs.time_hours") to ChronoUnit.HOURS,
@@ -65,7 +65,7 @@ class QueryEditorDialog(
             if (view.queryBox.text.isNotEmpty()) {
                 SaveQueryDialog(project, view.queryBox.text, logGroupNames).show()
             } else {
-                SaveQueryDialog(project, message("cloudwatch.logs.default_query"), logGroupNames).show()
+                SaveQueryDialog(project, default_query, logGroupNames).show()
             }
         }
     }

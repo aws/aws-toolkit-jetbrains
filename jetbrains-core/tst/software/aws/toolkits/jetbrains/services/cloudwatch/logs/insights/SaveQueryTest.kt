@@ -26,7 +26,7 @@ class SaveQueryTest {
     private lateinit var validator: SaveQueryDialog
 
     @Test
-    fun `Query name entered`() {
+    fun `Query name not entered, error message displayed`() {
         runInEdtAndWait {
             val project = projectRule.project
             view = EnterQueryName(project)
@@ -34,6 +34,18 @@ class SaveQueryTest {
             validator = SaveQueryDialog(project, "fields @timestamp", listOf("log1"), client)
             view.queryName.text = ""
             assertThat(validator.validateQueryName(view)?.message).contains(message("cloudwatch.logs.query_name"))
+        }
+    }
+
+    @Test
+    fun `Query name entered, Save Query clicked, Query saved`() {
+        runInEdtAndWait {
+            val project = projectRule.project
+            view = EnterQueryName(project)
+            client = mockClientManagerRule.create()
+            validator = SaveQueryDialog(project, "fields @timestamp", listOf("log1"), client)
+            view.queryName.text = "TrialQuery"
+            assertThat(validator.validateQueryName(view)?.message).isNull()
         }
     }
 }
