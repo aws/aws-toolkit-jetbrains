@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import software.aws.toolkits.core.utils.test.notNull
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.LambdaFunction
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
@@ -52,9 +53,11 @@ class YamlCloudFormationTemplateTest {
 
     @Test
     fun noResourcesReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
-        """.trimIndent())
+        """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.resources().toList()).isEmpty()
         }
@@ -62,12 +65,14 @@ Description: "Some description"
 
     @Test
     fun emptyResourcesReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
 
 
-        """.trimIndent())
+        """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.resources().toList()).isEmpty()
         }
@@ -75,11 +80,13 @@ Resources:
 
     @Test
     fun partialResourceIsIgnored() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     Foo:
-        """.trimIndent())
+        """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.resources().toList()).isEmpty()
         }
@@ -95,9 +102,11 @@ Resources:
 
     @Test
     fun noParametersReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
-        """.trimIndent())
+        """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.parameters().toList()).isEmpty()
         }
@@ -105,12 +114,14 @@ Description: "Some description"
 
     @Test
     fun emptyParametersReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
 Parameters:
 
 
-        """.trimIndent())
+        """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.parameters().toList()).isEmpty()
         }
@@ -122,10 +133,11 @@ Parameters:
         runInEdtAndWait {
             assertThat(template.parameters().toList()).hasSize(2)
             val tableTag = template.parameters().firstOrNull { it.logicalName == "TableTag" }
-            assertThat(tableTag).isNotNull
-            assertThat(tableTag!!.defaultValue()).isNull()
-            assertThat(tableTag.description()).isNotNull()
-            assertThat(tableTag.constraintDescription()).isNull()
+            assertThat(tableTag).notNull.satisfies { tag ->
+                assertThat(tag.defaultValue()).isNull()
+                assertThat(tag.description()).isNotNull()
+                assertThat(tag.constraintDescription()).isNull()
+            }
         }
     }
 

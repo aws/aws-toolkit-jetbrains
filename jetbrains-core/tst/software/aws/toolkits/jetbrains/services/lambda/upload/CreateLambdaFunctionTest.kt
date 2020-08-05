@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,16 +59,16 @@ Resources:
         )
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun InvalidNullArgs() {
         val handlerName = "helloworld.App::handleRequest"
 
         runInEdtAndWait {
-            CreateLambdaFunction(handlerName, null, null)
+            assertThatThrownBy { CreateLambdaFunction(handlerName, null, null) }.isInstanceOf(java.lang.IllegalArgumentException::class.java)
         }
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun InvalidNullArgs_Element() {
         val handlerName = "helloworld.App::handleRequest"
         val handlerResolver = mock<LambdaHandlerResolver> {
@@ -75,16 +76,16 @@ Resources:
         }
 
         runInEdtAndWait {
-            CreateLambdaFunction(handlerName, null, handlerResolver)
+            assertThatThrownBy { CreateLambdaFunction(handlerName, null, handlerResolver) }.isInstanceOf(java.lang.IllegalArgumentException::class.java)
         }
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun InvalidNullArgs_HandlerResolver() {
         val handlerName = "helloworld.App::handleRequest"
 
         runInEdtAndWait {
-            CreateLambdaFunction(handlerName, smartElement, null)
+            assertThatThrownBy { CreateLambdaFunction(handlerName, smartElement, null) }.isInstanceOf(java.lang.IllegalArgumentException::class.java)
         }
     }
 

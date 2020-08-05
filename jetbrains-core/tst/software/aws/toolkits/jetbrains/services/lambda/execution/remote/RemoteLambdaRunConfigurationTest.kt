@@ -22,6 +22,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
+import kotlin.test.assertNotNull
 
 class RemoteLambdaRunConfigurationTest {
     @Rule
@@ -58,14 +59,14 @@ class RemoteLambdaRunConfigurationTest {
 
     @Test
     fun invalidRegion() {
-            val runConfiguration = createRunConfiguration(
-                project = projectRule.project,
-                regionId = null
-            )
-            assertThat(runConfiguration).isNotNull
-            assertThatThrownBy { runConfiguration.checkConfiguration() }
-                .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("configure.validate.no_region_specified"))
+        val runConfiguration = createRunConfiguration(
+            project = projectRule.project,
+            regionId = null
+        )
+        assertThat(runConfiguration).isNotNull
+        assertThatThrownBy { runConfiguration.checkConfiguration() }
+            .isInstanceOf(RuntimeConfigurationError::class.java)
+            .hasMessage(message("configure.validate.no_region_specified"))
     }
 
     @Test
@@ -220,7 +221,7 @@ class RemoteLambdaRunConfigurationTest {
 
     private fun getState(runConfiguration: RemoteLambdaRunConfiguration): RemoteLambdaState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        assertThat(executor).isNotNull
+        assertNotNull(executor)
 
         val environment = ExecutionEnvironmentBuilder.create(
             DefaultRunExecutor.getRunExecutorInstance(),

@@ -15,13 +15,14 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
-import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import kotlin.test.assertNotNull
 
 class CredentialManagerTest {
     @Rule
@@ -58,9 +59,9 @@ class CredentialManagerTest {
         assertThat(credentialManager.getCredentialIdentifiers().map { it.id }).contains("testFoo1", "testFoo2", "testBar1", "testBar2")
 
         val credentialsIdentifier = credentialManager.getCredentialIdentifierById("testFoo2")
-        assertThat(credentialsIdentifier).isNotNull
+        assertNotNull(credentialsIdentifier)
 
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier!!, region)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, region)
 
         assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
             assertThat(it.accessKeyId()).isEqualTo("testFoo2Access")
@@ -86,9 +87,9 @@ class CredentialManagerTest {
         val credentialManager = DefaultCredentialManager()
 
         val credentialsIdentifier = credentialManager.getCredentialIdentifierById("testFoo1")
-        assertThat(credentialsIdentifier).isNotNull
+        assertNotNull(credentialsIdentifier)
 
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier!!, partition1)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, partition1)
 
         assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
             assertThat(it.accessKeyId()).isEqualTo("aws-test-1Access")
@@ -118,9 +119,9 @@ class CredentialManagerTest {
         val credentialManager = DefaultCredentialManager()
 
         val credentialsIdentifier = credentialManager.getCredentialIdentifierById("testFoo1")
-        assertThat(credentialsIdentifier).isNotNull
+        assertNotNull(credentialsIdentifier)
 
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier!!, region)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, region)
 
         assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
             assertThat(it.accessKeyId()).isEqualTo("testFoo1Access")
@@ -167,9 +168,9 @@ class CredentialManagerTest {
         val credentialManager = DefaultCredentialManager()
 
         val credentialsIdentifier = credentialManager.getCredentialIdentifierById("testFoo1")
-        assertThat(credentialsIdentifier).isNotNull
+        assertNotNull(credentialsIdentifier)
 
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier!!, region)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, region)
 
         assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
             assertThat(it.accessKeyId()).isEqualTo("testFoo1Access")

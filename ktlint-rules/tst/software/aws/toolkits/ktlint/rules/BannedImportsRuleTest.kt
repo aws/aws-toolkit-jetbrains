@@ -60,6 +60,11 @@ class BannedImportsRuleTest {
     }
 
     @Test
+    fun `Importing kotlin test notNull succeeds`() {
+        assertThat(rule.lint("import kotlin.test.assertNotNull")).isEmpty()
+    }
+
+    @Test
     fun `Importing Assert assertThat succeeds`() {
         assertThat(rule.lint("import org.assertj.core.api.Assertions.assertThat")).isEmpty()
     }

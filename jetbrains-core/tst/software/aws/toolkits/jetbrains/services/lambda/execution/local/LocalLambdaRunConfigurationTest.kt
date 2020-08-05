@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.toElement
 import software.aws.toolkits.resources.message
 import java.nio.file.Paths
+import kotlin.test.assertNotNull
 
 class LocalLambdaRunConfigurationTest {
     @Rule
@@ -719,7 +720,7 @@ class LocalLambdaRunConfigurationTest {
 
     private fun getState(runConfiguration: LocalLambdaRunConfiguration): SamRunningState {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        assertThat(executor).isNotNull
+        assertNotNull(executor)
 
         val environment = ExecutionEnvironmentBuilder.create(
             DefaultDebugExecutor.getDebugExecutorInstance(),
