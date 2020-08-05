@@ -20,6 +20,7 @@ import software.aws.toolkits.resources.message
 class SchemasServiceNode(project: Project, service: AwsExplorerServiceNode) :
     CacheBackedAwsExplorerServiceRootNode<RegistrySummary>(project, service, SchemasResources.LIST_REGISTRIES) {
     override fun toNode(child: RegistrySummary): AwsExplorerNode<*> = SchemaRegistryNode(nodeProject, child)
+    override fun consoleFragment() = "/events/home#/schemas"
 }
 
 open class SchemaRegistryNode(
@@ -58,6 +59,8 @@ open class SchemaRegistryNode(
         nodeProject,
         message("explorer.registry.no.schema.resources")
     )
+
+    override fun consoleFragment() = "/events/home#/schemas?registry=${value.registryName()}"
 }
 
 open class SchemaNode(
@@ -76,4 +79,6 @@ open class SchemaNode(
     override fun toString(): String = value.name
 
     override fun displayName() = value.name
+
+    override fun consoleFragment() = "/events/home#/registries/${schema.registryName}/schemas/${schema.name}"
 }

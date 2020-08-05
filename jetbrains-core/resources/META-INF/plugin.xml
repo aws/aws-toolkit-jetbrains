@@ -214,6 +214,10 @@
         <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer"/>
         <runConfigurationProducer implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunConfigurationProducer"/>
 
+        <!--Browser-->
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.JcefClientService"/>
+        <fileEditorProvider implementation="software.aws.toolkits.jetbrains.core.explorer.browservfs.BrowserEditorProvider"/>
+
         <!-- ECS -->
         <configurationType implementation="software.aws.toolkits.jetbrains.services.ecs.execution.EcsCloudDebugRunConfigurationType"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.clouddebug.execution.CloudDebuggingRunner"/>

@@ -20,6 +20,7 @@ abstract class AwsExplorerServiceRootNode(project: Project, private val service:
 
     override fun isAlwaysShowPlus(): Boolean = true
     override fun actionGroupName() = "aws.toolkit.explorer.$serviceId"
+    override fun consoleFragment() = "/$serviceId"
 }
 
 abstract class CacheBackedAwsExplorerServiceRootNode<T>(project: Project, service: AwsExplorerServiceNode, private val resource: Resource<out Collection<T>>) :

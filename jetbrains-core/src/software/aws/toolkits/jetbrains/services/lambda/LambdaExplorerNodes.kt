@@ -45,4 +45,6 @@ open class LambdaFunctionNode(
 
     fun handlerPsi(): Array<NavigatablePsiElement> =
         Lambda.findPsiElementsForHandler(nodeProject, value.runtime, value.handler)
+
+    override fun consoleFragment() = "/lambda/home#/functions/${functionName()}"
 }

@@ -19,6 +19,7 @@ class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNod
     CloudWatchResources.LIST_LOG_GROUPS
 ) {
     override fun toNode(child: LogGroup): AwsExplorerNode<*> = CloudWatchLogsNode(nodeProject, child.arn(), child.logGroupName())
+    override fun consoleFragment() = "/cloudwatch/home#logsV2:log-groups"
 }
 
 class CloudWatchLogsNode(
@@ -40,4 +41,6 @@ class CloudWatchLogsNode(
     override fun onDoubleClick() {
         CloudWatchLogWindow.getInstance(nodeProject)?.showLogGroup(logGroupName)
     }
+
+    override fun consoleFragment() = "/cloudwatch/home#logStream:group=${logGroupName}"
 }

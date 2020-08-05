@@ -50,5 +50,7 @@ abstract class AwsExplorerNode<T>(val nodeProject: Project, value: T, private va
      */
     open fun onDoubleClick() {}
 
+    open fun consoleFragment(): String? = null
+
     override fun toString(): String = displayName()
 }

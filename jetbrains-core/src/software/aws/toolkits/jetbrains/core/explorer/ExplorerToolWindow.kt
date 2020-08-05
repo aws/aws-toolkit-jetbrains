@@ -46,6 +46,7 @@ import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_R
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
 import software.aws.toolkits.jetbrains.core.explorer.actions.CopyArnAction
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
+import software.aws.toolkits.jetbrains.core.explorer.actions.OpenAwsConsoleAction
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
@@ -204,6 +205,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
 
                 (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { totalActions.addAll(it.getChildren(null)) }
 
+                totalActions.add(OpenAwsConsoleAction())
                 if (explorerNode is AwsExplorerResourceNode<*>) {
                     totalActions.add(CopyArnAction())
                 }

@@ -34,4 +34,6 @@ class S3BucketNode(project: Project, val bucket: Bucket) :
     }
 
     override fun displayName(): String = bucket.name()
+
+    override fun consoleFragment() = "/s3/buckets/${bucket.name()}"
 }

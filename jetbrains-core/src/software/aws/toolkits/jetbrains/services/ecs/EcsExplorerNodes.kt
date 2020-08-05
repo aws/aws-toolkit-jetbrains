@@ -37,6 +37,8 @@ class EcsClusterParentNode(project: Project) :
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = AwsResourceCache.getInstance(nodeProject)
         .getResourceNow(EcsResources.LIST_CLUSTER_ARNS)
         .map { EcsClusterNode(nodeProject, it) }
+
+    override fun consoleFragment() = "/ecs/home#/clusters"
 }
 
 class EcsClusterNode(project: Project, private val clusterArn: String) :
@@ -57,6 +59,8 @@ class EcsClusterNode(project: Project, private val clusterArn: String) :
             .map { resourceCache.getResourceNow(EcsResources.describeService(clusterArn, it)) }
             .map { EcsServiceNode(nodeProject, it, clusterArn) }
     }
+
+    override fun consoleFragment() = "/ecs/home#/clusters/${displayName()}"
 }
 
 class EcsServiceNode(project: Project, private val service: Service, private val clusterArn: String) :
@@ -69,6 +73,8 @@ class EcsServiceNode(project: Project, private val service: Service, private val
     override fun location() = EcsCloudDebugLocation(nodeProject, service)
 
     fun clusterArn(): String = clusterArn
+
+    override fun consoleFragment() = "/ecs/home#/clusters/${clusterArn.split("cluster/", limit = 2).last()}/services/${value.serviceName()}"
 }
 
 class EcsTaskDefinitionsParentNode(project: Project) :

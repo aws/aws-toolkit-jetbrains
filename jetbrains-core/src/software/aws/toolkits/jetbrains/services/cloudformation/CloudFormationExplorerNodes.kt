@@ -46,4 +46,6 @@ class CloudFormationStackNode(
     override fun onDoubleClick() {
         StackWindowManager.getInstance(nodeProject).openStack(stackName, stackId)
     }
+
+    override fun consoleFragment() = "/cloudformation/home?#/stacks/stackinfo?stackId=${stackId}"
 }
