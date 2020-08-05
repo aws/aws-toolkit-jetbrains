@@ -24,8 +24,6 @@ import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.io.File
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 class YamlCloudFormationTemplateTest {
     @Rule
@@ -124,10 +122,10 @@ Parameters:
         runInEdtAndWait {
             assertThat(template.parameters().toList()).hasSize(2)
             val tableTag = template.parameters().firstOrNull { it.logicalName == "TableTag" }
-            assertNotNull(tableTag)
-            assertNull(tableTag.defaultValue())
-            assertNotNull(tableTag.description())
-            assertNull(tableTag.constraintDescription())
+            assertThat(tableTag).isNotNull
+            assertThat(tableTag!!.defaultValue()).isNull()
+            assertThat(tableTag.description()).isNotNull()
+            assertThat(tableTag.constraintDescription()).isNull()
         }
     }
 

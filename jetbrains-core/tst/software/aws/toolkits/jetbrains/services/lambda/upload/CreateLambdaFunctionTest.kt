@@ -11,15 +11,13 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openFile
-import kotlin.test.assertFails
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class CreateLambdaFunctionTest {
     @Rule
@@ -32,19 +30,22 @@ class CreateLambdaFunctionTest {
     fun setup() {
         val fixture = projectRule.fixture
 
-        val element = fixture.addClass("""
+        val element = fixture.addClass(
+            """
 public class Processor {
     public void handler() {
 
     }
 }
-        """).findMethodsByName("handler", false).first()
+        """
+        ).findMethodsByName("handler", false).first()
 
         runInEdtAndWait {
             smartElement = SmartPointerManager.createPointer(element)
         }
 
-        fixture.openFile("template.yaml", """
+        fixture.openFile(
+            "template.yaml", """
 Resources:
   ServerlessFunction:
     Type: AWS::Serverless::Function
@@ -53,19 +54,20 @@ Resources:
       Handler: helloworld.App::handleRequest
       Runtime: foo
       Timeout: 800
-""")
+"""
+        )
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun InvalidNullArgs() {
         val handlerName = "helloworld.App::handleRequest"
 
         runInEdtAndWait {
-            assertFails { CreateLambdaFunction(handlerName, null, null) }
+            CreateLambdaFunction(handlerName, null, null)
         }
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun InvalidNullArgs_Element() {
         val handlerName = "helloworld.App::handleRequest"
         val handlerResolver = mock<LambdaHandlerResolver> {
@@ -73,16 +75,16 @@ Resources:
         }
 
         runInEdtAndWait {
-            assertFails { CreateLambdaFunction(handlerName, null, handlerResolver) }
+            CreateLambdaFunction(handlerName, null, handlerResolver)
         }
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun InvalidNullArgs_HandlerResolver() {
         val handlerName = "helloworld.App::handleRequest"
 
         runInEdtAndWait {
-            assertFails { CreateLambdaFunction(handlerName, smartElement, null) }
+            CreateLambdaFunction(handlerName, smartElement, null)
         }
     }
 
@@ -99,7 +101,7 @@ Resources:
             val actionEvent = TestActionEvent()
             action.update(actionEvent)
 
-            assertFalse { actionEvent.presentation.isVisible }
+            assertThat(actionEvent.presentation.isVisible).isFalse()
         }
     }
 
@@ -116,7 +118,7 @@ Resources:
             val actionEvent = TestActionEvent()
             action.update(actionEvent)
 
-            assertTrue { actionEvent.presentation.isVisible }
+            assertThat(actionEvent.presentation.isVisible).isTrue()
         }
     }
 
@@ -133,7 +135,7 @@ Resources:
             val actionEvent = TestActionEvent()
             action.update(actionEvent)
 
-            assertTrue { actionEvent.presentation.isVisible }
+            assertThat(actionEvent.presentation.isVisible).isTrue()
         }
     }
 }

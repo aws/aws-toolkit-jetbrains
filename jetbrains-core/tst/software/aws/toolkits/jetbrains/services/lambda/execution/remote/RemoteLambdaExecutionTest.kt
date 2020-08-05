@@ -35,7 +35,6 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
 class RemoteLambdaExecutionTest {
     @Rule
@@ -132,7 +131,7 @@ class RemoteLambdaExecutionTest {
         )
 
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        assertNotNull(executor)
+        assertThat(executor).isNotNull
         val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
         val executionFuture = CompletableFuture<Output>()
         runInEdt {
