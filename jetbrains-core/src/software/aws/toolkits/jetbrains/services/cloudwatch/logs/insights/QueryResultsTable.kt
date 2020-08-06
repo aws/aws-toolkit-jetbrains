@@ -29,6 +29,7 @@ class QueryResultsTable(
             for (field in fieldList){
                 columnInfoList.add(ColumnInfoDetails(field))
             }
+        val columnInfoArray=columnInfoList.toArray()
             val  tableModel = ListTableModel(
                 arrayOf(ColumnInfoDetails(fieldList[0])), mutableListOf<List<ResultField>>()
             )
