@@ -37,7 +37,13 @@ class SaveQueryDialog(
         override fun doAction(e: ActionEvent?) {
             super.doAction(e)
             if (doValidateAll().isNotEmpty()) return
-            saveQuery()
+            if(checkQueryName(view.queryName.text)){
+                saveQuery()
+            }
+            else{
+                notifyError(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_not_saved"))
+            }
+
             close(OK_EXIT_CODE)
         }
     }
@@ -50,23 +56,19 @@ class SaveQueryDialog(
     override fun doValidate(): ValidationInfo? = validateQueryName(view)
     override fun getOKAction(): Action = action
 
-    private fun checkQueryName(queryName: String): Boolean {
+    fun checkQueryName(queryName: String) : Boolean {
         val request = DescribeQueryDefinitionsRequest.builder().queryDefinitionNamePrefix(queryName).build()
         val response = client.describeQueryDefinitions(request)
-        if (response.queryDefinitions().isEmpty()) {
-            return true
-        }
-        return false
+        return response.queryDefinitions().isEmpty()
     }
-    fun saveQuery() = launch {
+
+    fun saveQuery() =launch {
         try {
-            if (checkQueryName(view.queryName.text)) {
-                val request = PutQueryDefinitionRequest.builder().logGroupNames(logGroups).name(view.queryName.text).queryString(query).build()
+                val queryName = view.queryName.text
+                val request = PutQueryDefinitionRequest.builder().logGroupNames(logGroups).name(queryName).queryString(query).build()
                 val response = client.putQueryDefinition(request)
                 notifyInfo(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_saved_successfully"), project)
-            } else {
-                notifyError(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_not_saved"))
-            }
+
         } catch (e: Exception) {
             notifyError(message("cloudwatch.logs.saved_query_status"), e.toString())
         }
@@ -82,5 +84,10 @@ class SaveQueryDialog(
     @TestOnly
     fun createSaveQueryRequest() {
         client.putQueryDefinition { request -> request.name(view.queryName.text).queryString(query) }
+    }
+
+    @TestOnly
+    fun createQueryName() {
+        client.describeQueryDefinitions{ request -> request.queryDefinitionNamePrefix(view.queryName.text)}
     }
 }
