@@ -16,7 +16,7 @@
           </grid>
         </constraints>
         <properties>
-          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.queue.name.tooltip"/>
+          <toolTipText value=""/>
         </properties>
       </component>
       <component id="7f54b" class="com.intellij.ui.components.JBLabel">
