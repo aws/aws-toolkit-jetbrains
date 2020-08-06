@@ -25,8 +25,9 @@ class QueryResultsTable(
     private val resultsTable: TableView<List<ResultField>>
 
     init{
+            lateinit var columnInfoList : ArrayList<ColumnInfoDetails>
             for (field in fieldList){
-
+                columnInfoList.add(ColumnInfoDetails(field))
             }
             val  tableModel = ListTableModel(
                 arrayOf(ColumnInfoDetails(fieldList[0])), mutableListOf<List<ResultField>>()
