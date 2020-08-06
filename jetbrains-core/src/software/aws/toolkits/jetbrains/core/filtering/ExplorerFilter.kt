@@ -34,7 +34,7 @@ class ExplorerFilter : AwsExplorerTreeStructureProvider {
                 }
                 request.resourceTypeFilters(resourceType)
                 ResourceFilterManager.getInstance(project).getActiveFilters().forEach {
-                    request.tagFilters(TagFilter.builder().key(it.key).values(it.value).build())
+                    request.tagFilters(TagFilter.builder().key(it.first).values(it.second).build())
                 }
             }.resourceTagMappingList()
             resourceNodes.filter { node -> tags.any { node.resourceArn() == it.resourceARN() } }
