@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.sqs.SqsClient
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
@@ -52,6 +53,7 @@ class CreateQueueDialog(
                     }, ModalityState.stateForComponent(view.component))
                     project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
                 } catch (e: Exception) {
+                    // API only throws QueueNameExistsException if the request includes attributes whose values differ from those of the existing queue.
                     LOG.warn(e) { message("sqs.create.queue.failed", queueName()) }
                     setErrorText(e.message)
                     setOKButtonText(message("sqs.create.queue.create"))
@@ -90,10 +92,14 @@ class CreateQueueDialog(
     fun createQueue() {
         client.createQueue {
             it.queueName(queueName())
+            if (view.fifoType.isSelected) {
+                it.attributes(mutableMapOf(Pair(QueueAttributeName.FIFO_QUEUE, TRUE)))
+            }
         }
     }
 
     private companion object {
         val LOG = getLogger<CreateQueueDialog>()
+        val TRUE = "true"
     }
 }
