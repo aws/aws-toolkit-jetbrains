@@ -64,7 +64,7 @@ class SaveQueryTest {
         val describeQueryDefinitionCaptor = argumentCaptor<DescribeQueryDefinitionsRequest>()
         val apiTestClient = delegateMock<CloudWatchLogsClient>()
         apiTestClient.stub {
-            on { putQueryDefinition(putQueryDefinitionCaptor.capture()) } doReturn PutQueryDefinitionResponse.builder().build()
+            on { putQueryDefinition(putQueryDefinitionCaptor.capture()) } doReturn PutQueryDefinitionResponse.builder().queryDefinitionId("1234").build()
         }
         apiTestClient.stub{
             on {describeQueryDefinitions(describeQueryDefinitionCaptor.capture())} doReturn DescribeQueryDefinitionsResponse.builder().build()
@@ -76,7 +76,6 @@ class SaveQueryTest {
             dialog.createSaveQueryRequest()
             assertThat(putQueryDefinitionCaptor.firstValue.name()).isEqualTo("SampleQuery")
             assertThat(putQueryDefinitionCaptor.firstValue.queryString()).isEqualTo("fields @timestamp")
-            dialog.createQueryName()
             //assertThat(dialog.checkQueryName(dialog.view.queryName.text)).isFalse()
         }
 
