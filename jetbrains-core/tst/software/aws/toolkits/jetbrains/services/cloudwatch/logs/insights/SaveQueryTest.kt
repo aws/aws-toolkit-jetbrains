@@ -85,30 +85,28 @@ class SaveQueryTest {
     fun `Save Query API Call saves query to account`(){
         val putQueryDefinitionCaptor = argumentCaptor<PutQueryDefinitionRequest>()
         val describeQueryDefinitionCaptor = argumentCaptor<DescribeQueryDefinitionsRequest>()
-        val client1 = delegateMock<CloudWatchLogsClient>()
-        //val l = [{"queryDefinitionId"}]
+        val apiClient = delegateMock<CloudWatchLogsClient>()
+
         client1.stub{
             on {putQueryDefinition(putQueryDefinitionCaptor.capture()) } doReturn PutQueryDefinitionResponse.builder().build()
             on {describeQueryDefinitions(describeQueryDefinitionCaptor.capture())} doReturn DescribeQueryDefinitionsResponse.builder().build()
         }
-        client1.stub{
 
-        }
         lateinit var dialog: SaveQueryDialog
         runInEdtAndWait {
             val project = projectRule.project
             client = mockClientManagerRule.create()
 
-            //val client1 = delegateMock<CloudWatchLogsClient>()
-            dialog = SaveQueryDialog(project = project, query = "fields @timestamp", logGroups = listOf("log1"), client = client1)
+
+            dialog = SaveQueryDialog(project = project, query = "fields @timestamp", logGroups = listOf("log1"), client = apiClient)
             view = EnterQueryName(project)
             dialog.view.queryName.text = "SampleQuery"
             //dialog.checkQueryName("SampleQuery")
             dialog.saveQuery()
 
         }
-        assertThat(dialog.checkQueryName("SampleQuery")).isFalse()
-        //assertThat(dialog.checkQueryName("SampleQuery")).isFalse
+
+        assertThat(dialog.checkQueryName("SampleQuery")).isFalse
     }
 
  */
