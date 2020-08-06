@@ -1,15 +1,15 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.explorer
+package software.aws.toolkits.jetbrains.core.filtering
 
 import com.intellij.ide.projectView.ViewSettings
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import software.amazon.awssdk.services.resourcegroupstaggingapi.ResourceGroupsTaggingApiClient
 import software.amazon.awssdk.services.resourcegroupstaggingapi.model.TagFilter
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.jetbrains.core.ResourceFilterManager
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 
 class ExplorerFilter : AwsExplorerTreeStructureProvider {
