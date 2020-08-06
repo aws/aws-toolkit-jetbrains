@@ -25,9 +25,9 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
         val list = ResourceFilterManager.getInstance(project).getActiveFilters()
         list.clear()
         table.getItems().forEach {
-            it.key ?: return@forEach
-            it.value ?: return@forEach
-            list.add(it.key to it.value)
+            val key = it.key ?: return@forEach
+            val value = it.value ?: return@forEach
+            list.add(key to value)
         }
         super.doOKAction()
     }
@@ -36,9 +36,9 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
 }
 
 data class TemporaryModel(
-    val enabled: Boolean = false,
-    val key: String? = null,
-    val value: String? = null
+    var enabled: Boolean = false,
+    var key: String? = null,
+    var value: String? = null
 )
 
 class TemporaryTable : ListTableWithButtons<TemporaryModel>() {
@@ -46,14 +46,23 @@ class TemporaryTable : ListTableWithButtons<TemporaryModel>() {
         object : ColumnInfo<TemporaryModel, Boolean>("TODO enabled") {
             override fun valueOf(item: TemporaryModel): Boolean? = item.enabled
             override fun isCellEditable(item: TemporaryModel): Boolean = true
+            override fun setValue(item: TemporaryModel, value: Boolean?) {
+                item.enabled = value ?: false
+            }
         },
         object : ColumnInfo<TemporaryModel, String>("TODO key") {
             override fun valueOf(item: TemporaryModel): String? = item.key
             override fun isCellEditable(item: TemporaryModel): Boolean = true
+            override fun setValue(item: TemporaryModel, value: String?) {
+                item.key = value
+            }
         },
         object : ColumnInfo<TemporaryModel, String>("TODO value") {
             override fun valueOf(item: TemporaryModel): String? = item.value
             override fun isCellEditable(item: TemporaryModel): Boolean = true
+            override fun setValue(item: TemporaryModel, value: String?) {
+                item.value = value
+            }
         }
     )
 

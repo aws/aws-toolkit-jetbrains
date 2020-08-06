@@ -27,14 +27,24 @@ class ExplorerFilter : AwsExplorerTreeStructureProvider {
             val client = project.awsClient<ResourceGroupsTaggingApiClient>()
             val tags = client.getResourcesPaginator { request ->
                 // S3 is special, its resourcetype doesn't exist for some reason
-                val resourceType = if(firstNode.serviceId == S3Client.SERVICE_NAME) {
+                val resourceType = if (firstNode.serviceId == S3Client.SERVICE_NAME) {
                     firstNode.serviceId
                 } else {
                     "${firstNode.serviceId}:${firstNode.resourceType()}"
                 }
                 request.resourceTypeFilters(resourceType)
-                ResourceFilterManager.getInstance(project).getActiveFilters().forEach {
-                    request.tagFilters(TagFilter.builder().key(it.first).values(it.second).build())
+                val tagMap = mutableMapOf<String, MutableList<String>>()
+                val tags = ResourceFilterManager.getInstance(project).getActiveFilters()
+                tags.forEach {
+                    val existingList = tagMap[it.first]
+                    if (existingList != null) {
+                        existingList.add(it.second)
+                    } else {
+                        tagMap[it.first] = mutableListOf(it.second)
+                    }
+                }
+                tagMap.forEach {
+                    request.tagFilters(TagFilter.builder().key(it.key).values(it.value).build())
                 }
             }.resourceTagMappingList()
             resourceNodes.filter { node -> tags.any { node.resourceArn() == it.resourceARN() } }
