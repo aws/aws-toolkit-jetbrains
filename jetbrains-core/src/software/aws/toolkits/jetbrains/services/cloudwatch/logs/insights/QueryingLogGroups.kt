@@ -46,7 +46,11 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
             val requestCheckQueryCompletion=GetQueryResultsRequest.builder().queryId(queryId).build()
             val responseCheckQueryCompletion=client.getQueryResults(requestCheckQueryCompletion)
             val resultList = responseCheckQueryCompletion.results()
-            println(resultList[0])
+            for (item in resultList){
+                for (item1 in item){
+                    println(item1.field())
+                }
+            }
             status= responseCheckQueryCompletion.statusAsString()
             if(responseCheckQueryCompletion.results().size!=0){
                 //QueryResultsWindow.getInstance(project).showResults(resultList, queryId, fieldList)
