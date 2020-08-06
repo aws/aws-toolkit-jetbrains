@@ -31,7 +31,7 @@ class CloudWatchLogsNode(
     logGroupName,
     AwsIcons.Resources.CloudWatch.LOG_GROUP
 ) {
-    override fun resourceType() = "group"
+    override fun resourceType() = "log-group"
 
     override fun resourceArn() = arn
 

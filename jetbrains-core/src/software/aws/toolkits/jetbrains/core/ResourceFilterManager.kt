@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 class ResourceFilterManager : Disposable {
     fun getActiveFilters(): Map<String, List<String>> {
         return mapOf(
-            "SoftwareType" to listOf("Infrastructure")
+            "SoftwareType" to listOf("Infrastructure", "Long-Running Server-Side Software")
         )
     }
 

@@ -303,7 +303,7 @@
                     class="software.aws.toolkits.jetbrains.services.cloudformation.actions.DeleteStackAction"/>
         </group>
 
-        <group id="aws.toolkit.explorer.logs.group" popup="true" compact="false">
+        <group id="aws.toolkit.explorer.logs.log-group" popup="true" compact="false">
             <action id="cloudwatch.logs.open"
                     class="software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogGroupAction"/>
             <separator/>
