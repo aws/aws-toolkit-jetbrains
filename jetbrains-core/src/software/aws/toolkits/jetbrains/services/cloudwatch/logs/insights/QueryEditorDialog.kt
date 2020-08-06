@@ -62,11 +62,8 @@ class QueryEditorDialog(
         }
 
         view.saveQueryButton.addActionListener {
-            if (view.queryBox.text.isNotEmpty()) {
-                SaveQueryDialog(project, view.queryBox.text, logGroupNames).show()
-            } else {
-                SaveQueryDialog(project, default_query, logGroupNames).show()
-            }
+            val query = if (view.queryBox.text.isNotEmpty()) view.queryBox.text else default_query
+            SaveQueryDialog(project, query, logGroupNames).show()
         }
     }
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
