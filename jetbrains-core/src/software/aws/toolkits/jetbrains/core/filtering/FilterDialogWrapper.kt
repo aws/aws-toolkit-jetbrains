@@ -17,7 +17,7 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
     init {
         init()
         table.setValues(ResourceFilterManager.getInstance(project).getActiveFilters().map { entry ->
-            TemporaryModel(true, entry.first, entry.second)
+            TemporaryModel(true, entry.key, entry.value)
         })
     }
 
@@ -26,8 +26,7 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
         list.clear()
         table.getItems().forEach {
             val key = it.key ?: return@forEach
-            val value = it.value ?: return@forEach
-            list.add(key to value)
+            list[key] = it.values.toMutableList()
         }
         super.doOKAction()
     }
@@ -38,16 +37,16 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
 data class TemporaryModel(
     var enabled: Boolean = false,
     var key: String? = null,
-    var value: String? = null
+    var values: List<String> = listOf()
 )
 
 class TemporaryTable : ListTableWithButtons<TemporaryModel>() {
     override fun createListModel(): ListTableModel<*> = ListTableModel<ArtifactMapping>(
-        object : ColumnInfo<TemporaryModel, Boolean>("TODO enabled") {
-            override fun valueOf(item: TemporaryModel): Boolean? = item.enabled
+        object : ColumnInfo<TemporaryModel, String>("TODO enabled") {
+            override fun valueOf(item: TemporaryModel): String? = item.enabled.toString()
             override fun isCellEditable(item: TemporaryModel): Boolean = true
-            override fun setValue(item: TemporaryModel, value: Boolean?) {
-                item.enabled = value ?: false
+            override fun setValue(item: TemporaryModel, value: String?) {
+                item.enabled = value?.toBoolean() ?: false
             }
         },
         object : ColumnInfo<TemporaryModel, String>("TODO key") {
@@ -58,10 +57,10 @@ class TemporaryTable : ListTableWithButtons<TemporaryModel>() {
             }
         },
         object : ColumnInfo<TemporaryModel, String>("TODO value") {
-            override fun valueOf(item: TemporaryModel): String? = item.value
+            override fun valueOf(item: TemporaryModel): String? = item.values.joinToString(", ")
             override fun isCellEditable(item: TemporaryModel): Boolean = true
-            override fun setValue(item: TemporaryModel, value: String?) {
-                item.value = value
+            override fun setValue(item: TemporaryModel, value: String) {
+                item.values = value.split(",").map { it.trim() }
             }
         }
     )
@@ -70,7 +69,7 @@ class TemporaryTable : ListTableWithButtons<TemporaryModel>() {
 
     override fun createElement(): TemporaryModel = TemporaryModel()
 
-    override fun isEmpty(element: TemporaryModel?): Boolean = element?.key.isNullOrEmpty() || element?.value.isNullOrEmpty()
+    override fun isEmpty(element: TemporaryModel?): Boolean = element?.key.isNullOrEmpty() || element?.values.isNullOrEmpty()
 
     override fun cloneElement(variable: TemporaryModel): TemporaryModel = variable.copy()
 

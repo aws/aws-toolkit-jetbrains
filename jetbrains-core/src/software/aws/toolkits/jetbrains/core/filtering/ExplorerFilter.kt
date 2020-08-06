@@ -33,17 +33,7 @@ class ExplorerFilter : AwsExplorerTreeStructureProvider {
                     "${firstNode.serviceId}:${firstNode.resourceType()}"
                 }
                 request.resourceTypeFilters(resourceType)
-                val tagMap = mutableMapOf<String, MutableList<String>>()
-                val tags = ResourceFilterManager.getInstance(project).getActiveFilters()
-                tags.forEach {
-                    val existingList = tagMap[it.first]
-                    if (existingList != null) {
-                        existingList.add(it.second)
-                    } else {
-                        tagMap[it.first] = mutableListOf(it.second)
-                    }
-                }
-                tagMap.forEach {
+                ResourceFilterManager.getInstance(project).getActiveFilters().forEach {
                     request.tagFilters(TagFilter.builder().key(it.key).values(it.value).build())
                 }
             }.resourceTagMappingList()

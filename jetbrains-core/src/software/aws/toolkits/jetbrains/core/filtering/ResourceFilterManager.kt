@@ -8,11 +8,11 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 
 class ResourceFilterManager : Disposable {
-    val filters = mutableListOf<Pair<String, String>>(
-            "SoftwareType" to "Infrastructure",
-            "SoftwareType" to "Long-Running Server-Side Software"
+    val filters = mutableMapOf<String, MutableList<String>>(
+        "SoftwareType" to mutableListOf("Infrastructure", "Long-Running Server-Side Software")
     )
-    fun getActiveFilters(): MutableList<Pair<String, String>> = filters
+
+    fun getActiveFilters(): MutableMap<String, MutableList<String>> = filters
 
     override fun dispose() {}
 
