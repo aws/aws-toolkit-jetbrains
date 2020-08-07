@@ -4,12 +4,28 @@
 package software.aws.toolkits.jetbrains.core.filtering
 
 import com.intellij.execution.util.ListTableWithButtons
+import com.intellij.openapi.project.Project
+import com.intellij.ui.TextFieldWithAutoCompletion
+import com.intellij.ui.TextFieldWithAutoCompletionListProvider
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
+import software.amazon.awssdk.services.resourcegroupstaggingapi.ResourceGroupsTaggingApiClient
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.ecs.execution.ArtifactMapping
+import java.awt.Component
 import javax.swing.JTable
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableCellRenderer
 
-class TagFilterTable : ListTableWithButtons<TagFilterTableModel>() {
+class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFilterTableModel>() {
+    val provider = object : TextFieldWithAutoCompletionListProvider<String>(listOf()) {
+        init {
+            val client: ResourceGroupsTaggingApiClient = project.awsClient()
+            setItems(client.tagKeysPaginator.tagKeys().toMutableList())
+        }
+        override fun getLookupString(item: String): String = item
+    }
+
     init {
         tableView.tableHeader.reorderingAllowed = false
         tableView.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
@@ -29,6 +45,14 @@ class TagFilterTable : ListTableWithButtons<TagFilterTableModel>() {
             override fun isCellEditable(item: TagFilterTableModel): Boolean = true
             override fun setValue(item: TagFilterTableModel, value: String?) {
                 item.key = value
+            }
+            override fun getRenderer(item: TagFilterTableModel?): TableCellRenderer? {
+                return object : DefaultTableCellRenderer() {
+                    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+                        //return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+                        return TextFieldWithAutoCompletion(project,  provider, true, "")
+                    }
+                }
             }
         },
         object : ColumnInfo<TagFilterTableModel, String>("TODO value") {

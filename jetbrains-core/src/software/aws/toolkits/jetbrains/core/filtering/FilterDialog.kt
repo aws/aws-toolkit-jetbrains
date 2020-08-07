@@ -14,7 +14,7 @@ class FilterDialog(private val project: Project) {
     private lateinit var tagTable: JComponent
 
     private fun createUIComponents() {
-        table = TagFilterTable()
+        table = TagFilterTable(project)
         tagTable = table.component
         val state = ResourceFilterManager.getInstance(project).state
         table.setValues(state.tags.map { entry ->
