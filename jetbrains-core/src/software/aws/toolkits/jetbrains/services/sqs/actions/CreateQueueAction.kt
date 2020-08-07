@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.DumbAwareAction
 import icons.AwsIcons
 import software.amazon.awssdk.services.sqs.SqsClient
@@ -17,9 +17,8 @@ class CreateQueueAction : DumbAwareAction(
     AwsIcons.Resources.Sqs.SQS_QUEUE
 ) {
     override fun actionPerformed(e: AnActionEvent) {
-        val project = e.getRequiredData(LangDataKeys.PROJECT)
+        val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val client: SqsClient = project.awsClient()
-        val dialog = CreateQueueDialog(project, client)
-        dialog.show()
+        CreateQueueDialog(project, client).show()
     }
 }
