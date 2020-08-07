@@ -69,14 +69,17 @@ class CreateQueueDialog(
         if (view.queueName.text.isEmpty()) {
             return ValidationInfo(message("sqs.create.validation.empty.queue.name"), view.queueName)
         }
-        if (!validateCharacters(view.queueName.text)) {
-            return ValidationInfo(message("sqs.create.validation.queue.name.invalid"), view.queueName)
+        if (queueName().length > MAX_LENGTH_OF_QUEUE_NAME) {
+            return ValidationInfo(message("sqs.create.validation.long.queue.name", MAX_LENGTH_OF_QUEUE_NAME), view.queueName)
         }
-        if (queueName().length > MAX_LENGTH_OF_STANDARD_QUEUE_NAME) {
-            return if (view.fifoType.isSelected) {
-                ValidationInfo(message("sqs.create.validation.long.queue.name", MAX_LENGTH_OF_FIFO_QUEUE_NAME), view.queueName)
-            } else {
-                ValidationInfo(message("sqs.create.validation.long.queue.name", MAX_LENGTH_OF_STANDARD_QUEUE_NAME), view.queueName)
+
+        if (view.fifoType.isSelected) {
+            if (!validateCharacters(queueName().substringBefore(FIFO_SUFFIX))) {
+                return ValidationInfo(message("sqs.create.validation.queue.name.invalid"), view.queueName)
+            }
+        } else {
+            if (!validateCharacters(queueName())) {
+                return ValidationInfo(message("sqs.create.validation.queue.name.invalid"), view.queueName)
             }
         }
 
@@ -86,11 +89,12 @@ class CreateQueueDialog(
     private fun validateCharacters(queueName: String): Boolean = queueName.matches("^[a-zA-Z0-9-_]*$".toRegex())
 
     private fun queueName(): String {
-        var name = view.queueName.text.trim()
-        if (view.fifoType.isSelected) {
-            name += FIFO_SUFFIX
+        val name = view.queueName.text.trim()
+        return if (view.fifoType.isSelected && !name.endsWith(FIFO_SUFFIX)) {
+            name + FIFO_SUFFIX
+        } else {
+            name
         }
-        return name
     }
 
     fun createQueue() {

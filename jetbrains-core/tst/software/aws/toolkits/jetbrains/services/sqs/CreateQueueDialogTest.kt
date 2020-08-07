@@ -65,7 +65,7 @@ class CreateQueueDialogTest {
     fun `Too long standard queue name fails`() {
         runInEdtAndWait {
             val dialog = CreateQueueDialog(projectRule.project, client).apply {
-                view.queueName.text = RuleUtils.randomName(length = MAX_LENGTH_OF_STANDARD_QUEUE_NAME + 1)
+                view.queueName.text = RuleUtils.randomName(length = MAX_LENGTH_OF_QUEUE_NAME + 1)
             }
 
             val validationInfo = dialog.validate()
