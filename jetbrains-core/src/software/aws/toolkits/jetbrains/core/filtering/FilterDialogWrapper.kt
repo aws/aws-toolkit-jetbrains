@@ -17,16 +17,15 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
     init {
         init()
         table.setValues(ResourceFilterManager.getInstance(project).state.tags.map { entry ->
-            TemporaryModel(entry.value.first, entry.key, entry.value.second)
+            TemporaryModel(entry.value.enabled, entry.key, entry.value.values)
         })
     }
 
     override fun doOKAction() {
-        ResourceFilterManager.getInstance(project).state.tags.clear()
-        table.getItems().forEach {
-            val key = it.key ?: return@forEach
-            ResourceFilterManager.getInstance(project).state.tags[key] = Pair(it.enabled, it.values.toMutableList())
-        }
+        ResourceFilterManager.getInstance(project).state.tags = table.getItems().mapNotNull {
+            val key = it.key ?: return@mapNotNull null
+            key to TagFilter(it.enabled, it.values)
+        }.toMap()
         super.doOKAction()
     }
 
@@ -34,7 +33,7 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
 }
 
 data class TemporaryModel(
-    var enabled: Boolean = false,
+    var enabled: Boolean = true,
     var key: String? = null,
     var values: List<String> = listOf()
 )

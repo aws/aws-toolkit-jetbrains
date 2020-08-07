@@ -22,26 +22,33 @@ class ExplorerFilter : AwsExplorerTreeStructureProvider {
         val computedNodes = if (resourceNodes.isEmpty()) {
             listOf()
         } else {
-            val firstNode = resourceNodes.first()
-            val project = firstNode.nodeProject
-            val client = project.awsClient<ResourceGroupsTaggingApiClient>()
-            val tags = client.getResourcesPaginator { request ->
-                // S3 is special, its resourcetype doesn't exist for some reason
-                val resourceType = if (firstNode.serviceId == S3Client.SERVICE_NAME) {
-                    firstNode.serviceId
-                } else {
-                    "${firstNode.serviceId}:${firstNode.resourceType()}"
-                }
-                request.resourceTypeFilters(resourceType)
-                ResourceFilterManager.getInstance(project).state.tags.forEach {
-                    if(it.value.first) {
-                        request.tagFilters(TagFilter.builder().key(it.key).values(it.value.second).build())
-                    }
-                }
-            }.resourceTagMappingList()
-            resourceNodes.filter { node -> tags.any { node.resourceArn() == it.resourceARN() } }
+            filterByTag(resourceNodes)
         }
         val otherNodes = children.filter { it !is AwsExplorerResourceNode<*> }
         return (otherNodes + computedNodes).toMutableList()
+    }
+
+    private fun filterByTag(resourceNodes: List<AwsExplorerResourceNode<*>>): List<AwsExplorerResourceNode<*>> {
+        val firstNode = resourceNodes.first()
+        val project = firstNode.nodeProject
+        val filterManager = ResourceFilterManager.getInstance(project)
+        if (!filterManager.tagFilterEnabled()) {
+            return resourceNodes
+        }
+        val client = project.awsClient<ResourceGroupsTaggingApiClient>()
+        val tags = client.getResourcesPaginator { request ->
+            // S3 is special, bucket resourcetype doesn't exist
+            val resourceType = if (firstNode.serviceId == S3Client.SERVICE_NAME) {
+                firstNode.serviceId
+            } else {
+                "${firstNode.serviceId}:${firstNode.resourceType()}"
+            }
+            filterManager.state.tags.forEach {
+                if (it.value.enabled) {
+                    request.tagFilters(TagFilter.builder().key(it.key).values(it.value.values).build())
+                }
+            }
+        }.resourceTagMappingList()
+        return resourceNodes.filter { node -> tags.any { node.resourceArn() == it.resourceARN() } }
     }
 }
