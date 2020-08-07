@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse
 import software.amazon.awssdk.services.sqs.model.QueueNameExistsException
+import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 
 class CreateQueueDialogTest {
@@ -49,10 +50,10 @@ class CreateQueueDialogTest {
     }
 
     @Test
-    fun `Invalid standard queue name fails`() {
+    fun `Invalid queue name fails`() {
         runInEdtAndWait {
             val dialog = CreateQueueDialog(projectRule.project, client).apply {
-                view.queueName.text = INVALID_STANDARD_NAME
+                view.queueName.text = INVALID_NAME
             }
 
             val validationInfo = dialog.validate()
@@ -61,11 +62,10 @@ class CreateQueueDialogTest {
     }
 
     @Test
-    fun `Invalid fifo queue name fails`() {
+    fun `Too long standard queue name fails`() {
         runInEdtAndWait {
             val dialog = CreateQueueDialog(projectRule.project, client).apply {
-                view.fifoType.isSelected = true
-                view.queueName.text = INVALID_FIFO_NAME
+                view.queueName.text = RuleUtils.randomName(length = MAX_LENGTH_OF_QUEUE_NAME + 1)
             }
 
             val validationInfo = dialog.validate()
@@ -74,11 +74,10 @@ class CreateQueueDialogTest {
     }
 
     @Test
-    fun `Fifo queue name missing suffix fails`() {
+    fun `Too long fifo queue name fails`() {
         runInEdtAndWait {
             val dialog = CreateQueueDialog(projectRule.project, client).apply {
-                view.queueName.text = VALID_STANDARD_NAME
-                view.fifoType.isSelected = true
+                view.queueName.text = RuleUtils.randomName(length = MAX_LENGTH_OF_FIFO_QUEUE_NAME + 1)
             }
 
             val validationInfo = dialog.validate()
@@ -95,12 +94,12 @@ class CreateQueueDialogTest {
 
         runInEdtAndWait {
             val dialog = CreateQueueDialog(projectRule.project, client).apply {
-                view.queueName.text = VALID_STANDARD_NAME
+                view.queueName.text = VALID_NAME
             }
             dialog.createQueue()
         }
 
-        assertThat(createQueueCaptor.firstValue.queueName()).isEqualTo(VALID_STANDARD_NAME)
+        assertThat(createQueueCaptor.firstValue.queueName()).isEqualTo(VALID_NAME)
     }
 
     @Test
@@ -112,13 +111,13 @@ class CreateQueueDialogTest {
 
         runInEdtAndWait {
             val dialog = CreateQueueDialog(projectRule.project, client).apply {
-                view.queueName.text = VALID_FIFO_NAME
+                view.queueName.text = VALID_NAME
                 view.fifoType.isSelected = true
             }
             dialog.createQueue()
         }
 
-        assertThat(createQueueCaptor.firstValue.queueName()).isEqualTo(VALID_FIFO_NAME)
+        assertThat(createQueueCaptor.firstValue.queueName()).isEqualTo(VALID_NAME_FIFO)
     }
 
     @Test
@@ -130,19 +129,18 @@ class CreateQueueDialogTest {
 
         runInEdtAndWait {
             val dialog = CreateQueueDialog(projectRule.project, client).apply {
-                view.queueName.text = VALID_STANDARD_NAME
+                view.queueName.text = VALID_NAME
             }
             assertThatThrownBy { dialog.createQueue() }.hasMessage(ERROR_MESSAGE)
         }
 
-        assertThat(createQueueCaptor.firstValue.queueName()).isEqualTo(VALID_STANDARD_NAME)
+        assertThat(createQueueCaptor.firstValue.queueName()).isEqualTo(VALID_NAME)
     }
 
     private companion object {
-        const val INVALID_STANDARD_NAME = "Hello_World!"
-        const val INVALID_FIFO_NAME = "Hello_World!.fifo"
-        const val VALID_STANDARD_NAME = "Hello-World"
-        const val VALID_FIFO_NAME = "Hello-World.fifo"
+        const val INVALID_NAME = "Hello_World!"
+        const val VALID_NAME = "Hello-World"
+        const val VALID_NAME_FIFO = "Hello-World.fifo"
         const val ERROR_MESSAGE = "Queue already exists."
     }
 }
