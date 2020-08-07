@@ -23,15 +23,16 @@ class QueryResultsTable(
 ) : CoroutineScope by ApplicationThreadPoolScope("QueryResultsTable"), Disposable {
     val component: JComponent = TODO()
     private val resultsTable: TableView<List<ResultField>>
+    private val queryActor: QueryActor<GetQueryResultsResponse>
 
     init{
             lateinit var columnInfoList : ArrayList<ColumnInfoDetails>
             for (field in fieldList){
                 columnInfoList.add(ColumnInfoDetails(field))
             }
-        val columnInfoArray=columnInfoList.toArray()
+        val columnInfoArray= columnInfoList.toTypedArray()
             val  tableModel = ListTableModel(
-                arrayOf(ColumnInfoDetails(fieldList[0])), mutableListOf<List<ResultField>>()
+                columnInfoArray, mutableListOf<List<ResultField>>()
             )
         resultsTable = TableView(tableModel).apply {
             setPaintBusy(true)
@@ -40,6 +41,7 @@ class QueryResultsTable(
             tableHeader.reorderingAllowed = false
             tableHeader.resizingAllowed = false
         }
+
 
         
     }
