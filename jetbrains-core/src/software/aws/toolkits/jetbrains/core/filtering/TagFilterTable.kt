@@ -3,27 +3,37 @@
 
 package software.aws.toolkits.jetbrains.core.filtering
 
+import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TextFieldWithAutoCompletion
+import com.intellij.ui.TextFieldWithAutoCompletion.StringsCompletionProvider
 import com.intellij.ui.TextFieldWithAutoCompletionListProvider
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.resourcegroupstaggingapi.ResourceGroupsTaggingApiClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.ecs.execution.ArtifactMapping
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import java.awt.Component
 import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
 
 class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFilterTableModel>() {
-    val provider = object : TextFieldWithAutoCompletionListProvider<String>(listOf()) {
+    val provider: TextFieldWithAutoCompletionListProvider<String> = object :
+        StringsCompletionProvider(listOf(), null),
+        CoroutineScope by ApplicationThreadPoolScope("completionProvider") {
+
         init {
-            val client: ResourceGroupsTaggingApiClient = project.awsClient()
-            setItems(client.tagKeysPaginator.tagKeys().toMutableList())
+            launch {
+                val client: ResourceGroupsTaggingApiClient = project.awsClient()
+                val items = client.tagKeysPaginator.tagKeys().toMutableList()
+                setItems(items)
+            }
         }
-        override fun getLookupString(item: String): String = item
     }
 
     init {
@@ -46,11 +56,19 @@ class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFil
             override fun setValue(item: TagFilterTableModel, value: String?) {
                 item.key = value
             }
+
             override fun getRenderer(item: TagFilterTableModel?): TableCellRenderer? {
                 return object : DefaultTableCellRenderer() {
-                    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+                    override fun getTableCellRendererComponent(
+                        table: JTable?,
+                        value: Any?,
+                        isSelected: Boolean,
+                        hasFocus: Boolean,
+                        row: Int,
+                        column: Int
+                    ): Component {
+                        return TextFieldWithAutoCompletion(project, provider, true, value?.toString() ?: "")
                         //return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
-                        return TextFieldWithAutoCompletion(project,  provider, true, "")
                     }
                 }
             }
