@@ -16,17 +16,16 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
 
     init {
         init()
-        table.setValues(ResourceFilterManager.getInstance(project).getActiveFilters().map { entry ->
-            TemporaryModel(true, entry.key, entry.value)
+        table.setValues(ResourceFilterManager.getInstance(project).state.tags.map { entry ->
+            TemporaryModel(entry.value.first, entry.key, entry.value.second)
         })
     }
 
     override fun doOKAction() {
-        val list = ResourceFilterManager.getInstance(project).getActiveFilters()
-        list.clear()
+        ResourceFilterManager.getInstance(project).state.tags.clear()
         table.getItems().forEach {
             val key = it.key ?: return@forEach
-            list[key] = it.values.toMutableList()
+            ResourceFilterManager.getInstance(project).state.tags[key] = Pair(it.enabled, it.values.toMutableList())
         }
         super.doOKAction()
     }
@@ -42,11 +41,12 @@ data class TemporaryModel(
 
 class TemporaryTable : ListTableWithButtons<TemporaryModel>() {
     override fun createListModel(): ListTableModel<*> = ListTableModel<ArtifactMapping>(
-        object : ColumnInfo<TemporaryModel, String>("TODO enabled") {
-            override fun valueOf(item: TemporaryModel): String? = item.enabled.toString()
+        object : ColumnInfo<TemporaryModel, Boolean>("TODO enabled") {
+            override fun getColumnClass(): Class<*> = Boolean::class.java
+            override fun valueOf(item: TemporaryModel): Boolean? = item.enabled
             override fun isCellEditable(item: TemporaryModel): Boolean = true
-            override fun setValue(item: TemporaryModel, value: String?) {
-                item.enabled = value?.toBoolean() ?: false
+            override fun setValue(item: TemporaryModel, value: Boolean?) {
+                item.enabled = value ?: false
             }
         },
         object : ColumnInfo<TemporaryModel, String>("TODO key") {

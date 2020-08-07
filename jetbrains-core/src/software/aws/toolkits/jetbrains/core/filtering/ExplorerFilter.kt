@@ -33,8 +33,10 @@ class ExplorerFilter : AwsExplorerTreeStructureProvider {
                     "${firstNode.serviceId}:${firstNode.resourceType()}"
                 }
                 request.resourceTypeFilters(resourceType)
-                ResourceFilterManager.getInstance(project).getActiveFilters().forEach {
-                    request.tagFilters(TagFilter.builder().key(it.key).values(it.value).build())
+                ResourceFilterManager.getInstance(project).state.tags.forEach {
+                    if(it.value.first) {
+                        request.tagFilters(TagFilter.builder().key(it.key).values(it.value.second).build())
+                    }
                 }
             }.resourceTagMappingList()
             resourceNodes.filter { node -> tags.any { node.resourceArn() == it.resourceARN() } }
