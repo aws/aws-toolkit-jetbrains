@@ -5,9 +5,10 @@ package software.aws.toolkits.jetbrains.core.filtering
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import javax.swing.JComponent
 
-class FilterDialogWrapper(project: Project) : DialogWrapper(project) {
+class FilterDialogWrapper(private val project: Project) : DialogWrapper(project) {
     private val table = FilterDialog(project)
 
     init {
@@ -16,6 +17,8 @@ class FilterDialogWrapper(project: Project) : DialogWrapper(project) {
 
     override fun doOKAction() {
         table.saveState()
+        // TODO only refresh if something changes
+        project.refreshAwsTree()
         super.doOKAction()
     }
 
