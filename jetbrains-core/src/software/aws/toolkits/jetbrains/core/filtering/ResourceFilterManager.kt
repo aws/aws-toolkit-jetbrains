@@ -8,13 +8,10 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
-import com.intellij.util.xmlb.Converter
-import com.intellij.util.xmlb.annotations.Tag
-import com.intellij.util.xmlb.annotations.XMap
 
 @State(name = "filters", storages = [Storage("aws.xml")])
 class ResourceFilterManager : PersistentStateComponent<ResourceFilter> {
-    private var state = ResourceFilter(true, mutableMapOf())
+    private var state = ResourceFilter(true, mapOf())
 
     override fun getState(): ResourceFilter = state
     override fun loadState(state: ResourceFilter) {
@@ -28,21 +25,6 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilter> {
     }
 }
 
-class TagFilterConverter : Converter<TagFilter>() {
-    override fun toString(value: TagFilter): String = "${value.enabled},${value.values}"
-    override fun fromString(value: String): TagFilter? {
-        return try {
-            val values = value.split(",")
-            TagFilter(
-                values[0].toBoolean(),
-                values.subList(1, values.size)
-            )
-        } catch (e: Exception) {
-            null
-        }
-    }
-}
-
 data class TagFilter(
     var enabled: Boolean = false,
     var values: List<String> = listOf()
@@ -51,5 +33,4 @@ data class TagFilter(
 data class ResourceFilter(
     var tagsEnabled: Boolean = false,
     var tags: Map<String, TagFilter> = mapOf()
-    // val stacks: MutableList<Pair<Boolean, String>>,
 )
