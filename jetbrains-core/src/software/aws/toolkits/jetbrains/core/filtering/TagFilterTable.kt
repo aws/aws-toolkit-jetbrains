@@ -67,7 +67,7 @@ class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFil
                         row: Int,
                         column: Int
                     ): Component {
-                        return TextFieldWithAutoCompletion(project, provider, true, value?.toString() ?: "")
+                        return TextFieldWithAutoCompletion(project, provider, false, value?.toString() ?: "")
                         //return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
                     }
                 }
