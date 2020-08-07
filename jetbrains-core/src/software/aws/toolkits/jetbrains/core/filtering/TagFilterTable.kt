@@ -7,8 +7,14 @@ import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import software.aws.toolkits.jetbrains.services.ecs.execution.ArtifactMapping
+import javax.swing.JTable
 
 class TagFilterTable : ListTableWithButtons<TagFilterTableModel>() {
+    init {
+        tableView.tableHeader.reorderingAllowed = false
+        tableView.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+    }
+
     override fun createListModel(): ListTableModel<*> = ListTableModel<ArtifactMapping>(
         object : ColumnInfo<TagFilterTableModel, Boolean>("TODO enabled") {
             override fun getColumnClass(): Class<*> = Boolean::class.java

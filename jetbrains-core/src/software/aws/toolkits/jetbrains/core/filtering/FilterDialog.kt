@@ -28,7 +28,10 @@ class FilterDialog(private val project: Project) {
 
     fun saveState() {
         ResourceFilterManager.getInstance(project).state.tags = table.getItems().mapNotNull {
-            val key = it.key ?: return@mapNotNull null
+            val key = it.key
+            if (key.isNullOrBlank()) {
+                return@mapNotNull null
+            }
             key to TagFilter(it.enabled, it.values)
         }.toMap()
         ResourceFilterManager.getInstance(project).state.tagsEnabled = tagFilteringEnabled.isSelected

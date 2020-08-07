@@ -11,8 +11,8 @@
       <component id="5da1b" class="javax.swing.JComponent" binding="tagTable" custom-create="true">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
-            <minimum-size width="300" height="100"/>
-            <preferred-size width="150" height="50"/>
+            <minimum-size width="500" height="200"/>
+            <preferred-size width="500" height="200"/>
           </grid>
         </constraints>
       </component>
