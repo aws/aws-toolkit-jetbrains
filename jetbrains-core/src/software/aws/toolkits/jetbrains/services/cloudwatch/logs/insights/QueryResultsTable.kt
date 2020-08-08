@@ -5,13 +5,18 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.ui.bottomReached
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
@@ -21,16 +26,18 @@ class QueryResultsTable(
     private val client: CloudWatchLogsClient,
     private val fieldList: List<String>
 ) : CoroutineScope by ApplicationThreadPoolScope("QueryResultsTable"), Disposable {
-    val component: JComponent = TODO()
+    val component: JComponent
+    val channel : Channel<QueryActor.MessageLoadQueryResults>
     private val resultsTable: TableView<List<ResultField>>
-    private val queryActor: QueryActor<GetQueryResultsResponse>
+    private val queryActor: QueryActor<List<ResultField>>
 
     init{
-            lateinit var columnInfoList : ArrayList<ColumnInfoDetails>
+            println("QueryResultsTable")
+            val columnInfoList : ArrayList<ColumnInfoDetails> = arrayListOf()
             for (field in fieldList){
                 columnInfoList.add(ColumnInfoDetails(field))
             }
-        val columnInfoArray= columnInfoList.toTypedArray()
+            val columnInfoArray= columnInfoList.toTypedArray()
             val  tableModel = ListTableModel(
                 columnInfoArray, mutableListOf<List<ResultField>>()
             )
@@ -42,10 +49,15 @@ class QueryResultsTable(
             tableHeader.resizingAllowed = false
         }
 
-
-        
+        queryActor = QueryResultsActor(project, client, resultsTable, queryResults)
+        channel = queryActor.channel
+        component = ScrollPaneFactory.createScrollPane(resultsTable).also {
+            it.bottomReached {
+                if (resultsTable.rowCount != 0) {
+                    launch { queryActor.channel.send(QueryActor.MessageLoadQueryResults.LoadNextQueryBatch) }
+                }
+            }
+        }
     }
-    override fun dispose() {
-
-    }
+    override fun dispose() {}
 }

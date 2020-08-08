@@ -5,7 +5,9 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -31,7 +33,16 @@ class QueryResultList(
         // TODO: place custom component creation code here
         tablePanel = SimpleToolWindowPanel(false, true)
     }
-
+    init {
+        println("QueryResultsList")
+        Disposer.register(this,resultsTable)
+        tablePanel.setContent(resultsTable.component)
+        refreshTable()
+    }
+    private fun refreshTable(){
+        launch {resultsTable.channel.send(QueryActor.MessageLoadQueryResults.LoadInitialQueryResults)}
+    }
     override fun dispose() {
     }
+
 }

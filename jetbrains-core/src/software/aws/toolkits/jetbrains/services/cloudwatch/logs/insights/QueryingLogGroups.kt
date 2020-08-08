@@ -42,22 +42,22 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
 
     private fun getQueryResults(queryId: String, client: CloudWatchLogsClient, fieldList: List<String>) = launch {
         var status = ""
+        var flag = true
+        var i=0
+        lateinit var resultList : MutableList<MutableList<ResultField>>
         while(status!="Complete"){
             val requestCheckQueryCompletion=GetQueryResultsRequest.builder().queryId(queryId).build()
             val responseCheckQueryCompletion=client.getQueryResults(requestCheckQueryCompletion)
-            val resultList = responseCheckQueryCompletion.results()
-            for (item in resultList){
-                for (item1 in item){
-                    println(item1.field())
-                }
-            }
+            resultList = responseCheckQueryCompletion.results()
+            println(responseCheckQueryCompletion.statusAsString())
             status= responseCheckQueryCompletion.statusAsString()
             if(responseCheckQueryCompletion.results().size!=0){
-                //QueryResultsWindow.getInstance(project).showResults(resultList, queryId, fieldList)
             }
 
         }
         println("Done")
+        QueryResultsWindow.getInstance(project).showResults(resultList, queryId, fieldList)
+        println(" Back to Pavillion")
 
     }
 
