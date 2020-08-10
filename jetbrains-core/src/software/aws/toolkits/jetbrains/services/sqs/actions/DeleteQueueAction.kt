@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.actions
 
-import com.intellij.openapi.application.runInEdt
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
@@ -17,12 +16,8 @@ import software.aws.toolkits.resources.message
 class DeleteQueueAction : DeleteResourceAction<SqsQueueNode>(message("sqs.delete.queue.action"), TaggingResourceType.SQS_QUEUE) {
     override fun performDelete(selected: SqsQueueNode) {
         val client = selected.nodeProject.awsClient<SqsClient>()
-        runInEdt {
-            SqsWindow.getInstance(selected.nodeProject).closeQueue(selected.queueUrl)
-        }
+        SqsWindow.getInstance(selected.nodeProject).closeQueue(selected.queueUrl)
         client.deleteQueue { it.queueUrl(selected.queueUrl) }
         selected.nodeProject.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
-
-        // TODO: Because telemetry not implemented, currently returns an error when deleting telemetry resource
     }
 }
