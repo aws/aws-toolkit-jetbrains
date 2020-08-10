@@ -9,17 +9,17 @@ import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 
 class QueryResultList(
     private val project: Project,
-    private val fieldList : List<String>,
+    private val fieldList: List<String>,
     private val queryId: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
     lateinit var resultsPanel: JPanel
@@ -34,14 +34,16 @@ class QueryResultList(
         tablePanel = SimpleToolWindowPanel(false, true)
     }
     init {
-        Disposer.register(this,resultsTable)
+        Disposer.register(this, resultsTable)
         tablePanel.setContent(resultsTable.component)
-        refreshTable()
+        loadInitialResultsTable()
+        openQueryEditor.addActionListener {
+            notifyInfo("Previous state Query Editor execution", "To be implemented!")
+        }
     }
-    private fun refreshTable(){
-        launch {resultsTable.channel.send(QueryActor.MessageLoadQueryResults.LoadInitialQueryResults)}
+    private fun loadInitialResultsTable() {
+        launch { resultsTable.channel.send(QueryActor.MessageLoadQueryResults.LoadInitialQueryResults) }
     }
     override fun dispose() {
     }
-
 }

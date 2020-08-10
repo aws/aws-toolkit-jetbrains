@@ -7,9 +7,6 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeQueriesRequest
-import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsRequest
-import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
 import software.amazon.awssdk.services.cloudwatchlogs.model.StartQueryRequest
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
@@ -24,20 +21,21 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
             .build()
         val response = client.startQuery(request)
         var queryId: String = response.queryId()
-        println(queryId)
-        val fieldList= getFields(query)
-        QueryResultsWindow.getInstance(project).showResults(queryId,fieldList)
+        val fieldList = getFields(query)
+        QueryResultsWindow.getInstance(project).showResults(queryId, fieldList)
     }
 
-    private fun getFields(query: String) : List<String> {
-        return if (query.contains("fields", ignoreCase = true)) {
-            var fields = query.substring(query.indexOf("fields", ignoreCase = true)+7)
+    fun getFields(query: String): List<String> {
+        var fieldList: List<String>
+        if (query.contains("fields", ignoreCase = true)) {
+            var fields = query.substring(query.indexOf("fields", ignoreCase = true) + 7)
             if (fields.contains("|")) {
-                fields = fields.substring(0,fields.indexOf("|"))
+                fields = fields.substring(0, fields.indexOf("|"))
             }
-            fields.split(",").map{it.trim()}
+            fieldList = fields.split(",").map { it.trim() }
         } else {
-            listOf("@message","@timestamp")
+            fieldList = listOf("@message", "@timestamp")
         }
+        return fieldList
     }
 }

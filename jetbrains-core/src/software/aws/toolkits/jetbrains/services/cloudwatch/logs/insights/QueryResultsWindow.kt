@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -17,8 +16,8 @@ import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 class QueryResultsWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("openResultsWindow") {
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, QueryResultsWindow.INSIGHTS_RESULTS_TOOL_WINDOW)
     private val edtContext = getCoroutineUiContext()
-    fun showResults (queryId: String, fieldList: List<String>) = launch {
-        try{
+    fun showResults(queryId: String, fieldList: List<String>) = launch {
+        try {
             val existingWindow = toolWindow.find(queryId)
             if (existingWindow != null) {
                 withContext(edtContext) {
@@ -30,18 +29,16 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
             withContext(edtContext) {
                 toolWindow.addTab(queryId, group.resultsPanel, activate = true, id = queryId, disposable = group)
             }
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             throw e
         }
-
-
     }
-    companion object{
+
+    companion object {
         internal val INSIGHTS_RESULTS_TOOL_WINDOW = ToolkitToolWindowType(
             "AWS.InsightsResultsTable",
-             "CloudWatch Logs Insights"
+            "CloudWatch Logs Insights"
         )
-        fun getInstance(project: Project)= ServiceManager.getService(project, QueryResultsWindow::class.java)
+        fun getInstance(project: Project) = ServiceManager.getService(project, QueryResultsWindow::class.java)
     }
-
 }

@@ -7,8 +7,11 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.table.TableView
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
@@ -25,7 +28,7 @@ sealed class QueryActor<T>(
     private val project: Project,
     protected val client: CloudWatchLogsClient,
     private val table: TableView<T>
-): CoroutineScope by ApplicationThreadPoolScope("InsightsResultTable"), Disposable {
+) : CoroutineScope by ApplicationThreadPoolScope("InsightsResultTable"), Disposable {
     val channel = Channel<MessageLoadQueryResults>()
     protected var moreResultsAvailable: Boolean = false
     protected abstract val emptyText: String
@@ -34,26 +37,26 @@ sealed class QueryActor<T>(
 
     private val edtContext = getCoroutineUiContext(disposable = this@QueryActor)
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
-        QueryActor.LOG.error(e) { "Exception thrown in Query Results not handled:" }
+        LOG.error(e) { "Exception thrown in Query Results not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
         table.setPaintBusy(false)
         Disposer.dispose(this)
     }
 
-    sealed class MessageLoadQueryResults{
+    sealed class MessageLoadQueryResults {
         object LoadInitialQueryResults : MessageLoadQueryResults()
-        object LoadNextQueryBatch :MessageLoadQueryResults()
+        object LoadNextQueryBatch : MessageLoadQueryResults()
     }
 
-    init{
-        launch (exceptionHandler) {
+    init {
+        launch(exceptionHandler) {
             messageActionsPerformed()
         }
     }
 
-    private suspend fun messageActionsPerformed(){
-        for (message in channel){
-            when(message) {
+    private suspend fun messageActionsPerformed() {
+        for (message in channel) {
+            when (message) {
                 is MessageLoadQueryResults.LoadNextQueryBatch -> {
                 if (moreResultsAvailable) {
                     withContext(edtContext) { table.setPaintBusy(true) }
@@ -62,9 +65,8 @@ sealed class QueryActor<T>(
                         table.listTableModel.addRows(items)
                         table.setPaintBusy(false)
                     }
-                }
-                    else{
-                    notifyInfo("Query Completion Result","Query Successfully Completed!")
+                } else {
+                    notifyInfo(message("cloudwatch.logs.query_result_completion_status"), message("cloudwatch.logs.query_result_completion_successful"))
                 }
             }
                 is MessageLoadQueryResults.LoadInitialQueryResults -> {
@@ -75,18 +77,17 @@ sealed class QueryActor<T>(
                     }
                 }
             }
-
         }
     }
 
-    protected suspend fun loadAndPopulateResultsTable (loadBlock: suspend() -> List<T>){
-        try{
+    protected suspend fun loadAndPopulateResultsTable(loadBlock: suspend() -> List<T>) {
+        try {
             tableLoading()
             val items = loadBlock()
             table.listTableModel.items = items
             table.emptyText.text = emptyText
         } catch (e: ResourceNotFoundException) {
-            withContext (edtContext) {
+            withContext(edtContext) {
                 table.emptyText.text = notFoundText
             }
         } catch (e: Exception) {
@@ -129,30 +130,29 @@ class QueryResultsActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<List<ResultField>>,
-    private val queryId : String
-): QueryActor<List<ResultField>>(project, client, table){
-    override val emptyText = "No Query Results"
-    override val tableErrorMessage = "Failed to load Query Results"
-    override val notFoundText = "No Query Results Exist"
+    private val queryId: String
+) : QueryActor<List<ResultField>>(project, client, table) {
+    override val emptyText = message("cloudwatch.logs.no_results_found")
+    override val tableErrorMessage = message("cloudwatch.logs.query_results_table_error")
+    override val notFoundText = message("cloudwatch.logs.no_results_found")
 
     override suspend fun loadInitialQueryResults() {
         var request = GetQueryResultsRequest.builder().queryId(queryId).build()
         var response = client.getQueryResults(request)
-        while(response.results().size==0){
+        while (response.results().size == 0) {
             request = GetQueryResultsRequest.builder().queryId(queryId).build()
             response = client.getQueryResults(request)
         }
         val queryResults = response.results().filterNotNull()
-        for (result in queryResults){
-            for (field in result){
-                if(field.field()=="@ptr"){
-                    ptrListQueryResults.add(field.value())
+        for (result in queryResults) {
+            for (field in result) {
+                if (field.field() == "@ptr") {
+                    queryResultsIdentifierList.add(field.value())
                 }
             }
         }
         moreResultsAvailable = response.statusAsString() != "Complete"
         loadAndPopulateResultsTable { queryResults }
-
     }
 
     override suspend fun loadNext(): List<List<ResultField>> {
@@ -162,20 +162,19 @@ class QueryResultsActor(
         return checkIfNewResult(response.results().filterNotNull())
     }
 
-    private fun checkIfNewResult(queryResultList : List<MutableList<ResultField>>) : List<MutableList<ResultField>> {
-        val  temporaryResults : MutableList<MutableList<ResultField>> = mutableListOf()
+    fun checkIfNewResult(queryResultList: List<MutableList<ResultField>>): List<MutableList<ResultField>> {
+        val newResults: MutableList<MutableList<ResultField>> = mutableListOf()
         for (result in queryResultList) {
             for (field in result) {
-                if(field.field()=="@ptr" && field.value() !in ptrListQueryResults){
-                    ptrListQueryResults.add(field.value())
-                    temporaryResults.add(result)
+                if (field.field() == "@ptr" && field.value() !in queryResultsIdentifierList) {
+                    queryResultsIdentifierList.add(field.value())
+                    newResults.add(result)
                 }
-
             }
         }
-        return temporaryResults
+        return newResults
     }
-    companion object{
-        private val ptrListQueryResults = arrayListOf<String>()
+    companion object {
+        val queryResultsIdentifierList = arrayListOf<String>()
     }
 }
