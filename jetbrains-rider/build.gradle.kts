@@ -23,6 +23,7 @@ buildscript {
 
 // IntellijVerison things
 val rdGenVersion: groovy.lang.Closure<String> by project
+val ideSdkVersion: groovy.lang.Closure<String> by project
 
 fun Project.intellij(): org.jetbrains.intellij.IntelliJPluginExtension = extensions["intellij"] as org.jetbrains.intellij.IntelliJPluginExtension
 
@@ -50,7 +51,7 @@ val rdgenDir = File("${project.buildDir}/rdgen/")
 
 rdgenDir.mkdirs()
 
-tasks.register<RdgenTask>("generateDaemonModel") {
+val generateDaemonModel = tasks.register<RdgenTask>("generateDaemonModel") {
     val daemonModelSource = File(modelDir, "daemon").canonicalPath
     val ktOutput = File(riderGeneratedSources, "DaemonProtocol")
 
@@ -92,9 +93,9 @@ tasks.register<RdgenTask>("generateDaemonModel") {
     }
 }
 
-tasks.register<RdgenTask>("generatePsiModel") {
-    def psiModelSource = new File(modelDir, "psi").canonicalPath
-    def ktOutput = new File(riderGeneratedSources, "PsiProtocol")
+val generatePsiModel = tasks.register<RdgenTask>("generatePsiModel") {
+    val psiModelSource = File(modelDir, "psi").canonicalPath
+    val ktOutput = File(riderGeneratedSources, "PsiProtocol")
 
     inputs.property("rdgen", rdGenVersion())
     inputs.dir(psiModelSource)
@@ -104,18 +105,18 @@ tasks.register<RdgenTask>("generatePsiModel") {
     // intellij SDK, which is extracted in afterEvaluate
     configure<RdgenParams> {
         verbose = true
-        hashFolder = rdgenDir
+        hashFolder = rdgenDir.toString()
 
         logger.info("Configuring rdgen params")
-        classpath {
-            logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
-            def sdkPath = intellij.ideaDependency.classes
-                def rdLibDirectory = new File(sdkPath, "lib/rd").canonicalFile
 
-            "$rdLibDirectory/rider-model.jar"
-        }
-        sources psiModelSource
-            packages = "protocol.model.psi"
+        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij().ideaDependency}")
+        val sdkPath = project.intellij().ideaDependency.classes
+        val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
+
+        classpath("$rdLibDirectory/rider-model.jar")
+
+        sources(psiModelSource)
+        packages = "protocol.model.psi"
 
         generator {
             language = "kotlin"
@@ -135,9 +136,9 @@ tasks.register<RdgenTask>("generatePsiModel") {
     }
 }
 
-task generateAwsSettingModel(type: tasks.getByName("rdgen").class) {
-    def settingModelSource = new File(modelDir, "setting").canonicalPath
-    def ktOutput = new File(riderGeneratedSources, "AwsSettingsProtocol")
+val generateAwsSettingModel = tasks.register<RdgenTask>("generateAwsSettingModel") {
+    val settingModelSource = File(modelDir, "setting").canonicalPath
+    val ktOutput = File(riderGeneratedSources, "AwsSettingsProtocol")
 
     inputs.property("rdgen", rdGenVersion())
     inputs.dir(settingModelSource)
@@ -145,20 +146,18 @@ task generateAwsSettingModel(type: tasks.getByName("rdgen").class) {
 
     // NOTE: classpath is evaluated lazily, at execution time, because it comes from the unzipped
     // intellij SDK, which is extracted in afterEvaluate
-    params {
+    configure<RdgenParams> {
         verbose = true
-        hashFolder = rdgenDir
+        hashFolder = rdgenDir.toString()
 
         logger.info("Configuring rdgen params")
-        classpath {
-            logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
-            def sdkPath = intellij.ideaDependency.classes
-                def rdLibDirectory = new File(sdkPath, "lib/rd").canonicalFile
 
-            "$rdLibDirectory/rider-model.jar"
-        }
-        sources settingModelSource
-            packages = "protocol.model.setting"
+        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij().ideaDependency}")
+        val sdkPath = project.intellij().ideaDependency.classes
+        val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
+        classpath("$rdLibDirectory/rider-model.jar")
+        sources(settingModelSource)
+        packages = "protocol.model.setting"
 
         generator {
             language = "kotlin"
@@ -178,9 +177,9 @@ task generateAwsSettingModel(type: tasks.getByName("rdgen").class) {
     }
 }
 
-task generateAwsProjectModel(type: tasks.getByName("rdgen").class) {
-    def projectModelSource = new File(modelDir, "project").canonicalPath
-    def ktOutput = new File(riderGeneratedSources, "AwsProjectProtocol")
+val generateAwsProjectModel = tasks.register<RdgenTask>("generateAwsProjectModel") {
+    val projectModelSource = File(modelDir, "project").canonicalPath
+    val ktOutput = File(riderGeneratedSources, "AwsProjectProtocol")
 
     inputs.property("rdgen", rdGenVersion())
     inputs.dir(projectModelSource)
@@ -188,20 +187,19 @@ task generateAwsProjectModel(type: tasks.getByName("rdgen").class) {
 
     // NOTE: classpath is evaluated lazily, at execution time, because it comes from the unzipped
     // intellij SDK, which is extracted in afterEvaluate
-    params {
+    configure<RdgenParams> {
         verbose = true
-        hashFolder = rdgenDir
+        hashFolder = rdgenDir.toString()
 
         logger.info("Configuring rdgen params")
-        classpath {
-            logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
-            def sdkPath = intellij.ideaDependency.classes
-                def rdLibDirectory = new File(sdkPath, "lib/rd").canonicalFile
 
-            "$rdLibDirectory/rider-model.jar"
-        }
-        sources projectModelSource
-            packages = "protocol.model.project"
+        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
+        val sdkPath = project.intellij().ideaDependency.classes
+        val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
+        classpath("$rdLibDirectory/rider-model.jar")
+
+        sources(projectModelSource)
+        packages = "protocol.model.project"
 
         generator {
             language = "kotlin"
@@ -221,145 +219,146 @@ task generateAwsProjectModel(type: tasks.getByName("rdgen").class) {
     }
 }
 
-task generateModels {
+tasks.register("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
 
-    dependsOn generateDaemonModel, generatePsiModel, generateAwsSettingModel, generateAwsProjectModel
+    dependsOn(generateDaemonModel, generatePsiModel, generateAwsSettingModel, generateAwsProjectModel)
 }
 
-task cleanGenerateModels {
+tasks.register("cleanGenerateModels") {
     group = protocolGroup
     description = "Clean up generated protocol models"
 
-    dependsOn cleanGenerateDaemonModel, cleanGeneratePsiModel, cleanGenerateAwsSettingModel, cleanGenerateAwsProjectModel
+    dependsOn(cleanGenerateDaemonModel, cleanGeneratePsiModel, cleanGenerateAwsSettingModel, cleanGenerateAwsProjectModel)
 }
-project.tasks.clean.dependsOn(cleanGenerateModels)
 
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
+project.tasks.clean {
+    dependsOn(cleanGenerateModels)
+}
 
-def backendGroup = "backend"
+// Backend
+    def backendGroup = "backend"
 
-task prepareBuildProps {
-    def riderSdkVersionPropsPath = new File(resharperPluginPath, "RiderSdkPackageVersion.props")
-    group = backendGroup
+    task prepareBuildProps {
+        def riderSdkVersionPropsPath = new File(resharperPluginPath, "RiderSdkPackageVersion.props")
+        group = backendGroup
 
-    inputs.property("riderNugetSdkVersion", riderNugetSdkVersion())
-    outputs.file(riderSdkVersionPropsPath)
+        inputs.property("riderNugetSdkVersion", riderNugetSdkVersion())
+        outputs.file(riderSdkVersionPropsPath)
 
-    doLast {
-        def riderSdkVersion = riderNugetSdkVersion()
-        def configText = """<Project>
+        doLast {
+            def riderSdkVersion = riderNugetSdkVersion()
+            def configText = """<Project>
   <PropertyGroup>
     <RiderSDKVersion>[$riderSdkVersion]</RiderSDKVersion>
   </PropertyGroup>
 </Project>
 """
-        riderSdkVersionPropsPath.write(configText)
+            riderSdkVersionPropsPath.write(configText)
+        }
     }
-}
 
-task prepareNuGetConfig {
-    group = backendGroup
+    task prepareNuGetConfig {
+        group = backendGroup
 
-    def nugetConfigPath = new File(projectDir, "NuGet.Config")
+        def nugetConfigPath = new File(projectDir, "NuGet.Config")
 
-    inputs.property("rdVersion", ideSdkVersion("RD"))
-    outputs.file(nugetConfigPath)
+        inputs.property("rdVersion", ideSdkVersion("RD"))
+        outputs.file(nugetConfigPath)
 
-    doLast {
-        def nugetPath = getNugetPackagesPath()
-        def configText = """<?xml version="1.0" encoding="utf-8"?>
+        doLast {
+            def nugetPath = getNugetPackagesPath()
+            def configText = """<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="resharper-sdk" value="${nugetPath}" />
   </packageSources>
 </configuration>
 """
-        nugetConfigPath.write(configText)
-    }
-}
-
-task buildReSharperPlugin {
-    group = backendGroup
-    description = "Builds the full ReSharper backend plugin solution"
-    dependsOn generateModels, prepareBuildProps, prepareNuGetConfig
-
-    inputs.dir(resharperPluginPath)
-    outputs.dir(resharperBuildPath)
-
-    outputs.files({
-        fileTree(file("${resharperPluginPath.absolutePath}/src")).matching {
-            include "**/bin/Debug/**/AWS*.dll"
-            include "**/bin/Debug/**/AWS*.pdb"
-        }.collect()
-    })
-
-    doLast {
-        def arguments = ["build"]
-        arguments << "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
-        arguments << "/p:DefineConstants=\"PROFILE_${resolveIdeProfileName().replace(".", "_")}\""
-        exec {
-            executable = "dotnet"
-            args = arguments
+            nugetConfigPath.write(configText)
         }
     }
-}
 
-project.tasks.clean.dependsOn(cleanPrepareBuildProps, cleanPrepareNuGetConfig, cleanBuildReSharperPlugin)
+    task buildReSharperPlugin {
+        group = backendGroup
+        description = "Builds the full ReSharper backend plugin solution"
+        dependsOn generateModels, prepareBuildProps, prepareNuGetConfig
 
-private File getNugetPackagesPath() {
-    def sdkPath = intellij.ideaDependency.classes
-        println("SDK path: $sdkPath")
+        inputs.dir(resharperPluginPath)
+        outputs.dir(resharperBuildPath)
 
-    // 2019
-    def riderSdk = new File(sdkPath, "lib/ReSharperHostSdk")
-    // 2020.1
-    if (!riderSdk.exists()) {
-        riderSdk = new File(sdkPath, "lib/DotNetSdkForRdPlugins")
+        outputs.files({
+            fileTree(file("${resharperPluginPath.absolutePath}/src")).matching {
+                include "**/bin/Debug/**/AWS*.dll"
+                include "**/bin/Debug/**/AWS*.pdb"
+            }.collect()
+        })
+
+        doLast {
+            def arguments = ["build"]
+            arguments << "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
+            arguments << "/p:DefineConstants=\"PROFILE_${resolveIdeProfileName().replace(".", "_")}\""
+            exec {
+                executable = "dotnet"
+                args = arguments
+            }
+        }
     }
 
-    println("NuGet packages: $riderSdk")
-    if (!riderSdk.isDirectory()) throw new IllegalStateException("${riderSdk} does not exist or not a directory")
+    project.tasks.clean.dependsOn(cleanPrepareBuildProps, cleanPrepareNuGetConfig, cleanBuildReSharperPlugin)
 
-    return riderSdk
-}
+    private File getNugetPackagesPath() {
+        def sdkPath = intellij.ideaDependency.classes
+            println("SDK path: $sdkPath")
 
-dependencies {
-    compile project(":jetbrains-core")
-    testImplementation project(path: ":jetbrains-core", configuration: "testArtifacts")
-}
+        // 2019
+        def riderSdk = new File(sdkPath, "lib/ReSharperHostSdk")
+        // 2020.1
+        if (!riderSdk.exists()) {
+            riderSdk = new File(sdkPath, "lib/DotNetSdkForRdPlugins")
+        }
 
-ext.riderGeneratedSources = "$buildDir/generated-src"
+        println("NuGet packages: $riderSdk")
+        if (!riderSdk.isDirectory()) throw new IllegalStateException("${riderSdk} does not exist or not a directory")
 
-sourceSets {
-    main.java.srcDir riderGeneratedSources
-}
+        return riderSdk
+    }
 
-intellij {
-    def parentIntellijTask = project(":jetbrains-core").intellij
-    version ideSdkVersion("RD")
-    pluginName parentIntellijTask.pluginName
-    updateSinceUntilBuild parentIntellijTask.updateSinceUntilBuild
+    dependencies {
+        compile project(":jetbrains-core")
+        testImplementation project(path: ":jetbrains-core", configuration: "testArtifacts")
+    }
 
-    // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-    def extraPlugins = [ "rider-plugins-appender" ]
-    plugins = idePlugins("RD") + extraPlugins
+    ext.riderGeneratedSources = "$buildDir/generated-src"
 
-    // Disable downloading source to avoid issues related to Rider SDK naming that is missed in Idea
-    // snapshots repository. The task is failed because if is unable to find related IC sources.
-    downloadSources = false
-    instrumentCode = false
-}
+    sourceSets {
+        main.java.srcDir riderGeneratedSources
+    }
 
-def resharperParts = [
-    "AWS.Daemon",
-    "AWS.Localization",
-    "AWS.Project",
-    "AWS.Psi",
-    "AWS.Settings"
-]
+    intellij {
+        val parentIntellijTask = project(":jetbrains-core").intellij()
+        version(ideSdkVersion("RD"))
+        pluginName parentIntellijTask.pluginName
+            updateSinceUntilBuild parentIntellijTask.updateSinceUntilBuild
+
+            // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+            def extraPlugins = [ "rider-plugins-appender" ]
+        plugins = idePlugins("RD") + extraPlugins
+
+        // Disable downloading source to avoid issues related to Rider SDK naming that is missed in Idea
+        // snapshots repository. The task is failed because if is unable to find related IC sources.
+        downloadSources = false
+        instrumentCode = false
+    }
+
+    val resharperParts = listOf(
+        "AWS.Daemon",
+        "AWS.Localization",
+        "AWS.Project",
+        "AWS.Psi",
+        "AWS.Settings"
+    )
 
 // Tasks:
 //
@@ -367,30 +366,32 @@ def resharperParts = [
 // `runIde` depends on `prepareSandbox` task and then executes IJ inside the sandbox dir
 // `prepareSandbox` depends on the standard Java `jar` and then copies everything into the sandbox dir
 
-tasks.withType(PrepareSandboxTask).configureEach {
-    dependsOn buildReSharperPlugin
+    tasks.withType(PrepareSandboxTask::class.java).configureEach {
+        dependsOn(buildReSharperPlugin)
 
-    def files = resharperParts.collect {"$resharperBuildPath/bin/$it/$buildConfiguration/${it}.dll"} +
-        resharperParts.collect {"$resharperBuildPath/bin/$it/$buildConfiguration/${it}.pdb"}
-    from(files, {
-        into("${intellij.pluginName}/dotnet")
-    })
-}
+        val files = resharperParts.map {"$resharperBuildPath/bin/$it/$buildConfiguration/${it}.dll"} +
+            resharperParts.map {"$resharperBuildPath/bin/$it/$buildConfiguration/${it}.pdb"}
+        from(files) {
+            into("${project.intellij().pluginName}/dotnet")
+        }
+    }
 
-compileKotlin.dependsOn(generateModels)
+    tasks.compileKotlin {
+        dependsOn(generateModels)
+    }
 
-test {
-    systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
-    useTestNG()
-    environment("LOCAL_ENV_RUN", true)
-    maxHeapSize("1024m")
-}
+    tasks.test {
+        systemProperty("log.dir", "${project.intellij().sandboxDirectory}-test/logs")
+        useTestNG()
+        environment("LOCAL_ENV_RUN", true)
+        maxHeapSize = "1024m"
+    }
 
-tasks.integrationTest {
-    useTestNG()
-    environment("LOCAL_ENV_RUN", true)
-}
+    tasks.integrationTest {
+        useTestNG()
+        environment("LOCAL_ENV_RUN", true)
+    }
 
-jar {
-    archiveBaseName.set("aws-intellij-toolkit-rider")
-}
+    tasks.jar {
+        archiveBaseName.set("aws-intellij-toolkit-rider")
+    }
