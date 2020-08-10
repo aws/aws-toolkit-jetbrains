@@ -24,12 +24,12 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilter> {
     }
 }
 
-data class TagFilter(
+data class ResourceTagFilter(
     var enabled: Boolean = false,
     var values: List<String> = listOf()
 )
 
 data class ResourceFilter(
     var tagsEnabled: Boolean = false,
-    var tags: Map<String, TagFilter> = mapOf()
+    var tags: Map<String, ResourceTagFilter> = mapOf()
 )

@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.core.filtering
 
 import com.intellij.ide.projectView.ViewSettings
 import com.intellij.ide.util.treeView.AbstractTreeNode
-import software.amazon.awssdk.services.resourcegroupstaggingapi.ResourceGroupsTaggingApiClient
-import software.amazon.awssdk.services.resourcegroupstaggingapi.model.TagFilter
-import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.jetbrains.core.awsClient
+import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.services.resourcegroupstaggingapi.resources.ResourceGroupsTaggingApiResources
 
 class ExplorerTagFilter : AwsExplorerTreeStructureProvider {
     override fun modify(
@@ -18,37 +18,36 @@ class ExplorerTagFilter : AwsExplorerTreeStructureProvider {
         children: MutableCollection<AbstractTreeNode<*>>,
         settings: ViewSettings?
     ): MutableCollection<AbstractTreeNode<*>> {
+        val awsParent = parent as? AwsExplorerNode<*> ?: return children
+        val filterManager = ResourceFilterManager.getInstance(awsParent.nodeProject)
+        if (!filterManager.tagFilterEnabled()) {
+            return children
+        }
         val resourceNodes = children.filterIsInstance<AwsExplorerResourceNode<*>>()
         val computedNodes = if (resourceNodes.isEmpty()) {
             listOf()
         } else {
-            filterByTag(resourceNodes)
+            filterByTag(awsParent.nodeProject, filterManager, resourceNodes)
         }
         val otherNodes = children.filter { it !is AwsExplorerResourceNode<*> }
         return (otherNodes + computedNodes).toMutableList()
     }
 
-    private fun filterByTag(resourceNodes: List<AwsExplorerResourceNode<*>>): List<AwsExplorerResourceNode<*>> {
-        val firstNode = resourceNodes.first()
-        val project = firstNode.nodeProject
-        val filterManager = ResourceFilterManager.getInstance(project)
-        if (!filterManager.tagFilterEnabled()) {
-            return resourceNodes
-        }
-        val client = project.awsClient<ResourceGroupsTaggingApiClient>()
-        val tags = client.getResourcesPaginator { request ->
-            // S3 is special, bucket resourcetype doesn't exist
-            val resourceType = if (firstNode.serviceId == S3Client.SERVICE_NAME) {
-                firstNode.serviceId
+    private fun filterByTag(
+        project: Project,
+        filterManager: ResourceFilterManager,
+        resourceNodes: List<AwsExplorerResourceNode<*>>
+    ): List<AwsExplorerResourceNode<*>> {
+        val resourceCache = AwsResourceCache.getInstance(project)
+        return resourceNodes.mapNotNull { node ->
+            val tags = resourceCache
+                .getResourceNow(ResourceGroupsTaggingApiResources.listResources(node.serviceId, node.resourceType(), filterManager.state.tags))
+                .resourceTagMappingList()
+            if (tags.any { node.resourceArn() == it.resourceARN() }) {
+                node
             } else {
-                "${firstNode.serviceId}:${firstNode.resourceType()}"
+                null
             }
-            filterManager.state.tags.forEach {
-                if (it.value.enabled) {
-                    request.tagFilters(TagFilter.builder().key(it.key).values(it.value.values).build())
-                }
-            }
-        }.resourceTagMappingList()
-        return resourceNodes.filter { node -> tags.any { node.resourceArn() == it.resourceARN() } }
+        }
     }
 }
