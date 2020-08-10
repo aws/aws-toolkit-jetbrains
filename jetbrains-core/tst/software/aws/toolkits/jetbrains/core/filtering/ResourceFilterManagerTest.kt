@@ -3,5 +3,4 @@
 
 package software.aws.toolkits.jetbrains.core.filtering
 
-class ResourceFilterManagerTest {
-}
+class ResourceFilterManagerTest
