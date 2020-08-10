@@ -195,6 +195,7 @@
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerValidator" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager" />
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.filtering.ResourceFilterManager" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow" />
         <toolWindow id="aws.explorer" anchor="left" secondary="true"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
@@ -246,6 +247,7 @@
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
+        <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.core.filtering.ExplorerFilter"/>
 
         <notice implementation="software.aws.toolkits.jetbrains.core.notification.JetBrainsMinimumVersionChange"/>
 
@@ -301,7 +303,7 @@
                     class="software.aws.toolkits.jetbrains.services.cloudformation.actions.DeleteStackAction"/>
         </group>
 
-        <group id="aws.toolkit.explorer.logs.group" popup="true" compact="false">
+        <group id="aws.toolkit.explorer.logs.log-group" popup="true" compact="false">
             <action id="cloudwatch.logs.open"
                     class="software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenLogGroupAction"/>
             <separator/>
