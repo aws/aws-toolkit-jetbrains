@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 
-class ExplorerFilter : AwsExplorerTreeStructureProvider {
+class ExplorerTagFilter : AwsExplorerTreeStructureProvider {
     override fun modify(
         parent: AbstractTreeNode<*>,
         children: MutableCollection<AbstractTreeNode<*>>,

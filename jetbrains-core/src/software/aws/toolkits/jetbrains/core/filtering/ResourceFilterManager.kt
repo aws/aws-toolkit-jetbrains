@@ -17,7 +17,6 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilter> {
     override fun loadState(state: ResourceFilter) {
         this.state = state
     }
-
     fun tagFilterEnabled(): Boolean = state.tagsEnabled && state.tags.any { it.value.enabled }
 
     companion object {

@@ -247,7 +247,7 @@
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
-        <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.core.filtering.ExplorerFilter"/>
+        <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.core.filtering.ExplorerTagFilter"/>
 
         <notice implementation="software.aws.toolkits.jetbrains.core.notification.JetBrainsMinimumVersionChange"/>
 
