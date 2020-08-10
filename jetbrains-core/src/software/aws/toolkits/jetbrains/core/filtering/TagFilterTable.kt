@@ -3,12 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.filtering
 
-import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TextFieldWithAutoCompletion
 import com.intellij.ui.TextFieldWithAutoCompletion.StringsCompletionProvider
-import com.intellij.ui.TextFieldWithAutoCompletionListProvider
 import com.intellij.util.ui.AbstractTableCellEditor
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
@@ -19,14 +17,8 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.ecs.execution.ArtifactMapping
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import java.awt.Component
-import java.util.EventObject
-import javax.swing.AbstractCellEditor
-import javax.swing.DefaultCellEditor
 import javax.swing.JTable
-import javax.swing.event.CellEditorListener
-import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellEditor
-import javax.swing.table.TableCellRenderer
 
 class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFilterTableModel>() {
     class KeyProvider(project: Project) :
@@ -37,6 +29,39 @@ class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFil
             launch {
                 val client: ResourceGroupsTaggingApiClient = project.awsClient()
                 val items = client.tagKeysPaginator.tagKeys().toMutableList()
+                setItems(items)
+            }
+        }
+    }
+
+    class ValueProvider(private val project: Project) :
+        StringsCompletionProvider(listOf(), null),
+        CoroutineScope by ApplicationThreadPoolScope("completionProvider") {
+
+        override fun getPrefix(text: String, offset: Int): String? {
+            var completed = 0
+            val chunks = text.split(",")
+            if (chunks.size <= 1) {
+                return text
+            }
+            chunks.forEach { chunk ->
+                // check if we are in this chunk
+                if (completed + chunk.length >= offset) {
+                    return chunk.trim()
+                } else {
+                    // +1 for the ','
+                    completed += chunk.length + 1
+                }
+            }
+            // as a fallback return the last chunk
+            return chunks.last()
+        }
+
+        init {
+            launch {
+                val client: ResourceGroupsTaggingApiClient = project.awsClient()
+                // TODO make this actually work
+                val items = client.getTagValuesPaginator { it.key("SoftwareType") }.tagValues().toMutableList()
                 setItems(items)
             }
         }
@@ -81,6 +106,19 @@ class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFil
             override fun isCellEditable(item: TagFilterTableModel): Boolean = true
             override fun setValue(item: TagFilterTableModel, value: String) {
                 item.values = value.split(",").map { it.trim() }
+            }
+
+            override fun getEditor(item: TagFilterTableModel?): TableCellEditor? {
+                return object : AbstractTableCellEditor() {
+                    val field = TextFieldWithAutoCompletion(project, ValueProvider(project), false, item?.values?.joinToString(",") ?: "")
+                    override fun getCellEditorValue(): Any {
+                        return field.text
+                    }
+
+                    override fun getTableCellEditorComponent(table: JTable?, value: Any?, isSelected: Boolean, row: Int, column: Int): Component {
+                        return field
+                    }
+                }
             }
         }
     )
