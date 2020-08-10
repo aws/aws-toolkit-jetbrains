@@ -1,9 +1,8 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+// Cannot be removed or else it will fail to compile
 import com.jetbrains.rd.generator.gradle.RdgenParams
 import com.jetbrains.rd.generator.gradle.RdgenTask
-// Cannot be removed or else it will fail to compile
-import org.jetbrains.intellij.IntelliJPlugin
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 
 buildscript {
@@ -34,7 +33,7 @@ val rdGenVersion: groovy.lang.Closure<String> by project
 val ideSdkVersion: groovy.lang.Closure<String> by project
 val riderNugetSdkVersion: groovy.lang.Closure<String> by project
 val resolveIdeProfileName: groovy.lang.Closure<String> by project
-val idePlugins: groovy.lang.Closure<ArrayList<String>> by ext
+val idePlugins: groovy.lang.Closure<ArrayList<String>> by project
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
@@ -87,10 +86,12 @@ val generateDaemonModel = tasks.register<RdgenTask>("generateDaemonModel") {
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
-        val sdkPath = project.intellij.ideaDependency.classes
-        val rdLibDirectory = File("$sdkPath/lib/rd").canonicalFile
-        classpath("$rdLibDirectory/rider-model.jar")
+        classpath({
+            logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
+            val sdkPath = intellij.ideaDependency.classes
+            val rdLibDirectory = File("$sdkPath/lib/rd").canonicalFile
+            "$rdLibDirectory/rider-model.jar"
+        })
 
         sources(daemonModelSource)
         packages = "protocol.model.daemon"
@@ -129,11 +130,12 @@ val generatePsiModel = tasks.register<RdgenTask>("generatePsiModel") {
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
-        val sdkPath = project.intellij.ideaDependency.classes
-        val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
-
-        classpath("$rdLibDirectory/rider-model.jar")
+        classpath({
+            logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
+            val sdkPath = intellij.ideaDependency.classes
+            val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
+            "$rdLibDirectory/rider-model.jar"
+        })
 
         sources(psiModelSource)
         packages = "protocol.model.psi"
@@ -172,10 +174,12 @@ val generateAwsSettingModel = tasks.register<RdgenTask>("generateAwsSettingModel
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
-        val sdkPath = project.intellij.ideaDependency.classes
-        val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
-        classpath("$rdLibDirectory/rider-model.jar")
+        classpath({
+            logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
+            val sdkPath = intellij.ideaDependency.classes
+            val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
+            "$rdLibDirectory/rider-model.jar"
+        })
         sources(settingModelSource)
         packages = "protocol.model.setting"
 
@@ -213,10 +217,12 @@ val generateAwsProjectModel = tasks.register<RdgenTask>("generateAwsProjectModel
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
-        val sdkPath = project.intellij.ideaDependency.classes
-        val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
-        classpath("$rdLibDirectory/rider-model.jar")
+        classpath({
+            logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
+            val sdkPath = intellij.ideaDependency.classes
+            val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
+            "$rdLibDirectory/rider-model.jar"
+        })
 
         sources(projectModelSource)
         packages = "protocol.model.project"
@@ -251,7 +257,7 @@ val cleanGenerateModels = tasks.register("cleanGenerateModels") {
     description = "Clean up generated protocol models"
 
     // TODO fix
-    dependsOn(tasks["cleanGenerateDaemonModel"])//, cleanGeneratePsiModel, cleanGenerateAwsSettingModel, cleanGenerateAwsProjectModel)
+    dependsOn("cleanGenerateDaemonModel")//, cleanGeneratePsiModel, cleanGenerateAwsSettingModel, cleanGenerateAwsProjectModel)
 }
 
 project.tasks.clean {
@@ -334,7 +340,7 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
 project.tasks.clean.dependsOn(cleanPrepareBuildProps, cleanPrepareNuGetConfig, cleanBuildReSharperPlugin)
 */
 fun getNugetPackagesPath(): File {
-    val sdkPath = project.intellij.ideaDependency.classes
+    val sdkPath = intellij.ideaDependency.classes
     println("SDK path: $sdkPath")
 
     // 2019
@@ -379,7 +385,7 @@ tasks.withType(PrepareSandboxTask::class.java).configureEach {
     val files = resharperParts.map { "$resharperBuildPath/bin/$it/$buildConfiguration/${it}.dll" } +
         resharperParts.map { "$resharperBuildPath/bin/$it/$buildConfiguration/${it}.pdb" }
     from(files) {
-        into("${project.intellij.pluginName}/dotnet")
+        into("${intellij.pluginName}/dotnet")
     }
 }
 
@@ -388,7 +394,7 @@ tasks.compileKotlin {
 }
 
 tasks.test {
-    systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
+    systemProperty("log.dir", "${intellij.sandboxDirectory}-test/logs")
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
