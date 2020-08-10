@@ -22,9 +22,9 @@ import javax.swing.JComponent
 
 class QueryResultsTable(
     private val project: Project,
-    private val queryResults: List<MutableList<ResultField>>,
     private val client: CloudWatchLogsClient,
-    private val fieldList: List<String>
+    private val fieldList: List<String>,
+    private val queryId : String
 ) : CoroutineScope by ApplicationThreadPoolScope("QueryResultsTable"), Disposable {
     val component: JComponent
     val channel : Channel<QueryActor.MessageLoadQueryResults>
@@ -32,7 +32,6 @@ class QueryResultsTable(
     private val queryActor: QueryActor<List<ResultField>>
 
     init{
-            println("QueryResultsTable")
             val columnInfoList : ArrayList<ColumnInfoDetails> = arrayListOf()
             for (field in fieldList){
                 columnInfoList.add(ColumnInfoDetails(field))
@@ -49,7 +48,7 @@ class QueryResultsTable(
             tableHeader.resizingAllowed = false
         }
 
-        queryActor = QueryResultsActor(project, client, resultsTable, queryResults)
+        queryActor = QueryResultsActor(project, client, resultsTable, queryId)
         channel = queryActor.channel
         component = ScrollPaneFactory.createScrollPane(resultsTable).also {
             it.bottomReached {

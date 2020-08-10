@@ -24,8 +24,9 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
             .build()
         val response = client.startQuery(request)
         var queryId: String = response.queryId()
+        println(queryId)
         val fieldList= getFields(query)
-        getQueryResults(queryId, client, fieldList)
+        QueryResultsWindow.getInstance(project).showResults(queryId,fieldList)
     }
 
     private fun getFields(query: String) : List<String> {
@@ -36,30 +37,7 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
             }
             fields.split(",").map{it.trim()}
         } else {
-            listOf<String>("@message","@timestamp")
+            listOf("@message","@timestamp")
         }
     }
-
-    private fun getQueryResults(queryId: String, client: CloudWatchLogsClient, fieldList: List<String>) = launch {
-        var status = ""
-        var flag = true
-        var i=0
-        lateinit var resultList : MutableList<MutableList<ResultField>>
-        while(status!="Complete"){
-            val requestCheckQueryCompletion=GetQueryResultsRequest.builder().queryId(queryId).build()
-            val responseCheckQueryCompletion=client.getQueryResults(requestCheckQueryCompletion)
-            resultList = responseCheckQueryCompletion.results()
-            println(responseCheckQueryCompletion.statusAsString())
-            status= responseCheckQueryCompletion.statusAsString()
-            if(responseCheckQueryCompletion.results().size!=0){
-            }
-
-        }
-        println("Done")
-        QueryResultsWindow.getInstance(project).showResults(resultList, queryId, fieldList)
-        println(" Back to Pavillion")
-
-    }
-
-
 }

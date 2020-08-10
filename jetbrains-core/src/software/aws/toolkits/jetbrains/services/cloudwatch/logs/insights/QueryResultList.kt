@@ -19,8 +19,8 @@ import javax.swing.JPanel
 
 class QueryResultList(
     private val project: Project,
-    private val response: List<MutableList<ResultField>>,
-    private val fieldList : List<String>
+    private val fieldList : List<String>,
+    private val queryId: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
     lateinit var resultsPanel: JPanel
     private lateinit var tablePanel: SimpleToolWindowPanel
@@ -28,13 +28,12 @@ class QueryResultList(
     private lateinit var resultsTitle: JLabel
     private val edtContext = getCoroutineUiContext(disposable = this)
     val client: CloudWatchLogsClient = project.awsClient()
-    private val resultsTable: QueryResultsTable = QueryResultsTable(project, response, client, fieldList)
+    private val resultsTable: QueryResultsTable = QueryResultsTable(project, client, fieldList, queryId)
     private fun createUIComponents() {
         // TODO: place custom component creation code here
         tablePanel = SimpleToolWindowPanel(false, true)
     }
     init {
-        println("QueryResultsList")
         Disposer.register(this,resultsTable)
         tablePanel.setContent(resultsTable.component)
         refreshTable()
