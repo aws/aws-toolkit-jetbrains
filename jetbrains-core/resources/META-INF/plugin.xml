@@ -245,6 +245,7 @@
         <executable implementation="software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
 
+        <!-- Explorer processors and filterers -->
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.core.filtering.ExplorerTagFilter"/>
