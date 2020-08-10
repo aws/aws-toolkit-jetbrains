@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.TextFieldWithAutoCompletion
 import com.intellij.ui.TextFieldWithAutoCompletion.StringsCompletionProvider
 import com.intellij.ui.TextFieldWithAutoCompletionListProvider
+import com.intellij.util.ui.AbstractTableCellEditor
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.CoroutineScope
@@ -18,12 +19,17 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.ecs.execution.ArtifactMapping
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import java.awt.Component
+import java.util.EventObject
+import javax.swing.AbstractCellEditor
+import javax.swing.DefaultCellEditor
 import javax.swing.JTable
+import javax.swing.event.CellEditorListener
 import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableCellEditor
 import javax.swing.table.TableCellRenderer
 
 class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFilterTableModel>() {
-    val provider: TextFieldWithAutoCompletionListProvider<String> = object :
+    class KeyProvider(project: Project) :
         StringsCompletionProvider(listOf(), null),
         CoroutineScope by ApplicationThreadPoolScope("completionProvider") {
 
@@ -57,18 +63,15 @@ class TagFilterTable(private val project: Project) : ListTableWithButtons<TagFil
                 item.key = value
             }
 
-            override fun getRenderer(item: TagFilterTableModel?): TableCellRenderer? {
-                return object : DefaultTableCellRenderer() {
-                    override fun getTableCellRendererComponent(
-                        table: JTable?,
-                        value: Any?,
-                        isSelected: Boolean,
-                        hasFocus: Boolean,
-                        row: Int,
-                        column: Int
-                    ): Component {
-                        return TextFieldWithAutoCompletion(project, provider, false, value?.toString() ?: "")
-                        //return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+            override fun getEditor(item: TagFilterTableModel?): TableCellEditor? {
+                return object : AbstractTableCellEditor() {
+                    val field = TextFieldWithAutoCompletion(project, KeyProvider(project), false, item?.key ?: "")
+                    override fun getCellEditorValue(): Any {
+                        return field.text
+                    }
+
+                    override fun getTableCellEditorComponent(table: JTable?, value: Any?, isSelected: Boolean, row: Int, column: Int): Component {
+                        return field
                     }
                 }
             }
