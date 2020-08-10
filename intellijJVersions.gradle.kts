@@ -1,4 +1,27 @@
+package software.aws.toolkits.gradle.ideversions
+
+data class ProductProfile(
+    val sdkVersion: String,
+    plugins: List<String>
+)
+
+data class Profile(
+    val sinceVersion: String,
+    val untilVersion: String,
+    val products: Map<String, ProductProfile>
+)
+
+object IdeProfiles {
+    private val ideProfiles = mapOf(
+        "2019.3" to Profile(
+            sinceVersion: "193",
+        untilVersion: "193.*",
+        products
+        )
+    )
+}
 static def ideProfiles() {
+
     return [
         "2019.3": [
             "sinceVersion": "193",
@@ -132,7 +155,7 @@ private def ideProduct(String productCode) {
 def ideSinceVersion() {
     def guiVersion = ideProfile()["sinceVersion"]
     if (guiVersion == null) {
-        throw new IllegalArgumentException("Missing 'sinceVersion' key for ${resolveIdeProfileName()}")
+        throw new IllegalArgumentException("Missing "sinceVersion" key for ${resolveIdeProfileName()}")
     }
     return guiVersion
 }
@@ -140,7 +163,7 @@ def ideSinceVersion() {
 def ideUntilVersion() {
     def guiVersion = ideProfile()["untilVersion"]
     if (guiVersion == null) {
-        throw new IllegalArgumentException("Missing 'untilVersion' key for ${resolveIdeProfileName()}")
+        throw new IllegalArgumentException("Missing "untilVersion" key for ${resolveIdeProfileName()}")
     }
     return guiVersion
 }
@@ -149,7 +172,7 @@ def ideUntilVersion() {
 def rdGenVersion() {
     def rdGen = ideProduct("RD").rdGenVersion
     if (rdGen == null) {
-        throw new IllegalArgumentException("Missing 'rdGenVersion' in 'RD' product for ${resolveIdeProfileName()}")
+        throw new IllegalArgumentException("Missing "rdGenVersion" in "RD" product for ${resolveIdeProfileName()}")
     }
     return rdGen
 }
@@ -158,7 +181,7 @@ def rdGenVersion() {
 def riderNugetSdkVersion() {
     def rdGen = ideProduct("RD").nugetVersion
     if (rdGen == null) {
-        throw new IllegalArgumentException("Missing 'nugetVersion' in 'RD' product for ${resolveIdeProfileName()}")
+        throw new IllegalArgumentException("Missing "nugetVersion" in "RD" product for ${resolveIdeProfileName()}")
     }
     return rdGen
 }

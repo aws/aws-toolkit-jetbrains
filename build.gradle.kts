@@ -23,11 +23,11 @@ plugins {
     id "de.undercouch.download" version "4.1.1" apply false
 }
 
-apply from: 'intellijJVersions.gradle'
+apply from: "intellijJVersions.gradle"
 
 def ideVersion = shortenVersion(resolveIdeProfileName())
 
-group 'software.aws.toolkits'
+group "software.aws.toolkits"
 // please check changelog generation logic if this format is changed
 version "$toolkitVersion-$ideVersion".toString()
 
@@ -43,8 +43,8 @@ allprojects {
     }
 
     apply plugin: "com.adarshr.test-logger"
-    apply plugin: 'java'
-    apply plugin: 'jacoco'
+    apply plugin: "java"
+    apply plugin: "jacoco"
 
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -61,7 +61,7 @@ allprojects {
                 } else {
                     throw new GradleException("ALTERNATIVE_IDE path not found"
                         + (System.env.ALTERNATIVE_IDE ==~ /.*[\/\\] *$/
-                        ? " (HINT: remove trailing slash '/')"
+                        ? " (HINT: remove trailing slash "/")"
                         : ": ${System.env.ALTERNATIVE_IDE}"))
                 }
             }
@@ -78,11 +78,11 @@ allprojects {
 
 // Kotlin plugin seems to be bugging out when there are no kotlin sources
 configure(subprojects - project(":telemetry-client")) {
-    apply plugin: 'kotlin'
+    apply plugin: "kotlin"
 
     sourceSets {
         integrationTest {
-            kotlin.srcDir 'it'
+            kotlin.srcDir "it"
         }
     }
 }
@@ -91,8 +91,8 @@ subprojects {
     group = parent.group
     version = parent.version
 
-    apply plugin: 'java'
-    apply plugin: 'idea'
+    apply plugin: "java"
+    apply plugin: "idea"
 
     sourceSets {
         main.java.srcDirs = SourceUtils.findFolders(project, "src", ideVersion)
@@ -133,7 +133,7 @@ subprojects {
 
     test {
         jacoco {
-            // don't instrument sdk, icons, ktlint, etc.
+            // don"t instrument sdk, icons, ktlint, etc.
             includes = ["software.aws.toolkits.*"]
             excludes = ["software.aws.toolkits.ktlint.*"]
         }
@@ -168,7 +168,7 @@ subprojects {
         classpath = sourceSets.integrationTest.runtimeClasspath
 
         jacoco {
-            // don't instrument sdk, icons, ktlint, etc.
+            // don"t instrument sdk, icons, ktlint, etc.
             includes = ["software.aws.toolkits.*"]
             excludes = ["software.aws.toolkits.ktlint.*"]
         }
@@ -201,7 +201,7 @@ subprojects {
         kotlinOptions.jvmTarget = "1.8"
     }
 
-    // Force us to compile the integration tests even during check even though we don't run them
+    // Force us to compile the integration tests even during check even though we don"t run them
     check.dependsOn(integrationTestClasses)
 
     task testJar(type: Jar) {
@@ -214,7 +214,7 @@ subprojects {
         testArtifacts testJar
     }
 
-    // Remove the tasks added in by gradle-intellij-plugin so that we don't publish/verify multiple times
+    // Remove the tasks added in by gradle-intellij-plugin so that we don"t publish/verify multiple times
     project.afterEvaluate {
         removeTask(tasks, org.jetbrains.intellij.tasks.PublishTask)
         removeTask(tasks, org.jetbrains.intellij.tasks.VerifyPluginTask)
@@ -232,12 +232,12 @@ def removeTask(TaskContainer tasks, Class<? extends Task> takeType) {
     }
 }
 
-apply plugin: 'org.jetbrains.intellij'
-apply plugin: 'toolkit-change-log'
+apply plugin: "org.jetbrains.intellij"
+apply plugin: "toolkit-change-log"
 
 intellij {
     version ideSdkVersion("IC")
-    pluginName 'aws-jetbrains-toolkit'
+    pluginName "aws-jetbrains-toolkit"
     updateSinceUntilBuild false
     downloadSources = System.getenv("CI") == null
 }
@@ -250,10 +250,10 @@ prepareSandbox {
 
 publishPlugin {
     token publishToken
-    channels publishChannel ? publishChannel.split(',').collect { it.trim() } : []
+    channels publishChannel ? publishChannel.split(",").collect { it.trim() } : []
 }
 
-tasks.register('generateChangeLog', GenerateGithubChangeLog) {
+tasks.register("generateChangeLog", GenerateGithubChangeLog) {
     changeLogFile = project.file("CHANGELOG.md")
 }
 
@@ -262,7 +262,7 @@ task ktlint(type: JavaExec, group: "verification") {
     classpath = configurations.ktlint
     main = "com.pinterest.ktlint.Main"
 
-    def isWindows = System.properties['os.name'].toLowerCase().contains('windows')
+    def isWindows = System.properties["os.name"].toLowerCase().contains("windows")
 
     def toInclude = project.rootDir.relativePath(project.projectDir) + "/**/*.kt"
     def toExclude = project.rootDir.relativePath(new File(project.projectDir, "jetbrains-rider")) + "/**/*.Generated.kt"
@@ -332,11 +332,11 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
     // Only disable this if running from root project
     if (gradle.startParameter.projectDir == project.rootProject.rootDir
         || System.properties.containsKey("idea.gui.tests.gradle.runner")) {
-        println("Top level runIde selected, excluding sub-projects' runIde")
+        println("Top level runIde selected, excluding sub-projects" runIde")
         gradle.taskGraph.whenReady { graph ->
             graph.allTasks.forEach {
                 if (it.name == "runIde" &&
-                    it.project != project(':jetbrains-core')) {
+                    it.project != project(":jetbrains-core")) {
                     it.enabled = false
                 }
             }
@@ -345,8 +345,8 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
 }
 
 dependencies {
-    implementation project(':jetbrains-ultimate')
-    project.findProject(':jetbrains-rider')?.collect {
+    implementation project(":jetbrains-ultimate")
+    project.findProject(":jetbrains-rider")?.collect {
         implementation it
     }
 
