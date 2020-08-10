@@ -56,7 +56,7 @@ val rdgenDir = File("${project.buildDir}/rdgen/")
 rdgenDir.mkdirs()
 
 intellij {
-    val parentIntellijTask = project(":jetbrains-core").intellij
+    val parentIntellijTask = rootProject.intellij
     version = ideSdkVersion("RD")
     pluginName = parentIntellijTask.pluginName
     updateSinceUntilBuild = parentIntellijTask.updateSinceUntilBuild

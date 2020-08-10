@@ -27,8 +27,6 @@ buildscript {
     }
 }
 
-fun Project.intellij(): IntelliJPluginExtension = extensions["intellij"] as IntelliJPluginExtension
-
 val telemetryVersion: String by project
 val awsSdkVersion: String by project
 val coroutinesVersion: String by project
@@ -42,7 +40,7 @@ val compileKotlin: KotlinCompile by tasks
 val patchPluginXml: PatchPluginXmlTask by tasks
 
 intellij {
-    val rootIntelliJTask = rootProject.intellij()
+    val rootIntelliJTask = rootProject.intellij
     version = ideSdkVersion("IC")
     setPlugins(*(idePlugins("IC").toArray()))
     pluginName = rootIntelliJTask.pluginName
@@ -68,7 +66,7 @@ sourceSets {
 }
 
 tasks.test {
-    systemProperty("log.dir", "${project.intellij().sandboxDirectory}-test/logs")
+    systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
