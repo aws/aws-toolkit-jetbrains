@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import com.jetbrains.rd.generator.gradle.RdgenParams
 import com.jetbrains.rd.generator.gradle.RdgenTask
-import org.jetbrains.intellij.IntelliJPluginExtension
+// Cannot be removed or else it will fail to compile
+import org.jetbrains.intellij.IntelliJPlugin
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 
 buildscript {
@@ -22,6 +23,12 @@ buildscript {
     }
 }
 
+plugins {
+    id("org.jetbrains.intellij")
+}
+
+apply(plugin = "com.jetbrains.rdgen")
+
 // IntellijVerison things
 val rdGenVersion: groovy.lang.Closure<String> by project
 val ideSdkVersion: groovy.lang.Closure<String> by project
@@ -29,17 +36,10 @@ val riderNugetSdkVersion: groovy.lang.Closure<String> by project
 val resolveIdeProfileName: groovy.lang.Closure<String> by project
 val idePlugins: groovy.lang.Closure<ArrayList<String>> by ext
 
-fun Project.intellij(): org.jetbrains.intellij.IntelliJPluginExtension = extensions["intellij"] as org.jetbrains.intellij.IntelliJPluginExtension
-
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
 
 val buildConfiguration = project.extra.properties["BuildConfiguration"] ?: "Debug" // TODO: Do we ever want to make a release build?
-
-plugins {
-    "org.jetbrains.intellij"
-    "com.jetbrains.rdgen"
-}
 
 // Protocol
 val protocolGroup = "protocol"
@@ -54,6 +54,22 @@ val modelDir = File(projectDir, "protocol/model")
 val rdgenDir = File("${project.buildDir}/rdgen/")
 
 rdgenDir.mkdirs()
+
+intellij {
+    val parentIntellijTask = project(":jetbrains-core").intellij
+    version = ideSdkVersion("RD")
+    pluginName = parentIntellijTask.pluginName
+    updateSinceUntilBuild = parentIntellijTask.updateSinceUntilBuild
+
+    // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+    val extraPlugins = arrayOf("rider-plugins-appender")
+    setPlugins(*(idePlugins("RD") + extraPlugins).toTypedArray())
+
+    // Disable downloading source to avoid issues related to Rider SDK naming that is missed in Idea
+    // snapshots repository. The task is failed because if is unable to find related IC sources.
+    downloadSources = false
+    instrumentCode = false
+}
 
 val generateDaemonModel = tasks.register<RdgenTask>("generateDaemonModel") {
     val daemonModelSource = File(modelDir, "daemon").canonicalPath
@@ -71,8 +87,8 @@ val generateDaemonModel = tasks.register<RdgenTask>("generateDaemonModel") {
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij().ideaDependency}")
-        val sdkPath = project.intellij().ideaDependency.classes
+        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
+        val sdkPath = project.intellij.ideaDependency.classes
         val rdLibDirectory = File("$sdkPath/lib/rd").canonicalFile
         classpath("$rdLibDirectory/rider-model.jar")
 
@@ -113,8 +129,8 @@ val generatePsiModel = tasks.register<RdgenTask>("generatePsiModel") {
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij().ideaDependency}")
-        val sdkPath = project.intellij().ideaDependency.classes
+        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
+        val sdkPath = project.intellij.ideaDependency.classes
         val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
 
         classpath("$rdLibDirectory/rider-model.jar")
@@ -156,8 +172,8 @@ val generateAwsSettingModel = tasks.register<RdgenTask>("generateAwsSettingModel
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij().ideaDependency}")
-        val sdkPath = project.intellij().ideaDependency.classes
+        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
+        val sdkPath = project.intellij.ideaDependency.classes
         val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
         classpath("$rdLibDirectory/rider-model.jar")
         sources(settingModelSource)
@@ -197,8 +213,8 @@ val generateAwsProjectModel = tasks.register<RdgenTask>("generateAwsProjectModel
 
         logger.info("Configuring rdgen params")
 
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij().ideaDependency}")
-        val sdkPath = project.intellij().ideaDependency.classes
+        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${project.intellij.ideaDependency}")
+        val sdkPath = project.intellij.ideaDependency.classes
         val rdLibDirectory = File(sdkPath, "lib/rd").canonicalFile
         classpath("$rdLibDirectory/rider-model.jar")
 
@@ -318,7 +334,7 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
 project.tasks.clean.dependsOn(cleanPrepareBuildProps, cleanPrepareNuGetConfig, cleanBuildReSharperPlugin)
 */
 fun getNugetPackagesPath(): File {
-    val sdkPath = project.intellij().ideaDependency.classes
+    val sdkPath = project.intellij.ideaDependency.classes
     println("SDK path: $sdkPath")
 
     // 2019
@@ -343,22 +359,6 @@ sourceSets {
     main.get().java.srcDirs("$buildDir/generated-src")
 }
 
-extensions.configure<IntelliJPluginExtension>("intellij") {
-    val parentIntellijTask = project(":jetbrains-core").intellij()
-    version = ideSdkVersion("RD")
-    pluginName = parentIntellijTask.pluginName
-    updateSinceUntilBuild = parentIntellijTask.updateSinceUntilBuild
-
-    // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-    val extraPlugins = arrayOf("rider-plugins-appender")
-    setPlugins(*(idePlugins("RD") + extraPlugins).toTypedArray())
-
-    // Disable downloading source to avoid issues related to Rider SDK naming that is missed in Idea
-    // snapshots repository. The task is failed because if is unable to find related IC sources.
-    downloadSources = false
-    instrumentCode = false
-}
-
 val resharperParts = listOf(
     "AWS.Daemon",
     "AWS.Localization",
@@ -379,7 +379,7 @@ tasks.withType(PrepareSandboxTask::class.java).configureEach {
     val files = resharperParts.map { "$resharperBuildPath/bin/$it/$buildConfiguration/${it}.dll" } +
         resharperParts.map { "$resharperBuildPath/bin/$it/$buildConfiguration/${it}.pdb" }
     from(files) {
-        into("${project.intellij().pluginName}/dotnet")
+        into("${project.intellij.pluginName}/dotnet")
     }
 }
 
@@ -388,7 +388,7 @@ tasks.compileKotlin {
 }
 
 tasks.test {
-    systemProperty("log.dir", "${project.intellij().sandboxDirectory}-test/logs")
+    systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"

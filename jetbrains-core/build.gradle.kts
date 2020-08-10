@@ -8,8 +8,12 @@ import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 import toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+// Cannot be removed or else it will fail to compile
+import org.jetbrains.intellij.IntelliJPlugin
 
-apply(plugin = "org.jetbrains.intellij")
+plugins {
+    id("org.jetbrains.intellij")
+}
 apply(from = "../intellijJVersions.gradle")
 
 buildscript {
@@ -36,9 +40,8 @@ val ideUntilVersion: Closure<String> by ext
 
 val compileKotlin: KotlinCompile by tasks
 val patchPluginXml: PatchPluginXmlTask by tasks
-val jar: Jar by tasks
 
-extensions.configure<IntelliJPluginExtension>("intellij") {
+intellij {
     val rootIntelliJTask = rootProject.intellij()
     version = ideSdkVersion("IC")
     setPlugins(*(idePlugins("IC").toArray()))
