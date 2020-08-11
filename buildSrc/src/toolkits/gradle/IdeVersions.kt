@@ -5,6 +5,10 @@ package toolkits.gradle
 
 import org.gradle.api.Project
 
+enum class ProductCode {
+    IC
+}
+
 data class ProductProfile(
     val sdkVersion: String,
     val plugins: List<String>
@@ -13,7 +17,7 @@ data class ProductProfile(
 data class Profile(
     val sinceVersion: String,
     val untilVersion: String,
-    val products: Map<String, ProductProfile>
+    val products: Map<ProductCode, ProductProfile>
 )
 
 open class IdeVersions(private val project: Project) {
@@ -22,8 +26,8 @@ open class IdeVersions(private val project: Project) {
             sinceVersion = "193",
             untilVersion = "193.*",
             products = mapOf(
-                "IC" to ProductProfile(
-                    "IC-2019.3",
+                ProductCode.IC to ProductProfile(
+                    sdkVersion = "IC-2019.3",
                     plugins = listOf(
                         "org.jetbrains.plugins.terminal",
                         "org.jetbrains.plugins.yaml",
@@ -37,6 +41,19 @@ open class IdeVersions(private val project: Project) {
             )
         )
     )
+
+    // Convert (as an example) 2020.2 -> 202
+    fun resolveShortenedIdeProfileName(): String {
+        val profileName = resolveIdeProfileName().trim()
+        val parts = profileName.split(".")
+        return parts[0].substring(2) + parts[1]
+    }
+
+    fun ideSdkVersion(code: ProductCode): String = ideProfiles[resolveIdeProfileName()]
+        ?.products
+        ?.get(code)
+        ?.sdkVersion
+        ?: throw IllegalArgumentException("Product not in map of IDE versions: ${resolveIdeProfileName()}, $code")
 
     fun resolveIdeProfileName(): String = if (System.getenv()["ALTERNATIVE_IDE_PROFILE_NAME"] != null) {
         System.getenv("ALTERNATIVE_IDE_PROFILE_NAME")
