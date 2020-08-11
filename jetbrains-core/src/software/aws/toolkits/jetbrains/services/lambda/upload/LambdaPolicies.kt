@@ -40,3 +40,21 @@ val DEFAULT_POLICY = """
   ]
 }
 """.trim()
+
+@Language("JSON")
+val SQS_POLLER_ROLE_POLICY = """
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes", 
+        "sqs:ReceiveMessage"
+      ],
+      "Resource": "arn:aws:sqs:*"
+    }
+  ]
+}
+""".trim()
