@@ -1,38 +1,43 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import org.gradle.api.Task.TASK_GROUP
+import org.gradle.api.Task.TASK_NAME
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import toolkits.gradle.IdeVersions
 import toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
-import java.nio.file.Files
 import java.nio.file.Paths
 
 buildscript {
     repositories {
-        maven { url "https://plugins.gradle.org/m2/" }
+        maven("https://plugins.gradle.org/m2/")
         mavenCentral()
         jcenter()
     }
+    val kotlinVersion: String by project
+    val ideaPluginVersion: String by project
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath "gradle.plugin.org.jetbrains.intellij.plugins:gradle-intellij-plugin:$ideaPluginVersion"
-        classpath "com.adarshr:gradle-test-logger-plugin:1.7.0"
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("gradle.plugin.org.jetbrains.intellij.plugins:gradle-intellij-plugin:$ideaPluginVersion")
+        classpath("com.adarshr:gradle-test-logger-plugin:1.7.0")
     }
 }
 
 plugins {
-    id "de.undercouch.download" version "4.1.1" apply false
+    id("de.undercouch.download") version "4.1.1" apply false
 }
 
-apply from: "intellijJVersions.gradle"
+val ideVersions = IdeVersions(this)
+// TODO shortenversion was removed here
+val ideVersion = ideVersions.resolveIdeProfileName()
+val toolkitVersion: String by project
 
-def ideVersion = shortenVersion(resolveIdeProfileName())
-
-group "software.aws.toolkits"
+group = "software.aws.toolkits"
 // please check changelog generation logic if this format is changed
-version "$toolkitVersion-$ideVersion".toString()
+version = "$toolkitVersion-$ideVersion"
 
 repositories {
-    maven { url "https://www.jetbrains.com/intellij-repository/snapshots/" }
+    maven("https://www.jetbrains.com/intellij-repository/snapshots/")
 }
 
 allprojects {
@@ -42,43 +47,51 @@ allprojects {
         jcenter()
     }
 
-    apply plugin: "com.adarshr.test-logger"
-    apply plugin: "java"
-    apply plugin: "jacoco"
+    apply(plugin = "com.adarshr.test-logger")
+    apply(plugin = "java")
+    apply(plugin = "jacoco")
 
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    tasks.withType(JavaCompile::class) {
+        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
+        targetCompatibility = JavaVersion.VERSION_1_8.toString()
+    }
 
-    tasks.withType(JavaExec) {
+    tasks.withType(JavaExec::class) {
         systemProperty("aws.toolkits.enableTelemetry", false)
     }
 
-    tasks.withType(org.jetbrains.intellij.tasks.RunIdeTask) {
+    tasks.withType(org.jetbrains.intellij.tasks.RunIdeTask::class) {
         intellij {
-            if (System.env.ALTERNATIVE_IDE) {
-                if (file(System.env.ALTERNATIVE_IDE).exists()) {
-                    alternativeIdePath = System.env.ALTERNATIVE_IDE
+            val alternativeIde = System.getenv()["ALTERNATIVE_IDE"]
+            if (!alternativeIde.isNullOrEmpty()) {
+                if (file(alternativeIde).exists()) {
+                    alternativeIdePath = alternativeIde
                 } else {
-                    throw new GradleException("ALTERNATIVE_IDE path not found"
-                        + (System.env.ALTERNATIVE_IDE ==~ /.*[\/\\] *$/
-                        ? " (HINT: remove trailing slash "/")"
-                        : ": ${System.env.ALTERNATIVE_IDE}"))
+                    throw GradleException(
+                        "ALTERNATIVE_IDE path not found ${
+                            if (System.getenv()["ALTERNATIVE_IDE"]?.endsWith("/") == true) {
+                                " (Remove the trailing slash /)"
+                            } else {
+                                ": ${System.getenv()["ALTERNATIVE_IDE"]}"
+                            }
+                        }"
+                    )
                 }
             }
         }
     }
 
     configurations {
-        runtimeClasspath.exclude group: "org.slf4j"
-        runtimeClasspath.exclude group: "org.jetbrains.kotlin"
-        runtimeClasspath.exclude group: "org.jetbrains.kotlinx"
-        runtimeClasspath.exclude group: "software.amazon.awssdk", module: "netty-nio-client"
+        runtimeClasspath.exclude(group = "org.slf4j")
+        runtimeClasspath.exclude(group = "org.jetbrains.kotlin")
+        runtimeClasspath.exclude(group = "org.jetbrains.kotlinx")
+        runtimeClasspath.exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
     }
 }
 
 // Kotlin plugin seems to be bugging out when there are no kotlin sources
-configure(subprojects - project(":telemetry-client")) {
-    apply plugin: "kotlin"
+configure(subprojects.filter { it != project(":telemetry-client") }) {
+    apply(plugin = "kotlin")
 
     sourceSets {
         integrationTest {
@@ -88,17 +101,17 @@ configure(subprojects - project(":telemetry-client")) {
 }
 
 subprojects {
-    group = parent.group
-    version = parent.version
+    group = parent!!.group
+    version = parent!!.version
 
-    apply plugin: "java"
-    apply plugin: "idea"
+    apply(plugin = "java")
+    apply(plugin = "idea")
 
     sourceSets {
-        main.java.srcDirs = SourceUtils.findFolders(project, "src", ideVersion)
-        main.resources.srcDirs = SourceUtils.findFolders(project, "resources", ideVersion)
-        test.java.srcDirs = SourceUtils.findFolders(project, "tst", ideVersion)
-        test.resources.srcDirs = SourceUtils.findFolders(project, "tst-resources", ideVersion)
+        main.get().java.srcDirs = SourceUtils.findFolders(project, "src", ideVersion)
+        main.get().resources.srcDirs = SourceUtils.findFolders(project, "resources", ideVersion)
+        test.get().java.srcDirs = SourceUtils.findFolders(project, "tst", ideVersion)
+        test.get().resources.srcDirs = SourceUtils.findFolders(project, "tst-resources", ideVersion)
         integrationTest {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
@@ -111,16 +124,16 @@ subprojects {
         testArtifacts
 
         integrationTestImplementation.extendsFrom testImplementation
-        integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+            integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     }
 
     dependencies {
-        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-        implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-        testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion"
-        testImplementation "org.mockito:mockito-core:$mockitoVersion"
-        testImplementation "org.assertj:assertj-core:$assertjVersion"
-        testImplementation "junit:junit:$junitVersion"
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+        implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+        testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion")
+        testImplementation("org.mockito:mockito-core:$mockitoVersion")
+        testImplementation("org.assertj:assertj-core:$assertjVersion")
+        testImplementation("junit:junit:$junitVersion")
     }
 
     testlogger {
@@ -161,7 +174,7 @@ subprojects {
         }
     }
 
-    task integrationTest(type: Test) {
+    tasks.register<Test>("integrationTest") {
         group = LifecycleBasePlugin.VERIFICATION_GROUP
         description = "Runs the integration tests."
         testClassesDirs = sourceSets.integrationTest.output.classesDirs
@@ -177,7 +190,7 @@ subprojects {
             systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
         }
 
-        mustRunAfter tasks.test
+        mustRunAfter tasks . test
     }
 
     project.plugins.withId("org.jetbrains.intellij") {
@@ -204,11 +217,11 @@ subprojects {
     // Force us to compile the integration tests even during check even though we don"t run them
     check.dependsOn(integrationTestClasses)
 
-    task testJar(type: Jar) {
-        baseName = "${project.name}-test"
-        from sourceSets.test.output
-        from sourceSets.integrationTest.output
-    }
+    task testJar (type: Jar) {
+    baseName = "${project.name}-test"
+    from sourceSets . test . output
+        from sourceSets . integrationTest . output
+}
 
     artifacts {
         testArtifacts testJar
@@ -226,17 +239,17 @@ configurations {
     ktlint
 }
 
-def removeTask(TaskContainer tasks, Class<? extends Task> takeType) {
+inline fun <reified T : Task> removeTask(tasks: TaskContainer, takeType: T) {
     tasks.withType(takeType).configureEach {
         setEnabled(false)
     }
 }
 
-apply plugin: "org.jetbrains.intellij"
-apply plugin: "toolkit-change-log"
+apply(plugin = "org.jetbrains.intellij")
+apply(plugin = "toolkit-change-log")
 
 intellij {
-    version ideSdkVersion("IC")
+    version ideSdkVersion ("IC")
     pluginName "aws-jetbrains-toolkit"
     updateSinceUntilBuild false
     downloadSources = System.getenv("CI") == null
@@ -250,22 +263,22 @@ prepareSandbox {
 
 publishPlugin {
     token publishToken
-    channels publishChannel ? publishChannel.split(",").collect { it.trim() } : []
+        channels publishChannel ? publishChannel . split (",").collect { it.trim() } : []
 }
 
-tasks.register("generateChangeLog", GenerateGithubChangeLog) {
-    changeLogFile = project.file("CHANGELOG.md")
+tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
+    changeLogFile.set(project.file("CHANGELOG.md"))
 }
 
-task ktlint(type: JavaExec, group: "verification") {
+tasks.register<JavaExec>(mapOf(TASK_NAME to "ktlint", TASK_GROUP to "verification")) {
     description = "Check Kotlin code style."
-    classpath = configurations.ktlint
+    classpath = configurations["ktlint"]
     main = "com.pinterest.ktlint.Main"
 
-    def isWindows = System.properties["os.name"].toLowerCase().contains("windows")
+    val isWindows = System.properties["os.name"].toLowerCase().contains("windows")
 
-    def toInclude = project.rootDir.relativePath(project.projectDir) + "/**/*.kt"
-    def toExclude = project.rootDir.relativePath(new File(project.projectDir, "jetbrains-rider")) + "/**/*.Generated.kt"
+    val toInclude = project.rootDir.relativePath(project.projectDir) + "/**/*.kt"
+    val toExclude = project.rootDir.relativePath(File(project.projectDir, "jetbrains-rider")) + "/**/*.Generated.kt"
 
     if (isWindows) {
         toInclude = toInclude.replace("/", "\\")
@@ -273,21 +286,21 @@ task ktlint(type: JavaExec, group: "verification") {
     }
 
     args "-v", toInclude, "!${toExclude}", "!/**/generated-src/**/*.kt"
-
-    inputs.files(project.fileTree(dir: ".", include: "**/*.kt"))
+    // todo revert
+    inputs.files(project.fileTree(dir: ".", include: "** /*.kt"))
     outputs.dir("${project.buildDir}/reports/ktlint/")
 }
 
-task validateLocalizedMessages(group: "verification") {
+tasks.register("validateLocalizedMessages", "verification") {
     doLast {
-        BufferedReader files = Files.newBufferedReader(Paths.get("${project.rootDir}/resources/resources/software/aws/toolkits/resources/localized_messages.properties"))
+        BufferedReader files = Files . newBufferedReader (Paths.get("${project.rootDir}/resources/resources/software/aws/toolkits/resources/localized_messages.properties"))
         files
             .lines()
             .map({ item ->
                 if (item == null || item.isEmpty()) {
                     return ""
                 }
-                String[] chunks = item.split("=")
+                String[] chunks = item . split ("=")
                 if (chunks.length <= 1) {
                     return ""
                 } else {
@@ -297,7 +310,7 @@ task validateLocalizedMessages(group: "verification") {
             .filter({ item -> !item.isEmpty() })
             .reduce({ item1, item2 ->
                 if (item1 > item2) {
-                    throw new GradleException("localization file is not sorted:" + item1 + " > " + item2)
+                    throw new GradleException ("localization file is not sorted:" + item1 + " > " + item2)
                 }
 
                 return item2
@@ -306,11 +319,11 @@ task validateLocalizedMessages(group: "verification") {
 }
 
 check.dependsOn ktlint
-check.dependsOn validateLocalizedMessages
-check.dependsOn verifyPlugin
+    check.dependsOn validateLocalizedMessages
+    check.dependsOn verifyPlugin
 
-task coverageReport(type: JacocoReport) {
-    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+    task coverageReport (type: JacocoReport) {
+    executionData fileTree (project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
 
     getAdditionalSourceDirs().from(subprojects.sourceSets.main.java.srcDirs)
     getSourceDirectories().from(subprojects.sourceSets.main.java.srcDirs)
@@ -328,28 +341,34 @@ check.dependsOn coverageReport
 
 // Workaround for runIde being defined in multiple projects, if we request the root project runIde, "alias" it to
 // community edition
-if (gradle.startParameter.taskNames.contains("runIde")) {
-    // Only disable this if running from root project
-    if (gradle.startParameter.projectDir == project.rootProject.rootDir
-        || System.properties.containsKey("idea.gui.tests.gradle.runner")) {
-        println("Top level runIde selected, excluding sub-projects" runIde")
-        gradle.taskGraph.whenReady { graph ->
-            graph.allTasks.forEach {
-                if (it.name == "runIde" &&
-                    it.project != project(":jetbrains-core")) {
-                    it.enabled = false
+    if (gradle.startParameter.taskNames.contains("runIde")) {
+        // Only disable this if running from root project
+        if (gradle.startParameter.projectDir == project.rootProject.rootDir
+            || System.properties.containsKey("idea.gui.tests.gradle.runner")
+        ) {
+            println(
+                "Top level runIde selected, excluding sub-projects" runIde ")
+                    gradle . taskGraph . whenReady { graph ->
+                    graph.allTasks.forEach {
+                        if (it.name == "runIde" &&
+                            it.project != project(":jetbrains-core")
+                        ) {
+                            it.enabled = false
+                        }
+                    }
                 }
-            }
+        } else {
         }
+    } else {
     }
-}
 
 dependencies {
-    implementation project(":jetbrains-ultimate")
-    project.findProject(":jetbrains-rider")?.collect {
-        implementation it
+    implementation(project(":jetbrains-ultimate"))
+    project.findProject(":jetbrains-rider")?.let {
+        implementation(it)
     }
 
     ktlint "com.pinterest:ktlint:$ktlintVersion"
-    ktlint project(":ktlint-rules")
+    ktlint project (":ktlint-rules")
 }
+
