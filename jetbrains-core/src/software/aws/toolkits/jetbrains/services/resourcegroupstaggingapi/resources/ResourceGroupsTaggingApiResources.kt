@@ -10,8 +10,8 @@ import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.filtering.ResourceTagFilter
 
 object ResourceGroupsTaggingApiResources {
-    fun listResources(serviceId: String, resourceType: String? = null, tags: Map<String, ResourceTagFilter>? = null) =
-        ClientBackedCachedResource(ResourceGroupsTaggingApiClient::class, "resourceGroupsTaggingApi.$serviceId.$resourceType.${tags?.toString()}}") {
+    fun listResources(serviceId: String, resourceType: String? = null) =
+        ClientBackedCachedResource(ResourceGroupsTaggingApiClient::class, "resourceGroupsTaggingApi.$serviceId.$resourceType") {
             getResourcesPaginator { request ->
                 // S3 is special, bucket resourcetype doesn't exist
                 val resourceTypeFilter = if (serviceId == S3Client.SERVICE_NAME || resourceType == null) {
@@ -20,11 +20,6 @@ object ResourceGroupsTaggingApiResources {
                     "$serviceId:$resourceType"
                 }
                 request.resourceTypeFilters(resourceTypeFilter)
-                tags?.forEach {
-                    if (it.value.enabled) {
-                        request.tagFilters(TagFilter.builder().key(it.key).values(it.value.values).build())
-                    }
-                }
             }
         }
 }
