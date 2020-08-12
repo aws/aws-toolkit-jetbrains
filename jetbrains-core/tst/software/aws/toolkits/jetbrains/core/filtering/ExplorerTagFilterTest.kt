@@ -9,10 +9,14 @@ import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import software.amazon.awssdk.services.resourcegroupstaggingapi.model.ResourceTagMapping
+import software.amazon.awssdk.services.resourcegroupstaggingapi.model.Tag
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.services.resourcegroupstaggingapi.resources.ResourceGroupsTaggingApiResources
+import java.util.concurrent.CompletableFuture
 
 class ExplorerTagFilterTest {
     @JvmField
@@ -21,20 +25,20 @@ class ExplorerTagFilterTest {
 
     @JvmField
     @Rule
-    val mockClientManagerRule = MockClientManagerRule(projectRule)
+    val mockResourceCache = MockResourceCacheRule(projectRule)
     val filter = ExplorerTagFilter()
 
     val parentName = RuleUtils.randomName()
+    val serviceId = RuleUtils.randomName()
+    val resourceType = RuleUtils.randomName()
+
     val parent = object : AwsExplorerNode<String>(projectRule.project, parentName, null) {
         override fun getChildren(): MutableCollection<out AbstractTreeNode<*>> = mutableListOf()
     }
 
-    fun buildChild(
-        type: String = "s3",
-        arn: String = RuleUtils.randomName()
-    ): AwsExplorerResourceNode<String> {
-        return object : AwsExplorerResourceNode<String>() {
-            override fun resourceType(): String = type
+    fun buildChild(arn: String = RuleUtils.randomName()): AwsExplorerResourceNode<String> {
+        return object : AwsExplorerResourceNode<String>(projectRule.project, serviceId, "value", mock()) {
+            override fun resourceType(): String = resourceType
             override fun resourceArn(): String = arn
         }
     }
@@ -60,7 +64,7 @@ class ExplorerTagFilterTest {
     @Test
     fun `Does not filter if parent is not AWS Explorer node`() {
         ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
-            enabled = false,
+            enabled = true,
             tags = mapOf("tag" to listOf())
         )
         assertThat(
@@ -77,11 +81,53 @@ class ExplorerTagFilterTest {
 
     @Test
     fun `AWS nodes are filtered if enabled`() {
+        val foundArn = RuleUtils.randomName()
 
+        mockResourceCache.get().addEntry(
+            ResourceGroupsTaggingApiResources.listResources(serviceId, resourceType),
+            CompletableFuture.completedFuture(
+                listOf(
+                    ResourceTagMapping.builder().resourceARN(foundArn).tags(Tag.builder().key("tag").value("value").build()).build()
+                )
+            )
+        )
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+            enabled = true,
+            tags = mapOf("tag" to listOf())
+        )
+        val list = filter.modify(
+            parent,
+            mutableListOf(
+                buildChild(arn = "${foundArn}123"),
+                buildChild(arn = foundArn)
+            ),
+            mock()
+        )
+        assertThat(list).hasOnlyOneElementSatisfying {
+            it is AwsExplorerResourceNode && it.resourceArn() == foundArn
+        }
     }
 
     @Test
-    fun `Does not filter out non AWS nodes`() {
-
+    fun `Does not filter out non AWS resource nodes`() {
+        val foundArn = RuleUtils.randomName()
+        mockResourceCache.get().addEntry(
+            ResourceGroupsTaggingApiResources.listResources(serviceId, resourceType),
+            CompletableFuture.completedFuture(listOf(ResourceTagMapping.builder().resourceARN(foundArn).build()))
+        )
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+            enabled = true,
+            tags = mapOf("tag" to listOf())
+        )
+        val list = filter.modify(
+            parent,
+            mutableListOf(
+                buildChild(arn = "${foundArn}123"),
+                buildChild(arn = foundArn),
+                mock()
+            ),
+            mock()
+        )
+        assertThat(list).hasSize(2)
     }
 }

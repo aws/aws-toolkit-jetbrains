@@ -29,14 +29,18 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
         val taggedResources = AwsResourceCache
             .getInstance(project)
             .getResourceNow(resource = ResourceGroupsTaggingApiResources.listResources(serviceId, resourceType))
-            .resourceTagMappingList()
         return taggedResources.filter { resource ->
             val tagMap = resource.tags().map { it.key() to it.value() }.toMap()
             resource.hasTags()
                 && state
-                .filter { it.value.enabled }
-                // Make sure it has one of the values that the resources tag is set to or if it's empty that it has the value at all
-                .all { it.value.tags.contains(tagMap[it.key]) || (it.value.tags.isEmpty() && tagMap[it.key] != null) }
+                // Only show enabled filters with tags
+                .filter { it.value.enabled && it.value.tags.isNotEmpty() }
+                // convert the list of key values to just a list of key values
+                .flatMap { it.value.tags.toList() }
+                .all { (key, values) ->
+                    // If there is a tag with no values, make sure the resource has the tag with any value
+                    tagMap[key] != null && (values.isEmpty() || values.contains(tagMap[key]))
+                }
         }
     }
 

@@ -20,6 +20,6 @@ object ResourceGroupsTaggingApiResources {
                 "$serviceId:$resourceType"
             }
             request.resourceTypeFilters(resourceTypeFilter)
-        }
+        }.resourceTagMappingList().toList()
     }
 }
