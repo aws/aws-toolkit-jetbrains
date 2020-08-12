@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.resourcegroupstaggingapi.resources.ResourceGroupsTaggingApiResources
 
 @State(name = "filters", storages = [Storage("aws.xml")])
-class ResourceFilterManager : PersistentStateComponent<ResourceFilter> {
+class TagFilterManager : PersistentStateComponent<ResourceFilter> {
     private var state = ResourceFilter(false, mapOf())
 
     override fun getState(): ResourceFilter = state
@@ -42,7 +42,7 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilter> {
     }
 
     companion object {
-        fun getInstance(project: Project): ResourceFilterManager = ServiceManager.getService(project, ResourceFilterManager::class.java)
+        fun getInstance(project: Project): TagFilterManager = ServiceManager.getService(project, TagFilterManager::class.java)
     }
 }
 
