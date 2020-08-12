@@ -13,15 +13,15 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.resourcegroupstaggingapi.resources.ResourceGroupsTaggingApiResources
 
 @State(name = "filters", storages = [Storage("aws.xml")])
-class TagFilterManager : PersistentStateComponent<ResourceFilter> {
-    private var state = ResourceFilter(false, mapOf())
+class TagFilterManager : PersistentStateComponent<ResourceFilters> {
+    private var state: ResourceFilters = mapOf()
 
-    override fun getState(): ResourceFilter = state
-    override fun loadState(state: ResourceFilter) {
+    override fun getState(): ResourceFilters = state
+    override fun loadState(state: ResourceFilters) {
         this.state = state
     }
 
-    fun tagFilterEnabled(): Boolean = state.tagsEnabled && state.tags.any { it.value.enabled }
+    fun filtersEnabled(): Boolean = state.any { it.value.enabled }
 
     // get resources based on the currently applied filters
     fun getTaggedResources(project: Project, serviceId: String, resourceType: String? = null): List<ResourceTagMapping> {
@@ -33,11 +33,9 @@ class TagFilterManager : PersistentStateComponent<ResourceFilter> {
             val tagMap = resource.tags().map { it.key() to it.value() }.toMap()
             resource.hasTags()
                 && state
-                .tags
-                // for all enabled tags
                 .filter { it.value.enabled }
                 // Make sure it has one of the values that the resources tag is set to or if it's empty that it has the value at all
-                .all { it.value.values.contains(tagMap[it.key]) || (it.value.values.isEmpty() && tagMap[it.key] != null) }
+                .all { it.value.tags.contains(tagMap[it.key]) || (it.value.tags.isEmpty() && tagMap[it.key] != null) }
         }
     }
 
@@ -46,12 +44,10 @@ class TagFilterManager : PersistentStateComponent<ResourceFilter> {
     }
 }
 
-data class ResourceTagFilter(
-    var enabled: Boolean = false,
-    var values: List<String> = listOf()
+data class ResourceFilter(
+    var enabled: Boolean = true,
+    var tags: Map<String, List<String>> = mapOf(),
+    var stacks: List<String> = listOf()
 )
 
-data class ResourceFilter(
-    var tagsEnabled: Boolean = false,
-    var tags: Map<String, ResourceTagFilter> = mapOf()
-)
+typealias ResourceFilters = Map<String, ResourceFilter>
