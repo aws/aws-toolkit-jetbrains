@@ -114,10 +114,14 @@ class EditFunctionDialog(
         view.envVars.envVars = envVariables
 
         if (mode == UPDATE_CONFIGURATION) {
+            // Show a unfiltered list of runtimes since we don't have to filter
+            view.setRuntimes(Runtime.knownValues())
             view.name.isEnabled = false
             view.deploySettings.isVisible = false
             view.buildSettings.isVisible = false
         } else {
+            // show a filtered list of runtimes to only ones we can build (since we have to build)
+            view.setRuntimes(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes })
             view.createBucket.addActionListener {
                 val bucketDialog = CreateS3BucketDialog(
                     project = project,
@@ -140,7 +144,6 @@ class EditFunctionDialog(
                 .forEach { it.isVisible = false }
         }
 
-        view.setRuntimes(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes })
         view.runtime.selectedItem = runtime?.validOrNull
 
         view.xrayEnabled.isSelected = xrayEnabled
