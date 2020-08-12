@@ -13,8 +13,8 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.services.resourcegroupstaggingapi.resources.ResourceGroupsTaggingApiResources
 
 @State(name = "filters", storages = [Storage("aws.xml")])
-class TagFilterManager : PersistentStateComponent<ResourceFilters> {
-    private var state: ResourceFilters = mapOf()
+class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
+    private var state: ResourceFilters = mutableMapOf()
 
     override fun getState(): ResourceFilters = state
     override fun loadState(state: ResourceFilters) {
@@ -22,6 +22,7 @@ class TagFilterManager : PersistentStateComponent<ResourceFilters> {
     }
 
     fun filtersEnabled(): Boolean = state.any { it.value.enabled }
+    fun tagFiltersEnabled(): Boolean = state.any { it.value.enabled && it.value.tags.isNotEmpty() }
 
     // get resources based on the currently applied filters
     fun getTaggedResources(project: Project, serviceId: String, resourceType: String? = null): List<ResourceTagMapping> {
@@ -40,7 +41,7 @@ class TagFilterManager : PersistentStateComponent<ResourceFilters> {
     }
 
     companion object {
-        fun getInstance(project: Project): TagFilterManager = ServiceManager.getService(project, TagFilterManager::class.java)
+        fun getInstance(project: Project): ResourceFilterManager = ServiceManager.getService(project, ResourceFilterManager::class.java)
     }
 }
 
@@ -50,4 +51,4 @@ data class ResourceFilter(
     var stacks: List<String> = listOf()
 )
 
-typealias ResourceFilters = Map<String, ResourceFilter>
+typealias ResourceFilters = MutableMap<String, ResourceFilter>

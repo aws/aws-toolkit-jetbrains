@@ -17,7 +17,7 @@ class ExplorerTagFilter : AwsExplorerTreeStructureProvider {
     ): MutableCollection<AbstractTreeNode<*>> = when (parent) {
         is AwsExplorerNode -> {
             val filterManager = ResourceFilterManager.getInstance(parent.nodeProject)
-            if (!filterManager.tagFilterEnabled()) {
+            if (!filterManager.tagFiltersEnabled()) {
                 children
             } else {
                 val resourceNodes = children.filterIsInstance<AwsExplorerResourceNode<*>>()

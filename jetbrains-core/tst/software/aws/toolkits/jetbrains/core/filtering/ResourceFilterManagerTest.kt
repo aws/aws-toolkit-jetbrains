@@ -3,4 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core.filtering
 
-class ResourceFilterManagerTest
+import org.junit.Test
+
+class ResourceFilterManagerTest {
+    @Test
+    fun `cool test`() {
+
+    }
+}

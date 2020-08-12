@@ -3,10 +3,16 @@
 
 package software.aws.toolkits.jetbrains.core.filtering
 
+import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.testFramework.ProjectRule
+import com.nhaarman.mockitokotlin2.mock
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 
 class ExplorerTagFilterTest {
     @JvmField
@@ -16,18 +22,57 @@ class ExplorerTagFilterTest {
     @JvmField
     @Rule
     val mockClientManagerRule = MockClientManagerRule(projectRule)
-
     val filter = ExplorerTagFilter()
 
-    @Test
-    fun `Does not filter if tag filter disabled`() {
-        ResourceFilterManager.getInstance(projectRule.project).state.tagsEnabled = false
+    val parentName = RuleUtils.randomName()
+    val parent = object : AwsExplorerNode<String>(projectRule.project, parentName, null) {
+        override fun getChildren(): MutableCollection<out AbstractTreeNode<*>> = mutableListOf()
+    }
 
+    fun buildChild(
+        type: String = "s3",
+        arn: String = RuleUtils.randomName()
+    ): AwsExplorerResourceNode<String> {
+        return object : AwsExplorerResourceNode<String>() {
+            override fun resourceType(): String = type
+            override fun resourceArn(): String = arn
+        }
+    }
+
+    @Test
+    fun `Does not filter if no filters are enabled`() {
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+            enabled = false,
+            tags = mapOf("tag" to listOf())
+        )
+        assertThat(
+            filter.modify(
+                parent,
+                mutableListOf(
+                    buildChild(),
+                    buildChild()
+                ),
+                mock()
+            )
+        ).hasSize(2)
     }
 
     @Test
     fun `Does not filter if parent is not AWS Explorer node`() {
-
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+            enabled = false,
+            tags = mapOf("tag" to listOf())
+        )
+        assertThat(
+            filter.modify(
+                mock(),
+                mutableListOf(
+                    buildChild(),
+                    buildChild()
+                ),
+                mock()
+            )
+        ).hasSize(2)
     }
 
     @Test
