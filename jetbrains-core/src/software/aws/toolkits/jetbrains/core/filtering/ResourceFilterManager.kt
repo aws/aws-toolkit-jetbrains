@@ -33,7 +33,7 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
             resource.hasTags() && state
                 // Only show enabled filters with tags
                 .filter { it.value.enabled && it.value.tags.isNotEmpty() }
-                // convert the list of key values to just a list of key values
+                // convert the list of maps to a list of key values pairs
                 .flatMap { it.value.tags.toList() }
                 .all { (key, values) ->
                     // If there is a tag with no values, make sure the resource has the tag with any value
