@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import software.aws.toolkits.jetbrains.core.filtering.ResourceFilteringAction
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
@@ -26,6 +27,8 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
         if (toolWindow is ToolWindowEx) {
             val actionManager = ActionManager.getInstance()
             toolWindow.setTitleActions(
+                ResourceFilteringAction(),
+                Separator.create(),
                 actionManager.getAction("aws.settings.refresh"),
                 Separator.create(),
                 FeedbackDialog.getAction(project)

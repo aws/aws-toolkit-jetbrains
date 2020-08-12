@@ -21,7 +21,9 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
         this.state = state
     }
 
+    fun filtersEnabled() = tagFiltersEnabled() || cloudFormationFiltersEnabled()
     fun tagFiltersEnabled(): Boolean = state.any { it.value.enabled && it.value.tags.isNotEmpty() }
+    fun cloudFormationFiltersEnabled(): Boolean = state.any {it.value.enabled && it.value.stacks.isNotEmpty() }
 
     // get resources based on the currently applied filters
     fun getTaggedResources(project: Project, serviceId: String, resourceType: String? = null): List<ResourceTagMapping> {
