@@ -3,11 +3,12 @@
 
 package software.aws.toolkits.jetbrains.core.filtering
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
 class ResourceFilterManagerTest {
     @Test
     fun `cool test`() {
-
+        assertThat(true).isTrue()
     }
 }

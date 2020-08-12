@@ -36,13 +36,6 @@ class ExplorerTagFilterTest {
         override fun getChildren(): MutableCollection<out AbstractTreeNode<*>> = mutableListOf()
     }
 
-    fun buildChild(arn: String = RuleUtils.randomName()): AwsExplorerResourceNode<String> {
-        return object : AwsExplorerResourceNode<String>(projectRule.project, serviceId, "value", mock()) {
-            override fun resourceType(): String = resourceType
-            override fun resourceArn(): String = arn
-        }
-    }
-
     @Test
     fun `Does not filter if no filters are enabled`() {
         ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
@@ -83,14 +76,7 @@ class ExplorerTagFilterTest {
     fun `AWS nodes are filtered if enabled`() {
         val foundArn = RuleUtils.randomName()
 
-        mockResourceCache.get().addEntry(
-            ResourceGroupsTaggingApiResources.listResources(serviceId, resourceType),
-            CompletableFuture.completedFuture(
-                listOf(
-                    ResourceTagMapping.builder().resourceARN(foundArn).tags(Tag.builder().key("tag").value("value").build()).build()
-                )
-            )
-        )
+        stockResourceCache(foundArn)
         ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
             enabled = true,
             tags = mapOf("tag" to listOf())
@@ -111,10 +97,7 @@ class ExplorerTagFilterTest {
     @Test
     fun `Does not filter out non AWS resource nodes`() {
         val foundArn = RuleUtils.randomName()
-        mockResourceCache.get().addEntry(
-            ResourceGroupsTaggingApiResources.listResources(serviceId, resourceType),
-            CompletableFuture.completedFuture(listOf(ResourceTagMapping.builder().resourceARN(foundArn).build()))
-        )
+        stockResourceCache(foundArn)
         ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
             enabled = true,
             tags = mapOf("tag" to listOf())
@@ -129,5 +112,22 @@ class ExplorerTagFilterTest {
             mock()
         )
         assertThat(list).hasSize(2)
+    }
+
+    private fun buildChild(arn: String = RuleUtils.randomName()): AwsExplorerResourceNode<String> =
+        object : AwsExplorerResourceNode<String>(projectRule.project, serviceId, "value", mock()) {
+            override fun resourceType(): String = resourceType
+            override fun resourceArn(): String = arn
+        }
+
+    private fun stockResourceCache(foundArn: String) {
+        mockResourceCache.get().addEntry(
+            ResourceGroupsTaggingApiResources.listResources(serviceId, resourceType),
+            CompletableFuture.completedFuture(
+                listOf(
+                    ResourceTagMapping.builder().resourceARN(foundArn).tags(Tag.builder().key("tag").value("value").build()).build()
+                )
+            )
+        )
     }
 }

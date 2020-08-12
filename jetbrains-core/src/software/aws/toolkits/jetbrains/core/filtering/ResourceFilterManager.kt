@@ -31,8 +31,7 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
             .getResourceNow(resource = ResourceGroupsTaggingApiResources.listResources(serviceId, resourceType))
         return taggedResources.filter { resource ->
             val tagMap = resource.tags().map { it.key() to it.value() }.toMap()
-            resource.hasTags()
-                && state
+            resource.hasTags() && state
                 // Only show enabled filters with tags
                 .filter { it.value.enabled && it.value.tags.isNotEmpty() }
                 // convert the list of key values to just a list of key values

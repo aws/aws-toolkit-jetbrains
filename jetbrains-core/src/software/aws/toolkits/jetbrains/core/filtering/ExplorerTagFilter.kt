@@ -40,4 +40,3 @@ class ExplorerTagFilter : AwsExplorerTreeStructureProvider {
         else -> children
     }
 }
-
