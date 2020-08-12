@@ -23,12 +23,12 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.iam.CreateIamRoleDialog
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
+import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
@@ -140,12 +140,11 @@ class EditFunctionDialog(
                 .forEach { it.isVisible = false }
         }
 
-        view.setRuntimes(Runtime.knownValues())
+        view.setRuntimes(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes })
         view.runtime.selectedItem = runtime?.validOrNull
 
         view.xrayEnabled.isSelected = xrayEnabled
 
-        val regionProvider = AwsRegionProvider.getInstance()
         val settings = AwsConnectionManager.getInstance(project)
         view.setXrayControlVisibility(mode != UPDATE_CODE && lambdaTracingConfigIsAvailable(settings.activeRegion))
 

@@ -165,7 +165,7 @@ class RuntimeGroupExtensionPoint<T> : AbstractExtensionPointBean(), KeyedLazyIns
  * To be implemented on a companion object of the extension point object to expose factory methods.
  * See [software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder]
  */
-abstract class RuntimeGroupExtensionPointObject<T>(private val extensionPointName: ExtensionPointName<RuntimeGroupExtensionPoint<T>>) {
+abstract class RuntimeGroupExtensionPointObject<T>(val extensionPointName: ExtensionPointName<RuntimeGroupExtensionPoint<T>>) {
     protected val collector = KeyedExtensionCollector<T, RuntimeGroup>(extensionPointName.name)
     fun getInstance(runtimeGroup: RuntimeGroup): T? = collector.findSingle(runtimeGroup)
     fun getInstanceOrThrow(runtimeGroup: RuntimeGroup): T =

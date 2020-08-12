@@ -29,8 +29,9 @@ import software.amazon.awssdk.services.s3.model.HeadBucketResponse
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
+import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 class EditFunctionDialogTest {
@@ -61,6 +62,18 @@ class EditFunctionDialogTest {
                 ProjectRootManager.getInstance(projectRule.project).projectSdk = sdk
             }
         }
+    }
+
+    @Test
+    fun dialogOnlyShowsSupportedRuntimes() {
+        mockBuckets()
+        mockRoles()
+
+        val dialog = runInEdtAndGet {
+            EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.NEW)
+        }
+
+        assertThat(dialog.getViewForTestAssertions().runtime.model.size).isEqualTo(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes }.size)
     }
 
     @Test
