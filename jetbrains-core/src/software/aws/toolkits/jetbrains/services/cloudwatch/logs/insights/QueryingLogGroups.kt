@@ -26,7 +26,23 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
     }
 
     fun getFields(query: String): List<String> {
-        var fieldList: List<String>
+        var fieldList = mutableListOf<List<String>>()
+
+        val queries = query.split("|")
+        for (item in queries){
+            if (item.trim().startsWith("fields", ignoreCase = false)) {
+                var fields = item.trim().substring(6)
+                fieldList.add(fields.split(",").map { it.trim() })
+            }
+        }
+        if(fieldList.isEmpty()){
+            return listOf("@message", "@timestamp")
+        }
+        return fieldList.flatten()
+
+
+
+       /* var fieldList: List<String>
         if (query.contains("fields", ignoreCase = true)) {
             var fields = query.substring(query.indexOf("fields", ignoreCase = true) + 7)
             if (fields.contains("|")) {
@@ -36,6 +52,6 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
         } else {
             fieldList = listOf("@message", "@timestamp")
         }
-        return fieldList
+        return fieldList*/
     }
 }

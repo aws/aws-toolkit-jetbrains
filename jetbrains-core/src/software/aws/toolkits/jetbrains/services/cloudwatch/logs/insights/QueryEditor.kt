@@ -43,13 +43,14 @@ class QueryEditor internal constructor(private val project: Project) {
         tablePanel = SimpleToolWindowPanel(false, true)
         showLogGroupTable = AddRemoveLogGroupTable(project)
         initArLogGroupTable()
-        tablePanel.setContent(showLogGroupTable.component)
+        //tablePanel.setContent(showLogGroupTable.component)
         val timeUnits = arrayOf(
             message("cloudwatch.logs.time_minutes"),
             message("cloudwatch.logs.time_hours"),
             message("cloudwatch.logs.time_days"),
             message("cloudwatch.logs.time_weeks"))
         relativeTimeUnit = ComboBox<String>(timeUnits)
+
     }
 
     init {

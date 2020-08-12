@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.message
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -34,11 +35,13 @@ class QueryResultList(
         tablePanel = SimpleToolWindowPanel(false, true)
     }
     init {
+        openQueryEditor.text = message("cloudwatch.logs.query")
+        resultsTitle.text = message("cloudwatch.logs.query_result")
         Disposer.register(this, resultsTable)
         tablePanel.setContent(resultsTable.component)
         loadInitialResultsTable()
         openQueryEditor.addActionListener {
-            notifyInfo("Previous state Query Editor execution", "To be implemented!")
+            // TODO : Open the Query editor with the corresponding fields
         }
     }
     private fun loadInitialResultsTable() {

@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.resources.message
 
 class QueryResultsWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("openResultsWindow") {
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, QueryResultsWindow.INSIGHTS_RESULTS_TOOL_WINDOW)
@@ -37,7 +38,7 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
     companion object {
         internal val INSIGHTS_RESULTS_TOOL_WINDOW = ToolkitToolWindowType(
             "AWS.InsightsResultsTable",
-            "CloudWatch Logs Insights"
+            message("cloudwatch.logs.results_window_title")
         )
         fun getInstance(project: Project) = ServiceManager.getService(project, QueryResultsWindow::class.java)
     }

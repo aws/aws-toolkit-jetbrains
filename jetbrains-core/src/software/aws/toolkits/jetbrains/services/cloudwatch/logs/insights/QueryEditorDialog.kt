@@ -38,6 +38,7 @@ class QueryEditorDialog(
     init {
         super.init()
         title = message("cloudwatch.logs.query_editor_title")
+        view.logGroupLabel.text = "Log Group:$lGroupName"
         view.absoluteTimeRadioButton.addActionListener {
             view.startDate.isEnabled = true
             view.endDate.isEnabled = true
