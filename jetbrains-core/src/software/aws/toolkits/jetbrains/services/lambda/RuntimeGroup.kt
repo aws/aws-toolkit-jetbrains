@@ -51,9 +51,7 @@ interface RuntimeGroup {
         @JvmStatic
         fun find(predicate: (RuntimeGroup) -> Boolean): RuntimeGroup? = registeredRuntimeGroups().firstOrNull(predicate)
 
-        fun findById(id: String): RuntimeGroup? = find { it.id == id }
-
-        fun getById(id: String): RuntimeGroup = findById(id) ?: throw IllegalStateException("No RuntimeGroup with $id is registered")
+        fun getById(id: String): RuntimeGroup = find { it.id == id } ?: throw IllegalStateException("No RuntimeGroup with $id is registered")
 
         fun determineRuntime(project: Project?): Runtime? = project?.let { _ ->
             registeredRuntimeGroups().asSequence().mapNotNull { it.determineRuntime(project) }.firstOrNull()
@@ -103,8 +101,8 @@ fun AnActionEvent.runtime(): Runtime? {
 abstract class RuntimeGroupExtensionPointObject<T>(private val extensionPointName: ExtensionPointName<IdBasedExtensionPoint<T>>) {
     private val collector = KeyedExtensionCollector<T, String>(extensionPointName.name)
 
-    fun getInstance(runtimeGroup: RuntimeGroup): T? = collector.findSingle(runtimeGroup.id)
-    fun getInstanceOrThrow(runtimeGroup: RuntimeGroup): T = getInstance(runtimeGroup)
+    fun getInstanceOrNull(runtimeGroup: RuntimeGroup): T? = collector.findSingle(runtimeGroup.id)
+    fun getInstance(runtimeGroup: RuntimeGroup): T = getInstanceOrNull(runtimeGroup)
         ?: throw IllegalStateException("Attempted to retrieve feature for unsupported runtime group $runtimeGroup")
 
     fun supportedRuntimeGroups(): Set<RuntimeGroup> {

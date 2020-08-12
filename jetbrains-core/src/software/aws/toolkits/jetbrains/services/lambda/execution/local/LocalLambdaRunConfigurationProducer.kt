@@ -55,7 +55,7 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
         if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups()) {
             return false
         }
-        val resolver = LambdaHandlerResolver.getInstanceOrThrow(runtimeGroup)
+        val resolver = LambdaHandlerResolver.getInstance(runtimeGroup)
         val handler = resolver.determineHandler(element) ?: return false
         val runtime = RuntimeGroup.determineRuntime(context.module) ?: RuntimeGroup.determineRuntime(context.project)
 
@@ -79,7 +79,7 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
         if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups()) {
             return false
         }
-        val resolver = LambdaHandlerResolver.getInstanceOrThrow(runtimeGroup)
+        val resolver = LambdaHandlerResolver.getInstance(runtimeGroup)
         val handler = resolver.determineHandler(element) ?: return false
         return configuration.handler() == handler
     }

@@ -44,7 +44,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
         }
 
         val runtimeGroup = element.language.runtimeGroup ?: return null
-        val handlerResolver = LambdaHandlerResolver.getInstance(runtimeGroup) ?: return null
+        val handlerResolver = LambdaHandlerResolver.getInstanceOrNull(runtimeGroup) ?: return null
         val handler = handlerResolver.determineHandler(element) ?: return null
 
         return if (handlerResolver.shouldShowLineMarker(handler) || shouldShowLineMarker(element.containingFile, handler, runtimeGroup)) {

@@ -21,7 +21,7 @@ class HandlerCompletionProvider(private val project: Project, runtime: Runtime?)
     private val handlerCompletion: HandlerCompletion? by lazy {
         val runtimeGroup = runtime?.runtimeGroup ?: RuntimeGroup.determineRuntime(project)?.runtimeGroup ?: return@lazy null
 
-        return@lazy HandlerCompletion.getInstance(runtimeGroup) ?: let {
+        return@lazy HandlerCompletion.getInstanceOrNull(runtimeGroup) ?: let {
             logger.info { "Lambda handler completion provider is not registered for runtime: ${runtimeGroup.id}. Completion is not supported." }
             null
         }
