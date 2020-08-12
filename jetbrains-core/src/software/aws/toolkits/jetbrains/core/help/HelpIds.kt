@@ -65,8 +65,12 @@ enum class HelpIds(shortId: String, val url: String) {
     CFN_LINT(
         "cloudformation.linter",
         "https://github.com/aws-cloudformation/cfn-python-lint/blob/master/README.md"
-    )
-    ;
+    ),
+    // RDS
+    RDS_SETUP_IAM_AUTH(
+        "rdsIamAuth",
+        "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html"
+    );
 
     val id = "aws.toolkit.$shortId"
 }

@@ -20,7 +20,7 @@ import com.intellij.psi.SmartPointerManager
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.ProjectAccountSettingsManager
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex.Companion.listFunctions
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
@@ -74,12 +74,6 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
         } else null
     }
 
-    override fun collectSlowLineMarkers(
-        elements: MutableList<PsiElement>,
-        result: MutableCollection<LineMarkerInfo<PsiElement>>
-    ) {
-    }
-
     private fun shouldShowLineMarker(psiFile: PsiFile, handler: String, runtimeGroup: RuntimeGroup): Boolean {
         val project = psiFile.project
         return LambdaSettings.getInstance(project).showAllHandlerGutterIcons ||
@@ -95,7 +89,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
 
     // Handler defined in remote Lambda with the same runtime group is valid
     private fun handlerInRemote(psiFile: PsiFile, handler: String, runtimeGroup: RuntimeGroup): Boolean {
-        if (!ProjectAccountSettingsManager.getInstance(psiFile.project).isValidConnectionSettings()) {
+        if (!AwsConnectionManager.getInstance(psiFile.project).isValidConnectionSettings()) {
             return false
         }
 

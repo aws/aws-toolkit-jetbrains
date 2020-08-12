@@ -12,6 +12,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.IdeBorderFactory;
@@ -61,6 +62,8 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private JPanel remoteDebugSettings;
     private JPanel applicationLevelSettings;
 
+    private ComboBox<UseAwsCredentialRegion> defaultRegionHandling;
+
     public AwsSettingsConfigurable(Project project) {
         this.project = project;
 
@@ -88,6 +91,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         samExecutablePath = createCliConfigurationElement(getSamExecutableInstance(), SAM);
         cfnLintHelp = createHelpLink(HelpIds.CFN_LINT);
         cfnLintExecutablePath = createCliConfigurationElement(getCfnLintExecutableInstance(), CFNLINT);
+        defaultRegionHandling = new ComboBox<>(UseAwsCredentialRegion.values());
     }
 
     @NotNull
@@ -111,7 +115,8 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
                !Objects.equals(getCloudDebugTextboxInput(), getSavedExecutablePath(getCloudDebugExecutableInstance(), false)) ||
                !Objects.equals(getCfnLintTextboxInput(), getSavedExecutablePath(getCfnLintExecutableInstance(), false)) ||
                isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons()) ||
-               isModified(enableTelemetry, awsSettings.isTelemetryEnabled());
+               isModified(enableTelemetry, awsSettings.isTelemetryEnabled()) ||
+               isModified(defaultRegionHandling, awsSettings.getUseDefaultCredentialRegion());
     }
 
     @Override
@@ -132,7 +137,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
                                    getSavedExecutablePath(getCfnLintExecutableInstance(), false),
                                    getCfnLintTextboxInput());
 
-        saveTelemetrySettings();
+        saveAwsSettings();
         saveLambdaSettings();
     }
 
@@ -146,6 +151,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         cfnLintExecutablePath.setText(getSavedExecutablePath(getCfnLintExecutableInstance(), false));
         showAllHandlerGutterIcons.setSelected(lambdaSettings.getShowAllHandlerGutterIcons());
         enableTelemetry.setSelected(awsSettings.isTelemetryEnabled());
+        defaultRegionHandling.setSelectedItem(awsSettings.getUseDefaultCredentialRegion());
     }
 
     @NotNull
@@ -280,9 +286,10 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         ExecutableManager.getInstance().setExecutablePath(executableType, path);
     }
 
-    private void saveTelemetrySettings() {
+    private void saveAwsSettings() {
         AwsSettings awsSettings = AwsSettings.getInstance();
         awsSettings.setTelemetryEnabled(enableTelemetry.isSelected());
+        awsSettings.setUseDefaultCredentialRegion((UseAwsCredentialRegion) Objects.requireNonNull(defaultRegionHandling.getSelectedItem()));
     }
 
     private void saveLambdaSettings() {

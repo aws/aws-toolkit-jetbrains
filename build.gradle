@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -18,6 +19,10 @@ buildscript {
     }
 }
 
+plugins {
+    id "de.undercouch.download" version "4.1.1" apply false
+}
+
 apply from: 'intellijJVersions.gradle'
 
 def ideVersion = shortenVersion(resolveIdeProfileName())
@@ -25,7 +30,6 @@ def ideVersion = shortenVersion(resolveIdeProfileName())
 group 'software.aws.toolkits'
 // please check changelog generation logic if this format is changed
 version "$toolkitVersion-$ideVersion".toString()
-
 
 repositories {
     maven { url "https://www.jetbrains.com/intellij-repository/snapshots/" }
@@ -52,11 +56,11 @@ allprojects {
     tasks.withType(org.jetbrains.intellij.tasks.RunIdeTask) {
         intellij {
             if (System.env.ALTERNATIVE_IDE) {
-                if(file(System.env.ALTERNATIVE_IDE).exists()) {
+                if (file(System.env.ALTERNATIVE_IDE).exists()) {
                     alternativeIdePath = System.env.ALTERNATIVE_IDE
                 } else {
                     throw new GradleException("ALTERNATIVE_IDE path not found"
-                      + (System.env.ALTERNATIVE_IDE ==~ /.*[\/\\] *$/
+                        + (System.env.ALTERNATIVE_IDE ==~ /.*[\/\\] *$/
                         ? " (HINT: remove trailing slash '/')"
                         : ": ${System.env.ALTERNATIVE_IDE}"))
                 }
@@ -68,6 +72,7 @@ allprojects {
         runtimeClasspath.exclude group: "org.slf4j"
         runtimeClasspath.exclude group: "org.jetbrains.kotlin"
         runtimeClasspath.exclude group: "org.jetbrains.kotlinx"
+        runtimeClasspath.exclude group: "software.amazon.awssdk", module: "netty-nio-client"
     }
 }
 
@@ -88,25 +93,17 @@ subprojects {
 
     apply plugin: 'java'
     apply plugin: 'idea'
-    apply plugin: 'signing'
-
-    def isReleaseVersion = !version.endsWith("SNAPSHOT")
-
-    signing {
-        required { isReleaseVersion && gradle.startParameter.taskNames.contains("publishPlugin") }
-        sign configurations.archives
-    }
 
     sourceSets {
-        main.java.srcDirs = ['src', "src-$ideVersion"]
-        main.resources.srcDirs = ['resources', "resources-$ideVersion"]
-        test.java.srcDirs = ['tst', "tst-$ideVersion"]
-        test.resources.srcDirs = ['tst-resources', "tst-resources-$ideVersion"]
+        main.java.srcDirs = SourceUtils.findFolders(project, "src", ideVersion)
+        main.resources.srcDirs = SourceUtils.findFolders(project, "resources", ideVersion)
+        test.java.srcDirs = SourceUtils.findFolders(project, "tst", ideVersion)
+        test.resources.srcDirs = SourceUtils.findFolders(project, "tst-resources", ideVersion)
         integrationTest {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            java.srcDirs = ['it', "it-$ideVersion"]
-            resources.srcDirs = ['it-resources', "it-resources-$ideVersion"]
+            java.srcDirs = SourceUtils.findFolders(project, "it", ideVersion)
+            resources.srcDirs = SourceUtils.findFolders(project, "it-resources", ideVersion)
         }
     }
 
@@ -121,6 +118,7 @@ subprojects {
         implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
         implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
         testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion"
+        testImplementation "org.mockito:mockito-core:$mockitoVersion"
         testImplementation "org.assertj:assertj-core:$assertjVersion"
         testImplementation "junit:junit:$junitVersion"
     }
@@ -148,8 +146,8 @@ subprojects {
 
     idea {
         module {
-            sourceDirs += file("src-$ideVersion")
-            resourceDirs += file("resources-$ideVersion")
+            sourceDirs += sourceSets.main.java.srcDirs
+            resourceDirs += sourceSets.main.resources.srcDirs
             testSourceDirs += file("tst-$ideVersion")
             testResourceDirs += file("tst-resources-$ideVersion")
 
@@ -182,6 +180,23 @@ subprojects {
         mustRunAfter tasks.test
     }
 
+    project.plugins.withId("org.jetbrains.intellij") {
+        downloadRobotServerPlugin.version = remoteRobotVersion
+
+        tasks.withType(org.jetbrains.intellij.tasks.RunIdeForUiTestTask).all {
+            systemProperty "robot-server.port", remoteRobotPort
+            systemProperty "ide.mac.file.chooser.native", "false"
+            systemProperty "jb.consents.confirmation.enabled", "false"
+            // This does some magic in EndUserAgreement.java to make it not show the privacy policy
+            systemProperty "jb.privacy.policy.text", "<!--999.999-->"
+            if (System.getenv("CI") != null) {
+                systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
+            }
+        }
+
+        jacoco.applyTo(runIdeForUiTests)
+    }
+
     tasks.withType(KotlinCompile).all {
         kotlinOptions.jvmTarget = "1.8"
     }
@@ -189,7 +204,7 @@ subprojects {
     // Force us to compile the integration tests even during check even though we don't run them
     check.dependsOn(integrationTestClasses)
 
-    task testJar (type: Jar) {
+    task testJar(type: Jar) {
         baseName = "${project.name}-test"
         from sourceSets.test.output
         from sourceSets.integrationTest.output
@@ -201,12 +216,9 @@ subprojects {
 
     // Remove the tasks added in by gradle-intellij-plugin so that we don't publish/verify multiple times
     project.afterEvaluate {
-        removeTask(tasks, 'publishPlugin')
-        removeTask(tasks, 'verifyPlugin')
-        removeTask(tasks, 'buildSearchableOptions')
-        if (!isReleaseVersion) {
-            removeTask(tasks, "signArchives")
-        }
+        removeTask(tasks, org.jetbrains.intellij.tasks.PublishTask)
+        removeTask(tasks, org.jetbrains.intellij.tasks.VerifyPluginTask)
+        removeTask(tasks, org.jetbrains.intellij.tasks.BuildSearchableOptionsTask)
     }
 }
 
@@ -214,16 +226,14 @@ configurations {
     ktlint
 }
 
-def removeTask(tasks, taskName) {
-    def task = tasks.findByName("$taskName")
-
-    if (task != null) {
-        task.setEnabled(false)
+def removeTask(TaskContainer tasks, Class<? extends Task> takeType) {
+    tasks.withType(takeType).configureEach {
+        setEnabled(false)
     }
 }
 
 apply plugin: 'org.jetbrains.intellij'
-apply plugin: ChangeLogPlugin
+apply plugin: 'toolkit-change-log'
 
 intellij {
     version ideSdkVersion("IC")
@@ -233,21 +243,18 @@ intellij {
 }
 
 prepareSandbox {
-    tasks.findByPath(":jetbrains-rider:buildReSharperPlugin")?.collect {
-        from(it, {
-            into("${intellij.pluginName}/dotnet")
-        })
+    tasks.findByPath(":jetbrains-rider:prepareSandbox")?.collect {
+        from(it)
     }
 }
 
 publishPlugin {
     token publishToken
-    channels publishChannel ? publishChannel.split(',').collect{ it.trim() } : []
+    channels publishChannel ? publishChannel.split(',').collect { it.trim() } : []
 }
 
-generateChangeLog {
-    generateJetbrains = false
-    generateGithub = true
+tasks.register('generateChangeLog', GenerateGithubChangeLog) {
+    changeLogFile = project.file("CHANGELOG.md")
 }
 
 task ktlint(type: JavaExec, group: "verification") {
@@ -328,24 +335,13 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
         println("Top level runIde selected, excluding sub-projects' runIde")
         gradle.taskGraph.whenReady { graph ->
             graph.allTasks.forEach {
-                if (gradle.startParameter.systemPropertiesArgs.getOrDefault("exec.args", "").contains("guitest")) {
-                    if (it.name == "runIde" &&
-                        it.project != project(':jetbrains-core-gui')) {
-                        it.enabled = false
-                    }
-                } else {
-                    if (it.name == "runIde" &&
-                        it.project != project(':jetbrains-core')) {
-                        it.enabled = false
-                    }
+                if (it.name == "runIde" &&
+                    it.project != project(':jetbrains-core')) {
+                    it.enabled = false
                 }
             }
         }
     }
-}
-
-task guiTest(type: Test) {
-    dependsOn ":jetbrains-core-gui:guiTest"
 }
 
 dependencies {

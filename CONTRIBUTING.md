@@ -24,13 +24,11 @@ reported the issue. Please try to include as much information as you can. Detail
 
 * [Java 11](https://docs.aws.amazon.com/corretto/latest/corretto-11-ug/downloads-list.html)
 * [Git](https://git-scm.com/)
-* Dotnet Framework (Windows) or Mono (Linux, macOS)
+* Dotnet Framework (Windows)
   * macOS steps:
     ```
-    brew install mono
     brew cask install dotnet-sdk
     ```
-  * Note: You can skip this if you do not want to build Rider support by adding `-PskipRider` to any Gradle command.
 
 ### Instructions
 
@@ -104,11 +102,12 @@ To test your changes locally, you can run the project from IntelliJ or gradle.
   - Requires [`cfn-lint`](https://github.com/aws-cloudformation/cfn-python-lint/) CLI to be on your `$PATH`.
 - To run **GUI tests**:
   ```
-  ./gradlew guiTest
+  ./gradlew uiTestCore
   ```
   - To debug GUI tests,
-    1. Set `runIde.debugOptions.enabled=true` in the gradle file.
-    2. When prompted, attach your (IntelliJ) debugger to port 5005.
+    1. Start the IDE that will be debugged `./gradlew :jetbrains-core:runIdeForUiTests --debug-jvm`
+	2. In your running Intellij instance `Run -> Attach to process` attach to the ide test debug process.
+    4. Run `./gradlew uiTestCore`. This will attach to the running debug IDE instance and run tests.
 
 ### Logging
 
