@@ -29,7 +29,7 @@ class ResourceFilterManagerTest {
     val resourceArn = RuleUtils.randomName()
 
     @Test
-    fun `tagFiltersEnabled return true if tags specified and enabled`() {
+    fun `tagFiltersEnabled returns true if tags specified and enabled`() {
         filterManager().state["default"] = ResourceFilter(
             enabled = true,
             tags = mapOf("tag" to listOf())
@@ -77,12 +77,12 @@ class ResourceFilterManagerTest {
     }
 
     @Test
-    fun `getTaggedResources returns resources if resource has matching tag and value`() {
+    fun `getTaggedResources returns resources if resource has matching tags and value`() {
         filterManager().state["default"] = ResourceFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf("value"))
+            tags = mapOf("tag" to listOf("value"), "tag2" to listOf("value2"))
         )
-        stockResourceCache(mapOf("tag" to "value"))
+        stockResourceCache(mapOf("tag" to "value", "tag2" to "value2"))
         assertThat(filterManager().getTaggedResources(projectRule.project, serviceId, resourceType)).hasOnlyOneElementSatisfying {
             it.resourceARN() == resourceArn
         }
