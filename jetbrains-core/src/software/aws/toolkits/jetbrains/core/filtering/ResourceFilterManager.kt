@@ -21,7 +21,6 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
         this.state = state
     }
 
-    fun filtersEnabled(): Boolean = state.any { it.value.enabled }
     fun tagFiltersEnabled(): Boolean = state.any { it.value.enabled && it.value.tags.isNotEmpty() }
 
     // get resources based on the currently applied filters

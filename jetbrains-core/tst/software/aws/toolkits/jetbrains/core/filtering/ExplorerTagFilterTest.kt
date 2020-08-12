@@ -26,6 +26,7 @@ class ExplorerTagFilterTest {
     @JvmField
     @Rule
     val mockResourceCache = MockResourceCacheRule(projectRule)
+
     val filter = ExplorerTagFilter()
 
     val parentName = RuleUtils.randomName()
