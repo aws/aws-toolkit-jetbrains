@@ -1,15 +1,12 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// Cannot be removed or else it will fail to compile
 import groovy.lang.Closure
-import org.gradle.jvm.tasks.Jar
-import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 import toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
-// Cannot be removed or else it will fail to compile
-import org.jetbrains.intellij.IntelliJPlugin
 
 plugins {
     id("org.jetbrains.intellij")
@@ -19,6 +16,7 @@ apply(from = "../intellijJVersions.gradle")
 buildscript {
     val telemetryVersion: String by project
     repositories {
+        mavenLocal()
         mavenCentral()
         maven { setUrl("https://jitpack.io") }
     }
