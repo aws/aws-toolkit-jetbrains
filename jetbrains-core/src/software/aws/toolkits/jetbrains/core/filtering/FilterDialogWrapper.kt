@@ -13,6 +13,7 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
 
     init {
         init()
+        title = "TODO localize add/edit filter"
     }
 
     override fun doOKAction() {

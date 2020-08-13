@@ -2,59 +2,58 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.core.filtering
 
-import com.intellij.execution.util.ListTableWithButtons
-import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
-import com.intellij.ui.AnActionButton
-import com.intellij.util.ui.ColumnInfo
-import com.intellij.util.ui.ListTableModel
-import javax.swing.JComponent
-import javax.swing.JTable
+import com.intellij.openapi.ui.ComboBox
+import software.amazon.awssdk.services.cloudformation.model.StackSummary
+import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
+import software.aws.toolkits.jetbrains.services.ecs.EcsUtils
+import software.aws.toolkits.jetbrains.ui.ResourceSelector
+import javax.swing.JComboBox
+import javax.swing.JPanel
+import javax.swing.JTextField
 
 class FilterDialog(private val project: Project) {
-    val component: JComponent
+    lateinit var component: JPanel
+    lateinit var filterType: JComboBox<FilterTypes>
+    lateinit var tags: JPanel
+    lateinit var stacks: JPanel
+    lateinit var keyBox: JTextField
+    lateinit var stackSelector: ResourceSelector<StackSummary>
 
     init {
-        val table = TagFilterTable()
-        table.setValues(ResourceFilterManager.getInstance(project).state.keys.toMutableList())
-        component = table.component
-    }
-}
-
-class TagFilterTable : ListTableWithButtons<String>() {
-    init {
-        tableView.tableHeader.reorderingAllowed = false
-        tableView.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
-        // tableView.emptyText = "TODO empty text, add "
+        stacks.isVisible = false
+        tags.isVisible = true
     }
 
-    override fun createListModel(): ListTableModel<String> = ListTableModel(
-        object : ColumnInfo<String, String>("TODO filters") {
-            override fun valueOf(item: String?): String? = item
-            override fun isCellEditable(item: String?): Boolean = true
-        },
-        object : ColumnInfo<String, String>("TODO type") {
-            override fun valueOf(item: String?): String? = "$item type"
-            override fun isCellEditable(item: String?): Boolean = false
-        },
-        object : ColumnInfo<String, String>("TODO description") {
-            override fun valueOf(item: String?): String? = "$item description"
-            override fun isCellEditable(item: String?): Boolean = false
-        }
-    )
-
-    override fun createElement(): String = ""
-    override fun isEmpty(element: String?): Boolean = element?.isEmpty() ?: true
-    override fun cloneElement(variable: String?): String = variable ?: ""
-    override fun canDeleteElement(selection: String?): Boolean = true
-    override fun createExtraActions(): Array<AnActionButton> = arrayOf(
-        AnActionButton.fromAction(object : DumbAwareAction("TODO edit", null, AllIcons.Actions.Edit) {
-            override fun actionPerformed(e: AnActionEvent) {
-                // TODO open editor
+    private fun createUIComponents() {
+        filterType = ComboBox(FilterTypes.values())
+        filterType.addActionListener {
+            when (filterType.selectedItem) {
+                FilterTypes.Tag -> showTag()
+                FilterTypes.Stack -> showStack()
             }
-        })
-    )
-}
+        }
+        stackSelector = ResourceSelector.builder(project)
+            .resource { CloudFormationResources.ACTIVE_STACKS }
+            .customRenderer { value, component -> component.append(value.stackId()); component }
+            .build()
+    }
 
+    private fun showTag() {
+        stacks.isVisible = false
+        tags.isVisible = true
+    }
+
+    private fun showStack() {
+        stacks.isVisible = true
+        tags.isVisible = false
+    }
+
+    fun selected(): FilterTypes = filterType.selectedItem as? FilterTypes ?: throw IllegalStateException("Combo box does not have right items")
+
+    // TODO move this
+    enum class FilterTypes(val text: String) {
+        Tag("TODO localize Tag based filtering"),
+        Stack("TODO localize CloudFormation Stack")
+    }
+}

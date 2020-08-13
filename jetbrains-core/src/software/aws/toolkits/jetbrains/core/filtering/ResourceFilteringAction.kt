@@ -32,14 +32,18 @@ class ResourceFilteringAction : DumbAwareAction(
         val chooser = ElementsChooser(mutableListOf("element2"), true)
         val actiongroup = object : ActionGroup() {
             override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
+                object : DumbAwareAction("TODO add", null, AllIcons.General.Add) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        FilterDialogWrapper(project).showAndGet()
+                    }
+                },
                 object : DumbAwareAction("TODO edit", null, AllIcons.Actions.Edit) {
                     override fun actionPerformed(e: AnActionEvent) {
-                        // TODO open editor
+                        FilterDialogWrapper(project).showAndGet()
                     }
 
                     override fun update(e: AnActionEvent) {
-                        super.update(e)
-                        chooser.
+                        e.presentation.isEnabled = chooser.selectedElements.size == 1
                     }
                 }, Separator(),
                 object : DumbAwareAction("TODO set none", null, AllIcons.Actions.Unselectall) {
@@ -50,6 +54,11 @@ class ResourceFilteringAction : DumbAwareAction(
                 object : DumbAwareAction("TODO select all", null, AllIcons.Actions.Selectall) {
                     override fun actionPerformed(e: AnActionEvent) {
                         chooser.setAllElementsMarked(true)
+                    }
+                },
+                object : DumbAwareAction("TODO invert", null, AllIcons.Actions.SwapPanels) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        chooser.invertSelection()
                     }
                 }
             )
