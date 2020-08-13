@@ -15,7 +15,6 @@ apply(from = "../intellijJVersions.gradle")
 buildscript {
     val telemetryVersion: String by project
     repositories {
-        mavenLocal()
         mavenCentral()
         maven { setUrl("https://jitpack.io") }
     }

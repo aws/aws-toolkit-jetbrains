@@ -79,7 +79,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     override fun checkConfiguration() {
         resolveRegion()
         resolveCredentials()
-        val (runtime) = checkLambdaHandler()
+        val runtime = checkLambdaHandler()
         checkSamVersion(runtime)
         checkInput()
     }
@@ -106,7 +106,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         }
     }
 
-    private fun checkLambdaHandler(): Pair<Runtime, String> {
+    private fun checkLambdaHandler(): Runtime {
         val handlerValidator = project.service<LambdaHandlerValidator>()
         val (handler, runtime) = resolveLambdaInfo(project = project, functionOptions = serializableOptions.functionOptions)
         val promise = handlerValidator.evaluate(LambdaHandlerValidator.LambdaEntry(project, runtime, handler))
@@ -123,7 +123,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
             throw RuntimeConfigurationError(message("lambda.run_configuration.handler_not_found", handler))
         }
 
-        return runtime to handler
+        return runtime
     }
 
     override fun getState(executor: Executor, environment: ExecutionEnvironment): SamRunningState {
