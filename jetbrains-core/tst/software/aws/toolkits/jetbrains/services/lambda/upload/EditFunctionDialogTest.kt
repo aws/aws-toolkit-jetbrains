@@ -85,7 +85,9 @@ class EditFunctionDialogTest {
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CONFIGURATION)
         }
-        assertThat(dialog.getViewForTestAssertions().runtime.model.size).isNotEqualTo(LambdaHandlerResolver.supportedRuntimeGroups().flatMap { it.runtimes }.size)
+        assertThat(dialog.getViewForTestAssertions().runtime.model.size).isNotEqualTo(
+            LambdaHandlerResolver.supportedRuntimeGroups().flatMap { it.runtimes }.size
+        )
         assertThat(dialog.getViewForTestAssertions().runtime.model.size).isEqualTo(Runtime.knownValues().size)
     }
 
