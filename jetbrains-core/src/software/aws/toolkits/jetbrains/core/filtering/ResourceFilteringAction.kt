@@ -37,6 +37,7 @@ class ResourceFilteringAction : DumbAwareAction(
                 project.redrawAwsTree()
             })
         }
+        // This popup is inspired by the IDE's Database filter popup
         val panel = JPanel()
         val popup = createPopup(panel)
         val buttons = ActionManager
