@@ -12,9 +12,11 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import icons.AwsIcons
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
 import javax.swing.BoxLayout
@@ -30,12 +32,21 @@ class ResourceFilteringAction : DumbAwareAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val chooser = ElementsChooser(mutableListOf("element2"), true)
-        val actiongroup = object : ActionGroup() {
+        val actiongroup = object : ActionGroup(), DumbAware {
             override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-                object : DumbAwareAction("TODO add", null, AllIcons.General.Add) {
-                    override fun actionPerformed(e: AnActionEvent) {
-                        FilterDialogWrapper(project).showAndGet()
-                    }
+                object : ActionGroup("TODO add", null, AllIcons.General.Add), DumbAware {
+                    override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
+                        object : DumbAwareAction("TODO cloudformation", null, AwsIcons.Resources.CLOUDFORMATION_STACK) {
+                            override fun actionPerformed(e: AnActionEvent) {
+                                FilterDialogWrapper(project, FilterDialogWrapper.FilterType.CloudFormation).show()
+                            }
+                        },
+                        object : DumbAwareAction("TODO tag", null, AwsIcons.Logos.AWS) {
+                            override fun actionPerformed(e: AnActionEvent) {
+                                FilterDialogWrapper(project, FilterDialogWrapper.FilterType.Tag).show()
+                            }
+                        }
+                    )
                 },
                 object : DumbAwareAction("TODO edit", null, AllIcons.Actions.Edit) {
                     override fun actionPerformed(e: AnActionEvent) {

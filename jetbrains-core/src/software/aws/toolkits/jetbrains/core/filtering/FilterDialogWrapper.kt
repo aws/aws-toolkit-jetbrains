@@ -8,8 +8,11 @@ import com.intellij.openapi.ui.DialogWrapper
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import javax.swing.JComponent
 
-class FilterDialogWrapper(private val project: Project) : DialogWrapper(project) {
-    private val table = FilterDialog(project)
+class FilterDialogWrapper(private val project: Project, private val type: FilterType) : DialogWrapper(project) {
+    private val dialog = when (type) {
+        FilterType.Tag -> TagFilterDialog(project)
+        FilterType.CloudFormation -> CloudFormationFilterDialog(project)
+    }
 
     init {
         init()
@@ -17,11 +20,22 @@ class FilterDialogWrapper(private val project: Project) : DialogWrapper(project)
     }
 
     override fun doOKAction() {
-        // TODO table.saveState()
+        // TODO validate()
         // TODO only refresh if something changes
         project.refreshAwsTree()
         super.doOKAction()
     }
 
-    override fun createCenterPanel(): JComponent? = table.component
+    override fun createCenterPanel(): JComponent? = dialog.component
+
+    // TODO get rid of
+    enum class FilterType {
+        Tag,
+        CloudFormation
+    }
+}
+
+interface FilterDialog {
+    val component: JComponent
+    fun validate()
 }
