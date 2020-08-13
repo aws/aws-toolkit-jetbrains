@@ -20,7 +20,7 @@ class TagFilterDialog(private val project: Project): FilterDialog {
     override fun save() {
         ResourceFilterManager.getInstance(project).state[filterName.text] = ResourceFilter(
             enabled = true,
-            tags = mapOf(keyBox.text to listOf(""))
+            tags = mapOf(keyBox.text to listOf())
         )
     }
 

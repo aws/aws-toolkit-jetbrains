@@ -12,6 +12,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import software.aws.toolkits.jetbrains.core.explorer.redrawAwsTree
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
 import javax.swing.BoxLayout
@@ -33,6 +34,7 @@ class ResourceFilteringAction : DumbAwareAction(
             // Cannot use SAM without specifying the type because of overload resolution ambiguity
             this.addElementsMarkListener(ElementsChooser.ElementsMarkListener<String> { element, isMarked ->
                 ResourceFilterManager.getInstance(project).state[element]?.enabled = isMarked
+                project.redrawAwsTree()
             })
         }
         val panel = JPanel()
