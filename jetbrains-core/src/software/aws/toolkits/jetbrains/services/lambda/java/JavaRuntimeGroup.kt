@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 
 class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
     override val id: String = BuiltInRuntimeGroups.Java
-    override val runtimes = setOf(Runtime.JAVA8, Runtime.JAVA11)
+    override val runtimes = setOf(Runtime.JAVA8, Runtime.JAVA8_AL2, Runtime.JAVA11)
     override val languageIds = setOf(JavaLanguage.INSTANCE.id)
 
     override fun runtimeForSdk(sdk: Sdk): Runtime? {
@@ -29,7 +29,7 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
     }
 
     private fun determineRuntimeForSdk(sdk: JavaSdkVersion) = when {
-        sdk <= JavaSdkVersion.JDK_1_8 -> Runtime.JAVA8
+        sdk <= JavaSdkVersion.JDK_1_8 -> Runtime.JAVA8_AL2
         sdk <= JavaSdkVersion.JDK_11 -> Runtime.JAVA11
         else -> null
     }
