@@ -1,7 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Cannot be removed or else it will fail to compile
 import groovy.lang.Closure
 import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
