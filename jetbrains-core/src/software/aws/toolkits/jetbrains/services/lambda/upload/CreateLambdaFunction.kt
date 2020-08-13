@@ -62,7 +62,7 @@ class CreateLambdaFunction(
         val element: PsiElement? = elementPointer?.element
         if (handlerName == null || element == null || lambdaHandlerResolver == null) {
             // It was created from ActionManager, so only show it if we have supported runtime groups
-            e.presentation.isVisible = LambdaHandlerResolver.supportedRuntimeGroups.isNotEmpty()
+            e.presentation.isVisible = LambdaHandlerResolver.supportedRuntimeGroups().isNotEmpty()
             return
         }
 

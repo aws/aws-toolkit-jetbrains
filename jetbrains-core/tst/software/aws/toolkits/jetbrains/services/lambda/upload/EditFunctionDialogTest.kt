@@ -70,13 +70,13 @@ class EditFunctionDialogTest {
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.NEW)
         }
-        assertThat(dialog.getViewForTestAssertions().runtime.model.size).isEqualTo(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes }.size)
+        assertThat(dialog.getViewForTestAssertions().runtime.model.size).isEqualTo(LambdaHandlerResolver.supportedRuntimeGroups().flatMap { it.runtimes }.size)
         assertThat(dialog.getViewForTestAssertions().runtime.model.size).isNotEqualTo(Runtime.knownValues().size)
 
         val dialog2 = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE)
         }
-        assertThat(dialog2.getViewForTestAssertions().runtime.model.size).isEqualTo(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes }.size)
+        assertThat(dialog2.getViewForTestAssertions().runtime.model.size).isEqualTo(LambdaHandlerResolver.supportedRuntimeGroups().flatMap { it.runtimes }.size)
         assertThat(dialog2.getViewForTestAssertions().runtime.model.size).isNotEqualTo(Runtime.knownValues().size)
     }
 
@@ -85,7 +85,7 @@ class EditFunctionDialogTest {
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CONFIGURATION)
         }
-        assertThat(dialog.getViewForTestAssertions().runtime.model.size).isNotEqualTo(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes }.size)
+        assertThat(dialog.getViewForTestAssertions().runtime.model.size).isNotEqualTo(LambdaHandlerResolver.supportedRuntimeGroups().flatMap { it.runtimes }.size)
         assertThat(dialog.getViewForTestAssertions().runtime.model.size).isEqualTo(Runtime.knownValues().size)
     }
 

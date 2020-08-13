@@ -121,7 +121,7 @@ class EditFunctionDialog(
             view.buildSettings.isVisible = false
         } else {
             // show a filtered list of runtimes to only ones we can build (since we have to build)
-            view.setRuntimes(LambdaHandlerResolver.supportedRuntimeGroups.flatMap { it.runtimes })
+            view.setRuntimes(LambdaHandlerResolver.supportedRuntimeGroups().flatMap { it.runtimes })
             view.createBucket.addActionListener {
                 val bucketDialog = CreateS3BucketDialog(
                     project = project,
