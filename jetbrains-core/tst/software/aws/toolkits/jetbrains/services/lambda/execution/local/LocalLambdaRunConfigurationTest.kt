@@ -103,7 +103,6 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun samIsNotSet() {
         val fakeSamPath = "NotValid"
-        preWarmLambdaHandlerValidation(projectRule.project)
         ExecutableManager.getInstance().removeExecutable(SamExecutable())
         ExecutableManager.getInstance().setExecutablePath(SamExecutable(), Paths.get(fakeSamPath))
         Thread.sleep(1000)

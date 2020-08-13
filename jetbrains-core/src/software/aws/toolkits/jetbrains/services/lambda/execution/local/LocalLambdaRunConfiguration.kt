@@ -77,10 +77,11 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     override fun checkConfiguration() {
+        val (handler, runtime) = resolveLambdaInfo(project = project, functionOptions = serializableOptions.functionOptions)
+        checkSamVersion(runtime)
         resolveRegion()
         resolveCredentials()
-        val runtime = checkLambdaHandler()
-        checkSamVersion(runtime)
+        checkLambdaHandler(handler, runtime)
         checkInput()
     }
 
@@ -106,9 +107,8 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         }
     }
 
-    private fun checkLambdaHandler(): Runtime {
+    private fun checkLambdaHandler(handler: String, runtime: Runtime): Runtime {
         val handlerValidator = project.service<LambdaHandlerValidator>()
-        val (handler, runtime) = resolveLambdaInfo(project = project, functionOptions = serializableOptions.functionOptions)
         val promise = handlerValidator.evaluate(LambdaHandlerValidator.LambdaEntry(project, runtime, handler))
 
         if (promise.isPending) {
