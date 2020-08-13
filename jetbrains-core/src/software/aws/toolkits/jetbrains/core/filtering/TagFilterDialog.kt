@@ -15,7 +15,13 @@ import javax.swing.JTextField
 class TagFilterDialog(private val project: Project): FilterDialog {
     override lateinit var component: JPanel
     override fun validate() {
-        TODO("Not yet implemented")
+    }
+
+    override fun save() {
+        ResourceFilterManager.getInstance(project).state[filterName.text] = ResourceFilter(
+            enabled = true,
+            tags = mapOf(keyBox.text to listOf(""))
+        )
     }
 
     private lateinit var filterName: JTextField

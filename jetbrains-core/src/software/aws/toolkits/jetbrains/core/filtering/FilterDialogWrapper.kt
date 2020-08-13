@@ -20,7 +20,7 @@ class FilterDialogWrapper(private val project: Project, private val type: Filter
     }
 
     override fun doOKAction() {
-        // TODO validate()
+        dialog.save()
         // TODO only refresh if something changes
         project.refreshAwsTree()
         super.doOKAction()
@@ -38,4 +38,5 @@ class FilterDialogWrapper(private val project: Project, private val type: Filter
 interface FilterDialog {
     val component: JComponent
     fun validate()
+    fun save()
 }
