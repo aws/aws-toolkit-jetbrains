@@ -6,14 +6,20 @@ package software.aws.toolkits.jetbrains.core.filtering
 import com.intellij.execution.runners.ExecutionUtil
 import com.intellij.icons.AllIcons
 import com.intellij.ide.util.ElementsChooser
+import com.intellij.openapi.actionSystem.ActionGroup
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
+import javax.swing.BoxLayout
 import javax.swing.JComponent
+import javax.swing.JPanel
 
 class ResourceFilteringAction : DumbAwareAction(
     message("explorer.filter"),
@@ -24,13 +30,45 @@ class ResourceFilteringAction : DumbAwareAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val chooser = ElementsChooser(mutableListOf("element2"), true)
+        val actiongroup = object : ActionGroup() {
+            override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
+                object : DumbAwareAction("TODO edit", null, AllIcons.Actions.Edit) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        // TODO open editor
+                    }
+
+                    override fun update(e: AnActionEvent) {
+                        super.update(e)
+                        chooser.
+                    }
+                }, Separator(),
+                object : DumbAwareAction("TODO set none", null, AllIcons.Actions.Unselectall) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        chooser.setAllElementsMarked(false)
+                    }
+                },
+                object : DumbAwareAction("TODO select all", null, AllIcons.Actions.Selectall) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        chooser.setAllElementsMarked(true)
+                    }
+                }
+            )
+        }
+
+        val buttons = ActionManager.getInstance().createActionToolbar("TODOSuperCool", actiongroup, true)
+        val panel = JPanel()
+        panel.layout = BoxLayout(panel, 1)
+        panel.add(chooser)
+        panel.add(buttons.component)
         val popup = JBPopupFactory
             .getInstance()
-            .createComponentPopupBuilder(chooser, null as JComponent?).setFocusable(false).setRequestFocus(false).setResizable(true)
+            .createComponentPopupBuilder(panel, null as JComponent?).setFocusable(false).setRequestFocus(false).setResizable(true)
             .setMinSize(Dimension(200, 200))
             .setDimensionServiceKey(project, "DatabaseViewActions_Filter", false)
             .createPopup()
-        popup.showInBestPositionFor(e.dataContext)
+        val eventSource = e.inputEvent.source as JComponent
+        popup.setMinimumSize(eventSource.size)
+        popup.showUnderneathOf(eventSource)
         // AllIcons.General.Filter
         //FilterDialogWrapper(project).show()
     }
@@ -41,5 +79,10 @@ class ResourceFilteringAction : DumbAwareAction(
         val active = ResourceFilterManager.getInstance(project).filtersEnabled()
         // Give the icon the small green dot if active
         e.presentation.icon = if (active) ExecutionUtil.getLiveIndicator(icon) else icon
+    }
+
+    fun showDialog(project: Project) {
+        FilterDialogWrapper(project).showAndGet()
+        // TODO then update the contents
     }
 }
