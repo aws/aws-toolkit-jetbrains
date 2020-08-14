@@ -1,8 +1,8 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 // Cannot be removed or else it will fail to compile
-import com.jetbrains.rd.generator.gradle.RdgenParams
-import com.jetbrains.rd.generator.gradle.RdgenTask
+import com.jetbrains.rd.generator.gradle.RdGenExtension
+import com.jetbrains.rd.generator.gradle.RdGenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.IdeVersions
 
@@ -64,7 +64,7 @@ intellij {
     instrumentCode = false
 }
 
-val generateDaemonModel = tasks.register<RdgenTask>("generateDaemonModel") {
+val generateDaemonModel = tasks.register<RdGenTask>("generateDaemonModel") {
     val daemonModelSource = File(modelDir, "daemon").canonicalPath
     val ktOutput = File(riderGeneratedSources, "DaemonProtocol")
 
@@ -74,7 +74,7 @@ val generateDaemonModel = tasks.register<RdgenTask>("generateDaemonModel") {
 
     // NOTE: classpath is evaluated lazily, at execution time, because it comes from the unzipped
     // intellij SDK, which is extracted in afterEvaluate
-    configure<RdgenParams> {
+    configure<RdGenExtension> {
         verbose = true
         hashFolder = rdgenDir.toString()
 
@@ -108,7 +108,7 @@ val generateDaemonModel = tasks.register<RdgenTask>("generateDaemonModel") {
     }
 }
 
-val generatePsiModel = tasks.register<RdgenTask>("generatePsiModel") {
+val generatePsiModel = tasks.register<RdGenTask>("generatePsiModel") {
     val psiModelSource = File(modelDir, "psi").canonicalPath
     val ktOutput = File(riderGeneratedSources, "PsiProtocol")
 
@@ -118,7 +118,7 @@ val generatePsiModel = tasks.register<RdgenTask>("generatePsiModel") {
 
     // NOTE: classpath is evaluated lazily, at execution time, because it comes from the unzipped
     // intellij SDK, which is extracted in afterEvaluate
-    configure<RdgenParams> {
+    configure<RdGenExtension> {
         verbose = true
         hashFolder = rdgenDir.toString()
 
@@ -152,7 +152,7 @@ val generatePsiModel = tasks.register<RdgenTask>("generatePsiModel") {
     }
 }
 
-val generateAwsSettingModel = tasks.register<RdgenTask>("generateAwsSettingModel") {
+val generateAwsSettingModel = tasks.register<RdGenTask>("generateAwsSettingModel") {
     val settingModelSource = File(modelDir, "setting").canonicalPath
     val ktOutput = File(riderGeneratedSources, "AwsSettingsProtocol")
 
@@ -162,7 +162,7 @@ val generateAwsSettingModel = tasks.register<RdgenTask>("generateAwsSettingModel
 
     // NOTE: classpath is evaluated lazily, at execution time, because it comes from the unzipped
     // intellij SDK, which is extracted in afterEvaluate
-    configure<RdgenParams> {
+    configure<RdGenExtension> {
         verbose = true
         hashFolder = rdgenDir.toString()
 
@@ -195,7 +195,7 @@ val generateAwsSettingModel = tasks.register<RdgenTask>("generateAwsSettingModel
     }
 }
 
-val generateAwsProjectModel = tasks.register<RdgenTask>("generateAwsProjectModel") {
+val generateAwsProjectModel = tasks.register<RdGenTask>("generateAwsProjectModel") {
     val projectModelSource = File(modelDir, "project").canonicalPath
     val ktOutput = File(riderGeneratedSources, "AwsProjectProtocol")
 
@@ -205,7 +205,7 @@ val generateAwsProjectModel = tasks.register<RdgenTask>("generateAwsProjectModel
 
     // NOTE: classpath is evaluated lazily, at execution time, because it comes from the unzipped
     // intellij SDK, which is extracted in afterEvaluate
-    configure<RdgenParams> {
+    configure<RdGenExtension> {
         verbose = true
         hashFolder = rdgenDir.toString()
 
@@ -250,8 +250,7 @@ val cleanGenerateModels = tasks.register("cleanGenerateModels") {
     group = protocolGroup
     description = "Clean up generated protocol models"
 
-    // TODO fix
-    dependsOn("cleanGenerateDaemonModel")//, cleanGeneratePsiModel, cleanGenerateAwsSettingModel, cleanGenerateAwsProjectModel)
+    dependsOn("cleanGenerateDaemonModel", "cleanGeneratePsiModel", "cleanGenerateAwsSettingModel", "cleanGenerateAwsProjectModel")
 }
 
 project.tasks.clean {
