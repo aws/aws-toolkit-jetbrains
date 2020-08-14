@@ -16,7 +16,6 @@ fun Project.redrawAwsTree() {
         // redraw explorer
         ExplorerToolWindow.getInstance(this).invalidateTree()
     }
-
 }
 
 /*

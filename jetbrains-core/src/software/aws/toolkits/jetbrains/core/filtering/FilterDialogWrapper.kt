@@ -37,9 +37,7 @@ class FilterDialogWrapper(private val project: Project, type: FilterType) : Dial
         dialog.load(name, filter)
     }
 
-    override fun doValidate(): ValidationInfo? {
-        return dialog.validate()
-    }
+    override fun doValidate(): ValidationInfo? = dialog.validate()
 
     override fun createCenterPanel(): JComponent? = dialog.component
 

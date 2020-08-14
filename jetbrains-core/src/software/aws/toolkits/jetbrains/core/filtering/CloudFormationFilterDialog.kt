@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
+import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 import javax.swing.JTextField
 
@@ -24,6 +25,12 @@ class CloudFormationFilterDialog(private val project: Project) : FilterDialog {
     }
 
     override fun validate(): ValidationInfo? {
+        if (filterName.text.isBlank()) {
+            return ValidationInfo(message("explorer.filter.validation.no_filter_name"))
+        }
+        if (stackSelector.selected() == null) {
+            return ValidationInfo(message("explorer.filter.validation.no_stack_selected"))
+        }
         return null
     }
 

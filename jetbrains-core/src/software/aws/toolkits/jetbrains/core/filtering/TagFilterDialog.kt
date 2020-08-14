@@ -21,6 +21,12 @@ class TagFilterDialog : FilterDialog {
     }
 
     override fun validate(): ValidationInfo? {
+        if (filterName.text.isBlank()) {
+            return ValidationInfo(message("explorer.filter.validation.no_filter_name"))
+        }
+        if (keyBox.text.isBlank()) {
+            return ValidationInfo(message("explorer.filter.validation.no_key_entered"))
+        }
         return null
     }
 
@@ -28,7 +34,7 @@ class TagFilterDialog : FilterDialog {
         val tags = if (valuesField.text.isBlank()) {
             listOf()
         } else {
-            valuesField.text.split(",").map { it.trim() }
+            valuesField.text.split(",").map { it.trim() }.filter { it.isNotBlank() }
         }
         return filterName.text to TagFilter(enabled = enabled, tagKey = keyBox.text, tagValues = tags)
     }
