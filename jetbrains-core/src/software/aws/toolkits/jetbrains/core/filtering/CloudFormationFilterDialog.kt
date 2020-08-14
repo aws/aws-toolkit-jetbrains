@@ -26,10 +26,10 @@ class CloudFormationFilterDialog(private val project: Project) : FilterDialog {
 
     override fun validate(): ValidationInfo? {
         if (filterName.text.isBlank()) {
-            return ValidationInfo(message("explorer.filter.validation.no_filter_name"))
+            return ValidationInfo(message("explorer.filter.validation.no_filter_name"), filterName)
         }
         if (stackSelector.selected() == null) {
-            return ValidationInfo(message("explorer.filter.validation.no_stack_selected"))
+            return ValidationInfo(message("explorer.filter.validation.no_stack_selected"), stackSelector)
         }
         return null
     }

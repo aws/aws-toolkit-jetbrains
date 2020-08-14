@@ -22,10 +22,10 @@ class TagFilterDialog : FilterDialog {
 
     override fun validate(): ValidationInfo? {
         if (filterName.text.isBlank()) {
-            return ValidationInfo(message("explorer.filter.validation.no_filter_name"))
+            return ValidationInfo(message("explorer.filter.validation.no_filter_name"), filterName)
         }
         if (keyBox.text.isBlank()) {
-            return ValidationInfo(message("explorer.filter.validation.no_key_entered"))
+            return ValidationInfo(message("explorer.filter.validation.no_key_entered"), keyBox)
         }
         return null
     }
