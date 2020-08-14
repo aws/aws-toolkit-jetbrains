@@ -13,6 +13,7 @@ import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebugSessionImpl
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.SamRunningState
 
@@ -42,5 +43,9 @@ class JavaSamDebugSupport : SamDebugSupport {
                 return JavaDebugProcess.create(session, debuggerSession)
             }
         }
+    }
+
+    override fun isSupported(runtime: Runtime): Boolean {
+        return runtime != Runtime.JAVA8_AL2
     }
 }
