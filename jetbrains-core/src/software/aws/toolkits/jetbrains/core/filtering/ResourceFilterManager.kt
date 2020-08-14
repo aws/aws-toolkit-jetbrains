@@ -56,7 +56,7 @@ data class TagFilter(
 
 data class StackFilter(
     override val enabled: Boolean = true,
-    val stackID: String = ""
+    val stackId: String = ""
 ) : ResourceFilter(enabled)
 
 typealias ResourceFilters = MutableMap<String, ResourceFilter>

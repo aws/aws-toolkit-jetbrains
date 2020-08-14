@@ -44,16 +44,7 @@ class ExplorerTagFilterTest {
             tagKey = "tag",
             tagValues = listOf()
         )
-        assertThat(
-            filter.modify(
-                parent,
-                mutableListOf(
-                    buildChild(),
-                    buildChild()
-                ),
-                mock()
-            )
-        ).hasSize(2)
+        assertThat(filter.modify(parent, mutableListOf(buildChild(), buildChild()), mock())).hasSize(2)
     }
 
     @Test
@@ -63,16 +54,7 @@ class ExplorerTagFilterTest {
             tagKey = "tag",
             tagValues = listOf()
         )
-        assertThat(
-            filter.modify(
-                mock(),
-                mutableListOf(
-                    buildChild(),
-                    buildChild()
-                ),
-                mock()
-            )
-        ).hasSize(2)
+        assertThat(filter.modify(mock(), mutableListOf(buildChild(), buildChild()), mock())).hasSize(2)
     }
 
     @Test
@@ -85,17 +67,8 @@ class ExplorerTagFilterTest {
             tagKey = "tag",
             tagValues = listOf()
         )
-        val list = filter.modify(
-            parent,
-            mutableListOf(
-                buildChild(arn = "${foundArn}123"),
-                buildChild(arn = foundArn)
-            ),
-            mock()
-        )
-        assertThat(list).hasOnlyOneElementSatisfying {
-            it is AwsExplorerResourceNode && it.resourceArn() == foundArn
-        }
+        val list = filter.modify(parent, mutableListOf(buildChild(arn = "${foundArn}123"), buildChild(arn = foundArn)), mock())
+        assertThat(list).hasOnlyOneElementSatisfying { it is AwsExplorerResourceNode && it.resourceArn() == foundArn }
     }
 
     @Test
@@ -117,6 +90,16 @@ class ExplorerTagFilterTest {
             mock()
         )
         assertThat(list).hasSize(2)
+    }
+
+    @Test
+    fun `Does nothing if children are empty`() {
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
+            enabled = false,
+            tagKey = "tag",
+            tagValues = listOf()
+        )
+        assertThat(filter.modify(parent, mutableListOf(), mock())).isEmpty()
     }
 
     private fun buildChild(arn: String = RuleUtils.randomName()): AwsExplorerResourceNode<String> =
