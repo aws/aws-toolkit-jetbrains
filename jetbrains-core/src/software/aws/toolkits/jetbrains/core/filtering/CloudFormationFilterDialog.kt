@@ -36,13 +36,13 @@ class CloudFormationFilterDialog(private val project: Project) : FilterDialog {
 
     override fun save(): Pair<String, ResourceFilter> = filterName.text to StackFilter(
         enabled = enabled,
-        stackID = stackSelector.selected()?.stackId() ?: ""
+        stackId = stackSelector.selected()?.stackId() ?: ""
     )
 
     override fun load(name: String, filter: ResourceFilter) {
         if (filter !is StackFilter) throw IllegalStateException("filter passed into CloudFormationFilterDialog is not a StackFilter: $filter")
         filterName.text = name
         enabled = filter.enabled
-        stackSelector.selectedItem { it.stackId() == filter.stackID }
+        stackSelector.selectedItem { it.stackId() == filter.stackId }
     }
 }

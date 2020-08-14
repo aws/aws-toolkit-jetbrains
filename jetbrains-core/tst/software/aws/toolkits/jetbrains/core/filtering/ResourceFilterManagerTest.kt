@@ -107,6 +107,17 @@ class ResourceFilterManagerTest {
     }
 
     @Test
+    fun `getTaggedResources filters out untagged resources`() {
+        filterManager().state["default"] = TagFilter(
+            enabled = true,
+            tagKey = "tag",
+            tagValues = listOf("value")
+        )
+        stockResourceCache(mapOf())
+        assertThat(filterManager().getTaggedResources(projectRule.project, serviceId, resourceType)).isEmpty()
+    }
+
+    @Test
     fun `getTaggedResources returns resources if resource has matching tags and value`() {
         filterManager().state["default"] = TagFilter(
             enabled = true,

@@ -22,7 +22,7 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
     }
 
     fun filtersEnabled() = state.values.any { it.enabled }
-    fun cloudFormationFiltersEnabled(): Boolean = state.values.filterIsInstance<StackFilter>().any { it.enabled && it.stackID.isNotBlank() }
+    fun cloudFormationFiltersEnabled(): Boolean = state.values.filterIsInstance<StackFilter>().any { it.enabled && it.stackId.isNotBlank() }
     fun tagFiltersEnabled(): Boolean = state.values.filterIsInstance<TagFilter>().any { it.enabled && it.tagKey.isValidTagKey() }
 
     // get resources based on the currently applied filters
@@ -63,7 +63,7 @@ data class TagFilter(
 
 data class StackFilter(
     override val enabled: Boolean = true,
-    val stackID: String = ""
+    val stackId: String = ""
 ) : ResourceFilter(enabled) {
     override fun copy(isEnabled: Boolean) = copy(enabled = isEnabled)
 }
