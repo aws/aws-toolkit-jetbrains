@@ -17,6 +17,7 @@ open class ValidateMessages : DefaultTask() {
 
     @TaskAction
     fun validateMessage() {
+        var hasError = false
         paths.map {
             it.absolutePath to it.readLines()
         }.forEach { (filePath, fileLines) ->
@@ -27,18 +28,22 @@ open class ValidateMessages : DefaultTask() {
                     if (it.contains("=")) {
                         it
                     } else {
-                        LOG.warn(""""Invalid message in $filePath does not contain a '=': "$it"""")
+                        LOG.warn(""""$filePath contains invalid message missing a '=': "$it"""")
                         null
                     }
                 }
                 .map { it.split("=").first() }
                 .reduce { item1, item2 ->
                     if (item1 > item2) {
-                        throw GradleException("""localization file $filePath is not sorted:"$item1" > "$item2"""")
+                        LOG.error("""$filePath is not sorted:"$item1" > "$item2"""")
+                        hasError = true
                     }
 
                     item2
                 }
+            if (hasError) {
+                throw GradleException("$filePath has one or more out of order items!")
+            }
         }
     }
 
