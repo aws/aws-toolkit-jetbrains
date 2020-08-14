@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.filtering
 
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.resourcegroupstaggingapi.model.ResourceTagMapping
@@ -23,34 +24,61 @@ class ResourceFilterManagerTest {
     @Rule
     val mockResourceCache = MockResourceCacheRule(projectRule)
 
-    val filter = ExplorerTagFilter()
-    val serviceId = RuleUtils.randomName()
-    val resourceType = RuleUtils.randomName()
-    val resourceArn = RuleUtils.randomName()
+    private val serviceId = RuleUtils.randomName()
+    private val resourceType = RuleUtils.randomName()
+    private val resourceArn = RuleUtils.randomName()
+
+    @Before
+    fun clear() {
+        filterManager().state.clear()
+    }
 
     @Test
     fun `tagFiltersEnabled returns true if tags specified and enabled`() {
-        filterManager().state["default"] = ResourceFilter(
+        filterManager().state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf())
+            tagKey = "tag",
+            tagValues = listOf()
         )
         assertThat(filterManager().tagFiltersEnabled()).isTrue()
     }
 
     @Test
     fun `tagFiltersEnabled returns false when no tags specified`() {
-        filterManager().state["default"] = ResourceFilter(
+        assertThat(filterManager().tagFiltersEnabled()).isFalse()
+    }
+
+    @Test
+    fun `tagFiltersEnabled returns false when only invalid tags specified`() {
+        filterManager().state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf()
+            tagKey = " ",
+            tagValues = listOf()
+        )
+        assertThat(filterManager().tagFiltersEnabled()).isFalse()
+    }
+
+    @Test
+    fun `tagFiltersEnabled returns false when all tags are disabled`() {
+        filterManager().state["default"] = TagFilter(
+            enabled = false,
+            tagKey = "key",
+            tagValues = listOf()
         )
         assertThat(filterManager().tagFiltersEnabled()).isFalse()
     }
 
     @Test
     fun `getTaggedResources returns no resources if resource doesn't have all tags`() {
-        filterManager().state["default"] = ResourceFilter(
+        filterManager().state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf("value"), "tag2" to listOf())
+            tagKey = "tag",
+            tagValues = listOf("value")
+        )
+        filterManager().state["default2"] = TagFilter(
+            enabled = true,
+            tagKey = "tag2",
+            tagValues = listOf()
         )
         stockResourceCache(mapOf("tag" to "value"))
         assertThat(filterManager().getTaggedResources(projectRule.project, serviceId, resourceType)).isEmpty()
@@ -58,9 +86,10 @@ class ResourceFilterManagerTest {
 
     @Test
     fun `getTaggedResources returns no resources if resource doesn't have the correct tag value`() {
-        filterManager().state["default"] = ResourceFilter(
+        filterManager().state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf("value"))
+            tagKey = "tag",
+            tagValues = listOf("value")
         )
         stockResourceCache(mapOf("tag" to "value2"))
         assertThat(filterManager().getTaggedResources(projectRule.project, serviceId, resourceType)).isEmpty()
@@ -68,9 +97,10 @@ class ResourceFilterManagerTest {
 
     @Test
     fun `getTaggedResources returns no resources if resource doesn't have the tag specified`() {
-        filterManager().state["default"] = ResourceFilter(
+        filterManager().state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf("value"))
+            tagKey = "tag",
+            tagValues = listOf("value")
         )
         stockResourceCache(mapOf("notTag" to "value2"))
         assertThat(filterManager().getTaggedResources(projectRule.project, serviceId, resourceType)).isEmpty()
@@ -78,11 +108,17 @@ class ResourceFilterManagerTest {
 
     @Test
     fun `getTaggedResources returns resources if resource has matching tags and value`() {
-        filterManager().state["default"] = ResourceFilter(
+        filterManager().state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf("value"), "tag2" to listOf("value2"))
+            tagKey = "tag",
+            tagValues = listOf("value")
         )
-        stockResourceCache(mapOf("tag" to "value", "tag2" to "value2"))
+        filterManager().state["default2"] = TagFilter(
+            enabled = true,
+            tagKey = "tag2",
+            tagValues = listOf("Value2")
+        )
+        stockResourceCache(mapOf("tag" to "value", "tag2" to "Value2"))
         assertThat(filterManager().getTaggedResources(projectRule.project, serviceId, resourceType)).hasOnlyOneElementSatisfying {
             it.resourceARN() == resourceArn
         }
@@ -90,9 +126,10 @@ class ResourceFilterManagerTest {
 
     @Test
     fun `getTaggedResources returns resources if resource has matching tag and no values specified`() {
-        filterManager().state["default"] = ResourceFilter(
+        filterManager().state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf())
+            tagKey = "tag",
+            tagValues = listOf()
         )
         stockResourceCache(mapOf("tag" to "value"))
         assertThat(filterManager().getTaggedResources(projectRule.project, serviceId, resourceType)).hasOnlyOneElementSatisfying {

@@ -21,9 +21,9 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
         this.state = state
     }
 
-    fun filtersEnabled() = tagFiltersEnabled() || cloudFormationFiltersEnabled()
-    fun tagFiltersEnabled(): Boolean = state.any { it.value.enabled && it.value.tags.isNotEmpty() }
-    fun cloudFormationFiltersEnabled(): Boolean = state.any {it.value.enabled && it.value.stacks.isNotEmpty() }
+    fun filtersEnabled() = state.values.any { it.enabled }
+    fun cloudFormationFiltersEnabled(): Boolean = state.values.filterIsInstance<StackFilter>().any { it.enabled && it.stackID.isNotBlank() }
+    fun tagFiltersEnabled(): Boolean = state.values.filterIsInstance<TagFilter>().any { it.enabled && it.tagKey.isValidTagKey() }
 
     // get resources based on the currently applied filters
     fun getTaggedResources(project: Project, serviceId: String, resourceType: String? = null): List<ResourceTagMapping> {
@@ -33,13 +33,13 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
         return taggedResources.filter { resource ->
             val tagMap = resource.tags().map { it.key() to it.value() }.toMap()
             resource.hasTags() && state
+                .values
+                .filterIsInstance<TagFilter>()
                 // Only show enabled filters with tags
-                .filter { it.value.enabled && it.value.tags.isNotEmpty() }
-                // convert the list of maps to a list of key values pairs
-                .flatMap { it.value.tags.toList() }
-                .all { (key, values) ->
+                .filter { it.enabled && it.tagKey.isValidTagKey() }
+                .all {
                     // If there is a tag with no values, make sure the resource has the tag with any value
-                    tagMap[key] != null && (values.isEmpty() || values.contains(tagMap[key]))
+                    tagMap[it.tagKey] != null && (it.tagValues.isEmpty() || it.tagValues.contains(tagMap[it.tagKey]))
                 }
         }
     }
@@ -49,10 +49,16 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
     }
 }
 
-data class ResourceFilter(
-    var enabled: Boolean = true,
-    var tags: Map<String, List<String>> = mapOf(),
-    var stacks: List<String> = listOf()
-)
+sealed class ResourceFilter(open val enabled: Boolean)
+data class TagFilter(
+    override val enabled: Boolean = true,
+    var tagKey: String = "",
+    var tagValues: List<String> = listOf()
+) : ResourceFilter(enabled)
+
+data class StackFilter(
+    override val enabled: Boolean = true,
+    val stackID: String = ""
+) : ResourceFilter(enabled)
 
 typealias ResourceFilters = MutableMap<String, ResourceFilter>

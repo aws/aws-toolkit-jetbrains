@@ -39,9 +39,10 @@ class ExplorerTagFilterTest {
 
     @Test
     fun `Does not filter if no filters are enabled`() {
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
             enabled = false,
-            tags = mapOf("tag" to listOf())
+            tagKey = "tag",
+            tagValues = listOf()
         )
         assertThat(
             filter.modify(
@@ -57,9 +58,10 @@ class ExplorerTagFilterTest {
 
     @Test
     fun `Does not filter if parent is not AWS Explorer node`() {
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf())
+            tagKey = "tag",
+            tagValues = listOf()
         )
         assertThat(
             filter.modify(
@@ -78,9 +80,10 @@ class ExplorerTagFilterTest {
         val foundArn = RuleUtils.randomName()
 
         stockResourceCache(foundArn)
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf())
+            tagKey = "tag",
+            tagValues = listOf()
         )
         val list = filter.modify(
             parent,
@@ -99,9 +102,10 @@ class ExplorerTagFilterTest {
     fun `Does not filter out non AWS resource nodes`() {
         val foundArn = RuleUtils.randomName()
         stockResourceCache(foundArn)
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = ResourceFilter(
+        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
             enabled = true,
-            tags = mapOf("tag" to listOf())
+            tagKey = "tag",
+            tagValues = listOf()
         )
         val list = filter.modify(
             parent,
