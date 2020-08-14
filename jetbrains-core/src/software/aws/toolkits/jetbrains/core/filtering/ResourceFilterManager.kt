@@ -50,8 +50,8 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
 sealed class ResourceFilter(open val enabled: Boolean)
 data class TagFilter(
     override val enabled: Boolean = true,
-    var tagKey: String = "",
-    var tagValues: List<String> = listOf()
+    val tagKey: String = "",
+    val tagValues: List<String> = listOf()
 ) : ResourceFilter(enabled)
 
 data class StackFilter(
