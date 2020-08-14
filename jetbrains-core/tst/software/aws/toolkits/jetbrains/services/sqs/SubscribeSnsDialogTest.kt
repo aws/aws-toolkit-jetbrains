@@ -18,7 +18,6 @@ import software.amazon.awssdk.services.sns.SnsClient
 import software.amazon.awssdk.services.sns.model.InternalErrorException
 import software.amazon.awssdk.services.sns.model.SubscribeRequest
 import software.amazon.awssdk.services.sns.model.SubscribeResponse
-import software.amazon.awssdk.services.sns.model.Topic
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
@@ -27,7 +26,6 @@ class SubscribeSnsDialogTest {
     lateinit var snsClient: SnsClient
     lateinit var region: AwsRegion
     lateinit var queue: Queue
-    lateinit var topic: Topic
 
     @Rule
     @JvmField
@@ -42,24 +40,12 @@ class SubscribeSnsDialogTest {
         snsClient = mockClientManagerRule.create()
         region = MockRegionProvider.getInstance().defaultRegion()
         queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test", region)
-        topic = Topic.builder().topicArn(TOPIC_ARN).build()
     }
 
     @Test
     fun `No topic specified fails`() {
         runInEdtAndWait {
             val dialog = SubscribeSnsDialog(projectRule.project, queue)
-            val validationInfo = dialog.validate()
-            assertThat(validationInfo).isNotNull()
-        }
-    }
-
-    @Test
-    fun `Invalid arn format fails`() {
-        runInEdtAndWait {
-            val dialog = SubscribeSnsDialog(projectRule.project, queue).apply {
-                view.topicArn.text = INVALID_ARN
-            }
             val validationInfo = dialog.validate()
             assertThat(validationInfo).isNotNull()
         }
@@ -73,10 +59,8 @@ class SubscribeSnsDialogTest {
         }
 
         runInEdtAndWait {
-            val dialog = SubscribeSnsDialog(projectRule.project, queue).apply {
-                view.topicArn.text = TOPIC_ARN
-            }
-            assertThatThrownBy { dialog.subscribe() }.hasMessage(ERROR_MESSAGE)
+            val dialog = SubscribeSnsDialog(projectRule.project, queue)
+            assertThatThrownBy { dialog.subscribe(TOPIC_ARN) }.hasMessage(ERROR_MESSAGE)
         }
         assertThat(subscribeCaptor.firstValue.topicArn()).isEqualTo(TOPIC_ARN)
     }
@@ -89,17 +73,13 @@ class SubscribeSnsDialogTest {
         }
 
         runInEdtAndWait {
-            val dialog = SubscribeSnsDialog(projectRule.project, queue).apply {
-                view.topicArn.text = TOPIC_ARN
-            }
-            dialog.subscribe()
+            SubscribeSnsDialog(projectRule.project, queue).subscribe(TOPIC_ARN)
         }
         assertThat(subscribeCaptor.firstValue.topicArn()).isEqualTo(TOPIC_ARN)
     }
 
     private companion object {
         const val TOPIC_ARN = "arn:aws:sns:us-east-1:123456789012:MyTopic"
-        const val INVALID_ARN = "abc"
         const val ERROR_MESSAGE = "Network Error"
     }
 }

@@ -10,8 +10,8 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.sns.SnsClient
-import software.amazon.awssdk.services.sns.model.AuthorizationErrorException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -44,10 +44,7 @@ class SubscribeSnsDialog(
 
     override fun doValidate(): ValidationInfo? {
         if (topicSelected().isEmpty()) {
-            return ValidationInfo(message("sqs.subscribe.sns.validation.empty_topic"), view.topicArn)
-        }
-        if (!ARN_REGEX.matches(topicSelected())) {
-            return ValidationInfo(message("sqs.subscribe.sns.validation.invalid_arn"), view.topicArn)
+            return ValidationInfo(message("sqs.subscribe.sns.validation.empty_topic"), view.topicSelector)
         }
         return null
     }
@@ -59,20 +56,15 @@ class SubscribeSnsDialog(
 
             launch {
                 try {
-                    subscribe()
+                    subscribe(topicSelected())
                     runInEdt(ModalityState.any()) {
                         close(OK_EXIT_CODE)
                     }
                     project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
                     notifyInfo(NOTIFICATION_TITLE, message("sqs.subscribe.sns.success", topicSelected()), project)
                 } catch (e: Exception) {
-                    // Specific error message displayed if user does not have permission to perform subscribe on the topic
-                    if (e is AuthorizationErrorException) {
-                        setErrorText(message("sqs.subscribe.sns.permission.error.text", topicSelected()))
-                    } else {
-                        setErrorText(e.message)
-                    }
                     LOG.warn(e) { message("sqs.subscribe.sns.failed", queue.queueName, topicSelected()) }
+                    setErrorText(e.message)
                     setOKButtonText(message("sqs.subscribe.sns.subscribe"))
                     isOKActionEnabled = true
                 }
@@ -80,18 +72,24 @@ class SubscribeSnsDialog(
         }
     }
 
-    private fun topicSelected(): String = view.topicArn.text
+    private fun topicSelected(): String =
+        if (view.topicSelector.selected() == null) {
+            ""
+        } else {
+            view.topicSelector.selected()!!.arn
+        }
 
-    fun subscribe() {
+    @TestOnly
+    fun subscribe(arn: String) {
         snsClient.subscribe {
-            it.topicArn(topicSelected())
-            it.protocol(message("sqs.subscribe.sns.protocol"))
+            it.topicArn(arn)
+            it.protocol(PROTOCOL)
             it.endpoint(queue.arn)
         }
     }
 
     private companion object {
         val LOG = getLogger<SubscribeSnsDialog>()
-        val ARN_REGEX = "arn:.+:sns:.+:.+:(.+)".toRegex()
+        const val PROTOCOL = "sqs"
     }
 }

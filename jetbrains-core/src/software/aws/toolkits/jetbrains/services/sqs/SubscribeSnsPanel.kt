@@ -3,8 +3,9 @@
 package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.project.Project
-import com.intellij.ui.components.JBTextField
+import com.intellij.ui.IdeBorderFactory
 import software.aws.toolkits.jetbrains.services.sqs.resources.SnsResources
 import software.aws.toolkits.jetbrains.services.sqs.resources.SnsTopic
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
@@ -15,17 +16,15 @@ import javax.swing.JPanel
 class SubscribeSnsPanel(private val project: Project) {
     lateinit var component: JPanel
     lateinit var topicSelector: ResourceSelector<SnsTopic>
-    lateinit var topicArn: JBTextField
     lateinit var selectContextHelp: JLabel
 
     init {
+        component.border = IdeBorderFactory.createTitledBorder(message("sqs.subscribe.sns.select"))
         selectContextHelp.icon = AllIcons.General.ContextHelp
-        topicSelector.addActionListener {
-            if (topicSelector.selected() != null) {
-                topicArn.text = topicSelector.selected()?.arn
-            }
+        HelpTooltip().apply {
+            setDescription(message("sqs.subscribe.sns.select.tooltip"))
+            installOn(selectContextHelp)
         }
-        topicArn.emptyText.text = message("sqs.subscribe.sns.example.arn")
     }
 
     private fun createUIComponents() {
