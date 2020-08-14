@@ -40,7 +40,7 @@ class TagFilterDialog : FilterDialog {
     }
 
     override fun load(name: String, filter: ResourceFilter) {
-        if (filter !is TagFilter) return
+        if (filter !is TagFilter) throw IllegalStateException("filter passed into TagFilterDialog is not a TagFilter: $filter")
         filterName.text = name
         enabled = filter.enabled
         keyBox.text = filter.tagKey

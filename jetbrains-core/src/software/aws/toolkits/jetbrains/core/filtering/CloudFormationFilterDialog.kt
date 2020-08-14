@@ -40,7 +40,7 @@ class CloudFormationFilterDialog(private val project: Project) : FilterDialog {
     )
 
     override fun load(name: String, filter: ResourceFilter) {
-        if (filter !is StackFilter) return
+        if (filter !is StackFilter) throw IllegalStateException("filter passed into CloudFormationFilterDialog is not a StackFilter: $filter")
         filterName.text = name
         enabled = filter.enabled
         stackSelector.selectedItem { it.stackId() == filter.stackID }
