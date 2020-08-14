@@ -31,13 +31,13 @@ class ResourceFilterActionGroup(
                 object : DumbAwareAction(message("explorer.filter.cloudformation"), null, AwsIcons.Resources.CLOUDFORMATION_STACK) {
                     override fun actionPerformed(e: AnActionEvent) {
                         popup.cancel()
-                        FilterDialogWrapper(project, FilterDialogWrapper.FilterType.CloudFormation).show()
+                        FilterDialog(project, FilterDialog.FilterType.CloudFormation).show()
                     }
                 },
                 object : DumbAwareAction(message("explorer.filter.tag"), null, AwsIcons.Logos.AWS) {
                     override fun actionPerformed(e: AnActionEvent) {
                         popup.cancel()
-                        FilterDialogWrapper(project, FilterDialogWrapper.FilterType.Tag).show()
+                        FilterDialog(project, FilterDialog.FilterType.Tag).show()
                     }
                 }
             )
@@ -65,10 +65,10 @@ class ResourceFilterActionGroup(
                 }
                 popup.cancel()
                 val filterType = when (filter) {
-                    is StackFilter -> FilterDialogWrapper.FilterType.CloudFormation
-                    is TagFilter -> FilterDialogWrapper.FilterType.Tag
+                    is StackFilter -> FilterDialog.FilterType.CloudFormation
+                    is TagFilter -> FilterDialog.FilterType.Tag
                 }
-                val dialogWrapper = FilterDialogWrapper(project, filterType)
+                val dialogWrapper = FilterDialog(project, filterType)
                 dialogWrapper.load(name, filter)
                 dialogWrapper.show()
             }

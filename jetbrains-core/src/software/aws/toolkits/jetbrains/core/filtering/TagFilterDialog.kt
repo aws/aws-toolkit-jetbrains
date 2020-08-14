@@ -8,7 +8,7 @@ import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class TagFilterDialog : FilterDialog {
+class TagFilterDialog : FilterDialogPanel {
     override lateinit var component: JPanel
     private lateinit var filterName: JTextField
     private lateinit var keyBox: JTextField

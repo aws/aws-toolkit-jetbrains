@@ -11,7 +11,7 @@ import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class CloudFormationFilterDialog(private val project: Project) : FilterDialog {
+class CloudFormationFilterDialog(private val project: Project) : FilterDialogPanel {
     override lateinit var component: JPanel
     private lateinit var stackSelector: ResourceSelector<StackSummary>
     private lateinit var filterName: JTextField
