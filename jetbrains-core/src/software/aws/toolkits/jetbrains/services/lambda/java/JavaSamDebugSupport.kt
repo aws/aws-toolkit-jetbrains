@@ -45,7 +45,5 @@ class JavaSamDebugSupport : SamDebugSupport {
         }
     }
 
-    override fun isSupported(runtime: Runtime): Boolean {
-        return runtime != Runtime.JAVA8_AL2
-    }
+    override fun isSupported(runtime: Runtime): Boolean = runtime != Runtime.JAVA8_AL2
 }
