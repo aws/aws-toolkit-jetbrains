@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import software.aws.toolkits.jetbrains.core.explorer.redrawAwsTree
+import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
 class FilterDialogWrapper(private val project: Project, type: FilterType) : DialogWrapper(project) {
@@ -18,7 +19,7 @@ class FilterDialogWrapper(private val project: Project, type: FilterType) : Dial
 
     init {
         init()
-        title = "TODO localize add/edit filter"
+        title = message("explorer.filter.edit.title")
     }
 
     override fun doOKAction() {
