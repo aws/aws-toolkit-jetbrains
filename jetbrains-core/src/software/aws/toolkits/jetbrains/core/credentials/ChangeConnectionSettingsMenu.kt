@@ -75,8 +75,11 @@ class ChangeAccountSettingsActionGroup(project: Project, private val mode: Chang
             }
         }
 
-        actions.add(Separator.create())
-        actions.addAll(accountSettingsManager.connectionState.actions)
+        // Both mode == status bar version
+        if(mode == BOTH) {
+            actions.add(Separator.create())
+            actions.addAll(accountSettingsManager.connectionState.actions)
+        }
 
         CachedValueProvider.Result.create(actions.toTypedArray(), accountSettingsManager)
     }
