@@ -14,6 +14,7 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import icons.AwsIcons
+import software.aws.toolkits.resources.message
 
 class ResourceFilterActionGroup(
     private val project: Project,
@@ -21,19 +22,19 @@ class ResourceFilterActionGroup(
     private val chooser: ElementsChooser<String>
 ) : ActionGroup(), DumbAware {
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-        object : ActionGroup("TODO add", null, AllIcons.General.Add), DumbAware {
+        object : ActionGroup(message("explorer.filter.add"), null, AllIcons.General.Add), DumbAware {
             init {
                 isPopup = true
             }
 
             override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-                object : DumbAwareAction("TODO cloudformation", null, AwsIcons.Resources.CLOUDFORMATION_STACK) {
+                object : DumbAwareAction(message("explorer.filter.cloudformation"), null, AwsIcons.Resources.CLOUDFORMATION_STACK) {
                     override fun actionPerformed(e: AnActionEvent) {
                         popup.cancel()
                         FilterDialogWrapper(project, FilterDialogWrapper.FilterType.CloudFormation).showAndGet()
                     }
                 },
-                object : DumbAwareAction("TODO tag", null, AwsIcons.Logos.AWS) {
+                object : DumbAwareAction(message("explorer.filter.tag"), null, AwsIcons.Logos.AWS) {
                     override fun actionPerformed(e: AnActionEvent) {
                         popup.cancel()
                         FilterDialogWrapper(project, FilterDialogWrapper.FilterType.Tag).show()
@@ -41,19 +42,20 @@ class ResourceFilterActionGroup(
                 }
             )
         },
-        object : DumbAwareAction("TODO remove", null, AllIcons.General.Remove) {
+        object : DumbAwareAction("explorer.filter.delete", null, AllIcons.General.Remove) {
             override fun actionPerformed(e: AnActionEvent) {
-                val element = chooser.selectedElements.firstOrNull() ?: return
-                // remove from the manager and the chooser
-                ResourceFilterManager.getInstance(project).state.remove(element)
-                chooser.removeElement(element)
+                chooser.selectedElements.forEach {
+                    // remove from the manager and the chooser
+                    ResourceFilterManager.getInstance(project).state.remove(it)
+                    chooser.removeElement(it)
+                }
             }
 
             override fun update(e: AnActionEvent) {
-                e.presentation.isEnabled = chooser.selectedElements.size == 1
+                e.presentation.isEnabled = chooser.selectedElements.isNotEmpty()
             }
         },
-        object : DumbAwareAction("TODO edit", null, AllIcons.Actions.Edit) {
+        object : DumbAwareAction(message("explorer.filter.edit"), null, AllIcons.Actions.Edit) {
             override fun actionPerformed(e: AnActionEvent) {
                 // TODO get type
                 popup.cancel()
@@ -63,15 +65,16 @@ class ResourceFilterActionGroup(
             override fun update(e: AnActionEvent) {
                 e.presentation.isEnabled = chooser.selectedElements.size == 1
             }
-        }, Separator(),
-        object : DumbAwareAction("TODO set none", null, AllIcons.Actions.Unselectall) {
-            override fun actionPerformed(e: AnActionEvent) {
-                chooser.setAllElementsMarked(false)
-            }
         },
-        object : DumbAwareAction("TODO select all", null, AllIcons.Actions.Selectall) {
+        Separator(),
+        object : DumbAwareAction(message("explorer.filter.select_all"), null, AllIcons.Actions.Selectall) {
             override fun actionPerformed(e: AnActionEvent) {
                 chooser.setAllElementsMarked(true)
+            }
+        },
+        object : DumbAwareAction(message("explorer.filter.select_none"), null, AllIcons.Actions.Unselectall) {
+            override fun actionPerformed(e: AnActionEvent) {
+                chooser.setAllElementsMarked(false)
             }
         }
     )

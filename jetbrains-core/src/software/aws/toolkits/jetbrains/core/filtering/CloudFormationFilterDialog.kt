@@ -9,15 +9,15 @@ import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class CloudFormationFilterDialog(private val project: Project): FilterDialog {
+class CloudFormationFilterDialog(private val project: Project) : FilterDialog {
     override lateinit var component: JPanel
     override fun validate() {
     }
 
     override fun save() {
-        ResourceFilterManager.getInstance(project).state[filterName.text] = ResourceFilter(
+        ResourceFilterManager.getInstance(project).state[filterName.text] = StackFilter(
             enabled = true,
-            stacks = listOf(stackSelector.selected()?.stackId() ?: "")
+            stackID = stackSelector.selected()?.stackId() ?: ""
         )
     }
 

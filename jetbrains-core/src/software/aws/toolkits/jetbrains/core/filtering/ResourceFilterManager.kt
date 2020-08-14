@@ -49,16 +49,23 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
     }
 }
 
-sealed class ResourceFilter(open val enabled: Boolean)
+sealed class ResourceFilter(open val enabled: Boolean) {
+    abstract fun copy(isEnabled: Boolean): ResourceFilter
+}
+
 data class TagFilter(
     override val enabled: Boolean = true,
     var tagKey: String = "",
     var tagValues: List<String> = listOf()
-) : ResourceFilter(enabled)
+) : ResourceFilter(enabled) {
+    override fun copy(isEnabled: Boolean) = copy(enabled = isEnabled)
+}
 
 data class StackFilter(
     override val enabled: Boolean = true,
     val stackID: String = ""
-) : ResourceFilter(enabled)
+) : ResourceFilter(enabled) {
+    override fun copy(isEnabled: Boolean) = copy(enabled = isEnabled)
+}
 
 typealias ResourceFilters = MutableMap<String, ResourceFilter>

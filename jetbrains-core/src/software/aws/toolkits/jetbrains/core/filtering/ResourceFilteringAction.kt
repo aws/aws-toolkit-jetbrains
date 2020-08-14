@@ -28,13 +28,20 @@ class ResourceFilteringAction : DumbAwareAction(
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
         val eventSource = e.inputEvent.source as JComponent
         val chooser = ElementsChooser(mutableListOf<String>(), false).apply {
-            emptyText.text = "TODO add a filter"
+            emptyText.text = message("explorer.filter.empty")
             // populate with existing filters
             ResourceFilterManager.getInstance(project).state.forEach { (key, value) -> this@apply.addElement(key, value.enabled) }
             // Cannot use SAM without specifying the type because of overload resolution ambiguity
             this.addElementsMarkListener(ElementsChooser.ElementsMarkListener<String> { element, isMarked ->
-                ResourceFilterManager.getInstance(project).state[element]?.enabled = isMarked
-                project.redrawAwsTree()
+                val manager = ResourceFilterManager.getInstance(project)
+                val state = manager.state[element]
+                // If we are somehow out of sync, like if the state was manually edited, remove the element
+                if (state == null) {
+                    this.removeElement(element)
+                } else {
+                    manager.state[element] = state.copy(isEnabled = isMarked)
+                    project.redrawAwsTree()
+                }
             })
         }
         // This popup is inspired by the IDE's Database filter popup

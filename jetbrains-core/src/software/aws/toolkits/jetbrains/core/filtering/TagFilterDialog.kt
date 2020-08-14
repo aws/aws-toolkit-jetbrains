@@ -26,9 +26,10 @@ class TagFilterDialog(private val project: Project) : FilterDialog {
         } else {
             valuesField.text.split(",").map { it.trim() }
         }
-        ResourceFilterManager.getInstance(project).state[filterName.text] = ResourceFilter(
+        ResourceFilterManager.getInstance(project).state[filterName.text] = TagFilter(
             enabled = true,
-            tags = mapOf(keyBox.text to tags)
+            tagKey = keyBox.text,
+            tagValues = tags
         )
     }
 
