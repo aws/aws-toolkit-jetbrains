@@ -9,11 +9,16 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
+import org.gradle.language.base.plugins.LifecycleBasePlugin.VERIFICATION_GROUP
 import java.io.File
 
 open class ValidateMessages : DefaultTask() {
     @InputFiles
     lateinit var paths: List<File>
+
+    init {
+        group = VERIFICATION_GROUP
+    }
 
     @TaskAction
     fun validateMessage() {
