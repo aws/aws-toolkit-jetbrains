@@ -31,7 +31,7 @@ abstract class GenerateChangeLog(private val shouldStage: Boolean) : ChangeLogTa
     fun generate() {
         val writer = createWriter()
         logger.info("Generating Changelog with $writer")
-        val generator = ChangeLogGenerator(listOf(writer))
+        val generator = ChangeLogGenerator(listOf(writer), logger)
         if (includeUnreleased.get()) {
             val unreleasedEntries = nextReleaseDirectory.jsonFiles().files
 
