@@ -76,7 +76,7 @@ class ChangeAccountSettingsActionGroup(project: Project, private val mode: Chang
         }
 
         // Both mode == status bar version
-        if(mode == BOTH) {
+        if (mode == BOTH) {
             actions.add(Separator.create())
             actions.addAll(accountSettingsManager.connectionState.actions)
         }
