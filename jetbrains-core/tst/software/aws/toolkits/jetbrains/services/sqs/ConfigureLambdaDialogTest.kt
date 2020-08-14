@@ -7,7 +7,6 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.whenever
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -19,7 +18,6 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 
 class ConfigureLambdaDialogTest {
     lateinit var sqsClient: SqsClient
@@ -75,9 +73,9 @@ class ConfigureLambdaDialogTest {
                 view.inputButton.isSelected = true
                 view.functionArn.text = TEST_FUNCTION_NAME
             }
+            // TODO: Finish test
         }
     }
-
 
     private companion object {
         const val TEST_FUNCTION_NAME = "Function"

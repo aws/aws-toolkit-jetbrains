@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.InvalidParameterValueException
@@ -19,7 +18,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
-import java.awt.Component
 import javax.swing.JComponent
 
 class ConfigureLambdaDialog(
@@ -55,6 +53,7 @@ class ConfigureLambdaDialog(
                         }
                     } catch (e: InvalidParameterValueException) {
                         // Exception thrown for invalid permission
+                        // TODO: Integrate IAM role
                         println("INVALID PERMISSION")
                         isOKActionEnabled = true
                     } catch (e: Exception) {

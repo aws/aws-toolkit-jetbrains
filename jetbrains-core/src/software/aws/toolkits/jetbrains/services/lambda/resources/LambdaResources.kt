@@ -7,8 +7,6 @@ import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.find
-import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
-import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 
 object LambdaResources {
     @JvmField

@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.utils.ui.formatAndSet
 import java.awt.Component
 import javax.swing.JComponent
 
+// TODO: Incomplete - integrate IAM dialog with main configuration dialog
 class ConfirmIamPolicyDialog(
     private val project: Project,
     private val parent: Component? = null
@@ -18,6 +19,7 @@ class ConfirmIamPolicyDialog(
     val view = ConfirmIamPolicyCreationPanel()
 
     init {
+        // TODO: Localization
         title = "Create IAM Role"
         setOKButtonText("Create")
 

@@ -4,6 +4,7 @@ package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.components.JBLabel
+import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 
 class ConfirmIamPolicyCreationPanel {
@@ -12,6 +13,6 @@ class ConfirmIamPolicyCreationPanel {
     lateinit var warningText: JBLabel
 
     init {
-        warningText.text = "The selected Lambda function does not have permission to access SQS. The following IAM role policy will be added:"
+        warningText.text = message("sqs.iam.warning.text")
     }
 }
