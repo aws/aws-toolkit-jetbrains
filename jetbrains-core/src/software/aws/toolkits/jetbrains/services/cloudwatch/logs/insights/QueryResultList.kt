@@ -11,8 +11,6 @@ import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JButton
 import javax.swing.JLabel
@@ -27,7 +25,6 @@ class QueryResultList(
     private lateinit var tablePanel: SimpleToolWindowPanel
     private lateinit var openQueryEditor: JButton
     private lateinit var resultsTitle: JLabel
-    private val edtContext = getCoroutineUiContext(disposable = this)
     val client: CloudWatchLogsClient = project.awsClient()
     private val resultsTable: QueryResultsTable = QueryResultsTable(project, client, fieldList, queryId)
     private fun createUIComponents() {

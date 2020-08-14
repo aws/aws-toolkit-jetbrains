@@ -20,9 +20,9 @@ import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 class QueryResultsReturnedTest : BaseCoroutineTest() {
 
     private lateinit var client: CloudWatchLogsClient
-    private lateinit var tableModel: ListTableModel<List<ResultField>>
-    private lateinit var table: TableView<List<ResultField>>
-    private lateinit var queryactor: QueryActor<List<ResultField>>
+    private lateinit var tableModel: ListTableModel<MutableMap<String, String>>
+    private lateinit var table: TableView<MutableMap<String, String>>
+    private lateinit var queryactor: QueryActor<MutableMap<String, String>>
 
     @Test
     fun `Check if already displayed identifier list is getting updated`() {
@@ -41,7 +41,7 @@ class QueryResultsReturnedTest : BaseCoroutineTest() {
     @Test
     fun `Initial log events are loaded in the table model`() {
         getTableModelDetails()
-        val sampleResult = ResultField.builder().field("@message").value("Sample Message").field("@ptr").value("1234").build()
+        val sampleResult = ResultField.builder().field("@message").value("Sample Message").build()
         val sampleResultList = listOf(sampleResult)
         whenever(client.getQueryResults(Mockito.any<GetQueryResultsRequest>()))
             .thenReturn(
@@ -52,22 +52,18 @@ class QueryResultsReturnedTest : BaseCoroutineTest() {
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
-        assertThat(tableModel.items.first()).contains(sampleResult)
+        assertThat(tableModel.items.first().keys).isEqualTo(setOf("@message"))
     }
 
     @Test
     fun `Loading more log events in table model after the initial results`() {
         getTableModelDetails()
         val sampleResult1 = ResultField.builder()
-            .field("@message")
-            .value("First Sample Message")
             .field("@ptr")
             .value("1234")
             .build()
         val firstSampleResultList = listOf(sampleResult1)
         val sampleResult2 = ResultField.builder()
-            .field("@message")
-            .value("Second Sample Message")
             .field("@ptr").value("5678")
             .build()
         val secondSampleResultList = listOf(sampleResult2)
@@ -76,7 +72,7 @@ class QueryResultsReturnedTest : BaseCoroutineTest() {
                 GetQueryResultsResponse.builder().results(firstSampleResultList).build()
             )
             .thenReturn(
-                GetQueryResultsResponse.builder().results(secondSampleResultList).build()
+                GetQueryResultsResponse.builder().results(firstSampleResultList, secondSampleResultList).build()
             )
         runBlocking {
             queryactor.channel.send(QueryActor.MessageLoadQueryResults.LoadInitialQueryResults)
@@ -84,13 +80,13 @@ class QueryResultsReturnedTest : BaseCoroutineTest() {
             tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
-        assertThat(tableModel.items.first()).contains(sampleResult1)
-        assertThat(tableModel.items[1]).contains(sampleResult2)
+        assertThat(tableModel.items[0].keys).isEqualTo(setOf("@ptr"))
+        assertThat(tableModel.items[0].keys).isEqualTo(setOf("@ptr"))
     }
 
     private fun getTableModelDetails() {
         client = mockClientManagerRule.create()
-        tableModel = ListTableModel<List<ResultField>>()
+        tableModel = ListTableModel<MutableMap<String, String>>()
         table = TableView(tableModel)
         queryactor = QueryResultsActor(projectRule.project, client, table, "1234")
     }

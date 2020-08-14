@@ -26,9 +26,9 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
                 }
                 return@launch
             }
-            val group = QueryResultList(project, fieldList, queryId)
+            val queryResult = QueryResultList(project, fieldList, queryId)
             withContext(edtContext) {
-                toolWindow.addTab(queryId, group.resultsPanel, activate = true, id = queryId, disposable = group)
+                toolWindow.addTab(queryId, queryResult.resultsPanel, activate = true, id = queryId, disposable = queryResult)
             }
         } catch (e: Exception) {
             throw e

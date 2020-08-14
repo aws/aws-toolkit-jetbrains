@@ -6,28 +6,21 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.speedSearch.SpeedSearchUtil
 import com.intellij.util.ui.ColumnInfo
-import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamsStreamColumnRenderer
 import software.aws.toolkits.jetbrains.utils.ui.setSelectionHighlighting
 import java.awt.Component
 import javax.swing.JTable
 import javax.swing.table.TableCellRenderer
 
-class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<List<ResultField>, String>(fieldName) {
+class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<MutableMap<String, String>, String>(fieldName) {
     private val renderer = FieldColumnRenderer()
-    override fun valueOf(item: List<ResultField>?): String? {
+    override fun valueOf(item: MutableMap<String, String>?): String? {
         if (item != null) {
-            for (field in item) {
-                if (field.field() == fieldName) {
-                    return field.value()
-                }
-            }
+            return item[fieldName]
         }
-        //return item?.first { it.field() == fieldName }?.value()
         return null
     }
-    override fun isCellEditable(item: List<ResultField>?): Boolean = false
-    override fun getRenderer(item: List<ResultField>?): TableCellRenderer? = renderer
+    override fun isCellEditable(item: MutableMap<String, String>?): Boolean = false
+    override fun getRenderer(item: MutableMap<String, String>?): TableCellRenderer? = renderer
 }
 
 class FieldColumnRenderer : TableCellRenderer {

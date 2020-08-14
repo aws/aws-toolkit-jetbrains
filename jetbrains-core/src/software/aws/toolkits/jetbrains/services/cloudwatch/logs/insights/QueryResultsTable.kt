@@ -12,7 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.bottomReached
 import software.aws.toolkits.resources.message
@@ -26,8 +25,8 @@ class QueryResultsTable(
 ) : CoroutineScope by ApplicationThreadPoolScope("QueryResultsTable"), Disposable {
     val component: JComponent
     val channel: Channel<QueryActor.MessageLoadQueryResults>
-    private val resultsTable: TableView<List<ResultField>>
-    private val queryActor: QueryActor<List<ResultField>>
+    private val resultsTable: TableView<MutableMap<String, String>>
+    private val queryActor: QueryActor<MutableMap<String, String>>
 
     init {
             val columnInfoList: ArrayList<ColumnInfoDetails> = arrayListOf()
@@ -36,7 +35,7 @@ class QueryResultsTable(
             }
             val columnInfoArray = columnInfoList.toTypedArray()
             val tableModel = ListTableModel(
-                columnInfoArray, mutableListOf<List<ResultField>>()
+                columnInfoArray, mutableListOf<MutableMap<String, String>>()
             )
         resultsTable = TableView(tableModel).apply {
             setPaintBusy(true)

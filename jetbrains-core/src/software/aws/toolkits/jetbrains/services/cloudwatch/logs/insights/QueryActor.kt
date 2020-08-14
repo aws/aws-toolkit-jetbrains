@@ -120,7 +120,6 @@ sealed class QueryActor<T>(
     override fun dispose() {
         channel.close()
     }
-
     companion object {
         private val LOG = getLogger<QueryActor<*>>()
     }
@@ -129,9 +128,9 @@ sealed class QueryActor<T>(
 class QueryResultsActor(
     project: Project,
     client: CloudWatchLogsClient,
-    table: TableView<List<ResultField>>,
+    table: TableView<MutableMap<String, String>>,
     private val queryId: String
-) : QueryActor<List<ResultField>>(project, client, table) {
+) : QueryActor<MutableMap<String, String>>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_results_found")
     override val tableErrorMessage = message("cloudwatch.logs.query_results_table_error")
     override val notFoundText = message("cloudwatch.logs.no_results_found")
@@ -143,36 +142,46 @@ class QueryResultsActor(
             request = GetQueryResultsRequest.builder().queryId(queryId).build()
             response = client.getQueryResults(request)
         }
+        val listOfResults = mutableListOf<MutableMap<String, String>>()
         val queryResults = response.results().filterNotNull()
         for (result in queryResults) {
+            val fieldToValueMap = mutableMapOf<String, String>()
             for (field in result) {
+                fieldToValueMap[field.field().toString()] = field.value().toString()
                 if (field.field() == "@ptr") {
                     queryResultsIdentifierList.add(field.value())
                 }
             }
+            listOfResults.add(fieldToValueMap)
         }
         moreResultsAvailable = response.statusAsString() != "Complete"
-        loadAndPopulateResultsTable { queryResults }
+        loadAndPopulateResultsTable { listOfResults }
     }
 
-    override suspend fun loadNext(): List<List<ResultField>> {
+    override suspend fun loadNext(): List<MutableMap<String, String>> {
         val request = GetQueryResultsRequest.builder().queryId(queryId).build()
         val response = client.getQueryResults(request)
         moreResultsAvailable = response.statusAsString() != "Complete"
         return checkIfNewResult(response.results().filterNotNull())
     }
 
-    fun checkIfNewResult(queryResultList: List<MutableList<ResultField>>): List<MutableList<ResultField>> {
-        val newResults: MutableList<MutableList<ResultField>> = mutableListOf()
+    fun checkIfNewResult(queryResultList: List<MutableList<ResultField>>): List<MutableMap<String, String>> {
+        val listOfResults = mutableListOf<MutableMap<String, String>>()
         for (result in queryResultList) {
+            var resultIsUnique = false
+            var fieldToValueMap = mutableMapOf<String, String>()
             for (field in result) {
+                fieldToValueMap[field.field().toString()] = field.value().toString()
                 if (field.field() == "@ptr" && field.value() !in queryResultsIdentifierList) {
                     queryResultsIdentifierList.add(field.value())
-                    newResults.add(result)
+                    resultIsUnique = true
                 }
             }
+            if (resultIsUnique) {
+                listOfResults.add(fieldToValueMap)
+            }
         }
-        return newResults
+        return listOfResults
     }
     companion object {
         val queryResultsIdentifierList = arrayListOf<String>()
