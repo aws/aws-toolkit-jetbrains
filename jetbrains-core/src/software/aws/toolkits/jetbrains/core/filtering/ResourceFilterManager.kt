@@ -21,7 +21,7 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
         this.state = state
     }
 
-    fun tagFiltersEnabled(): Boolean = state.values.filterIsInstance<TagFilter>().any { it.enabled && it.tagKey.isNotBlank() }
+    fun tagFiltersEnabled(): Boolean = state.values.filterIsInstance<TagFilter>().any { it.enabled && it.tagKey.isValidTagKey() }
 
     // get resources based on the currently applied filters
     fun getTaggedResources(project: Project, serviceId: String, resourceType: String? = null): List<ResourceTagMapping> {
@@ -34,7 +34,7 @@ class ResourceFilterManager : PersistentStateComponent<ResourceFilters> {
                 .values
                 .filterIsInstance<TagFilter>()
                 // Only show enabled filters with tags
-                .filter { it.enabled && it.tagKey.isNotBlank() }
+                .filter { it.enabled && it.tagKey.isValidTagKey() }
                 .all {
                     // If there is a tag with no values, make sure the resource has the tag with any value
                     tagMap[it.tagKey] != null && (it.tagValues.isEmpty() || it.tagValues.contains(tagMap[it.tagKey]))
@@ -52,7 +52,7 @@ data class TagFilter(
     override val enabled: Boolean = true,
     var tagKey: String = "",
     var tagValues: List<String> = listOf()
-): ResourceFilter(enabled)
+) : ResourceFilter(enabled)
 
 data class StackFilter(
     override val enabled: Boolean = true,
