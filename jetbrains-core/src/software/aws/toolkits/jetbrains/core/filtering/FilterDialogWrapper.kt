@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.core.filtering
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.ValidationInfo
 import software.aws.toolkits.jetbrains.core.explorer.redrawAwsTree
 import javax.swing.JComponent
 
-class FilterDialogWrapper(private val project: Project, private val type: FilterType) : DialogWrapper(project) {
+class FilterDialogWrapper(private val project: Project, type: FilterType) : DialogWrapper(project) {
+    private var originalName: String? = null
     private val dialog = when (type) {
-        FilterType.Tag -> TagFilterDialog(project)
+        FilterType.Tag -> TagFilterDialog()
         FilterType.CloudFormation -> CloudFormationFilterDialog(project)
     }
 
@@ -20,14 +22,26 @@ class FilterDialogWrapper(private val project: Project, private val type: Filter
     }
 
     override fun doOKAction() {
-        dialog.save()
+        val (newName, value) = dialog.save()
+        if (newName != originalName) {
+            ResourceFilterManager.getInstance(project).state.remove(originalName)
+        }
+        ResourceFilterManager.getInstance(project).state[newName] = value
         project.redrawAwsTree()
         super.doOKAction()
     }
 
+    fun load(name: String, filter: ResourceFilter) {
+        originalName = name
+        dialog.load(name, filter)
+    }
+
+    override fun doValidate(): ValidationInfo? {
+        return dialog.validate()
+    }
+
     override fun createCenterPanel(): JComponent? = dialog.component
 
-    // TODO get rid of
     enum class FilterType {
         Tag,
         CloudFormation
@@ -36,6 +50,7 @@ class FilterDialogWrapper(private val project: Project, private val type: Filter
 
 interface FilterDialog {
     val component: JComponent
-    fun validate()
-    fun save()
+    fun validate(): ValidationInfo?
+    fun load(name: String, filter: ResourceFilter)
+    fun save(): Pair<String, ResourceFilter>
 }

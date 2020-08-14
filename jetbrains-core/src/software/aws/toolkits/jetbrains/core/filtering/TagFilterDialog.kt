@@ -2,39 +2,42 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.core.filtering
 
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBTextField
+import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class TagFilterDialog(private val project: Project) : FilterDialog {
+class TagFilterDialog : FilterDialog {
     override lateinit var component: JPanel
     private lateinit var filterName: JTextField
     private lateinit var keyBox: JTextField
     private lateinit var valuesField: JBTextField
+    private var enabled = true
 
     init {
-        valuesField.emptyText.text = "TODO all values"
+        valuesField.emptyText.text = message("explorer.filter.tag.any_value")
+        // TODO load autocomplete suggestions in next PR
     }
 
-    override fun validate() {
+    override fun validate(): ValidationInfo? {
+        return null
     }
 
-    override fun save() {
+    override fun save(): Pair<String, ResourceFilter> {
         val tags = if (valuesField.text.isBlank()) {
             listOf()
         } else {
             valuesField.text.split(",").map { it.trim() }
         }
-        ResourceFilterManager.getInstance(project).state[filterName.text] = TagFilter(
-            enabled = true,
-            tagKey = keyBox.text,
-            tagValues = tags
-        )
+        return filterName.text to TagFilter(enabled = enabled, tagKey = keyBox.text, tagValues = tags)
     }
 
-
-    init {
-        // TODO load autocomplete suggestions
+    override fun load(name: String, filter: ResourceFilter) {
+        if (filter !is TagFilter) return
+        filterName.text = name
+        enabled = filter.enabled
+        keyBox.text = filter.tagKey
+        valuesField.text = filter.tagValues.joinToString(", ")
     }
 }
