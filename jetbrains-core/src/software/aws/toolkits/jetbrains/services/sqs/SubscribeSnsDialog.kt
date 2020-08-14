@@ -11,7 +11,7 @@ import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.sns.SnsClient
-import software.amazon.awssdk.services.sqs.SqsClient
+import software.amazon.awssdk.services.sns.model.AuthorizationErrorException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -64,10 +64,10 @@ class SubscribeSnsDialog(
                         close(OK_EXIT_CODE)
                     }
                     project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
-                    // TODO: maybe display that it is subscribed with subscription arn
                     notifyInfo(NOTIFICATION_TITLE, message("sqs.subscribe.sns.success", topicSelected()), project)
                 } catch (e: Exception) {
-                    if (containsStatusCode(e.message, message("sqs.subscribe.sns.status.invalid.permission"))) {
+                    // Specific error message displayed if user does not have permission to perform subscribe on the topic
+                    if (e is AuthorizationErrorException) {
                         setErrorText(message("sqs.subscribe.sns.permission.error.text", topicSelected()))
                     } else {
                         setErrorText(e.message)
@@ -82,9 +82,7 @@ class SubscribeSnsDialog(
 
     private fun topicSelected(): String = view.topicArn.text
 
-    private fun containsStatusCode(message: String?, code: String): Boolean = message?.contains(code) ?: false
-
-    private fun subscribe() {
+    fun subscribe() {
         snsClient.subscribe {
             it.topicArn(topicSelected())
             it.protocol(message("sqs.subscribe.sns.protocol"))
