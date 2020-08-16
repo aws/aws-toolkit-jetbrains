@@ -4,23 +4,22 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
 import com.intellij.ui.SimpleColoredComponent
-import com.intellij.ui.speedSearch.SpeedSearchUtil
 import com.intellij.util.ui.ColumnInfo
 import software.aws.toolkits.jetbrains.utils.ui.setSelectionHighlighting
 import java.awt.Component
 import javax.swing.JTable
 import javax.swing.table.TableCellRenderer
 
-class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<MutableMap<String, String>, String>(fieldName) {
+class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<Map<String, String>, String>(fieldName) {
     private val renderer = FieldColumnRenderer()
-    override fun valueOf(item: MutableMap<String, String>?): String? {
+    override fun valueOf(item: Map<String, String>?): String? {
         if (item != null) {
             return item[fieldName]
         }
         return null
     }
-    override fun isCellEditable(item: MutableMap<String, String>?): Boolean = false
-    override fun getRenderer(item: MutableMap<String, String>?): TableCellRenderer? = renderer
+    override fun isCellEditable(item: Map<String, String>?): Boolean = false
+    override fun getRenderer(item: Map<String, String>?): TableCellRenderer? = renderer
 }
 
 class FieldColumnRenderer : TableCellRenderer {
@@ -31,8 +30,6 @@ class FieldColumnRenderer : TableCellRenderer {
             return component
         }
         component.setSelectionHighlighting(table, isSelected)
-        SpeedSearchUtil.applySpeedSearchHighlighting(table, component, true, isSelected)
-
         return component
     }
 }

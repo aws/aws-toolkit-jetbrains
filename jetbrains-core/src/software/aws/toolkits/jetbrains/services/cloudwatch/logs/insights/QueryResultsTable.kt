@@ -25,8 +25,8 @@ class QueryResultsTable(
 ) : CoroutineScope by ApplicationThreadPoolScope("QueryResultsTable"), Disposable {
     val component: JComponent
     val channel: Channel<QueryActor.MessageLoadQueryResults>
-    private val resultsTable: TableView<MutableMap<String, String>>
-    private val queryActor: QueryActor<MutableMap<String, String>>
+    private val resultsTable: TableView<Map<String, String>>
+    private val queryActor: QueryActor<Map<String, String>>
 
     init {
             val columnInfoList: ArrayList<ColumnInfoDetails> = arrayListOf()
@@ -35,7 +35,7 @@ class QueryResultsTable(
             }
             val columnInfoArray = columnInfoList.toTypedArray()
             val tableModel = ListTableModel(
-                columnInfoArray, mutableListOf<MutableMap<String, String>>()
+                columnInfoArray, listOf<Map<String, String>>()
             )
         resultsTable = TableView(tableModel).apply {
             setPaintBusy(true)

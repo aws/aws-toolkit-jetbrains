@@ -20,9 +20,9 @@ import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 class QueryResultsReturnedTest : BaseCoroutineTest() {
 
     private lateinit var client: CloudWatchLogsClient
-    private lateinit var tableModel: ListTableModel<MutableMap<String, String>>
-    private lateinit var table: TableView<MutableMap<String, String>>
-    private lateinit var queryactor: QueryActor<MutableMap<String, String>>
+    private lateinit var tableModel: ListTableModel<Map<String, String>>
+    private lateinit var table: TableView<Map<String, String>>
+    private lateinit var queryactor: QueryActor<Map<String, String>>
 
     @Test
     fun `Check if already displayed identifier list is getting updated`() {
@@ -86,7 +86,7 @@ class QueryResultsReturnedTest : BaseCoroutineTest() {
 
     private fun getTableModelDetails() {
         client = mockClientManagerRule.create()
-        tableModel = ListTableModel<MutableMap<String, String>>()
+        tableModel = ListTableModel<Map<String, String>>()
         table = TableView(tableModel)
         queryactor = QueryResultsActor(projectRule.project, client, table, "1234")
     }
