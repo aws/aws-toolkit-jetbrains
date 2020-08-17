@@ -30,7 +30,7 @@ data class Profile(
 )
 
 class IdeVersions(private val project: Project) {
-    val ideProfiles = mapOf(
+    private val ideProfiles = mapOf(
         "2019.3" to Profile(
             sinceVersion = "193",
             untilVersion = "193.*",
@@ -61,6 +61,80 @@ class IdeVersions(private val project: Project) {
                     sdkVersion = "RD-2019.3.4",
                     rdGenVersion = "0.193.146",
                     nugetVersion = "2019.3.4",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.yaml"
+                    )
+                )
+            )
+        ),
+        "2020.1" to Profile(
+            sinceVersion = "201",
+            untilVersion = "201.*",
+            products = mapOf(
+                ProductCode.IC to ProductProfile(
+                    sdkVersion = "IC-2020.1",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.terminal",
+                        "org.jetbrains.plugins.yaml",
+                        "PythonCore:201.6668.31",
+                        "java",
+                        "com.intellij.gradle",
+                        "org.jetbrains.idea.maven",
+                        "Docker:201.6668.30"
+                    )
+                ),
+                ProductCode.IU to ProductProfile(
+                    sdkVersion = "IU-2020.1",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.terminal",
+                        "Pythonid:201.6668.31",
+                        "org.jetbrains.plugins.yaml",
+                        "JavaScript",
+                        "JavaScriptDebugger",
+                        "com.intellij.database"
+                    )
+                ),
+                ProductCode.RD to RiderProfile(
+                    sdkVersion = "RD-2020.1.0",
+                    rdGenVersion = "0.201.69",
+                    nugetVersion = "2020.1.0",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.yaml"
+                    )
+                )
+            )
+        ),
+        "2020.2" to Profile(
+            sinceVersion = "202",
+            untilVersion = "202.*",
+            products = mapOf(
+                ProductCode.IC to ProductProfile(
+                    sdkVersion = "IC-2020.2",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.terminal",
+                        "org.jetbrains.plugins.yaml",
+                        "PythonCore:202.6397.124",
+                        "java",
+                        "com.intellij.gradle",
+                        "org.jetbrains.idea.maven",
+                        "Docker:202.6397.93"
+                    )
+                ),
+                ProductCode.IU to ProductProfile(
+                    sdkVersion = "IU-2020.2",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.terminal",
+                        "Pythonid:202.6397.98",
+                        "org.jetbrains.plugins.yaml",
+                        "JavaScript",
+                        "JavaScriptDebugger",
+                        "com.intellij.database"
+                    )
+                ),
+                ProductCode.RD to RiderProfile(
+                    sdkVersion = "RD-2020.2",
+                    rdGenVersion = "0.202.113",
+                    nugetVersion = "2020.2.0",
                     plugins = listOf(
                         "org.jetbrains.plugins.yaml"
                     )
@@ -101,7 +175,8 @@ class IdeVersions(private val project: Project) {
         ideProfiles[resolveIdeProfileName()] ?: throw IllegalStateException("Unable to resolve profile ${resolveIdeProfileName()}")
 
     private fun getProductProfile(code: ProductCode): ProductProfile =
-        ideProfiles[resolveIdeProfileName()]?.products?.get(code) ?: throw IllegalStateException("Unable to get profile ${resolveIdeProfileName()} code $code")
+        ideProfiles[resolveIdeProfileName()]?.products?.get(code)
+            ?: throw IllegalStateException("Unable to get profile ${resolveIdeProfileName()} code $code")
 
     private fun getRiderProfile(): RiderProfile = ideProfiles[resolveIdeProfileName()]?.products?.get(ProductCode.RD) as? RiderProfile
         ?: throw IllegalStateException("Failed to get Rider profile for ${resolveIdeProfileName()}!")
