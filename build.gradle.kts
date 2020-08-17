@@ -9,6 +9,7 @@ import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.ProductCode
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import software.aws.toolkits.gradle.findFolders
+import software.aws.toolkits.gradle.getOrCreate
 import software.aws.toolkits.gradle.resources.ValidateMessages
 
 buildscript {
@@ -120,7 +121,7 @@ subprojects {
         main.get().resources.srcDirs(findFolders(project, "resources", ideVersion))
         test.get().java.srcDirs(findFolders(project, "tst", ideVersion))
         test.get().resources.srcDirs(findFolders(project, "tst-resources", ideVersion))
-        create("integrationTest") {
+        getOrCreate("integrationTest") {
             compileClasspath += main.get().output + test.get().output
             runtimeClasspath += main.get().output + test.get().output
             java.srcDirs(findFolders(project, "it", ideVersion))
@@ -129,10 +130,10 @@ subprojects {
     }
 
     val testArtifacts by configurations.creating
-    val integrationTestImplementation by configurations.creating {
+    configurations.getByName("integrationTestImplementation").apply {
         extendsFrom(configurations.getByName("testImplementation"))
     }
-    val integrationTestRuntimeOnly by configurations.creating {
+    configurations.getByName("integrationTestRuntimeOnly").apply {
         extendsFrom(configurations.getByName("testRuntimeOnly"))
     }
 
@@ -231,7 +232,9 @@ subprojects {
     }
 
     // Force us to compile the integration tests even during check even though we don't run them
-    check.dependsOn(sourceSets.getByName("integrationTest").classesTaskName)
+    tasks.named("check") {
+        dependsOn.add(sourceSets.getByName("integrationTest").compileJavaTaskName)
+    }
 
     val testJar = tasks.register<Jar>("testJar") {
         baseName = "${project.name}-test"
