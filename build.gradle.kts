@@ -6,10 +6,10 @@ import com.adarshr.gradle.testlogger.TestLoggerPlugin
 import org.jetbrains.intellij.tasks.RunIdeTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
+import software.aws.toolkits.gradle.ProductCode
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.resources.ValidateMessages
-import software.aws.toolkits.gradle.ProductCode
 
 buildscript {
     repositories {
@@ -101,7 +101,7 @@ configure(subprojects.filter { it.name != "telemetry-client" }) {
     apply(plugin = "kotlin")
 
     sourceSets {
-        sourceSets.getByName("integrationTest") {
+        create("integrationTest") {
             java.srcDir("it")
         }
     }
@@ -270,14 +270,14 @@ intellij {
 }
 
 tasks.prepareSandbox {
-    tasks.findByPath(":jetbrains-rider:prepareSandbox")?.map {
+    tasks.findByPath(":jetbrains-rider:prepareSandbox")?.let {
         from(it)
     }
 }
 
 tasks.publishPlugin {
-    token = publishToken
-    channels = if (publishChannel != null) publishChannel.split(",").map { it.trim() } else listOf()
+    token(publishToken)
+    channels(if (publishChannel != null) publishChannel.split(",").map { it.trim() } else listOf())
 }
 
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
@@ -292,8 +292,8 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
 
     val isWindows = System.getProperty("os.name")?.toLowerCase()?.contains("windows") == true
 
-    var toInclude = project.rootDir.relativePath(project.projectDir) + "/**/*.kt"
-    var toExclude = project.rootDir.relativePath(File(project.projectDir, "jetbrains-rider")) + "/**/*.Generated.kt"
+    var toInclude = project.projectDir.absolutePath + "/**/*.kt"
+    var toExclude = File(project.projectDir, "jetbrains-rider").absolutePath + "/**/*.Generated.kt"
 
     if (isWindows) {
         toInclude = toInclude.replace("/", "\\")
@@ -313,9 +313,11 @@ val validateLocalizedMessages = tasks.register<ValidateMessages>("validateLocali
 val coverageReport = tasks.register<JacocoReport>("coverageReport") {
     executionData.setFrom(fileTree(project.rootDir.absolutePath) { include("**/build/jacoco/*.exec") })
 
-    additionalSourceDirs.from(subprojects.sourceSets.main.java.srcDirs)
-    sourceDirectories.from(subprojects.sourceSets.main.java.srcDirs)
-    classDirectories.from(subprojects.sourceSets.main.output.classesDirs)
+    subprojects.forEach {
+        additionalSourceDirs.from(it.sourceSets.main.get().java.srcDirs)
+        sourceDirectories.from(it.sourceSets.main.get().java.srcDirs)
+        classDirectories.from(it.sourceSets.main.get().output.classesDirs)
+    }
 
     reports {
         html.isEnabled = true
