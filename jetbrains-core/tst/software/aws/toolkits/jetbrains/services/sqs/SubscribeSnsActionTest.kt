@@ -38,7 +38,7 @@ class SubscribeSnsActionTest {
     }
 
     @Test
-    fun `FIFO queue shows subscribe action`() {
+    fun `FIFO queue doesn't show subscribe action`() {
         val mockNode = SqsQueueNode(projectRule.project, FIFO_QUEUE_URL)
         val action = TestActionEvent()
         SubscribeSnsAction().update(mockNode, action)
