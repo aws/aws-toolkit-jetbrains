@@ -69,14 +69,14 @@ class IdeVersions(private val project: Project) {
         )
     )
 
-    fun sinceVersion(): String = ideProfiles[resolveIdeProfileName()]?.sinceVersion ?: throw IllegalStateException("Unable to resolve profile ${resolveIdeProfileName()}")
-        fun untilVersion() = ideProfiles[resolveIdeProfileName()]?.untilVersion ?: throw IllegalStateException("Unable to resolve profile ${resolveIdeProfileName()}")
+    fun sinceVersion(): String = getProfile().sinceVersion
+    fun untilVersion() = getProfile().untilVersion
 
-    fun sdkVersion(code: ProductCode): String = getProfile(code).sdkVersion
-    fun plugins(code: ProductCode): List<String> = getProfile(code).plugins
+    fun sdkVersion(code: ProductCode): String = getProductProfile(code).sdkVersion
+    fun plugins(code: ProductCode): List<String> = getProductProfile(code).plugins
 
     fun rdGenVersion(): String = getRiderProfile().rdGenVersion
-    fun nugetVersion(): String = getRiderProfile().nugetVersion
+    fun nugetSdkVersion(): String = getRiderProfile().nugetVersion
 
     // Convert (as an example) 2020.2 -> 202
     fun resolveShortenedIdeProfileName(): String {
@@ -91,13 +91,18 @@ class IdeVersions(private val project: Project) {
         ?.sdkVersion
         ?: throw IllegalArgumentException("Product not in map of IDE versions: ${resolveIdeProfileName()}, $code")
 
-    private fun getProfile(code: ProductCode): ProductProfile = ideProfiles[resolveIdeProfileName()]?.products?.get(code)  ?: throw IllegalStateException("Unable to get profile ${resolveIdeProfileName()} code $code")
-    private fun getRiderProfile(): RiderProfile = ideProfiles[resolveIdeProfileName()]?.products?.get(ProductCode.RD) as? RiderProfile
-        ?: throw IllegalStateException("Failed to get Rider profile for ${resolveIdeProfileName()}!")
-
-    private fun resolveIdeProfileName(): String = if (System.getenv()["ALTERNATIVE_IDE_PROFILE_NAME"] != null) {
+    fun resolveIdeProfileName(): String = if (System.getenv()["ALTERNATIVE_IDE_PROFILE_NAME"] != null) {
         System.getenv("ALTERNATIVE_IDE_PROFILE_NAME")
     } else {
         project.properties["ideProfileName"]?.toString() ?: throw IllegalStateException("No ideProfileName property set")
     }
+
+    private fun getProfile(): Profile =
+        ideProfiles[resolveIdeProfileName()] ?: throw IllegalStateException("Unable to resolve profile ${resolveIdeProfileName()}")
+
+    private fun getProductProfile(code: ProductCode): ProductProfile =
+        ideProfiles[resolveIdeProfileName()]?.products?.get(code) ?: throw IllegalStateException("Unable to get profile ${resolveIdeProfileName()} code $code")
+
+    private fun getRiderProfile(): RiderProfile = ideProfiles[resolveIdeProfileName()]?.products?.get(ProductCode.RD) as? RiderProfile
+        ?: throw IllegalStateException("Failed to get Rider profile for ${resolveIdeProfileName()}!")
 }

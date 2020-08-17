@@ -29,7 +29,6 @@ val awsSdkVersion: String by project
 val coroutinesVersion: String by project
 
 val compileKotlin: KotlinCompile by tasks
-val patchPluginXml: PatchPluginXmlTask by tasks
 
 intellij {
     val rootIntelliJTask = rootProject.intellij
@@ -41,8 +40,10 @@ intellij {
 
 }
 
-patchPluginXml.setSinceBuild(ideVersions.sinceVersion())
-patchPluginXml.setUntilBuild(ideVersions.untilVersion())
+tasks.patchPluginXml {
+    setSinceBuild(ideVersions.sinceVersion())
+    setUntilBuild(ideVersions.untilVersion())
+}
 
 configurations {
     testArtifacts
