@@ -1,11 +1,12 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import groovy.lang.Closure
 import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.IdeVersions
+import software.aws.toolkits.gradle.ProductCode
 
 plugins {
     id("org.jetbrains.intellij")
@@ -22,29 +23,26 @@ buildscript {
     }
 }
 
+val ideVersions = IdeVersions(project)
 val telemetryVersion: String by project
 val awsSdkVersion: String by project
 val coroutinesVersion: String by project
-
-val ideSdkVersion: Closure<String> by ext
-val idePlugins: Closure<ArrayList<String>> by ext
-val ideSinceVersion: Closure<String> by ext
-val ideUntilVersion: Closure<String> by ext
 
 val compileKotlin: KotlinCompile by tasks
 val patchPluginXml: PatchPluginXmlTask by tasks
 
 intellij {
     val rootIntelliJTask = rootProject.intellij
-    version = ideSdkVersion("IC")
-    setPlugins(*(idePlugins("IC").toArray()))
+    version = ideVersions.sdkVersion(ProductCode.IC)
+    setPlugins(ideVersions.plugins(ProductCode.IC))
     pluginName = rootIntelliJTask.pluginName
     updateSinceUntilBuild = rootIntelliJTask.updateSinceUntilBuild
     downloadSources = rootIntelliJTask.downloadSources
+
 }
 
-patchPluginXml.setSinceBuild(ideSinceVersion())
-patchPluginXml.setUntilBuild(ideUntilVersion())
+patchPluginXml.setSinceBuild(ideVersions.sinceVersion())
+patchPluginXml.setUntilBuild(ideVersions.untilVersion())
 
 configurations {
     testArtifacts

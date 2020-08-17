@@ -69,6 +69,12 @@ class IdeVersions(private val project: Project) {
         )
     )
 
+    fun sinceVersion(): String = ideProfiles[resolveIdeProfileName()]?.sinceVersion ?: throw IllegalStateException("Unable to resolve profile ${resolveIdeProfileName()}")
+        fun untilVersion() = ideProfiles[resolveIdeProfileName()]?.untilVersion ?: throw IllegalStateException("Unable to resolve profile ${resolveIdeProfileName()}")
+
+    fun sdkVersion(code: ProductCode): String = getProfile(code).sdkVersion
+    fun plugins(code: ProductCode): List<String> = getProfile(code).plugins
+
     fun rdGenVersion(): String = getRiderProfile().rdGenVersion
     fun nugetVersion(): String = getRiderProfile().nugetVersion
 
@@ -85,6 +91,7 @@ class IdeVersions(private val project: Project) {
         ?.sdkVersion
         ?: throw IllegalArgumentException("Product not in map of IDE versions: ${resolveIdeProfileName()}, $code")
 
+    private fun getProfile(code: ProductCode): ProductProfile = ideProfiles[resolveIdeProfileName()]?.products?.get(code)  ?: throw IllegalStateException("Unable to get profile ${resolveIdeProfileName()} code $code")
     private fun getRiderProfile(): RiderProfile = ideProfiles[resolveIdeProfileName()]?.products?.get(ProductCode.RD) as? RiderProfile
         ?: throw IllegalStateException("Failed to get Rider profile for ${resolveIdeProfileName()}!")
 

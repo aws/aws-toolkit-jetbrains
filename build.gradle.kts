@@ -47,8 +47,10 @@ val publishToken: String by project
 val publishChannel: String by project
 
 plugins {
+    val ideaPluginVersion: String by project
     java
     id("de.undercouch.download") version "4.1.1" apply false
+    id("org.jetbrains.intellij") version ideaPluginVersion
 }
 
 group = "software.aws.toolkits"
@@ -104,7 +106,7 @@ configure(subprojects.filter { it.name != "telemetry-client" }) {
     apply(plugin = "kotlin")
 
     sourceSets {
-        create("integrationTest") {
+        getOrCreate("integrationTest") {
             java.srcDir("it")
         }
     }
@@ -267,21 +269,20 @@ inline fun <reified T : Task> removeTask(tasks: TaskContainer, takeType: Class<T
 apply(plugin = "org.jetbrains.intellij")
 apply(plugin = "toolkit-change-log")
 
-val intellij = extensions.getByName("intellij") as IntelliJPluginExtension
-intellij.apply {
+intellij {
     version = ideVersions.ideSdkVersion(ProductCode.IC)
     pluginName = "aws-jetbrains-toolkit"
     updateSinceUntilBuild = false
     downloadSources = System.getenv("CI") == null
 }
 
-tasks.getByName<PrepareSandboxTask>("prepareSandbox") {
+tasks.prepareSandbox {
     tasks.findByPath(":jetbrains-rider:prepareSandbox")?.let {
         from(it)
     }
 }
 
-tasks.getByName<PublishTask>("publishPlugin") {
+tasks.publishPlugin {
     token(publishToken)
     channels(if (publishChannel != null) publishChannel.split(",").map { it.trim() } else listOf())
 }
