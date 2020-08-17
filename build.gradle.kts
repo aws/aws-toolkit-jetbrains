@@ -9,6 +9,7 @@ import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.resources.ValidateMessages
+import software.aws.toolkits.gradle.ProductCode
 
 buildscript {
     repositories {
@@ -35,10 +36,16 @@ val assertjVersion: String by project
 val junitVersion: String by project
 val remoteRobotPort: String by project
 val ktlintVersion: String by project
+val remoteRobotVersion: String by project
+// publishing
+val publishToken: String by project
+val publishChannel: String by project
 
 plugins {
-    id("de.undercouch.download") version "4.1.1" apply false
+    val ideaPluginVersion: String by project
     java
+    id("de.undercouch.download") version "4.1.1" apply false
+    id("org.jetbrains.intellij") version ideaPluginVersion
 }
 
 group = "software.aws.toolkits"
@@ -163,18 +170,18 @@ subprojects {
 
     plugins.withType<IdeaPlugin> {
         model.module.apply {
-            sourceDirs(sourceSets.main.get().java.srcDirs)
-            resourceDirs += sourceSets.main.resources.srcDirs
-            testSourceDirs += file("tst-$ideVersion")
-            testResourceDirs += file("tst-resources-$ideVersion")
+            sourceDirs.plusAssign(sourceSets.main.get().java.srcDirs)
+            resourceDirs.plusAssign(sourceSets.main.get().resources.srcDirs)
+            testSourceDirs.plusAssign(File("tst-$ideVersion"))
+            testResourceDirs.plusAssign(File("tst-resources-$ideVersion"))
 
-            sourceDirs -= file("it")
-            testSourceDirs += file("it")
-            testSourceDirs += file("it-$ideVersion")
+            sourceDirs.minusAssign(File("it"))
+            testSourceDirs.plusAssign(File("it"))
+            testSourceDirs.plusAssign(File("it-$ideVersion"))
 
-            resourceDirs -= file("it-resources")
-            testResourceDirs += file("it-resources")
-            testResourceDirs += file("it-resources-$ideVersion")
+            resourceDirs.minusAssign(File("it-resources"))
+            testResourceDirs.plusAssign(File("it-resources"))
+            testResourceDirs.plusAssign(File("it-resources-$ideVersion"))
         }
     }
 
@@ -191,16 +198,18 @@ subprojects {
         }
 
         project.plugins.withId("org.jetbrains.intellij") {
-            systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
+            systemProperty("log.dir", "${(project.extensions["intellij"] as org.jetbrains.intellij.IntelliJPluginExtension).sandboxDirectory}-test/logs")
         }
 
-        mustRunAfter = tasks.test
+        mustRunAfter(tasks.test)
     }
 
     project.plugins.withId("org.jetbrains.intellij") {
-        downloadRobotServerPlugin.version = remoteRobotVersion
+        tasks.withType(org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask::class.java) {
+            this.version = remoteRobotVersion
+        }
 
-        tasks.withType(org.jetbrains.intellij.tasks.RunIdeForUiTestTask).all {
+        tasks.withType(org.jetbrains.intellij.tasks.RunIdeForUiTestTask::class.java).all {
             systemProperty("robot-server.port", remoteRobotPort)
             systemProperty("ide.mac.file.chooser.native", "false")
             systemProperty("jb.consents.confirmation.enabled", "false")
@@ -211,15 +220,18 @@ subprojects {
             }
         }
 
-        jacoco.applyTo(runIdeForUiTests)
+        extensions.getByType<JacocoPluginExtension>().apply {
+            val task = tasks.getByName("runIdeForUiTests")
+            applyTo<org.gradle.testing.jacoco.plugins.JacocoPlugin>(task)
+        }
     }
 
-    tasks.withType(KotlinCompile).all {
+    tasks.withType(KotlinCompile::class.java).all {
         kotlinOptions.jvmTarget = "1.8"
     }
 
     // Force us to compile the integration tests even during check even though we don't run them
-    check.dependsOn(integrationTestClasses)
+    check.dependsOn(sourceSets.getByName("integrationTest").classesTaskName)
 
     val testJar = tasks.register<Jar>("testJar") {
         baseName = "${project.name}-test"
@@ -228,22 +240,22 @@ subprojects {
     }
 
     artifacts {
-        testArtifacts = testJar.get()
+        add("testArtifacts", testJar)
     }
 
     // Remove the tasks added in by gradle-intellij-plugin so that we don"t publish/verify multiple times
     project.afterEvaluate {
-        removeTask(tasks, org.jetbrains.intellij.tasks.PublishTask)
-        removeTask(tasks, org.jetbrains.intellij.tasks.VerifyPluginTask)
-        removeTask(tasks, org.jetbrains.intellij.tasks.BuildSearchableOptionsTask)
+        removeTask(tasks, org.jetbrains.intellij.tasks.PublishTask::class.java)
+        removeTask(tasks, org.jetbrains.intellij.tasks.VerifyPluginTask::class.java)
+        removeTask(tasks, org.jetbrains.intellij.tasks.BuildSearchableOptionsTask::class.java)
     }
 }
 
-val ktlint by configurations.creating
+val ktlint: Configuration by configurations.creating
 
-fun removeTask(tasks: TaskContainer, takeType: Class<Task>) {
+inline fun <reified T : Task> removeTask(tasks: TaskContainer, takeType: Class<T>) {
     tasks.withType(takeType).configureEach {
-        setEnabled(false)
+        enabled = false
     }
 }
 
@@ -251,25 +263,25 @@ apply(plugin = "org.jetbrains.intellij")
 apply(plugin = "toolkit-change-log")
 
 intellij {
-    version = ideSdkVersion("IC")
+    version = ideVersions.ideSdkVersion(ProductCode.IC)
     pluginName = "aws-jetbrains-toolkit"
     updateSinceUntilBuild = false
     downloadSources = System.getenv("CI") == null
 }
 
-prepareSandbox {
-    tasks.findByPath(":jetbrains-rider:prepareSandbox")?.collect {
+tasks.prepareSandbox {
+    tasks.findByPath(":jetbrains-rider:prepareSandbox")?.map {
         from(it)
     }
 }
 
-publishPlugin {
+tasks.publishPlugin {
     token = publishToken
-    channels = if (publishChannel != null) publishChannel.split(",").map { it.trim() } else []
+    channels = if (publishChannel != null) publishChannel.split(",").map { it.trim() } else listOf()
 }
 
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
-    changeLogFile = project.file("CHANGELOG.md")
+    changeLogFile.set(project.file("CHANGELOG.md"))
 }
 
 val ktlintTask = tasks.register<JavaExec>("ktlint") {
@@ -312,7 +324,7 @@ val coverageReport = tasks.register<JacocoReport>("coverageReport") {
 }
 
 subprojects.forEach {
-    coverageReport.mustRunAfter(it.tasks.withType(Test::class.java))
+    coverageReport.get().mustRunAfter(it.tasks.withType(Test::class.java))
 }
 
 val check = tasks.getByName("check")
@@ -321,6 +333,7 @@ check.dependsOn(validateLocalizedMessages)
 check.dependsOn(tasks.getByName("verifyPlugin"))
 check.dependsOn(coverageReport)
 
+/*
 // Workaround for runIde being defined in multiple projects, if we request the root project runIde, "alias" it to
 // community edition
 if (gradle.startParameter.taskNames.contains("runIde")) {
@@ -341,6 +354,7 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
     // Else required because this is an expression
 } else {
 }
+ */
 
 dependencies {
     implementation(project(":jetbrains-ultimate"))
