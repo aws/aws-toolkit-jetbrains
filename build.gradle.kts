@@ -5,8 +5,8 @@ import org.jetbrains.intellij.tasks.RunIdeTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
-import software.aws.toolkits.gradle.resources.ValidateMessages
 import software.aws.toolkits.gradle.findFolders
+import software.aws.toolkits.gradle.resources.ValidateMessages
 
 buildscript {
     repositories {
@@ -104,25 +104,27 @@ subprojects {
 
     apply(plugin = "java")
     apply(plugin = "idea")
+    apply(plugin = "com.adarshr.test-logger")
 
     sourceSets {
         main.get().java.srcDirs(findFolders(project, "src", ideVersion))
-        main.get().resources.srcDirs( findFolders(project, "resources", ideVersion))
-        test.get().java.srcDirs( findFolders(project, "tst", ideVersion))
-        test.get().resources.srcDirs( findFolders(project, "tst-resources", ideVersion))
+        main.get().resources.srcDirs(findFolders(project, "resources", ideVersion))
+        test.get().java.srcDirs(findFolders(project, "tst", ideVersion))
+        test.get().resources.srcDirs(findFolders(project, "tst-resources", ideVersion))
         create("integrationTest") {
-            compileClasspath += main.output + test.output
-            runtimeClasspath += main.output + test.output
-            java.srcDirs = SourceUtils.findFolders(project, "it", ideVersion)
-            resources.srcDirs = SourceUtils.findFolders(project, "it-resources", ideVersion)
+            compileClasspath += main.get().output + test.get().output
+            runtimeClasspath += main.get().output + test.get().output
+            java.srcDirs(findFolders(project, "it", ideVersion))
+            resources.srcDirs(findFolders(project, "it-resources", ideVersion))
         }
     }
 
-    configurations {
-        testArtifacts
-
-        integrationTestImplementation.extendsFrom(testImplementation)
-        integrationTestRuntimeOnly.extendsFrom(testRuntimeOnly)
+    val testArtifacts by configurations.creating
+    val integrationTestImplementation by configurations.creating {
+        extendsFrom(configurations.getByName("testImplementation"))
+    }
+    val integrationTestRuntimeOnly by configurations.creating {
+        extendsFrom(configurations.getByName("testRuntimeOnly"))
     }
 
     dependencies {
