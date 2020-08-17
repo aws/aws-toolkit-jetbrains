@@ -25,7 +25,7 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
             val response = client.startQuery(request)
             var queryId: String = response.queryId()
             val fieldList = getFields(query)
-            QueryResultsWindow.getInstance(project).showResults(queryId, fieldList)
+            QueryResultsWindow.getInstance(project).showResults(queryId, fieldList, logGroupNames[0])
         } catch (e: Exception) {
             notifyError(message("cloudwatch.logs.query_result_completion_status"), e.toString())
             throw e

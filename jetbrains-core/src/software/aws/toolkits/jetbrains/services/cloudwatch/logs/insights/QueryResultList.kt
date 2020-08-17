@@ -19,7 +19,8 @@ import javax.swing.JPanel
 class QueryResultList(
     private val project: Project,
     private val fieldList: List<String>,
-    private val queryId: String
+    private val queryId: String,
+    private val selectedLogGroup: String
 ) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
     lateinit var resultsPanel: JPanel
     private lateinit var tablePanel: SimpleToolWindowPanel
@@ -39,6 +40,7 @@ class QueryResultList(
         loadInitialResultsTable()
         openQueryEditor.addActionListener {
             // TODO : Open the Query editor with the corresponding fields
+            QueryEditorDialog(project, selectedLogGroup , false).show()
         }
     }
     private fun loadInitialResultsTable() {

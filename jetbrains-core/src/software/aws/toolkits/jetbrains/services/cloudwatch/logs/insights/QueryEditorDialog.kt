@@ -25,10 +25,11 @@ val relativeTimeUnit = mapOf(
 class QueryEditorDialog(
     private val project: Project,
     private val lGroupName: String,
-    private val client: CloudWatchLogsClient
+    private val client: CloudWatchLogsClient,
+    private val defaultQueryEditorState : Boolean
 ) : DialogWrapper(project) {
-    constructor(project: Project, logGroupName: String) :
-        this(project = project, lGroupName = logGroupName, client = project.awsClient())
+    constructor(project: Project, logGroupName: String, defaultState: Boolean) :
+        this(project = project, lGroupName = logGroupName, client = project.awsClient(), defaultQueryEditorState = defaultState)
 
     private val view = QueryEditor(project)
     private val queryingLogGroupApiCall = QueryingLogGroups(project)
@@ -37,8 +38,15 @@ class QueryEditorDialog(
 
     init {
         super.init()
+
         title = message("cloudwatch.logs.query_editor_title")
-        view.logGroupLabel.text = "Log Group:$lGroupName"
+        if(defaultQueryEditorState){
+            setView(QueryEditorSavedState.savedState, QueryEditorSavedState.enabledDisabledOptionsState)
+        }
+        else{
+            setView(QueryEditorSavedState().getQueryEditorState(),QueryEditorSavedState().getEnabledDisabledOptionsState())
+        }
+
         view.absoluteTimeRadioButton.addActionListener {
             view.startDate.isEnabled = true
             view.endDate.isEnabled = true
@@ -71,6 +79,28 @@ class QueryEditorDialog(
         // Do nothing, close logic is handled separately
     }
 
+    private fun setView(queryDetails: QueryDetails, enabledComponentsState: EnabledComponentsState) {
+        view.startDate.isEnabled = enabledComponentsState.startDateEnabled
+        view.endDate.isEnabled = enabledComponentsState.endDateEnabled
+        view.relativeTimeNumber.isEnabled = enabledComponentsState.relativeTimeNumberEnabled
+        view.relativeTimeUnit.isEnabled = enabledComponentsState.relativeTimeUnitEnabled
+        view.querySearchTerm.isEnabled = enabledComponentsState.querySearchTermEnabled
+        view.queryBox.isEnabled = enabledComponentsState.queryBoxEnabled
+        view.logGroupLabel.text = "Log Group : $lGroupName"
+        view.absoluteTimeRadioButton.isSelected = queryDetails.absoluteTimeSelected
+        view.startDate.date = queryDetails.startDateAbsolute
+        view.endDate.date = queryDetails.endDateAbsolute
+        view.relativeTimeRadioButton.isSelected = queryDetails.relativeTimeSelected
+        view.relativeTimeUnit.selectedItem = queryDetails.relativeTimeUnit
+        view.relativeTimeNumber.text = queryDetails.relativeTimeNumber
+        view.searchTerm.isSelected = queryDetails.searchTermSelected
+        view.querySearchTerm.text = queryDetails.searchTerm
+        view.queryLogGroupsRadioButton.isSelected = queryDetails.enterQuery
+        view.queryBox.text = queryDetails.query
+
+
+    }
+
     private fun getCurrentTime() = Calendar.getInstance().toInstant()
 
     private fun getRelativeTime(unitOfTime: ChronoUnit?, relTimeNumber: Long): StartEndDate = StartEndDate(getCurrentTime().minus(relTimeNumber, unitOfTime),
@@ -101,9 +131,19 @@ class QueryEditorDialog(
             funDetails.query } else {
             getFilterQuery(funDetails.searchTerm)
         }
+        QueryEditorSavedState().setQueryEditorState(getFunctionDetails(), getEnabledDisabledComponentsState())
         close(OK_EXIT_CODE)
         queryingLogGroupApiCall.executeStartQuery(queryStartEndDate, funDetails.logGroupName, query, client)
     }
+
+    private fun getEnabledDisabledComponentsState() : EnabledComponentsState = EnabledComponentsState(
+        startDateEnabled = view.startDate.isEnabled,
+        endDateEnabled = view.endDate.isEnabled,
+        relativeTimeNumberEnabled = view.relativeTimeNumber.isEnabled,
+        relativeTimeUnitEnabled = view.relativeTimeUnit.isEnabled,
+        querySearchTermEnabled = view.querySearchTerm.isEnabled,
+        queryBoxEnabled = view.queryBox.isEnabled
+    )
 
     private fun getFunctionDetails(): QueryDetails = QueryDetails(
         logGroupName = logGroupNames,
