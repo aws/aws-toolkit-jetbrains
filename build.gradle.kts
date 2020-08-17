@@ -7,6 +7,7 @@ import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import org.jetbrains.intellij.tasks.PublishTask
 import org.jetbrains.intellij.tasks.RunIdeTask
+import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.ProductCode
@@ -47,10 +48,8 @@ val publishToken: String by project
 val publishChannel: String by project
 
 plugins {
-    val ideaPluginVersion: String by project
     java
     id("de.undercouch.download") version "4.1.1" apply false
-    id("org.jetbrains.intellij") version ideaPluginVersion
 }
 
 group = "software.aws.toolkits"
@@ -225,10 +224,7 @@ subprojects {
             }
         }
 
-        extensions.getByType<JacocoPluginExtension>().apply {
-            val task = tasks.getByName("runIdeForUiTests")
-            applyTo<org.gradle.testing.jacoco.plugins.JacocoPlugin>(task)
-        }
+        extensions.getByType<JacocoPluginExtension>().applyTo(tasks.getByName<RunIdeForUiTestTask>("runIdeForUiTests"))
     }
 
     tasks.withType(KotlinCompile::class.java).all {
@@ -269,20 +265,20 @@ inline fun <reified T : Task> removeTask(tasks: TaskContainer, takeType: Class<T
 apply(plugin = "org.jetbrains.intellij")
 apply(plugin = "toolkit-change-log")
 
-intellij {
+(project.extensions.getByName("intellij") as IntelliJPluginExtension).apply {
     version = ideVersions.ideSdkVersion(ProductCode.IC)
     pluginName = "aws-jetbrains-toolkit"
     updateSinceUntilBuild = false
     downloadSources = System.getenv("CI") == null
 }
 
-tasks.prepareSandbox {
+tasks.getByName<PrepareSandboxTask>("prepareSandbox") {
     tasks.findByPath(":jetbrains-rider:prepareSandbox")?.let {
         from(it)
     }
 }
 
-tasks.publishPlugin {
+tasks.getByName<PublishTask>("publishPlugin") {
     token(publishToken)
     channels(if (publishChannel != null) publishChannel.split(",").map { it.trim() } else listOf())
 }

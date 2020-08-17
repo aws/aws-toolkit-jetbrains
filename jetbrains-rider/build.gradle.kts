@@ -286,7 +286,7 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
 
     val nugetConfigPath = File(projectDir, "NuGet.Config")
 
-    inputs.property("rdVersion",ideVersions.sdkVersion(ProductCode.RD)))
+    inputs.property("rdVersion",ideVersions.sdkVersion(ProductCode.RD))
     outputs.file(nugetConfigPath)
 
     doLast {
