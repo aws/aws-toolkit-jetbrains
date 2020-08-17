@@ -23,12 +23,12 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.iam.CreateIamRoleDialog
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
+import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
@@ -114,10 +114,14 @@ class EditFunctionDialog(
         view.envVars.envVars = envVariables
 
         if (mode == UPDATE_CONFIGURATION) {
+            // Show a unfiltered list of runtimes since we don't have to filter
+            view.setRuntimes(Runtime.knownValues())
             view.name.isEnabled = false
             view.deploySettings.isVisible = false
             view.buildSettings.isVisible = false
         } else {
+            // show a filtered list of runtimes to only ones we can build (since we have to build)
+            view.setRuntimes(LambdaHandlerResolver.supportedRuntimeGroups().flatMap { it.runtimes })
             view.createBucket.addActionListener {
                 val bucketDialog = CreateS3BucketDialog(
                     project = project,
@@ -140,12 +144,10 @@ class EditFunctionDialog(
                 .forEach { it.isVisible = false }
         }
 
-        view.setRuntimes(Runtime.knownValues())
         view.runtime.selectedItem = runtime?.validOrNull
 
         view.xrayEnabled.isSelected = xrayEnabled
 
-        val regionProvider = AwsRegionProvider.getInstance()
         val settings = AwsConnectionManager.getInstance(project)
         view.setXrayControlVisibility(mode != UPDATE_CODE && lambdaTracingConfigIsAvailable(settings.activeRegion))
 
@@ -217,7 +219,7 @@ class EditFunctionDialog(
 
         val s3Bucket = view.sourceBucket.selectedItem as String
 
-        val lambdaBuilder = psiFile.language.runtimeGroup?.let { LambdaBuilder.getInstance(it) } ?: return
+        val lambdaBuilder = psiFile.language.runtimeGroup?.let { LambdaBuilder.getInstanceOrNull(it) } ?: return
         val lambdaCreator = LambdaCreatorFactory.create(AwsClientManager.getInstance(project), lambdaBuilder)
 
         FileDocumentManager.getInstance().saveAllDocuments()
@@ -338,7 +340,7 @@ class UploadToLambdaValidator {
         val runtime = view.runtime.selected()
             ?: return ValidationInfo(message("lambda.upload_validation.runtime"), view.runtime)
 
-        runtime.runtimeGroup?.let { LambdaBuilder.getInstance(it) } ?: return ValidationInfo(
+        runtime.runtimeGroup?.let { LambdaBuilder.getInstanceOrNull(it) } ?: return ValidationInfo(
             message("lambda.upload_validation.unsupported_runtime", runtime),
             view.runtime
         )
