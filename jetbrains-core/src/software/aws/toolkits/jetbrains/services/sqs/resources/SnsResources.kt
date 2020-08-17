@@ -9,16 +9,9 @@ import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
 
 object SnsResources {
-    private val LIST_TOPICS: Resource.Cached<List<Topic>> = ClientBackedCachedResource(SnsClient::class, "sns.list_topics") {
+    val LIST_TOPICS: Resource.Cached<List<Topic>> = ClientBackedCachedResource(SnsClient::class, "sns.list_topics") {
         listTopicsPaginator().topics().toList()
     }
-
-    val LIST_TOPIC_NAMES: Resource<List<SnsTopic>> = Resource.View(LIST_TOPICS) {
-        map { SnsTopic(it.topicArn()) }
-    }
 }
 
-data class SnsTopic(val arn: String) {
-    val name = arn.substringAfterLast(':')
-    override fun toString(): String = name
-}
+fun Topic.getName(): String = topicArn().substringAfterLast(':')

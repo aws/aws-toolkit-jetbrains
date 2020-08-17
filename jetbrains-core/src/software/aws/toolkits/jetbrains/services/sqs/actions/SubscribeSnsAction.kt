@@ -12,7 +12,7 @@ import software.aws.toolkits.resources.message
 
 class SubscribeSnsAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.subscribe.sns")), DumbAware {
     override fun update(selected: SqsQueueNode, e: AnActionEvent) {
-        // Amazon SNS isn't currently compatible with FIFO queues.
+        // TODO: Amazon SNS isn't currently compatible with FIFO queues.
         if (selected.queue.isFifo) {
             e.presentation.isVisible = false
         }

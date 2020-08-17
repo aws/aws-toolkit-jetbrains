@@ -22,8 +22,6 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
-private val NOTIFICATION_TITLE = message("sqs.service_name")
-
 class SubscribeSnsDialog(
     private val project: Project,
     private val queue: Queue
@@ -60,8 +58,7 @@ class SubscribeSnsDialog(
                     runInEdt(ModalityState.any()) {
                         close(OK_EXIT_CODE)
                     }
-                    project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
-                    notifyInfo(NOTIFICATION_TITLE, message("sqs.subscribe.sns.success", topicSelected()), project)
+                    notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)
                 } catch (e: Exception) {
                     LOG.warn(e) { message("sqs.subscribe.sns.failed", queue.queueName, topicSelected()) }
                     setErrorText(e.message)
@@ -72,15 +69,9 @@ class SubscribeSnsDialog(
         }
     }
 
-    private fun topicSelected(): String =
-        if (view.topicSelector.selected() == null) {
-            ""
-        } else {
-            view.topicSelector.selected()!!.arn
-        }
+    private fun topicSelected(): String = view.topicSelector.selected()?.topicArn() ?: ""
 
-    @TestOnly
-    fun subscribe(arn: String) {
+    internal fun subscribe(arn: String) {
         snsClient.subscribe {
             it.topicArn(arn)
             it.protocol(PROTOCOL)

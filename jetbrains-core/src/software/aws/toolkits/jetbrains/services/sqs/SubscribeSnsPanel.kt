@@ -6,8 +6,9 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.project.Project
 import com.intellij.ui.IdeBorderFactory
+import software.amazon.awssdk.services.sns.model.Topic
 import software.aws.toolkits.jetbrains.services.sqs.resources.SnsResources
-import software.aws.toolkits.jetbrains.services.sqs.resources.SnsTopic
+import software.aws.toolkits.jetbrains.services.sqs.resources.getName
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
@@ -15,7 +16,7 @@ import javax.swing.JPanel
 
 class SubscribeSnsPanel(private val project: Project) {
     lateinit var component: JPanel
-    lateinit var topicSelector: ResourceSelector<SnsTopic>
+    lateinit var topicSelector: ResourceSelector<Topic>
     lateinit var selectContextHelp: JLabel
 
     init {
@@ -28,6 +29,9 @@ class SubscribeSnsPanel(private val project: Project) {
     }
 
     private fun createUIComponents() {
-        topicSelector = ResourceSelector.builder(project).resource(SnsResources.LIST_TOPIC_NAMES).build()
+        topicSelector = ResourceSelector.builder(project)
+            .resource(SnsResources.LIST_TOPICS)
+            .customRenderer {value, component -> component.append(value.getName()); component }
+            .build()
     }
 }

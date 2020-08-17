@@ -24,7 +24,7 @@
           </grid>
         </constraints>
         <properties>
-          <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.subscribe.sns.selector.tooltip"/>
+          <toolTipText value=""/>
         </properties>
       </component>
       <component id="17f3b" class="javax.swing.JLabel" binding="selectContextHelp">
