@@ -1,6 +1,8 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import com.adarshr.gradle.testlogger.TestLoggerExtension
+import com.adarshr.gradle.testlogger.TestLoggerPlugin
 import org.jetbrains.intellij.tasks.RunIdeTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
@@ -136,30 +138,32 @@ subprojects {
         testImplementation("junit:junit:$junitVersion")
     }
 
-    testlogger {
-        showFullStackTraces = true
-        showStandardStreams = true
-        showPassedStandardStreams = false
-        showSkippedStandardStreams = true
-        showFailedStandardStreams = true
+    plugins.withType<TestLoggerPlugin> {
+        configure<TestLoggerExtension> {
+            showFullStackTraces = true
+            showStandardStreams = true
+            showPassedStandardStreams = false
+            showSkippedStandardStreams = true
+            showFailedStandardStreams = true
+        }
     }
 
-    test {
-        jacoco {
-            // don"t instrument sdk, icons, ktlint, etc.
-            includes = ["software.aws.toolkits.*"]
-            excludes = ["software.aws.toolkits.ktlint.*"]
+    tasks.test {
+        configure<JacocoTaskExtension> {
+            // don't instrument sdk, icons, ktlint, etc.
+            includes = listOf("software.aws.toolkits.*")
+            excludes = listOf("software.aws.toolkits.ktlint.*")
         }
 
         reports {
-            junitXml.enabled = true
-            html.enabled = true
+            junitXml.isEnabled = true
+            html.isEnabled = true
         }
     }
 
-    idea {
-        module {
-            sourceDirs += sourceSets.main.java.srcDirs
+    plugins.withType<IdeaPlugin> {
+        model.module.apply {
+            sourceDirs(sourceSets.main.get().java.srcDirs)
             resourceDirs += sourceSets.main.resources.srcDirs
             testSourceDirs += file("tst-$ideVersion")
             testResourceDirs += file("tst-resources-$ideVersion")
@@ -180,10 +184,10 @@ subprojects {
         testClassesDirs = sourceSets["integrationTest"].output.classesDirs
         classpath = sourceSets["integrationTest"].runtimeClasspath
 
-        jacoco {
+        configure<JacocoTaskExtension> {
             // don"t instrument sdk, icons, ktlint, etc.
-            includes = ["software.aws.toolkits.*"]
-            excludes = ["software.aws.toolkits.ktlint.*"]
+            includes = listOf("software.aws.toolkits.*")
+            excludes = listOf("software.aws.toolkits.ktlint.*")
         }
 
         project.plugins.withId("org.jetbrains.intellij") {
@@ -219,12 +223,12 @@ subprojects {
 
     val testJar = tasks.register<Jar>("testJar") {
         baseName = "${project.name}-test"
-        from(sourceSets.test.output)
-        from(sourceSets.integrationTest.output)
+        from(sourceSets.test.get().output)
+        from(sourceSets.getByName("integrationTest").output)
     }
 
     artifacts {
-        testArtifacts = testJar
+        testArtifacts = testJar.get()
     }
 
     // Remove the tasks added in by gradle-intellij-plugin so that we don"t publish/verify multiple times
@@ -308,12 +312,13 @@ val coverageReport = tasks.register<JacocoReport>("coverageReport") {
 }
 
 subprojects.forEach {
-    coverageReport.mustRunAfter(it.tasks.withType(Test))
+    coverageReport.mustRunAfter(it.tasks.withType(Test::class.java))
 }
 
+val check = tasks.getByName("check")
 check.dependsOn(ktlintTask)
 check.dependsOn(validateLocalizedMessages)
-check.dependsOn(verifyPlugin)
+check.dependsOn(tasks.getByName("verifyPlugin"))
 check.dependsOn(coverageReport)
 
 // Workaround for runIde being defined in multiple projects, if we request the root project runIde, "alias" it to
@@ -323,13 +328,15 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
     if (gradle.startParameter.projectDir == project.rootProject.rootDir || System.getProperty("idea.gui.tests.gradle.runner") != null
     ) {
         println("Top level runIde selected, excluding sub-projects")
-        gradle.taskGraph.whenReady({ graph ->
-            graph.allTasks.forEach { it ->
-                if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
-                    it.enabled = false
+        gradle.taskGraph.whenReady { graph ->
+            {
+                graph.allTasks.forEach { it ->
+                    if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
+                        it.enabled = false
+                    }
                 }
             }
-        })
+        }
     }
     // Else required because this is an expression
 } else {
@@ -337,7 +344,7 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
 
 dependencies {
     implementation(project(":jetbrains-ultimate"))
-    project.findProject(":jetbrains-rider")?.map {
+    project.findProject(":jetbrains-rider")?.let {
         implementation(it)
     }
 
