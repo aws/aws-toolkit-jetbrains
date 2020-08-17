@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import software.aws.toolkits.gradle.resources.ValidateMessages
+import software.aws.toolkits.gradle.findFolders
 
 buildscript {
     repositories {
@@ -37,7 +38,6 @@ plugins {
     id("de.undercouch.download") version "4.1.1" apply false
     java
 }
-apply(plugin= "org.jetbrains.intellij")
 
 group = "software.aws.toolkits"
 // please check changelog generation logic if this format is changed
@@ -57,7 +57,6 @@ allprojects {
     apply(plugin = "com.adarshr.test-logger")
     apply(plugin = "java")
     apply(plugin = "jacoco")
-    apply(plugin = "org.jetbrains.intellij")
 
     java.sourceCompatibility = JavaVersion.VERSION_1_8
     java.targetCompatibility = JavaVersion.VERSION_1_8
@@ -67,14 +66,13 @@ allprojects {
     }
 
     tasks.withType(RunIdeTask::class.java) {
-        intellij {
-            val alternativeIde = System.getenv("ALTERNATIVE_IDE")
-            if (alternativeIde != null) {
-                if (File(alternativeIde).exists()) {
-                    alternativeIdePath = System.env.ALTERNATIVE_IDE
-                } else {
-                    throw GradleException("ALTERNATIVE_IDE path not found $alternativeIde ${if (alternativeIde.endsWith("/")) "remove the trailing slash" else ""}")
-                }
+        val ijExt = project.extensions.getByName("intellij") as org.jetbrains.intellij.IntelliJPluginExtension
+        val alternativeIde = System.getenv("ALTERNATIVE_IDE")
+        if (alternativeIde != null) {
+            if (File(alternativeIde).exists()) {
+                ijExt.alternativeIdePath = System.getenv("ALTERNATIVE_IDE")
+            } else {
+                throw GradleException("ALTERNATIVE_IDE path not found $alternativeIde ${if (alternativeIde.endsWith("/")) "remove the trailing slash" else ""}")
             }
         }
     }
@@ -94,24 +92,24 @@ configure(subprojects.filter { it.name != "telemetry-client" }) {
     apply(plugin = "kotlin")
 
     sourceSets {
-        sourceSets["integrationTest"] {
-            kotlin.srcDir("it")
+        sourceSets.getByName("integrationTest") {
+            java.srcDir("it")
         }
     }
 }
 
 subprojects {
-    group = parent.group
-    version = parent.version
+    group = parent!!.group
+    version = parent!!.version
 
     apply(plugin = "java")
     apply(plugin = "idea")
 
     sourceSets {
-        main.get().java.srcDirs = SourceUtils.findFolders(project, "src", ideVersion)
-        main.get().resources.srcDirs = SourceUtils.findFolders(project, "resources", ideVersion)
-        test.get().java.srcDirs = SourceUtils.findFolders(project, "tst", ideVersion)
-        test.get().resources.srcDirs = SourceUtils.findFolders(project, "tst-resources", ideVersion)
+        main.get().java.srcDirs(findFolders(project, "src", ideVersion))
+        main.get().resources.srcDirs( findFolders(project, "resources", ideVersion))
+        test.get().java.srcDirs( findFolders(project, "tst", ideVersion))
+        test.get().resources.srcDirs( findFolders(project, "tst-resources", ideVersion))
         create("integrationTest") {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
@@ -324,12 +322,12 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
     ) {
         println("Top level runIde selected, excluding sub-projects")
         gradle.taskGraph.whenReady({ graph ->
-                graph.allTasks.forEach { it ->
-                    if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
-                        it.enabled = false
-                    }
+            graph.allTasks.forEach { it ->
+                if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
+                    it.enabled = false
                 }
-            })
+            }
+        })
     }
     // Else required because this is an expression
 } else {
