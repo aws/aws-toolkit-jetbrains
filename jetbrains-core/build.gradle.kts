@@ -33,7 +33,7 @@ val compileKotlin: KotlinCompile by tasks
 intellij {
     val rootIntelliJTask = rootProject.intellij
     version = ideVersions.sdkVersion(ProductCode.IC)
-    setPlugins(ideVersions.plugins(ProductCode.IC))
+    setPlugins(*ideVersions.plugins(ProductCode.IC).toTypedArray())
     pluginName = rootIntelliJTask.pluginName
     updateSinceUntilBuild = rootIntelliJTask.updateSinceUntilBuild
     downloadSources = rootIntelliJTask.downloadSources

@@ -57,7 +57,7 @@ intellij {
 
     // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
     val extraPlugins = arrayOf("rider-plugins-appender")
-    setPlugins(ideVersions.plugins(ProductCode.RD) + extraPlugins)
+    setPlugins(*(ideVersions.plugins(ProductCode.RD) + extraPlugins).toTypedArray())
 
     // Disable downloading source to avoid issues related to Rider SDK naming that is missed in Idea
     // snapshots repository. The task is failed because if is unable to find related IC sources.

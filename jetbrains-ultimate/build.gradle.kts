@@ -21,7 +21,7 @@ val ideVersions = IdeVersions(project)
 intellij {
     val parentIntellijTask = rootProject.intellij
     version = ideVersions.sdkVersion(ProductCode.IU)
-    setPlugins(ideVersions.plugins(ProductCode.IU))
+    setPlugins(*ideVersions.plugins(ProductCode.IU).toTypedArray())
     pluginName = parentIntellijTask.pluginName
     updateSinceUntilBuild = parentIntellijTask.updateSinceUntilBuild
     downloadSources = parentIntellijTask.downloadSources
