@@ -6,9 +6,7 @@ import com.jetbrains.rd.generator.gradle.RdgenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 
 buildscript {
-    val rdGenVersion: groovy.lang.Closure<String> by project
-    val rdversion = rdGenVersion()
-    project.extra["rd_version"] = rdversion
+    val rdversion = software.aws.toolkits.gradle.IdeVersions(project).rdGenVersion()
 
     logger.info("Using rd-gen: $rdversion")
 

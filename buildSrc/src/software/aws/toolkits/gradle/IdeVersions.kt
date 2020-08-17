@@ -6,13 +6,22 @@ package software.aws.toolkits.gradle
 import org.gradle.api.Project
 
 enum class ProductCode {
-    IC
+    IC,
+    IU,
+    RD
 }
 
-data class ProductProfile(
+open class ProductProfile(
     val sdkVersion: String,
     val plugins: List<String>
 )
+
+class RiderProfile(
+    sdkVersion: String,
+    plugins: List<String>,
+    val rdGenVersion: String,
+    val nugetVersion: String
+) : ProductProfile(sdkVersion, plugins)
 
 data class Profile(
     val sinceVersion: String,
@@ -20,7 +29,7 @@ data class Profile(
     val products: Map<ProductCode, ProductProfile>
 )
 
-open class IdeVersions(private val project: Project) {
+class IdeVersions(private val project: Project) {
     val ideProfiles = mapOf(
         "2019.3" to Profile(
             sinceVersion = "193",
@@ -37,10 +46,31 @@ open class IdeVersions(private val project: Project) {
                         "org.jetbrains.idea.maven",
                         "Docker:193.5233.140"
                     )
+                ),
+                ProductCode.IU to ProductProfile(
+                    sdkVersion = "IU-2019.3",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.terminal",
+                        "Pythonid:193.5233.109",
+                        "org.jetbrains.plugins.yaml",
+                        "JavaScript",
+                        "JavaScriptDebugger"
+                    )
+                ),
+                ProductCode.RD to RiderProfile(
+                    sdkVersion = "RD-2019.3.4",
+                    rdGenVersion = "0.193.146",
+                    nugetVersion = "2019.3.4",
+                    plugins = listOf(
+                        "org.jetbrains.plugins.yaml"
+                    )
                 )
             )
         )
     )
+
+    fun rdGenVersion(): String = getRiderProfile().rdGenVersion
+    fun nugetVersion(): String = getRiderProfile().nugetVersion
 
     // Convert (as an example) 2020.2 -> 202
     fun resolveShortenedIdeProfileName(): String {
@@ -54,6 +84,9 @@ open class IdeVersions(private val project: Project) {
         ?.get(code)
         ?.sdkVersion
         ?: throw IllegalArgumentException("Product not in map of IDE versions: ${resolveIdeProfileName()}, $code")
+
+    private fun getRiderProfile(): RiderProfile = ideProfiles[resolveIdeProfileName()]?.products?.get(ProductCode.RD) as? RiderProfile
+        ?: throw IllegalStateException("Failed to get Rider profile for ${resolveIdeProfileName()}!")
 
     private fun resolveIdeProfileName(): String = if (System.getenv()["ALTERNATIVE_IDE_PROFILE_NAME"] != null) {
         System.getenv("ALTERNATIVE_IDE_PROFILE_NAME")
