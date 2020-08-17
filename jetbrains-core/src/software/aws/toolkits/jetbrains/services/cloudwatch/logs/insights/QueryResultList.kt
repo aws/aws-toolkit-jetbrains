@@ -40,7 +40,7 @@ class QueryResultList(
         loadInitialResultsTable()
         openQueryEditor.addActionListener {
             // TODO : Open the Query editor with the corresponding fields
-            QueryEditorDialog(project, selectedLogGroup , false).show()
+            QueryEditorDialog(project, selectedLogGroup, false).show()
         }
     }
     private fun loadInitialResultsTable() {

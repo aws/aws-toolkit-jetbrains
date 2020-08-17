@@ -26,7 +26,7 @@ class QueryEditorDialog(
     private val project: Project,
     private val lGroupName: String,
     private val client: CloudWatchLogsClient,
-    private val defaultQueryEditorState : Boolean
+    private val defaultQueryEditorState: Boolean
 ) : DialogWrapper(project) {
     constructor(project: Project, logGroupName: String, defaultState: Boolean) :
         this(project = project, lGroupName = logGroupName, client = project.awsClient(), defaultQueryEditorState = defaultState)
@@ -40,11 +40,10 @@ class QueryEditorDialog(
         super.init()
 
         title = message("cloudwatch.logs.query_editor_title")
-        if(defaultQueryEditorState){
+        if (defaultQueryEditorState) {
             setView(QueryEditorSavedState.savedState, QueryEditorSavedState.enabledDisabledOptionsState)
-        }
-        else{
-            setView(QueryEditorSavedState().getQueryEditorState(),QueryEditorSavedState().getEnabledDisabledOptionsState())
+        } else {
+            setView(QueryEditorSavedState().getQueryEditorState(), QueryEditorSavedState().getEnabledDisabledOptionsState())
         }
 
         view.absoluteTimeRadioButton.addActionListener {
@@ -97,8 +96,6 @@ class QueryEditorDialog(
         view.querySearchTerm.text = queryDetails.searchTerm
         view.queryLogGroupsRadioButton.isSelected = queryDetails.enterQuery
         view.queryBox.text = queryDetails.query
-
-
     }
 
     private fun getCurrentTime() = Calendar.getInstance().toInstant()
@@ -136,7 +133,7 @@ class QueryEditorDialog(
         queryingLogGroupApiCall.executeStartQuery(queryStartEndDate, funDetails.logGroupName, query, client)
     }
 
-    private fun getEnabledDisabledComponentsState() : EnabledComponentsState = EnabledComponentsState(
+    private fun getEnabledDisabledComponentsState(): EnabledComponentsState = EnabledComponentsState(
         startDateEnabled = view.startDate.isEnabled,
         endDateEnabled = view.endDate.isEnabled,
         relativeTimeNumberEnabled = view.relativeTimeNumber.isEnabled,

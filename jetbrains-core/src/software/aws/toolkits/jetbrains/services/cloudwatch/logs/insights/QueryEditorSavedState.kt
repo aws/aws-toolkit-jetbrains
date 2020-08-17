@@ -3,28 +3,24 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
-import java.util.*
+import java.util.Calendar
 
 class QueryEditorSavedState {
-    fun setQueryEditorState(queryDetails: QueryDetails, enabledComponentsDisabledComponents: EnabledComponentsState){
+    fun setQueryEditorState(queryDetails: QueryDetails, enabledComponentsDisabledComponents: EnabledComponentsState) {
         savedState = queryDetails
         enabledDisabledOptionsState = enabledComponentsDisabledComponents
     }
 
-    fun getQueryEditorState() : QueryDetails {
-        return savedState
-    }
+    fun getQueryEditorState(): QueryDetails = savedState
 
-    fun getEnabledDisabledOptionsState(): EnabledComponentsState {
-        return enabledDisabledOptionsState
-    }
+    fun getEnabledDisabledOptionsState(): EnabledComponentsState = enabledDisabledOptionsState
 
-    companion object{
-        var savedState = QueryDetails (
+    companion object {
+        var savedState = QueryDetails(
             listOf("Default log"),
             false,
-            Calendar.getInstance().time
-            , Calendar.getInstance().time,
+            Calendar.getInstance().time,
+            Calendar.getInstance().time,
             true,
             "Minutes",
             "10",
@@ -36,12 +32,13 @@ class QueryEditorSavedState {
                 "| limit 20"
 
             )
-        var enabledDisabledOptionsState  = EnabledComponentsState(
-            false,
-            false,
-            true,
-            true,
-            true,
-            false)
+        var enabledDisabledOptionsState = EnabledComponentsState(
+            startDateEnabled = false,
+            endDateEnabled = false,
+            relativeTimeNumberEnabled = true,
+            relativeTimeUnitEnabled = true,
+            querySearchTermEnabled = true,
+            queryBoxEnabled = false
+        )
     }
 }
