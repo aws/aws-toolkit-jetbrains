@@ -12,7 +12,9 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
+const val fields = "fields"
 class QueryingLogGroups(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("ExecutingQuery") {
+
     fun executeStartQuery(queryStartEndDate: StartEndDate, logGroupNames: List<String>, query: String, client: CloudWatchLogsClient) = launch {
         // TODO: Multiple log groups queried (currently only a single log group can be selected and queried)
         try {
@@ -23,7 +25,7 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
                 .startTime(queryStartEndDate.startDate.epochSecond)
                 .build()
             val response = client.startQuery(request)
-            var queryId: String = response.queryId()
+            val queryId: String = response.queryId()
             val fieldList = getFields(query)
             QueryResultsWindow.getInstance(project).showResults(queryId, fieldList, logGroupNames[0])
         } catch (e: Exception) {
@@ -37,8 +39,9 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
         query.replace("\\|", "")
         val queries = query.split("|")
         for (item in queries) {
-            if (item.trim().startsWith("fields", ignoreCase = false)) {
-                var fields = item.trim().substring(6)
+            val splitQuery = item.trim()
+            if (splitQuery.startsWith(fields, ignoreCase = false)) {
+                var fields = splitQuery.substring(fields.length + 1)
                 fieldList.add(fields.split(",").map { it.trim() })
             }
         }

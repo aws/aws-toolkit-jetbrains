@@ -7,16 +7,16 @@ import java.util.Calendar
 
 class QueryEditorSavedState {
     fun setQueryEditorState(queryDetails: QueryDetails, enabledComponentsDisabledComponents: EnabledComponentsState) {
-        savedState = queryDetails
+        currentQueryEditorState = queryDetails
         enabledDisabledOptionsState = enabledComponentsDisabledComponents
     }
 
-    fun getQueryEditorState(): QueryDetails = savedState
+    fun getQueryEditorState(): QueryDetails = currentQueryEditorState
 
     fun getEnabledDisabledOptionsState(): EnabledComponentsState = enabledDisabledOptionsState
 
     companion object {
-        var savedState = QueryDetails(
+        var currentQueryEditorState = QueryDetails(
             listOf("Default log"),
             false,
             Calendar.getInstance().time,

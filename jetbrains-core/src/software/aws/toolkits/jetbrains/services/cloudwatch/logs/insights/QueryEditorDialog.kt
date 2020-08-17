@@ -26,10 +26,10 @@ class QueryEditorDialog(
     private val project: Project,
     private val lGroupName: String,
     private val client: CloudWatchLogsClient,
-    private val defaultQueryEditorState: Boolean
+    private val initialQueryEditorState: Boolean
 ) : DialogWrapper(project) {
-    constructor(project: Project, logGroupName: String, defaultState: Boolean) :
-        this(project = project, lGroupName = logGroupName, client = project.awsClient(), defaultQueryEditorState = defaultState)
+    constructor(project: Project, logGroupName: String, initialState: Boolean) :
+        this(project = project, lGroupName = logGroupName, client = project.awsClient(), initialQueryEditorState = initialState)
 
     private val view = QueryEditor(project)
     private val queryingLogGroupApiCall = QueryingLogGroups(project)
@@ -40,8 +40,8 @@ class QueryEditorDialog(
         super.init()
 
         title = message("cloudwatch.logs.query_editor_title")
-        if (defaultQueryEditorState) {
-            setView(QueryEditorSavedState.savedState, QueryEditorSavedState.enabledDisabledOptionsState)
+        if (initialQueryEditorState) {
+            setView(QueryEditorSavedState.currentQueryEditorState, QueryEditorSavedState.enabledDisabledOptionsState)
         } else {
             setView(QueryEditorSavedState().getQueryEditorState(), QueryEditorSavedState().getEnabledDisabledOptionsState())
         }

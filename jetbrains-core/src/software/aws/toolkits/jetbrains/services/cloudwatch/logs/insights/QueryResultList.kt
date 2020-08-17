@@ -39,8 +39,7 @@ class QueryResultList(
         tablePanel.setContent(resultsTable.component)
         loadInitialResultsTable()
         openQueryEditor.addActionListener {
-            // TODO : Open the Query editor with the corresponding fields
-            QueryEditorDialog(project, selectedLogGroup, false).show()
+            QueryEditorDialog(project, selectedLogGroup, initialState = false).show()
         }
     }
     private fun loadInitialResultsTable() {

@@ -18,20 +18,16 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, QueryResultsWindow.INSIGHTS_RESULTS_TOOL_WINDOW)
     private val edtContext = getCoroutineUiContext()
     fun showResults(queryId: String, fieldList: List<String>, selectedlogGroup: String) = launch {
-        try {
-            val existingWindow = toolWindow.find(queryId)
-            if (existingWindow != null) {
-                withContext(edtContext) {
-                    existingWindow.show()
-                }
-                return@launch
-            }
-            val queryResult = QueryResultList(project, fieldList, queryId, selectedlogGroup)
+        val existingWindow = toolWindow.find(queryId)
+        if (existingWindow != null) {
             withContext(edtContext) {
-                toolWindow.addTab(queryId, queryResult.resultsPanel, activate = true, id = queryId, disposable = queryResult)
+                existingWindow.show()
             }
-        } catch (e: Exception) {
-            throw e
+            return@launch
+        }
+        val queryResult = QueryResultList(project, fieldList, queryId, selectedlogGroup)
+        withContext(edtContext) {
+            toolWindow.addTab(queryId, queryResult.resultsPanel, activate = true, id = queryId, disposable = queryResult)
         }
     }
 

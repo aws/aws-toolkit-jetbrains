@@ -42,7 +42,7 @@ class QueryResultsTable(
             autoscrolls = true
             emptyText.text = message("loading_resource.loading")
             tableHeader.reorderingAllowed = false
-            tableHeader.resizingAllowed = false
+            tableHeader.resizingAllowed = true
         }
 
         queryActor = QueryResultsActor(project, client, resultsTable, queryId)
