@@ -10,13 +10,10 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.sns.SnsClient
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
-import software.aws.toolkits.jetbrains.services.sqs.resources.SqsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message

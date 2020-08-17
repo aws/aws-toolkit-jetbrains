@@ -31,7 +31,7 @@ class SubscribeSnsPanel(private val project: Project) {
     private fun createUIComponents() {
         topicSelector = ResourceSelector.builder(project)
             .resource(SnsResources.LIST_TOPICS)
-            .customRenderer {value, component -> component.append(value.getName()); component }
+            .customRenderer { value, component -> component.append(value.getName()); component }
             .build()
     }
 }
