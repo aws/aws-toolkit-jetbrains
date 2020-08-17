@@ -3,6 +3,9 @@
 
 import com.adarshr.gradle.testlogger.TestLoggerExtension
 import com.adarshr.gradle.testlogger.TestLoggerPlugin
+import org.jetbrains.intellij.IntelliJPluginExtension
+import org.jetbrains.intellij.tasks.PrepareSandboxTask
+import org.jetbrains.intellij.tasks.PublishTask
 import org.jetbrains.intellij.tasks.RunIdeTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
@@ -38,15 +41,14 @@ val junitVersion: String by project
 val remoteRobotPort: String by project
 val ktlintVersion: String by project
 val remoteRobotVersion: String by project
+val ideaPluginVersion: String by project
 // publishing
 val publishToken: String by project
 val publishChannel: String by project
 
 plugins {
-    val ideaPluginVersion: String by project
     java
     id("de.undercouch.download") version "4.1.1" apply false
-    id("org.jetbrains.intellij") version ideaPluginVersion
 }
 
 group = "software.aws.toolkits"
@@ -76,7 +78,7 @@ allprojects {
     }
 
     tasks.withType(RunIdeTask::class.java) {
-        val ijExt = project.extensions.getByName("intellij") as org.jetbrains.intellij.IntelliJPluginExtension
+        val ijExt = project.extensions.getByName("intellij") as IntelliJPluginExtension
         val alternativeIde = System.getenv("ALTERNATIVE_IDE")
         if (alternativeIde != null) {
             if (File(alternativeIde).exists()) {
@@ -265,20 +267,21 @@ inline fun <reified T : Task> removeTask(tasks: TaskContainer, takeType: Class<T
 apply(plugin = "org.jetbrains.intellij")
 apply(plugin = "toolkit-change-log")
 
-intellij {
+val intellij = extensions.getByName("intellij") as IntelliJPluginExtension
+intellij.apply {
     version = ideVersions.ideSdkVersion(ProductCode.IC)
     pluginName = "aws-jetbrains-toolkit"
     updateSinceUntilBuild = false
     downloadSources = System.getenv("CI") == null
 }
 
-tasks.prepareSandbox {
+tasks.getByName<PrepareSandboxTask>("prepareSandbox") {
     tasks.findByPath(":jetbrains-rider:prepareSandbox")?.let {
         from(it)
     }
 }
 
-tasks.publishPlugin {
+tasks.getByName<PublishTask>("publishPlugin") {
     token(publishToken)
     channels(if (publishChannel != null) publishChannel.split(",").map { it.trim() } else listOf())
 }
