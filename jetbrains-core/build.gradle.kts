@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import groovy.lang.Closure
-import org.gradle.jvm.tasks.Jar
-import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
-import toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 
-apply(plugin = "org.jetbrains.intellij")
+plugins {
+    id("org.jetbrains.intellij")
+}
 apply(from = "../intellijJVersions.gradle")
 
 buildscript {
@@ -23,8 +23,6 @@ buildscript {
     }
 }
 
-fun Project.intellij(): IntelliJPluginExtension = extensions["intellij"] as IntelliJPluginExtension
-
 val telemetryVersion: String by project
 val awsSdkVersion: String by project
 val coroutinesVersion: String by project
@@ -36,10 +34,9 @@ val ideUntilVersion: Closure<String> by ext
 
 val compileKotlin: KotlinCompile by tasks
 val patchPluginXml: PatchPluginXmlTask by tasks
-val jar: Jar by tasks
 
-extensions.configure<IntelliJPluginExtension>("intellij") {
-    val rootIntelliJTask = rootProject.intellij()
+intellij {
+    val rootIntelliJTask = rootProject.intellij
     version = ideSdkVersion("IC")
     setPlugins(*(idePlugins("IC").toArray()))
     pluginName = rootIntelliJTask.pluginName
@@ -65,7 +62,7 @@ sourceSets {
 }
 
 tasks.test {
-    systemProperty("log.dir", "${project.intellij().sandboxDirectory}-test/logs")
+    systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {

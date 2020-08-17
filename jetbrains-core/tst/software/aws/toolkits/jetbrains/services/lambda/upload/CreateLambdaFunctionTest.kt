@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.services.lambda.upload
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
+import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.any
@@ -24,6 +26,10 @@ class CreateLambdaFunctionTest {
     @Rule
     @JvmField
     val projectRule = JavaCodeInsightTestFixtureRule()
+
+    @Rule
+    @JvmField
+    val disposableRule = DisposableRule()
 
     lateinit var smartElement: SmartPsiElementPointer<PsiElement>
 
@@ -137,6 +143,32 @@ Resources:
             action.update(actionEvent)
 
             assertThat(actionEvent.presentation.isVisible).isTrue()
+        }
+    }
+
+    @Test
+    fun `Supported runtime groups shows action`() {
+        // With no masking it should be visible because we have runtime groups
+        runInEdtAndWait {
+            val action = CreateLambdaFunction()
+            val actionEvent = TestActionEvent()
+            action.update(actionEvent)
+            assertThat(actionEvent.presentation.isVisible).isTrue()
+        }
+    }
+
+    @Test
+    fun `No supported runtime groups hides action`() {
+        ExtensionTestUtil.maskExtensions(
+            LambdaHandlerResolver.extensionPointName,
+            listOf(),
+            disposableRule.disposable
+        )
+        runInEdtAndWait {
+            val action = CreateLambdaFunction()
+            val actionEvent = TestActionEvent()
+            action.update(actionEvent)
+            assertThat(actionEvent.presentation.isVisible).isFalse()
         }
     }
 }
