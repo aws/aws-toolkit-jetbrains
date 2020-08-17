@@ -7,7 +7,6 @@ import org.jetbrains.intellij.IntelliJPluginExtension
 plugins {
     id("org.jetbrains.intellij")
 }
-apply(from = "../intellijJVersions.gradle")
 
 val ideSdkVersion: Closure<String> by ext
 val idePlugins: Closure<ArrayList<String>> by ext

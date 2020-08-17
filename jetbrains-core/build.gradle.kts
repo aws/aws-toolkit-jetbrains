@@ -10,7 +10,6 @@ import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 plugins {
     id("org.jetbrains.intellij")
 }
-apply(from = "../intellijJVersions.gradle")
 
 buildscript {
     val telemetryVersion: String by project

@@ -22,12 +22,7 @@ buildscript {
     }
 }
 
-plugins {
-    id("de.undercouch.download") version "4.1.1" apply false
-    java
-}
-
-val ideVersions = IdeVersions(this)
+val ideVersions = IdeVersions(project)
 val ideVersion = ideVersions.resolveShortenedIdeProfileName()
 val toolkitVersion: String by project
 val kotlinVersion: String by project
@@ -36,6 +31,13 @@ val mockitoKotlinVersion: String by project
 val assertjVersion: String by project
 val junitVersion: String by project
 val remoteRobotPort: String by project
+val ktlintVersion: String by project
+
+plugins {
+    id("de.undercouch.download") version "4.1.1" apply false
+    java
+}
+apply(plugin= "org.jetbrains.intellij")
 
 group = "software.aws.toolkits"
 // please check changelog generation logic if this format is changed
@@ -55,6 +57,7 @@ allprojects {
     apply(plugin = "com.adarshr.test-logger")
     apply(plugin = "java")
     apply(plugin = "jacoco")
+    apply(plugin = "org.jetbrains.intellij")
 
     java.sourceCompatibility = JavaVersion.VERSION_1_8
     java.targetCompatibility = JavaVersion.VERSION_1_8
@@ -288,7 +291,7 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
 }
 
 val validateLocalizedMessages = tasks.register<ValidateMessages>("validateLocalizedMessages") {
-    paths = listOf("${project.rootDir}/resources/resources/software/aws/toolkits/resources/localized_messages.properties"))
+    paths.set(listOf("${project.rootDir}/resources/resources/software/aws/toolkits/resources/localized_messages.properties"))
 }
 
 val coverageReport = tasks.register<JacocoReport>("coverageReport") {
@@ -317,29 +320,25 @@ check.dependsOn(coverageReport)
 // community edition
 if (gradle.startParameter.taskNames.contains("runIde")) {
     // Only disable this if running from root project
-    if (gradle.startParameter.projectDir == project.rootProject.rootDir
-        || System.properties.containsKey("idea.gui.tests.gradle.runner")
+    if (gradle.startParameter.projectDir == project.rootProject.rootDir || System.getProperty("idea.gui.tests.gradle.runner") != null
     ) {
-        println(
-            "Top level runIde selected, excluding sub-projects" runIde ")
-                gradle . taskGraph . whenReady { graph ->
-                graph.allTasks.forEach {
-                    if (it.name == "runIde" &&
-                        it.project != project(":jetbrains-core")
-                    ) {
+        println("Top level runIde selected, excluding sub-projects")
+        gradle.taskGraph.whenReady({ graph ->
+                graph.allTasks.forEach { it ->
+                    if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
                         it.enabled = false
                     }
                 }
-            }
+            })
     }
     // Else required because this is an expression
 } else {
 }
 
 dependencies {
-    implementation = project(":jetbrains-ultimate")
-    project.findProject(":jetbrains-rider")?.collect {
-        implementation it
+    implementation(project(":jetbrains-ultimate"))
+    project.findProject(":jetbrains-rider")?.map {
+        implementation(it)
     }
 
     ktlint("com.pinterest:ktlint:$ktlintVersion")
