@@ -39,7 +39,7 @@ class QueryResultList(
         tablePanel.setContent(resultsTable.component)
         loadInitialResultsTable()
         openQueryEditor.addActionListener {
-            QueryEditorDialog(project, selectedLogGroup, initialState = false).show()
+            QueryEditorDialog(project, selectedLogGroup, initialParametersDisplayed = false).show()
         }
     }
     private fun loadInitialResultsTable() {

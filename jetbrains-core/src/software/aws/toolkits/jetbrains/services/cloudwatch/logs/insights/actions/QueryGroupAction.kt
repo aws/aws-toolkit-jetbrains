@@ -14,5 +14,5 @@ class QueryGroupAction : SingleResourceNodeAction<CloudWatchLogsNode>(message("c
     override fun actionPerformed(selected: CloudWatchLogsNode, e: AnActionEvent) = QueryEditorDialog(
         selected.nodeProject,
         selected.logGroupName,
-        initialState = true).show()
+        initialParametersDisplayed = true).show()
 }
