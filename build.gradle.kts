@@ -3,17 +3,17 @@
 
 import com.adarshr.gradle.testlogger.TestLoggerExtension
 import com.adarshr.gradle.testlogger.TestLoggerPlugin
-import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import org.jetbrains.intellij.tasks.PublishTask
-import org.jetbrains.intellij.tasks.RunIdeTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
+import org.jetbrains.intellij.tasks.RunIdeTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.ProductCode
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.getOrCreate
+import software.aws.toolkits.gradle.intellij
 import software.aws.toolkits.gradle.resources.ValidateMessages
 
 buildscript {
@@ -49,7 +49,7 @@ val publishChannel: String by project
 
 plugins {
     java
-    id("de.undercouch.download") version "4.1.1" apply false
+    id("de.undercouch.download") apply false
 }
 
 group = "software.aws.toolkits"
@@ -79,11 +79,12 @@ allprojects {
     }
 
     tasks.withType(RunIdeTask::class.java) {
-        val ijExt = project.extensions.getByName("intellij") as IntelliJPluginExtension
         val alternativeIde = System.getenv("ALTERNATIVE_IDE")
         if (alternativeIde != null) {
             if (File(alternativeIde).exists()) {
-                ijExt.alternativeIdePath = System.getenv("ALTERNATIVE_IDE")
+                intellij {
+                    alternativeIdePath = System.getenv("ALTERNATIVE_IDE")
+                }
             } else {
                 throw GradleException("ALTERNATIVE_IDE path not found $alternativeIde ${if (alternativeIde.endsWith("/")) "remove the trailing slash" else ""}")
             }
@@ -265,7 +266,7 @@ inline fun <reified T : Task> removeTask(tasks: TaskContainer, takeType: Class<T
 apply(plugin = "org.jetbrains.intellij")
 apply(plugin = "toolkit-change-log")
 
-(project.extensions.getByName("intellij") as IntelliJPluginExtension).apply {
+intellij {
     version = ideVersions.ideSdkVersion(ProductCode.IC)
     pluginName = "aws-jetbrains-toolkit"
     updateSinceUntilBuild = false
@@ -338,7 +339,6 @@ check.dependsOn(validateLocalizedMessages)
 check.dependsOn(tasks.getByName("verifyPlugin"))
 check.dependsOn(coverageReport)
 
-/*
 // Workaround for runIde being defined in multiple projects, if we request the root project runIde, "alias" it to
 // community edition
 if (gradle.startParameter.taskNames.contains("runIde")) {
@@ -346,20 +346,17 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
     if (gradle.startParameter.projectDir == project.rootProject.rootDir || System.getProperty("idea.gui.tests.gradle.runner") != null
     ) {
         println("Top level runIde selected, excluding sub-projects")
-        gradle.taskGraph.whenReady { graph ->
-            {
-                graph.allTasks.forEach { it ->
-                    if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
-                        it.enabled = false
-                    }
+        gradle.taskGraph.whenReady {
+            allTasks.forEach { it ->
+                if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
+                    it.enabled = false
                 }
             }
         }
     }
-    // Else required because this is an expression
+    // Else required because this is considered an expression
 } else {
 }
- */
 
 dependencies {
     implementation(project(":jetbrains-ultimate"))
