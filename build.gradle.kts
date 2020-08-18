@@ -117,8 +117,10 @@ configure(subprojects.filter { it.name != "telemetry-client" }) {
 }
 
 subprojects {
-    group = parent?.group ?: throw IllegalStateException("Subproject $name parent is null!")
-    version = parent?.version ?: throw IllegalStateException("Subproject $name parent is null!")
+    parent?.let {
+        group = it.group
+        version = it.version
+    } ?: throw IllegalStateException("Subproject $name parent is null!")
 
     apply(plugin = "java")
     apply(plugin = "idea")
