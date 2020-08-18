@@ -13,7 +13,7 @@ import javax.swing.JComponent
 class FilterDialog(private val project: Project, type: FilterType) : DialogWrapper(project) {
     private var originalName: String? = null
     internal val content = when (type) {
-        FilterType.Tag -> TagFilterDialog()
+        FilterType.Tag -> TagFilterDialog(project)
         FilterType.CloudFormation -> CloudFormationFilterDialog(project)
     }
 

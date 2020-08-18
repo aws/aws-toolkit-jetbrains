@@ -2,22 +2,33 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.core.filtering
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.ui.components.JBTextField
+import com.intellij.ui.TextFieldWithAutoCompletion
 import software.aws.toolkits.resources.message
+import java.awt.event.FocusEvent
+import java.awt.event.FocusListener
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class TagFilterDialog : FilterDialogPanel {
+class TagFilterDialog(private val project: Project) : FilterDialogPanel {
     override lateinit var component: JPanel
     private lateinit var filterName: JTextField
-    private lateinit var keyBox: JTextField
-    private lateinit var valuesField: JBTextField
+    private lateinit var keyBox: TextFieldWithAutoCompletion<String>
+    private lateinit var valuesField: TextFieldWithAutoCompletion<String>
     private var enabled = true
 
-    init {
-        valuesField.emptyText.text = message("explorer.filter.tag.any_value")
-        // TODO load autocomplete suggestions in next PR
+    private fun createUIComponents() {
+        keyBox = TextFieldWithAutoCompletion(project, KeyProvider(project), false, "")
+        valuesField = TextFieldWithAutoCompletion(project, ValueProvider(project, ""), false, "")
+        keyBox.addFocusListener(
+            object : FocusListener {
+                override fun focusGained(e: FocusEvent?) = Unit
+                override fun focusLost(e: FocusEvent?) {
+                    valuesField.installProvider(ValueProvider(project, keyBox.text))
+                }
+            }
+        )
     }
 
     override fun validate(): ValidationInfo? {
