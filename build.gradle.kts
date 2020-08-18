@@ -295,8 +295,8 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
 
     val isWindows = System.getProperty("os.name")?.toLowerCase()?.contains("windows") == true
 
-    var toInclude = project.projectDir.absolutePath + "/**/*.kt"
-    var toExclude = File(project.projectDir, "jetbrains-rider").absolutePath + "/**/*.Generated.kt"
+    var toInclude = project.projectDir.toRelativeString(project.rootDir) + "/**/*.kt"
+    var toExclude = File(project.projectDir, "jetbrains-rider").toRelativeString(project.rootDir) + "/**/*.Generated.kt"
 
     if (isWindows) {
         toInclude = toInclude.replace("/", "\\")
