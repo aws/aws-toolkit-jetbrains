@@ -54,7 +54,7 @@
           <grid row="7" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Search logs containing:"/>
+          <text value="Search logs containing"/>
         </properties>
       </component>
       <component id="3ffc0" class="javax.swing.JTextField" binding="querySearchTerm">
@@ -67,7 +67,7 @@
       </component>
       <component id="b0158" class="javax.swing.JRadioButton" binding="queryLogGroupsRadioButton">
         <constraints>
-          <grid row="8" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="8" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Query Log Groups"/>
