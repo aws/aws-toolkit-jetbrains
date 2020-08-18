@@ -357,7 +357,9 @@ dependencies {
 }
 
 sourceSets {
-    main.get().java.srcDirs("$buildDir/generated-src")
+    main{
+        java.srcDirs("$buildDir/generated-src")
+    }
 }
 
 val resharperParts = listOf(

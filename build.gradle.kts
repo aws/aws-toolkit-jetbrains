@@ -11,6 +11,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.ProductCode
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
+import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
+import org.jetbrains.intellij.tasks.VerifyPluginTask
+import org.jetbrains.intellij.tasks.BuildSearchableOptionsTask
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.getOrCreate
 import software.aws.toolkits.gradle.intellij
@@ -113,18 +116,22 @@ configure(subprojects.filter { it.name != "telemetry-client" }) {
 }
 
 subprojects {
-    group = parent!!.group
-    version = parent!!.version
+    group = parent?.group ?: throw IllegalStateException("Subproject $name parent is null!")
+    version = parent?.version ?: throw IllegalStateException("Subproject $name parent is null!")
 
     apply(plugin = "java")
     apply(plugin = "idea")
     apply(plugin = "com.adarshr.test-logger")
 
     sourceSets {
-        main.get().java.srcDirs(findFolders(project, "src", ideVersion))
-        main.get().resources.srcDirs(findFolders(project, "resources", ideVersion))
-        test.get().java.srcDirs(findFolders(project, "tst", ideVersion))
-        test.get().resources.srcDirs(findFolders(project, "tst-resources", ideVersion))
+        main {
+            java.srcDirs(findFolders(project, "src", ideVersion))
+            resources.srcDirs(findFolders(project, "resources", ideVersion))
+        }
+        test {
+            java.srcDirs(findFolders(project, "tst", ideVersion))
+            resources.srcDirs(findFolders(project, "tst-resources", ideVersion))
+        }
         getOrCreate("integrationTest") {
             compileClasspath += main.get().output + test.get().output
             runtimeClasspath += main.get().output + test.get().output
@@ -210,11 +217,11 @@ subprojects {
     }
 
     project.plugins.withId("org.jetbrains.intellij") {
-        tasks.withType(org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask::class.java) {
+        tasks.withType(DownloadRobotServerPluginTask::class.java) {
             this.version = remoteRobotVersion
         }
 
-        tasks.withType(org.jetbrains.intellij.tasks.RunIdeForUiTestTask::class.java).all {
+        tasks.withType(RunIdeForUiTestTask::class.java).all {
             systemProperty("robot-server.port", remoteRobotPort)
             systemProperty("ide.mac.file.chooser.native", "false")
             systemProperty("jb.consents.confirmation.enabled", "false")
@@ -228,7 +235,7 @@ subprojects {
         extensions.getByType<JacocoPluginExtension>().applyTo(tasks.getByName<RunIdeForUiTestTask>("runIdeForUiTests"))
     }
 
-    tasks.withType(KotlinCompile::class.java).all {
+    tasks.withType<KotlinCompile>().all {
         kotlinOptions.jvmTarget = "1.8"
     }
 
@@ -249,16 +256,16 @@ subprojects {
 
     // Remove the tasks added in by gradle-intellij-plugin so that we don"t publish/verify multiple times
     project.afterEvaluate {
-        removeTask(tasks, org.jetbrains.intellij.tasks.PublishTask::class.java)
-        removeTask(tasks, org.jetbrains.intellij.tasks.VerifyPluginTask::class.java)
-        removeTask(tasks, org.jetbrains.intellij.tasks.BuildSearchableOptionsTask::class.java)
+        removeTask<PublishTask>()
+        removeTask<VerifyPluginTask>()
+        removeTask<BuildSearchableOptionsTask>()
     }
 }
 
 val ktlint: Configuration by configurations.creating
 
-inline fun <reified T : Task> removeTask(tasks: TaskContainer, takeType: Class<T>) {
-    tasks.withType(takeType).configureEach {
+inline fun <reified T : Task> Project.removeTask() {
+    tasks.withType<T> {
         enabled = false
     }
 }

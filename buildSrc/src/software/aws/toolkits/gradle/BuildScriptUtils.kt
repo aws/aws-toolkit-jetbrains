@@ -15,8 +15,8 @@ import org.jetbrains.intellij.IntelliJPluginExtension
  */
 fun Project.intellij(block: IntelliJPluginExtension.() -> Unit) {
     val intellij = try {
-        project.extensions.getByName("intellij") as IntelliJPluginExtension
-    } catch(e:Exception) {
+        project.extensions.getByType(IntelliJPluginExtension::class.java)
+    } catch (e: Exception) {
         throw GradleException("Unable to get extension intellij, did you apply(plugin = \"org.jetbrains.intellij\")?", e)
     }
     intellij.block()

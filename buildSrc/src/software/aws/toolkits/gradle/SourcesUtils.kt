@@ -14,9 +14,9 @@ import java.io.FileFilter
  * [type] is the type of the source folder (e.g. 'src', 'tst', 'resources')
  * [ideVersion] is the 3 digit numerical version of the JetBrains SDK (e.g. 192, 201 etc)
  */
-fun findFolders(project: Project, type: String, ideVersion: String): MutableSet<File> = project.projectDir.listFiles(FileFilter {
+fun findFolders(project: Project, type: String, ideVersion: String): Set<File> = project.projectDir.listFiles(FileFilter {
     it.isDirectory && includeFolder(type, ideVersion, it.name)
-})?.map { File(it.name) }?.toMutableSet() ?: mutableSetOf()
+})?.map { File(it.name) }?.toSet() ?: setOf()
 
 /**
  * Determines if a folder should be included based on the ideVersion being targeted

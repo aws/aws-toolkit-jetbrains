@@ -56,7 +56,9 @@ val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
 compileKotlin.dependsOn(generateTelemetry)
 
 sourceSets {
-    main.get().java.srcDir("${project.buildDir}/generated-src")
+    main {
+        java.srcDir("${project.buildDir}/generated-src")
+    }
 }
 
 tasks.test {

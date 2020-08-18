@@ -40,8 +40,12 @@ plugins {
 }
 
 sourceSets {
-    main.get().java.srcDir("src")
-    test.get().java.srcDir("src")
+    main {
+        java.srcDir("src")
+    }
+    test {
+        java.srcDir("src")
+    }
 }
 
 dependencies {
