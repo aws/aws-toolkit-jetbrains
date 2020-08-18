@@ -3,20 +3,21 @@
 
 import com.adarshr.gradle.testlogger.TestLoggerExtension
 import com.adarshr.gradle.testlogger.TestLoggerPlugin
+import org.jetbrains.intellij.tasks.BuildSearchableOptionsTask
+import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import org.jetbrains.intellij.tasks.PublishTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
 import org.jetbrains.intellij.tasks.RunIdeTask
+import org.jetbrains.intellij.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.ProductCode
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
-import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
-import org.jetbrains.intellij.tasks.VerifyPluginTask
-import org.jetbrains.intellij.tasks.BuildSearchableOptionsTask
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.getOrCreate
 import software.aws.toolkits.gradle.intellij
+import software.aws.toolkits.gradle.removeTask
 import software.aws.toolkits.gradle.resources.ValidateMessages
 
 buildscript {
@@ -264,12 +265,6 @@ subprojects {
 
 val ktlint: Configuration by configurations.creating
 
-inline fun <reified T : Task> Project.removeTask() {
-    tasks.withType<T> {
-        enabled = false
-    }
-}
-
 apply(plugin = "org.jetbrains.intellij")
 apply(plugin = "toolkit-change-log")
 
@@ -303,6 +298,7 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
 
     val isWindows = System.getProperty("os.name")?.toLowerCase()?.contains("windows") == true
 
+    // Must be relative or else Windows will fail
     var toInclude = project.projectDir.toRelativeString(project.rootDir) + "/**/*.kt"
     var toExclude = File(project.projectDir, "jetbrains-rider").toRelativeString(project.rootDir) + "/**/*.Generated.kt"
 
@@ -350,8 +346,7 @@ check.dependsOn(coverageReport)
 // community edition
 if (gradle.startParameter.taskNames.contains("runIde")) {
     // Only disable this if running from root project
-    if (gradle.startParameter.projectDir == project.rootProject.rootDir || System.getProperty("idea.gui.tests.gradle.runner") != null
-    ) {
+    if (gradle.startParameter.projectDir == project.rootProject.rootDir || System.getProperty("idea.gui.tests.gradle.runner") != null) {
         println("Top level runIde selected, excluding sub-projects")
         gradle.taskGraph.whenReady {
             allTasks.forEach { it ->
@@ -361,8 +356,6 @@ if (gradle.startParameter.taskNames.contains("runIde")) {
             }
         }
     }
-    // Else required because this is considered an expression
-} else {
 }
 
 dependencies {
