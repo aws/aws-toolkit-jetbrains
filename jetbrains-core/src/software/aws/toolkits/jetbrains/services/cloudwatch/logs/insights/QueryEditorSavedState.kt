@@ -32,7 +32,31 @@ class QueryEditorSavedState {
                 "| limit 20"
 
             )
+        var initialQueryEditorState = QueryDetails(
+            listOf("Default log"),
+            false,
+            Calendar.getInstance().time,
+            Calendar.getInstance().time,
+            true,
+            "Minutes",
+            "10",
+            true,
+            "Error",
+            false,
+            "fields @timestamp, @message\n" +
+                "| sort @timestamp desc\n" +
+                "| limit 20"
+
+        )
         var enabledDisabledOptionsState = EnabledComponentsState(
+            startDateEnabled = false,
+            endDateEnabled = false,
+            relativeTimeNumberEnabled = true,
+            relativeTimeUnitEnabled = true,
+            querySearchTermEnabled = true,
+            queryBoxEnabled = false
+        )
+        var initialEnabledDisabledOptionsState = EnabledComponentsState(
             startDateEnabled = false,
             endDateEnabled = false,
             relativeTimeNumberEnabled = true,

@@ -22,7 +22,6 @@ class QueryEditor internal constructor(private val project: Project) {
     lateinit var querySearchTerm: JTextField
     lateinit var queryLogGroupsRadioButton: JRadioButton
     lateinit var saveQueryButton: JButton
-    lateinit var retrieveSavedQueriesButton: JButton
     private lateinit var tablePanel: SimpleToolWindowPanel
     lateinit var queryBox: JTextArea
     lateinit var logGroupLabel: JLabel
@@ -32,6 +31,7 @@ class QueryEditor internal constructor(private val project: Project) {
     lateinit var relativeTimeNumber: JTextField
     lateinit var startDate: DatePicker
     private lateinit var showLogGroupTable: AddRemoveLogGroupTable
+    private lateinit var retrieveSavedQueries : JComboBox<*>
 
     private fun initArLogGroupTable() {
         showLogGroupTable.tableView.listTableModel

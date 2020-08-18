@@ -66,6 +66,11 @@ enum class HelpIds(shortId: String, val url: String) {
     RDS_SETUP_IAM_AUTH(
         "rdsIamAuth",
         "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html"
+    ),
+    // CLOUDWATCH LOGS INSIGHTS
+    QUERY_EDITOR(
+        "queryEditorHelp",
+        "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html"
     )
     ;
 

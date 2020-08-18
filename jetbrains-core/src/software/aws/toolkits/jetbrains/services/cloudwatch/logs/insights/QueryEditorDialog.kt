@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.help.HelpIds
 import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.JComponent
@@ -41,7 +42,7 @@ class QueryEditorDialog(
 
         title = message("cloudwatch.logs.query_editor_title")
         if (displayInitialParameters) {
-            setView(QueryEditorSavedState.currentQueryEditorState, QueryEditorSavedState.enabledDisabledOptionsState)
+            setView(QueryEditorSavedState.initialQueryEditorState, QueryEditorSavedState.initialEnabledDisabledOptionsState)
         } else {
             setView(QueryEditorSavedState().getQueryEditorState(), QueryEditorSavedState().getEnabledDisabledOptionsState())
         }
@@ -80,6 +81,7 @@ class QueryEditorDialog(
     override fun doCancelAction() {
         super.doCancelAction()
     }
+    override fun getHelpId(): String? = HelpIds.QUERY_EDITOR.id
 
     override fun doOKAction() {
         // Do nothing, close logic is handled separately
