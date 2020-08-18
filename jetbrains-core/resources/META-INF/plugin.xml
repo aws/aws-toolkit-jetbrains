@@ -131,6 +131,8 @@
         <extensionPoint name="explorer.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode" dynamic="true"/>
         <extensionPoint name="explorer.nodeProcessor" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor" dynamic="true"/>
         <extensionPoint name="explorer.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider" dynamic="true"/>
+
+        <extensionPoint name="resourceFilter" interface="software.aws.toolkits.jetbrains.core.filtering.FilterManager" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -187,7 +189,7 @@
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerValidator" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager" />
-        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.filtering.ResourceFilterManager" />
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.filtering.FilterManagerService" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow" />
         <toolWindow id="aws.explorer" anchor="left" secondary="true"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
@@ -224,6 +226,9 @@
         <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.s3.editor.S3FileIconProvider"/>
         <registryKey key="aws.sso.enabled" description="(Experimental) Enable SSO AWS Credentials" restartRequired="true" defaultValue="false"/>
         <registryKey key="aws.credentialProcess.timeout" description="AWS Credential Process timeout (ms)" restartRequired="false" defaultValue="30000"/>
+
+        <!-- Filter state storage -->
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.filtering.filters.TagFilterStorage"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">
@@ -233,6 +238,9 @@
     <extensions defaultExtensionNs="aws.toolkit">
         <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
 
+        <!-- Filters -->
+        <resourceFilter implementation="software.aws.toolkits.jetbrains.core.filtering.filters.TagFilterManager"/>
+
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
@@ -240,7 +248,7 @@
         <!-- Explorer processors and filterers -->
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
-        <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.core.filtering.ExplorerTagFilter"/>
+        <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.core.filtering.ExplorerResourceFilter"/>
 
         <notice implementation="software.aws.toolkits.jetbrains.core.notification.JetBrainsMinimumVersionChange"/>
 

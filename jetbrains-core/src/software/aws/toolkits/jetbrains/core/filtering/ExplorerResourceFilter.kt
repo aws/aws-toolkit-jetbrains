@@ -9,29 +9,25 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructurePro
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 
-class ExplorerTagFilter : AwsExplorerTreeStructureProvider {
+/**
+ * Filter the AWS explorer by user specified filters. Executed asynchronously after the explorer loads.
+ */
+class ExplorerResourceFilter : AwsExplorerTreeStructureProvider {
     override fun modify(
         parent: AbstractTreeNode<*>,
         children: MutableCollection<AbstractTreeNode<*>>,
         settings: ViewSettings?
     ): MutableCollection<AbstractTreeNode<*>> = when (parent) {
         is AwsExplorerNode -> {
-            val filterManager = ResourceFilterManager.getInstance(parent.nodeProject)
-            if (!filterManager.tagFiltersEnabled()) {
+            val filterManager = FilterManagerService.getInstance(parent.nodeProject)
+            if (!filterManager.filtersEnabled()) {
                 children
             } else {
                 val resourceNodes = children.filterIsInstance<AwsExplorerResourceNode<*>>()
                 val filteredNodes = if (resourceNodes.isEmpty()) {
                     listOf()
                 } else {
-                    resourceNodes.mapNotNull { node ->
-                        val resources = filterManager.getTaggedResources(node.nodeProject, node.serviceId, node.resourceType())
-                        if (resources.any { node.resourceArn() == it.resourceARN() }) {
-                            node
-                        } else {
-                            null
-                        }
-                    }
+                    resourceNodes.filter { node -> filterManager.filter(node.resourceArn(), node.serviceId, node.resourceType()) }
                 }
                 val otherNodes = children.filter { it !is AwsExplorerResourceNode<*> }
                 (otherNodes + filteredNodes).toMutableList()

@@ -15,10 +15,12 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.core.filtering.filters.TagFilter
+import software.aws.toolkits.jetbrains.core.filtering.filters.TagFilterStorage
 import software.aws.toolkits.jetbrains.services.resourcegroupstaggingapi.resources.ResourceGroupsTaggingApiResources
 import java.util.concurrent.CompletableFuture
 
-class ExplorerTagFilterTest {
+class ExplorerResourceFilterTest {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
@@ -27,7 +29,7 @@ class ExplorerTagFilterTest {
     @Rule
     val mockResourceCache = MockResourceCacheRule(projectRule)
 
-    val filter = ExplorerTagFilter()
+    val filter = ExplorerResourceFilter()
 
     val parentName = RuleUtils.randomName()
     val serviceId = RuleUtils.randomName()
@@ -39,20 +41,29 @@ class ExplorerTagFilterTest {
 
     @Test
     fun `Does not filter if no filters are enabled`() {
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
-            enabled = false,
-            tagKey = "tag",
-            tagValues = listOf()
+        TagFilterStorage.getInstance(projectRule.project).loadState(
+            listOf(
+                TagFilter(
+                    name = "default",
+                    enabled = false,
+                    tagKey = "tag",
+                    tagValues = listOf()
+                )
+            )
         )
         assertThat(filter.modify(parent, mutableListOf(buildChild(), buildChild()), mock())).hasSize(2)
     }
 
     @Test
     fun `Does not filter if parent is not AWS Explorer node`() {
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
-            enabled = true,
-            tagKey = "tag",
-            tagValues = listOf()
+        TagFilterStorage.getInstance(projectRule.project).loadState(
+            listOf(
+                TagFilter(
+                    enabled = true,
+                    tagKey = "tag",
+                    tagValues = listOf()
+                )
+            )
         )
         assertThat(filter.modify(mock(), mutableListOf(buildChild(), buildChild()), mock())).hasSize(2)
     }
@@ -62,10 +73,15 @@ class ExplorerTagFilterTest {
         val foundArn = RuleUtils.randomName()
 
         stockResourceCache(foundArn)
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
-            enabled = true,
-            tagKey = "tag",
-            tagValues = listOf()
+        TagFilterStorage.getInstance(projectRule.project).loadState(
+            listOf(
+                TagFilter(
+                    name = "default",
+                    enabled = true,
+                    tagKey = "tag",
+                    tagValues = listOf()
+                )
+            )
         )
         val list = filter.modify(parent, mutableListOf(buildChild(arn = "${foundArn}123"), buildChild(arn = foundArn)), mock())
         assertThat(list).hasOnlyOneElementSatisfying { it is AwsExplorerResourceNode && it.resourceArn() == foundArn }
@@ -75,10 +91,15 @@ class ExplorerTagFilterTest {
     fun `Does not filter out non AWS resource nodes`() {
         val foundArn = RuleUtils.randomName()
         stockResourceCache(foundArn)
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
-            enabled = true,
-            tagKey = "tag",
-            tagValues = listOf()
+        TagFilterStorage.getInstance(projectRule.project).loadState(
+            listOf(
+                TagFilter(
+                    name = "default",
+                    enabled = true,
+                    tagKey = "tag",
+                    tagValues = listOf()
+                )
+            )
         )
         val list = filter.modify(
             parent,
@@ -94,10 +115,15 @@ class ExplorerTagFilterTest {
 
     @Test
     fun `Does nothing if children are empty`() {
-        ResourceFilterManager.getInstance(projectRule.project).state["default"] = TagFilter(
-            enabled = false,
-            tagKey = "tag",
-            tagValues = listOf()
+        TagFilterStorage.getInstance(projectRule.project).loadState(
+            listOf(
+                TagFilter(
+                    name = "default",
+                    enabled = false,
+                    tagKey = "tag",
+                    tagValues = listOf()
+                )
+            )
         )
         assertThat(filter.modify(parent, mutableListOf(), mock())).isEmpty()
     }

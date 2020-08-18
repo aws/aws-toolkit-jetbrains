@@ -3,4 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.filtering
 
-fun String?.isValidTagKey(): Boolean = this != null && this.isNotBlank()
+interface Filter {
+    val name: String
+    val enabled: Boolean
+    val type: String
+}
