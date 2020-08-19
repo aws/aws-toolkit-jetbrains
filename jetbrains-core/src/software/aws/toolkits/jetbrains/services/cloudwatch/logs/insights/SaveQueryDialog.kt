@@ -61,6 +61,7 @@ class SaveQueryDialog(
             if (checkQueryName(queryName)) {
                 val request = PutQueryDefinitionRequest.builder().logGroupNames(logGroups).name(queryName).queryString(query).build()
                 val response = client.putQueryDefinition(request)
+                RetrieveSavedQueries(client).getSavedQueries()
                 notifyInfo(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_saved_successfully"), project)
             } else {
                 notifyError(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_not_saved"))

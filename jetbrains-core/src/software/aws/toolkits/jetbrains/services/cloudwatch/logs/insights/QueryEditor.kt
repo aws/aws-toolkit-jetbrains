@@ -31,7 +31,7 @@ class QueryEditor internal constructor(private val project: Project) {
     lateinit var relativeTimeNumber: JTextField
     lateinit var startDate: DatePicker
     private lateinit var showLogGroupTable: AddRemoveLogGroupTable
-    private lateinit var retrieveSavedQueries : JComboBox<*>
+    lateinit var retrieveSavedQueries : JComboBox<*>
 
     private fun initArLogGroupTable() {
         showLogGroupTable.tableView.listTableModel
@@ -50,6 +50,7 @@ class QueryEditor internal constructor(private val project: Project) {
             message("cloudwatch.logs.time_days"),
             message("cloudwatch.logs.time_weeks"))
         relativeTimeUnit = ComboBox<String>(timeUnits)
+        retrieveSavedQueries = ComboBox<String>(RetrieveSavedQueries.allQueries.keys.toTypedArray())
     }
 
     init {
