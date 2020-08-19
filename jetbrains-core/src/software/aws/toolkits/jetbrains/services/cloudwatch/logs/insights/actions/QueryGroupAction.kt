@@ -25,9 +25,7 @@ while(true){
     override fun actionPerformed(selected: CloudWatchLogsNode, e: AnActionEvent) {
         RetrieveSavedQueries(selected.nodeProject.awsClient()).getSavedQueries()
         while(true){
-            println(RetrieveSavedQueries.allQueries.size)
             if (RetrieveSavedQueries.allQueries.size != sampleQueries.size){
-                println("Inside")
                 QueryEditorDialog(selected.nodeProject, selected.logGroupName, initialParametersDisplayed = true).show()
                 break
             }

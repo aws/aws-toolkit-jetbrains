@@ -41,7 +41,6 @@ class QueryEditorDialog(
 
     init {
         super.init()
-        println(" Query Editor Dialog")
         title = message("cloudwatch.logs.query_editor_title")
         if (displayInitialParameters) {
             setView(QueryEditorSavedState.initialQueryEditorState, QueryEditorSavedState.initialEnabledDisabledOptionsState)
