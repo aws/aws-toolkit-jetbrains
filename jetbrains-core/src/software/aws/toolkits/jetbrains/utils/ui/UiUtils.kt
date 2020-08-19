@@ -175,7 +175,6 @@ class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val tog
 
     init {
         textArea.font = UIUtil.getLabelFont()
-        textArea.border = JBUI.Borders.empty(2, 2)
         textArea.wrapStyleWord = true
 
         add(textArea)
