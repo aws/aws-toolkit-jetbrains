@@ -35,7 +35,7 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
     }
 
     fun getFields(query: String): List<String> {
-        var fieldList = mutableListOf<List<String>>()
+        var fieldList = mutableListOf(listOf("@ptr"))
         query.replace("\\|", "")
         val queries = query.split("|")
         for (item in queries) {
@@ -45,9 +45,10 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
                 fieldList.add(fields.split(",").map { it.trim() })
             }
         }
-        if (fieldList.isEmpty()) {
-            return listOf("@message", "@timestamp")
+        if (fieldList.size==1) {
+            return listOf("@ptr","@message", "@timestamp")
         }
+
         return fieldList.flatten()
     }
 }

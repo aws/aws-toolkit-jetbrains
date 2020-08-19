@@ -22,6 +22,13 @@ class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<Map<String, 
     override fun getRenderer(item: Map<String, String>?): TableCellRenderer? = renderer
 }
 
+class LogEventColumnDetails() : ColumnInfo <String,String> ("Log Event") {
+    private val renderer = FieldColumnRenderer()
+    override fun valueOf(item: String?): String? = item
+    override fun isCellEditable(item: String?): Boolean = false
+    override fun getRenderer(item: String?): TableCellRenderer? = renderer
+}
+
 class FieldColumnRenderer : TableCellRenderer {
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = SimpleColoredComponent()

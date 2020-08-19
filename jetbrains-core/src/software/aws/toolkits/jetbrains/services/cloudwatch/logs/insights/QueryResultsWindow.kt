@@ -31,6 +31,20 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
         }
     }
 
+    fun showDetailedEvent(identifier: String) = launch {
+        val existingWindow = toolWindow.find(identifier)
+        if (existingWindow != null) {
+            withContext(edtContext) {
+                existingWindow.show()
+            }
+            return@launch
+        }
+        val detailedLogEvent = DetailedLogEvent(project, identifier)
+        withContext(edtContext) {
+            toolWindow.addTab(identifier, detailedLogEvent.allLogFieldsPanel, activate = true, id = identifier, disposable = detailedLogEvent)
+        }
+    }
+
     companion object {
         internal val INSIGHTS_RESULTS_TOOL_WINDOW = ToolkitToolWindowType(
             "AWS.InsightsResultsTable",

@@ -146,7 +146,6 @@ class QueryResultsActor(
             result -> result.map { it.field().toString() to it.value().toString() }.toMap() }
         listOfResults.iterator().forEach { it["@ptr"]?.let { it1 -> queryResultsIdentifierList.add(it1) } }
         moreResultsAvailable = response.status() != QueryStatus.COMPLETE
-
         loadAndPopulateResultsTable { listOfResults }
     }
 
