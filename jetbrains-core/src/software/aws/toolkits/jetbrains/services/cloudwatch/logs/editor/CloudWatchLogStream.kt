@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditorAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.TailLogsAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogsAction
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryEditorDialog
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.ui.onEmpty
@@ -32,6 +33,7 @@ import software.aws.toolkits.jetbrains.utils.ui.onEnter
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 import java.time.Duration
+import javax.swing.JButton
 import javax.swing.JPanel
 
 class CloudWatchLogStream(
@@ -46,6 +48,7 @@ class CloudWatchLogStream(
     private lateinit var locationInformation: Breadcrumbs
     private lateinit var tablePanel: SimpleToolWindowPanel
     private lateinit var searchField: SearchTextField
+    private lateinit var openQueryEditor : JButton
 
     private val edtContext = getCoroutineUiContext(disposable = this)
 
@@ -72,7 +75,10 @@ class CloudWatchLogStream(
 
         addActionToolbar()
         addSearchListener()
-
+        openQueryEditor.text = message("cloudwatch.logs.query")
+        openQueryEditor.addActionListener {
+            QueryEditorDialog(project, logGroup, initialParametersDisplayed = true).show()
+        }
         refreshTable()
     }
 
