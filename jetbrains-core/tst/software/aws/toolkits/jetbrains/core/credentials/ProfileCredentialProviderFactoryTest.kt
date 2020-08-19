@@ -441,7 +441,7 @@ class ProfileCredentialProviderFactoryTest {
     }
 
     @Test
-    fun testUnrelatedProfilesAreNotNotified() {
+    fun testEditingUnrelatedProfilesAreNotNotified() {
         profileFile.writeToFile(
             """
             [profile foo]
