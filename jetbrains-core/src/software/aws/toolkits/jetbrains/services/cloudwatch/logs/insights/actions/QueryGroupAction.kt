@@ -15,7 +15,7 @@ import software.aws.toolkits.resources.message
 
 class QueryGroupAction : SingleResourceNodeAction<CloudWatchLogsNode>(message("cloudwatch.logs.query")), DumbAware {
     override fun actionPerformed(selected: CloudWatchLogsNode, e: AnActionEvent) {
-        RetrieveSavedQueries(selected.nodeProject.awsClient()).getSavedQueries()
+        //RetrieveSavedQueries(selected.nodeProject.awsClient()).getSavedQueries()
         QueryEditorDialog(selected.nodeProject, selected.logGroupName, initialParametersDisplayed = true).show()
         /*while(true){
             if (RetrieveSavedQueries.allQueries.size != sampleQueries.size){

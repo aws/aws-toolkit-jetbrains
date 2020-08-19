@@ -114,7 +114,9 @@ class LogEventsResultsActor(
     override suspend fun loadLogEventResults() {
         var request = GetLogRecordRequest.builder().logRecordPointer(logEventIdentifier).build()
         var response = client.getLogRecord(request)
+       // val listOfResults= response.logRecord().toMap()
         val listOfResults = response.logRecord().map { "${it.key} = ${it.value}" }
+        //val listOfResults = response.logRecord().map { it.key.toString() to it.value.toString() }.toMap()
         loadAndPopulateResultsTable { listOfResults }
     }
 

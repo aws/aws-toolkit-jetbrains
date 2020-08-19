@@ -23,13 +23,13 @@ class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<Map<String, 
 }
 
 class LogEventColumnDetails() : ColumnInfo <String,String> ("Log Event") {
-    private val renderer = FieldColumnRenderer()
+    private val renderer = LogEventColumnRenderer()
     override fun valueOf(item: String?): String? = item
     override fun isCellEditable(item: String?): Boolean = false
     override fun getRenderer(item: String?): TableCellRenderer? = renderer
 }
 
-class FieldColumnRenderer : TableCellRenderer {
+class LogEventColumnRenderer : TableCellRenderer {
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = SimpleColoredComponent()
         component.append((value as? String)?.trim() ?: "")
@@ -38,5 +38,23 @@ class FieldColumnRenderer : TableCellRenderer {
         }
         component.setSelectionHighlighting(table, isSelected)
         return component
+    }
+}
+
+class FieldColumnRenderer : TableCellRenderer {
+    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+        if (table != null) {
+            table.columnModel.getColumn(0).preferredWidth = 5
+            table.columnModel.getColumn(0).minWidth = 5
+            table.columnModel.getColumn(0).maxWidth = 5
+        }
+        val component = SimpleColoredComponent()
+        component.append((value as? String)?.trim() ?: "")
+        if (table == null) {
+            return component
+        }
+        component.setSelectionHighlighting(table, isSelected)
+        return component
+
     }
 }
