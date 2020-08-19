@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.services.sqs
 import com.intellij.icons.AllIcons
 import com.intellij.ide.HelpTooltip
 import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.JBColor
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
-import java.awt.Color
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JRadioButton
@@ -51,6 +51,7 @@ class CreateQueuePanel {
             border = IdeBorderFactory.createBorder(0)
         }
         fifoSuffixField.apply {
+            background = queueName.background
             layout = BorderLayout()
             border = IdeBorderFactory.createBorder(0)
             add(fifoSuffixLabel, BorderLayout.WEST)
@@ -59,7 +60,7 @@ class CreateQueuePanel {
 
     companion object {
         val fifoSuffixLabel = JLabel(".fifo").apply {
-            foreground = Color.GRAY
+            foreground = JBColor.GRAY
         }
     }
 }

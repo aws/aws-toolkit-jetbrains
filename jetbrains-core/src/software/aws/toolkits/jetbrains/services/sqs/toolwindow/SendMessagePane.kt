@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
+import com.intellij.ide.plugins.newui.UpdateButton
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.components.JBTextArea
@@ -27,7 +28,7 @@ class SendMessagePane(
 ) : CoroutineScope by ApplicationThreadPoolScope("SendMessagePane") {
     lateinit var component: JPanel
     lateinit var inputText: JBTextArea
-    lateinit var sendButton: JButton
+    lateinit var sendButton: UpdateButton
     lateinit var clearButton: JButton
     lateinit var bodyErrorLabel: JLabel
     lateinit var confirmationLabel: JLabel
