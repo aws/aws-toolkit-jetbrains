@@ -19,7 +19,7 @@ class DynamicTableView<T>(private vararg val fields: Field<T>) : View {
         autoscrolls = true
         setShowColumns(true)
         setPaintBusy(true)
-        fields.forEach {field ->
+        fields.forEach { field ->
             field.renderer?.let {
                 getColumn(field.readableName).cellRenderer = it
             }

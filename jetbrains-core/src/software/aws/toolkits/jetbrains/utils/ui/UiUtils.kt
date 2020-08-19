@@ -182,7 +182,7 @@ class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val tog
     }
 
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
-        if(table == null) {
+        if (table == null) {
             return this
         }
 
