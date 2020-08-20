@@ -25,11 +25,11 @@ class LogEventTable(
 //    val a : JComponent = TODO()
     val component: JComponent
     val channel: Channel<LogEventActor.MessageLoadEvent>
-    private val resultsTable: TableView<String>
-    private val logEventActor: LogEventActor<String>
+    private val resultsTable: TableView<List<String>>
+    private val logEventActor: LogEventActor<List<String>>
 
     init {
-        val tableModel = ListTableModel (arrayOf(LogEventColumnDetails()), mutableListOf<String>())
+        val tableModel = ListTableModel (arrayOf(LogEventKeyColumnDetails(), LogEventValueColumnDetails()), mutableListOf<List<String>>())
         resultsTable = TableView(tableModel).apply {
             setPaintBusy(true)
             autoscrolls = true

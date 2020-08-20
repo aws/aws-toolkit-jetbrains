@@ -22,11 +22,18 @@ class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<Map<String, 
     override fun getRenderer(item: Map<String, String>?): TableCellRenderer? = renderer
 }
 
-class LogEventColumnDetails() : ColumnInfo <String,String> ("Log Event") {
+class LogEventKeyColumnDetails() : ColumnInfo <List<String>,String> ("Log Event Field") {
+    private val renderer = FieldColumnRenderer2()
+    override fun valueOf(item: List<String>?): String? = item?.get(0)
+    override fun isCellEditable(item: List<String>?): Boolean = false
+    override fun getRenderer(item: List<String>?): TableCellRenderer? = renderer
+}
+
+class LogEventValueColumnDetails() : ColumnInfo <List<String>,String> ("Field Value") {
     private val renderer = LogEventColumnRenderer()
-    override fun valueOf(item: String?): String? = item
-    override fun isCellEditable(item: String?): Boolean = false
-    override fun getRenderer(item: String?): TableCellRenderer? = renderer
+    override fun valueOf(item: List<String>?): String? = item?.get(1)
+    override fun isCellEditable(item: List<String>?): Boolean = false
+    override fun getRenderer(item: List<String>?): TableCellRenderer? = renderer
 }
 
 class LogEventColumnRenderer : TableCellRenderer {
@@ -47,6 +54,23 @@ class FieldColumnRenderer : TableCellRenderer {
             table.columnModel.getColumn(0).preferredWidth = 5
             table.columnModel.getColumn(0).minWidth = 5
             table.columnModel.getColumn(0).maxWidth = 5
+        }
+        val component = SimpleColoredComponent()
+        component.append((value as? String)?.trim() ?: "")
+        if (table == null) {
+            return component
+        }
+        component.setSelectionHighlighting(table, isSelected)
+        return component
+
+    }
+}
+class FieldColumnRenderer2 : TableCellRenderer {
+    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+        if (table != null) {
+            table.columnModel.getColumn(0).preferredWidth = 150
+            table.columnModel.getColumn(0).minWidth = 150
+            table.columnModel.getColumn(0).maxWidth = 150
         }
         val component = SimpleColoredComponent()
         component.append((value as? String)?.trim() ?: "")

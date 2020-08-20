@@ -104,9 +104,9 @@ sealed class LogEventActor<T>(
 class LogEventsResultsActor(
     project: Project,
     client: CloudWatchLogsClient,
-    table: TableView<String>,
+    table: TableView<List<String>>,
     private val logEventIdentifier: String
-) : LogEventActor<String>(project, client, table) {
+) : LogEventActor<List<String>>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_results_found")
     override val tableErrorMessage = message("cloudwatch.logs.query_results_table_error")
     override val notFoundText = message("cloudwatch.logs.no_results_found")
@@ -114,9 +114,9 @@ class LogEventsResultsActor(
     override suspend fun loadLogEventResults() {
         var request = GetLogRecordRequest.builder().logRecordPointer(logEventIdentifier).build()
         var response = client.getLogRecord(request)
-       // val listOfResults= response.logRecord().toMap()
-        val listOfResults = response.logRecord().map { "${it.key} = ${it.value}" }
-        //val listOfResults = response.logRecord().map { it.key.toString() to it.value.toString() }.toMap()
+       //val listOfResults= response.logRecord().toMap()
+        //val listOfResults = response.logRecord().map { "${it.key} = ${it.value}" }
+        val listOfResults = response.logRecord().map { (it.key.toString() to it.value.toString()).toList() }
         loadAndPopulateResultsTable { listOfResults }
     }
 
