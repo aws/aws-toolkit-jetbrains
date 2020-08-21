@@ -175,7 +175,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtim
     @Test
     fun samIsExecutedWithDebugger() {
         // TODO Remove when SAM 1.2.0 is out
-        if(runtime == Runtime.JAVA8_AL2) {
+        if (runtime == Runtime.JAVA8_AL2) {
             val samVersion = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().version?.let {
                 SemVer.parseFromText(it)
             }
