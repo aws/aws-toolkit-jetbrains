@@ -39,7 +39,7 @@ object IdeVersions {
             nugetVersion = "2020.2.0",
             additionalUltimatePlugins = listOf("com.intellij.database")
         )
-    ).map { it.name to it }.toMap()
+    ).associateBy { it.name }
 
     private fun resolveIdeProfileName(project: Project): String = if (System.getenv()["ALTERNATIVE_IDE_PROFILE_NAME"] != null) {
         System.getenv("ALTERNATIVE_IDE_PROFILE_NAME")
