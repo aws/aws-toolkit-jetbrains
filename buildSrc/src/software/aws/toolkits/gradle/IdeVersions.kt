@@ -5,6 +5,47 @@ package software.aws.toolkits.gradle
 
 import org.gradle.api.Project
 
+object IdeVersions {
+    fun ideProfile(project: Project): Profile {
+        val profileName = resolveIdeProfileName(project)
+        return ideProfiles[profileName] ?: throw IllegalStateException("Can't find profile for $profileName")
+    }
+
+    private val ideProfiles = listOf(
+        Profile(
+            name = "2019.3",
+            pythonVersion = "193.5233.109",
+            communityPythonVersion = "193.5233.139",
+            dockerVersion = "193.5233.140",
+            riderSdkOverride = "RD-2019.3.4",
+            rdGenVersion = "0.193.146",
+            nugetVersion = "2019.3.4"
+        ),
+        Profile(
+            name = "2020.1",
+            pythonVersion = "201.6668.31",
+            dockerVersion = "201.6668.30",
+            riderSdkOverride = "RD-2020.1.0",
+            rdGenVersion = "0.201.69",
+            nugetVersion = "2020.1.0"
+        ),
+        Profile(
+            name = "2020.2",
+            pythonVersion = "202.6397.98",
+            communityPythonVersion = "202.6397.124",
+            dockerVersion = "202.6397.93",
+            rdGenVersion = "0.202.113",
+            nugetVersion = "2020.2.0"
+        )
+    ).map { it.name to it }.toMap()
+
+    private fun resolveIdeProfileName(project: Project): String = if (System.getenv()["ALTERNATIVE_IDE_PROFILE_NAME"] != null) {
+        System.getenv("ALTERNATIVE_IDE_PROFILE_NAME")
+    } else {
+        project.properties["ideProfileName"]?.toString() ?: throw IllegalStateException("No ideProfileName property set")
+    }
+}
+
 open class ProductProfile(
     val sdkVersion: String,
     val plugins: Array<String>
@@ -56,47 +97,6 @@ class Profile(
         rdGenVersion = rdGenVersion,
         nugetVersion = nugetVersion
     )
-}
-
-object IdeVersions {
-    fun ideProfile(project: Project): Profile {
-        val profileName = resolveIdeProfileName(project)
-        return ideProfiles[profileName] ?: throw IllegalStateException("Can't find profile for $profileName")
-    }
-
-    private val ideProfiles = listOf(
-        Profile(
-            name = "2019.3",
-            pythonVersion = "193.5233.109",
-            communityPythonVersion = "193.5233.139",
-            dockerVersion = "193.5233.140",
-            riderSdkOverride = "RD-2019.3.4",
-            rdGenVersion = "0.193.146",
-            nugetVersion = "2019.3.4"
-        ),
-        Profile(
-            name = "2020.1",
-            pythonVersion = "201.6668.31",
-            dockerVersion = "201.6668.30",
-            riderSdkOverride = "RD-2020.1.0",
-            rdGenVersion = "0.201.69",
-            nugetVersion = "2020.1.0"
-        ),
-        Profile(
-            name = "2020.2",
-            pythonVersion = "202.6397.98",
-            communityPythonVersion = "202.6397.124",
-            dockerVersion = "202.6397.93",
-            rdGenVersion = "0.202.113",
-            nugetVersion = "2020.2.0"
-        )
-    ).map { it.name to it }.toMap()
-
-    private fun resolveIdeProfileName(project: Project): String = if (System.getenv()["ALTERNATIVE_IDE_PROFILE_NAME"] != null) {
-        System.getenv("ALTERNATIVE_IDE_PROFILE_NAME")
-    } else {
-        project.properties["ideProfileName"]?.toString() ?: throw IllegalStateException("No ideProfileName property set")
-    }
 }
 
 private fun shortenedIdeProfileName(sdkName: String): String {
