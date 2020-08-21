@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.HeavyPlatformTestCase
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -98,8 +97,7 @@ class AwsClientManagerTest {
 
     @Test
     fun clientsAreClosedWhenProjectIsDisposed() {
-        val project = HeavyPlatformTestCase.createProject(temporaryDirectory.newFolder().toPath())
-        val sut = getClientManager(project)
+        val sut = getClientManager(projectRule.project)
         val client = sut.getClient<DummyServiceClient>()
 
         // Frameworks handle this normally but we can't trigger it from tests
