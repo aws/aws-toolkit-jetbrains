@@ -27,7 +27,8 @@ object IdeVersions {
             dockerVersion = "201.6668.30",
             riderSdkOverride = "RD-2020.1.0",
             rdGenVersion = "0.201.69",
-            nugetVersion = "2020.1.0"
+            nugetVersion = "2020.1.0",
+            additionalUltimatePlugins = listOf("com.intellij.database")
         ),
         Profile(
             name = "2020.2",
@@ -35,7 +36,8 @@ object IdeVersions {
             communityPythonVersion = "202.6397.124",
             dockerVersion = "202.6397.93",
             rdGenVersion = "0.202.113",
-            nugetVersion = "2020.2.0"
+            nugetVersion = "2020.2.0",
+            additionalUltimatePlugins = listOf("com.intellij.database")
         )
     ).map { it.name to it }.toMap()
 
@@ -68,14 +70,15 @@ class Profile(
     dockerVersion: String,
     riderSdkOverride: String? = null,
     rdGenVersion: String,
-    nugetVersion: String
+    nugetVersion: String,
+    additionalUltimatePlugins: List<String> = emptyList()
 ) {
     private val commonPlugins = arrayOf(
         "org.jetbrains.plugins.terminal",
         "org.jetbrains.plugins.yaml"
     )
 
-    private val ultimatePlugins = commonPlugins + arrayOf(
+    private val ultimatePlugins = commonPlugins + additionalUltimatePlugins + arrayOf(
         "Pythonid:$pythonVersion",
         "JavaScript",
         "JavaScriptDebugger"
