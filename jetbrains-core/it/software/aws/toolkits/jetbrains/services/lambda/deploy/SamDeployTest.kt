@@ -167,7 +167,7 @@ class SamDeployTest {
                 """.trimIndent()
             ).virtualFile
         } else {
-            projectRule.fixture.addFileToProject("template.yaml",  File(templateFilePath).readText()).virtualFile
+            projectRule.fixture.addFileToProject("template.yaml", File(templateFilePath).readText()).virtualFile
         }
     }
 
