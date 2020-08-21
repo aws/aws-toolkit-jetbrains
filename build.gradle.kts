@@ -59,7 +59,7 @@ plugins {
 
 group = "software.aws.toolkits"
 // please check changelog generation logic if this format is changed
-version = "$toolkitVersion-$ideVersion".toString()
+version = "$toolkitVersion-$ideVersion"
 
 repositories {
     maven("https://www.jetbrains.com/intellij-repository/snapshots/")
@@ -244,7 +244,11 @@ subprojects {
     }
 
     tasks.withType<KotlinCompile>().all {
-        kotlinOptions.jvmTarget = "1.8"
+        kotlinOptions{
+            jvmTarget = "1.8"
+            apiVersion = "1.3"
+            languageVersion = "1.3"
+        }
     }
 
     // Force us to compile the integration tests even during check even though we don't run them
@@ -253,7 +257,7 @@ subprojects {
     }
 
     val testJar = tasks.register<Jar>("testJar") {
-        baseName = "${project.name}-test"
+        archiveBaseName.set("${project.name}-test")
         from(sourceSets.test.get().output)
         from(sourceSets.getByName("integrationTest").output)
     }
@@ -290,7 +294,7 @@ tasks.getByName<PrepareSandboxTask>("prepareSandbox") {
 
 tasks.getByName<PublishTask>("publishPlugin") {
     token(publishToken)
-    channels(if (publishChannel != null) publishChannel.split(",").map { it.trim() } else listOf())
+    channels(publishChannel.split(",").map { it.trim() })
 }
 
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
