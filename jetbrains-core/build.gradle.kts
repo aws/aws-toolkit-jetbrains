@@ -1,16 +1,16 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import groovy.lang.Closure
-import org.gradle.jvm.tasks.Jar
-import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
-import toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.IdeVersions
+import software.aws.toolkits.gradle.ProductCode
 
-apply(plugin = "org.jetbrains.intellij")
-apply(from = "../intellijJVersions.gradle")
+plugins {
+    id("org.jetbrains.intellij")
+}
 
 buildscript {
     val telemetryVersion: String by project
@@ -23,32 +23,27 @@ buildscript {
     }
 }
 
-fun Project.intellij(): IntelliJPluginExtension = extensions["intellij"] as IntelliJPluginExtension
-
+val ideVersions = IdeVersions(project)
 val telemetryVersion: String by project
 val awsSdkVersion: String by project
 val coroutinesVersion: String by project
 
-val ideSdkVersion: Closure<String> by ext
-val idePlugins: Closure<ArrayList<String>> by ext
-val ideSinceVersion: Closure<String> by ext
-val ideUntilVersion: Closure<String> by ext
-
 val compileKotlin: KotlinCompile by tasks
-val patchPluginXml: PatchPluginXmlTask by tasks
-val jar: Jar by tasks
 
-extensions.configure<IntelliJPluginExtension>("intellij") {
-    val rootIntelliJTask = rootProject.intellij()
-    version = ideSdkVersion("IC")
-    setPlugins(*(idePlugins("IC").toArray()))
+intellij {
+    val rootIntelliJTask = rootProject.intellij
+    version = ideVersions.sdkVersion(ProductCode.IC)
+    setPlugins(*ideVersions.plugins(ProductCode.IC).toTypedArray())
     pluginName = rootIntelliJTask.pluginName
     updateSinceUntilBuild = rootIntelliJTask.updateSinceUntilBuild
     downloadSources = rootIntelliJTask.downloadSources
+
 }
 
-patchPluginXml.setSinceBuild(ideSinceVersion())
-patchPluginXml.setUntilBuild(ideUntilVersion())
+tasks.patchPluginXml {
+    setSinceBuild(ideVersions.sinceVersion())
+    setUntilBuild(ideVersions.untilVersion())
+}
 
 configurations {
     testArtifacts
@@ -61,11 +56,13 @@ val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
 compileKotlin.dependsOn(generateTelemetry)
 
 sourceSets {
-    main.get().java.srcDir("${project.buildDir}/generated-src")
+    main {
+        java.srcDir("${project.buildDir}/generated-src")
+    }
 }
 
 tasks.test {
-    systemProperty("log.dir", "${project.intellij().sandboxDirectory}-test/logs")
+    systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -95,6 +92,7 @@ dependencies {
     api("software.amazon.awssdk:rds:$awsSdkVersion")
     api("software.amazon.awssdk:redshift:$awsSdkVersion")
     api("software.amazon.awssdk:secretsmanager:$awsSdkVersion")
+    api("software.amazon.awssdk:sns:$awsSdkVersion")
     api("software.amazon.awssdk:sqs:$awsSdkVersion")
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))

@@ -1,14 +1,13 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import groovy.lang.Closure
 import org.jetbrains.intellij.IntelliJPluginExtension
+import software.aws.toolkits.gradle.IdeVersions
+import software.aws.toolkits.gradle.ProductCode
 
-apply(from = "../intellijJVersions.gradle")
-apply(plugin = "org.jetbrains.intellij")
-
-val ideSdkVersion: Closure<String> by ext
-val idePlugins: Closure<ArrayList<String>> by ext
+plugins {
+    id("org.jetbrains.intellij")
+}
 
 dependencies {
     api(project(":jetbrains-core"))
@@ -17,10 +16,12 @@ dependencies {
     integrationTestImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
 }
 
-extensions.configure<IntelliJPluginExtension>("intellij") {
-    val parentIntellijTask = project(":jetbrains-core").extensions["intellij"] as IntelliJPluginExtension
-    version = ideSdkVersion("IU")
-    setPlugins(*(idePlugins("IU").toArray()))
+val ideVersions = IdeVersions(project)
+
+intellij {
+    val parentIntellijTask = rootProject.intellij
+    version = ideVersions.sdkVersion(ProductCode.IU)
+    setPlugins(*ideVersions.plugins(ProductCode.IU).toTypedArray())
     pluginName = parentIntellijTask.pluginName
     updateSinceUntilBuild = parentIntellijTask.updateSinceUntilBuild
     downloadSources = parentIntellijTask.downloadSources
