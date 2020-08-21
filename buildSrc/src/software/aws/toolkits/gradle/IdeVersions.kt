@@ -14,30 +14,58 @@ object IdeVersions {
     private val ideProfiles = listOf(
         Profile(
             name = "2019.3",
-            pythonVersion = "193.5233.109",
-            communityPythonVersion = "193.5233.139",
-            dockerVersion = "193.5233.140",
+            communityPlugins = listOf(
+                "java",
+                "com.intellij.gradle",
+                "org.jetbrains.idea.maven",
+                "PythonCore:193.5233.139",
+                "Docker:193.5233.140"
+            ),
+            ultimatePlugins = listOf(
+                "JavaScript",
+                "JavaScriptDebugger",
+                "Pythonid:193.5233.109"
+            ),
             riderSdkOverride = "RD-2019.3.4",
             rdGenVersion = "0.193.146",
             nugetVersion = "2019.3.4"
         ),
         Profile(
             name = "2020.1",
-            pythonVersion = "201.6668.31",
-            dockerVersion = "201.6668.30",
+            communityPlugins = listOf(
+                "java",
+                "com.intellij.gradle",
+                "org.jetbrains.idea.maven",
+                "PythonCore:201.6668.31",
+                "Docker:201.6668.30"
+            ),
+            ultimatePlugins = listOf(
+                "JavaScript",
+                "JavaScriptDebugger",
+                "com.intellij.database",
+                "Pythonid:201.6668.31"
+            ),
             riderSdkOverride = "RD-2020.1.0",
             rdGenVersion = "0.201.69",
-            nugetVersion = "2020.1.0",
-            additionalUltimatePlugins = listOf("com.intellij.database")
+            nugetVersion = "2020.1.0"
         ),
         Profile(
             name = "2020.2",
-            pythonVersion = "202.6397.98",
-            communityPythonVersion = "202.6397.124",
-            dockerVersion = "202.6397.93",
+            communityPlugins = listOf(
+                "java",
+                "com.intellij.gradle",
+                "org.jetbrains.idea.maven",
+                "PythonCore:202.6397.124",
+                "Docker:202.6397.93"
+            ),
+            ultimatePlugins = listOf(
+                "JavaScript",
+                "JavaScriptDebugger",
+                "com.intellij.database",
+                "Pythonid:202.6397.98"
+            ),
             rdGenVersion = "0.202.113",
-            nugetVersion = "2020.2.0",
-            additionalUltimatePlugins = listOf("com.intellij.database")
+            nugetVersion = "2020.2.0"
         )
     ).associateBy { it.name }
 
@@ -65,35 +93,19 @@ class Profile(
     val shortName: String = shortenedIdeProfileName(name),
     val sinceVersion: String = shortName,
     val untilVersion: String = "$sinceVersion.*",
-    pythonVersion: String,
-    communityPythonVersion: String = pythonVersion,
-    dockerVersion: String,
+    communityPlugins: List<String>,
+    ultimatePlugins: List<String>,
     riderSdkOverride: String? = null,
     rdGenVersion: String,
-    nugetVersion: String,
-    additionalUltimatePlugins: List<String> = emptyList()
+    nugetVersion: String
 ) {
     private val commonPlugins = arrayOf(
         "org.jetbrains.plugins.terminal",
         "org.jetbrains.plugins.yaml"
     )
 
-    private val ultimatePlugins = commonPlugins + additionalUltimatePlugins + arrayOf(
-        "Pythonid:$pythonVersion",
-        "JavaScript",
-        "JavaScriptDebugger"
-    )
-
-    private val communityPlugins = commonPlugins + arrayOf(
-        "PythonCore:$communityPythonVersion",
-        "java",
-        "com.intellij.gradle",
-        "org.jetbrains.idea.maven",
-        "Docker:$dockerVersion"
-    )
-
-    val community: ProductProfile = ProductProfile(sdkVersion = "IC-$name", plugins = communityPlugins)
-    val ultimate: ProductProfile = ProductProfile(sdkVersion = "IU-$name", plugins = ultimatePlugins)
+    val community: ProductProfile = ProductProfile(sdkVersion = "IC-$name", plugins = commonPlugins + communityPlugins)
+    val ultimate: ProductProfile = ProductProfile(sdkVersion = "IU-$name", plugins = commonPlugins + ultimatePlugins)
     val rider: RiderProfile = RiderProfile(
         sdkVersion = riderSdkOverride ?: "RD-$name",
         plugins = arrayOf("org.jetbrains.plugins.yaml"),
