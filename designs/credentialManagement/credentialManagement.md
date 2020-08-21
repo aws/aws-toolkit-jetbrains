@@ -17,14 +17,14 @@ by third party plugins.
 ## Classes and Concepts
 ![ClassDiagram]
 
-1. `AwsRegion` - Date class that represents an AWS Region and joins together related data for that region. This data is sourced from the endpoints.json file.
+1. `AwsRegion` - Data class that represents an AWS Region and joins together related data for that region. This data is sourced from the endpoints.json file.
 It contains the following data:
     1. `ID` - Contains the ID of the region  (e.g. `us-west-2`)
     1. `Name` - Contains the human readable name for the region (e.g. `US West (Oregon)`)
     1. `Partiton ID` - Contains the ID of the top level AWS partition (e.g. `aws`, `aws-cn`)
 
-1. `CredentialIdentifier` - Represents the globally unique identifier for a possible credential profile in the toolkit. This identifier must be deterministic 
-meaning that if two `CredentialIdentifier`s for the same credential source should be equal even across different IDE sessions. 
+1. `CredentialIdentifier` - Represents the globally unique identifier for a possible credential profile in the toolkit. This identifier must be deterministic, 
+meaning a credential source should have identical `CredentialIdentifier` values when represented by different instances, or when used across different IDE sessions. 
 This is shown to the user as the **Profile** in the UI.
 
 1. `AwsCredentialsProvider` - SDK interface that resolves AWS Credentials from the provider. For more info, see [AwsCredentialsProvider] in the SDK.
