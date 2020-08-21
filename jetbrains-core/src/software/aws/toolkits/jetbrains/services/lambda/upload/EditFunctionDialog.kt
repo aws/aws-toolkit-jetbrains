@@ -11,6 +11,7 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.layout.selected
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.text.nullize
 import com.intellij.util.ui.UIUtil
@@ -38,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.U
 import software.aws.toolkits.jetbrains.services.lambda.upload.EditFunctionMode.UPDATE_CONFIGURATION
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
+import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.lambdaTracingConfigIsAvailable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -168,6 +170,8 @@ class EditFunctionDialog(
                 }
             }
         }
+
+        loadSettings()
     }
 
     private fun configurationChanged(): Boolean = mode != NEW && !(name == view.name.text &&
@@ -295,6 +299,7 @@ class EditFunctionDialog(
             // We normally don't validate the deploy settings in case they are editing settings only, but they requested
             // to deploy so start validating that too
             super.doAction(e)
+            saveSettings()
             if (doValidateAll().isNotEmpty()) return
             upsertLambdaCode()
         }
@@ -308,10 +313,23 @@ class EditFunctionDialog(
 
         override fun doAction(e: ActionEvent?) {
             super.doAction(e)
+            saveSettings()
             if (validation() == null) {
                 performUpdate()
             }
         }
+    }
+
+    private fun loadSettings() {
+        val updateSettings = UpdateLambdaSettings.getInstance(project)
+        view.sourceBucket.selectedItem = updateSettings.bucketName(name)
+        view.buildInContainer.isSelected = updateSettings.useContainer(name) ?: false
+    }
+
+    private fun saveSettings() {
+        val updateSettings = UpdateLambdaSettings.getInstance(project)
+        updateSettings.setBucketName(name, view.sourceBucket.selectedItem?.toString())
+        updateSettings.setUseContainer(name, view.buildInContainer.isSelected)
     }
 
     @TestOnly
