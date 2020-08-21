@@ -244,7 +244,7 @@ subprojects {
     }
 
     tasks.withType<KotlinCompile>().all {
-        kotlinOptions{
+        kotlinOptions {
             jvmTarget = "1.8"
             apiVersion = "1.3"
             languageVersion = "1.3"
