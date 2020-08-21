@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
-const val default_query = "fields @timestamp, @message| sort @timestamp desc| limit 20"
+const val default_query = "fields @timestamp, @message\n| sort @timestamp desc\n| limit 20"
 
 val sampleQueries = mapOf(
     "Lambda: View Latency Statistics for 5-minute intervals" to mapOf(

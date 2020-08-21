@@ -14,7 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.bottomReached
 import software.aws.toolkits.resources.message
@@ -71,7 +70,7 @@ class QueryResultsTable(
     }
     private fun JBTable.getSelectedLog(): String? {
         val row = selectedRow.takeIf { it >= 0 } ?: return null
-        return getValueAt(row,0) as? String
+        return getValueAt(row, 0) as? String
     }
     override fun dispose() {}
 }

@@ -12,13 +12,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.*
+import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogRecordRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
 sealed class LogEventActor<T>(
@@ -38,7 +38,7 @@ sealed class LogEventActor<T>(
         channel.close()
     }
 
-    sealed class MessageLoadEvent{
+    sealed class MessageLoadEvent {
         object LoadLogEventResults : MessageLoadEvent()
     }
 
@@ -108,16 +108,14 @@ class LogEventsResultsActor(
     private val logEventIdentifier: String
 ) : LogEventActor<List<String>>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_results_found")
-    override val tableErrorMessage = message("cloudwatch.logs.query_results_table_error")
+    override val tableErrorMessage = message("cloudwatch.logs.no_log_record_found")
     override val notFoundText = message("cloudwatch.logs.no_results_found")
 
     override suspend fun loadLogEventResults() {
         var request = GetLogRecordRequest.builder().logRecordPointer(logEventIdentifier).build()
         var response = client.getLogRecord(request)
-       //val listOfResults= response.logRecord().toMap()
-        //val listOfResults = response.logRecord().map { "${it.key} = ${it.value}" }
         val listOfResults = response.logRecord().map { (it.key.toString() to it.value.toString()).toList() }
         loadAndPopulateResultsTable { listOfResults }
+        // TODO : Pagination of fields in the log records
     }
-
 }

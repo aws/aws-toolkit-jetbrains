@@ -63,6 +63,7 @@ class SaveQueryDialog(
                 val response = client.putQueryDefinition(request)
                 RetrieveSavedQueries(client).getSavedQueries()
                 notifyInfo(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_saved_successfully"), project)
+                // TODO: Add a warning if same query exists
             } else {
                 notifyError(message("cloudwatch.logs.saved_query_status"), message("cloudwatch.logs.query_not_saved"))
             }

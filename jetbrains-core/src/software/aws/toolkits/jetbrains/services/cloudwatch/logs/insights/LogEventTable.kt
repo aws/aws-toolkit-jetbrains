@@ -12,24 +12,21 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.channels.Channel
-import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
 class LogEventTable(
     private val project: Project,
-    private val client : CloudWatchLogsClient,
+    private val client: CloudWatchLogsClient,
     private val logEventIdentifier: String
-): CoroutineScope by ApplicationThreadPoolScope("LogEventTable"), Disposable {
-//    val a : JComponent = TODO()
+) : CoroutineScope by ApplicationThreadPoolScope("LogEventTable"), Disposable {
     val component: JComponent
     val channel: Channel<LogEventActor.MessageLoadEvent>
     private val resultsTable: TableView<List<String>>
     private val logEventActor: LogEventActor<List<String>>
 
     init {
-        val tableModel = ListTableModel (arrayOf(LogEventKeyColumnDetails(), LogEventValueColumnDetails()), mutableListOf<List<String>>())
+        val tableModel = ListTableModel(arrayOf(LogEventKeyColumnDetails(), LogEventValueColumnDetails()), mutableListOf<List<String>>())
         resultsTable = TableView(tableModel).apply {
             setPaintBusy(true)
             autoscrolls = true
@@ -44,6 +41,4 @@ class LogEventTable(
 
     override fun dispose() {
     }
-
 }
-

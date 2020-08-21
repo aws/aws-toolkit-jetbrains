@@ -9,9 +9,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeQueryDefinitionsRequest
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
-
-class RetrieveSavedQueries(private val client : CloudWatchLogsClient)
-    : CoroutineScope by ApplicationThreadPoolScope("ExecutingQuery") {
+class RetrieveSavedQueries(private val client: CloudWatchLogsClient) :
+    CoroutineScope by ApplicationThreadPoolScope("ExecutingQuery") {
 
     fun getSavedQueries() = launch {
         val request = DescribeQueryDefinitionsRequest.builder().build()

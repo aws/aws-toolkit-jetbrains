@@ -145,24 +145,10 @@ class QueryResultsActor(
         val listOfResults = queryResults.map {
             result -> result.map { it.field().toString() to it.value().toString() }.toMap() }
         listOfResults.iterator().forEach { it["@ptr"]?.let { it1 -> queryResultsIdentifierList.add(it1) } }
-        /*for (result in queryResults){
-            var log =""
-            var logStream=""
-            var ptr=""
-            for (item in result){
-                if(item.field()=="@log"){
-                    log = item.value().toString()
-                }
-                if(item.field()=="@logStream"){
-                    logStream = item.value().toString()
-                }
-                if(item.field()=="@ptr"){
-                    ptr = item.value().toString()
-                }
-            }
-            queryPtrToLogGroupLogStream.put(ptr, mapOf("log" to log, "logStream" to logStream))
-        }*/
         moreResultsAvailable = response.status() != QueryStatus.COMPLETE
+        if (!moreResultsAvailable) {
+            println(response.results().size)
+        }
         loadAndPopulateResultsTable { listOfResults }
     }
 
@@ -170,6 +156,9 @@ class QueryResultsActor(
         val request = GetQueryResultsRequest.builder().queryId(queryId).build()
         val response = client.getQueryResults(request)
         moreResultsAvailable = response.status() != QueryStatus.COMPLETE
+        if (!moreResultsAvailable) {
+            println(response.results().size)
+        }
         return checkIfNewResult(response.results().filterNotNull())
     }
 
@@ -183,15 +172,10 @@ class QueryResultsActor(
                 fieldToValueMap["@ptr"]?.let { queryResultsIdentifierList.add(it) }
                 listOfResults.add(fieldToValueMap)
             }
-            /*mapOf("log" to fieldToValueMap["@log"], "logStream" to fieldToValueMap["@logStream"])?.let {
-                fieldToValueMap["@ptr"]?.let { it1 -> queryPtrToLogGroupLogStream.put(it1, it as Map<String, String>)
-                }
-            }*/
         }
         return listOfResults
     }
     companion object {
         val queryResultsIdentifierList = arrayListOf<String>()
-        //var queryPtrToLogGroupLogStream =mutableMapOf<String,Map<String,String>>()
     }
 }

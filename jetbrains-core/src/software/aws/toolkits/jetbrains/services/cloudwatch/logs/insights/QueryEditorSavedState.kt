@@ -27,11 +27,9 @@ class QueryEditorSavedState {
             true,
             "Error",
             false,
-            "fields @timestamp, @message\n" +
-                "| sort @timestamp desc\n" +
-                "| limit 20"
-
+            default_query
             )
+
         var initialQueryEditorState = QueryDetails(
             listOf("Default log"),
             false,
@@ -43,11 +41,9 @@ class QueryEditorSavedState {
             true,
             "Error",
             false,
-            "fields @timestamp, @message\n" +
-                "| sort @timestamp desc\n" +
-                "| limit 20"
-
+            default_query
         )
+
         var enabledDisabledOptionsState = EnabledComponentsState(
             startDateEnabled = false,
             endDateEnabled = false,

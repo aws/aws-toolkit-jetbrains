@@ -48,7 +48,7 @@ class CloudWatchLogStream(
     private lateinit var locationInformation: Breadcrumbs
     private lateinit var tablePanel: SimpleToolWindowPanel
     private lateinit var searchField: SearchTextField
-    private lateinit var openQueryEditor : JButton
+    private lateinit var openQueryEditor: JButton
 
     private val edtContext = getCoroutineUiContext(disposable = this)
 

@@ -21,10 +21,10 @@ class GetFieldsFromEnteredQueryTest {
         val onlyFieldsQuery = "fields @logStream, @timestamp"
         val twoFieldsQuery = "fields @timestamp, @logStream | limit 10 | fields @message"
         val fieldsInFilterQuery = "filter @message like /fields/ | fields @logStream"
-        assertThat(query.getFields(fieldsAsSecondPartOfQuery)).isEqualTo(listOf("@message"))
-        assertThat(query.getFields(noFieldsQuery)).isEqualTo(listOf("@message", "@timestamp"))
-        assertThat(query.getFields(onlyFieldsQuery)).isEqualTo(listOf("@logStream", "@timestamp"))
-        assertThat(query.getFields(twoFieldsQuery)).isEqualTo(listOf("@timestamp", "@logStream", "@message"))
-        assertThat(query.getFields(fieldsInFilterQuery)).isEqualTo(listOf("@logStream"))
+        assertThat(query.getFields(fieldsAsSecondPartOfQuery)).isEqualTo(listOf("@ptr", "@message"))
+        assertThat(query.getFields(noFieldsQuery)).isEqualTo(listOf("@ptr", "@message", "@timestamp"))
+        assertThat(query.getFields(onlyFieldsQuery)).isEqualTo(listOf("@ptr", "@logStream", "@timestamp"))
+        assertThat(query.getFields(twoFieldsQuery)).isEqualTo(listOf("@ptr", "@timestamp", "@logStream", "@message"))
+        assertThat(query.getFields(fieldsInFilterQuery)).isEqualTo(listOf("@ptr", "@logStream"))
     }
 }

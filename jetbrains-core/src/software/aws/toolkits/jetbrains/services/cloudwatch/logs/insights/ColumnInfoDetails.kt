@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.util.ui.ColumnInfo
 import software.aws.toolkits.jetbrains.utils.ui.setSelectionHighlighting
+import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JTable
 import javax.swing.table.TableCellRenderer
@@ -22,14 +23,14 @@ class ColumnInfoDetails(private val fieldName: String) : ColumnInfo<Map<String, 
     override fun getRenderer(item: Map<String, String>?): TableCellRenderer? = renderer
 }
 
-class LogEventKeyColumnDetails() : ColumnInfo <List<String>,String> ("Log Event Field") {
-    private val renderer = FieldColumnRenderer2()
+class LogEventKeyColumnDetails() : ColumnInfo <List<String>, String> (message("cloudwatch.logs.complete_log_event_field_name")) {
+    private val renderer = DetailedLogEventFieldColumnRenderer()
     override fun valueOf(item: List<String>?): String? = item?.get(0)
     override fun isCellEditable(item: List<String>?): Boolean = false
     override fun getRenderer(item: List<String>?): TableCellRenderer? = renderer
 }
 
-class LogEventValueColumnDetails() : ColumnInfo <List<String>,String> ("Field Value") {
+class LogEventValueColumnDetails() : ColumnInfo <List<String>, String> (message("cloudwatch.logs.complete_log_event_field_value")) {
     private val renderer = LogEventColumnRenderer()
     override fun valueOf(item: List<String>?): String? = item?.get(1)
     override fun isCellEditable(item: List<String>?): Boolean = false
@@ -62,10 +63,9 @@ class FieldColumnRenderer : TableCellRenderer {
         }
         component.setSelectionHighlighting(table, isSelected)
         return component
-
     }
 }
-class FieldColumnRenderer2 : TableCellRenderer {
+class DetailedLogEventFieldColumnRenderer : TableCellRenderer {
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         if (table != null) {
             table.columnModel.getColumn(0).preferredWidth = 150
@@ -79,6 +79,5 @@ class FieldColumnRenderer2 : TableCellRenderer {
         }
         component.setSelectionHighlighting(table, isSelected)
         return component
-
     }
 }

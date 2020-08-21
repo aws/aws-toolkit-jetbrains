@@ -44,9 +44,10 @@ class QueryingLogGroups(private val project: Project) : CoroutineScope by Applic
                 var fields = splitQuery.substring(fields.length + 1)
                 fieldList.add(fields.split(",").map { it.trim() })
             }
+            // TODO: Extract field names stored as aliases (eg: with fields followed by "as" keyword)
         }
-        if (fieldList.size==1) {
-            return listOf("@ptr","@message", "@timestamp")
+        if (fieldList.size == 1) {
+            return listOf("@ptr", "@message", "@timestamp")
         }
 
         return fieldList.flatten()

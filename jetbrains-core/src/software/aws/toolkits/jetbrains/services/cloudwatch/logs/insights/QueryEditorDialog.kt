@@ -6,11 +6,9 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.util.castSafelyTo
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.utils.notifyWarn
 import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.JComponent
@@ -75,22 +73,8 @@ class QueryEditorDialog(
             val query = if (view.queryBox.text.isNotEmpty()) view.queryBox.text else default_query
             SaveQueryDialog(project, query, logGroupNames).show()
         }
-        view.retrieveSavedQueries.addActionListener{
-            val queryDetails =  RetrieveSavedQueries.allQueries[view.retrieveSavedQueries.selectedItem.toString()]
-            val query = queryDetails?.get("query")
-            view.queryLogGroupsRadioButton.isSelected = true
-            view.queryBox.isEnabled = true
-            view.queryBox.text = query.toString()
-            val retrievedQueryLogGroup = queryDetails?.get("logGroups").castSafelyTo<List<String>>()
-            if (retrievedQueryLogGroup != null) {
-                if(retrievedQueryLogGroup.isEmpty()){
-                    notifyWarn(message("cloudwatch.logs.log_group_not_saved"), message("cloudwatch.logs.no_log_group"))
-                    view.logGroupLabel.text = logGroupNames[0]
-                }
-                else{
-                    view.logGroupLabel.text = retrievedQueryLogGroup?.get(0)
-                }
-            }
+        view.retrieveSavedQueries.addActionListener {
+            // TODO : Converting retrieveSavedQueries to ResourceSelector
         }
     }
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
@@ -144,7 +128,9 @@ class QueryEditorDialog(
         if (!okAction.isEnabled) {
             return
         }
+
         val funDetails = getFunctionDetails()
+        val a = funDetails.endDateAbsolute
         val queryStartEndDate: StartEndDate
         queryStartEndDate = (if (funDetails.absoluteTimeSelected) {
             getAbsoluteTime(funDetails.startDateAbsolute, funDetails.endDateAbsolute)
