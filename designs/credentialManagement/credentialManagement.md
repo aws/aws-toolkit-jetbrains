@@ -69,8 +69,9 @@ If the call fails, we consider the credentials to be invalid.
 
 The class [AwsConnectionManager] is the entry point into this system.
 
-The concept of _Active Connection Settings_ represents the current user selected credentials and region that the toolkit uses to perform actions in the AWS Explorer as well as 
-being used as defaults when more than one option is possible. 
+The concept of _Active Connection Settings_ represents the user's currently selected credentials and region. They are used by the toolkit:
+* to perform actions in the AWS Explorer
+* as defaults when presenting more than one option in a dialog 
 
 Due to the nature of the IntellJ projects (project level) each has their own windows while existing in one JVM (application level). Since we store active 
 connection settings at the project level,  each window can have a different active `CredenitalIdentifier` and/or `AwsRegion` selected.
