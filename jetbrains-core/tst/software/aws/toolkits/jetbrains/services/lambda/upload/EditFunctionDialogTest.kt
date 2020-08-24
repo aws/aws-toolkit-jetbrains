@@ -10,13 +10,11 @@ import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.iam.model.ListRolesRequest
 import software.amazon.awssdk.services.iam.model.ListRolesResponse
@@ -25,14 +23,15 @@ import software.amazon.awssdk.services.iam.paginators.ListRolesIterable
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest
-import software.amazon.awssdk.services.s3.model.HeadBucketResponse
-import software.amazon.awssdk.services.s3.model.ListBucketsResponse
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
+import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
 class EditFunctionDialogTest {
@@ -44,6 +43,10 @@ class EditFunctionDialogTest {
     @JvmField
     @Rule
     val mockClientManager = MockClientManagerRule(projectRule)
+
+    @JvmField
+    @Rule
+    val mockResourceCache = MockResourceCacheRule(projectRule)
 
     private val mockSettingsManager by lazy { AwsConnectionManager.getInstance(projectRule.project) as MockAwsConnectionManager }
 
@@ -81,6 +84,40 @@ class EditFunctionDialogTest {
     }
 
     @Test
+    fun `Loads saved settings if function name matches`() {
+        mockBuckets()
+
+        val name = RuleUtils.randomName()
+        val settings = UpdateLambdaSettings.getInstance(projectRule.project)
+
+        settings.setBucketName(name, "hello2")
+        settings.setUseContainer(name, true)
+
+        val dialog = runInEdtAndGet {
+            EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, name = name)
+        }
+        assertThat(dialog.getViewForTestAssertions().buildInContainer.isSelected).isEqualTo(true)
+        assertThat(dialog.getViewForTestAssertions().sourceBucket.selectedItem?.toString()).isEqualTo("hello2")
+    }
+
+    @Test
+    fun `Does not load saved settings if function name does not match`() {
+        mockBuckets()
+
+        val name = RuleUtils.randomName()
+        val settings = UpdateLambdaSettings.getInstance(projectRule.project)
+
+        settings.setBucketName(name, "hello2")
+        settings.setUseContainer(name, true)
+
+        val dialog = runInEdtAndGet {
+            EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, name = "not$name")
+        }
+        assertThat(dialog.getViewForTestAssertions().buildInContainer.isSelected).isEqualTo(false)
+        assertThat(dialog.getViewForTestAssertions().sourceBucket.selectedItem).isNull()
+    }
+
+    @Test
     fun `On update configuration, dialog shows all runtimes`() {
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CONFIGURATION)
@@ -93,7 +130,6 @@ class EditFunctionDialogTest {
 
     @Test
     fun newShowsConfigurationDeploymentAndBuildSettings() {
-        mockBuckets()
         mockRoles()
 
         val dialog = runInEdtAndGet {
@@ -107,7 +143,6 @@ class EditFunctionDialogTest {
 
     @Test
     fun updateConfigurationShowsOnlyConfigurationSettings() {
-        mockBuckets()
         mockRoles()
 
         val dialog = runInEdtAndGet {
@@ -121,7 +156,6 @@ class EditFunctionDialogTest {
 
     @Test
     fun updateCodeShowsOnlyDeploymentSettingsHandlerAndBuild() {
-        mockBuckets()
         mockRoles()
 
         val dialog = runInEdtAndGet {
@@ -145,11 +179,12 @@ class EditFunctionDialogTest {
     }
 
     private fun mockBuckets() {
-        whenever(s3Client.listBuckets()).thenReturn(ListBucketsResponse.builder().buckets(Bucket.builder().name("hello").build()).build())
-        val mockSdkResponse = mock<SdkHttpResponse>()
-        whenever(mockSdkResponse.headers()).thenReturn(mapOf("x-amz-bucket-region" to listOf("us-west-1")))
-        whenever(s3Client.headBucket(HeadBucketRequest.builder().bucket("hello").build())).thenReturn(
-            HeadBucketResponse.builder().sdkHttpResponse(mockSdkResponse).build() as HeadBucketResponse
+        mockResourceCache.get().addEntry(
+            S3Resources.LIST_REGIONALIZED_BUCKETS,
+            listOf(
+                S3Resources.RegionalizedBucket(Bucket.builder().name("hello").build(), mockSettingsManager.activeRegion),
+                S3Resources.RegionalizedBucket(Bucket.builder().name("hello2").build(), mockSettingsManager.activeRegion)
+            )
         )
     }
 
