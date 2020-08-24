@@ -91,10 +91,10 @@ class EditFunctionDialogTest {
         mockBuckets()
 
         val arn = RuleUtils.randomName()
-        val settings = UpdateLambdaSettings.getInstance()
+        val settings = UpdateLambdaSettings.getInstance(arn)
 
-        settings.setBucketName(arn, "hello2")
-        settings.setUseContainer(arn, true)
+        settings.bucketName = "hello2"
+        settings.useContainer = true
 
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, arn = arn)
@@ -109,10 +109,10 @@ class EditFunctionDialogTest {
         mockBuckets()
 
         val arn = RuleUtils.randomName()
-        val settings = UpdateLambdaSettings.getInstance()
+        val settings = UpdateLambdaSettings.getInstance(arn)
 
-        settings.setBucketName(arn, "hello2")
-        settings.setUseContainer(arn, true)
+        settings.bucketName = "hello2"
+        settings.useContainer = true
 
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, arn = "not$arn")

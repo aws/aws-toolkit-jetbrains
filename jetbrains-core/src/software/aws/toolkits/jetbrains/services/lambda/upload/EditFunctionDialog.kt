@@ -93,7 +93,7 @@ class EditFunctionDialog(
     private val validator = UploadToLambdaValidator()
     private val s3Client: S3Client = project.awsClient()
     private val iamClient: IamClient = project.awsClient()
-    private val updateSettings = UpdateLambdaSettings.getInstance()
+    private val updateSettings = UpdateLambdaSettings.getInstance(arn)
 
     private val action: OkAction = when (mode) {
         NEW -> CreateNewLambdaOkAction()
@@ -323,13 +323,13 @@ class EditFunctionDialog(
     }
 
     private fun loadSettings() {
-        view.sourceBucket.selectedItem = updateSettings.bucketName(arn)
-        view.buildInContainer.isSelected = updateSettings.useContainer(arn) ?: false
+        view.sourceBucket.selectedItem = updateSettings.bucketName
+        view.buildInContainer.isSelected = updateSettings.useContainer ?: false
     }
 
     private fun saveSettings() {
-        updateSettings.setBucketName(arn, view.sourceBucket.selectedItem?.toString())
-        updateSettings.setUseContainer(arn, view.buildInContainer.isSelected)
+        updateSettings.bucketName = view.sourceBucket.selectedItem?.toString()
+        updateSettings.useContainer = view.buildInContainer.isSelected
     }
 
     @TestOnly
