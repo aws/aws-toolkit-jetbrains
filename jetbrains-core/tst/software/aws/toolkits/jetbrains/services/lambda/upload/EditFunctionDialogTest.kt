@@ -11,6 +11,7 @@ import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.whenever
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -32,7 +33,9 @@ import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
+import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.waitForFalse
 
 class EditFunctionDialogTest {
 
@@ -96,6 +99,7 @@ class EditFunctionDialogTest {
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, name = name)
         }
+        dialog.getViewForTestAssertions().sourceBucket.waitToLoad()
         assertThat(dialog.getViewForTestAssertions().buildInContainer.isSelected).isEqualTo(true)
         assertThat(dialog.getViewForTestAssertions().sourceBucket.selectedItem?.toString()).isEqualTo("hello2")
     }
@@ -113,6 +117,7 @@ class EditFunctionDialogTest {
         val dialog = runInEdtAndGet {
             EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, name = "not$name")
         }
+        dialog.getViewForTestAssertions().sourceBucket.waitToLoad()
         assertThat(dialog.getViewForTestAssertions().buildInContainer.isSelected).isEqualTo(false)
         assertThat(dialog.getViewForTestAssertions().sourceBucket.selectedItem).isNull()
     }
@@ -202,5 +207,11 @@ class EditFunctionDialogTest {
                 ).build()
             ).isTruncated(false).build()
         )
+    }
+
+    private fun ResourceSelector<*>.waitToLoad() {
+        runBlocking {
+            waitForFalse { isLoading }
+        }
     }
 }
