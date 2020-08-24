@@ -11,7 +11,6 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.ui.layout.selected
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.text.nullize
 import com.intellij.util.ui.UIUtil
@@ -63,6 +62,7 @@ class EditFunctionDialog(
     private val project: Project,
     private val mode: EditFunctionMode,
     private val name: String = "",
+    private val arn: String = "",
     private val description: String = "",
     private val runtime: Runtime? = null,
     private val handlerName: String = "",
@@ -78,6 +78,7 @@ class EditFunctionDialog(
             project = project,
             mode = mode,
             name = lambdaFunction.name,
+            arn = lambdaFunction.arn,
             description = lambdaFunction.description ?: "",
             runtime = lambdaFunction.runtime,
             handlerName = lambdaFunction.handler,
@@ -92,6 +93,7 @@ class EditFunctionDialog(
     private val validator = UploadToLambdaValidator()
     private val s3Client: S3Client = project.awsClient()
     private val iamClient: IamClient = project.awsClient()
+    private val updateSettings = UpdateLambdaSettings.getInstance()
 
     private val action: OkAction = when (mode) {
         NEW -> CreateNewLambdaOkAction()
@@ -321,15 +323,13 @@ class EditFunctionDialog(
     }
 
     private fun loadSettings() {
-        val updateSettings = UpdateLambdaSettings.getInstance(project)
-        view.sourceBucket.selectedItem = updateSettings.bucketName(name)
-        view.buildInContainer.isSelected = updateSettings.useContainer(name) ?: false
+        view.sourceBucket.selectedItem = updateSettings.bucketName(arn)
+        view.buildInContainer.isSelected = updateSettings.useContainer(arn) ?: false
     }
 
     private fun saveSettings() {
-        val updateSettings = UpdateLambdaSettings.getInstance(project)
-        updateSettings.setBucketName(name, view.sourceBucket.selectedItem?.toString())
-        updateSettings.setUseContainer(name, view.buildInContainer.isSelected)
+        updateSettings.setBucketName(arn, view.sourceBucket.selectedItem?.toString())
+        updateSettings.setUseContainer(arn, view.buildInContainer.isSelected)
     }
 
     @TestOnly

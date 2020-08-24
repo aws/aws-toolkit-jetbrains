@@ -7,7 +7,6 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.project.Project
 
 @State(name = "updateLambdaSettings", storages = [Storage("aws.xml")])
 class UpdateLambdaSettings : PersistentStateComponent<UpdateSettings> {
@@ -18,24 +17,24 @@ class UpdateLambdaSettings : PersistentStateComponent<UpdateSettings> {
         this.state = state
     }
 
-    fun useContainer(stackArn: String): Boolean? = state.samConfigs[stackArn]?.useContainer
+    fun useContainer(stackArn: String): Boolean? = state.updateConfigs[stackArn]?.useContainer
     fun setUseContainer(stackArn: String, value: Boolean) {
-        state.samConfigs.computeIfAbsent(stackArn) { UpdateConfig() }.useContainer = value
+        state.updateConfigs.computeIfAbsent(stackArn) { UpdateConfig() }.useContainer = value
     }
 
-    fun bucketName(stackArn: String): String? = state.samConfigs[stackArn]?.bucketName
+    fun bucketName(stackArn: String): String? = state.updateConfigs[stackArn]?.bucketName
     fun setBucketName(stackArn: String, value: String?) {
-        state.samConfigs.computeIfAbsent(stackArn) { UpdateConfig() }.bucketName = value
+        state.updateConfigs.computeIfAbsent(stackArn) { UpdateConfig() }.bucketName = value
     }
 
     companion object {
         @JvmStatic
-        fun getInstance(project: Project): UpdateLambdaSettings = ServiceManager.getService(project, UpdateLambdaSettings::class.java)
+        fun getInstance(): UpdateLambdaSettings = ServiceManager.getService(UpdateLambdaSettings::class.java)
     }
 }
 
 data class UpdateSettings(
-    var samConfigs: MutableMap<String, UpdateConfig> = mutableMapOf()
+    var updateConfigs: MutableMap<String, UpdateConfig> = mutableMapOf()
 )
 
 data class UpdateConfig(

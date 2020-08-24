@@ -91,7 +91,7 @@ class EditFunctionDialogTest {
         mockBuckets()
 
         val name = RuleUtils.randomName()
-        val settings = UpdateLambdaSettings.getInstance(projectRule.project)
+        val settings = UpdateLambdaSettings.getInstance()
 
         settings.setBucketName(name, "hello2")
         settings.setUseContainer(name, true)
@@ -109,7 +109,7 @@ class EditFunctionDialogTest {
         mockBuckets()
 
         val name = RuleUtils.randomName()
-        val settings = UpdateLambdaSettings.getInstance(projectRule.project)
+        val settings = UpdateLambdaSettings.getInstance()
 
         settings.setBucketName(name, "hello2")
         settings.setUseContainer(name, true)
