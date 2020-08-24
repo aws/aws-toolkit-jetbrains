@@ -9,7 +9,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
 @State(name = "updateLambdaState", storages = [Storage("aws.xml")])
-class UpdateLambdaState : PersistentStateComponent<UpdateLambda> {
+private class UpdateLambdaState : PersistentStateComponent<UpdateLambda> {
     private var settings = UpdateLambda()
 
     override fun getState(): UpdateLambda = settings
