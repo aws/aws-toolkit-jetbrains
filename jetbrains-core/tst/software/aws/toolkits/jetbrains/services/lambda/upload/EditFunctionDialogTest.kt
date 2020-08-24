@@ -90,14 +90,14 @@ class EditFunctionDialogTest {
     fun `Loads saved settings if function name matches`() {
         mockBuckets()
 
-        val name = RuleUtils.randomName()
+        val arn = RuleUtils.randomName()
         val settings = UpdateLambdaSettings.getInstance()
 
-        settings.setBucketName(name, "hello2")
-        settings.setUseContainer(name, true)
+        settings.setBucketName(arn, "hello2")
+        settings.setUseContainer(arn, true)
 
         val dialog = runInEdtAndGet {
-            EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, name = name)
+            EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, arn = arn)
         }
         dialog.getViewForTestAssertions().sourceBucket.waitToLoad()
         assertThat(dialog.getViewForTestAssertions().buildInContainer.isSelected).isEqualTo(true)
@@ -108,14 +108,14 @@ class EditFunctionDialogTest {
     fun `Does not load saved settings if function name does not match`() {
         mockBuckets()
 
-        val name = RuleUtils.randomName()
+        val arn = RuleUtils.randomName()
         val settings = UpdateLambdaSettings.getInstance()
 
-        settings.setBucketName(name, "hello2")
-        settings.setUseContainer(name, true)
+        settings.setBucketName(arn, "hello2")
+        settings.setUseContainer(arn, true)
 
         val dialog = runInEdtAndGet {
-            EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, name = "not$name")
+            EditFunctionDialog(project = projectRule.project, mode = EditFunctionMode.UPDATE_CODE, arn = "not$arn")
         }
         dialog.getViewForTestAssertions().sourceBucket.waitToLoad()
         assertThat(dialog.getViewForTestAssertions().buildInContainer.isSelected).isEqualTo(false)
