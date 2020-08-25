@@ -4,24 +4,35 @@
 package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.json.JsonLanguage
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import software.amazon.awssdk.services.iam.IamClient
+import software.amazon.awssdk.services.lambda.LambdaClient
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.upload.SQS_POLLER_ROLE_POLICY
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.formatAndSet
+import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent
 
-// TODO: Incomplete - integrate IAM dialog with main configuration dialog
 class ConfirmIamPolicyDialog(
     private val project: Project,
+    private val iamClient: IamClient,
+    private val lambdaClient: LambdaClient,
+    private val functionName: String,
     private val parent: Component? = null
-) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
-    val view = ConfirmIamPolicyCreationPanel()
+) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT), CoroutineScope by ApplicationThreadPoolScope("ConfirmIamPolicy") {
+    val view = ConfirmIamPolicyCreationPanel(project)
 
     init {
-        // TODO: Localization
-        title = "Create IAM Role"
-        setOKButtonText("Create")
+        title = message("sqs.confirm.iam")
+        setOKButtonText(message("sqs.confirm.iam.create"))
 
         view.policyDocument.formatAndSet(SQS_POLLER_ROLE_POLICY, JsonLanguage.INSTANCE)
         init()
@@ -30,7 +41,47 @@ class ConfirmIamPolicyDialog(
     override fun createCenterPanel(): JComponent? = view.component
 
     override fun doOKAction() {
-        println("Created IAM Role policy")
-        doOKAction()
+        if (isOKActionEnabled) {
+            setOKButtonText(message("sqs.confirm.iam.in_progress"))
+            isOKActionEnabled = false
+
+            launch {
+                try {
+                    val policyArn = createPolicy()
+                    attachPolicy(policyArn)
+                    runInEdt(ModalityState.any()) {
+                        close(OK_EXIT_CODE)
+                    }
+                } catch (e: Exception) {
+                    LOG.warn(e) { message("sqs.confirm.iam.failed") }
+                    setErrorText(e.message)
+                    setOKButtonText(message("sqs.confirm.iam.create"))
+                    isOKActionEnabled = true
+                }
+            }
+        }
+    }
+
+    private fun createPolicy(): String {
+        val policy = iamClient.createPolicy {
+            it.policyName(policyName())
+            it.policyDocument(SQS_POLLER_ROLE_POLICY)
+        }.policy()
+        return policy.arn()
+    }
+
+    private fun attachPolicy(policyArn: String): String {
+        val role = lambdaClient.getFunctionConfiguration { it.functionName(functionName) }.role().substringAfterLast('/')
+        iamClient.attachRolePolicy {
+            it.policyArn(policyArn)
+            it.roleName(role)
+        }
+        return role
+    }
+
+    private fun policyName() = "AWSLambdaSQSPollerExecutionRole-$functionName"
+
+    private companion object {
+        val LOG = getLogger<ConfirmIamPolicyDialog>()
     }
 }

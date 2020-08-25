@@ -5,14 +5,19 @@ package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.doThrow
+import com.nhaarman.mockitokotlin2.stub
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingRequest
+import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingResponse
 import software.amazon.awssdk.services.lambda.model.InvalidParameterValueException
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.core.region.AwsRegion
@@ -22,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 class ConfigureLambdaDialogTest {
     lateinit var sqsClient: SqsClient
     lateinit var lambdaClient: LambdaClient
+    lateinit var iamClient: IamClient
     lateinit var region: AwsRegion
     lateinit var queue: Queue
 
@@ -37,6 +43,7 @@ class ConfigureLambdaDialogTest {
     fun setup() {
         sqsClient = mockClientManagerRule.create()
         lambdaClient = mockClientManagerRule.create()
+        iamClient = mockClientManagerRule.create()
         region = MockRegionProvider.getInstance().defaultRegion()
         queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test", region)
     }
@@ -44,40 +51,45 @@ class ConfigureLambdaDialogTest {
     @Test
     fun `No function selected`() {
         runInEdtAndWait {
-            val dialog = ConfigureLambdaDialog(projectRule.project, sqsClient, queue)
+            val dialog = ConfigureLambdaDialog(projectRule.project, queue)
             val validationInfo = dialog.validate()
             assertThat(validationInfo).isNotNull()
         }
     }
 
     @Test
-    fun `No function arn specified`() {
-        runInEdtAndWait {
-            val dialog = ConfigureLambdaDialog(projectRule.project, sqsClient, queue).apply {
-                view.inputButton.isSelected = true
-                view.functionArn.text = ""
-            }
-            val validationInfo = dialog.validate()
-            assertThat(validationInfo).isNotNull()
+    fun `Function configuration succeeds`() {
+        val configureCaptor = argumentCaptor<CreateEventSourceMappingRequest>()
+        lambdaClient.stub {
+            on { createEventSourceMapping(configureCaptor.capture()) } doReturn CreateEventSourceMappingResponse.builder().build()
         }
+
+        runInEdtAndWait {
+            ConfigureLambdaDialog(projectRule.project, queue).apply {
+                configureLambda(TEST_FUNCTION_NAME)
+            }
+        }
+        assertThat(configureCaptor.firstValue.functionName()).isEqualTo(TEST_FUNCTION_NAME)
+        assertThat(configureCaptor.firstValue.eventSourceArn()).isEqualTo(queue.arn)
     }
 
     @Test
-    fun `Specified function does not have permission`() {
-        whenever(lambdaClient.createEventSourceMapping(any<CreateEventSourceMappingRequest>())).then {
-            InvalidParameterValueException.builder().build()
+    fun `Error configuring function`() {
+        val configureCaptor = argumentCaptor<CreateEventSourceMappingRequest>()
+        lambdaClient.stub {
+            on { createEventSourceMapping(configureCaptor.capture()) } doThrow InvalidParameterValueException.builder().message(ERROR_MESSAGE).build()
         }
 
         runInEdtAndWait {
-            val dialog = ConfigureLambdaDialog(projectRule.project, sqsClient, queue).apply {
-                view.inputButton.isSelected = true
-                view.functionArn.text = TEST_FUNCTION_NAME
-            }
-            // TODO: Finish test
+            val dialog = ConfigureLambdaDialog(projectRule.project, queue)
+            assertThatThrownBy { dialog.configureLambda(TEST_FUNCTION_NAME) }.hasMessage(ERROR_MESSAGE)
         }
+        assertThat(configureCaptor.firstValue.functionName()).isEqualTo(TEST_FUNCTION_NAME)
+        assertThat(configureCaptor.firstValue.eventSourceArn()).isEqualTo(queue.arn)
     }
 
     private companion object {
         const val TEST_FUNCTION_NAME = "Function"
+        const val ERROR_MESSAGE = "Function has invalid permission"
     }
 }
