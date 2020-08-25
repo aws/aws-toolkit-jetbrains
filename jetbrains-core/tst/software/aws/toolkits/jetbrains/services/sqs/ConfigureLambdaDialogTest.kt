@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingRequest
 import software.amazon.awssdk.services.lambda.model.CreateEventSourceMappingResponse
 import software.amazon.awssdk.services.lambda.model.InvalidParameterValueException
+import software.amazon.awssdk.services.lambda.model.ResourceConflictException
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
@@ -88,8 +89,40 @@ class ConfigureLambdaDialogTest {
         assertThat(configureCaptor.firstValue.eventSourceArn()).isEqualTo(queue.arn)
     }
 
+    @Test
+    fun `Error configuring after policy added`() {
+        val configureCaptor = argumentCaptor<CreateEventSourceMappingRequest>()
+        lambdaClient.stub {
+            on { createEventSourceMapping(configureCaptor.capture()) } doThrow ResourceConflictException.builder().message(ERROR_MESSAGE).build()
+        }
+
+        runInEdtAndWait {
+            val identifier = ConfigureLambdaDialog(projectRule.project, queue).waitUntilConfigured(TEST_FUNCTION_NAME)
+            assertThat(identifier).isEmpty()
+        }
+        assertThat(configureCaptor.firstValue.functionName()).isEqualTo(TEST_FUNCTION_NAME)
+        assertThat(configureCaptor.firstValue.eventSourceArn()).isEqualTo(queue.arn)
+    }
+
+    @Test
+    fun `Success configuring after policy added`() {
+        val configureCaptor = argumentCaptor<CreateEventSourceMappingRequest>()
+        lambdaClient.stub {
+            on { createEventSourceMapping(configureCaptor.capture()) } doReturn
+                CreateEventSourceMappingResponse.builder().eventSourceArn(queue.arn).uuid(EVENT_IDENTIFIER).build()
+        }
+
+        runInEdtAndWait {
+            val identifier = ConfigureLambdaDialog(projectRule.project, queue).waitUntilConfigured(TEST_FUNCTION_NAME)
+            assertThat(identifier).isEqualTo(EVENT_IDENTIFIER)
+        }
+        assertThat(configureCaptor.firstValue.functionName()).isEqualTo(TEST_FUNCTION_NAME)
+        assertThat(configureCaptor.firstValue.eventSourceArn()).isEqualTo(queue.arn)
+    }
+
     private companion object {
         const val TEST_FUNCTION_NAME = "Function"
+        const val EVENT_IDENTIFIER = "abc"
         const val ERROR_MESSAGE = "Function has invalid permission"
     }
 }

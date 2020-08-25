@@ -13,6 +13,10 @@ import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.InvalidParameterValueException
+import software.amazon.awssdk.services.lambda.model.LambdaException
+import software.amazon.awssdk.services.lambda.model.ResourceConflictException
+import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException
+import software.amazon.awssdk.services.lambda.model.ServiceException
 import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -66,16 +70,19 @@ class ConfigureLambdaDialog(
                     runInEdt(ModalityState.any()) {
                         val iamDialog = ConfirmIamPolicyDialog(project, iamClient, lambdaClient, functionSelected(), view.component)
                         if (iamDialog.showAndGet()) {
-                            waitUntilConfigured(functionSelected())
-                            notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionSelected()), project)
-                            close(OK_EXIT_CODE)
-                        } else {
-                            setOKButtonText(message("sqs.configure.lambda.configure"))
-                            isOKActionEnabled = true
+                            val identifier = waitUntilConfigured(functionSelected())
+                            if (identifier.isNotEmpty()) {
+                                notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionSelected()), project)
+                                close(OK_EXIT_CODE)
+                            } else {
+                                setErrorText(message("sqs.configure.lambda.error", queue.queueName, functionSelected()))
+                            }
                         }
+                        setOKButtonText(message("sqs.configure.lambda.configure"))
+                        isOKActionEnabled = true
                     }
                 } catch (e: Exception) {
-                    LOG.warn(e) { message("sqs.configure.lambda.error", queue.queueName, functionSelected()) }
+                    LOG.warn(e) { message("sqs.configure.lambda.failed", queue.queueName, functionSelected()) }
                     setErrorText(e.message)
                     setOKButtonText(message("sqs.configure.lambda.configure"))
                     isOKActionEnabled = true
@@ -94,20 +101,25 @@ class ConfigureLambdaDialog(
     }
 
     // It takes a few seconds for the role policy to update, so this function will attempt configuration for a duration of time until it succeeds.
-    private fun waitUntilConfigured(functionName: String) {
+    internal fun waitUntilConfigured(functionName: String): String {
+        var identifier: String = ""
         waitUntilBlocking(
             succeedOn = {
                 it.eventSourceArn().isNotEmpty()
             },
             exceptionsToIgnore = setOf(InvalidParameterValueException::class),
+            exceptionsToStopOn = setOf(LambdaException::class, ResourceConflictException::class, ResourceNotFoundException::class, ServiceException::class),
             maxDuration = Duration.ofSeconds(CONFIGURATION_WAIT_TIME),
             call = {
                 lambdaClient.createEventSourceMapping {
                     it.functionName(functionName)
                     it.eventSourceArn(queue.arn)
+                }.apply {
+                    identifier = this.uuid()
                 }
             }
         )
+        return identifier
     }
 
     private companion object {
