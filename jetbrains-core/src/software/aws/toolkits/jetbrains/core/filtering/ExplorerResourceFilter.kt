@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.filtering
 import com.intellij.ide.projectView.ViewSettings
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 
@@ -24,13 +25,19 @@ class ExplorerResourceFilter : AwsExplorerTreeStructureProvider {
                 children
             } else {
                 val resourceNodes = children.filterIsInstance<AwsExplorerResourceNode<*>>()
-                val filteredNodes = if (resourceNodes.isEmpty()) {
-                    listOf()
-                } else {
-                    resourceNodes.filter { node -> filterManager.filter(node.resourceArn(), node.serviceId, node.resourceType()) }
-                }
+                val filteredNodes = resourceNodes.filter { node -> filterManager.filter(node.resourceArn(), node.serviceId, node.resourceType()) }
                 val otherNodes = children.filter { it !is AwsExplorerResourceNode<*> }
-                (otherNodes + filteredNodes).toMutableList()
+                val length = otherNodes.size + filteredNodes.size
+                if (length == 0) {
+                    // if we filter out all of the nodes, add the empty node. This has to be done manually
+                    // since we filter after the parent node builds its children
+                    mutableListOf<AbstractTreeNode<*>>(AwsExplorerEmptyNode(parent.nodeProject))
+                } else {
+                    ArrayList<AbstractTreeNode<*>>(length).apply {
+                        addAll(otherNodes)
+                        addAll(filteredNodes)
+                    }
+                }
             }
         }
         else -> children

@@ -132,7 +132,7 @@
         <extensionPoint name="explorer.nodeProcessor" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor" dynamic="true"/>
         <extensionPoint name="explorer.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider" dynamic="true"/>
 
-        <extensionPoint name="resourceFilter" interface="software.aws.toolkits.jetbrains.core.filtering.FilterManager" dynamic="true"/>
+        <extensionPoint name="resourceFilter" interface="software.aws.toolkits.jetbrains.core.filtering.FilterFactory" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -226,9 +226,6 @@
         <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.s3.editor.S3FileIconProvider"/>
         <registryKey key="aws.sso.enabled" description="(Experimental) Enable SSO AWS Credentials" restartRequired="true" defaultValue="false"/>
         <registryKey key="aws.credentialProcess.timeout" description="AWS Credential Process timeout (ms)" restartRequired="false" defaultValue="30000"/>
-
-        <!-- Filter state storage -->
-        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.filtering.filters.TagFilterStorage"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">
@@ -239,7 +236,7 @@
         <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
 
         <!-- Filters -->
-        <resourceFilter implementation="software.aws.toolkits.jetbrains.core.filtering.filters.TagFilterManager"/>
+        <resourceFilter implementation="software.aws.toolkits.jetbrains.core.filtering.filters.TagFilterFactory"/>
 
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable"/>
