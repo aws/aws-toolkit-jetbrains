@@ -11,13 +11,13 @@ import software.aws.toolkits.resources.message
 import java.util.Collections
 import javax.swing.JPanel
 
-class ConfirmIamPolicyCreationPanel(private val project: Project) {
+class ConfirmIamPolicyPanel(private val project: Project) {
     lateinit var component: JPanel
     lateinit var policyDocument: EditorTextField
     lateinit var warningText: JBLabel
 
     init {
-        warningText.text = message("sqs.iam.warning.text")
+        warningText.text = message("sqs.confirm.iam.warning.text")
     }
 
     private fun createUIComponents() {

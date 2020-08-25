@@ -17,10 +17,6 @@ class ConfigureLambdaPanel(private val project: Project) {
     lateinit var lambdaFunction: ResourceSelector<String>
     lateinit var functionContextHelp: JLabel
 
-    private fun createUIComponents() {
-        lambdaFunction = ResourceSelector.builder(project).resource(LambdaResources.LIST_FUNCTION_NAMES).build()
-    }
-
     init {
         component.border = IdeBorderFactory.createTitledBorder(message("sqs.configure.lambda.select"))
         functionContextHelp.icon = AllIcons.General.ContextHelp
@@ -28,5 +24,9 @@ class ConfigureLambdaPanel(private val project: Project) {
             setDescription(message("sqs.configure.lambda.tooltip"))
             installOn(functionContextHelp)
         }
+    }
+
+    private fun createUIComponents() {
+        lambdaFunction = ResourceSelector.builder(project).resource(LambdaResources.LIST_FUNCTION_NAMES).build()
     }
 }

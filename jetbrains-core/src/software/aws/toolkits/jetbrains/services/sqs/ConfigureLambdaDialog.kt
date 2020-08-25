@@ -30,7 +30,6 @@ class ConfigureLambdaDialog(
     private val lambdaClient: LambdaClient = project.awsClient()
     private val iamClient: IamClient = project.awsClient()
     val view = ConfigureLambdaPanel(project)
-    var policyNeeded = false
 
     init {
         title = message("sqs.configure.lambda")
@@ -44,7 +43,12 @@ class ConfigureLambdaDialog(
 
     override fun getPreferredFocusedComponent(): JComponent? = view.lambdaFunction
 
-    override fun doValidate(): ValidationInfo? = validateFields()
+    override fun doValidate(): ValidationInfo? {
+        if (functionSelected().isEmpty()) {
+            return ValidationInfo(message("sqs.configure.lambda.validation.function"), view.lambdaFunction)
+        }
+        return null
+    }
 
     override fun doOKAction() {
         if (isOKActionEnabled) {
@@ -82,13 +86,6 @@ class ConfigureLambdaDialog(
 
     private fun functionSelected(): String = view.lambdaFunction.selected() ?: ""
 
-    private fun validateFields(): ValidationInfo? {
-        if (functionSelected().isEmpty()) {
-            return ValidationInfo(message("sqs.configure.lambda.validation.function"), view.lambdaFunction)
-        }
-        return null
-    }
-
     internal fun configureLambda(functionName: String) {
         lambdaClient.createEventSourceMapping {
             it.functionName(functionName)
@@ -96,13 +93,14 @@ class ConfigureLambdaDialog(
         }
     }
 
+    // It takes a few seconds for the role policy to update, so this function will attempt configuration for a duration of time until it succeeds.
     private fun waitUntilConfigured(functionName: String) {
         waitUntilBlocking(
             succeedOn = {
                 it.eventSourceArn().isNotEmpty()
             },
             exceptionsToIgnore = setOf(InvalidParameterValueException::class),
-            maxDuration = Duration.ofSeconds(10),
+            maxDuration = Duration.ofSeconds(CONFIGURATION_WAIT_TIME),
             call = {
                 lambdaClient.createEventSourceMapping {
                     it.functionName(functionName)
@@ -114,5 +112,6 @@ class ConfigureLambdaDialog(
 
     private companion object {
         val LOG = getLogger<ConfigureLambdaDialog>()
+        const val CONFIGURATION_WAIT_TIME: Long = 10
     }
 }

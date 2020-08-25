@@ -28,7 +28,7 @@ class ConfirmIamPolicyDialog(
     private val functionName: String,
     private val parent: Component? = null
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT), CoroutineScope by ApplicationThreadPoolScope("ConfirmIamPolicy") {
-    val view = ConfirmIamPolicyCreationPanel(project)
+    val view = ConfirmIamPolicyPanel(project)
 
     init {
         title = message("sqs.confirm.iam")
@@ -64,7 +64,7 @@ class ConfirmIamPolicyDialog(
 
     private fun createPolicy(): String {
         val policy = iamClient.createPolicy {
-            it.policyName(policyName())
+            it.policyName(policyName)
             it.policyDocument(SQS_POLLER_ROLE_POLICY)
         }.policy()
         return policy.arn()
@@ -79,7 +79,7 @@ class ConfirmIamPolicyDialog(
         return role
     }
 
-    private fun policyName() = "AWSLambdaSQSPollerExecutionRole-$functionName"
+    private val policyName: String by lazy { "AWSLambdaSQSPollerExecutionRole-$functionName" }
 
     private companion object {
         val LOG = getLogger<ConfirmIamPolicyDialog>()
