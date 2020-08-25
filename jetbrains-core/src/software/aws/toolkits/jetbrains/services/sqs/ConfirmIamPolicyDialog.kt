@@ -70,13 +70,12 @@ class ConfirmIamPolicyDialog(
         return policy.arn()
     }
 
-    private fun attachPolicy(policyArn: String): String {
+    private fun attachPolicy(policyArn: String) {
         val role = lambdaClient.getFunctionConfiguration { it.functionName(functionName) }.role().substringAfterLast('/')
         iamClient.attachRolePolicy {
             it.policyArn(policyArn)
             it.roleName(role)
         }
-        return role
     }
 
     private val policyName: String by lazy { "AWSLambdaSQSPollerExecutionRole-$functionName" }
