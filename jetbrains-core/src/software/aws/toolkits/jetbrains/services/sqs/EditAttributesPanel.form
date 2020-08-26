@@ -22,7 +22,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.edit.attributes.visibility_timeout.tooltip"/>
+            </properties>
           </component>
           <component id="d05a6" class="javax.swing.JTextField" binding="messageSize">
             <constraints>
@@ -30,7 +32,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.edit.attributes.maximum_size.tooltip"/>
+            </properties>
           </component>
           <component id="fbe8e" class="javax.swing.JTextField" binding="retentionPeriod">
             <constraints>
@@ -38,7 +42,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.edit.attributes.retention_period.tooltip"/>
+            </properties>
           </component>
           <component id="41240" class="javax.swing.JTextField" binding="deliveryDelay">
             <constraints>
@@ -46,7 +52,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.edit.attributes.delivery_delay.tooltip"/>
+            </properties>
           </component>
           <component id="c10d3" class="javax.swing.JLabel">
             <constraints>
@@ -86,7 +94,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="software/aws/toolkits/resources/localized_messages" key="sqs.edit.attributes.wait_time.tooltip"/>
+            </properties>
           </component>
           <component id="d595c" class="javax.swing.JLabel">
             <constraints>

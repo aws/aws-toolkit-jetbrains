@@ -20,6 +20,4 @@ class EditAttributesPanel(private val client: SqsClient, private val queue: Queu
     init {
         component.border = IdeBorderFactory.createTitledBorder(message("sqs.edit.attributes.queue.attributes"))
     }
-
-    // TODO: Request queue attributes information to prepopulate the fields
 }
