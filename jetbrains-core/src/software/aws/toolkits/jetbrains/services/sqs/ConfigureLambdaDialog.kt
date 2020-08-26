@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.lambda.model.LambdaException
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException
 import software.amazon.awssdk.services.lambda.model.ServiceException
+import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -117,7 +118,7 @@ class ConfigureLambdaDialog(
                     }
                 }
             )
-        } catch (e: Exception) {
+        } catch (e: WaiterTimeoutException) {
             identifier = null
         }
         return identifier
@@ -126,7 +127,7 @@ class ConfigureLambdaDialog(
     private fun retryConfiguration(functionName: String) {
         launch {
             val identifier = waitUntilConfigured(functionName)
-            if (identifier != null) {
+            if (!identifier.isNullOrEmpty()) {
                 runInEdt(ModalityState.any()) {
                     close(OK_EXIT_CODE)
                 }
