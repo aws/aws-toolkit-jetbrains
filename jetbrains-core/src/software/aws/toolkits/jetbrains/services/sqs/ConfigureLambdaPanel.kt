@@ -6,6 +6,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.project.Project
 import com.intellij.ui.IdeBorderFactory
+import software.amazon.awssdk.services.lambda.model.FunctionConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message
@@ -14,7 +15,7 @@ import javax.swing.JPanel
 
 class ConfigureLambdaPanel(private val project: Project) {
     lateinit var component: JPanel
-    lateinit var lambdaFunction: ResourceSelector<String>
+    lateinit var lambdaFunction: ResourceSelector<FunctionConfiguration>
     lateinit var functionContextHelp: JLabel
 
     init {
@@ -27,6 +28,9 @@ class ConfigureLambdaPanel(private val project: Project) {
     }
 
     private fun createUIComponents() {
-        lambdaFunction = ResourceSelector.builder(project).resource(LambdaResources.LIST_FUNCTION_NAMES).build()
+        lambdaFunction = ResourceSelector.builder(project)
+            .resource(LambdaResources.LIST_FUNCTIONS)
+            .customRenderer { value, component -> component.append(value.functionName()); component }
+            .build()
     }
 }

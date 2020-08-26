@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.lambda.upload.SQS_POLLER_ROLE_POLICY
+import software.aws.toolkits.jetbrains.services.lambda.upload.createSqsPollerPolicy
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.formatAndSet
 import software.aws.toolkits.resources.message
@@ -26,15 +26,17 @@ class ConfirmIamPolicyDialog(
     private val iamClient: IamClient,
     private val lambdaClient: LambdaClient,
     private val functionName: String,
+    private val queue: Queue,
     private val parent: Component? = null
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT), CoroutineScope by ApplicationThreadPoolScope("ConfirmIamPolicy") {
+    private val rolePolicy: String by lazy { createSqsPollerPolicy(queue.arn) }
+    private val policyName: String by lazy { "AWSLambdaSQSPollerExecutionRole-$functionName-${queue.queueName}" }
     val view = ConfirmIamPolicyPanel(project)
 
     init {
         title = message("sqs.confirm.iam")
         setOKButtonText(message("sqs.confirm.iam.create"))
-
-        view.policyDocument.formatAndSet(SQS_POLLER_ROLE_POLICY, JsonLanguage.INSTANCE)
+        view.policyDocument.formatAndSet(rolePolicy, JsonLanguage.INSTANCE)
         init()
     }
 
@@ -65,7 +67,7 @@ class ConfirmIamPolicyDialog(
     private fun createPolicy(): String {
         val policy = iamClient.createPolicy {
             it.policyName(policyName)
-            it.policyDocument(SQS_POLLER_ROLE_POLICY)
+            it.policyDocument(rolePolicy)
         }.policy()
         return policy.arn()
     }
@@ -77,8 +79,6 @@ class ConfirmIamPolicyDialog(
             it.roleName(role)
         }
     }
-
-    private val policyName: String by lazy { "AWSLambdaSQSPollerExecutionRole-$functionName" }
 
     private companion object {
         val LOG = getLogger<ConfirmIamPolicyDialog>()

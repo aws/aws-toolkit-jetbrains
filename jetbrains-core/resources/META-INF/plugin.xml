@@ -351,7 +351,6 @@
             <separator/>
             <action id="sqs.configure.lambda"
                     class="software.aws.toolkits.jetbrains.services.sqs.actions.ConfigureLambdaAction"/>
-            <separator/>
             <action id="sqs.subscribe.sns"
                     class="software.aws.toolkits.jetbrains.services.sqs.actions.SubscribeSnsAction"/>
             <separator/>

@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.lambda.model.LambdaException
 import software.amazon.awssdk.services.lambda.model.ResourceConflictException
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException
 import software.amazon.awssdk.services.lambda.model.ServiceException
-import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
+import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -37,7 +37,7 @@ class ConfigureLambdaDialog(
 
     init {
         title = message("sqs.configure.lambda")
-        setOKButtonText(message("sqs.configure.lambda.configure"))
+        setOKButtonText(message("general.configure_button"))
         setOKButtonTooltip(message("sqs.configure.lambda.configure.tooltip"))
 
         init()
@@ -55,43 +55,40 @@ class ConfigureLambdaDialog(
     }
 
     override fun doOKAction() {
-        if (isOKActionEnabled) {
-            isOKActionEnabled = false
-            setOKButtonText(message("sqs.configure.lambda.in_progress"))
+        if (!isOKActionEnabled) {
+            return
+        }
 
-            launch {
-                try {
-                    configureLambda(functionSelected())
-                    runInEdt(ModalityState.any()) {
-                        close(OK_EXIT_CODE)
-                    }
-                } catch (e: InvalidParameterValueException) {
-                    // Exception thrown for invalid permission
-                    runInEdt(ModalityState.any()) {
-                        val iamDialog = ConfirmIamPolicyDialog(project, iamClient, lambdaClient, functionSelected(), view.component)
-                        if (iamDialog.showAndGet()) {
-                            val identifier = waitUntilConfigured(functionSelected())
-                            if (identifier.isNotEmpty()) {
-                                notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionSelected()), project)
-                                close(OK_EXIT_CODE)
-                            } else {
-                                setErrorText(message("sqs.configure.lambda.error", queue.queueName, functionSelected()))
-                            }
-                        }
-                        setOKButtonText(message("sqs.configure.lambda.configure"))
+        isOKActionEnabled = false
+        setOKButtonText(message("sqs.configure.lambda.in_progress"))
+
+        launch {
+            try {
+                configureLambda(functionSelected())
+                runInEdt(ModalityState.any()) {
+                    close(OK_EXIT_CODE)
+                }
+                notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionSelected()), project)
+            } catch (e: InvalidParameterValueException) {
+                // Exception thrown for invalid permission
+                runInEdt(ModalityState.any()) {
+                    if (ConfirmIamPolicyDialog(project, iamClient, lambdaClient, functionSelected(), queue, view.component).showAndGet()) {
+                        retryConfiguration(functionSelected())
+                    } else {
+                        setOKButtonText(message("general.configure_button"))
                         isOKActionEnabled = true
                     }
-                } catch (e: Exception) {
-                    LOG.warn(e) { message("sqs.configure.lambda.failed", queue.queueName, functionSelected()) }
-                    setErrorText(e.message)
-                    setOKButtonText(message("sqs.configure.lambda.configure"))
-                    isOKActionEnabled = true
                 }
+            } catch (e: Exception) {
+                LOG.warn(e) { message("sqs.configure.lambda.error", queue.queueName, functionSelected()) }
+                setErrorText(e.message)
+                setOKButtonText(message("general.configure_button"))
+                isOKActionEnabled = true
             }
         }
     }
 
-    private fun functionSelected(): String = view.lambdaFunction.selected() ?: ""
+    private fun functionSelected(): String = view.lambdaFunction.selected()?.functionName() ?: ""
 
     internal fun configureLambda(functionName: String) {
         lambdaClient.createEventSourceMapping {
@@ -101,9 +98,9 @@ class ConfigureLambdaDialog(
     }
 
     // It takes a few seconds for the role policy to update, so this function will attempt configuration for a duration of time until it succeeds.
-    internal fun waitUntilConfigured(functionName: String): String {
+    internal suspend fun waitUntilConfigured(functionName: String): String {
         var identifier: String = ""
-        waitUntilBlocking(
+        waitUntil(
             succeedOn = {
                 it.eventSourceArn().isNotEmpty()
             },
@@ -122,8 +119,24 @@ class ConfigureLambdaDialog(
         return identifier
     }
 
+    private fun retryConfiguration(functionName: String) {
+        launch {
+            val identifier = waitUntilConfigured(functionName)
+            if (identifier.isNotEmpty()) {
+                runInEdt(ModalityState.any()) {
+                    close(OK_EXIT_CODE)
+                }
+                notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionName), project)
+            } else {
+                setErrorText(message("sqs.configure.lambda.error", queue.queueName, functionName))
+                setOKButtonText(message("general.configure_button"))
+                isOKActionEnabled = true
+            }
+        }
+    }
+
     private companion object {
         val LOG = getLogger<ConfigureLambdaDialog>()
-        const val CONFIGURATION_WAIT_TIME: Long = 10
+        const val CONFIGURATION_WAIT_TIME: Long = 30
     }
 }

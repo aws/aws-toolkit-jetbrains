@@ -42,7 +42,7 @@ val DEFAULT_POLICY = """
 """.trim()
 
 @Language("JSON")
-val SQS_POLLER_ROLE_POLICY = """
+fun createSqsPollerPolicy(arn: String): String = """
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -53,7 +53,7 @@ val SQS_POLLER_ROLE_POLICY = """
         "sqs:GetQueueAttributes", 
         "sqs:ReceiveMessage"
       ],
-      "Resource": "arn:aws:sqs:*"
+      "Resource": "$arn"
     }
   ]
 }

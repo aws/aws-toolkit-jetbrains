@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.stub
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -97,8 +98,11 @@ class ConfigureLambdaDialogTest {
         }
 
         runInEdtAndWait {
-            val identifier = ConfigureLambdaDialog(projectRule.project, queue).waitUntilConfigured(TEST_FUNCTION_NAME)
-            assertThat(identifier).isEmpty()
+            val dialog = ConfigureLambdaDialog(projectRule.project, queue)
+            runBlocking {
+                val identifier = dialog.waitUntilConfigured(TEST_FUNCTION_NAME)
+                assertThat(identifier).isEmpty()
+            }
         }
         assertThat(configureCaptor.firstValue.functionName()).isEqualTo(TEST_FUNCTION_NAME)
         assertThat(configureCaptor.firstValue.eventSourceArn()).isEqualTo(queue.arn)
@@ -113,8 +117,11 @@ class ConfigureLambdaDialogTest {
         }
 
         runInEdtAndWait {
-            val identifier = ConfigureLambdaDialog(projectRule.project, queue).waitUntilConfigured(TEST_FUNCTION_NAME)
-            assertThat(identifier).isEqualTo(EVENT_IDENTIFIER)
+            val dialog = ConfigureLambdaDialog(projectRule.project, queue)
+            runBlocking {
+                val identifier = dialog.waitUntilConfigured(TEST_FUNCTION_NAME)
+                assertThat(identifier).isEqualTo(EVENT_IDENTIFIER)
+            }
         }
         assertThat(configureCaptor.firstValue.functionName()).isEqualTo(TEST_FUNCTION_NAME)
         assertThat(configureCaptor.firstValue.eventSourceArn()).isEqualTo(queue.arn)
