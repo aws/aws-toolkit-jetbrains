@@ -80,7 +80,7 @@ class ConfigureLambdaDialog(
                     }
                 }
             } catch (e: Exception) {
-                LOG.warn(e) { message("sqs.configure.lambda.error", queue.queueName, functionSelected()) }
+                LOG.warn(e) { message("sqs.configure.lambda.error", functionSelected()) }
                 setErrorText(e.message)
                 setOKButtonText(message("general.configure_button"))
                 isOKActionEnabled = true
@@ -98,37 +98,41 @@ class ConfigureLambdaDialog(
     }
 
     // It takes a few seconds for the role policy to update, so this function will attempt configuration for a duration of time until it succeeds.
-    internal suspend fun waitUntilConfigured(functionName: String): String {
-        var identifier: String = ""
-        waitUntil(
-            succeedOn = {
-                it.eventSourceArn().isNotEmpty()
-            },
-            exceptionsToIgnore = setOf(InvalidParameterValueException::class),
-            exceptionsToStopOn = setOf(LambdaException::class, ResourceConflictException::class, ResourceNotFoundException::class, ServiceException::class),
-            maxDuration = Duration.ofSeconds(CONFIGURATION_WAIT_TIME),
-            call = {
-                lambdaClient.createEventSourceMapping {
-                    it.functionName(functionName)
-                    it.eventSourceArn(queue.arn)
-                }.apply {
-                    identifier = this.uuid()
+    internal suspend fun waitUntilConfigured(functionName: String): String? {
+        var identifier: String? = null
+        try {
+            waitUntil(
+                succeedOn = {
+                    it.eventSourceArn().isNotEmpty()
+                },
+                exceptionsToIgnore = setOf(InvalidParameterValueException::class),
+                exceptionsToStopOn = setOf(LambdaException::class, ResourceConflictException::class, ResourceNotFoundException::class, ServiceException::class),
+                maxDuration = Duration.ofSeconds(CONFIGURATION_WAIT_TIME),
+                call = {
+                    lambdaClient.createEventSourceMapping {
+                        it.functionName(functionName)
+                        it.eventSourceArn(queue.arn)
+                    }.apply {
+                        identifier = this.uuid()
+                    }
                 }
-            }
-        )
+            )
+        } catch (e: Exception) {
+            identifier = null
+        }
         return identifier
     }
 
     private fun retryConfiguration(functionName: String) {
         launch {
             val identifier = waitUntilConfigured(functionName)
-            if (identifier.isNotEmpty()) {
+            if (identifier != null) {
                 runInEdt(ModalityState.any()) {
                     close(OK_EXIT_CODE)
                 }
                 notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionName), project)
             } else {
-                setErrorText(message("sqs.configure.lambda.error", queue.queueName, functionName))
+                setErrorText(message("sqs.configure.lambda.error", functionName))
                 setOKButtonText(message("general.configure_button"))
                 isOKActionEnabled = true
             }

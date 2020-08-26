@@ -101,7 +101,7 @@ class ConfigureLambdaDialogTest {
             val dialog = ConfigureLambdaDialog(projectRule.project, queue)
             runBlocking {
                 val identifier = dialog.waitUntilConfigured(TEST_FUNCTION_NAME)
-                assertThat(identifier).isEmpty()
+                assertThat(identifier).isNull()
             }
         }
         assertThat(configureCaptor.firstValue.functionName()).isEqualTo(TEST_FUNCTION_NAME)

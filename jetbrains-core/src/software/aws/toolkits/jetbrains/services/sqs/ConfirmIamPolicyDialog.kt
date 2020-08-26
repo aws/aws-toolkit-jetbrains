@@ -30,7 +30,7 @@ class ConfirmIamPolicyDialog(
     private val parent: Component? = null
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT), CoroutineScope by ApplicationThreadPoolScope("ConfirmIamPolicy") {
     private val rolePolicy: String by lazy { createSqsPollerPolicy(queue.arn) }
-    private val policyName: String by lazy { "AWSLambdaSQSPollerExecutionRole-$functionName-${queue.queueName}" }
+    private val policyName: String by lazy { "AWSLambdaSQSPollerExecutionRole-$functionName-${queue.queueName}-${queue.region.id}" }
     val view = ConfirmIamPolicyPanel(project)
 
     init {
@@ -43,23 +43,24 @@ class ConfirmIamPolicyDialog(
     override fun createCenterPanel(): JComponent? = view.component
 
     override fun doOKAction() {
-        if (isOKActionEnabled) {
-            setOKButtonText(message("sqs.confirm.iam.in_progress"))
-            isOKActionEnabled = false
+        if (!isOKActionEnabled) {
+            return
+        }
 
-            launch {
-                try {
-                    val policyArn = createPolicy()
-                    attachPolicy(policyArn)
-                    runInEdt(ModalityState.any()) {
-                        close(OK_EXIT_CODE)
-                    }
-                } catch (e: Exception) {
-                    LOG.warn(e) { message("sqs.confirm.iam.failed") }
-                    setErrorText(e.message)
-                    setOKButtonText(message("sqs.confirm.iam.create"))
-                    isOKActionEnabled = true
+        setOKButtonText(message("sqs.confirm.iam.in_progress"))
+        isOKActionEnabled = false
+        launch {
+            try {
+                val policyArn = createPolicy()
+                attachPolicy(policyArn)
+                runInEdt(ModalityState.any()) {
+                    close(OK_EXIT_CODE)
                 }
+            } catch (e: Exception) {
+                LOG.warn(e) { message("sqs.confirm.iam.failed") }
+                setErrorText(e.message)
+                setOKButtonText(message("sqs.confirm.iam.create"))
+                isOKActionEnabled = true
             }
         }
     }
@@ -73,6 +74,8 @@ class ConfirmIamPolicyDialog(
     }
 
     private fun attachPolicy(policyArn: String) {
+        // getFunctionConfiguration().role() returns the ARN of the role like this: arn:aws:iam::123456789012:role/service-role/ROLE-NAME.
+        // We must use substringAfterLast to extract only the role name.
         val role = lambdaClient.getFunctionConfiguration { it.functionName(functionName) }.role().substringAfterLast('/')
         iamClient.attachRolePolicy {
             it.policyArn(policyArn)
