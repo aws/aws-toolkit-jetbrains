@@ -235,7 +235,7 @@
         <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
 
         <!-- Executables -->
-        <executable implementation="software.aws.toolkits.jetbrains.core.executables.CloudDebugExecutable"/>
+        <executable implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
@@ -349,6 +349,8 @@
             <action id="sqs.send.message"
                     class="software.aws.toolkits.jetbrains.services.sqs.actions.SendMessageAction"/>
             <separator/>
+            <action id="sqs.configure.lambda"
+                    class="software.aws.toolkits.jetbrains.services.sqs.actions.ConfigureLambdaAction"/>
             <action id="sqs.subscribe.sns"
                     class="software.aws.toolkits.jetbrains.services.sqs.actions.SubscribeSnsAction"/>
             <separator/>
