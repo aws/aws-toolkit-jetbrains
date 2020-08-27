@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
@@ -26,7 +27,7 @@ class EditAttributesDialog(
     init {
         title = message("sqs.edit.attributes")
         setOKButtonText(message("sqs.edit.attributes.save"))
-        prepopulateFields()
+        populateFields()
         init()
     }
 
@@ -79,7 +80,10 @@ class EditAttributesDialog(
         launch {
             try {
                 updateAttributes()
-                println("SUCCESS")
+                notifyInfo(
+                    title = message("sqs.service_name"),
+                    content = message("sqs.edit.attributes.updated", queue.queueName)
+                )
                 runInEdt(ModalityState.any()) {
                     close(OK_EXIT_CODE)
                 }
@@ -90,7 +94,7 @@ class EditAttributesDialog(
         }
     }
 
-    private fun prepopulateFields() {
+    private fun populateFields() {
         launch {
             val currentAttributes = client.getQueueAttributes {
                 it.queueUrl(queue.queueUrl)
@@ -104,7 +108,7 @@ class EditAttributesDialog(
         }
     }
 
-    private fun updateAttributes() {
+    internal fun updateAttributes() {
         val attributes = mutableMapOf(
             Pair(QueueAttributeName.VISIBILITY_TIMEOUT, view.visibilityTimeout.text),
             Pair(QueueAttributeName.MAXIMUM_MESSAGE_SIZE, view.messageSize.text),
