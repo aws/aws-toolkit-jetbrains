@@ -35,7 +35,7 @@ open class CreateRelease @Inject constructor(projectLayout: ProjectLayout) : Cha
     val releaseFile: RegularFileProperty = project.objects.fileProperty().convention(changesDirectory.file(releaseVersion.map { "$it.json" }))
 
     @OutputFile
-    val changeLogFile : RegularFileProperty = project.objects.fileProperty().convention(projectLayout.buildDirectory.file("releaseChangeLog.md"))
+    val changeLogFile: RegularFileProperty = project.objects.fileProperty().convention(projectLayout.buildDirectory.file("releaseChangeLog.md"))
 
     @TaskAction
     fun create() {
