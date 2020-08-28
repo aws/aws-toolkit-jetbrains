@@ -3,14 +3,25 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
+import com.intellij.execution.Platform
 import com.intellij.execution.configurations.GeneralCommandLine
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 
-class SamExecutableTest {
+@RunWith(Parameterized::class)
+class SamExecutableTest(private val platform: Platform) {
+    companion object {
+        @Parameters(name = "{0}")
+        @JvmStatic
+        fun parameters(): Collection<Array<*>> = Platform.values().map { arrayOf(it) }
+    }
+
     @Rule
     @JvmField
     val tempFolder = TemporaryFolder()
@@ -26,13 +37,13 @@ class SamExecutableTest {
             useContainer = false
         )
 
-        assertThat(cmd.commandLineString).isEqualToIgnoringNewLines(
-            """
-                sam 
-                build 
-                --template $templatePath
-                --build-dir $buildDir
-            """.trimIndent()
+        assertThat(cmd.getPreparedCommandLine(platform).lines()).containsExactly(
+            "sam",
+            "build",
+            "--template",
+            "$templatePath",
+            "--build-dir",
+            "$buildDir"
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -51,14 +62,14 @@ class SamExecutableTest {
             useContainer = true
         )
 
-        assertThat(cmd.commandLineString).isEqualToIgnoringNewLines(
-            """
-                sam 
-                build 
-                --template $templatePath
-                --build-dir $buildDir
-                --use-container
-            """.trimIndent()
+        assertThat(cmd.getPreparedCommandLine(platform).lines()).containsExactly(
+            "sam",
+            "build",
+            "--template",
+            "$templatePath",
+            "--build-dir",
+            "$buildDir",
+            "--use-container"
         )
     }
 
@@ -68,19 +79,20 @@ class SamExecutableTest {
         val packagedTemplatePath = tempFolder.newFile("packagedTemplate.yaml").toPath()
         val cmd = GeneralCommandLine("sam").samPackageCommand(
             environmentVariables = mapOf("Foo" to "Bar"),
-            templatePath = tempFolder.newFile("template.yaml").toPath(),
-            packagedTemplatePath = tempFolder.newFolder("packagedTemplate.yaml").toPath(),
+            templatePath = templatePath,
+            packagedTemplatePath = packagedTemplatePath,
             s3Bucket = "myBucket"
         )
 
-        assertThat(cmd.commandLineString).isEqualToIgnoringNewLines(
-            """
-                sam 
-                package 
-                --template-file $templatePath
-                --output-template-file $packagedTemplatePath
-                --s3-bucket myBucket
-            """.trimIndent()
+        assertThat(cmd.getPreparedCommandLine(platform).lines()).containsExactly(
+            "sam",
+            "package",
+            "--template-file",
+            "$templatePath",
+            "--output-template-file",
+            "$packagedTemplatePath",
+            "--s3-bucket",
+            "myBucket"
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -100,16 +112,19 @@ class SamExecutableTest {
             s3Bucket = "myBucket"
         )
 
-        assertThat(cmd.commandLineString).isEqualToIgnoringNewLines(
-            """
-                sam 
-                deploy 
-                --template-file $templatePath
-                --stack-name MyStack 
-                --s3-bucket myBucket 
-                --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM 
-                --no-execute-changeset
-            """.trimIndent()
+        assertThat(cmd.getPreparedCommandLine(platform).lines()).containsExactly(
+            "sam",
+            "deploy",
+            "--template-file",
+            "$templatePath",
+            "--stack-name",
+            "MyStack",
+            "--s3-bucket",
+            "myBucket",
+            "--capabilities",
+            "CAPABILITY_IAM",
+            "CAPABILITY_NAMED_IAM",
+            "--no-execute-changeset"
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -125,23 +140,55 @@ class SamExecutableTest {
             templatePath = templatePath,
             stackName = "MyStack",
             parameters = mapOf(
-                "Hello" to "World",
-                "Hel lo" to "Wor ld"
+                "Hello1" to "World",
+                "Hello2" to "Wor ld",
+                "Hello3" to "\"Wor ld\"",
+                "Hello4" to "It's",
+                "Hello5" to "2+2=22"
             ),
             capabilities = emptyList(),
             s3Bucket = "myBucket"
         )
 
-        assertThat(cmd.commandLineString).isEqualToIgnoringNewLines(
-            """
-                sam 
-                deploy 
-                --template-file $templatePath
-                --stack-name MyStack 
-                --s3-bucket myBucket 
-                --no-execute-changeset 
-                --parameter-overrides \"Hello\"=\"World\" "\"Hel lo\"=\"Wor ld\""
-            """.trimIndent()
-        )
+        if(platform == Platform.WINDOWS) {
+            assertThat(cmd.getPreparedCommandLine(platform).lines()).containsExactly(
+                "sam",
+                "deploy",
+                "--template-file",
+                "$templatePath",
+                "--stack-name",
+                "MyStack",
+                "--s3-bucket",
+                "myBucket",
+                "--no-execute-changeset",
+                "--parameter-overrides",
+                """ "\"Hello1\"=\"World\"" """.trim(),
+                """ "\"Hello2\"=\"Wor ld\"" """.trim(),
+                """ "\"Hello3\"='\"Wor ld\"'" """.trim(),
+                """ "\"Hello4\"=\"It's\"" """.trim(),
+                """ "\"Hello5\"=\"2+2=22\"" """.trim()
+            )
+        } else {
+            --parameter-overrides "\"Helo\"=\"Wor ld\"" \"Hello\"=\"World\" \"me\"=\"It's\" "\"Hell\"='\"Wor ld\"'"
+
+            assertThat(cmd.getPreparedCommandLine(platform).lines()).containsExactly(
+                "sam",
+                "deploy",
+                "--template-file",
+                "$templatePath",
+                "--stack-name",
+                "MyStack",
+                "--s3-bucket",
+                "myBucket",
+                "--no-execute-changeset",
+                "--parameter-overrides",
+                """ "Hello1"="World"" """.trim(),
+                """ "Hello2"="Wor ld"" """.trim(),
+                """ "Hello3"='"Wor ld"'" """.trim(),
+                """ "Hello4"="It's"" """.trim(),
+                """ "Hello5"="2+2=22"" """.trim()
+            )
+        }
+
     }
 }
