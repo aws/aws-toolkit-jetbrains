@@ -14,6 +14,7 @@ import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -100,7 +101,7 @@ class IamAuthTest {
 
     @Test
     fun `Valid connection`() {
-        val authInformation = iamAuth.getAuthInformation(projectRule.project, buildConnection())
+        val authInformation = iamAuth.getAuthInformation(buildConnection())
         assertThat(authInformation.port).isEqualTo(port)
         assertThat(authInformation.user).isEqualTo(username)
         assertThat(authInformation.connectionSettings.region.id).isEqualTo(defaultRegion)
@@ -109,22 +110,22 @@ class IamAuthTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `No username`() {
-        iamAuth.getAuthInformation(projectRule.project, buildConnection(hasUsername = false))
+        iamAuth.getAuthInformation(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No region`() {
-        iamAuth.getAuthInformation(projectRule.project, buildConnection(hasUsername = false))
+        iamAuth.getAuthInformation(buildConnection(hasUsername = false))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `No credentials`() {
-        iamAuth.getAuthInformation(projectRule.project, buildConnection(hasCredentials = false))
+        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasCredentials = false)) }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun `No instance id`() {
-        iamAuth.getAuthInformation(projectRule.project, buildConnection(hasInstance = false))
+       assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasInstance = false)) }.isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test
@@ -161,7 +162,7 @@ class IamAuthTest {
                     m[REGION_ID_PROPERTY] = defaultRegion
                 }
                 if (hasInstance) {
-                    m[INSTANCE_ID_PROPERTY] = instanceId
+                    m[DATABASE_HOST_PROPERTY] = instanceId
                 }
                 m
             }
