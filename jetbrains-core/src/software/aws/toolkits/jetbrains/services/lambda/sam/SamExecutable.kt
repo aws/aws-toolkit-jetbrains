@@ -127,7 +127,6 @@ fun GeneralCommandLine.samDeployCommand(
         addParameter("--parameter-overrides")
         // Even though keys must be alphanumeric, escape it so that it is "valid" enough so that CFN can return a validation error instead of us failing
         parameters.forEach { (key, value) ->
-            println(value)
             addParameter(
                 "${escapeParameter(key)}=${escapeParameter(value)}"
             )
@@ -140,11 +139,11 @@ fun GeneralCommandLine.samDeployCommand(
 
 private fun escapeParameter(param: String): String {
     // Invert the quote if the string is already quoted
-    val quote = if(param.startsWith("\"") || param.endsWith("\"")) {
+    val quote = if (param.startsWith("\"") || param.endsWith("\"")) {
         "'"
     } else {
         "\""
     }
 
-    return  quote + param + quote
+    return quote + param + quote
 }
