@@ -31,6 +31,9 @@ class IamAuthWidgetTest {
     private val defaultRegion = RuleUtils.randomName()
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
+    private val hostParameter = "host"
+    private val portParameter = "port"
+
     @Before
     fun setUp() {
         widget = IamAuthWidget()
@@ -88,28 +91,26 @@ class IamAuthWidgetTest {
     fun `Sets instance from URL`() {
         widget.reset(mock(), false)
         val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        assertThat(widget.getInstanceId()).isEqualTo("abc")
+        widget.updateFromUrl(mock<UrlEditorModel> {
+            on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
+            on { getParameter(portParameter) } doReturn "5423"
+        })
+        assertThat(widget.getDatabaseHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
+        assertThat(widget.getDatabasePort()).isEqualTo("5423")
     }
 
     @Test
-    fun `Does not unset instance on invalid url`() {
+    fun `Does not unset instance on empty url`() {
+        val model = UrlEditorModel(listOf())
+        model.url
         widget.reset(mock(), false)
-        val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        val badUrl = "jdbc:postgresql://abcdefg/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn badUrl })
-        assertThat(widget.getInstanceId()).isEqualTo("abc")
-    }
-
-    @Test
-    fun `Does not change instance on editing url`() {
-        widget.reset(mock(), false)
-        val endpointUrl = "jdbc:postgresql://def.host.$defaultRegion.rds.amazonaws.com:5432/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn endpointUrl })
-        val badUrl = "jdbc:postgresql://aurorawriter.host.$defaultRegion.rds.amazonaws.com:5432/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> { on { url } doReturn badUrl })
-        assertThat(widget.getInstanceId()).isEqualTo("def")
+        widget.updateFromUrl(mock<UrlEditorModel> {
+            on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
+            on { getParameter(portParameter) } doReturn "5423"
+        })
+        widget.updateFromUrl(mock<UrlEditorModel>())
+        assertThat(widget.getDatabaseHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
+        assertThat(widget.getDatabasePort()).isEqualTo("5423")
     }
 
     private fun buildDataSource(
