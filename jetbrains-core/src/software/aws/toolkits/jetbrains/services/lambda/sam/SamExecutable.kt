@@ -131,9 +131,6 @@ fun GeneralCommandLine.samDeployCommand(
                 "${escapeParameter(key)}=${escapeParameter(value)}"
             )
         }
-//        addParameter(
-//            parameters.entries.joinToString(separator = ",") { "ParameterKey=${escapeParameter(it.key)},ParameterValue=${escapeParameter(it.value)}" }
-//        )
     }
 }
 
