@@ -7,15 +7,12 @@ import com.intellij.database.dataSource.DataSourceUiUtil
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
-import com.intellij.icons.AllIcons
-import com.intellij.ide.HelpTooltip
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.rds.RdsResources
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
-import javax.swing.JLabel
 import javax.swing.JPanel
 
 const val DATABASE_HOST_PROPERTY = "AWS.RdsHost"
@@ -36,18 +33,12 @@ class IamAuthWidget : AwsAuthWidget() {
 
     override fun createPanel(): JPanel {
         val panel = super.createPanel()
-        val databaseHostLabel = JBLabel(message("rds.url"))
-        val databasePortLabel = JBLabel(message("rds.port"))
-        val help = JLabel("").apply { icon = AllIcons.General.ContextHelp }
-        HelpTooltip().apply {
-            setDescription(message("rds.iam_help"))
-            installOn(help)
-        }
+        val databaseHostLabel = JBLabel(message("rds.url")).apply { toolTipText = message("rds.iam_help") }
+        val databasePortLabel = JBLabel(message("rds.port")).apply { toolTipText = message("rds.iam_help") }
         panel.add(databaseHostLabel, UrlPropertiesPanel.createLabelConstraints(3, 0, databaseHostLabel.preferredSize.getWidth()))
-        panel.add(databaseHostTextField, UrlPropertiesPanel.createSimpleConstraints(3, 1, 2))
-        panel.add(databasePortLabel, UrlPropertiesPanel.createLabelConstraints(3, 3, databasePortLabel.preferredSize.getWidth()))
-        panel.add(databasePortTextField, UrlPropertiesPanel.createSimpleConstraints(3, 4, 1))
-        panel.add(help, UrlPropertiesPanel.createLabelConstraints(3, 5, help.preferredSize.getWidth()))
+        panel.add(databaseHostTextField, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
+        panel.add(databasePortLabel, UrlPropertiesPanel.createLabelConstraints(3, 4, databasePortLabel.preferredSize.getWidth()))
+        panel.add(databasePortTextField, UrlPropertiesPanel.createSimpleConstraints(3, 5, 1))
         return panel
     }
 
