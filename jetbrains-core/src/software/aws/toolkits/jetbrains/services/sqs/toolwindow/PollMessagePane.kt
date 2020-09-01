@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.ui.PopupHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -12,6 +17,7 @@ import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.jetbrains.services.sqs.MAX_NUMBER_OF_POLLED_MESSAGES
 import software.aws.toolkits.jetbrains.services.sqs.Queue
+import software.aws.toolkits.jetbrains.services.sqs.actions.DeleteMessageAction
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import javax.swing.JButton
@@ -19,6 +25,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 
 class PollMessagePane(
+    private val project: Project,
     private val client: SqsClient,
     private val queue: Queue
 ) : CoroutineScope by ApplicationThreadPoolScope("PollMessagesPane") {
@@ -38,6 +45,7 @@ class PollMessagePane(
         pollButton.addActionListener {
             poll()
         }
+        addActionsToTable()
     }
 
     fun startPolling() {
@@ -83,7 +91,17 @@ class PollMessagePane(
         }
     }
 
-    // TODO: Add message table actions
+    private fun addActionsToTable() {
+        val actionGroup = DefaultActionGroup().apply {
+            add(DeleteMessageAction(project, client, messagesTable.table, queue.queueUrl))
+        }
+        PopupHandler.installPopupHandler(
+            messagesTable.table,
+            actionGroup,
+            ActionPlaces.EDITOR_POPUP,
+            ActionManager.getInstance()
+        )
+    }
 
     private fun poll() = launch {
         // TODO: Add debounce

@@ -10,9 +10,9 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
 import software.amazon.awssdk.services.sqs.SqsClient
-import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
+import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
@@ -45,7 +45,7 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         client = mockClientManagerRule.create()
         region = MockRegionProvider.getInstance().defaultRegion()
         queue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/test1", region)
-        pane = PollMessagePane(client, queue)
+        pane = PollMessagePane(projectRule.project, client, queue)
         table = pane.messagesTable
         label = pane.messagesAvailableLabel
     }
