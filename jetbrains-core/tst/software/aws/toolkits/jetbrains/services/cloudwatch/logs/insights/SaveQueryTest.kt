@@ -8,11 +8,9 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.stub
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
-import software.aws.toolkits.resources.message
-import org.assertj.core.api.Assertions.assertThat
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryDefinition
 import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionRequest
@@ -20,12 +18,15 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionRe
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeQueryDefinitionsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeQueryDefinitionsResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.resources.message
 
 @RunsInEdt
 class SaveQueryTest {
     @JvmField
     @Rule
     val projectRule = JavaCodeInsightTestFixtureRule()
+
     @JvmField
     @Rule
     val mockClientManagerRule = MockClientManagerRule(projectRule)
