@@ -23,7 +23,6 @@ import com.jetbrains.rd.framework.SocketWire
 import com.jetbrains.rd.framework.impl.RpcTimeouts
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.lifetime.onTermination
-import com.jetbrains.rd.util.put
 import com.jetbrains.rd.util.reactive.adviseUntil
 import com.jetbrains.rdclient.protocol.RdDispatcher
 import com.jetbrains.rider.RiderEnvironment
