@@ -4,6 +4,7 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.ide.plugins.newui.UpdateButton
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.openapi.project.Project
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.components.JBTextArea
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +15,9 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SqsQueueType
+import software.aws.toolkits.telemetry.SqsTelemetry
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
 import javax.swing.JButton
@@ -22,6 +26,7 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 
 class SendMessagePane(
+    private val project: Project,
     private val client: SqsClient,
     private val queue: Queue,
     private val messageCache: PropertiesComponent
@@ -98,8 +103,10 @@ class SendMessagePane(
                 }
                 messageCache.setValue(queue.queueUrl, inputText.text)
                 clearFields()
+                SqsTelemetry.sendMessage(project, Result.Succeeded, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
             } catch (e: Exception) {
                 confirmationLabel.text = message("sqs.failed_to_send_message")
+                SqsTelemetry.sendMessage(project, Result.Failed, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
             }
             confirmationLabel.isVisible = true
         }

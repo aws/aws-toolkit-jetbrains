@@ -7,8 +7,8 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -19,6 +19,8 @@ import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.SqsQueueType
+import software.aws.toolkits.telemetry.SqsTelemetry
 
 class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("SqsWindow") {
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, SQS_TOOL_WINDOW)
@@ -34,6 +36,7 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
     }
 
     private fun showQueue(queue: Queue, component: SqsWindowUI) = launch {
+        SqsTelemetry.openQueue(project, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
         try {
             val existingWindow = toolWindow.find(queue.queueUrl)
             if (existingWindow != null) {

@@ -25,6 +25,9 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SqsQueueType
+import software.aws.toolkits.telemetry.SqsTelemetry
 import java.time.Duration
 import javax.swing.JComponent
 
@@ -55,6 +58,11 @@ class ConfigureLambdaDialog(
         return null
     }
 
+    override fun doCancelAction() {
+        SqsTelemetry.configureLambdaTrigger(project, Result.Cancelled, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
+        super.doCancelAction()
+    }
+
     override fun doOKAction() {
         if (!isOKActionEnabled) {
             return
@@ -70,6 +78,7 @@ class ConfigureLambdaDialog(
                     close(OK_EXIT_CODE)
                 }
                 notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionSelected()), project)
+                SqsTelemetry.configureLambdaTrigger(project, Result.Succeeded, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
             } catch (e: InvalidParameterValueException) {
                 // Exception thrown for invalid permission
                 runInEdt(ModalityState.any()) {
@@ -85,6 +94,7 @@ class ConfigureLambdaDialog(
                 setErrorText(e.message)
                 setOKButtonText(message("general.configure_button"))
                 isOKActionEnabled = true
+                SqsTelemetry.configureLambdaTrigger(project, Result.Failed, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
             }
         }
     }
@@ -132,10 +142,12 @@ class ConfigureLambdaDialog(
                     close(OK_EXIT_CODE)
                 }
                 notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionName), project)
+                SqsTelemetry.configureLambdaTrigger(project, Result.Succeeded, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
             } else {
                 setErrorText(message("sqs.configure.lambda.error", functionName))
                 setOKButtonText(message("general.configure_button"))
                 isOKActionEnabled = true
+                SqsTelemetry.configureLambdaTrigger(project, Result.Failed, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
             }
         }
     }
