@@ -27,6 +27,7 @@ import com.jetbrains.rd.framework.Serializers
 import com.jetbrains.rd.framework.SocketWire
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.lifetime.onTermination
+import com.jetbrains.rd.util.put
 import com.jetbrains.rd.util.reactive.adviseUntil
 import com.jetbrains.rdclient.protocol.RdDispatcher
 import com.jetbrains.rider.debugger.RiderDebuggerWorkerModelManager
@@ -36,6 +37,7 @@ import com.jetbrains.rider.model.debuggerWorkerConnectionHelperModel
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.run.IDebuggerOutputListener
 import com.jetbrains.rider.run.bindToSettings
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
