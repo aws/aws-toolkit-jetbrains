@@ -3,17 +3,38 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.actions
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.project.DumbAware
+import software.amazon.awssdk.services.sqs.SqsClient
+import software.amazon.awssdk.services.sqs.model.PurgeQueueInProgressException
+import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
+import software.aws.toolkits.jetbrains.services.sqs.SqsQueueNode
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
-class PurgeQueueAction : DumbAwareAction(
-    message("sqs.purge_queue"),
-    null,
-    AllIcons.Actions.Cancel
-) {
-    override fun actionPerformed(e: AnActionEvent) {
-        TODO("Not yet implemented")
+class PurgeQueueAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.purge_queue")), DumbAware {
+    override fun actionPerformed(selected: SqsQueueNode, e: AnActionEvent) {
+        val project = selected.nodeProject
+        val client: SqsClient = project.awsClient()
+        try {
+            client.purgeQueue { it.queueUrl(selected.queueUrl) }
+            notifyInfo(
+                project = project,
+                title = message("aws.notification.title"),
+                content = message("sqs.purge_queue.succeeded", selected.queueUrl)
+            )
+        } catch (e: PurgeQueueInProgressException) {
+            notifyError(
+                project = project,
+                content = message("sqs.purge_queue.failed.60_seconds", selected.queueUrl)
+            )
+        } catch (e: Exception) {
+            notifyError(
+                project = project,
+                content = message("sqs.purge_queue.failed", selected.queueUrl)
+            )
+        }
     }
 }
