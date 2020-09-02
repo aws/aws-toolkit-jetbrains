@@ -1,9 +1,9 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.ide.plugins.newui.UpdateButton
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.components.JBTextArea
 import kotlinx.coroutines.CoroutineScope
@@ -23,8 +23,7 @@ import javax.swing.JScrollPane
 
 class SendMessagePane(
     private val client: SqsClient,
-    private val queue: Queue,
-    private val messageCache: PropertiesComponent
+    private val queue: Queue
 ) : CoroutineScope by ApplicationThreadPoolScope("SendMessagePane") {
     lateinit var component: JPanel
     lateinit var inputText: JBTextArea
@@ -55,7 +54,6 @@ class SendMessagePane(
         }
         clearButton.addActionListener {
             clearFields()
-            messageCache.setValue(queue.queueUrl, "")
             confirmationLabel.isVisible = false
         }
     }
@@ -66,7 +64,6 @@ class SendMessagePane(
         }
         inputText.apply {
             emptyText.text = message("sqs.send.message.body.empty.text")
-            text = messageCache.getValue(queue.queueUrl)
             addKeyListener(
                 object : KeyListener {
                     override fun keyTyped(e: KeyEvent?) {
@@ -96,7 +93,6 @@ class SendMessagePane(
                     }.messageId()
                     confirmationLabel.text = message("sqs.send.message.success", messageId)
                 }
-                messageCache.setValue(queue.queueUrl, inputText.text)
                 clearFields()
             } catch (e: Exception) {
                 confirmationLabel.text = message("sqs.failed_to_send_message")

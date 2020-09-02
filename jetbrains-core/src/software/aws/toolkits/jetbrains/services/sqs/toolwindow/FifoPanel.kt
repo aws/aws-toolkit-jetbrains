@@ -91,6 +91,7 @@ class FifoPanel {
                 errorLabel.isVisible = false
             }
         }
+
         override fun removeUpdate(e: DocumentEvent?) {
             if (textField.text.length <= MAX_LENGTH_OF_FIFO_ID) {
                 errorLabel.isVisible = false

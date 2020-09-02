@@ -7,8 +7,8 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -26,24 +26,17 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
     private val client: SqsClient = project.awsClient()
 
     fun pollMessage(queue: Queue) {
-        showQueue(queue, SqsWindowUI(project, client, queue).apply { pollMessage() })
+        showQueue(queue, SqsWindowUI(client, queue).apply { pollMessage() })
     }
 
     fun sendMessage(queue: Queue) {
-        showQueue(queue, SqsWindowUI(project, client, queue).apply { sendMessage() })
+        showQueue(queue, SqsWindowUI(client, queue).apply { sendMessage() })
     }
 
     private fun showQueue(queue: Queue, component: SqsWindowUI) = launch {
         try {
-            val existingWindow = toolWindow.find(queue.queueUrl)
-            if (existingWindow != null) {
-                withContext(edtContext) {
-                    existingWindow.dispose()
-                }
-            }
-
             withContext(edtContext) {
-                toolWindow.addTab(queue.queueName, component.mainPanel, activate = true, id = queue.queueUrl)
+                toolWindow.find(queue.queueUrl)?.show() ?: toolWindow.addTab(queue.queueName, component.mainPanel, activate = true, id = queue.queueUrl)
             }
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while trying to open queue '${queue.queueName}'" }
@@ -51,11 +44,10 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
         }
     }
 
-    fun closeQueue(queueUrl: String) = launch {
+    suspend fun closeQueue(queueUrl: String) =
         withContext(edtContext) {
             toolWindow.find(queueUrl)?.dispose()
         }
-    }
 
     companion object {
         internal val SQS_TOOL_WINDOW = ToolkitToolWindowType(
@@ -64,7 +56,8 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
             AwsIcons.Resources.Sqs.SQS_TOOL_WINDOW
         )
 
-        fun getInstance(project: Project) = ServiceManager.getService(project, SqsWindow::class.java)
+        fun getInstance(project: Project): SqsWindow? = ServiceManager.getService(project, SqsWindow::class.java)
+
         private val LOG = getLogger<SqsWindow>()
     }
 }
