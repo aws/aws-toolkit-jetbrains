@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.core.utils.error
@@ -44,10 +45,11 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
         }
     }
 
-    suspend fun closeQueue(queueUrl: String) =
+    fun closeQueue(queueUrl: String) = runBlocking {
         withContext(edtContext) {
             toolWindow.find(queueUrl)?.dispose()
         }
+    }
 
     companion object {
         internal val SQS_TOOL_WINDOW = ToolkitToolWindowType(

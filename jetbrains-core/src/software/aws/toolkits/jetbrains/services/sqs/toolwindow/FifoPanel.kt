@@ -45,43 +45,42 @@ class FifoPanel {
     private fun setFields() {
         deduplicationId.apply {
             emptyText.text = message("sqs.required.empty.text")
-            document.addDocumentListener(createListener(this, deduplicationErrorLabel))
+            document.addDocumentListener(createListener(this, deduplicationErrorLabel, message("sqs.message.validation.empty.deduplication_id")))
         }
 
         groupId.apply {
             emptyText.text = message("sqs.required.empty.text")
-            document.addDocumentListener(createListener(this, groupErrorLabel))
+            document.addDocumentListener(createListener(this, groupErrorLabel, message("sqs.message.validation.empty.group_id")))
         }
     }
 
     fun validateFields(): Boolean {
-        var deduplicationIsValid = true
-        var groupIsValid = true
+        var isValid = true
 
         if (deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID) {
             deduplicationErrorLabel.text = message("sqs.message.validation.long.id")
             deduplicationErrorLabel.isVisible = true
-            deduplicationIsValid = false
-        } else if (deduplicationId.text.isEmpty()) {
+            isValid = false
+        } else if (deduplicationId.text.isBlank()) {
             deduplicationErrorLabel.text = message("sqs.message.validation.empty.deduplication_id")
             deduplicationErrorLabel.isVisible = true
-            deduplicationIsValid = false
+            isValid = false
         }
 
         if (groupId.text.length > MAX_LENGTH_OF_FIFO_ID) {
             groupErrorLabel.text = message("sqs.message.validation.long.id")
             groupErrorLabel.isVisible = true
-            groupIsValid = false
-        } else if (groupId.text.isEmpty()) {
+            isValid = false
+        } else if (groupId.text.isBlank()) {
             groupErrorLabel.text = message("sqs.message.validation.empty.group_id")
             groupErrorLabel.isVisible = true
-            groupIsValid = false
+            isValid = false
         }
 
-        return (deduplicationIsValid && groupIsValid)
+        return isValid
     }
 
-    private fun createListener(textField: JBTextField, errorLabel: JLabel): DocumentListener = object : DocumentListener {
+    private fun createListener(textField: JBTextField, errorLabel: JLabel, minText: String): DocumentListener = object : DocumentListener {
         override fun changedUpdate(e: DocumentEvent?) {}
         override fun insertUpdate(e: DocumentEvent?) {
             if (textField.text.length > MAX_LENGTH_OF_FIFO_ID) {
@@ -93,8 +92,11 @@ class FifoPanel {
         }
 
         override fun removeUpdate(e: DocumentEvent?) {
-            if (textField.text.length <= MAX_LENGTH_OF_FIFO_ID) {
+            if (textField.text.length <= MAX_LENGTH_OF_FIFO_ID && !textField.text.isBlank()) {
                 errorLabel.isVisible = false
+            } else if (textField.text.isBlank()) {
+                errorLabel.text = minText
+                errorLabel.isVisible = true
             }
         }
     }
