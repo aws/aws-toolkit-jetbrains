@@ -91,10 +91,12 @@ class IamAuthWidgetTest {
     fun `Sets instance from URL`() {
         widget.reset(mock(), false)
         val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
-        widget.updateFromUrl(mock<UrlEditorModel> {
-            on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
-            on { getParameter(portParameter) } doReturn "5423"
-        })
+        widget.updateFromUrl(
+            mock<UrlEditorModel> {
+                on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
+                on { getParameter(portParameter) } doReturn "5423"
+            }
+        )
         assertThat(widget.getDatabaseHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
         assertThat(widget.getDatabasePort()).isEqualTo("5423")
     }
@@ -104,10 +106,12 @@ class IamAuthWidgetTest {
         val model = UrlEditorModel(listOf())
         model.url
         widget.reset(mock(), false)
-        widget.updateFromUrl(mock<UrlEditorModel> {
-            on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
-            on { getParameter(portParameter) } doReturn "5423"
-        })
+        widget.updateFromUrl(
+            mock<UrlEditorModel> {
+                on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
+                on { getParameter(portParameter) } doReturn "5423"
+            }
+        )
         widget.updateFromUrl(mock<UrlEditorModel>())
         assertThat(widget.getDatabaseHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
         assertThat(widget.getDatabasePort()).isEqualTo("5423")
