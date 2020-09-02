@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.ide.util.PropertiesComponent
 import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -29,7 +28,6 @@ class SendMessagePaneTest : BaseCoroutineTest() {
     private lateinit var fifoQueue: Queue
     private lateinit var standardPane: SendMessagePane
     private lateinit var fifoPane: SendMessagePane
-    private lateinit var cache: PropertiesComponent
 
     @Before
     fun reset() {
@@ -37,9 +35,8 @@ class SendMessagePaneTest : BaseCoroutineTest() {
         region = MockRegionProvider.getInstance().defaultRegion()
         standardQueue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/standard", region)
         fifoQueue = Queue("https://sqs.us-east-1.amazonaws.com/123456789012/fifo.fifo", region)
-        cache = PropertiesComponent.getInstance(projectRule.project)
-        standardPane = SendMessagePane(client, standardQueue, cache)
-        fifoPane = SendMessagePane(client, fifoQueue, cache)
+        standardPane = SendMessagePane(client, standardQueue)
+        fifoPane = SendMessagePane(client, fifoQueue)
     }
 
     @Test
@@ -49,7 +46,7 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertThat(standardPane.bodyErrorLabel.isVisible).isTrue()
+        assertThat(standardPane.errorLabel.isVisible).isTrue()
         assertThat(standardPane.fifoFields.component.isVisible).isFalse()
     }
 
@@ -62,9 +59,7 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertThat(fifoPane.bodyErrorLabel.isVisible).isTrue()
-        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isTrue()
-        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isTrue()
+        assertThat(fifoPane.errorLabel.isVisible).isTrue()
     }
 
     @Test
@@ -76,9 +71,7 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertThat(fifoPane.bodyErrorLabel.isVisible).isFalse()
-        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isTrue()
-        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isFalse()
+        assertThat(fifoPane.errorLabel.isVisible).isTrue()
     }
 
     @Test
@@ -90,9 +83,7 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertThat(fifoPane.bodyErrorLabel.isVisible).isFalse()
-        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isFalse()
-        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isTrue()
+        assertThat(fifoPane.errorLabel.isVisible).isTrue()
     }
 
     @Test
@@ -104,10 +95,8 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             runBlocking { sendMessage() }
         }
 
-        assertThat(fifoPane.bodyErrorLabel.isVisible).isFalse()
-        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.isVisible).isTrue()
-        assertThat(fifoPane.fifoFields.groupErrorLabel.isVisible).isFalse()
-        assertThat(fifoPane.fifoFields.deduplicationErrorLabel.text).isEqualTo(message("sqs.message.validation.long.id"))
+        assertThat(fifoPane.errorLabel.isVisible).isTrue()
+        assertThat(fifoPane.errorLabel.text).isEqualTo(message("sqs.message.validation.long.id"))
     }
 
     @Test

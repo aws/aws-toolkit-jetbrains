@@ -29,7 +29,7 @@ class SendMessagePane(
     lateinit var inputText: JBTextArea
     lateinit var sendButton: UpdateButton
     lateinit var clearButton: JButton
-    lateinit var bodyErrorLabel: JLabel
+    lateinit var errorLabel: JLabel
     lateinit var confirmationLabel: JLabel
     lateinit var fifoFields: FifoPanel
     lateinit var scrollPane: JScrollPane
@@ -44,7 +44,7 @@ class SendMessagePane(
         if (!queue.isFifo) {
             fifoFields.component.isVisible = false
         }
-        bodyErrorLabel.isVisible = false
+        errorLabel.isVisible = false
         confirmationLabel.isVisible = false
     }
 
@@ -64,19 +64,10 @@ class SendMessagePane(
         }
         inputText.apply {
             emptyText.text = message("sqs.send.message.body.empty.text")
-            addKeyListener(
-                object : KeyListener {
-                    override fun keyTyped(e: KeyEvent?) {
-                        if (bodyErrorLabel.isVisible) {
-                            bodyErrorLabel.isVisible = false
-                        }
-                    }
-
-                    override fun keyPressed(e: KeyEvent?) {}
-                    override fun keyReleased(e: KeyEvent?) {}
-                }
-            )
+            addKeyListener(hideErrorListener)
         }
+        fifoFields.deduplicationId.addKeyListener(hideErrorListener)
+        fifoFields.groupId.addKeyListener(hideErrorListener)
     }
 
     suspend fun sendMessage() {
@@ -103,12 +94,24 @@ class SendMessagePane(
 
     private fun validateFields(): Boolean {
         val inputIsValid = inputText.text.isNotEmpty()
-        bodyErrorLabel.isVisible = !inputIsValid
+        errorLabel.isVisible = !inputIsValid
+        if (!inputIsValid) {
+            errorLabel.text = message("sqs.message.validation.empty.message.body")
+            return false
+        }
 
-        return if (queue.isFifo) {
-            (fifoFields.validateFields() && inputIsValid)
+        return if (!queue.isFifo) {
+            true
         } else {
-            inputIsValid
+            val message = fifoFields.validateFields()
+            if (message == null) {
+                errorLabel.isVisible = false
+                true
+            } else {
+                errorLabel.isVisible = true
+                errorLabel.text = message
+                false
+            }
         }
     }
 
@@ -118,5 +121,15 @@ class SendMessagePane(
             fifoFields.deduplicationId.text = ""
             fifoFields.groupId.text = ""
         }
+    }
+
+    private val hideErrorListener = object : KeyListener {
+        override fun keyTyped(e: KeyEvent?) {
+            if (errorLabel.isVisible) {
+                errorLabel.isVisible = false
+            }
+        }
+        override fun keyPressed(e: KeyEvent?) {}
+        override fun keyReleased(e: KeyEvent?) {}
     }
 }
