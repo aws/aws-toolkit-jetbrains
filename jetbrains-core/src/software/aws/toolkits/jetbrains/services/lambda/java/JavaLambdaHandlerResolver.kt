@@ -191,11 +191,13 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
 
     private fun PsiMethod.hasRequiredParameters(): Boolean = when (this.parameters.size) {
         1 -> true
-        2 -> (this.parameterList.parameters[0].isInputStreamParameter() && this.parameterList.parameters[1].isOutputStreamParameter()) ||
-            this.parameterList.parameters[1].isContextParameter()
-        3 -> this.parameterList.parameters[0].isInputStreamParameter() &&
-            this.parameterList.parameters[1].isOutputStreamParameter() &&
-            this.parameterList.parameters[2].isContextParameter()
+        2 ->
+            (this.parameterList.parameters[0].isInputStreamParameter() && this.parameterList.parameters[1].isOutputStreamParameter()) ||
+                this.parameterList.parameters[1].isContextParameter()
+        3 ->
+            this.parameterList.parameters[0].isInputStreamParameter() &&
+                this.parameterList.parameters[1].isOutputStreamParameter() &&
+                this.parameterList.parameters[2].isContextParameter()
         else -> false
     }
 
