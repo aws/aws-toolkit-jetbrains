@@ -12,11 +12,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.QueryDefinition
-import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionRequest
-import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeQueryDefinitionsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeQueryDefinitionsResponse
+import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionResponse
+import software.amazon.awssdk.services.cloudwatchlogs.model.QueryDefinition
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
