@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
@@ -58,7 +57,7 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
             AwsIcons.Resources.Sqs.SQS_TOOL_WINDOW
         )
 
-        fun getInstance(project: Project): SqsWindow? = ServiceManager.getService(project, SqsWindow::class.java)
+        fun getInstance(project: Project): SqsWindow = project.getService(SqsWindow::class.java)
 
         private val LOG = getLogger<SqsWindow>()
     }

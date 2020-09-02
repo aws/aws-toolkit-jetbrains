@@ -17,7 +17,7 @@ class DeleteQueueAction : DeleteResourceAction<SqsQueueNode>(message("sqs.delete
     override fun performDelete(selected: SqsQueueNode) {
         val project = selected.nodeProject
         val client = project.awsClient<SqsClient>()
-        SqsWindow.getInstance(project)?.closeQueue(selected.queueUrl)
+        SqsWindow.getInstance(project).closeQueue(selected.queueUrl)
         client.deleteQueue { it.queueUrl(selected.queueUrl) }
         project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
     }
