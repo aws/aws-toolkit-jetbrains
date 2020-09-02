@@ -94,15 +94,13 @@ class SendMessagePane(
 
     private fun validateFields(): Boolean {
         val inputIsValid = inputText.text.isNotEmpty()
-        errorLabel.isVisible = !inputIsValid
         if (!inputIsValid) {
+            errorLabel.isVisible = true
             errorLabel.text = message("sqs.message.validation.empty.message.body")
             return false
         }
 
-        return if (!queue.isFifo) {
-            true
-        } else {
+        return if (queue.isFifo) {
             val message = fifoFields.validateFields()
             if (message == null) {
                 errorLabel.isVisible = false
@@ -112,6 +110,9 @@ class SendMessagePane(
                 errorLabel.text = message
                 false
             }
+        } else {
+            errorLabel.isVisible = false
+            true
         }
     }
 
@@ -129,6 +130,7 @@ class SendMessagePane(
                 errorLabel.isVisible = false
             }
         }
+
         override fun keyPressed(e: KeyEvent?) {}
         override fun keyReleased(e: KeyEvent?) {}
     }
