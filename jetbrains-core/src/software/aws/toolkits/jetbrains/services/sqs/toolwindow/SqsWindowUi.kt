@@ -9,7 +9,7 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.resources.message
 
-class SqsWindowUI(private val client: SqsClient, val queue: Queue) {
+class SqsWindowUi(private val client: SqsClient, val queue: Queue) {
     val mainPanel = JBTabbedPane().apply {
         tabComponentInsets = JBUI.emptyInsets()
         border = JBUI.Borders.empty()
