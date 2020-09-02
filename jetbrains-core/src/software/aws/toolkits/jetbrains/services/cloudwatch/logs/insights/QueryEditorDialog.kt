@@ -127,18 +127,19 @@ class QueryEditorDialog(
         }
         val funDetails = getFunctionDetails()
         val queryStartEndDate: StartEndDate
-        queryStartEndDate = (
-            if (funDetails.absoluteTimeSelected) {
-                getAbsoluteTime(funDetails.startDateAbsolute, funDetails.endDateAbsolute)
-            } else {
-                getRelativeTime(relativeTimeUnit[funDetails.relativeTimeUnit], funDetails.relativeTimeNumber.toLong())
-            }
-            )
+
+        queryStartEndDate = if (funDetails.absoluteTimeSelected) {
+            getAbsoluteTime(funDetails.startDateAbsolute, funDetails.endDateAbsolute)
+        } else {
+            getRelativeTime(relativeTimeUnit[funDetails.relativeTimeUnit], funDetails.relativeTimeNumber.toLong())
+        }
+
         val query = if (funDetails.enterQuery) {
             funDetails.query
         } else {
             getFilterQuery(funDetails.searchTerm)
         }
+
         QueryEditorSavedState().setQueryEditorState(getFunctionDetails(), getEnabledDisabledComponentsState())
         close(OK_EXIT_CODE)
         queryingLogGroupApiCall.executeStartQuery(queryStartEndDate, funDetails.logGroupName, query, client)
