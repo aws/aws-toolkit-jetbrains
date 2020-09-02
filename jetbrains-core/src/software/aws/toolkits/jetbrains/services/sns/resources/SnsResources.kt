@@ -14,5 +14,5 @@ object SnsResources {
     }
 }
 
-// Topic arns are in the format: arn:<partition>:sns:<region>:<accountId>:<name> and cannot contain ':'
+// SNS topic ARNs are in the format: arn:<partition>:sns:<region>:<accountId>:<name> and cannot contain ':'
 fun Topic.getName(): String = topicArn().substringAfterLast(':')
