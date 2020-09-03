@@ -4,22 +4,26 @@
 package software.aws.toolkits.jetbrains.services.sqs
 
 import software.aws.toolkits.core.region.AwsRegion
-import java.lang.IllegalArgumentException
 import software.aws.toolkits.resources.message
 
-/*This does not support FIPS*/
+// TODO This does not support FIPS
+
+/**
+ * @param queueUrl The format for queueUrl is https://sqs.<region>.amazonaws.com/<accountId>/<queueName>
+ * queueName cannot contain '/', so it is safe enough to do string manipulation on it
+ */
 class Queue(val queueUrl: String, val region: AwsRegion) {
     val accountId: String by lazy {
-        val id = queueUrl.substringAfter("${region.id}").substringAfter("/").substringBefore("/")
+        val id = queueUrl.substringBeforeLast("/").substringAfterLast("/")
         if ((id == queueUrl) || (id.length != 12) || id.isBlank()) {
-                throw IllegalArgumentException(message("sqs.url.parse_error"))
+            throw IllegalArgumentException(message("sqs.url.parse_error"))
         } else {
             id
         }
     }
 
     val queueName: String by lazy {
-        val name = queueUrl.substringAfter("$accountId/")
+        val name = queueUrl.substringAfterLast("/")
         if (name == queueUrl || name.isBlank()) {
             throw IllegalArgumentException(message("sqs.url.parse_error"))
         } else {
