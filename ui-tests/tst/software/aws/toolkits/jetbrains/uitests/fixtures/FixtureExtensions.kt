@@ -28,6 +28,10 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
 }
 
+fun ContainerFixture.pressCreate() = step("Press the \"Create\" button") {
+    find<ComponentFixture>(byXpath("//div[@text='Create']")).click()
+}
+
 /*
  * Find an action button by button text instead of by xPath
  */
