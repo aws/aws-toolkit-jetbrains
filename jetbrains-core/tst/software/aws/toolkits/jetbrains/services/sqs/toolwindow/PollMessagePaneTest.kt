@@ -102,7 +102,7 @@ class PollMessagePaneTest : BaseCoroutineTest() {
             pane.getAvailableMessages()
         }
 
-        assertThat(label.text).isEqualTo(message("sqs.messages.available.text") + "10")
+        assertThat(label.text).isEqualTo(message("sqs.messages.available.text", "10"))
     }
 
     @Test

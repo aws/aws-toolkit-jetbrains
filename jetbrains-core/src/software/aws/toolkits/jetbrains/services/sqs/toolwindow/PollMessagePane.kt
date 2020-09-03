@@ -80,7 +80,7 @@ class PollMessagePane(
                     it.attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
                 }.attributes().getValue(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
 
-                messagesAvailableLabel.text = message("sqs.messages.available.text") + numMessages
+                messagesAvailableLabel.text = message("sqs.messages.available.text", numMessages.toIntOrNull() ?: 0)
             }
         } catch (e: Exception) {
             messagesAvailableLabel.text = message("sqs.failed_to_load_total")
