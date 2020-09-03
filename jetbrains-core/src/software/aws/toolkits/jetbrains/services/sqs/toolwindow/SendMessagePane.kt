@@ -87,10 +87,10 @@ class SendMessagePane(
                     confirmationLabel.text = message("sqs.send.message.success", messageId)
                 }
                 clearFields()
-                SqsTelemetry.sendMessage(project, Result.Succeeded, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
+                SqsTelemetry.sendMessage(project, Result.Succeeded, queue.telemetryType)
             } catch (e: Exception) {
                 confirmationLabel.text = message("sqs.failed_to_send_message")
-                SqsTelemetry.sendMessage(project, Result.Failed, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
+                SqsTelemetry.sendMessage(project, Result.Failed, queue.telemetryType)
             }
             confirmationLabel.isVisible = true
         }

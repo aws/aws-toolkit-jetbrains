@@ -37,7 +37,7 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
     }
 
     private fun showQueue(queue: Queue, component: SqsWindowUi) = launch {
-        SqsTelemetry.openQueue(project, if (queue.isFifo) SqsQueueType.Fifo else SqsQueueType.Standard)
+        SqsTelemetry.openQueue(project, queue.telemetryType)
         try {
             withContext(edtContext) {
                 toolWindow.find(queue.queueUrl)?.show() ?: toolWindow.addTab(queue.queueName, component.mainPanel, activate = true, id = queue.queueUrl)
