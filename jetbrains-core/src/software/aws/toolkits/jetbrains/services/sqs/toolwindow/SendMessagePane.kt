@@ -89,35 +89,29 @@ class SendMessagePane(
         }
     }
 
-    private fun validateFields(): Boolean {
-        listOfNotNull(
+    fun validateFields(): Boolean {
+        val validationIssues = mutableListOf<ValidationInfo>().apply {
             if (inputText.text.isEmpty()) {
-                ValidationInfo(message("sqs.message.validation.empty.message.body"), inputText)
-            } else {
-                null
+                add(ValidationInfo(message("sqs.message.validation.empty.message.body"), inputText))
             }
-        ).plus(
             if (queue.isFifo) {
-                fifoFields.validateFields()
-            } else {
-                listOf()
+                addAll(fifoFields.validateFields())
             }
-        ).let {
-            return if (it.isEmpty()) {
-                true
-            } else {
-                it.forEach { validationIssue ->
-                    runInEdt(ModalityState.any()) {
-                        validationIssue.component?.let {
-                            ComponentValidator.createPopupBuilder(validationIssue, null)
-                                .setCancelOnClickOutside(true)
-                                .createPopup()
-                                .showUnderneathOf(it)
-                        }
+        }
+        return if (validationIssues.isEmpty()) {
+            true
+        } else {
+            runInEdt(ModalityState.any()) {
+                validationIssues.forEach { validationIssue ->
+                    validationIssue.component?.let { component ->
+                        ComponentValidator.createPopupBuilder(validationIssue, null)
+                            .setCancelOnClickOutside(true)
+                            .createPopup()
+                            .showUnderneathOf(component)
                     }
                 }
-                false
             }
+            false
         }
     }
 
