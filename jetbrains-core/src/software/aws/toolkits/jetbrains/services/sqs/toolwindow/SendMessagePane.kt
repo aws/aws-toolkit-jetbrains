@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
-import software.aws.toolkits.telemetry.SqsQueueType
 import software.aws.toolkits.telemetry.SqsTelemetry
 import javax.swing.JButton
 import javax.swing.JLabel
