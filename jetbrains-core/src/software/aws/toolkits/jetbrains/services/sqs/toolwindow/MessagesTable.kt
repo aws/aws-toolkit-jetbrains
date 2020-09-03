@@ -31,7 +31,7 @@ class MessagesTable {
             // Disable the header so the user cannot sort or resize columns
             tableHeader.isEnabled = false
             autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
-            emptyText.text = message("loading_resource.loading")
+            emptyText.text = message("sqs.message_table_initial_text")
         }
 
         TableSpeedSearch(table)
