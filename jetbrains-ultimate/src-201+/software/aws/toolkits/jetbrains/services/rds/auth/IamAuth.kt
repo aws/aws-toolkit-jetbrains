@@ -74,9 +74,9 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     }
 
     internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
-        val signingUrl = connection.connectionPoint.additionalJdbcProperties[DATABASE_HOST_PROPERTY]
+        val signingUrl = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_HOST_PROPERTY]
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_host"))
-        val signingPort = connection.connectionPoint.additionalJdbcProperties[DATABASE_PORT_PROPERTY]?.toIntOrNull()
+        val signingPort = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_PORT_PROPERTY]?.toIntOrNull()
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_port"))
         val user = connection.connectionPoint.dataSource.username
 

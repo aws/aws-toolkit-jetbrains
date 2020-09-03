@@ -97,8 +97,8 @@ class IamAuthWidgetTest {
                 on { getParameter(portParameter) } doReturn "5423"
             }
         )
-        assertThat(widget.getDatabaseHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
-        assertThat(widget.getDatabasePort()).isEqualTo("5423")
+        assertThat(widget.getDatabaseSigningHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
+        assertThat(widget.getDatabaseSigningPort()).isEqualTo("5423")
     }
 
     @Test
@@ -113,8 +113,8 @@ class IamAuthWidgetTest {
             }
         )
         widget.updateFromUrl(mock<UrlEditorModel>())
-        assertThat(widget.getDatabaseHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
-        assertThat(widget.getDatabasePort()).isEqualTo("5423")
+        assertThat(widget.getDatabaseSigningHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
+        assertThat(widget.getDatabaseSigningPort()).isEqualTo("5423")
     }
 
     private fun buildDataSource(

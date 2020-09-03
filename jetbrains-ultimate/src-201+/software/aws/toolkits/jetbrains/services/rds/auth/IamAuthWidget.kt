@@ -15,84 +15,73 @@ import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 
-const val DATABASE_HOST_PROPERTY = "AWS.RdsHost"
-const val DATABASE_PORT_PROPERTY = "AWS.RdsPort"
+const val RDS_SIGNING_HOST_PROPERTY = "AWS.RdsSigningHost"
+const val RDS_SIGNING_PORT_PROPERTY = "AWS.RdsSigningPort"
 
 class IamAuthWidget : AwsAuthWidget() {
-    private val databaseHostTextField = JBTextField()
-    private val databasePortTextField = JBTextField()
-
-    // Cache the most recently set URL and port, so if we save, and have
-    // emtpy text, we set HOST and PORT properties to the current values instead of
-    // having to split the datasource url string
-    private var cachedUrl: String = ""
-    private var cachedPort: String = ""
+    private val rdsSigningHostField = JBTextField()
+    private val rdsSigningPortField = JBTextField()
 
     override val rowCount = 4
     override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url)
 
     override fun createPanel(): JPanel {
         val panel = super.createPanel()
-        val databaseHostLabel = JBLabel(message("rds.url")).apply { toolTipText = message("rds.iam_help") }
-        val databasePortLabel = JBLabel(message("rds.port")).apply { toolTipText = message("rds.iam_help") }
-        panel.add(databaseHostLabel, UrlPropertiesPanel.createLabelConstraints(3, 0, databaseHostLabel.preferredSize.getWidth()))
-        panel.add(databaseHostTextField, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
-        panel.add(databasePortLabel, UrlPropertiesPanel.createLabelConstraints(3, 4, databasePortLabel.preferredSize.getWidth()))
-        panel.add(databasePortTextField, UrlPropertiesPanel.createSimpleConstraints(3, 5, 1))
+        val rdsSigningHostLabel = JBLabel(message("rds.url")).apply { toolTipText = message("rds.iam_help") }
+        val rdsSigningPortLabel = JBLabel(message("rds.port")).apply { toolTipText = message("rds.iam_help") }
+        panel.add(rdsSigningHostLabel, UrlPropertiesPanel.createLabelConstraints(3, 0, rdsSigningHostLabel.preferredSize.getWidth()))
+        panel.add(rdsSigningHostField, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
+        panel.add(rdsSigningPortLabel, UrlPropertiesPanel.createLabelConstraints(3, 4, rdsSigningPortLabel.preferredSize.getWidth()))
+        panel.add(rdsSigningPortField, UrlPropertiesPanel.createSimpleConstraints(3, 5, 1))
         return panel
     }
 
     override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
         super.save(dataSource, copyCredentials)
 
-        val host = if (databaseHostTextField.text.isNullOrBlank()) {
-            cachedUrl
+        // If the user has not specified a
+        val host = if (rdsSigningHostField.text.isNullOrBlank()) {
+            dataSource.url?.split("://")?.firstOrNull()?.substringBefore(":")
         } else {
-            databaseHostTextField.text
+            rdsSigningHostField.text
         }
         DataSourceUiUtil.putOrRemove(
             dataSource.additionalJdbcProperties,
-            DATABASE_HOST_PROPERTY,
+            RDS_SIGNING_HOST_PROPERTY,
             host
         )
 
-        val port = if (databasePortTextField.text.isNullOrBlank()) {
-            cachedPort
+        val port = if (rdsSigningPortField.text.isNullOrBlank()) {
+            dataSource.url?.substringAfter(":")?.substringBefore("/")
         } else {
-            databasePortTextField.text
+            rdsSigningPortField.text
         }
         DataSourceUiUtil.putOrRemove(
             dataSource.additionalJdbcProperties,
-            DATABASE_PORT_PROPERTY,
+            RDS_SIGNING_PORT_PROPERTY,
             port
         )
     }
 
     override fun reset(dataSource: LocalDataSource, resetCredentials: Boolean) {
         super.reset(dataSource, resetCredentials)
-        databaseHostTextField.text = dataSource.additionalJdbcProperties[DATABASE_HOST_PROPERTY]
-        databasePortTextField.text = dataSource.additionalJdbcProperties[DATABASE_PORT_PROPERTY]
+        rdsSigningHostField.text = dataSource.additionalJdbcProperties[RDS_SIGNING_HOST_PROPERTY]
+        rdsSigningPortField.text = dataSource.additionalJdbcProperties[RDS_SIGNING_PORT_PROPERTY]
     }
 
     override fun updateFromUrl(holder: ParametersHolder) {
         super.updateFromUrl(holder)
         holder.getParameter(hostParameter)?.let {
-            if (it.isNotBlank()) {
-                databaseHostTextField.emptyText.text = it
-                cachedUrl = it
-            }
+            rdsSigningHostField.emptyText.text = it
         }
         holder.getParameter(portParameter)?.let {
-            if (it.isNotBlank()) {
-                databasePortTextField.emptyText.text = it
-                cachedPort = it
-            }
+            rdsSigningPortField.emptyText.text = it
         }
     }
 
     @TestOnly
-    internal fun getDatabaseHost() = cachedUrl
+    internal fun getDatabaseSigningHost() = rdsSigningHostField.text
 
     @TestOnly
-    internal fun getDatabasePort() = cachedPort
+    internal fun getDatabaseSigningPort() = rdsSigningPortField.text
 }

@@ -24,9 +24,9 @@ import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auroraMysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.auroraPostgresEngineType
-import software.aws.toolkits.jetbrains.services.rds.auth.DATABASE_HOST_PROPERTY
-import software.aws.toolkits.jetbrains.services.rds.auth.DATABASE_PORT_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
+import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_HOST_PROPERTY
+import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_PORT_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.jdbcMariadb
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
@@ -121,8 +121,8 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
     val builder = builder
         .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, config.credentialId)
         .withJdbcAdditionalProperty(REGION_ID_PROPERTY, config.regionId)
-        .withJdbcAdditionalProperty(DATABASE_HOST_PROPERTY, host)
-        .withJdbcAdditionalProperty(DATABASE_PORT_PROPERTY, port.toString())
+        .withJdbcAdditionalProperty(RDS_SIGNING_HOST_PROPERTY, host)
+        .withJdbcAdditionalProperty(RDS_SIGNING_PORT_PROPERTY, port.toString())
     when (dbEngine) {
         mysqlEngineType -> {
             builder
