@@ -39,9 +39,9 @@ class IamAuthWidget : AwsAuthWidget() {
     override fun save(dataSource: LocalDataSource, copyCredentials: Boolean) {
         super.save(dataSource, copyCredentials)
 
-        // If the user has not specified a
+        // If the user has not specified a signing host/port we will try to use the URL in the connection
         val host = if (rdsSigningHostField.text.isNullOrBlank()) {
-            dataSource.url?.split("://")?.firstOrNull()?.substringBefore(":")
+            null
         } else {
             rdsSigningHostField.text
         }
@@ -52,7 +52,7 @@ class IamAuthWidget : AwsAuthWidget() {
         )
 
         val port = if (rdsSigningPortField.text.isNullOrBlank()) {
-            dataSource.url?.substringAfter(":")?.substringBefore("/")
+            null
         } else {
             rdsSigningPortField.text
         }

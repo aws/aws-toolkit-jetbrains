@@ -61,8 +61,17 @@ class IamAuthTest {
     }
 
     @Test
-    fun `Intercept credentials fails`() {
-        assertThatThrownBy { iamAuth.intercept(buildConnection(hasHost = false), false)?.unwrap() }.isInstanceOf(IllegalArgumentException::class.java)
+    fun `Intercept credentials fails no port`() {
+        assertThatThrownBy { iamAuth.intercept(buildConnection(hasPort = false, hasBadHost = true), false)?.unwrap() }.isInstanceOf(
+            IllegalArgumentException::class.java
+        )
+    }
+
+    @Test
+    fun `Intercept credentials fails no host`() {
+        assertThatThrownBy { iamAuth.intercept(buildConnection(hasHost = false, hasBadHost = true), false)?.unwrap() }.isInstanceOf(
+            IllegalArgumentException::class.java
+        )
     }
 
     @Test
@@ -90,16 +99,6 @@ class IamAuthTest {
     }
 
     @Test
-    fun `No instance url`() {
-        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasHost = false)) }.isInstanceOf(IllegalArgumentException::class.java)
-    }
-
-    @Test
-    fun `No instance port`() {
-        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasPort = false)) }.isInstanceOf(IllegalArgumentException::class.java)
-    }
-
-    @Test
     fun `Generate pre-signed auth token request succeeds`() {
         val connection = iamAuth.getAuthInformation(buildConnection())
         val request = iamAuth.generateAuthToken(connection)
@@ -112,12 +111,26 @@ class IamAuthTest {
             .doesNotStartWith("https://")
     }
 
+    @Test
+    fun `Generate pre-signed auth token request succeeds using default host and port`() {
+        val connection = iamAuth.getAuthInformation(buildConnection(hasHost = false, hasPort = false))
+        val request = iamAuth.generateAuthToken(connection)
+        assertThat(request)
+            .contains("X-Amz-Signature")
+            .contains("connect")
+            .contains(username)
+            .contains(dbHost)
+            .contains(connectionPort.toString())
+            .doesNotStartWith("https://")
+    }
+
     private fun buildConnection(
         hasUsername: Boolean = true,
         hasRegion: Boolean = true,
         hasHost: Boolean = true,
         hasPort: Boolean = true,
-        hasCredentials: Boolean = true
+        hasCredentials: Boolean = true,
+        hasBadHost: Boolean = false
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doReturn "jdbc:postgresql://$dbHost:$connectionPort/dev"
@@ -126,6 +139,7 @@ class IamAuthTest {
             on { username } doReturn if (hasUsername) username else ""
         }
         val dbConnectionPoint = mock<DatabaseConnectionPoint> {
+            on { url } doAnswer { if (hasBadHost) null else "jdbc:postgresql://$dbHost:$connectionPort/dev" }
             on { additionalJdbcProperties } doAnswer {
                 val m = mutableMapOf<String, String>()
                 if (hasCredentials) {
@@ -135,10 +149,10 @@ class IamAuthTest {
                     m[REGION_ID_PROPERTY] = defaultRegion
                 }
                 if (hasHost) {
-                    m[DATABASE_HOST_PROPERTY] = dbHost
+                    m[RDS_SIGNING_HOST_PROPERTY] = dbHost
                 }
                 if (hasPort) {
-                    m[DATABASE_PORT_PROPERTY] = instancePort
+                    m[RDS_SIGNING_PORT_PROPERTY] = instancePort
                 }
                 m
             }

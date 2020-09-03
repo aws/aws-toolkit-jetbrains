@@ -87,36 +87,6 @@ class IamAuthWidgetTest {
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
-    @Test
-    fun `Sets instance from URL`() {
-        widget.reset(mock(), false)
-        val endpointUrl = "jdbc:postgresql://abc.host.$defaultRegion.rds.amazonaws.com:5432/dev"
-        widget.updateFromUrl(
-            mock<UrlEditorModel> {
-                on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
-                on { getParameter(portParameter) } doReturn "5423"
-            }
-        )
-        assertThat(widget.getDatabaseSigningHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
-        assertThat(widget.getDatabaseSigningPort()).isEqualTo("5423")
-    }
-
-    @Test
-    fun `Does not unset instance on empty url`() {
-        val model = UrlEditorModel(listOf())
-        model.url
-        widget.reset(mock(), false)
-        widget.updateFromUrl(
-            mock<UrlEditorModel> {
-                on { getParameter(hostParameter) } doReturn "abc.host.$defaultRegion.rds.amazonaws.com"
-                on { getParameter(portParameter) } doReturn "5423"
-            }
-        )
-        widget.updateFromUrl(mock<UrlEditorModel>())
-        assertThat(widget.getDatabaseSigningHost()).isEqualTo("abc.host.$defaultRegion.rds.amazonaws.com")
-        assertThat(widget.getDatabaseSigningPort()).isEqualTo("5423")
-    }
-
     private fun buildDataSource(
         hasCredentials: Boolean = true,
         hasRegion: Boolean = true

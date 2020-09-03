@@ -23,6 +23,8 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
+import software.aws.toolkits.jetbrains.datagrip.hostFromJdbcString
+import software.aws.toolkits.jetbrains.datagrip.portFromJdbcString
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DatabaseCredentials.IAM
@@ -75,8 +77,10 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
 
     internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
         val signingUrl = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_HOST_PROPERTY]
+            ?: connection.connectionPoint.url.hostFromJdbcString()
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_host"))
         val signingPort = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_PORT_PROPERTY]?.toIntOrNull()
+            ?: connection.connectionPoint.url.portFromJdbcString()?.toIntOrNull()
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_port"))
         val user = connection.connectionPoint.dataSource.username
 
