@@ -87,6 +87,23 @@ class IamAuthWidgetTest {
         assertThat(widget.getSelectedRegion()?.id).isEqualTo(defaultRegion)
     }
 
+    @Test
+    fun `Save saves set signing host and port if set`() {
+        widget.reset(mock { on { additionalJdbcProperties } doReturn mapOf(RDS_SIGNING_HOST_PROPERTY to "host", RDS_SIGNING_PORT_PROPERTY to "port") }, false)
+        val m = mutableMapOf<String, String>()
+        widget.save(mock { on { additionalJdbcProperties } doReturn m }, false)
+        assertThat(m[RDS_SIGNING_HOST_PROPERTY]).isEqualTo("host")
+        assertThat(m[RDS_SIGNING_PORT_PROPERTY]).isEqualTo("port")
+    }
+
+    @Test
+    fun `Save saves null signing host and port if not set`() {
+        val m = mutableMapOf<String, String>()
+        widget.save(mock { on { additionalJdbcProperties } doReturn m }, false)
+        assertThat(m[RDS_SIGNING_HOST_PROPERTY]).isNull()
+        assertThat(m[RDS_SIGNING_PORT_PROPERTY]).isNull()
+    }
+
     private fun buildDataSource(
         hasCredentials: Boolean = true,
         hasRegion: Boolean = true

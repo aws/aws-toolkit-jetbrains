@@ -9,7 +9,6 @@ import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
-import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.rds.RdsResources
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message
@@ -78,10 +77,4 @@ class IamAuthWidget : AwsAuthWidget() {
             rdsSigningPortField.emptyText.text = it
         }
     }
-
-    @TestOnly
-    internal fun getDatabaseSigningHost() = rdsSigningHostField.text
-
-    @TestOnly
-    internal fun getDatabaseSigningPort() = rdsSigningPortField.text
 }
