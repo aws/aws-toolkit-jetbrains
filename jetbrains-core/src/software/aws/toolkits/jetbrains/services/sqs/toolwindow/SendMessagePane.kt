@@ -90,34 +90,34 @@ class SendMessagePane(
     }
 
     private fun validateFields(): Boolean {
-        val inputIsValid = inputText.text.isNotEmpty()
-        if (!inputIsValid) {
-            runInEdt(ModalityState.any()) {
-                ComponentValidator.createPopupBuilder(ValidationInfo(message("sqs.message.validation.empty.message.body"), inputText), null)
-                    .setCancelOnClickOutside(true)
-                    .createPopup()
-                    .showUnderneathOf(inputText)
+        listOfNotNull(
+            if (inputText.text.isEmpty()) {
+                ValidationInfo(message("sqs.message.validation.empty.message.body"), inputText)
+            } else {
+                null
             }
-            return false
-        }
-
-        return if (queue.isFifo) {
-            val validationInfo = fifoFields.validateFields()
-            if (validationInfo == null) {
+        ).plus(
+            if (queue.isFifo) {
+                fifoFields.validateFields()
+            } else {
+                listOf()
+            }
+        ).let {
+            return if (it.isEmpty()) {
                 true
             } else {
-                runInEdt(ModalityState.any()) {
-                    validationInfo.component?.let {
-                        ComponentValidator.createPopupBuilder(validationInfo, null)
-                            .setCancelOnClickOutside(true)
-                            .createPopup()
-                            .showUnderneathOf(it)
+                it.forEach { validationIssue ->
+                    runInEdt(ModalityState.any()) {
+                        validationIssue.component?.let {
+                            ComponentValidator.createPopupBuilder(validationIssue, null)
+                                .setCancelOnClickOutside(true)
+                                .createPopup()
+                                .showUnderneathOf(it)
+                        }
                     }
                 }
                 false
             }
-        } else {
-            true
         }
     }
 

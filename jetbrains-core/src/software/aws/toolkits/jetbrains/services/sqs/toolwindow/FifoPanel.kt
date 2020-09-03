@@ -41,21 +41,28 @@ class FifoPanel {
         groupId.emptyText.text = message("sqs.required.empty.text")
     }
 
-    fun validateFields(): ValidationInfo? = when {
-        deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
-            ValidationInfo(message("sqs.message.validation.long.id"), deduplicationId)
+    fun validateFields(): List<ValidationInfo> = listOfNotNull(
+        when {
+            deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
+                ValidationInfo(message("sqs.message.validation.long.id"), deduplicationId)
+            }
+            deduplicationId.text.isBlank() -> {
+                ValidationInfo(message("sqs.message.validation.empty.deduplication_id"), deduplicationId)
+            }
+            else -> {
+                null
+            }
+        },
+        when {
+            groupId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
+                ValidationInfo(message("sqs.message.validation.long.id"), groupId)
+            }
+            groupId.text.isBlank() -> {
+                ValidationInfo(message("sqs.message.validation.empty.group_id"), groupId)
+            }
+            else -> {
+                null
+            }
         }
-        groupId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
-            ValidationInfo(message("sqs.message.validation.long.id"), groupId)
-        }
-        deduplicationId.text.isBlank() -> {
-            ValidationInfo(message("sqs.message.validation.empty.deduplication_id"), deduplicationId)
-        }
-        groupId.text.isBlank() -> {
-            ValidationInfo(message("sqs.message.validation.empty.group_id"), groupId)
-        }
-        else -> {
-            null
-        }
-    }
+    )
 }
