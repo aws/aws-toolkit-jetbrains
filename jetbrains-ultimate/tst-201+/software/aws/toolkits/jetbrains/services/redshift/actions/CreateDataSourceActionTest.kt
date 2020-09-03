@@ -11,9 +11,9 @@ import org.junit.Test
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.services.redshift.auth.CLUSTER_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.redshift.createDatasource
@@ -30,7 +30,8 @@ class CreateDataSourceActionTest {
         val username = RuleUtils.randomName()
         val dbName = RuleUtils.randomName()
         val registry = DataSourceRegistry(projectRule.project)
-        registry.createDatasource(projectRule.project,
+        registry.createDatasource(
+            projectRule.project,
             Cluster.builder()
                 .endpoint { it.address(address).port(port) }
                 .masterUsername(username)
