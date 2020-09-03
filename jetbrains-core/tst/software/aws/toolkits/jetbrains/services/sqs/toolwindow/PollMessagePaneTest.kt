@@ -99,7 +99,7 @@ class PollMessagePaneTest : BaseCoroutineTest() {
             GetQueueAttributesResponse.builder().attributes(mutableMapOf(Pair(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES, "10"))).build()
         )
         runBlocking {
-            pane.addTotal()
+            pane.getAvailableMessages()
         }
 
         assertThat(label.text).isEqualTo(message("sqs.messages.available.text") + "10")
@@ -111,7 +111,7 @@ class PollMessagePaneTest : BaseCoroutineTest() {
             throw IllegalStateException("Network Error")
         }
         runBlocking {
-            pane.addTotal()
+            pane.getAvailableMessages()
         }
 
         assertThat(label.text).isEqualTo(message("sqs.failed_to_load_total"))

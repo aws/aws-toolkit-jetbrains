@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
+import com.intellij.icons.AllIcons
+import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +29,8 @@ class PollMessagePane(
     lateinit var messagesAvailableLabel: JLabel
     lateinit var tablePanel: SimpleToolWindowPanel
     lateinit var pollButton: JButton
+    lateinit var pollHelpLabel: JLabel
+
     val messagesTable = MessagesTable()
 
     private fun createUIComponents() {
@@ -34,19 +38,17 @@ class PollMessagePane(
     }
 
     init {
-        tablePanel.setContent(PollWarning(this).content)
-        pollButton.isVisible = false
+        tablePanel.setContent(messagesTable.component)
         pollButton.addActionListener {
             poll()
         }
-    }
-
-    fun startPolling() {
-        tablePanel.setContent(messagesTable.component)
-        pollButton.isVisible = true
+        pollHelpLabel.icon = AllIcons.General.ContextHelp
+        HelpTooltip().apply {
+            setDescription(message("sqs.poll.warning.text"))
+            installOn(pollHelpLabel)
+        }
         launch {
-            requestMessages()
-            addTotal()
+            getAvailableMessages()
         }
     }
 
@@ -62,14 +64,15 @@ class PollMessagePane(
                 polledMessages.forEach {
                     messagesTable.tableModel.addRow(it)
                 }
-                messagesTable.setBusy(busy = false)
             }
         } catch (e: Exception) {
             messagesTable.table.emptyText.text = message("sqs.failed_to_poll_messages")
+        } finally {
+            messagesTable.setBusy(busy = false)
         }
     }
 
-    suspend fun addTotal() {
+    suspend fun getAvailableMessages() {
         try {
             withContext(Dispatchers.IO) {
                 val numMessages = client.getQueueAttributes {
@@ -85,12 +88,11 @@ class PollMessagePane(
     }
 
     // TODO: Add message table actions
-
     private fun poll() = launch {
         // TODO: Add debounce
         messagesTable.setBusy(busy = true)
         messagesTable.reset()
         requestMessages()
-        addTotal()
+        getAvailableMessages()
     }
 }

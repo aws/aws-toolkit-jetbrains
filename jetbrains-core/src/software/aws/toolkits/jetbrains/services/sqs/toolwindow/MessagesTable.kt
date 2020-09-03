@@ -31,7 +31,6 @@ class MessagesTable {
             // Disable the header so the user cannot sort or resize columns
             tableHeader.isEnabled = false
             autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
-            setPaintBusy(true)
             emptyText.text = message("loading_resource.loading")
         }
 
