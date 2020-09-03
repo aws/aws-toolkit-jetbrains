@@ -4,6 +4,7 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.HelpTooltip
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBTextField
 import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_FIFO_ID
 import software.aws.toolkits.resources.message
@@ -40,14 +41,21 @@ class FifoPanel {
         groupId.emptyText.text = message("sqs.required.empty.text")
     }
 
-    fun validateFields(): String? =
-        if (deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID || groupId.text.length > MAX_LENGTH_OF_FIFO_ID) {
-            message("sqs.message.validation.long.id")
-        } else if (deduplicationId.text.isBlank()) {
-            message("sqs.message.validation.empty.deduplication_id")
-        } else if (groupId.text.isBlank()) {
-            message("sqs.message.validation.empty.group_id")
-        } else {
+    fun validateFields(): ValidationInfo? = when {
+        deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
+            ValidationInfo(message("sqs.message.validation.long.id"), deduplicationId)
+        }
+        groupId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
+            ValidationInfo(message("sqs.message.validation.long.id"), groupId)
+        }
+        deduplicationId.text.isBlank() -> {
+            ValidationInfo(message("sqs.message.validation.empty.deduplication_id"), deduplicationId)
+        }
+        groupId.text.isBlank() -> {
+            ValidationInfo(message("sqs.message.validation.empty.group_id"), groupId)
+        }
+        else -> {
             null
         }
+    }
 }

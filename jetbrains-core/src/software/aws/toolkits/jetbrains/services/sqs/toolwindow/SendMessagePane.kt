@@ -4,6 +4,10 @@
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.ide.plugins.newui.UpdateButton
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.ui.ComponentValidator
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.components.JBTextArea
 import kotlinx.coroutines.CoroutineScope
@@ -14,8 +18,6 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
-import java.awt.event.KeyEvent
-import java.awt.event.KeyListener
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -29,7 +31,6 @@ class SendMessagePane(
     lateinit var inputText: JBTextArea
     lateinit var sendButton: UpdateButton
     lateinit var clearButton: JButton
-    lateinit var errorLabel: JLabel
     lateinit var confirmationLabel: JLabel
     lateinit var fifoFields: FifoPanel
     lateinit var scrollPane: JScrollPane
@@ -44,7 +45,6 @@ class SendMessagePane(
         if (!queue.isFifo) {
             fifoFields.component.isVisible = false
         }
-        errorLabel.isVisible = false
         confirmationLabel.isVisible = false
     }
 
@@ -64,10 +64,7 @@ class SendMessagePane(
         }
         inputText.apply {
             emptyText.text = message("sqs.send.message.body.empty.text")
-            addKeyListener(hideErrorListener)
         }
-        fifoFields.deduplicationId.addKeyListener(hideErrorListener)
-        fifoFields.groupId.addKeyListener(hideErrorListener)
     }
 
     suspend fun sendMessage() {
@@ -95,23 +92,31 @@ class SendMessagePane(
     private fun validateFields(): Boolean {
         val inputIsValid = inputText.text.isNotEmpty()
         if (!inputIsValid) {
-            errorLabel.isVisible = true
-            errorLabel.text = message("sqs.message.validation.empty.message.body")
+            runInEdt(ModalityState.any()) {
+                ComponentValidator.createPopupBuilder(ValidationInfo(message("sqs.message.validation.empty.message.body"), inputText), null)
+                    .setCancelOnClickOutside(true)
+                    .createPopup()
+                    .showUnderneathOf(inputText)
+            }
             return false
         }
 
         return if (queue.isFifo) {
-            val message = fifoFields.validateFields()
-            if (message == null) {
-                errorLabel.isVisible = false
+            val validationInfo = fifoFields.validateFields()
+            if (validationInfo == null) {
                 true
             } else {
-                errorLabel.isVisible = true
-                errorLabel.text = message
+                runInEdt(ModalityState.any()) {
+                    validationInfo.component?.let {
+                        ComponentValidator.createPopupBuilder(validationInfo, null)
+                            .setCancelOnClickOutside(true)
+                            .createPopup()
+                            .showUnderneathOf(it)
+                    }
+                }
                 false
             }
         } else {
-            errorLabel.isVisible = false
             true
         }
     }
@@ -122,16 +127,5 @@ class SendMessagePane(
             fifoFields.deduplicationId.text = ""
             fifoFields.groupId.text = ""
         }
-    }
-
-    private val hideErrorListener = object : KeyListener {
-        override fun keyTyped(e: KeyEvent?) {
-            if (errorLabel.isVisible) {
-                errorLabel.isVisible = false
-            }
-        }
-
-        override fun keyPressed(e: KeyEvent?) {}
-        override fun keyReleased(e: KeyEvent?) {}
     }
 }
