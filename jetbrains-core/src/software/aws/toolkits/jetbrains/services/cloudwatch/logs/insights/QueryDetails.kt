@@ -1,0 +1,69 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
+
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
+import java.util.Date
+
+typealias SelectedLogGroups = MutableList<String>
+
+data class QueryDetails(
+    val logGroups: SelectedLogGroups,
+    val timeRange: TimeRange,
+    val query: QueryString
+) {
+    fun getQueryRange(clock: Clock = Clock.systemUTC()) =
+        when (timeRange) {
+            is AbsoluteRange -> {
+                StartEndInstant(timeRange.startDate.toInstant(), timeRange.endDate.toInstant())
+            }
+            is RelativeRange -> {
+                val now = Instant.now(clock)
+                StartEndInstant(
+                    // Instant doesn't support minus(Week), so we need to explicitly use the ISO calendar system
+                    // ZonedDateTime must be based off an temporal instance with a ZoneId
+                    ZonedDateTime.from(now.atZone(ZoneId.systemDefault())).minus(timeRange.relativeTimeAmount, timeRange.relativeTimeUnit).toInstant(),
+                    now
+                )
+            }
+        }
+
+    fun getQueryString() =
+        when (query) {
+            is SearchTermQueryString -> {
+                val regexTerm = query.searchTerm.replace("/", "\\/")
+
+                "fields @message, @timestamp | filter @message like /$regexTerm/"
+            }
+
+            is InsightsQLQueryString -> query.query
+        }
+}
+
+sealed class QueryString
+data class SearchTermQueryString(
+    val searchTerm: String
+) : QueryString()
+data class InsightsQLQueryString(
+    val query: String
+) : QueryString()
+
+sealed class TimeRange
+data class AbsoluteRange(
+    val startDate: Date,
+    val endDate: Date
+) : TimeRange()
+data class RelativeRange(
+    val relativeTimeAmount: Long,
+    val relativeTimeUnit: ChronoUnit
+) : TimeRange()
+
+data class StartEndInstant(
+    val startInstant: Instant,
+    val endInstant: Instant
+)
