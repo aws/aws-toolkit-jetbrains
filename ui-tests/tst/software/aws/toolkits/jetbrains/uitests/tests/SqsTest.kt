@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillAllTextFields
+import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleJBTextArea
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
@@ -81,21 +82,21 @@ class SqsTest {
             step("Standard queue") {
                 openSendMessagePane(queueName)
                 step("Send a message and validate it is sent") {
-                    fillSingleTextField("message")
+                    fillSingleJBTextArea("message")
                     findAndClick("//div[@text='Send']")
                     // Make sure it shows a sent message
                     findByXpath("//div[contains(@accessiblename, 'Sent message ID')]")
                 }
-                step("pack the queue full of messages so poll will be garunteed to work") {
-                    (1..10).forEach {
-                        fillSingleTextField("bmessage$it")
+                step("pack the queue full of messages so poll will be guaranteed to work") {
+                    (1..6).forEach {
+                        fillSingleJBTextArea("bmessage$it")
                         findAndClick("//div[@text='Send']")
                     }
                 }
                 openPollMessagePane(queueName)
                 step("poll for messages") {
                     findAndClick("//div[@accessiblename='Poll for Messages' and @class='JButton']")
-                    // Wait for the table to be populated (Fast for small tables)
+                    // Wait for the table to be populated (It's very fast for small queues)
                     Thread.sleep(1000)
                     find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText().any { it.text.contains("bmessage") }
                 }
@@ -103,6 +104,8 @@ class SqsTest {
             step("FIFO queue") {
                 openSendMessagePane(fifoQueueName)
                 step("Send a message and validate it is sent") {
+                    // fill the message box
+                    fillSingleJBTextArea("message")
                     fillAllTextFields("message")
                     findAndClick("//div[@text='Send']")
                     // Make sure it shows a sent message
@@ -162,15 +165,15 @@ class SqsTest {
     private fun RemoteRobot.openSendMessagePane(queueName: String) = step("Open send message pane") {
         awsExplorer {
             openExplorerActionMenu(sqsNodeLabel, queueName)
-            findAndClick("//div[@accessiblename='Send a Message']")
         }
+        find<ComponentFixture>(byXpath("//div[@text='Send a Message']")).click()
     }
 
     private fun RemoteRobot.openPollMessagePane(queueName: String) = step("Open poll message pane") {
         awsExplorer {
             openExplorerActionMenu(sqsNodeLabel, queueName)
-            findAndClick("//div[@accessiblename='Poll for Messages']")
         }
+        find<ComponentFixture>(byXpath("//div[@accessiblename='Poll for Messages']")).click()
     }
 
     private fun SqsClient.verifyDeleted(queueName: String) {
