@@ -64,6 +64,8 @@ class PollMessagePane(
                 polledMessages.forEach {
                     messagesTable.tableModel.addRow(it)
                 }
+
+                messagesTable.table.emptyText.text = message("sqs.message.no_messages")
             }
         } catch (e: Exception) {
             messagesTable.table.emptyText.text = message("sqs.failed_to_poll_messages")
