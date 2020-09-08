@@ -48,8 +48,6 @@ class MessagesTable {
         table.setPaintBusy(busy)
         if (busy) {
             table.emptyText.text = message("loading_resource.loading")
-        } else {
-            table.emptyText.text = message("sqs.message.no_messages")
         }
     }
 }
