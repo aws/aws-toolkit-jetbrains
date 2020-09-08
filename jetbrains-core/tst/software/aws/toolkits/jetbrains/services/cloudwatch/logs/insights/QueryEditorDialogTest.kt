@@ -6,7 +6,9 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 import com.intellij.testFramework.EdtRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -15,6 +17,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.StartQueryRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.StartQueryResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
@@ -46,6 +49,12 @@ class QueryEditorDialogTest {
         view = QueryEditor(project, listOf())
         client = mockClientManagerRule.create()
         sut = QueryEditorDialog(project, "log1", client)
+
+        client.stub {
+            on(it.startQuery(any<StartQueryRequest>())).thenReturn(
+                StartQueryResponse.builder().queryId("queryId").build()
+            )
+        }
     }
 
     @Test
@@ -128,11 +137,11 @@ class QueryEditorDialogTest {
         val start = end.minus(Duration.ofDays(1))
         val query = QueryDetails(
             mutableListOf("logGroup"),
-            AbsoluteRange(Date.from(start), Date.from(end)),
-            InsightsQLQueryString("query")
+            TimeRange.AbsoluteRange(Date.from(start), Date.from(end)),
+            QueryString.InsightsQueryString("query")
         )
 
-        runBlocking { sut.startQuery(query).await() }
+        runBlocking { sut.startQueryAsync(query).await() }
 
         val captor = argumentCaptor<StartQueryRequest>()
         verify(client).startQuery(captor.capture())
@@ -151,11 +160,11 @@ class QueryEditorDialogTest {
         val start = end.minus(Duration.ofDays(1))
         val query = QueryDetails(
             mutableListOf("logGroup"),
-            RelativeRange(1, ChronoUnit.DAYS),
-            InsightsQLQueryString("query")
+            TimeRange.RelativeRange(1, ChronoUnit.DAYS),
+            QueryString.InsightsQueryString("query")
         )
 
-        runBlocking { sut.startQuery(query).await() }
+        runBlocking { sut.startQueryAsync(query).await() }
 
         val captor = argumentCaptor<StartQueryRequest>()
         verify(client).startQuery(captor.capture())
@@ -174,11 +183,11 @@ class QueryEditorDialogTest {
         val start = end.minus(Duration.ofDays(1))
         val query = QueryDetails(
             mutableListOf("logGroup"),
-            RelativeRange(1, ChronoUnit.DAYS),
-            SearchTermQueryString("query")
+            TimeRange.RelativeRange(1, ChronoUnit.DAYS),
+            QueryString.SearchTermQueryString("query")
         )
 
-        runBlocking { sut.startQuery(query).await() }
+        runBlocking { sut.startQueryAsync(query).await() }
 
         val captor = argumentCaptor<StartQueryRequest>()
         verify(client).startQuery(captor.capture())
@@ -197,11 +206,11 @@ class QueryEditorDialogTest {
         val start = end.minus(Duration.ofDays(1))
         val query = QueryDetails(
             mutableListOf("logGroup"),
-            RelativeRange(1, ChronoUnit.DAYS),
-            InsightsQLQueryString("query")
+            TimeRange.RelativeRange(1, ChronoUnit.DAYS),
+            QueryString.InsightsQueryString("query")
         )
 
-        runBlocking { sut.startQuery(query).await() }
+        runBlocking { sut.startQueryAsync(query).await() }
 
         val captor = argumentCaptor<StartQueryRequest>()
         verify(client).startQuery(captor.capture())

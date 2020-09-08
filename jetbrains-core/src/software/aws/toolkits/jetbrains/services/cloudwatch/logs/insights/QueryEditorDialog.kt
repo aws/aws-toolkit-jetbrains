@@ -53,13 +53,13 @@ class QueryEditorDialog(
         view.logGroupLabel.text = "Log Group : ${queryDetails.logGroups.first()}"
 
         when (val timeRange = queryDetails.timeRange) {
-            is AbsoluteRange -> {
+            is TimeRange.AbsoluteRange -> {
                 view.setAbsolute()
                 view.startDate.date = timeRange.startDate
                 view.endDate.date = timeRange.endDate
             }
 
-            is RelativeRange -> {
+            is TimeRange.RelativeRange -> {
                 view.setRelative()
                 view.relativeTimeNumber.text = timeRange.relativeTimeAmount.toString()
                 view.relativeTimeUnit.selectedItem = timeRange.relativeTimeUnit
@@ -67,13 +67,13 @@ class QueryEditorDialog(
         }
 
         when (val query = queryDetails.query) {
-            is SearchTermQueryString -> {
+            is QueryString.SearchTermQueryString -> {
                 view.setSearchTerm()
                 view.querySearchTerm.text = query.searchTerm
             }
 
-            is InsightsQLQueryString -> {
-                view.setQueryLanguageBox()
+            is QueryString.InsightsQueryString -> {
+                view.setQueryLanguage()
                 view.queryBox.text = query.query
             }
         }
@@ -85,33 +85,33 @@ class QueryEditorDialog(
         }
 
         close(OK_EXIT_CODE)
+        val queryDetails = getQueryDetails()
+        val fieldList = getFields(queryDetails.getQueryString())
         launch {
-            val queryDetails = getQueryDetails()
-            val fieldList = getFields(queryDetails.getQueryString())
-            val queryId = startQuery(queryDetails).await()
+            val queryId = startQueryAsync(queryDetails).await()
             QueryResultsWindow.getInstance(project).showResults(queryDetails, queryId, fieldList)
         }
     }
 
     private fun getQueryDetails(): QueryDetails {
         val timeRange = if (view.absoluteTimeRadioButton.isSelected) {
-            AbsoluteRange(
+            TimeRange.AbsoluteRange(
                 startDate = view.startDate.date,
                 endDate = view.endDate.date
             )
         } else {
-            RelativeRange(
+            TimeRange.RelativeRange(
                 relativeTimeAmount = view.relativeTimeNumber.text.toLong(),
                 relativeTimeUnit = view.getSelectedTimeUnit()
             )
         }
 
         val query = if (view.queryLogGroupsRadioButton.isSelected) {
-            SearchTermQueryString(
+            QueryString.SearchTermQueryString(
                 searchTerm = view.querySearchTerm.text
             )
         } else {
-            InsightsQLQueryString(
+            QueryString.InsightsQueryString(
                 query = view.queryBox.text
             )
         }
@@ -154,14 +154,14 @@ class QueryEditorDialog(
         return null
     }
 
-    fun startQuery(queryDetails: QueryDetails) = async {
+    fun startQueryAsync(queryDetails: QueryDetails) = async {
         val timeRange = queryDetails.getQueryRange()
         val queryString = queryDetails.getQueryString()
         try {
             val request = StartQueryRequest.builder()
                 .logGroupNames(queryDetails.logGroups)
-                .startTime(timeRange.startInstant.epochSecond)
-                .endTime(timeRange.endInstant.epochSecond)
+                .startTime(timeRange.start.epochSecond)
+                .endTime(timeRange.end.epochSecond)
                 .queryString(queryString)
                 .build()
             val response = client.startQuery(request)
@@ -176,8 +176,8 @@ class QueryEditorDialog(
     companion object {
         private fun defaultQuery(logGroupName: String) = QueryDetails(
             mutableListOf(logGroupName),
-            RelativeRange(10, ChronoUnit.MINUTES),
-            InsightsQLQueryString(DEFAULT_INSIGHTS_QUERY_STRING)
+            TimeRange.RelativeRange(10, ChronoUnit.MINUTES),
+            QueryString.InsightsQueryString(DEFAULT_INSIGHTS_QUERY_STRING)
         )
 
         fun getFields(query: String): List<String> {

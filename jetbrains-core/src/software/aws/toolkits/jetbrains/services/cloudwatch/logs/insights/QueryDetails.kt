@@ -19,10 +19,10 @@ data class QueryDetails(
 ) {
     fun getQueryRange(clock: Clock = Clock.systemUTC()) =
         when (timeRange) {
-            is AbsoluteRange -> {
+            is TimeRange.AbsoluteRange -> {
                 StartEndInstant(timeRange.startDate.toInstant(), timeRange.endDate.toInstant())
             }
-            is RelativeRange -> {
+            is TimeRange.RelativeRange -> {
                 val now = Instant.now(clock)
                 StartEndInstant(
                     // Instant doesn't support minus(Week), so we need to explicitly use the ISO calendar system
@@ -35,35 +35,37 @@ data class QueryDetails(
 
     fun getQueryString() =
         when (query) {
-            is SearchTermQueryString -> {
+            is QueryString.SearchTermQueryString -> {
                 val regexTerm = query.searchTerm.replace("/", "\\/")
 
                 "fields @message, @timestamp | filter @message like /$regexTerm/"
             }
 
-            is InsightsQLQueryString -> query.query
+            is QueryString.InsightsQueryString -> query.query
         }
 }
 
-sealed class QueryString
-data class SearchTermQueryString(
-    val searchTerm: String
-) : QueryString()
-data class InsightsQLQueryString(
-    val query: String
-) : QueryString()
+sealed class QueryString {
+    data class SearchTermQueryString(
+        val searchTerm: String
+    ) : QueryString()
+    data class InsightsQueryString(
+        val query: String
+    ) : QueryString()
+}
 
-sealed class TimeRange
-data class AbsoluteRange(
-    val startDate: Date,
-    val endDate: Date
-) : TimeRange()
-data class RelativeRange(
-    val relativeTimeAmount: Long,
-    val relativeTimeUnit: ChronoUnit
-) : TimeRange()
+sealed class TimeRange {
+    data class AbsoluteRange(
+        val startDate: Date,
+        val endDate: Date
+    ) : TimeRange()
+    data class RelativeRange(
+        val relativeTimeAmount: Long,
+        val relativeTimeUnit: ChronoUnit
+    ) : TimeRange()
+}
 
 data class StartEndInstant(
-    val startInstant: Instant,
-    val endInstant: Instant
+    val start: Instant,
+    val end: Instant
 )

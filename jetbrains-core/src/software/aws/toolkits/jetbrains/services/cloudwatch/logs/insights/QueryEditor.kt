@@ -67,7 +67,7 @@ class QueryEditor internal constructor(
         }
 
         queryLogGroupsRadioButton.addActionListener {
-            setQueryLanguageBox()
+            setQueryLanguage()
         }
 
         searchTerm.addActionListener {
@@ -113,7 +113,7 @@ class QueryEditor internal constructor(
         saveQueryButton.isEnabled = false
     }
 
-    fun setQueryLanguageBox() {
+    fun setQueryLanguage() {
         queryLogGroupsRadioButton.isEnabled = true
         queryBox.isEnabled = true
         querySearchTerm.isEnabled = false
