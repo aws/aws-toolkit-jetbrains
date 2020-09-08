@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
@@ -42,6 +43,10 @@ open class AwsExplorer(
 
     fun doubleClickExplorer(vararg nodeElements: String) {
         findExplorerTree().doubleClickPath(*nodeElements)
+    }
+
+    fun refreshExplorer() {
+        find<ComponentFixture>(byXpath("//div[@accessiblename='Refresh AWS Connection' and @class='ActionButton']")).click()
     }
 
     private fun findExplorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']"), Duration.ofSeconds(10))

@@ -41,7 +41,7 @@ class SqsTest {
     @Test
     @CoreTest
     fun testSqs() = uiTest {
-        var client = SqsClient.create()
+        val client = SqsClient.create()
         welcomeFrame {
             openFolder(tempDir)
         }
@@ -50,43 +50,50 @@ class SqsTest {
             showAwsExplorer()
         }
         idea {
-            step("Create queue $queueName") {
-                awsExplorer {
-                    openExplorerActionMenu(sqsNodeLabel)
+            step("Create queues") {
+                step("Create queue $queueName") {
+                    awsExplorer {
+                        openExplorerActionMenu(sqsNodeLabel)
+                    }
+                    find<ComponentFixture>(byXpath("//div[@text='$createQueueText']")).click()
+                    fillSingleTextField(queueName)
+                    find<ComponentFixture>(byXpath("//div[@accessiblename='Standard']")).click()
+                    pressCreate()
+                    client.waitForCreation(queueName)
                 }
-                find<ComponentFixture>(byXpath("//div[@text='$createQueueText']")).click()
-                fillSingleTextField(queueName)
-                find<ComponentFixture>(byXpath("//div[@accessiblename='Standard']")).click()
-                pressCreate()
+                step("Create FIFO queue $fifoQueueName") {
+                    awsExplorer {
+                        openExplorerActionMenu(sqsNodeLabel)
+                    }
+                    find<ComponentFixture>(byXpath("//div[@text='$createQueueText']")).click()
+                    fillSingleTextField(queueName)
+                    find<ComponentFixture>(byXpath("//div[@accessiblename='FIFO']")).click()
+                    pressCreate()
+                    client.waitForCreation(fifoQueueName)
+                }
             }
-            step("Create FIFO queue $fifoQueueName") {
-                awsExplorer {
-                    openExplorerActionMenu(sqsNodeLabel)
-                }
-                find<ComponentFixture>(byXpath("//div[@text='$createQueueText']")).click()
-                fillSingleTextField(queueName)
-                find<ComponentFixture>(byXpath("//div[@accessiblename='FIFO']")).click()
-                pressCreate()
+            step("Refresh explorer to make sure queries are loaded") {
+                awsExplorer { refreshExplorer() }
             }
-            step("Delete queue $queueName") {
-                showAwsExplorer()
-                awsExplorer {
-                    openExplorerActionMenu(sqsNodeLabel, queueName)
+            step("Delete queues") {
+                step("Delete queue $queueName") {
+                    awsExplorer {
+                        openExplorerActionMenu(sqsNodeLabel, queueName)
+                    }
+                    findAndClick("//div[@text='$deleteQueueText']")
+                    fillSingleTextField(queueName)
+                    pressOk()
+                    client.waitForDeletion(queueName)
                 }
-                findAndClick("//div[@text='$deleteQueueText']")
-                fillSingleTextField(queueName)
-                pressOk()
-                client.waitForDeletion(queueName)
-            }
-            step("Delete queue $fifoQueueName") {
-                showAwsExplorer()
-                awsExplorer {
-                    openExplorerActionMenu(sqsNodeLabel, fifoQueueName)
+                step("Delete queue $fifoQueueName") {
+                    awsExplorer {
+                        openExplorerActionMenu(sqsNodeLabel, fifoQueueName)
+                    }
+                    findAndClick("//div[@text='$deleteQueueText']")
+                    fillSingleTextField(fifoQueueName)
+                    pressOk()
+                    client.waitForDeletion(fifoQueueName)
                 }
-                findAndClick("//div[@text='$deleteQueueText']")
-                fillSingleTextField(fifoQueueName)
-                pressOk()
-                client.waitForDeletion(fifoQueueName)
             }
         }
     }
@@ -110,7 +117,7 @@ class SqsTest {
         val queueUrl = try {
             getQueueUrl { it.queueName(queueName) }.queueUrl()
         } catch (e: QueueDoesNotExistException) {
-            log.info("Queue is deleted!")
+            log.info("Queue $queueName is deleted")
             return
         } catch (e: Exception) {
             log.error("Get queue URL returned an error, cannot attempt deletion again", e)
@@ -133,6 +140,17 @@ class SqsTest {
                 getQueueUrl { it.queueName(queueName) }
             }
             log.info("Verified $queueName is deleted")
+        } catch (e: Exception) {
+            log.error("Unknown exception thrown by waitForDeletion", e)
+        }
+    }
+
+    private fun SqsClient.waitForCreation(queueName: String) {
+        try {
+            waitUntilBlocking(exceptionsToIgnore = setOf(QueueDoesNotExistException::class)) {
+                getQueueUrl { it.queueName(queueName) }
+            }
+            log.info("Verified $queueName is created")
         } catch (e: Exception) {
             log.error("Unknown exception thrown by waitForDeletion", e)
         }
