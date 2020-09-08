@@ -10,7 +10,6 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
@@ -79,20 +78,8 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    fun setCredentials(profile: String, region: String) {
-        openCredentialsPanel()
-        // This will grab both the region and credentials
-        findAll<JListFixture>(byXpath("//div[@class='MyList']")).forEach {
-            if (it.items.contains(profile)) {
-                it.selectItem(profile)
-            }
-        }
-        openCredentialsPanel()
-        findAll<JListFixture>(byXpath("//div[@class='MyList']")).forEach {
-            if (it.items.contains(region)) {
-                it.selectItem(region)
-            }
-        }
+    fun validateNotificationIsShown(text: String) = step("Validate there is a notification shown that contains $text") {
+        find<ComponentFixture>(byXpath("//div[contains(@accessiblename, '$text') and @class='TextPanel']"))
     }
 
     // Tips sometimes open when running, close it if it opens

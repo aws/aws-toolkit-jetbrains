@@ -28,6 +28,10 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
 }
 
+fun ContainerFixture.fillAllTextFields(text: String) = step("Fill all visible text fields with $text") {
+    findAll(JTextFieldFixture::class.java, byXpath("//div[@class='JTextField']")).forEach { it.text = text }
+}
+
 fun ContainerFixture.pressCreate() = step("Press the \"Create\" button") {
     find<ComponentFixture>(byXpath("//div[@text='Create']")).click()
 }

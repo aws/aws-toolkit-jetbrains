@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.uitests.tests
 
+import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
@@ -16,9 +17,12 @@ import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
 import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
+import software.aws.toolkits.jetbrains.uitests.fixtures.fillAllTextFields
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
+import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressCreate
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
@@ -34,6 +38,7 @@ class SqsTest {
     private val sqsNodeLabel = "SQS"
     private val createQueueText = "Create Queue"
     private val deleteQueueText = "Delete Queue"
+    private val purgeQueueText = "Purge Queue"
 
     private val queueName = "uitest-${UUID.randomUUID()}"
     private val fifoQueueName = "$queueName.fifo"
@@ -72,7 +77,50 @@ class SqsTest {
                     client.waitForCreation(fifoQueueName)
                 }
             }
-            step("Expand explorer") { awsExplorer { expandExplorerNode(sqsNodeLabel) } }
+            step("Expand SQS node") { awsExplorer { expandExplorerNode(sqsNodeLabel) } }
+            step("Standard queue") {
+                openSendMessagePane(queueName)
+                step("Send a message and validate it is sent") {
+                    fillSingleTextField("message")
+                    findAndClick("//div[@text='Send']")
+                    // Make sure it shows a sent message
+                    findByXpath("//div[contains(@accessiblename, 'Sent message ID')]")
+                }
+                step("pack the queue full of messages so poll will be garunteed to work") {
+                    (1..10).forEach {
+                        fillSingleTextField("bmessage$it")
+                        findAndClick("//div[@text='Send']")
+                    }
+                }
+                openPollMessagePane(queueName)
+                step("poll for messages") {
+                    findAndClick("//div[@accessiblename='Poll for Messages' and @class='JButton']")
+                    // Wait for the table to be populated (Fast for small tables)
+                    Thread.sleep(1000)
+                    find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText().any { it.text.contains("bmessage") }
+                }
+            }
+            step("FIFO queue") {
+                openSendMessagePane(fifoQueueName)
+                step("Send a message and validate it is sent") {
+                    fillAllTextFields("message")
+                    findAndClick("//div[@text='Send']")
+                    // Make sure it shows a sent message
+                    findByXpath("//div[contains(@accessiblename, 'Sent message ID')]")
+                }
+            }
+            step("Purge queue") {
+                awsExplorer {
+                    openExplorerActionMenu(sqsNodeLabel, queueName)
+                    findAndClick("//div[@text='$purgeQueueText']")
+                }
+                validateNotificationIsShown("Started purging queue")
+                awsExplorer {
+                    openExplorerActionMenu(sqsNodeLabel, queueName)
+                    findAndClick("//div[@text='$purgeQueueText']")
+                }
+                validateNotificationIsShown("Purge queue request already in progress for queue")
+            }
             step("Delete queues") {
                 step("Delete queue $queueName") {
                     awsExplorer {
@@ -97,8 +145,8 @@ class SqsTest {
     }
 
     @AfterAll
+    // Make sure the two queues are deleted, and if not, delete them
     fun cleanup() {
-        // Make sure the two queues are deleted, and if not, delete them
         var client: SqsClient? = null
         try {
             client = SqsClient.create()
@@ -108,6 +156,20 @@ class SqsTest {
             log.error("Unable to verify the queues were removed", e)
         } finally {
             client?.close()
+        }
+    }
+
+    private fun RemoteRobot.openSendMessagePane(queueName: String) = step("Open send message pane") {
+        awsExplorer {
+            openExplorerActionMenu(sqsNodeLabel, queueName)
+            findAndClick("//div[@accessiblename='Send a Message']")
+        }
+    }
+
+    private fun RemoteRobot.openPollMessagePane(queueName: String) = step("Open poll message pane") {
+        awsExplorer {
+            openExplorerActionMenu(sqsNodeLabel, queueName)
+            findAndClick("//div[@accessiblename='Poll for Messages']")
         }
     }
 
