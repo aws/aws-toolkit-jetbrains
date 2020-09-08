@@ -45,9 +45,5 @@ open class AwsExplorer(
         findExplorerTree().doubleClickPath(*nodeElements)
     }
 
-    fun refreshExplorer() {
-        find<ComponentFixture>(byXpath("//div[@accessiblename='Refresh AWS Connection' and @class='ActionButton']")).click()
-    }
-
     private fun findExplorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']"), Duration.ofSeconds(10))
 }

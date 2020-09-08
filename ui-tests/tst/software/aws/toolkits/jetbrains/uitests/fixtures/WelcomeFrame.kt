@@ -27,7 +27,7 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     fun openPreferences() {
         actionLink("Configure").click()
 
-        find(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
+        find<ComponentFixture>(byXpath("//div[@class='MyList']"))
             .findText(remoteRobot.preferencesTitle())
             .click()
     }

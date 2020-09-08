@@ -72,9 +72,7 @@ class SqsTest {
                     client.waitForCreation(fifoQueueName)
                 }
             }
-            step("Refresh explorer to make sure queries are loaded") {
-                awsExplorer { refreshExplorer() }
-            }
+            step("Expand explorer") { awsExplorer { expandExplorerNode(sqsNodeLabel) } }
             step("Delete queues") {
                 step("Delete queue $queueName") {
                     awsExplorer {
