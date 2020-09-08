@@ -38,8 +38,8 @@ fun ContainerFixture.fillSingleJBTextArea(text:String) = step("Fill single JText
     keyboard { this.enterText(text, 5) }
 }
 
-fun ContainerFixture.fillAllTextFields(text: String) = step("Fill all visible text fields with $text") {
-    findAll(JTextFieldFixture::class.java, byXpath("//div[@class='JTextField']")).forEach { it.text = text }
+fun ContainerFixture.fillAllJBTextFields(text: String) = step("Fill all visible text fields with $text") {
+    findAll(JTextFieldFixture::class.java, byXpath("//div[@class='JBTextField']")).forEach { it.text = text }
 }
 
 fun ContainerFixture.pressCreate() = step("Press the \"Create\" button") {

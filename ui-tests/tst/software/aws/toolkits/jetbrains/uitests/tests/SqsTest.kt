@@ -17,9 +17,8 @@ import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
 import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
-import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
-import software.aws.toolkits.jetbrains.uitests.fixtures.fillAllTextFields
+import software.aws.toolkits.jetbrains.uitests.fixtures.fillAllJBTextFields
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleJBTextArea
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
@@ -27,6 +26,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressCreate
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
+import software.aws.toolkits.jetbrains.uitests.fixtures.rightClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 import java.util.UUID
@@ -106,7 +106,8 @@ class SqsTest {
                 step("Send a message and validate it is sent") {
                     // fill the message box
                     fillSingleJBTextArea("message")
-                    fillAllTextFields("message")
+                    // Fill the rest of the fields (deduplication and group ids)
+                    fillAllJBTextFields("message")
                     findAndClick("//div[@text='Send']")
                     // Make sure it shows a sent message
                     findByXpath("//div[contains(@accessiblename, 'Sent message ID')]")
@@ -115,14 +116,21 @@ class SqsTest {
             step("Purge queue") {
                 awsExplorer {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
-                    findAndClick("//div[@text='$purgeQueueText']")
                 }
+                findAndClick("//div[@text='$purgeQueueText']")
                 validateNotificationIsShown("Started purging queue")
                 awsExplorer {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
-                    findAndClick("//div[@text='$purgeQueueText']")
                 }
+                findAndClick("//div[@text='$purgeQueueText']")
                 validateNotificationIsShown("Purge queue request already in progress for queue")
+            }
+            // If we don't do this, it fails to find it since trees work off of text, not based on what the component
+            // actually has, so it scrolls too low :(
+            step("Close tool window so the robot can see the queues in the explorer") {
+                val firstTab = findAll(ComponentFixture::class.java, byXpath("//div[contains(@accessiblename, 'uitest') and @class='ContentTabLabel']")).first()
+                firstTab.rightClick()
+                findAndClick("//div[@accessiblename='Close All' and @class='ActionMenuItem' and @text='Close All']")
             }
             step("Delete queues") {
                 step("Delete queue $queueName") {
