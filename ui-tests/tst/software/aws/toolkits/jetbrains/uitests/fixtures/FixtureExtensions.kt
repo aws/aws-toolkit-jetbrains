@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.uitests.fixtures
 
-import com.intellij.remoterobot.data.componentAs
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
@@ -14,7 +13,6 @@ import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
 import org.intellij.lang.annotations.Language
 import java.time.Duration
-import javax.swing.JTextArea
 
 fun ComponentFixture.rightClick() = step("Right click") {
     runJs("robot.rightClick(component);")
@@ -33,9 +31,9 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
 }
 
 // There is no function to write text to this directly :(
-fun ContainerFixture.fillSingleJBTextArea(text:String) = step("Fill single JTextArea with $text") {
+fun ContainerFixture.fillSingleJBTextArea(text: String) = step("Fill single JBTextArea with $text") {
     find<JTextAreaFixture>(byXpath("//div[@class='JBTextArea']")).click()
-    keyboard { this.enterText(text, 5) }
+    keyboard { this.enterText(text) }
 }
 
 fun ContainerFixture.fillAllJBTextFields(text: String) = step("Fill all visible text fields with $text") {

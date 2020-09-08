@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
 import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillAllJBTextFields
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleJBTextArea
@@ -88,7 +89,7 @@ class SqsTest {
                     findByXpath("//div[contains(@accessiblename, 'Sent message ID')]")
                 }
                 step("pack the queue full of messages so poll will be guaranteed to work") {
-                    (1..6).forEach {
+                    (1..5).forEach {
                         fillSingleJBTextArea("bmessage$it")
                         findAndClick("//div[@text='Send']")
                     }
@@ -101,6 +102,7 @@ class SqsTest {
                     find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText().any { it.text.contains("bmessage") }
                 }
             }
+            closeToolWindowTab()
             step("FIFO queue") {
                 openSendMessagePane(fifoQueueName)
                 step("Send a message and validate it is sent") {
@@ -113,6 +115,7 @@ class SqsTest {
                     findByXpath("//div[contains(@accessiblename, 'Sent message ID')]")
                 }
             }
+            closeToolWindowTab()
             step("Purge queue") {
                 awsExplorer {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
@@ -125,19 +128,12 @@ class SqsTest {
                 findAndClick("//div[@text='$purgeQueueText']")
                 validateNotificationIsShown("Purge queue request already in progress for queue")
             }
-            // If we don't do this, it fails to find it since trees work off of text, not based on what the component
-            // actually has, so it scrolls too low :(
-            step("Close tool window so the robot can see the queues in the explorer") {
-                val firstTab = findAll(ComponentFixture::class.java, byXpath("//div[contains(@accessiblename, 'uitest') and @class='ContentTabLabel']")).first()
-                firstTab.rightClick()
-                findAndClick("//div[@accessiblename='Close All' and @class='ActionMenuItem' and @text='Close All']")
-            }
             step("Delete queues") {
                 step("Delete queue $queueName") {
                     awsExplorer {
                         openExplorerActionMenu(sqsNodeLabel, queueName)
                     }
-                    findAndClick("//div[@text='$deleteQueueText']")
+                    findAndClick("//div[@accessiblename='$deleteQueueText']")
                     fillSingleTextField(queueName)
                     pressOk()
                     client.waitForDeletion(queueName)
@@ -146,7 +142,7 @@ class SqsTest {
                     awsExplorer {
                         openExplorerActionMenu(sqsNodeLabel, fifoQueueName)
                     }
-                    findAndClick("//div[@text='$deleteQueueText']")
+                    findAndClick("//div[@accessiblename='$deleteQueueText']")
                     fillSingleTextField(fifoQueueName)
                     pressOk()
                     client.waitForDeletion(fifoQueueName)
@@ -174,7 +170,15 @@ class SqsTest {
         awsExplorer {
             openExplorerActionMenu(sqsNodeLabel, queueName)
         }
-        find<ComponentFixture>(byXpath("//div[@text='Send a Message']")).click()
+        find<ComponentFixture>(byXpath("//div[@accessiblename='Send a Message']")).click()
+    }
+
+    // If we don't do this, it fails to find it since trees work off of text, not based on what the component
+    // actually has, so it scrolls too low :(
+    private fun RemoteRobot.closeToolWindowTab() = step("Close tool window so the robot can see the queues in the explorer") {
+        val firstTab = findAll(ComponentFixture::class.java, byXpath("//div[contains(@accessiblename, 'uitest') and @class='ContentTabLabel']")).first()
+        firstTab.rightClick()
+        find<ComponentFixture>(byXpath("//div[@accessiblename='Close Tab' and @class='ActionMenuItem' and @text='Close Tab']")).click()
     }
 
     private fun RemoteRobot.openPollMessagePane(queueName: String) = step("Open poll message pane") {
