@@ -74,7 +74,6 @@ class SubscribeSnsDialog(
                 isOKActionEnabled = true
                 SqsTelemetry.subscribeSns(project, Result.Failed, queue.telemetryType())
             }
-
         }
     }
 
