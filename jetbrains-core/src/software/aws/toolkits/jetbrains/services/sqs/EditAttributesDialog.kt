@@ -18,11 +18,11 @@ import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
 class EditAttributesDialog(
-    private val project: Project,
+    project: Project,
     private val client: SqsClient,
     private val queue: Queue
 ) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("EditAttributesDialog") {
-    val view = EditAttributesPanel(client, queue)
+    val view = EditAttributesPanel()
 
     init {
         title = message("sqs.edit.attributes")

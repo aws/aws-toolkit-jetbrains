@@ -14,9 +14,6 @@ import software.aws.toolkits.resources.message
 
 class EditAttributesAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.edit.attributes")), DumbAware {
     override fun actionPerformed(selected: SqsQueueNode, e: AnActionEvent) {
-        val project = selected.nodeProject
-        val client = project.awsClient<SqsClient>()
-        val queue = selected.queue
-        EditAttributesDialog(project, client, queue).show()
+        EditAttributesDialog(selected.nodeProject, selected.nodeProject.awsClient(), selected.queue).show()
     }
 }
