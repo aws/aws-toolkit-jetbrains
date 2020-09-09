@@ -4,12 +4,12 @@
 package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.core.utils.getLogger
@@ -17,6 +17,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.sqs.resources.SqsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SqsQueueType
@@ -58,7 +59,7 @@ class CreateQueueDialog(
         launch {
             try {
                 createQueue()
-                runInEdt(ModalityState.any()) {
+                withContext(getCoroutineUiContext(ModalityState.any())) {
                     close(OK_EXIT_CODE)
                 }
                 project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
