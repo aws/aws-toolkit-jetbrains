@@ -14,6 +14,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry
 import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
@@ -79,6 +80,7 @@ class SqsTest {
                     client.waitForCreation(fifoQueueName)
                 }
             }
+            val queueUrl = client.getQueueUrl { it.queueName(queueName) }.queueUrl()
             step("Expand SQS node") { awsExplorer { expandExplorerNode(sqsNodeLabel) } }
             step("Standard queue") {
                 openSendMessagePane(queueName)
@@ -88,10 +90,13 @@ class SqsTest {
                     // Make sure it shows a sent message
                     findByXpath("//div[contains(@accessiblename, 'Sent message ID')]")
                 }
-                step("pack the queue full of messages so poll will be guaranteed to work") {
-                    (1..5).forEach {
-                        fillSingleJBTextArea("bmessage$it")
-                        findAndClick("//div[@text='Send']")
+                step("Add 10 messages to the queue so poll will be guaranteed to work") {
+                    client.sendMessageBatch {
+                        it.queueUrl(queueUrl).entries(
+                            (1..10).map { num ->
+                                SendMessageBatchRequestEntry.builder().messageBody("bmessage$num").id(num.toString()).build()
+                            }
+                        )
                     }
                 }
                 openPollMessagePane(queueName)
