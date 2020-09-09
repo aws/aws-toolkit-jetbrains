@@ -45,7 +45,7 @@ class SqsTest {
     private val purgeQueueText = "Purge Queue"
 
     private val queueName = "uitest-${UUID.randomUUID()}"
-    private val fifoQueueName = "$queueName.fifo"
+    private val fifoQueueName = "fifouitest-${UUID.randomUUID()}.fifo"
 
     @Test
     @CoreTest
@@ -75,7 +75,7 @@ class SqsTest {
                         openExplorerActionMenu(sqsNodeLabel)
                     }
                     find<ComponentFixture>(byXpath("//div[@text='$createQueueText']")).click()
-                    fillSingleTextField(queueName)
+                    fillSingleTextField(fifoQueueName.substringBefore(".fifo"))
                     find<ComponentFixture>(byXpath("//div[@accessiblename='FIFO']")).click()
                     pressCreate()
                     client.waitForCreation(fifoQueueName)
@@ -231,7 +231,7 @@ class SqsTest {
         try {
             // getQueueUrl can get before list works, so we can't use it to check if it exists.
             // So, use getQueuesPaginator instead
-            waitUntilBlocking(exceptionsToIgnore = setOf(QueueDoesNotExistException::class)) {
+            waitUntilBlocking(succeedOn = { it }) {
                 listQueuesPaginator().queueUrls().toList().any {
                     it.contains(queueName)
                 }

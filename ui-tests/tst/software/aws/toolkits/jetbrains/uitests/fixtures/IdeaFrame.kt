@@ -86,13 +86,16 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    private fun openCredentialsPanel() = try {
-        // 2020.1
-        findAndClick("//div[@class='MultipleTextValues']")
-    } catch (e: Exception) {
-        // TODO FIX_WHEN_MIN_IS_201 remove this
-        // 2019.3
-        findAndClick("//div[@class='MultipleTextValuesPresentationWrapper']")
+    fun refreshExplorer() {
+        findAndClick("//div[@accessiblename='Refresh AWS Connection' and @class='ActionButton']")
+        // wait for loading to disappear
+        try {
+            while (true) {
+                findText("loading...")
+                Thread.sleep(100)
+            }
+        } catch (e: Exception) {
+        }
     }
 
     fun findToast(timeout: Duration = Duration.ofSeconds(5)): ComponentFixture = find(byXpath("//div[@class='StatusPanel']"), timeout)
