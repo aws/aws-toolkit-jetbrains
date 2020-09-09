@@ -229,8 +229,12 @@ class SqsTest {
 
     private fun SqsClient.waitForCreation(queueName: String) {
         try {
+            // getQueueUrl can get before list works, so we can't use it to check if it exists.
+            // So, use getQueuesPaginator instead
             waitUntilBlocking(exceptionsToIgnore = setOf(QueueDoesNotExistException::class)) {
-                getQueueUrl { it.queueName(queueName) }
+                listQueuesPaginator().queueUrls().toList().any {
+                    it.contains(queueName)
+                }
             }
             log.info("Verified $queueName is created")
         } catch (e: Exception) {
