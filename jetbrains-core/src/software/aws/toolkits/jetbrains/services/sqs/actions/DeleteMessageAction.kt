@@ -31,6 +31,7 @@ class DeleteMessageAction(
     DumbAwareAction(message("sqs.delete.message.action", 1), null, AllIcons.Actions.Cancel) {
 
     override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = table.selectedObjects.size > 0
         e.presentation.text = message("sqs.delete.message.action", table.selectedObjects.size)
     }
 

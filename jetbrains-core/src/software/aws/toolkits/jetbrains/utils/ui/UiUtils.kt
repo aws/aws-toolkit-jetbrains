@@ -171,7 +171,10 @@ private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JCompo
     }
 }
 
-class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val toggleableWrap: Boolean) : CellRendererPanel(), TableCellRenderer {
+class WrappingCellRenderer(
+    private val wrapOnSelection: Boolean = false,
+    private val wrapOnToggle: Boolean = false,
+    private val truncateAfterChars: Int? = null) : CellRendererPanel(), TableCellRenderer {
     var wrap: Boolean = false
 
     private val textArea = JBTextArea()
@@ -188,8 +191,13 @@ class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val tog
             return this
         }
 
-        textArea.lineWrap = (wrapOnSelection && isSelected) || (toggleableWrap && wrap)
-        textArea.text = (value as? String) ?: ""
+        textArea.lineWrap = (wrapOnSelection && isSelected) || (wrapOnToggle && wrap)
+        val text = (value as? String) ?: ""
+        textArea.text = if(truncateAfterChars != null) {
+            text.take(truncateAfterChars)
+        } else {
+            text
+        }
         textArea.setSelectionHighlighting(table, isSelected)
 
         setSize(table.columnModel.getColumn(column).width, preferredSize.height)
@@ -211,13 +219,12 @@ class ResizingDateColumnRenderer(showSeconds: Boolean) : ResizingColumnRenderer(
     }
 
     override fun getText(value: Any?): String? {
-        val text = (value as? String)?.toLongOrNull()?.let {
+        return (value as? String)?.toLongOrNull()?.let {
             formatter.format(it)
         }
-        return text
     }
 }
 
-class ResizingTextColumnRenderer() : ResizingColumnRenderer() {
+class ResizingTextColumnRenderer : ResizingColumnRenderer() {
     override fun getText(value: Any?): String? = (value as? String)?.trim()
 }
