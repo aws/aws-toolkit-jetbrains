@@ -102,13 +102,13 @@ class PollMessagePane(
 
     private fun addActionsToTable() {
         val actionGroup = DefaultActionGroup().apply {
-            add(CopyMessageAction(messagesTable.table).apply {
-                registerCustomShortcutSet(CommonShortcuts.getCopy(), component)
-            })
+            add(CopyMessageAction(messagesTable.table).apply { registerCustomShortcutSet(CommonShortcuts.getCopy(), component) })
             add(Separator.create())
-            add(DeleteMessageAction(project, client, messagesTable.table, queue.queueUrl).apply {
-                registerCustomShortcutSet(CommonShortcuts.getDelete(), component)
-            })
+            add(
+                DeleteMessageAction(project, client, messagesTable.table, queue.queueUrl).apply {
+                    registerCustomShortcutSet(CommonShortcuts.getDelete(), component)
+                }
+            )
         }
         PopupHandler.installPopupHandler(
             messagesTable.table,
