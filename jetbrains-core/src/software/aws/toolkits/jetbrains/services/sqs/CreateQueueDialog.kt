@@ -49,26 +49,27 @@ class CreateQueueDialog(
     }
 
     override fun doOKAction() {
-        if (isOKActionEnabled) {
-            setOKButtonText(message("sqs.create.queue.in_progress"))
-            isOKActionEnabled = false
+        if (!isOKActionEnabled) {
+            return
+        }
+        setOKButtonText(message("sqs.create.queue.in_progress"))
+        isOKActionEnabled = false
 
-            launch {
-                try {
-                    createQueue()
-                    runInEdt(ModalityState.any()) {
-                        close(OK_EXIT_CODE)
-                    }
-                    project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
-                    SqsTelemetry.createQueue(project, Result.Succeeded, if (view.fifoType.isSelected) SqsQueueType.Fifo else SqsQueueType.Standard)
-                } catch (e: Exception) {
-                    // API only throws QueueNameExistsException if the request includes attributes whose values differ from those of the existing queue.
-                    LOG.warn(e) { message("sqs.create.queue.failed", queueName()) }
-                    setErrorText(e.message)
-                    setOKButtonText(message("sqs.create.queue.create"))
-                    isOKActionEnabled = true
-                    SqsTelemetry.createQueue(project, Result.Failed, if (view.fifoType.isSelected) SqsQueueType.Fifo else SqsQueueType.Standard)
+        launch {
+            try {
+                createQueue()
+                runInEdt(ModalityState.any()) {
+                    close(OK_EXIT_CODE)
                 }
+                project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
+                SqsTelemetry.createQueue(project, Result.Succeeded, if (view.fifoType.isSelected) SqsQueueType.Fifo else SqsQueueType.Standard)
+            } catch (e: Exception) {
+                // API only throws QueueNameExistsException if the request includes attributes whose values differ from those of the existing queue.
+                LOG.warn(e) { message("sqs.create.queue.failed", queueName()) }
+                setErrorText(e.message)
+                setOKButtonText(message("sqs.create.queue.create"))
+                isOKActionEnabled = true
+                SqsTelemetry.createQueue(project, Result.Failed, if (view.fifoType.isSelected) SqsQueueType.Fifo else SqsQueueType.Standard)
             }
         }
     }
