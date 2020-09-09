@@ -51,58 +51,68 @@ class SendMessagePaneTest {
 
     @Test
     fun `No input fails to send for standard`() {
-        standardPane.apply {
-            inputText.text = ""
-        }
+        runBlocking {
+            standardPane.apply {
+                inputText.text = ""
+            }
 
-        assertThat(standardPane.validateFields()).isFalse()
-        assertThat(standardPane.fifoFields.component.isVisible).isFalse()
+            assertThat(standardPane.validateFields()).isFalse()
+            assertThat(standardPane.fifoFields.component.isVisible).isFalse()
+        }
     }
 
     @Test
     fun `No input fails to send for fifo`() {
-        fifoPane.apply {
-            inputText.text = ""
-            fifoFields.deduplicationId.text = ""
-            fifoFields.groupId.text = ""
-        }
+        runBlocking {
+            fifoPane.apply {
+                inputText.text = ""
+                fifoFields.deduplicationId.text = ""
+                fifoFields.groupId.text = ""
+            }
 
-        assertThat(fifoPane.validateFields()).isFalse()
+            assertThat(fifoPane.validateFields()).isFalse()
+        }
     }
 
     @Test
     fun `No deduplication ID fails to send for fifo`() {
-        fifoPane.apply {
-            inputText.text = MESSAGE
-            fifoFields.deduplicationId.text = ""
-            fifoFields.groupId.text = GROUP_ID
-        }
+        runBlocking {
+            fifoPane.apply {
+                inputText.text = MESSAGE
+                fifoFields.deduplicationId.text = ""
+                fifoFields.groupId.text = GROUP_ID
+            }
 
-        assertThat(fifoPane.validateFields()).isFalse()
+            assertThat(fifoPane.validateFields()).isFalse()
+        }
     }
 
     @Test
     fun `No group ID fails to send for fifo`() {
-        fifoPane.apply {
-            inputText.text = MESSAGE
-            fifoFields.deduplicationId.text = DEDUPLICATION_ID
-            fifoFields.groupId.text = ""
-            runBlocking { sendMessage() }
-        }
+        runBlocking {
+            fifoPane.apply {
+                inputText.text = MESSAGE
+                fifoFields.deduplicationId.text = DEDUPLICATION_ID
+                fifoFields.groupId.text = ""
+                runBlocking { sendMessage() }
+            }
 
-        assertThat(fifoPane.validateFields()).isFalse()
+            assertThat(fifoPane.validateFields()).isFalse()
+        }
     }
 
     @Test
     fun `ID too long fails`() {
-        fifoPane.apply {
-            inputText.text = MESSAGE
-            fifoFields.deduplicationId.text = RuleUtils.randomName(length = MAX_LENGTH_OF_FIFO_ID + 1)
-            fifoFields.groupId.text = GROUP_ID
-            runBlocking { sendMessage() }
-        }
+        runBlocking {
+            fifoPane.apply {
+                inputText.text = MESSAGE
+                fifoFields.deduplicationId.text = RuleUtils.randomName(length = MAX_LENGTH_OF_FIFO_ID + 1)
+                fifoFields.groupId.text = GROUP_ID
+                runBlocking { sendMessage() }
+            }
 
-        assertThat(fifoPane.validateFields()).isFalse()
+            assertThat(fifoPane.validateFields()).isFalse()
+        }
     }
 
     @Test
