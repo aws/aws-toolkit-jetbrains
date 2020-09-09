@@ -40,10 +40,10 @@ class CreateConfigurationActionTest {
     @JvmField
     val resourceCache = MockResourceCacheRule(projectRule)
 
-    val port = RuleUtils.randomNumber()
-    val address = RuleUtils.randomName()
-    val username = "${RuleUtils.randomName()}CAPITAL"
-    val masterUsername = RuleUtils.randomName()
+    private val port = RuleUtils.randomNumber()
+    private val address = RuleUtils.randomName()
+    private val username = "${RuleUtils.randomName()}CAPITAL"
+    private val masterUsername = RuleUtils.randomName()
 
     @Test
     fun `Prerequisites fails when IAM authentication is disabled`() {
@@ -71,9 +71,12 @@ class CreateConfigurationActionTest {
 
     @Test
     fun `Create data source falls back to master username`() {
-        resourceCache.get().addEntry(StsResources.USER, CompletableFuture<String>().also {
-            it.completeExceptionally(RuntimeException("Failed to get current user"))
-        })
+        resourceCache.get().addEntry(
+            StsResources.USER,
+            CompletableFuture<String>().also {
+                it.completeExceptionally(RuntimeException("Failed to get current user"))
+            }
+        )
         val node = createNode()
         val registry = DataSourceRegistry(projectRule.project)
         CreateIamDataSourceAction().createDatasource(node, registry)

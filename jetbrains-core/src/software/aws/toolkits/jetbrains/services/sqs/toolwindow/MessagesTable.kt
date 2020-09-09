@@ -21,17 +21,17 @@ class MessagesTable {
             MessageBodyColumn(),
             MessageSenderIdColumn(),
             MessageDateColumn()
-        ), mutableListOf<Message>()
+        ),
+        mutableListOf<Message>()
     )
 
     init {
         table = TableView(tableModel).apply {
             autoscrolls = true
-            tableHeader.reorderingAllowed = false
-            tableHeader.resizingAllowed = false
+            // Disable the header so the user cannot sort or resize columns
+            tableHeader.isEnabled = false
             autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
-            setPaintBusy(true)
-            emptyText.text = message("loading_resource.loading")
+            emptyText.text = message("sqs.message_table_initial_text")
         }
 
         TableSpeedSearch(table)
@@ -48,8 +48,6 @@ class MessagesTable {
         table.setPaintBusy(busy)
         if (busy) {
             table.emptyText.text = message("loading_resource.loading")
-        } else {
-            table.emptyText.text = message("sqs.message.no_messages")
         }
     }
 }

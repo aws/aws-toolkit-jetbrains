@@ -27,8 +27,8 @@ import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
 import software.aws.toolkits.core.utils.failedFuture
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.services.schemas.Schema
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.services.schemas.SchemaSummary
@@ -75,7 +75,9 @@ class DownloadCodeForSchemaDialogTest {
         mockSettingsManager = AwsConnectionManager.getInstance(projectRule.project) as MockAwsConnectionManager
 
         resourceCache().mockSchemaVersions(
-            REGISTRY, SCHEMA_NAME, VERSIONS
+            REGISTRY,
+            SCHEMA_NAME,
+            VERSIONS
         )
 
         subscribeToNotifications()
@@ -236,12 +238,14 @@ class DownloadCodeForSchemaDialogTest {
     private fun MockResourceCache.mockSchemaVersions(registryName: String, schemaName: String, schemaVersions: List<String>) {
         this.addEntry(
             SchemasResources.getSchemaVersions(registryName, schemaName),
-            completedFuture(schemaVersions.map { v ->
-                SchemaVersionSummary.builder()
-                    .schemaName(schemaName)
-                    .schemaVersion(v)
-                    .build()
-            })
+            completedFuture(
+                schemaVersions.map { v ->
+                    SchemaVersionSummary.builder()
+                        .schemaName(schemaName)
+                        .schemaVersion(v)
+                        .build()
+                }
+            )
         )
     }
 }

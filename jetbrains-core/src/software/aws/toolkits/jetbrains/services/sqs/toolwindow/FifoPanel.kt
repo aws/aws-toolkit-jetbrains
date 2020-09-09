@@ -4,32 +4,22 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.HelpTooltip
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBTextField
 import software.aws.toolkits.jetbrains.services.sqs.MAX_LENGTH_OF_FIFO_ID
 import software.aws.toolkits.resources.message
+import java.util.UUID
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 class FifoPanel {
     lateinit var component: JPanel
     lateinit var deduplicationId: JBTextField
     lateinit var groupId: JBTextField
-    lateinit var deduplicationErrorLabel: JLabel
-    lateinit var groupErrorLabel: JLabel
     lateinit var deduplicationContextHelp: JLabel
     lateinit var groupContextHelp: JLabel
 
     init {
-        loadComponents()
-        setFields()
-    }
-
-    private fun loadComponents() {
-        deduplicationErrorLabel.isVisible = false
-        groupErrorLabel.isVisible = false
-
         deduplicationContextHelp.icon = AllIcons.General.ContextHelp
         HelpTooltip().apply {
             setDescription(message("sqs.message.deduplication_id.tooltip"))
@@ -40,61 +30,44 @@ class FifoPanel {
             setDescription(message("sqs.message.group_id.tooltip"))
             installOn(groupContextHelp)
         }
+        deduplicationId.emptyText.text = message("sqs.required.empty.text")
+        groupId.emptyText.text = message("sqs.required.empty.text")
+        clear()
     }
 
-    private fun setFields() {
-        deduplicationId.apply {
-            emptyText.text = message("sqs.required.empty.text")
-            document.addDocumentListener(createListener(this, deduplicationErrorLabel))
-        }
+    fun validateFields(): List<ValidationInfo> = listOfNotNull(
+        validateDedupeId(),
+        validateGroupId()
+    )
 
-        groupId.apply {
-            emptyText.text = message("sqs.required.empty.text")
-            document.addDocumentListener(createListener(this, groupErrorLabel))
+    fun clear(isSend: Boolean = false) {
+        deduplicationId.text = UUID.randomUUID().toString()
+        if (!isSend) {
+            groupId.text = ""
         }
     }
 
-    fun validateFields(): Boolean {
-        var deduplicationIsValid = true
-        var groupIsValid = true
-
-        if (deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID) {
-            deduplicationErrorLabel.text = message("sqs.message.validation.long.id")
-            deduplicationErrorLabel.isVisible = true
-            deduplicationIsValid = false
-        } else if (deduplicationId.text.isEmpty()) {
-            deduplicationErrorLabel.text = message("sqs.message.validation.empty.deduplication_id")
-            deduplicationErrorLabel.isVisible = true
-            deduplicationIsValid = false
+    private fun validateDedupeId(): ValidationInfo? = when {
+        deduplicationId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
+            ValidationInfo(message("sqs.message.validation.long.id"), deduplicationId)
         }
-
-        if (groupId.text.length > MAX_LENGTH_OF_FIFO_ID) {
-            groupErrorLabel.text = message("sqs.message.validation.long.id")
-            groupErrorLabel.isVisible = true
-            groupIsValid = false
-        } else if (groupId.text.isEmpty()) {
-            groupErrorLabel.text = message("sqs.message.validation.empty.group_id")
-            groupErrorLabel.isVisible = true
-            groupIsValid = false
+        deduplicationId.text.isBlank() -> {
+            ValidationInfo(message("sqs.message.validation.empty.deduplication_id"), deduplicationId)
         }
-
-        return (deduplicationIsValid && groupIsValid)
+        else -> {
+            null
+        }
     }
 
-    private fun createListener(textField: JBTextField, errorLabel: JLabel): DocumentListener = object : DocumentListener {
-        override fun changedUpdate(e: DocumentEvent?) {}
-        override fun insertUpdate(e: DocumentEvent?) {
-            if (textField.text.length > MAX_LENGTH_OF_FIFO_ID) {
-                errorLabel.text = message("sqs.message.validation.long.id")
-                errorLabel.isVisible = true
-            } else {
-                errorLabel.isVisible = false
-            }
+    private fun validateGroupId(): ValidationInfo? = when {
+        groupId.text.length > MAX_LENGTH_OF_FIFO_ID -> {
+            ValidationInfo(message("sqs.message.validation.long.id"), groupId)
         }
-        override fun removeUpdate(e: DocumentEvent?) {
-            if (textField.text.length <= MAX_LENGTH_OF_FIFO_ID) {
-                errorLabel.isVisible = false
-            }
+        groupId.text.isBlank() -> {
+            ValidationInfo(message("sqs.message.validation.empty.group_id"), groupId)
+        }
+        else -> {
+            null
         }
     }
 }
