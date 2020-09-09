@@ -53,26 +53,28 @@ class SubscribeSnsDialog(
     }
 
     override fun doOKAction() {
-        if (isOKActionEnabled) {
-            setOKButtonText(message("sqs.subscribe.sns.in_progress"))
-            isOKActionEnabled = false
+        if (!isOKActionEnabled) {
+            return
+        }
+        setOKButtonText(message("sqs.subscribe.sns.in_progress"))
+        isOKActionEnabled = false
 
-            launch {
-                try {
-                    subscribe(topicSelected())
-                    withContext(getCoroutineUiContext(ModalityState.any())) {
-                        close(OK_EXIT_CODE)
-                    }
-                    notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)
-                    SqsTelemetry.subscribeSns(project, Result.Succeeded, queue.telemetryType())
-                } catch (e: Exception) {
-                    LOG.warn(e) { message("sqs.subscribe.sns.failed", queue.queueName, topicSelected()) }
-                    setErrorText(e.message)
-                    setOKButtonText(message("sqs.subscribe.sns.subscribe"))
-                    isOKActionEnabled = true
-                    SqsTelemetry.subscribeSns(project, Result.Failed, queue.telemetryType())
+        launch {
+            try {
+                subscribe(topicSelected())
+                withContext(getCoroutineUiContext(ModalityState.any())) {
+                    close(OK_EXIT_CODE)
                 }
+                notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)
+                SqsTelemetry.subscribeSns(project, Result.Succeeded, queue.telemetryType())
+            } catch (e: Exception) {
+                LOG.warn(e) { message("sqs.subscribe.sns.failed", queue.queueName, topicSelected()) }
+                setErrorText(e.message)
+                setOKButtonText(message("sqs.subscribe.sns.subscribe"))
+                isOKActionEnabled = true
+                SqsTelemetry.subscribeSns(project, Result.Failed, queue.telemetryType())
             }
+
         }
     }
 
