@@ -78,15 +78,6 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    fun validateNotificationIsShown(text: String) = step("Validate there is a notification shown that contains $text") {
-        val foundText = findAllText(text)
-        if (foundText.isEmpty()) {
-            throw IllegalStateException("Unable to find notification label text: $text")
-        } else if (foundText.size > 1) {
-            throw IllegalStateException("Multiple instances of notification label text found, unable to verify the label is shown: $text")
-        }
-    }
-
     // Tips sometimes open when running, close it if it opens
     fun tryCloseTips() {
         try {

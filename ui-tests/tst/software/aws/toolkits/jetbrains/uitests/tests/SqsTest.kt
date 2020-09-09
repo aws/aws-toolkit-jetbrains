@@ -8,6 +8,7 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -126,12 +127,14 @@ class SqsTest {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
                 }
                 findAndClick("//div[@text='$purgeQueueText']")
-                validateNotificationIsShown("Started purging queue")
+                val toast = findToast()
+                assertThat(toast.hasText { it.text.contains("Started purging queue") })
                 awsExplorer {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
                 }
                 findAndClick("//div[@text='$purgeQueueText']")
-                validateNotificationIsShown("Purge queue request already in progress for queue")
+                val errorToast = findToast()
+                assertThat(errorToast.hasText { it.text.contains("Purge queue request already in progress for queue") })
             }
             step("Delete queues") {
                 step("Delete queue $queueName") {
@@ -178,8 +181,7 @@ class SqsTest {
         find<ComponentFixture>(byXpath("//div[@accessiblename='Send a Message']")).click()
     }
 
-    // If we don't do this, it fails to find it since trees work off of text, not based on what the component
-    // actually has, so it scrolls too low :(
+    // If we don't do this, it fails to find the entry in the explorer
     private fun RemoteRobot.closeToolWindowTab() = step("Close tool window so the robot can see the queues in the explorer") {
         val firstTab = findAll(ComponentFixture::class.java, byXpath("//div[contains(@accessiblename, 'uitest') and @class='ContentTabLabel']")).first()
         firstTab.rightClick()
