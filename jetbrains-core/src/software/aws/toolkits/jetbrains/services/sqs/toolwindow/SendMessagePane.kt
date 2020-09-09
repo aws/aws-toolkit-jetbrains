@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
+import software.aws.toolkits.jetbrains.services.sqs.telemetryType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
@@ -86,10 +87,10 @@ class SendMessagePane(
                     messageSentLabel.text = message("sqs.send.message.success", messageId)
                 }
                 clear(isSend = true)
-                SqsTelemetry.sendMessage(project, Result.Succeeded, queue.telemetryType)
+                SqsTelemetry.sendMessage(project, Result.Succeeded, queue.telemetryType())
             } catch (e: Exception) {
                 messageSentLabel.text = message("sqs.failed_to_send_message")
-                SqsTelemetry.sendMessage(project, Result.Failed, queue.telemetryType)
+                SqsTelemetry.sendMessage(project, Result.Failed, queue.telemetryType())
                 clear(isSend = true)
             }
             messageSentLabel.isVisible = true

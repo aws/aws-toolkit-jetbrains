@@ -48,7 +48,7 @@ class SubscribeSnsDialog(
     }
 
     override fun doCancelAction() {
-        SqsTelemetry.subscribeSns(project, Result.Cancelled, queue.telemetryType)
+        SqsTelemetry.subscribeSns(project, Result.Cancelled, queue.telemetryType())
         super.doCancelAction()
     }
 
@@ -64,13 +64,13 @@ class SubscribeSnsDialog(
                         close(OK_EXIT_CODE)
                     }
                     notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)
-                    SqsTelemetry.subscribeSns(project, Result.Succeeded, queue.telemetryType)
+                    SqsTelemetry.subscribeSns(project, Result.Succeeded, queue.telemetryType())
                 } catch (e: Exception) {
                     LOG.warn(e) { message("sqs.subscribe.sns.failed", queue.queueName, topicSelected()) }
                     setErrorText(e.message)
                     setOKButtonText(message("sqs.subscribe.sns.subscribe"))
                     isOKActionEnabled = true
-                    SqsTelemetry.subscribeSns(project, Result.Failed, queue.telemetryType)
+                    SqsTelemetry.subscribeSns(project, Result.Failed, queue.telemetryType())
                 }
             }
         }

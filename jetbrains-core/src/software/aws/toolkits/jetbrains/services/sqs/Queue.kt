@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.sqs
 
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.SqsQueueType
 
 // TODO This does not support FIPS
 
@@ -34,5 +33,4 @@ class Queue(val queueUrl: String, val region: AwsRegion) {
 
     val arn = "arn:${region.partitionId}:sqs:${region.id}:$accountId:$queueName"
     val isFifo: Boolean by lazy { queueName.endsWith(".fifo") }
-    val telemetryType = if (isFifo) SqsQueueType.Fifo else SqsQueueType.Standard
 }

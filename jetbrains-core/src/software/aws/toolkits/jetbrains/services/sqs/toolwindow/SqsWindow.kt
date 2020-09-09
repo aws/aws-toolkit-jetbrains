@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.services.sqs.Queue
+import software.aws.toolkits.jetbrains.services.sqs.telemetryType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
@@ -36,7 +37,7 @@ class SqsWindow(private val project: Project) : CoroutineScope by ApplicationThr
     }
 
     private fun showQueue(queue: Queue, component: SqsWindowUi) = launch {
-        SqsTelemetry.openQueue(project, queue.telemetryType)
+        SqsTelemetry.openQueue(project, queue.telemetryType())
         try {
             withContext(edtContext) {
                 toolWindow.find(queue.queueUrl)?.show() ?: toolWindow.addTab(queue.queueName, component.mainPanel, activate = true, id = queue.queueUrl)
