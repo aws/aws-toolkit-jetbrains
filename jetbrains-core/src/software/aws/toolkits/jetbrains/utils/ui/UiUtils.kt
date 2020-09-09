@@ -174,7 +174,8 @@ private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JCompo
 class WrappingCellRenderer(
     private val wrapOnSelection: Boolean = false,
     private val wrapOnToggle: Boolean = false,
-    private val truncateAfterChars: Int? = null) : CellRendererPanel(), TableCellRenderer {
+    private val truncateAfterChars: Int? = null
+) : CellRendererPanel(), TableCellRenderer {
     var wrap: Boolean = false
 
     private val textArea = JBTextArea()
@@ -193,7 +194,7 @@ class WrappingCellRenderer(
 
         textArea.lineWrap = (wrapOnSelection && isSelected) || (wrapOnToggle && wrap)
         val text = (value as? String) ?: ""
-        textArea.text = if(truncateAfterChars != null) {
+        textArea.text = if (truncateAfterChars != null) {
             text.take(truncateAfterChars)
         } else {
             text
@@ -218,11 +219,7 @@ class ResizingDateColumnRenderer(showSeconds: Boolean) : ResizingColumnRenderer(
         DateFormatUtil.getDateTimeFormat()
     }
 
-    override fun getText(value: Any?): String? {
-        return (value as? String)?.toLongOrNull()?.let {
-            formatter.format(it)
-        }
-    }
+    override fun getText(value: Any?): String? = (value as? String)?.toLongOrNull()?.let { formatter.format(it) }
 }
 
 class ResizingTextColumnRenderer : ResizingColumnRenderer() {
