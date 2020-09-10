@@ -15,12 +15,13 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
 class EditAttributesDialog(
-    project: Project,
+    private val project: Project,
     private val client: SqsClient,
     private val queue: Queue
 ) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("EditAttributesDialog") {
@@ -57,6 +58,7 @@ class EditAttributesDialog(
             try {
                 updateAttributes()
                 notifyInfo(
+                    project = project,
                     title = message("sqs.service_name"),
                     content = message("sqs.edit.attributes.updated", queue.queueName)
                 )
@@ -70,18 +72,28 @@ class EditAttributesDialog(
         }
     }
 
-    private fun populateFields() {
-        launch {
-            val currentAttributes = client.getQueueAttributes {
+    private fun populateFields() = launch {
+        val currentAttributes = try {
+            client.getQueueAttributes {
                 it.queueUrl(queue.queueUrl)
                 it.attributeNames(QueueAttributeName.ALL)
             }.attributes()
-            view.visibilityTimeout.text = currentAttributes[QueueAttributeName.VISIBILITY_TIMEOUT]
-            view.messageSize.text = currentAttributes[QueueAttributeName.MAXIMUM_MESSAGE_SIZE]
-            view.retentionPeriod.text = currentAttributes[QueueAttributeName.MESSAGE_RETENTION_PERIOD]
-            view.deliveryDelay.text = currentAttributes[QueueAttributeName.DELAY_SECONDS]
-            view.waitTime.text = currentAttributes[QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS]
+        } catch (e: Exception) {
+            withContext(getCoroutineUiContext(ModalityState.any())) {
+                close(CANCEL_EXIT_CODE)
+            }
+            notifyError(
+                project = project,
+                title = message("sqs.service_name"),
+                content = message("sqs.edit.attributes.failed", queue.queueName)
+            )
+            return@launch
         }
+        view.visibilityTimeout.text = currentAttributes[QueueAttributeName.VISIBILITY_TIMEOUT]
+        view.messageSize.text = currentAttributes[QueueAttributeName.MAXIMUM_MESSAGE_SIZE]
+        view.retentionPeriod.text = currentAttributes[QueueAttributeName.MESSAGE_RETENTION_PERIOD]
+        view.deliveryDelay.text = currentAttributes[QueueAttributeName.DELAY_SECONDS]
+        view.waitTime.text = currentAttributes[QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS]
     }
 
     internal fun updateAttributes() {
