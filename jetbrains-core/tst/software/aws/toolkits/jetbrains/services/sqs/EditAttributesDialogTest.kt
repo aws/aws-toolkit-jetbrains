@@ -46,7 +46,7 @@ class EditAttributesDialogTest {
     @Test
     fun `Empty field fails`() {
         runInEdtAndWait {
-            val dialog = EditAttributesDialog(projectRule.project, client, queue).apply {
+            val dialog = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
                 view.deliveryDelay.text = ""
             }
             val validationInfo = dialog.validate()
@@ -57,8 +57,12 @@ class EditAttributesDialogTest {
     @Test
     fun `Value out of bound fails`() {
         runInEdtAndWait {
-            val dialog = EditAttributesDialog(projectRule.project, client, queue).apply {
+            val dialog = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
+                view.visibilityTimeout.text = TEST_VISIBILITY_TIMEOUT
+                view.messageSize.text = TEST_MESSAGE_SIZE
+                view.retentionPeriod.text = TEST_RETENTION_PERIOD
                 view.deliveryDelay.text = (MAX_DELIVERY_DELAY + 1).toString()
+                view.waitTime.text = TEST_WAIT_TIME
             }
             val validationInfo = dialog.validate()
             assertThat(validationInfo).isNotNull()
@@ -73,7 +77,7 @@ class EditAttributesDialogTest {
         }
 
         runInEdtAndWait {
-            EditAttributesDialog(projectRule.project, client, queue).apply {
+            EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
                 view.visibilityTimeout.text = TEST_VISIBILITY_TIMEOUT
                 view.messageSize.text = TEST_MESSAGE_SIZE
                 view.retentionPeriod.text = TEST_RETENTION_PERIOD
@@ -99,7 +103,7 @@ class EditAttributesDialogTest {
         }
 
         runInEdtAndWait {
-            val dialog = EditAttributesDialog(projectRule.project, client, queue).apply {
+            val dialog = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
                 view.visibilityTimeout.text = TEST_VISIBILITY_TIMEOUT
                 view.messageSize.text = TEST_MESSAGE_SIZE
                 view.retentionPeriod.text = TEST_RETENTION_PERIOD
