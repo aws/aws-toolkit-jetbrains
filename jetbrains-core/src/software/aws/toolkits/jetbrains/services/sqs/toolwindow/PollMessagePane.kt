@@ -105,7 +105,7 @@ class PollMessagePane(
             add(CopyMessageAction(messagesTable.table).apply { registerCustomShortcutSet(CommonShortcuts.getCopy(), component) })
             add(Separator.create())
             add(
-                DeleteMessageAction(project, client, messagesTable.table, queue.queueUrl).apply {
+                DeleteMessageAction(project, client, messagesTable.table, pollButton, queue).apply {
                     registerCustomShortcutSet(CommonShortcuts.getDelete(), component)
                 }
             )

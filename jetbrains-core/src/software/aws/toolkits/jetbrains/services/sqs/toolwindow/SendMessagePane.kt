@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
 import com.intellij.ide.plugins.newui.UpdateButton
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComponentValidator
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.IdeBorderFactory
@@ -12,18 +13,23 @@ import com.intellij.ui.components.JBTextArea
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.services.sqs.Queue
+import software.aws.toolkits.jetbrains.services.sqs.telemetryType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SqsTelemetry
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 
 class SendMessagePane(
+    private val project: Project,
     private val client: SqsClient,
     private val queue: Queue
 ) : CoroutineScope by ApplicationThreadPoolScope("SendMessagePane") {
@@ -34,6 +40,7 @@ class SendMessagePane(
     lateinit var messageSentLabel: JLabel
     lateinit var fifoFields: FifoPanel
     lateinit var scrollPane: JScrollPane
+    private val edt = getCoroutineUiContext()
 
     init {
         loadComponents()
@@ -53,7 +60,7 @@ class SendMessagePane(
             launch { sendMessage() }
         }
         clearButton.addActionListener {
-            clear()
+            runBlocking { clear() }
             messageSentLabel.isVisible = false
         }
     }
@@ -84,12 +91,11 @@ class SendMessagePane(
                 messageSentLabel.text = message("sqs.send.message.success", messageId)
             }
             clear(isSend = true)
+            SqsTelemetry.sendMessage(project, Result.Succeeded, queue.telemetryType())
         } catch (e: Exception) {
             messageSentLabel.text = message("sqs.failed_to_send_message")
-        } finally {
-            if (messageSentLabel.text.isNotEmpty()) {
-                messageSentLabel.isVisible = true
-            }
+            SqsTelemetry.sendMessage(project, Result.Failed, queue.telemetryType())
+            clear(isSend = true)
         }
     }
 
@@ -119,7 +125,7 @@ class SendMessagePane(
         }
     }
 
-    private fun clear(isSend: Boolean = false) {
+    suspend fun clear(isSend: Boolean = false) = withContext(edt) {
         inputText.text = ""
         if (queue.isFifo) {
             fifoFields.clear(isSend)

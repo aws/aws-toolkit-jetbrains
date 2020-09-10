@@ -17,25 +17,30 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.sqs.Queue
+import software.aws.toolkits.jetbrains.services.sqs.telemetryType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SqsTelemetry
+import javax.swing.JComponent
 
 class DeleteMessageAction(
     private val project: Project,
     private val client: SqsClient,
     private val table: TableView<Message>,
-    private val queueUrl: String
+    private val sendButton: JComponent,
+    private val queue: Queue
 ) : CoroutineScope by ApplicationThreadPoolScope("DeleteSQSMessageAction"),
     DumbAwareAction(message("sqs.delete.message.action", 1), null, AllIcons.Actions.Cancel) {
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = table.selectedObjects.size > 0
         e.presentation.text = message("sqs.delete.message.action", table.selectedObjects.size)
     }
 
-    override fun actionPerformed(e: AnActionEvent) {
+    override fun actionPerformed(event: AnActionEvent) {
         // get an immutable view of the selected items
         val messages = table.selectedObjects.toList()
         if (messages.isEmpty()) {
@@ -43,11 +48,12 @@ class DeleteMessageAction(
         }
         launch {
             try {
+                setEnabled(event, false)
                 val requestEntries = messages.mapIndexed { index, item ->
                     // ID must be unique per request. Since we don't need to use it, just use index (other fields can be too long)
                     DeleteMessageBatchRequestEntry.builder().id(index.toString()).receiptHandle(item.receiptHandle()).build()
                 }
-                val response = client.deleteMessageBatch { it.queueUrl(queueUrl).entries(requestEntries) }
+                val response = client.deleteMessageBatch { it.queueUrl(queue.queueUrl).entries(requestEntries) }
                 // Remove all of the selected rows
                 messages.forEach { _ ->
                     val selected = table.selectedRow
@@ -64,16 +70,30 @@ class DeleteMessageAction(
                 }
                 notifyInfo(
                     project = project,
-                    title = title
+                    title = message("aws.notification.title"),
+                    content = title
                 )
+                SqsTelemetry.deleteMessages(project, Result.Succeeded, queue.telemetryType(), messages.size.toDouble())
             } catch (e: Exception) {
                 notifyError(
                     project = project,
-                    title = message("sqs.delete.message.failed", messages.size)
+                    content = message("sqs.delete.message.failed", messages.size)
                 )
                 LOG.error(e) { "Unable to delete SQS messages, request failed!" }
+                SqsTelemetry.deleteMessages(project, Result.Failed, queue.telemetryType(), messages.size.toDouble())
+            } finally {
+                setEnabled(event, true)
             }
         }
+    }
+
+    /*
+     * This is asynchronous, so disable the send button and delete while deleting,
+     * to not mess up the state
+     */
+    private fun setEnabled(e: AnActionEvent, enabled: Boolean) {
+        sendButton.isEnabled = enabled
+        e.presentation.isEnabled = enabled
     }
 
     private companion object {
