@@ -63,7 +63,9 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             fifoFields.groupId.text = ""
         }
 
-        assertThat(runBlocking { fifoPane.validateFields() }).isFalse()
+        runBlocking {
+            assertThat(fifoPane.validateFields()).isFalse()
+        }
     }
 
     @Test
@@ -83,8 +85,9 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             inputText.text = MESSAGE
             fifoFields.deduplicationId.text = DEDUPLICATION_ID
             fifoFields.groupId.text = ""
-            runBlocking { sendMessage() }
         }
+
+        runBlocking { fifoPane.sendMessage() }
 
         assertThat(runBlocking { fifoPane.validateFields() }).isFalse()
     }
@@ -95,8 +98,9 @@ class SendMessagePaneTest : BaseCoroutineTest() {
             inputText.text = MESSAGE
             fifoFields.deduplicationId.text = RuleUtils.randomName(length = MAX_LENGTH_OF_FIFO_ID + 1)
             fifoFields.groupId.text = GROUP_ID
-            runBlocking { sendMessage() }
         }
+
+        runBlocking { fifoPane.sendMessage() }
 
         assertThat(runBlocking { fifoPane.validateFields() }).isFalse()
     }
@@ -109,10 +113,11 @@ class SendMessagePaneTest : BaseCoroutineTest() {
 
         standardPane.apply {
             inputText.text = MESSAGE
-            runBlocking {
-                sendMessage()
-                waitForTrue { standardPane.messageSentLabel.isVisible }
-            }
+        }
+
+        runBlocking {
+            standardPane.sendMessage()
+            waitForTrue { standardPane.messageSentLabel.isVisible }
         }
 
         assertThat(standardPane.messageSentLabel.text).isEqualTo(message("sqs.failed_to_send_message"))
