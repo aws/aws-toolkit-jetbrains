@@ -11,7 +11,7 @@ import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent
 import javax.swing.JTable
-import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.DefaultTableCellRenderer 
 
 /**
  * Events table
