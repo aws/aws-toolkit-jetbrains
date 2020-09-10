@@ -101,7 +101,7 @@ class PollMessagePane(
     private fun addActionsToTable() {
         val actionGroup = DefaultActionGroup().apply {
             add(
-                DeleteMessageAction(project, client, messagesTable.table, pollButton, queue.queueUrl).apply {
+                DeleteMessageAction(project, client, messagesTable.table, pollButton, queue).apply {
                     registerCustomShortcutSet(CommonShortcuts.getDelete(), component)
                 }
             )
