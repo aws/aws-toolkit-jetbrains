@@ -21,11 +21,13 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import javax.swing.JComponent
 
 class DeleteMessageAction(
     private val project: Project,
     private val client: SqsClient,
     private val table: TableView<Message>,
+    private val sendButton: JComponent,
     private val queueUrl: String
 ) : CoroutineScope by ApplicationThreadPoolScope("DeleteSQSMessageAction"),
     DumbAwareAction(message("sqs.delete.message.action", 1), null, AllIcons.Actions.Cancel) {
@@ -34,7 +36,7 @@ class DeleteMessageAction(
         e.presentation.text = message("sqs.delete.message.action", table.selectedObjects.size)
     }
 
-    override fun actionPerformed(e: AnActionEvent) {
+    override fun actionPerformed(event: AnActionEvent) {
         // get an immutable view of the selected items
         val messages = table.selectedObjects.toList()
         if (messages.isEmpty()) {
@@ -42,6 +44,7 @@ class DeleteMessageAction(
         }
         launch {
             try {
+                setEnabled(event, false)
                 val requestEntries = messages.mapIndexed { index, item ->
                     // ID must be unique per request. Since we don't need to use it, just use index (other fields can be too long)
                     DeleteMessageBatchRequestEntry.builder().id(index.toString()).receiptHandle(item.receiptHandle()).build()
@@ -71,8 +74,19 @@ class DeleteMessageAction(
                     title = message("sqs.delete.message.failed", messages.size)
                 )
                 LOG.error(e) { "Unable to delete SQS messages, request failed!" }
+            } finally {
+                setEnabled(event, true)
             }
         }
+    }
+
+    /*
+     * This is asynchronous, so disable the send button and delete while deleting,
+     * to not mess up the state
+     */
+    private fun setEnabled(e: AnActionEvent, enabled: Boolean) {
+        sendButton.isEnabled = enabled
+        e.presentation.isEnabled = enabled
     }
 
     private companion object {

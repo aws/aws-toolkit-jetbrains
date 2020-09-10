@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.CommonShortcuts
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
@@ -99,7 +100,11 @@ class PollMessagePane(
 
     private fun addActionsToTable() {
         val actionGroup = DefaultActionGroup().apply {
-            add(DeleteMessageAction(project, client, messagesTable.table, queue.queueUrl))
+            add(
+                DeleteMessageAction(project, client, messagesTable.table, pollButton, queue.queueUrl).apply {
+                    registerCustomShortcutSet(CommonShortcuts.getDelete(), component)
+                }
+            )
         }
         PopupHandler.installPopupHandler(
             messagesTable.table,
