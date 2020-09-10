@@ -66,12 +66,13 @@ class DeleteMessageAction(
                 }
                 notifyInfo(
                     project = project,
-                    title = title
+                    title = message("aws.notification.title"),
+                    content = title
                 )
             } catch (e: Exception) {
                 notifyError(
                     project = project,
-                    title = message("sqs.delete.message.failed", messages.size)
+                    content = message("sqs.delete.message.failed", messages.size)
                 )
                 LOG.error(e) { "Unable to delete SQS messages, request failed!" }
             } finally {
