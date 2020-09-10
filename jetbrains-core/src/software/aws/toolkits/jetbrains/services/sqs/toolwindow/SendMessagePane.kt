@@ -53,7 +53,7 @@ class SendMessagePane(
             launch { sendMessage() }
         }
         clearButton.addActionListener {
-            clear()
+            launch { clear() }
             messageSentLabel.isVisible = false
         }
     }
@@ -119,10 +119,12 @@ class SendMessagePane(
         }
     }
 
-    private fun clear(isSend: Boolean = false) {
-        inputText.text = ""
-        if (queue.isFifo) {
-            fifoFields.clear(isSend)
+    private suspend fun clear(isSend: Boolean = false) {
+        withContext(getCoroutineUiContext(ModalityState.any())) {
+            inputText.text = ""
+            if (queue.isFifo) {
+                fifoFields.clear(isSend)
+            }
         }
     }
 }
