@@ -19,8 +19,11 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.sqs.EditAttributesDialog
 import software.aws.toolkits.jetbrains.services.sqs.SqsQueueNode
+import software.aws.toolkits.jetbrains.services.sqs.telemetryType
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SqsTelemetry
 
 class EditAttributesAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.edit.attributes.action")), DumbAware {
     override fun actionPerformed(selected: SqsQueueNode, e: AnActionEvent) {
@@ -46,6 +49,7 @@ class EditAttributesAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs
                             title = message("sqs.service_name"),
                             content = message("sqs.edit.attributes.failed", queue.queueName)
                         )
+                        SqsTelemetry.editQueueAttributes(project, Result.Failed, queue.telemetryType())
                         return
                     }
                     runInEdt {

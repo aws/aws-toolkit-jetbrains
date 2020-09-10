@@ -20,6 +20,8 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SqsTelemetry
 import javax.swing.JComponent
 
 class EditAttributesDialog(
@@ -52,6 +54,11 @@ class EditAttributesDialog(
         return null
     }
 
+    override fun doCancelAction() {
+        SqsTelemetry.editQueueAttributes(project, Result.Cancelled, queue.telemetryType())
+        super.doCancelAction()
+    }
+
     override fun doOKAction() {
         if (!isOKActionEnabled) {
             return
@@ -68,10 +75,12 @@ class EditAttributesDialog(
                 withContext(getCoroutineUiContext(ModalityState.any())) {
                     close(OK_EXIT_CODE)
                 }
+                SqsTelemetry.editQueueAttributes(project, Result.Succeeded, queue.telemetryType())
             } catch (e: SqsException) {
                 LOG.error(e) { "Updating queue attributes failed" }
                 setErrorText(e.message)
-                isOKActionEnabled = false
+                isOKActionEnabled = true
+                SqsTelemetry.editQueueAttributes(project, Result.Failed, queue.telemetryType())
             }
         }
     }
