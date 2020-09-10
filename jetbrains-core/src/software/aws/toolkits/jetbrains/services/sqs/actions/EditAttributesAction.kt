@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.services.sqs.SqsQueueNode
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
-class EditAttributesAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.edit.attributes")), DumbAware {
+class EditAttributesAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs.edit.attributes.action")), DumbAware {
     override fun actionPerformed(selected: SqsQueueNode, e: AnActionEvent) {
         ProgressManager.getInstance().run(
             object : Task.Backgroundable(
