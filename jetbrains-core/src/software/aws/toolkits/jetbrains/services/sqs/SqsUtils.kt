@@ -25,6 +25,5 @@ const val MAX_VISIBILITY_TIMEOUT = 43200
 const val MIN_WAIT_TIME = 0
 const val MAX_WAIT_TIME = 20
 
-// Extension function to get telemetry type from Queue. It's weird to put it on the Queue (it pollutes
-// the API), so make it an extension function
+// Extension function to get telemetry type from Queue
 fun Queue.telemetryType() = if (isFifo) SqsQueueType.Fifo else SqsQueueType.Standard
