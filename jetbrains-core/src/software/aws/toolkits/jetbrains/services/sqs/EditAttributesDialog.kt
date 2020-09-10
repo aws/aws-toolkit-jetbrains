@@ -69,7 +69,7 @@ class EditAttributesDialog(
                     close(OK_EXIT_CODE)
                 }
             } catch (e: SqsException) {
-                LOG.error(e) { "Updating queue attributes threw" }
+                LOG.error(e) { "Updating queue attributes failed" }
                 setErrorText(e.message)
                 isOKActionEnabled = false
             }
@@ -85,16 +85,17 @@ class EditAttributesDialog(
     }
 
     internal fun updateAttributes() {
-        val attributes = mutableMapOf(
-            Pair(QueueAttributeName.VISIBILITY_TIMEOUT, view.visibilityTimeout.text),
-            Pair(QueueAttributeName.MAXIMUM_MESSAGE_SIZE, view.messageSize.text),
-            Pair(QueueAttributeName.MESSAGE_RETENTION_PERIOD, view.retentionPeriod.text),
-            Pair(QueueAttributeName.DELAY_SECONDS, view.deliveryDelay.text),
-            Pair(QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS, view.waitTime.text)
-        )
         client.setQueueAttributes {
             it.queueUrl(queue.queueUrl)
-            it.attributes(attributes)
+            it.attributes(
+                mutableMapOf(
+                    Pair(QueueAttributeName.VISIBILITY_TIMEOUT, view.visibilityTimeout.text),
+                    Pair(QueueAttributeName.MAXIMUM_MESSAGE_SIZE, view.messageSize.text),
+                    Pair(QueueAttributeName.MESSAGE_RETENTION_PERIOD, view.retentionPeriod.text),
+                    Pair(QueueAttributeName.DELAY_SECONDS, view.deliveryDelay.text),
+                    Pair(QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS, view.waitTime.text)
+                )
+            )
         }
     }
 

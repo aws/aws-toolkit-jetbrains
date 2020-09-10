@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
@@ -46,26 +47,35 @@ class EditAttributesDialogTest {
     @Test
     fun `Empty field fails`() {
         runInEdtAndWait {
-            val dialog = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
-                view.deliveryDelay.text = ""
+            listOf(
+                buildDialog(visibilityTimeout = null),
+                buildDialog(maxDeliveryDelay = null),
+                buildDialog(waitTime = null),
+                buildDialog(testRetentionPeriod = null),
+                buildDialog(testMessageSize = null)
+            ).forEach { dialog ->
+                assertThat(dialog.validate()).isNotNull()
             }
-            val validationInfo = dialog.validate()
-            assertThat(validationInfo).isNotNull()
         }
     }
 
     @Test
     fun `Value out of bound fails`() {
         runInEdtAndWait {
-            val dialog = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
-                view.visibilityTimeout.text = TEST_VISIBILITY_TIMEOUT
-                view.messageSize.text = TEST_MESSAGE_SIZE
-                view.retentionPeriod.text = TEST_RETENTION_PERIOD
-                view.deliveryDelay.text = (MAX_DELIVERY_DELAY + 1).toString()
-                view.waitTime.text = TEST_WAIT_TIME
+            listOf(
+                buildDialog(visibilityTimeout = MAX_VISIBILITY_TIMEOUT + 1),
+                buildDialog(visibilityTimeout = MIN_VISIBILITY_TIMEOUT - 1),
+                buildDialog(maxDeliveryDelay = MAX_DELIVERY_DELAY + 1),
+                buildDialog(maxDeliveryDelay = MIN_DELIVERY_DELAY - 1),
+                buildDialog(waitTime = MAX_WAIT_TIME + 1),
+                buildDialog(waitTime = MIN_WAIT_TIME - 1),
+                buildDialog(testRetentionPeriod = MAX_RETENTION_PERIOD + 1),
+                buildDialog(testRetentionPeriod = MIN_RETENTION_PERIOD - 1),
+                buildDialog(testMessageSize = MAX_MESSAGE_SIZE_LIMIT + 1),
+                buildDialog(testMessageSize = MIN_MESSAGE_SIZE_LIMIT - 1)
+            ).forEach { dialog ->
+                assertThat(dialog.validate()).isNotNull()
             }
-            val validationInfo = dialog.validate()
-            assertThat(validationInfo).isNotNull()
         }
     }
 
@@ -77,56 +87,41 @@ class EditAttributesDialogTest {
         }
 
         runInEdtAndWait {
-            EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
-                view.visibilityTimeout.text = TEST_VISIBILITY_TIMEOUT
-                view.messageSize.text = TEST_MESSAGE_SIZE
-                view.retentionPeriod.text = TEST_RETENTION_PERIOD
-                view.deliveryDelay.text = TEST_DELAY_SECONDS
-                view.waitTime.text = TEST_WAIT_TIME
-                updateAttributes()
-            }
+            buildDialog().updateAttributes()
         }
 
         val updatedAttributes = attributesCaptor.firstValue.attributes()
-        assertThat(updatedAttributes[QueueAttributeName.VISIBILITY_TIMEOUT]).isEqualTo(TEST_VISIBILITY_TIMEOUT)
-        assertThat(updatedAttributes[QueueAttributeName.MAXIMUM_MESSAGE_SIZE]).isEqualTo(TEST_MESSAGE_SIZE)
-        assertThat(updatedAttributes[QueueAttributeName.MESSAGE_RETENTION_PERIOD]).isEqualTo(TEST_RETENTION_PERIOD)
-        assertThat(updatedAttributes[QueueAttributeName.DELAY_SECONDS]).isEqualTo(TEST_DELAY_SECONDS)
-        assertThat(updatedAttributes[QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS]).isEqualTo(TEST_WAIT_TIME)
+        assertThat(updatedAttributes[QueueAttributeName.VISIBILITY_TIMEOUT]).isEqualTo(MAX_VISIBILITY_TIMEOUT.toString())
+        assertThat(updatedAttributes[QueueAttributeName.MAXIMUM_MESSAGE_SIZE]).isEqualTo(MAX_MESSAGE_SIZE_LIMIT.toString())
+        assertThat(updatedAttributes[QueueAttributeName.MESSAGE_RETENTION_PERIOD]).isEqualTo(MAX_RETENTION_PERIOD.toString())
+        assertThat(updatedAttributes[QueueAttributeName.DELAY_SECONDS]).isEqualTo(MAX_DELIVERY_DELAY.toString())
+        assertThat(updatedAttributes[QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS]).isEqualTo(MAX_WAIT_TIME.toString())
     }
 
     @Test
     fun `Error editing queue attributes`() {
-        val attributesCaptor = argumentCaptor<SetQueueAttributesRequest>()
+        val message = "Internal error"
+
         client.stub {
-            on { setQueueAttributes(attributesCaptor.capture()) } doThrow AwsServiceException.builder().message(ERROR_MESSAGE).build()
+            on { setQueueAttributes(any<SetQueueAttributesRequest>()) } doThrow AwsServiceException.builder().message(message).build()
         }
 
         runInEdtAndWait {
-            val dialog = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
-                view.visibilityTimeout.text = TEST_VISIBILITY_TIMEOUT
-                view.messageSize.text = TEST_MESSAGE_SIZE
-                view.retentionPeriod.text = TEST_RETENTION_PERIOD
-                view.deliveryDelay.text = TEST_DELAY_SECONDS
-                view.waitTime.text = TEST_WAIT_TIME
-            }
-            assertThatThrownBy { dialog.updateAttributes() }.hasMessage(ERROR_MESSAGE)
+            assertThatThrownBy { buildDialog().updateAttributes() }.hasMessage(message)
         }
-
-        val updatedAttributes = attributesCaptor.firstValue.attributes()
-        assertThat(updatedAttributes[QueueAttributeName.VISIBILITY_TIMEOUT]).isEqualTo(TEST_VISIBILITY_TIMEOUT)
-        assertThat(updatedAttributes[QueueAttributeName.MAXIMUM_MESSAGE_SIZE]).isEqualTo(TEST_MESSAGE_SIZE)
-        assertThat(updatedAttributes[QueueAttributeName.MESSAGE_RETENTION_PERIOD]).isEqualTo(TEST_RETENTION_PERIOD)
-        assertThat(updatedAttributes[QueueAttributeName.DELAY_SECONDS]).isEqualTo(TEST_DELAY_SECONDS)
-        assertThat(updatedAttributes[QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS]).isEqualTo(TEST_WAIT_TIME)
     }
 
-    private companion object {
-        const val TEST_VISIBILITY_TIMEOUT = MAX_VISIBILITY_TIMEOUT.toString()
-        const val TEST_MESSAGE_SIZE = MAX_MESSAGE_SIZE_LIMIT.toString()
-        const val TEST_RETENTION_PERIOD = MAX_RETENTION_PERIOD.toString()
-        const val TEST_DELAY_SECONDS = MAX_DELIVERY_DELAY.toString()
-        const val TEST_WAIT_TIME = MAX_WAIT_TIME.toString()
-        const val ERROR_MESSAGE = "Internal error"
+    private fun buildDialog(
+        visibilityTimeout: Int? = MAX_VISIBILITY_TIMEOUT,
+        maxDeliveryDelay: Int? = MAX_DELIVERY_DELAY,
+        waitTime: Int? = MAX_WAIT_TIME,
+        testRetentionPeriod: Int? = MAX_RETENTION_PERIOD,
+        testMessageSize: Int? = MAX_MESSAGE_SIZE_LIMIT
+    ) = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
+        view.visibilityTimeout.text = visibilityTimeout?.toString() ?: ""
+        view.messageSize.text = testMessageSize?.toString() ?: ""
+        view.retentionPeriod.text = testRetentionPeriod?.toString() ?: ""
+        view.deliveryDelay.text = maxDeliveryDelay?.toString() ?: ""
+        view.waitTime.text = waitTime?.toString() ?: ""
     }
 }
