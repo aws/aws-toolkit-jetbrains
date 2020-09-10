@@ -96,6 +96,8 @@ class SendMessagePane(
             messageSentLabel.text = message("sqs.failed_to_send_message")
             SqsTelemetry.sendMessage(project, Result.Failed, queue.telemetryType())
             clear(isSend = true)
+        } finally {
+            messageSentLabel.isVisible = true
         }
     }
 
