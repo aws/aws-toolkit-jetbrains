@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
 import software.aws.toolkits.jetbrains.uitests.fixtures.rightClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
+import java.time.Duration
 import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -230,8 +231,9 @@ class SqsTest {
     private fun SqsClient.waitForCreation(queueName: String) {
         try {
             // getQueueUrl can get before list works, so we can't use it to check if it exists.
-            // So, use getQueuesPaginator instead
-            waitUntilBlocking(succeedOn = { it }) {
+            // So, use getQueuesPaginator instead. This can also take more than 1 minute sometimes,
+            // so give it a 5 min timeout
+            waitUntilBlocking(succeedOn = { it }, maxDuration = Duration.ofMinutes(5)) {
                 listQueuesPaginator().queueUrls().toList().any {
                     it.contains(queueName)
                 }
