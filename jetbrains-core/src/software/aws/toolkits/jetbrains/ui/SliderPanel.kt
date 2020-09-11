@@ -37,17 +37,19 @@ class SliderPanel(
         slider.value = defaultValue
         slider.addChangeListener { e: ChangeEvent? -> textField.text = Integer.toString(validValue(slider!!.value)) }
         textField.text = slider.value.toString()
-        textField.addFocusListener(object : FocusAdapter() {
-            // When the text field lost focus, we force the value to be valid to reset to
-            // - default value if the input is not a valid integer, or
-            // - min if it is smaller than min, or
-            // - max if it is bigger than max.
-            override fun focusLost(e: FocusEvent) {
-                val value = validValue(textField.text.toInt())
-                slider.value = value
-                textField.text = value.toString()
+        textField.addFocusListener(
+            object : FocusAdapter() {
+                // When the text field lost focus, we force the value to be valid to reset to
+                // - default value if the input is not a valid integer, or
+                // - min if it is smaller than min, or
+                // - max if it is bigger than max.
+                override fun focusLost(e: FocusEvent) {
+                    val value = validValue(textField.text.toInt())
+                    slider.value = value
+                    textField.text = value.toString()
+                }
             }
-        })
+        )
     }
 
     var value: Int
