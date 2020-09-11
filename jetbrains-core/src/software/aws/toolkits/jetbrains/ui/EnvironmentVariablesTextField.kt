@@ -43,15 +43,17 @@ class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityP
             EnvironmentVariablesDialog(this).show()
         }
 
-        textField.document.addDocumentListener(object : DocumentAdapter() {
-            override fun textChanged(e: DocumentEvent) {
-                if (!StringUtil.equals(stringify(data.envs), text)) {
-                    val textEnvs = EnvVariablesTable.parseEnvsFromText(text)
-                    data = EnvironmentVariablesData.create(textEnvs, data.isPassParentEnvs)
-                    fireStateChanged()
+        textField.document.addDocumentListener(
+            object : DocumentAdapter() {
+                override fun textChanged(e: DocumentEvent) {
+                    if (!StringUtil.equals(stringify(data.envs), text)) {
+                        val textEnvs = EnvVariablesTable.parseEnvsFromText(text)
+                        data = EnvironmentVariablesData.create(textEnvs, data.isPassParentEnvs)
+                        fireStateChanged()
+                    }
                 }
             }
-        })
+        )
     }
 
     private fun convertToVariables(envVars: Map<String, String>, readOnly: Boolean): List<EnvironmentVariable> = envVars.map { (key, value) ->
