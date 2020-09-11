@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.jetbrains.services.sqs.MAX_NUMBER_OF_POLLED_MESSAGES
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.services.sqs.actions.CopyMessageAction
-import software.aws.toolkits.jetbrains.services.sqs.actions.DeleteMessageAction
+import software.aws.toolkits.jetbrains.services.sqs.actions.PurgeQueueAction
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import javax.swing.JButton
@@ -70,6 +70,9 @@ class PollMessagePane(
                     it.queueUrl(queue.queueUrl)
                     it.attributeNames(QueueAttributeName.ALL)
                     it.maxNumberOfMessages(MAX_NUMBER_OF_POLLED_MESSAGES)
+                    // Make poll a real peek by setting the visibility timout to 0, so messages can be
+                    // requested by other consumers of the queue immediately
+                    it.visibilityTimeout(0)
                 }.messages()
 
                 polledMessages.forEach {
@@ -104,11 +107,7 @@ class PollMessagePane(
         val actionGroup = DefaultActionGroup().apply {
             add(CopyMessageAction(messagesTable.table).apply { registerCustomShortcutSet(CommonShortcuts.getCopy(), component) })
             add(Separator.create())
-            add(
-                DeleteMessageAction(project, client, messagesTable.table, pollButton, queue).apply {
-                    registerCustomShortcutSet(CommonShortcuts.getDelete(), component)
-                }
-            )
+            add(PurgeQueueAction(project, client, queue))
         }
         PopupHandler.installPopupHandler(
             messagesTable.table,
