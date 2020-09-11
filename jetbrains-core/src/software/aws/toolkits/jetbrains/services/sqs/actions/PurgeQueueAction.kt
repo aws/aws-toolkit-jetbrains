@@ -33,8 +33,8 @@ class PurgeQueueAction(
     override fun actionPerformed(e: AnActionEvent) {
         val response = Messages.showOkCancelDialog(
             project,
-            message("sqs.purge_queue.confirm", queue.queueUrl),
-            message("sqs.purge_queue.confirm", queue.queueUrl),
+            message("sqs.purge_queue.confirm", queue.queueName),
+            message("sqs.purge_queue.confirm.title"),
             CommonBundle.getOkButtonText(),
             CommonBundle.getCancelButtonText(),
             Messages.getWarningIcon()
@@ -46,7 +46,7 @@ class PurgeQueueAction(
         launch {
             try {
                 client.purgeQueue { it.queueUrl(queue.queueUrl) }
-                LOG.info { "Started purging ${queue}.queueUrl}" }
+                LOG.info { "Started purging ${queue.queueUrl}" }
                 notifyInfo(
                     project = project,
                     title = message("aws.notification.title"),
