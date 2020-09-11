@@ -36,7 +36,7 @@ import java.time.Duration
 import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class SqsTest {
+class QueryServiceTest {
     @TempDir
     lateinit var tempDir: Path
 
