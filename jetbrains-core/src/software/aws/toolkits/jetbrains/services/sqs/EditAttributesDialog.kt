@@ -42,13 +42,17 @@ class EditAttributesDialog(
     override fun createCenterPanel(): JComponent? = view.component
 
     override fun doValidate(): ValidationInfo? {
-        try {
-            view.messageSize.validateContent()
-            view.retentionPeriod.validateContent()
-        } catch (e: ConfigurationException) {
-            return ValidationInfo(e.title)
+        val sliderIssue = view.visibilityTimeout.validate() ?: view.deliveryDelay.validate() ?: view.waitTime.validate()
+        if (sliderIssue != null) {
+            return sliderIssue
         }
-        return view.waitTime.validate() ?: view.deliveryDelay.validate() ?: view.waitTime.validate()
+        return try {
+            view.retentionPeriod.validateContent()
+            view.messageSize.validateContent()
+            null
+        } catch (e: ConfigurationException) {
+            ValidationInfo(e.title)
+        }
     }
 
     override fun doCancelAction() {
@@ -95,11 +99,11 @@ class EditAttributesDialog(
             it.queueUrl(queue.queueUrl)
             it.attributes(
                 mutableMapOf(
-                    Pair(QueueAttributeName.VISIBILITY_TIMEOUT, view.visibilityTimeout.value.toString()),
-                    Pair(QueueAttributeName.MAXIMUM_MESSAGE_SIZE, view.messageSize.text),
-                    Pair(QueueAttributeName.MESSAGE_RETENTION_PERIOD, view.retentionPeriod.text),
-                    Pair(QueueAttributeName.DELAY_SECONDS, view.deliveryDelay.value.toString()),
-                    Pair(QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS, view.waitTime.value.toString())
+                    QueueAttributeName.VISIBILITY_TIMEOUT to view.visibilityTimeout.value.toString(),
+                    QueueAttributeName.MAXIMUM_MESSAGE_SIZE to view.messageSize.text,
+                    QueueAttributeName.MESSAGE_RETENTION_PERIOD to view.retentionPeriod.text,
+                    QueueAttributeName.DELAY_SECONDS to view.deliveryDelay.value.toString(),
+                    QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS to view.waitTime.value.toString()
                 )
             )
         }
