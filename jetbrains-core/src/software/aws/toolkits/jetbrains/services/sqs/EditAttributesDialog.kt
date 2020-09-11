@@ -43,15 +43,12 @@ class EditAttributesDialog(
 
     override fun doValidate(): ValidationInfo? {
         try {
-            view.deliveryDelay.validateContent()
-            view.visibilityTimeout.validateContent()
             view.messageSize.validateContent()
-            view.waitTime.validateContent()
             view.retentionPeriod.validateContent()
         } catch (e: ConfigurationException) {
             return ValidationInfo(e.title)
         }
-        return null
+        return view.waitTime.validate() ?: view.deliveryDelay.validate() ?: view.waitTime.validate()
     }
 
     override fun doCancelAction() {
@@ -72,10 +69,10 @@ class EditAttributesDialog(
                     title = message("sqs.service_name"),
                     content = message("sqs.edit.attributes.updated", queue.queueName)
                 )
+                SqsTelemetry.editQueueAttributes(project, Result.Succeeded, queue.telemetryType())
                 withContext(getCoroutineUiContext(ModalityState.any())) {
                     close(OK_EXIT_CODE)
                 }
-                SqsTelemetry.editQueueAttributes(project, Result.Succeeded, queue.telemetryType())
             } catch (e: SqsException) {
                 LOG.error(e) { "Updating queue attributes failed" }
                 setErrorText(e.message)
@@ -86,11 +83,11 @@ class EditAttributesDialog(
     }
 
     private fun populateFields() {
-        view.visibilityTimeout.text = attributes[QueueAttributeName.VISIBILITY_TIMEOUT]
+        view.visibilityTimeout.value = attributes[QueueAttributeName.VISIBILITY_TIMEOUT]?.toIntOrNull() ?: MIN_VISIBILITY_TIMEOUT
         view.messageSize.text = attributes[QueueAttributeName.MAXIMUM_MESSAGE_SIZE]
         view.retentionPeriod.text = attributes[QueueAttributeName.MESSAGE_RETENTION_PERIOD]
-        view.deliveryDelay.text = attributes[QueueAttributeName.DELAY_SECONDS]
-        view.waitTime.text = attributes[QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS]
+        view.deliveryDelay.value = attributes[QueueAttributeName.DELAY_SECONDS]?.toIntOrNull() ?: MIN_DELIVERY_DELAY
+        view.waitTime.value = attributes[QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS]?.toIntOrNull() ?: MIN_WAIT_TIME
     }
 
     internal fun updateAttributes() {
@@ -98,11 +95,11 @@ class EditAttributesDialog(
             it.queueUrl(queue.queueUrl)
             it.attributes(
                 mutableMapOf(
-                    Pair(QueueAttributeName.VISIBILITY_TIMEOUT, view.visibilityTimeout.text),
+                    Pair(QueueAttributeName.VISIBILITY_TIMEOUT, view.visibilityTimeout.value.toString()),
                     Pair(QueueAttributeName.MAXIMUM_MESSAGE_SIZE, view.messageSize.text),
                     Pair(QueueAttributeName.MESSAGE_RETENTION_PERIOD, view.retentionPeriod.text),
-                    Pair(QueueAttributeName.DELAY_SECONDS, view.deliveryDelay.text),
-                    Pair(QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS, view.waitTime.text)
+                    Pair(QueueAttributeName.DELAY_SECONDS, view.deliveryDelay.value.toString()),
+                    Pair(QueueAttributeName.RECEIVE_MESSAGE_WAIT_TIME_SECONDS, view.waitTime.value.toString())
                 )
             )
         }

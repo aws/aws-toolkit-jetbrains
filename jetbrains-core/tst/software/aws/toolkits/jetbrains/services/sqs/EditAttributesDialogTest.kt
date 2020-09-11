@@ -48,9 +48,6 @@ class EditAttributesDialogTest {
     fun `Empty field fails`() {
         runInEdtAndWait {
             listOf(
-                buildDialog(visibilityTimeout = null),
-                buildDialog(maxDeliveryDelay = null),
-                buildDialog(waitTime = null),
                 buildDialog(testRetentionPeriod = null),
                 buildDialog(testMessageSize = null)
             ).forEach { dialog ->
@@ -112,16 +109,16 @@ class EditAttributesDialogTest {
     }
 
     private fun buildDialog(
-        visibilityTimeout: Int? = MAX_VISIBILITY_TIMEOUT,
-        maxDeliveryDelay: Int? = MAX_DELIVERY_DELAY,
-        waitTime: Int? = MAX_WAIT_TIME,
+        visibilityTimeout: Int = MAX_VISIBILITY_TIMEOUT,
+        maxDeliveryDelay: Int = MAX_DELIVERY_DELAY,
+        waitTime: Int = MAX_WAIT_TIME,
         testRetentionPeriod: Int? = MAX_RETENTION_PERIOD,
         testMessageSize: Int? = MAX_MESSAGE_SIZE_LIMIT
     ) = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
-        view.visibilityTimeout.text = visibilityTimeout?.toString() ?: ""
+        view.visibilityTimeout.value = visibilityTimeout
         view.messageSize.text = testMessageSize?.toString() ?: ""
         view.retentionPeriod.text = testRetentionPeriod?.toString() ?: ""
-        view.deliveryDelay.text = maxDeliveryDelay?.toString() ?: ""
-        view.waitTime.text = waitTime?.toString() ?: ""
+        view.deliveryDelay.value = maxDeliveryDelay
+        view.waitTime.value = waitTime
     }
 }
