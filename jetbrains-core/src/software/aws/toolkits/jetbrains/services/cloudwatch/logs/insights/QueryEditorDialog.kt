@@ -11,7 +11,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.StartQueryRequest
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -22,20 +25,19 @@ import javax.swing.JComponent
 
 class QueryEditorDialog(
     private val project: Project,
-    queryDetails: QueryDetails,
-    private val client: CloudWatchLogsClient = project.awsClient()
+    private val initialQueryDetails: QueryDetails
 ) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("QueryEditorDialog") {
-    constructor(project: Project, logGroupName: String, client: CloudWatchLogsClient = project.awsClient()) :
-        this(project, defaultQuery(logGroupName), client)
+    constructor(project: Project, connectionSettings: ConnectionSettings, logGroupName: String) :
+        this(project, defaultQuery(connectionSettings, logGroupName))
 
-    private val view = QueryEditor(project, queryDetails.logGroups)
+    private val view = QueryEditor(project, initialQueryDetails)
     private val action: OkAction = QueryLogGroupOkAction()
 
     init {
         super.init()
 
         title = message("cloudwatch.logs.query_editor_title")
-        setView(queryDetails)
+        setView(initialQueryDetails)
     }
 
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
@@ -49,8 +51,12 @@ class QueryEditorDialog(
     }
 
     private fun setView(queryDetails: QueryDetails) {
-        // TODO: handle multiple groups
-        view.logGroupLabel.text = "Log Group : ${queryDetails.logGroups.first()}"
+        val availableLogGroups = AwsResourceCache.getInstance(project).getResourceNow(
+            CloudWatchResources.LIST_LOG_GROUPS,
+            region = initialQueryDetails.connectionSettings.region,
+            credentialProvider = initialQueryDetails.connectionSettings.credentials
+        ).map { it.logGroupName() }
+        view.logGroupTable.populateLogGroups(initialQueryDetails.logGroups.toSet(), availableLogGroups)
 
         when (val timeRange = queryDetails.timeRange) {
             is TimeRange.AbsoluteRange -> {
@@ -93,7 +99,7 @@ class QueryEditorDialog(
         }
     }
 
-    private fun getQueryDetails(): QueryDetails {
+    fun getQueryDetails(): QueryDetails {
         val timeRange = if (view.absoluteTimeRadioButton.isSelected) {
             TimeRange.AbsoluteRange(
                 startDate = view.startDate.date,
@@ -101,7 +107,7 @@ class QueryEditorDialog(
             )
         } else {
             TimeRange.RelativeRange(
-                relativeTimeAmount = view.relativeTimeNumber.text.toLong(),
+                relativeTimeAmount = view.getRelativeTimeAmount(),
                 relativeTimeUnit = view.getSelectedTimeUnit()
             )
         }
@@ -117,7 +123,8 @@ class QueryEditorDialog(
         }
 
         return QueryDetails(
-            logGroups = view.logGroupNames.toMutableList(),
+            connectionSettings = initialQueryDetails.connectionSettings,
+            logGroups = view.logGroupTable.getSelectedLogGroups(),
             timeRange = timeRange,
             query = query
         )
@@ -155,6 +162,7 @@ class QueryEditorDialog(
     }
 
     fun startQueryAsync(queryDetails: QueryDetails) = async {
+        val client = project.awsClient<CloudWatchLogsClient>(queryDetails.connectionSettings)
         val timeRange = queryDetails.getQueryRange()
         val queryString = queryDetails.getQueryString()
         try {
@@ -174,7 +182,8 @@ class QueryEditorDialog(
     }
 
     companion object {
-        private fun defaultQuery(logGroupName: String) = QueryDetails(
+        private fun defaultQuery(connectionSettings: ConnectionSettings, logGroupName: String) = QueryDetails(
+            connectionSettings,
             mutableListOf(logGroupName),
             TimeRange.RelativeRange(10, ChronoUnit.MINUTES),
             QueryString.InsightsQueryString(DEFAULT_INSIGHTS_QUERY_STRING)
