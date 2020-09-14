@@ -29,9 +29,16 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     fun openPreferences() {
         actionLink("Configure").click()
 
-        find(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
-            .findText(remoteRobot.preferencesTitle())
-            .click()
+        // MyList finds both the list of actions and the most recently used file list,
+        // so try both of them, ignoring failures. If it fails and passes this, the next
+        // stop will throw so it's safe to swallow the exception
+        findAll(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
+            .forEach {
+                try {
+                    it.findText(remoteRobot.preferencesTitle()).click()
+                } catch (e: NoSuchElementException) {
+                }
+            }
     }
 
     fun openFolder(path: Path) {
