@@ -42,8 +42,8 @@ class SQSTest {
     lateinit var tempDir: Path
 
     private val sqsNodeLabel = "SQS"
-    private val createQueueText = "Create Queue"
-    private val deleteQueueText = "Delete Queue"
+    private val createQueueText = "Create Queue..."
+    private val deleteQueueText = "Delete Queue..."
     private val purgeQueueText = "Purge Queue"
 
     private val queueName = "uitest-${UUID.randomUUID()}"
@@ -103,8 +103,8 @@ class SQSTest {
                     }
                 }
                 openPollMessagePane(queueName)
-                step("poll for messages") {
-                    findAndClick("//div[@accessiblename='Poll for Messages' and @class='JButton']")
+                step("View messages") {
+                    findAndClick("//div[@accessiblename='View Messages' and @class='JButton']")
                     // Wait for the table to be populated (It's very fast for small queues)
                     Thread.sleep(1000)
                     find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText().any { it.text.contains("bmessage") }
@@ -192,11 +192,11 @@ class SQSTest {
         find<ComponentFixture>(byXpath("//div[@accessiblename='Close Tab' and @class='ActionMenuItem' and @text='Close Tab']")).click()
     }
 
-    private fun RemoteRobot.openPollMessagePane(queueName: String) = step("Open poll message pane") {
+    private fun RemoteRobot.openPollMessagePane(queueName: String) = step("Open view message pane") {
         awsExplorer {
             openExplorerActionMenu(sqsNodeLabel, queueName)
         }
-        find<ComponentFixture>(byXpath("//div[@accessiblename='Poll for Messages']")).click()
+        find<ComponentFixture>(byXpath("//div[@accessiblename='View Messages']")).click()
     }
 
     private fun SqsClient.verifyDeleted(queueName: String) {
@@ -213,7 +213,7 @@ class SQSTest {
         try {
             deleteQueue { it.queueUrl(queueUrl) }
         } catch (e: Exception) {
-            log.info("Trying to delete $queueUrl threw an exception, it might not be deleted!", e)
+            log.error("Trying to delete $queueUrl threw an exception, it might not be deleted!", e)
             return
         }
 
