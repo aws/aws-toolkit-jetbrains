@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressCreate
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
+import software.aws.toolkits.jetbrains.uitests.fixtures.pressYes
 import software.aws.toolkits.jetbrains.uitests.fixtures.rightClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
@@ -128,12 +129,14 @@ class SQSTest {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
                 }
                 findAndClick("//div[@text='$purgeQueueText']")
+                pressYes()
                 val toast = findToast()
                 assertThat(toast.hasText { it.text.contains("Started purging queue") })
                 awsExplorer {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
                 }
                 findAndClick("//div[@text='$purgeQueueText']")
+                pressYes()
                 val errorToast = findToast()
                 assertThat(errorToast.hasText { it.text.contains("Purge queue request already in progress for queue") })
             }

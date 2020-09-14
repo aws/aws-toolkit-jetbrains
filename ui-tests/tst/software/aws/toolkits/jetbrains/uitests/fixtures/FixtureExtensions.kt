@@ -44,6 +44,10 @@ fun ContainerFixture.pressCreate() = step("Press the \"Create\" button") {
     find<ComponentFixture>(byXpath("//div[@text='Create']")).click()
 }
 
+fun ContainerFixture.pressYes() = step("""Press the visible "yes" button""") {
+    findAndClick("//div[@class='JButton' and @text='Yes']")
+}
+
 /*
  * Find an action button by button text instead of by xPath
  */
