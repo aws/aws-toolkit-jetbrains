@@ -7,17 +7,18 @@ import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
+import software.aws.toolkits.resources.message
 
 data class LogGroup(
     var selected: Boolean = false,
-    var name: String? = null
+    var name: String
 )
 
 class LogGroupSelectorTable : TableView<LogGroup>(model) {
     init {
+        listTableModel.items = emptyList()
         TableSpeedSearch(this)
-        TableUtil.setupCheckboxColumn(this, 0)
-        TableUtil.updateScroller(this)
+        emptyText.text = message("loading_resource.loading")
     }
 
     fun populateLogGroups(selectedLogGroups: Set<String>, availableLogGroups: List<String>) {
@@ -30,6 +31,8 @@ class LogGroupSelectorTable : TableView<LogGroup>(model) {
         }.unzip()
 
         listTableModel.items = modelItems
+        TableUtil.setupCheckboxColumn(this, 0)
+        TableUtil.updateScroller(this)
         TableUtil.selectRows(this, selected.filterNotNull().toIntArray())
         TableUtil.scrollSelectionToVisible(this)
     }
@@ -58,6 +61,8 @@ class LogGroupSelectorTable : TableView<LogGroup>(model) {
         }
 
         private class LogGroupNameColumnInfo : ColumnInfo<LogGroup, String>("Log Group Name") {
+            override fun isCellEditable(item: LogGroup) = false
+
             override fun valueOf(item: LogGroup) = item.name
 
             override fun setValue(item: LogGroup, value: String?) {

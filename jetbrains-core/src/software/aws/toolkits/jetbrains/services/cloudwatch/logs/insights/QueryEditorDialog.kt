@@ -3,12 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.StartQueryRequest
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -16,6 +19,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.awt.event.ActionEvent
@@ -51,13 +55,6 @@ class QueryEditorDialog(
     }
 
     private fun setView(queryDetails: QueryDetails) {
-        val availableLogGroups = AwsResourceCache.getInstance(project).getResourceNow(
-            CloudWatchResources.LIST_LOG_GROUPS,
-            region = initialQueryDetails.connectionSettings.region,
-            credentialProvider = initialQueryDetails.connectionSettings.credentials
-        ).map { it.logGroupName() }
-        view.logGroupTable.populateLogGroups(initialQueryDetails.logGroups.toSet(), availableLogGroups)
-
         when (val timeRange = queryDetails.timeRange) {
             is TimeRange.AbsoluteRange -> {
                 view.setAbsolute()
@@ -81,6 +78,17 @@ class QueryEditorDialog(
             is QueryString.InsightsQueryString -> {
                 view.setQueryLanguage()
                 view.queryBox.text = query.query
+            }
+        }
+
+        launch {
+            val availableLogGroups = AwsResourceCache.getInstance(project).getResource(
+                CloudWatchResources.LIST_LOG_GROUPS,
+                region = initialQueryDetails.connectionSettings.region,
+                credentialProvider = initialQueryDetails.connectionSettings.credentials
+            ).await().map { it.logGroupName() }
+            withContext(getCoroutineUiContext(ModalityState.stateForComponent(view.logGroupTable))) {
+                view.logGroupTable.populateLogGroups(initialQueryDetails.logGroups.toSet(), availableLogGroups)
             }
         }
     }
@@ -157,6 +165,9 @@ class QueryEditorDialog(
         }
         if (view.searchTerm.isSelected && view.querySearchTerm.text.isEmpty()) {
             return ValidationInfo(message("cloudwatch.logs.no_term_entered"), view.querySearchTerm)
+        }
+        if (view.logGroupTable.getSelectedLogGroups().isEmpty()) {
+            return ValidationInfo(message("cloudwatch.logs.no_log_group"), view.logGroupTable)
         }
         return null
     }

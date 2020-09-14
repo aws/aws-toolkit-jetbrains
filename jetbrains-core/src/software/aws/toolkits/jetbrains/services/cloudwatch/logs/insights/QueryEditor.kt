@@ -9,6 +9,7 @@ import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import com.michaelbaranov.microba.calendar.DatePicker
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.utils.ui.selected
@@ -34,7 +35,7 @@ class QueryEditor internal constructor(
     lateinit var queryLogGroupsRadioButton: JRadioButton
     lateinit var saveQueryButton: JButton
     lateinit var retrieveSavedQueriesButton: JButton
-    private lateinit var tablePanel: SimpleToolWindowPanel
+    lateinit var tablePanel: SimpleToolWindowPanel
     lateinit var queryBox: JTextArea
     lateinit var endDate: DatePicker
     lateinit var queryEditorBasePanel: JPanel
@@ -55,7 +56,7 @@ class QueryEditor internal constructor(
         numberFormat = NumberFormat.getIntegerInstance()
         relativeTimeNumber = JFormattedTextField(numberFormat)
         // arbitrary length
-        relativeTimeNumber.columns = 15
+        relativeTimeNumber.columns = 10
         relativeTimeUnit = ComboBox(timeUnits)
         relativeTimeUnit.renderer = timeUnitComboBoxRenderer
     }
@@ -93,8 +94,8 @@ class QueryEditor internal constructor(
         queryBox.text = DEFAULT_INSIGHTS_QUERY_STRING
 
         queryGroupScrollPane.border = IdeBorderFactory.createTitledBorder(message("cloudwatch.logs.log_groups"), false, JBUI.emptyInsets())
-        timePanel.border = JBUI.Borders.emptyTop(6)
-        searchPanel.border = JBUI.Borders.emptyTop(6)
+        timePanel.border = JBUI.Borders.emptyTop(UIUtil.DEFAULT_VGAP)
+        searchPanel.border = JBUI.Borders.emptyTop(UIUtil.DEFAULT_VGAP)
     }
 
     fun setAbsolute() {

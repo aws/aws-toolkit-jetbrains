@@ -155,6 +155,12 @@ class QueryEditorDialogTest {
     }
 
     @Test
+    fun `No log groups selected`() {
+        setViewDetails(relativeTime = true, logGroups = emptyList())
+        assertThat(sut.validateEditorEntries(view)?.message).contains(message("cloudwatch.logs.no_log_group"))
+    }
+
+    @Test
     fun `Path with relative time and queries correctly entered gets executed`() {
         setViewDetails(relativeTime = true, queryLogs = true, query = "fields @timestamp")
         assertThat(sut.validateEditorEntries(view)?.message).isNull()
@@ -294,6 +300,7 @@ class QueryEditorDialogTest {
     )
 
     private fun setViewDetails(
+        logGroups: List<String> = listOf("log1"),
         absoluteTime: Boolean = false,
         relativeTime: Boolean = false,
         startDate: Date = Calendar.getInstance().time,
@@ -305,6 +312,7 @@ class QueryEditorDialogTest {
         searchTerm: String = "Example",
         query: String = "Example Query"
     ) {
+        view.logGroupTable.populateLogGroups(logGroups.toSet(), logGroups)
         view.relativeTimeRadioButton.isSelected = relativeTime
         view.endDate.date = endDate
         view.startDate.date = startDate
