@@ -19,7 +19,9 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry
 import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.DialogFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
+import software.aws.toolkits.jetbrains.uitests.fixtures.NewProjectWizardDialog
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillAllJBTextFields
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleJBTextArea
@@ -44,7 +46,9 @@ class SQSTest {
     private val sqsNodeLabel = "SQS"
     private val createQueueText = "Create Queue..."
     private val deleteQueueText = "Delete Queue..."
-    private val purgeQueueText = "Purge Queue"
+    private val purgeQueueText = "Purge Queue..."
+    private val editQueueAttributesAction = "Edit Queue Attributes..."
+    private val editQueueAttributesTitle = "Edit Queue Attributes"
 
     private val queueName = "uitest-${UUID.randomUUID()}"
     private val fifoQueueName = "fifouitest-${UUID.randomUUID()}.fifo"
@@ -124,6 +128,14 @@ class SQSTest {
                 }
             }
             closeToolWindowTab()
+            step("edit queue settings") {
+                awsExplorer {
+                    openExplorerActionMenu(sqsNodeLabel, queueName)
+                }
+                findAndClick("//div[@text='$editQueueAttributesAction']")
+                // Make sure the dialog opens, then close it
+                find<NewProjectWizardDialog>(DialogFixture.byTitle(editQueueAttributesTitle)).close()
+            }
             step("Purge queue") {
                 awsExplorer {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
