@@ -9,6 +9,7 @@ import com.intellij.remoterobot.stepsProcessing.step
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
@@ -20,6 +21,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.projectStructureDialog
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SamTemplateProjectWizardTest {
     @TempDir
     lateinit var tempDir: Path
