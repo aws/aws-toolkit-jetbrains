@@ -31,7 +31,7 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
 
         // MyList finds both the list of actions and the most recently used file list,
         // so try both of them, ignoring failures. If it fails and passes this, the next
-        // stop will throw so it's safe to swallow the exception
+        // step should fail (since the preferences pane isn't open) so it's safe to swallow the exception
         findAll(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
             .forEach {
                 try {
