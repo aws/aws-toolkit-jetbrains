@@ -21,41 +21,38 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 
 class SamTemplateProjectWizardTest {
-    companion object {
-        @JvmStatic
-        @BeforeAll
-        fun setUpSamCli() {
-            val samPath = System.getenv("SAM_CLI_EXEC")
-            if (samPath.isNullOrEmpty()) {
-                log.warn("No custom SAM set, skipping setup")
-                return
-            }
+    @TempDir
+    lateinit var tempDir: Path
 
-            uiTest {
-                welcomeFrame {
-                    step("Open preferences page") {
-                        openPreferences()
+    @BeforeAll
+    fun setUpSamCli() {
+        val samPath = System.getenv("SAM_CLI_EXEC")
+        if (samPath.isNullOrEmpty()) {
+            log.warn("No custom SAM set, skipping setup")
+            return
+        }
 
-                        preferencesDialog {
-                            // Search for AWS because sometimes it is off the screen
-                            search("AWS")
+        uiTest {
+            welcomeFrame {
+                step("Open preferences page") {
+                    openPreferences()
 
-                            selectPreferencePage("Tools", "AWS")
+                    preferencesDialog {
+                        // Search for AWS because sometimes it is off the screen
+                        search("AWS")
 
-                            step("Set SAM CLI executable path to $samPath") {
-                                textField("SAM CLI executable:").text = samPath
-                            }
+                        selectPreferencePage("Tools", "AWS")
 
-                            pressOk()
+                        step("Set SAM CLI executable path to $samPath") {
+                            textField("SAM CLI executable:").text = samPath
                         }
+
+                        pressOk()
                     }
                 }
             }
         }
     }
-
-    @TempDir
-    lateinit var tempDir: Path
 
     @Test
     @CoreTest
