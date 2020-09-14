@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.sqs.MAX_NUMBER_OF_POLLED_MESSAGE
 import software.aws.toolkits.jetbrains.services.sqs.Queue
 import software.aws.toolkits.jetbrains.services.sqs.actions.CopyMessageAction
 import software.aws.toolkits.jetbrains.services.sqs.actions.PurgeQueueAction
+import software.aws.toolkits.jetbrains.services.sqs.approximateNumberOfMessages
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import javax.swing.JButton
@@ -91,12 +92,8 @@ class PollMessagePane(
     suspend fun getAvailableMessages() {
         try {
             withContext(Dispatchers.IO) {
-                val numMessages = client.getQueueAttributes {
-                    it.queueUrl(queue.queueUrl)
-                    it.attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
-                }.attributes().getValue(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
-
-                messagesAvailableLabel.text = message("sqs.messages.available.text", numMessages.toIntOrNull() ?: 0)
+                val numMessages = client.approximateNumberOfMessages(queue.queueUrl)
+                messagesAvailableLabel.text = message("sqs.messages.available.text", numMessages ?: 0)
             }
         } catch (e: Exception) {
             messagesAvailableLabel.text = message("sqs.failed_to_load_total")
