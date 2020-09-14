@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.tests
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComponentFixture
+import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
@@ -31,6 +32,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressCreate
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
+import software.aws.toolkits.jetbrains.uitests.fixtures.pressSave
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressYes
 import software.aws.toolkits.jetbrains.uitests.fixtures.rightClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
@@ -128,13 +130,20 @@ class SQSTest {
                 }
             }
             closeToolWindowTab()
-            step("edit queue settings") {
-                awsExplorer {
-                    openExplorerActionMenu(sqsNodeLabel, queueName)
-                }
+            step("Edit queue attributes") {
+                awsExplorer { openExplorerActionMenu(sqsNodeLabel, queueName) }
                 findAndClick("//div[@text='$editQueueAttributesAction']")
-                // Make sure the dialog opens, then close it
-                find<NewProjectWizardDialog>(DialogFixture.byTitle(editQueueAttributesTitle)).close()
+                val dialog = find<NewProjectWizardDialog>(DialogFixture.byTitle(editQueueAttributesTitle))
+                // Change visibility timeout to a different value
+                find<JTextFieldFixture>(byXpath("//div[@class='JTextField' and @visible_text='30']")).text = "24"
+                dialog.pressSave()
+                assertThat(findToast().hasText { it.text.contains("Updated queue attributes") })
+                // Reopen the dialog to make sure the new value was saved
+                awsExplorer { openExplorerActionMenu(sqsNodeLabel, queueName) }
+                findAndClick("//div[@text='$editQueueAttributesAction']")
+                val updatedDialog = find<NewProjectWizardDialog>(DialogFixture.byTitle(editQueueAttributesTitle))
+                find<JTextFieldFixture>(byXpath("//div[@class='JTextField' and @visible_text='24']"))
+                updatedDialog.close()
             }
             step("Purge queue") {
                 awsExplorer {
@@ -142,15 +151,13 @@ class SQSTest {
                 }
                 findAndClick("//div[@text='$purgeQueueText']")
                 pressYes()
-                val toast = findToast()
-                assertThat(toast.hasText { it.text.contains("Started purging queue") })
+                assertThat(findToast().hasText { it.text.contains("Started purging queue") })
                 awsExplorer {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
                 }
                 findAndClick("//div[@text='$purgeQueueText']")
                 pressYes()
-                val errorToast = findToast()
-                assertThat(errorToast.hasText { it.text.contains("Purge queue request already in progress for queue") })
+                assertThat(findToast().hasText { it.text.contains("Purge queue request already in progress for queue") })
             }
             step("Delete queues") {
                 step("Delete queue $queueName") {
