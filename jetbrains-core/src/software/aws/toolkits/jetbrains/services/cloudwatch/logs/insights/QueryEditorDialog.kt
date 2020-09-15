@@ -41,7 +41,9 @@ class QueryEditorDialog(
         super.init()
 
         title = message("cloudwatch.logs.query_editor_title")
-        setView(initialQueryDetails)
+        launch {
+            setView(initialQueryDetails)
+        }
     }
 
     override fun createCenterPanel(): JComponent? = view.queryEditorBasePanel
@@ -54,7 +56,7 @@ class QueryEditorDialog(
         // Do nothing, close logic is handled separately
     }
 
-    private fun setView(queryDetails: QueryDetails) {
+    suspend fun setView(queryDetails: QueryDetails) {
         when (val timeRange = queryDetails.timeRange) {
             is TimeRange.AbsoluteRange -> {
                 view.setAbsolute()
@@ -81,15 +83,13 @@ class QueryEditorDialog(
             }
         }
 
-        launch {
-            val availableLogGroups = AwsResourceCache.getInstance(project).getResource(
-                CloudWatchResources.LIST_LOG_GROUPS,
-                region = initialQueryDetails.connectionSettings.region,
-                credentialProvider = initialQueryDetails.connectionSettings.credentials
-            ).await().map { it.logGroupName() }
-            withContext(getCoroutineUiContext(ModalityState.stateForComponent(view.logGroupTable))) {
-                view.logGroupTable.populateLogGroups(initialQueryDetails.logGroups.toSet(), availableLogGroups)
-            }
+        val availableLogGroups = AwsResourceCache.getInstance(project).getResource(
+            CloudWatchResources.LIST_LOG_GROUPS,
+            region = initialQueryDetails.connectionSettings.region,
+            credentialProvider = initialQueryDetails.connectionSettings.credentials
+        ).await().map { it.logGroupName() }
+        withContext(getCoroutineUiContext(ModalityState.stateForComponent(view.logGroupTable))) {
+            view.logGroupTable.populateLogGroups(initialQueryDetails.logGroups.toSet(), availableLogGroups)
         }
     }
 

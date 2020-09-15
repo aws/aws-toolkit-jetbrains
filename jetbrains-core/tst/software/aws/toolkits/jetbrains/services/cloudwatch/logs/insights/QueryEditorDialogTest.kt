@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.verify
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -69,6 +70,10 @@ class QueryEditorDialogTest {
         )
         view = QueryEditor(project, queryDetails(listOf()))
         sut = QueryEditorDialog(project, connectionSettings, "log1")
+        runBlocking {
+            // annoying race between view initialization and test assertion
+            sut.setView(queryDetails(listOf("log1")))
+        }
 
         client.stub {
             on(it.startQuery(any<StartQueryRequest>())).thenReturn(
@@ -104,7 +109,11 @@ class QueryEditorDialogTest {
                 LogGroup.builder().logGroupName("log2").build()
             )
         )
-        sut = QueryEditorDialog(projectRule.project, queryDetails(listOf("log0", "log1")))
+        runBlocking {
+            sut = QueryEditorDialog(projectRule.project, queryDetails(listOf("log0", "log1")))
+            // annoying race between view initialization and test assertion
+            sut.setView(queryDetails(listOf("log0", "log1")))
+        }
         assertThat(sut.getQueryDetails().logGroups).containsExactly("log0", "log1")
     }
 

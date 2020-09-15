@@ -56,7 +56,7 @@ class QueryEditor internal constructor(
         numberFormat = NumberFormat.getIntegerInstance()
         relativeTimeNumber = JFormattedTextField(numberFormat)
         // arbitrary length
-        relativeTimeNumber.columns = 10
+        relativeTimeNumber.columns = 5
         relativeTimeUnit = ComboBox(timeUnits)
         relativeTimeUnit.renderer = timeUnitComboBoxRenderer
     }
