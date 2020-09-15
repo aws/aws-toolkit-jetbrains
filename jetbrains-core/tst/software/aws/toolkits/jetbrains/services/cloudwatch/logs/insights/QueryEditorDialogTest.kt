@@ -68,17 +68,22 @@ class QueryEditorDialogTest {
             credentials.id,
             listOf(LogGroup.builder().logGroupName("log1").build())
         )
-        view = QueryEditor(project, queryDetails(
-            connectionSettings = connectionSettings,
-            logGroups = listOf()
-        ))
+        view = QueryEditor(
+            project,
+            queryDetails(
+                connectionSettings = connectionSettings,
+                logGroups = listOf()
+            )
+        )
         sut = QueryEditorDialog(project, connectionSettings, "log1")
         runBlocking {
             // annoying race between view initialization and test assertion
-            sut.setView(queryDetails(
-                connectionSettings = connectionSettings,
-                logGroups = listOf("log1")
-            ))
+            sut.setView(
+                queryDetails(
+                    connectionSettings = connectionSettings,
+                    logGroups = listOf("log1")
+                )
+            )
         }
 
         client.stub {
@@ -116,7 +121,7 @@ class QueryEditorDialogTest {
             )
         )
         runBlocking {
-            val queryDetails =  queryDetails(
+            val queryDetails = queryDetails(
                 connectionSettings = connectionSettings,
                 logGroups = listOf("log0", "log1")
             )

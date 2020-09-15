@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 import com.intellij.testFramework.EdtRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
-import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -36,7 +35,8 @@ class RetrieveSavedQueryDialogTest {
     @Before
     fun setUp() {
         editor = QueryEditor(
-            projectRule.project, queryDetails(
+            projectRule.project,
+            queryDetails(
                 connectionSettings = connectionSettings
             )
         ).also {
