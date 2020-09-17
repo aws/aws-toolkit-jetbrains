@@ -1,0 +1,56 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
+
+import com.intellij.testFramework.EdtRule
+import com.intellij.testFramework.RuleChain
+import com.intellij.testFramework.RunsInEdt
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.whenever
+import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogRecordRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogRecordResponse
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
+
+@RunsInEdt
+class DetailedLogRecordTest {
+    val projectRule = JavaCodeInsightTestFixtureRule()
+
+    @Rule
+    @JvmField
+    val ruleChain = RuleChain(projectRule, EdtRule())
+
+    @JvmField
+    @Rule
+    val mockClientManagerRule = MockClientManagerRule(projectRule)
+
+    private lateinit var client: CloudWatchLogsClient
+
+    @Before
+    fun setUp() {
+        client = mockClientManagerRule.create()
+    }
+
+    @Test
+    fun `Loads record into table`() {
+        whenever(client.getLogRecord(any<GetLogRecordRequest>()))
+            .thenReturn(
+                GetLogRecordResponse.builder().logRecord(mapOf("field" to "value", "message" to "message")).build()
+            )
+        val sut = DetailedLogRecord(projectRule.project, client, "ptr")
+        val model = sut.tableView.listTableModel
+        runBlocking {
+            model.waitForModelToBeAtLeast(1)
+        }
+
+        assertThat(model.items).containsExactlyInAnyOrder("field" to "value", "message" to "message")
+    }
+}
