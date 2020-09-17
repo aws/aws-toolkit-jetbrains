@@ -176,7 +176,7 @@ class QueryResultsActor(
         val listOfResults = queryResults.map { result ->
             result.map { it.field().toString() to it.value().toString() }.toMap()
         }
-        listOfResults.iterator().forEach { loadedQueryResults.add(it.ptr()) }
+        listOfResults.forEach { loadedQueryResults.add(it.identifier()) }
         moreResultsAvailable = response.status() != QueryStatus.COMPLETE
 
         loadAndPopulateResultsTable { listOfResults }
@@ -194,8 +194,7 @@ class QueryResultsActor(
         // Since the results are cumulative, if the order of results change, this function ensures that the same results are not displayed repeatedly
         queryResultList.mapNotNull { result ->
             val logResult = result.toLogResult()
-            // @ptr is a unique identifier for each resultant log event which is used here to ensure results are not repeatedly displayed
-            val ptr = logResult.ptr()
+            val ptr = logResult.identifier()
             if (ptr !in loadedQueryResults) {
                 loadedQueryResults.add(ptr)
                 logResult

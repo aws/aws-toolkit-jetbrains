@@ -17,4 +17,5 @@ typealias LogRecordFieldPair = Pair<String, String>
 
 fun List<ResultField>.toLogResult() = this.map { it.field() to it.value() }.toMap()
 
-fun LogResult.ptr(): String = this["@ptr"] ?: throw IllegalStateException("CWL GetQueryResults returned record without @ptr field")
+// @ptr is a unique identifier for each resultant log event which is used here to ensure results are not repeatedly displayed
+fun LogResult.identifier(): String = this["@ptr"] ?: throw IllegalStateException("CWL GetQueryResults returned record without @ptr field")

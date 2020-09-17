@@ -19,7 +19,7 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
     private val edtContext = getCoroutineUiContext()
 
     suspend fun showResults(queryDetails: QueryDetails, queryId: String, fields: List<String>) {
-        if (!createToolWindow(queryId)) {
+        if (showWindow(queryId)) {
             return
         }
 
@@ -30,7 +30,7 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
     }
 
     suspend fun showDetailedEvent(client: CloudWatchLogsClient, identifier: String) {
-        if (!createToolWindow(identifier)) {
+        if (showWindow(identifier)) {
             return
         }
 
@@ -40,15 +40,15 @@ class QueryResultsWindow(private val project: Project) : CoroutineScope by Appli
         }
     }
 
-    private suspend fun createToolWindow(identifier: String): Boolean {
+    private suspend fun showWindow(identifier: String): Boolean {
         val existingWindow = toolWindow.find(identifier)
         if (existingWindow != null) {
             withContext(edtContext) {
                 existingWindow.show()
             }
-            return false
+            return true
         }
-        return true
+        return false
     }
 
     companion object {

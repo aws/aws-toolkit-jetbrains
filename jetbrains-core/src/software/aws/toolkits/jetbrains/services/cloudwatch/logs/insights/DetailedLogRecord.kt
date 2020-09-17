@@ -7,12 +7,19 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.table.TableView
+import com.intellij.util.ExceptionUtil
 import com.intellij.util.ui.ListTableModel
+import com.intellij.util.ui.StatusText
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.lang.IllegalStateException
 import javax.swing.JButton
@@ -27,7 +34,7 @@ class DetailedLogRecord(
     lateinit var basePanel: JPanel
     lateinit var tableView: TableView<LogRecordFieldPair>
     private lateinit var openStream: JButton
-    private var record: LogRecord? = null
+    private val recordLoadTask: Deferred<LogRecord>
 
     private fun createUIComponents() {
         val model = ListTableModel<LogRecordFieldPair>(
@@ -42,17 +49,28 @@ class DetailedLogRecord(
     }
 
     init {
+        recordLoadTask = loadLogRecordAsync()
         launch {
-            val rows = loadLogRecord()
-            tableView.listTableModel.items = rows
-            openStream.isEnabled = true
+            val record = recordLoadTask.await()
+            val items = record.map { it.key to it.value }
+            tableView.listTableModel.items = items
+            tableView.setPaintBusy(false)
+
+            if (items.isNotEmpty()) {
+                addOpenStreamListener(record)
+            } else {
+                tableView.emptyText.text = StatusText.DEFAULT_EMPTY_TEXT
+            }
         }
 
         openStream.isEnabled = false
+    }
+
+    private fun addOpenStreamListener(record: LogRecord) {
+        openStream.isEnabled = true
         openStream.addActionListener {
-            val logRecord = record ?: throw IllegalStateException("record was not loaded, but tried to open log stream from record")
-            val logGroup = logRecord["@log"] ?: throw IllegalStateException("@log was not defined in log record")
-            val logStream = logRecord["@logStream"] ?: throw IllegalStateException("@logstream was not defined in log record")
+            val logGroup = record["@log"] ?: throw IllegalStateException("@log was not defined in log record")
+            val logStream = record["@logStream"] ?: throw IllegalStateException("@logStream was not defined in log record")
 
             CloudWatchLogWindow.getInstance(project).showLogStream(
                 logGroup = logGroup,
@@ -61,17 +79,31 @@ class DetailedLogRecord(
         }
     }
 
-    private fun loadLogRecord(): List<LogRecordFieldPair> {
-        val response = client.getLogRecord {
-            it.logRecordPointer(logRecordPointer)
-        }.logRecord()
-        record = response
+    private fun loadLogRecordAsync(): Deferred<LogRecord> = async<LogRecord> {
+        try {
+            return@async client.getLogRecord {
+                it.logRecordPointer(logRecordPointer)
+            }.logRecord()
+        } catch (e: Exception) {
+            LOG.warn(e) { "Exception thrown while loading log record $logRecordPointer" }
+            notifyError(
+                project = project,
+                title = message("cloudwatch.logs.exception"),
+                content = ExceptionUtil.getThrowableText(e)
+            )
+        }
 
-        return response.map { it.key to it.value }
+        return@async mapOf()
     }
 
     override fun dispose() {
     }
 
     fun getComponent() = basePanel
+
+    fun isLoaded() = recordLoadTask.isCompleted
+
+    companion object {
+        private val LOG = getLogger<DetailedLogRecord>()
+    }
 }

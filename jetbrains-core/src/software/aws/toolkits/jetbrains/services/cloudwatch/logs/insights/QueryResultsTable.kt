@@ -66,9 +66,8 @@ class QueryResultsTable(
         object : DoubleClickListener() {
             override fun onDoubleClick(e: MouseEvent): Boolean {
                 // assume you can't double click multiple selection
-                val identifier = resultsTable.selectedObject?.ptr() ?: return false
-                val window = QueryResultsWindow.getInstance(project)
-                launch { window.showDetailedEvent(client, identifier) }
+                val identifier = resultsTable.selectedObject?.identifier() ?: return false
+                launch { QueryResultsWindow.getInstance(project).showDetailedEvent(client, identifier) }
 
                 return true
             }

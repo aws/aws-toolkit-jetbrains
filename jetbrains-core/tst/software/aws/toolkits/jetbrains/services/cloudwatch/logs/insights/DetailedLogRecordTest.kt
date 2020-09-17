@@ -8,12 +8,14 @@ import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.whenever
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.amazon.awssdk.services.cloudwatchlogs.model.CloudWatchLogsException
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogRecordRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogRecordResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
@@ -52,5 +54,20 @@ class DetailedLogRecordTest {
         }
 
         assertThat(model.items).containsExactlyInAnyOrder("field" to "value", "message" to "message")
+    }
+
+    @Test
+    fun `Does not throw on client exception`() {
+        whenever(client.getLogRecord(any<GetLogRecordRequest>()))
+            .thenThrow(CloudWatchLogsException::class.java)
+
+        val sut = DetailedLogRecord(projectRule.project, client, "ptr")
+        runBlocking {
+            while (!sut.isLoaded()) {
+                delay(10)
+            }
+        }
+
+        assertThat(sut.tableView.listTableModel.items).isEmpty()
     }
 }
