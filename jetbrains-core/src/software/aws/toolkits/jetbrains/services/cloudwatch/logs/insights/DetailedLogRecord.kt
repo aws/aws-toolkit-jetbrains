@@ -73,7 +73,7 @@ class DetailedLogRecord(
             val logStream = record["@logStream"] ?: throw IllegalStateException("@logStream was not defined in log record")
 
             CloudWatchLogWindow.getInstance(project).showLogStream(
-                logGroup = logGroup,
+                logGroup = getLogGroup(logGroup),
                 logStream = logStream
             )
         }
@@ -105,5 +105,16 @@ class DetailedLogRecord(
 
     companion object {
         private val LOG = getLogger<DetailedLogRecord>()
+        // Log group names can be between 1 and 512 characters long.
+        // Log group names consist of the following characters: a-z, A-Z, 0-9, '_' (underscore), '-' (hyphen), '/' (forward slash), '.' (period), and '#' (number sign)
+        // https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_CreateLogGroup.html
+        private val logGroupRegex = Regex("\\d{12}:(.{1,512})")
+
+        fun getLogGroup(log: String): String {
+            // conveniently, the @log field has the account ID prepended, which we don't want
+            // @log is a log group identifier in the form of . This can be useful in queries of multiple log groups, to identify which log group a particular event belongs to.
+            // https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_AnalyzeLogData-discoverable-fields.html
+            return logGroupRegex.find(log)?.groups?.get(1)?.value ?: throw IllegalStateException("$log format does not appear to be in a valid format (<account-id>:<log-group-name>)")
+        }
     }
 }

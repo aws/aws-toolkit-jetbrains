@@ -11,6 +11,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -69,5 +70,15 @@ class DetailedLogRecordTest {
         }
 
         assertThat(sut.tableView.listTableModel.items).isEmpty()
+    }
+
+    @Test
+    fun getLogGroup() {
+        assertThat(DetailedLogRecord.getLogGroup("123456789012:/log/group/name")).isEqualTo("/log/group/name")
+        assertThat(DetailedLogRecord.getLogGroup("123456789012:1./group_with#symbols-name")).isEqualTo("1./group_with#symbols-name")
+
+        assertThatThrownBy { DetailedLogRecord.getLogGroup("123456789012:") }.isInstanceOf(IllegalStateException::class.java)
+        assertThatThrownBy { DetailedLogRecord.getLogGroup("/name") }.isInstanceOf(IllegalStateException::class.java)
+        assertThatThrownBy { DetailedLogRecord.getLogGroup("123:/name") }.isInstanceOf(IllegalStateException::class.java)
     }
 }
