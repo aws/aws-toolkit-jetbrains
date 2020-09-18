@@ -91,7 +91,7 @@ class SaveQueryDialog(
             )
         } catch (e: Exception) {
             LOG.error(e) { "Failed to save insights query" }
-            notifyError(message("cloudwatch.logs.saved_query_status"), e.toString())
+            notifyError(message("cloudwatch.logs.failed_to_save_query"), e.toString())
         } finally {
             action.isEnabled = true
         }

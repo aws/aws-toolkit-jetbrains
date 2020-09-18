@@ -8,6 +8,7 @@ import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.stub
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -15,6 +16,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.amazon.awssdk.services.cloudwatchlogs.model.CloudWatchLogsException
 import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.PutQueryDefinitionResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryDefinition
@@ -113,5 +115,22 @@ class SaveQueryTest {
         assertThat(putQueryDefinitionCaptor.firstValue.name()).isEqualTo("SampleQuery")
         assertThat(putQueryDefinitionCaptor.firstValue.logGroupNames()).containsExactly("log1")
         assertThat(putQueryDefinitionCaptor.firstValue.queryString()).isEqualTo("fields @timestamp")
+    }
+
+    @Test
+    fun `Save query doesn't throw on failure`() {
+        val putQueryDefinitionCaptor = argumentCaptor<PutQueryDefinitionRequest>()
+        val client = mockClientManagerRule.create<CloudWatchLogsClient>()
+        val testQueryDefinition = QueryDefinition.builder().name("SampleQuery").queryDefinitionId("1234").build()
+        client.stub {
+            on { putQueryDefinition(putQueryDefinitionCaptor.capture()) } doThrow CloudWatchLogsException::class
+        }
+        resourceCache.get().addEntry(CloudWatchResources.DESCRIBE_QUERY_DEFINITIONS, region.id, credentials.id, listOf(testQueryDefinition))
+
+        val dialog = SaveQueryDialog(projectRule.project, connectionSettings, "fields @timestamp", listOf("log1"))
+        dialog.view.queryName.text = "SampleQuery"
+        runBlocking {
+            dialog.saveQuery().join()
+        }
     }
 }
