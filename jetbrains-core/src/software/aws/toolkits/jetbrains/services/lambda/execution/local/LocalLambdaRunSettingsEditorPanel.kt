@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.lambda.execution.local
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -27,14 +28,12 @@ import software.aws.toolkits.jetbrains.ui.SliderPanel
 import software.aws.toolkits.jetbrains.utils.ui.addQuickSelect
 import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.resources.message
-import java.awt.event.ActionEvent
 import java.io.File
 import java.util.Comparator
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JPanel
-import javax.swing.SwingUtilities
 
 class LocalLambdaRunSettingsEditorPanel(private val project: Project) {
     lateinit var panel: JPanel
@@ -69,7 +68,7 @@ class LocalLambdaRunSettingsEditorPanel(private val project: Project) {
 
     init {
         lambdaInputPanel.border = IdeBorderFactory.createTitledBorder(message("lambda.input.label"), false, JBUI.emptyInsets())
-        useTemplate.addActionListener { e: ActionEvent? -> updateComponents() }
+        useTemplate.addActionListener { updateComponents() }
         templateFile.textField.addQuickSelect(useTemplate, Runnable { updateComponents() })
         templateFile.addActionListener(
             ProjectFileBrowseListener(
@@ -81,7 +80,7 @@ class LocalLambdaRunSettingsEditorPanel(private val project: Project) {
                 setTemplateFile(it.canonicalPath)
             }
         )
-        runtime.addActionListener { e: ActionEvent? ->
+        runtime.addActionListener {
             val index = runtime.selectedIndex
             if (index < 0) {
                 lastSelectedRuntime = null
@@ -162,6 +161,6 @@ class LocalLambdaRunSettingsEditorPanel(private val project: Project) {
     }
 
     fun invalidateConfiguration() {
-        SwingUtilities.invokeLater { invalidator.isSelected = !invalidator.isSelected }
+        runInEdt { invalidator.isSelected = !invalidator.isSelected }
     }
 }
