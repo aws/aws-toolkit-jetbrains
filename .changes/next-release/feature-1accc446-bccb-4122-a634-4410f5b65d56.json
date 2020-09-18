@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Allow connecting to RDS/Redshift databases using your existing AWS credentials or SecretsManager secrets"
+}
