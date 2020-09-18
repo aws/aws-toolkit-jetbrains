@@ -37,6 +37,8 @@ class SelectSavedQuery(
             resourceSelector.selected()?.let {
                 logGroups.text = it.logGroupNames().joinToString("\n")
                 queryString.text = it.queryString()
+                // reset to the start, since setting the text moves the cursor to the end,
+                // which results in scrolling to the bottom right corner if there's enough text
                 logGroups.caretPosition = 0
                 queryString.caretPosition = 0
             }
