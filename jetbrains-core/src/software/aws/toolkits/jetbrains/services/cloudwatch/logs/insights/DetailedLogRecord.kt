@@ -110,11 +110,11 @@ class DetailedLogRecord(
         // https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_CreateLogGroup.html
         private val logGroupRegex = Regex("\\d{12}:(.{1,512})")
 
-        fun getLogGroup(log: String): String {
+        fun getLogGroup(log: String) =
             // conveniently, the @log field has the account ID prepended, which we don't want
             // @log is a log group identifier in the form of . This can be useful in queries of multiple log groups, to identify which log group a particular event belongs to.
             // https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_AnalyzeLogData-discoverable-fields.html
-            return logGroupRegex.find(log)?.groups?.get(1)?.value ?: throw IllegalStateException("$log format does not appear to be in a valid format (<account-id>:<log-group-name>)")
-        }
+            logGroupRegex.find(log)?.groups?.get(1)?.value
+                ?: throw IllegalStateException("$log format does not appear to be in a valid format (<account-id>:<log-group-name>)")
     }
 }
