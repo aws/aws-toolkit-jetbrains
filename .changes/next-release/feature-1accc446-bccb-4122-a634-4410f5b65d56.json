@@ -1,4 +1,4 @@
 {
   "type" : "feature",
-  "description" : "Allow connecting to RDS/Redshift databases using your existing AWS credentials or SecretsManager secrets"
+  "description" : "Allow connecting to RDS/Redshift databases with temporary IAM AWS credentials or a SecretsManager secret"
 }
