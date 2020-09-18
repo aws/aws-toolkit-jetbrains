@@ -30,7 +30,6 @@ import software.aws.toolkits.resources.message
 import java.awt.event.ActionEvent
 import java.io.File
 import java.util.Comparator
-import java.util.function.Consumer
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
@@ -131,21 +130,19 @@ class LocalLambdaRunSettingsEditorPanel(private val project: Project) {
     fun setTemplateFile(file: String?) {
         if (file == null) {
             templateFile.text = ""
-            updateFunctionModel(emptyList(), false)
+            updateFunctionModel(emptyList())
         } else {
             templateFile.text = file
-            val functions = findFunctionsFromTemplate(
-                project, File(file)
-            )
-            updateFunctionModel(functions, false)
+            val functions = findFunctionsFromTemplate(project, File(file))
+            updateFunctionModel(functions)
         }
     }
 
-    private fun updateFunctionModel(functions: List<Function>, selectSingle: Boolean) {
+    private fun updateFunctionModel(functions: List<Function>) {
         functionModels.removeAllElements()
         function.isEnabled = functions.isNotEmpty()
-        functions.forEach(Consumer { anObject: Function -> functionModels.addElement(anObject) })
-        if (selectSingle && functions.size == 1) {
+        functionModels.addAll(functions)
+        if (functions.size == 1) {
             functionModels.setSelectedItem(functions[0])
         } else {
             function.setSelectedIndex(-1)
@@ -154,12 +151,10 @@ class LocalLambdaRunSettingsEditorPanel(private val project: Project) {
     }
 
     fun selectFunction(logicalFunctionName: String?) {
-        if (logicalFunctionName == null) return
-        val function = functionModels.find { f: Function -> f.logicalName == logicalFunctionName }
-        if (function != null) {
-            functionModels.selectedItem = function
-            updateComponents()
-        }
+        logicalFunctionName ?: return
+        val function = functionModels.find { it.logicalName == logicalFunctionName } ?: return
+        functionModels.selectedItem = function
+        updateComponents()
     }
 
     fun setRuntimes(runtimes: List<Runtime>?) {
