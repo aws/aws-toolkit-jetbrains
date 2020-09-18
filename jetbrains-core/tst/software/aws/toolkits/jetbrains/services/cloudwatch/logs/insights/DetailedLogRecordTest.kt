@@ -74,11 +74,11 @@ class DetailedLogRecordTest {
 
     @Test
     fun getLogGroup() {
-        assertThat(DetailedLogRecord.getLogGroup("123456789012:/log/group/name")).isEqualTo("/log/group/name")
-        assertThat(DetailedLogRecord.getLogGroup("123456789012:1./group_with#symbols-name")).isEqualTo("1./group_with#symbols-name")
+        assertThat(DetailedLogRecord.extractLogGroup("123456789012:/log/group/name")).isEqualTo("/log/group/name")
+        assertThat(DetailedLogRecord.extractLogGroup("123456789012:1./group_with#symbols-name")).isEqualTo("1./group_with#symbols-name")
 
-        assertThatThrownBy { DetailedLogRecord.getLogGroup("123456789012:") }.isInstanceOf(IllegalStateException::class.java)
-        assertThatThrownBy { DetailedLogRecord.getLogGroup("/name") }.isInstanceOf(IllegalStateException::class.java)
-        assertThatThrownBy { DetailedLogRecord.getLogGroup("123:/name") }.isInstanceOf(IllegalStateException::class.java)
+        assertThatThrownBy { DetailedLogRecord.extractLogGroup("123456789012:") }.isInstanceOf(IllegalStateException::class.java)
+        assertThatThrownBy { DetailedLogRecord.extractLogGroup("/name") }.isInstanceOf(IllegalStateException::class.java)
+        assertThatThrownBy { DetailedLogRecord.extractLogGroup("123:/name") }.isInstanceOf(IllegalStateException::class.java)
     }
 }
