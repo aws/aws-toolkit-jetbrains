@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
-import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateLambdaRuntimes
@@ -144,8 +143,8 @@ class DeployServerlessApplicationAction : AnAction(
                     project
                 )
                 SamTelemetry.deploy(project, Result.Succeeded)
-                // We do not know if it is a create or not, so refresh every time
-                project.refreshAwsTree(CloudFormationResources.LIST_STACKS)
+                // Since we could update anything, do a full refresh of the resource cache and explorer
+                project.refreshAwsTree()
             } catch (e: Exception) {
                 e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
                 SamTelemetry.deploy(project, Result.Failed)
