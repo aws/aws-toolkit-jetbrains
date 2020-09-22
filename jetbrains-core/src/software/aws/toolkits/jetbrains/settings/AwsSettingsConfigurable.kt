@@ -35,16 +35,16 @@ import javax.swing.JPanel
 
 class AwsSettingsConfigurable(private val project: Project) : SearchableConfigurable {
     private lateinit var panel: JPanel
-    private lateinit var samExecutablePath: TextFieldWithBrowseButton
-    private lateinit var cloudDebugExecutablePath: TextFieldWithBrowseButton
     private lateinit var samHelp: LinkLabel<*>
     private lateinit var cloudDebugHelp: LinkLabel<*>
     private lateinit var showAllHandlerGutterIcons: JBCheckBox
-    private lateinit var enableTelemetry: JBCheckBox
     private lateinit var serverlessSettings: JPanel
     private lateinit var remoteDebugSettings: JPanel
     private lateinit var applicationLevelSettings: JPanel
     private lateinit var defaultRegionHandling: ComboBox<UseAwsCredentialRegion>
+    lateinit var samExecutablePath: TextFieldWithBrowseButton
+    lateinit var enableTelemetry: JBCheckBox
+    lateinit var cloudDebugExecutablePath: TextFieldWithBrowseButton
 
     private val cloudDebugExecutableInstance: CloudDebugExecutable
         get() = ExecutableType.getExecutable(CloudDebugExecutable::class.java)
