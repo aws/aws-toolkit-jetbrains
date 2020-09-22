@@ -22,11 +22,9 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.BadEx
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.ExecutableWithPath
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
-import software.aws.toolkits.jetbrains.core.executables.ExecutableType.Companion.getExecutable
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
-import software.aws.toolkits.jetbrains.settings.LambdaSettings.Companion.getInstance
 import software.aws.toolkits.resources.message
 import java.nio.file.Files
 import java.nio.file.Path
@@ -49,17 +47,15 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
     private lateinit var defaultRegionHandling: ComboBox<UseAwsCredentialRegion>
 
     private val cloudDebugExecutableInstance: CloudDebugExecutable
-        get() = getExecutable(CloudDebugExecutable::class.java)
+        get() = ExecutableType.getExecutable(CloudDebugExecutable::class.java)
     private val samExecutableInstance: SamExecutable
-        get() = getExecutable(SamExecutable::class.java)
+        get() = ExecutableType.getExecutable(SamExecutable::class.java)
     private val samTextboxInput: String?
         get() = StringUtil.nullize(samExecutablePath.text.trim { it <= ' ' })
     private val cloudDebugTextboxInput: String?
         get() = StringUtil.nullize(cloudDebugExecutablePath.text.trim { it <= ' ' })
 
-    override fun createComponent(): JComponent? {
-        return panel
-    }
+    override fun createComponent(): JComponent = panel
 
     private fun createUIComponents() {
         cloudDebugHelp = createHelpLink(HelpIds.CLOUD_DEBUG_ENABLE)
@@ -82,7 +78,7 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
 
     override fun isModified(): Boolean {
         val awsSettings = AwsSettings.getInstance()
-        val lambdaSettings = getInstance(project)
+        val lambdaSettings = LambdaSettings.getInstance(project)
         return samTextboxInput != getSavedExecutablePath(samExecutableInstance, false) ||
             cloudDebugTextboxInput != getSavedExecutablePath(cloudDebugExecutableInstance, false) ||
             isModified(showAllHandlerGutterIcons, lambdaSettings.showAllHandlerGutterIcons) ||
@@ -111,7 +107,7 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
 
     override fun reset() {
         val awsSettings = AwsSettings.getInstance()
-        val lambdaSettings = getInstance(project)
+        val lambdaSettings = LambdaSettings.getInstance(project)
         samExecutablePath.setText(getSavedExecutablePath(samExecutableInstance, false))
         cloudDebugExecutablePath.setText(getSavedExecutablePath(cloudDebugExecutableInstance, false))
         showAllHandlerGutterIcons.isSelected = lambdaSettings.showAllHandlerGutterIcons
@@ -119,10 +115,7 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
         defaultRegionHandling.selectedItem = awsSettings.useDefaultCredentialRegion
     }
 
-
-    private fun createHelpLink(helpId: HelpIds): LinkLabel<*> {
-        return LinkLabel.create(message("aws.settings.learn_more")) { BrowserUtil.browse(helpId.url) }
-    }
+    private fun createHelpLink(helpId: HelpIds): LinkLabel<*> = LinkLabel.create(message("aws.settings.learn_more")) { BrowserUtil.browse(helpId.url) }
 
     private fun createCliConfigurationElement(executableType: ExecutableType<*>, cliName: String): TextFieldWithBrowseButton {
         val autoDetectPath = getSavedExecutablePath(executableType, true)
@@ -142,31 +135,29 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
 
     // modifyMessageBasedOnDetectionStatus will append "Auto-detected: ...." to the
     // message if the executable is found this is used for setting the empty box text
-    private fun getSavedExecutablePath(executableType: ExecutableType<*>, modifyMessageBasedOnDetectionStatus: Boolean): String? {
-        return try {
-            ExecutableManager.getInstance().getExecutable(executableType).thenApply { it: ExecutableInstance? ->
-                if (it is ExecutableWithPath) {
-                    if (it !is ExecutableInstance.Executable) {
-                        return@thenApply (it as ExecutableWithPath).executablePath.toString()
+    private fun getSavedExecutablePath(executableType: ExecutableType<*>, modifyMessageBasedOnDetectionStatus: Boolean): String? = try {
+        ExecutableManager.getInstance().getExecutable(executableType).thenApply {
+            if (it is ExecutableWithPath) {
+                if (it !is ExecutableInstance.Executable) {
+                    return@thenApply (it as ExecutableWithPath).executablePath.toString()
+                } else {
+                    val path = it.executablePath.toString()
+                    val autoResolved = it.autoResolved
+                    if (autoResolved && modifyMessageBasedOnDetectionStatus) {
+                        return@thenApply message("aws.settings.auto_detect", path)
+                    } else if (autoResolved) {
+                        // If it is auto detected, we do not want to return text as the
+                        // box will be filled by empty text with the auto-resolve message
+                        return@thenApply null
                     } else {
-                        val path = it.executablePath.toString()
-                        val autoResolved = it.autoResolved
-                        if (autoResolved && modifyMessageBasedOnDetectionStatus) {
-                            return@thenApply message("aws.settings.auto_detect", path)
-                        } else if (autoResolved) {
-                            // If it is auto detected, we do not want to return text as the
-                            // box will be filled by empty text with the auto-resolve message
-                            return@thenApply null
-                        } else {
-                            return@thenApply path
-                        }
+                        return@thenApply path
                     }
                 }
-                null
-            }.toCompletableFuture().join()
-        } catch (ignored: CompletionException) {
+            }
             null
-        }
+        }.toCompletableFuture().join()
+    } catch (ignored: CompletionException) {
+        null
     }
 
     private fun validateAndSaveCliSettings(
@@ -199,13 +190,15 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
         val path: Path
         try {
             path = Paths.get(currentInput)
-            require(!(!Files.isExecutable(path) || !path.toFile().exists() || !path.toFile().isFile)) { "Set file is not an executable" }
+            if (!Files.isExecutable(path) || !path.toFile().exists() || !path.toFile().isFile) {
+                throw IllegalArgumentException("Set file is not an executable")
+            }
         } catch (e: Exception) {
             throw ConfigurationException(message("aws.settings.executables.executable_invalid", executableName, currentInput))
         }
         val instance = ExecutableManager.getInstance().validateExecutablePath(executableType, path)
         if (instance is BadExecutable) {
-            throw ConfigurationException((instance as BadExecutable).validationError)
+            throw ConfigurationException(instance.validationError)
         }
 
         // We have validated so now we can set
@@ -219,8 +212,7 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
     }
 
     private fun saveLambdaSettings() {
-        val lambdaSettings = getInstance(project)
-        lambdaSettings.showAllHandlerGutterIcons = showAllHandlerGutterIcons.isSelected
+        LambdaSettings.getInstance(project).showAllHandlerGutterIcons = showAllHandlerGutterIcons.isSelected
     }
 
     companion object {
