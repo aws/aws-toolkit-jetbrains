@@ -83,8 +83,7 @@
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
     <depends optional="true" config-file="ext-nodejs.xml">JavaScriptDebugger</depends>
     <depends optional="true" config-file="ext-rider.xml">com.intellij.modules.rider</depends>
-    <!--TODO enable to enable RDS/Redshift features-->
-    <!--depends optional="true" config-file="ext-datagrip.xml">com.intellij.database</depends-->
+    <depends optional="true" config-file="ext-datagrip.xml">com.intellij.database</depends>
 
     <xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
@@ -224,7 +223,6 @@
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.s3.S3ViewerEditorProvider"/>
         <!-- See this post why order="first" is required https://intellij-support.jetbrains.com/hc/en-us/community/posts/360003460619-fileIconProvider-is-not-showing-Icon-for-custom-LightVirtualFile -->
         <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.s3.editor.S3FileIconProvider"/>
-        <registryKey key="aws.sso.enabled" description="(Experimental) Enable SSO AWS Credentials" restartRequired="true" defaultValue="false"/>
         <registryKey key="aws.credentialProcess.timeout" description="AWS Credential Process timeout (ms)" restartRequired="false" defaultValue="30000"/>
     </extensions>
 
