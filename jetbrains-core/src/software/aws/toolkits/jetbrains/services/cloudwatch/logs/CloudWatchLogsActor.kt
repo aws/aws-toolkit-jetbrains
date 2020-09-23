@@ -7,8 +7,10 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
+import com.intellij.util.ExceptionUtil
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -16,45 +18,40 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.FilterLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
+import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.amazon.awssdk.services.cloudwatchlogs.model.OrderBy
+import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.LogResult
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.identifier
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.toLogResult
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
 
-sealed class LogActor<T>(
-    private val project: Project,
+sealed class CloudWatchLogsActor<T, Message>(
+    protected val project: Project,
     protected val client: CloudWatchLogsClient,
-    private val table: TableView<T>
-) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsStream"), Disposable {
+    protected val table: TableView<T>
+) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsActor"), Disposable {
     val channel = Channel<Message>()
 
-    protected var nextBackwardToken: String? = null
-    protected var nextForwardToken: String? = null
     protected abstract val emptyText: String
     protected abstract val tableErrorMessage: String
     protected abstract val notFoundText: String
 
-    private val edtContext = getCoroutineUiContext(disposable = this@LogActor)
+    protected val edtContext = getCoroutineUiContext(disposable = this@CloudWatchLogsActor)
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
         table.setPaintBusy(false)
         channel.close()
-    }
-
-    sealed class Message {
-        object LoadInitial : Message()
-        class LoadInitialRange(val previousEvent: LogStreamEntry, val duration: Duration) : Message()
-        class LoadInitialFilter(val queryString: String) : Message()
-        object LoadForward : Message()
-        object LoadBackward : Message()
     }
 
     init {
@@ -63,7 +60,78 @@ sealed class LogActor<T>(
         }
     }
 
-    private suspend fun handleMessages() {
+    abstract suspend fun handleMessages()
+
+    protected suspend fun loadAndPopulate(loadBlock: suspend () -> List<T>) {
+        try {
+            tableLoading()
+            val items = loadBlock()
+            table.listTableModel.items = items
+            table.emptyText.text = emptyText
+        } catch (e: ResourceNotFoundException) {
+            withContext(edtContext) {
+                table.emptyText.text = notFoundText
+            }
+        } catch (e: Exception) {
+            LOG.error(e) { tableErrorMessage }
+            withContext(edtContext) {
+                table.emptyText.text = tableErrorMessage
+                notifyError(title = tableErrorMessage, project = project)
+            }
+        } finally {
+            tableDoneLoading()
+        }
+    }
+
+    protected suspend fun tableLoading() = withContext(edtContext) {
+        table.setPaintBusy(true)
+        table.emptyText.text = message("loading_resource.loading")
+    }
+
+    protected suspend fun tableDoneLoading() = withContext(edtContext) {
+        table.tableViewModel.fireTableDataChanged()
+        table.setPaintBusy(false)
+    }
+
+    override fun dispose() {
+        channel.close()
+    }
+
+    companion object {
+        private val LOG = getLogger<CloudWatchLogsActor<*, *>>()
+    }
+}
+
+abstract class LogActor<T>(
+    project: Project,
+    client: CloudWatchLogsClient,
+    table: TableView<T>
+) : CloudWatchLogsActor<T, LogActor.Message>(project, client, table) {
+    sealed class Message {
+        object LoadInitial : Message()
+        class LoadInitialRange(val previousEvent: LogStreamEntry, val duration: Duration) : Message()
+        class LoadInitialFilter(val queryString: String) : Message()
+        object LoadForward : Message()
+        object LoadBackward : Message()
+    }
+    protected var nextBackwardToken: String? = null
+    protected var nextForwardToken: String? = null
+
+    protected open suspend fun loadInitial() {
+        throw IllegalStateException("Table does not support loadInitial")
+    }
+
+    protected open suspend fun loadInitialRange(startTime: Long, duration: Duration) {
+        throw IllegalStateException("Table does not support loadInitialRange")
+    }
+
+    protected open suspend fun loadInitialFilter(queryString: String) {
+        throw IllegalStateException("Table does not support loadInitialFilter")
+    }
+
+    protected abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<T>
+
+    override suspend fun handleMessages() {
         for (message in channel) {
             when (message) {
                 is Message.LoadForward -> if (!nextForwardToken.isNullOrEmpty()) {
@@ -138,55 +206,6 @@ sealed class LogActor<T>(
                 }
             }
         }
-    }
-
-    protected suspend fun loadAndPopulate(loadBlock: suspend () -> List<T>) {
-        try {
-            tableLoading()
-            val items = loadBlock()
-            table.listTableModel.items = items
-            table.emptyText.text = emptyText
-        } catch (e: ResourceNotFoundException) {
-            withContext(edtContext) {
-                table.emptyText.text = notFoundText
-            }
-        } catch (e: Exception) {
-            LOG.error(e) { tableErrorMessage }
-            withContext(edtContext) {
-                table.emptyText.text = tableErrorMessage
-                notifyError(title = tableErrorMessage, project = project)
-            }
-        } finally {
-            tableDoneLoading()
-        }
-    }
-
-    protected open suspend fun loadInitial() {
-        throw IllegalStateException("Table does not support loadInitial")
-    }
-
-    protected open suspend fun loadInitialRange(startTime: Long, duration: Duration) {
-        throw IllegalStateException("Table does not support loadInitialRange")
-    }
-
-    protected open suspend fun loadInitialFilter(queryString: String) {
-        throw IllegalStateException("Table does not support loadInitialFilter")
-    }
-
-    protected abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<T>
-
-    private suspend fun tableLoading() = withContext(edtContext) {
-        table.setPaintBusy(true)
-        table.emptyText.text = message("loading_resource.loading")
-    }
-
-    private suspend fun tableDoneLoading() = withContext(edtContext) {
-        table.tableViewModel.fireTableDataChanged()
-        table.setPaintBusy(false)
-    }
-
-    override fun dispose() {
-        channel.close()
     }
 
     companion object {
@@ -397,5 +416,132 @@ class LogGroupSearchActor(
         nextForwardToken = response.nextToken()
 
         return events
+    }
+}
+
+class InsightsQueryResultsActor(
+    project: Project,
+    client: CloudWatchLogsClient,
+    table: TableView<LogResult>,
+    private val queryId: String
+) : CloudWatchLogsActor<LogResult, InsightsQueryResultsActor.Message>(project, client, table) {
+    sealed class Message {
+        object StartLoadingAll : Message()
+        object StopLoading : Message()
+    }
+
+    override val emptyText = message("cloudwatch.logs.no_results_found")
+    override val tableErrorMessage = message("cloudwatch.logs.query_results_table_error")
+    override val notFoundText = message("cloudwatch.logs.no_results_found")
+
+    private var loadJob: Job? = null
+
+    override suspend fun handleMessages() {
+        for (message in channel) {
+            when (message) {
+                is Message.StartLoadingAll -> {
+                    try {
+                        startLoading()
+                    } catch (e: Exception) {
+                        notifyError(
+                            project = project,
+                            title = message("cloudwatch.logs.exception"),
+                            content = ExceptionUtil.getThrowableText(e)
+                        )
+                    }
+                }
+                is Message.StopLoading -> {
+                    try {
+                        stopLoading()
+                    } catch (e: Exception) {
+                        notifyError(
+                            project = project,
+                            title = message("cloudwatch.logs.exception"),
+                            content = ExceptionUtil.getThrowableText(e)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun startLoading() = launch {
+        tableLoading()
+        val loadedQueryResults = mutableSetOf<String>()
+        var response: GetQueryResultsResponse
+
+        do {
+            try {
+                response = client.getQueryResults {
+                    it.queryId(queryId)
+                }
+            } catch (e: Exception) {
+                notifyError(
+                    project = project,
+                    title = message("cloudwatch.logs.exception"),
+                    content = ExceptionUtil.getThrowableText(e)
+                )
+
+                channel.close()
+                return@launch
+            }
+
+            // consider a buffered flow instead, but can't use until min-coroutine version in the IDE is 1.3.6
+            // chunk the response because a) transforming the response into the table model may be expensive
+            // and b) don't want to force the table model to redraw after every single row
+            val dedupedResults = sequence {
+                response.results().forEach { result ->
+                    val logResult = result.toLogResult()
+                    val ptr = logResult.identifier()
+                    if (ptr !in loadedQueryResults) {
+                        loadedQueryResults.add(ptr)
+                        yield(logResult)
+                    }
+                }
+            }.chunked(1000)
+
+            dedupedResults.forEach { chunk ->
+                LOG.warn("loading block of ${chunk.size}")
+                table.listTableModel.addRows(chunk)
+            }
+        } while (isQueryRunning(response.status()))
+
+        LOG.warn("done, ${loadedQueryResults.size} entries in set")
+        tableDoneLoading()
+        LOG.warn("total items in table: ${table.listTableModel.items.size}")
+        channel.close()
+    }.also {
+        loadJob = it
+    }
+
+    private fun isQueryRunning(status: QueryStatus) = status !in terminalQueryStates
+
+    private fun stopLoading() {
+        channel.close()
+
+        loadJob?.let { job ->
+            if (job.isActive) {
+                job.cancel()
+                client.stopQuery {
+                    it.queryId(queryId)
+                }
+            }
+        }
+        loadJob = null
+    }
+
+    override fun dispose() {
+        try {
+            stopLoading()
+        } catch (e: Exception) {
+            // best effort; this will fail if the query raced to completion or user does not have permission
+            LOG.warn("Failed to stop query", e)
+        }
+        super.dispose()
+    }
+
+    companion object {
+        private val LOG = getLogger<InsightsQueryResultsActor>()
+        private val terminalQueryStates = setOf(QueryStatus.COMPLETE, QueryStatus.CANCELLED, QueryStatus.FAILED)
     }
 }
