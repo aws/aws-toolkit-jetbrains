@@ -522,21 +522,21 @@ class InsightsQueryResultsActor(
         loadJob?.let { job ->
             if (job.isActive) {
                 job.cancel()
-                client.stopQuery {
-                    it.queryId(queryId)
-                }
             }
         }
-        loadJob = null
-    }
 
-    override fun dispose() {
         try {
-            stopLoading()
+            client.stopQuery {
+                it.queryId(queryId)
+            }
         } catch (e: Exception) {
             // best effort; this will fail if the query raced to completion or user does not have permission
             LOG.warn("Failed to stop query", e)
         }
+    }
+
+    override fun dispose() {
+        stopLoading()
         super.dispose()
     }
 
