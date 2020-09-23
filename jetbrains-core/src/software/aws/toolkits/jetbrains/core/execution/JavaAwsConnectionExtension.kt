@@ -14,7 +14,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import org.jdom.Element
 import software.aws.toolkits.resources.message
 
-class JavaAwsConnectionRunConfigurationExtension : RunConfigurationExtension() {
+class JavaAwsConnectionExtension : RunConfigurationExtension() {
     private val delegate = AwsConnectionRunConfigurationExtension<RunConfigurationBase<*>>()
     override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean = true
 
@@ -27,9 +27,7 @@ class JavaAwsConnectionRunConfigurationExtension : RunConfigurationExtension() {
 
     override fun getEditorTitle() = message("aws_connection.tab.label")
 
-    override fun <T : RunConfigurationBase<*>?> createEditor(configuration: T): SettingsEditor<T>? = connectionSettingsEditor(
-        configuration
-    )
+    override fun <T : RunConfigurationBase<*>?> createEditor(configuration: T): SettingsEditor<T>? = connectionSettingsEditor(configuration)
 
     override fun readExternal(runConfiguration: RunConfigurationBase<*>, element: Element) = delegate.readExternal(runConfiguration, element)
 

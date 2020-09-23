@@ -41,7 +41,7 @@ import software.aws.toolkits.jetbrains.utils.rules.addModule
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
-class JavaAwsConnectionRunConfigurationExtensionIntegrationTest {
+class JavaAwsConnectionExtensionIntegrationTest {
 
     @Before
     fun setUp() {

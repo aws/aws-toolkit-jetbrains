@@ -12,7 +12,7 @@ import org.jdom.Element
 import org.junit.Rule
 import org.junit.Test
 
-class JavaAwsConnectionRunConfigurationExtensionTest {
+class JavaAwsConnectionExtensionTest {
 
     @Rule
     @JvmField

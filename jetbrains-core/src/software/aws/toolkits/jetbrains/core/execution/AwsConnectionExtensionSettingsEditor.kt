@@ -10,22 +10,10 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
-import software.aws.toolkits.jetbrains.ui.RegionSelector
 import javax.swing.JComponent
-import javax.swing.JPanel
-import javax.swing.JRadioButton
 
-class AwsConnectionRunConfigurationExtensionSettingsPanel {
-    internal lateinit var panel: JPanel
-    internal lateinit var none: JRadioButton
-    internal lateinit var useCurrentConnection: JRadioButton
-    internal lateinit var manuallyConfiguredConnection: JRadioButton
-    internal lateinit var credentialProvider: CredentialProviderSelector
-    internal lateinit var region: RegionSelector
-}
-
-class AwsConnectionRunConfigurationExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private val project: Project) : SettingsEditor<T>() {
-    internal val view = AwsConnectionRunConfigurationExtensionSettingsPanel()
+class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private val project: Project) : SettingsEditor<T>() {
+    internal val view = AwsConnectionExtensionSettingsPanel()
     private val regionProvider = AwsRegionProvider.getInstance()
     private val credentialManager = CredentialManager.getInstance()
 

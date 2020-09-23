@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.utils.execute
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import kotlin.test.assertNotNull
 
-class PythonAwsConnectionRunConfigurationExtensionIntegrationTest {
+class PythonAwsConnectionExtensionIntegrationTest {
 
     @Rule
     @JvmField
