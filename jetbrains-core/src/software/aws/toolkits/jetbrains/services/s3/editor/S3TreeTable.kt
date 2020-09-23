@@ -19,12 +19,14 @@ import com.intellij.ui.treeStructure.treetable.TreeTable
 import com.intellij.util.containers.Convertor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.s3.objectActions.deleteSelectedObjects
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
@@ -47,6 +49,7 @@ class S3TreeTable(
     val bucket: S3VirtualBucket,
     private val project: Project
 ) : TreeTable(treeTableModel), CoroutineScope by ApplicationThreadPoolScope("S3TreeTable") {
+    private val edt = getCoroutineUiContext()
 
     private val dropTargetListener = object : DropTargetAdapter() {
         override fun drop(dropEvent: DropTargetDropEvent) {
@@ -116,13 +119,13 @@ class S3TreeTable(
         launch {
             try {
                 bucket.download(project, objectNode.key, fileWrapper.file.outputStream())
-                runInEdt {
+                withContext(edt) {
                     // If the file type is not associated, prompt user to associate. Returns null on cancel
                     fileWrapper.virtualFile?.let {
                         ApplicationManager.getApplication().runWriteAction {
                             it.isWritable = false
                         }
-                        FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@runInEdt
+                        FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@withContext
                         // set virtual file to read only
                         FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
                             notifyError(project = project, content = message("s3.open.viewer.failed.unsupported"))
