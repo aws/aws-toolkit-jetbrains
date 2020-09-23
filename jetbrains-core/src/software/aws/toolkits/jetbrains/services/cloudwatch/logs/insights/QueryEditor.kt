@@ -143,6 +143,14 @@ class QueryEditor internal constructor(
         return unit.second
     }
 
+    fun setSelectedTimeUnit(unit: ChronoUnit) {
+        for (knownUnits in timeUnits) {
+            if (unit == knownUnits.second) {
+                relativeTimeUnit.selectedItem = knownUnits
+            }
+        }
+    }
+
     companion object {
         private val LOG = getLogger<QueryEditor>()
 

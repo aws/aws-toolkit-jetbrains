@@ -67,7 +67,7 @@ class QueryEditorDialog(
             is TimeRange.RelativeRange -> {
                 view.setRelative()
                 view.relativeTimeNumber.text = timeRange.relativeTimeAmount.toString()
-                view.relativeTimeUnit.selectedItem = timeRange.relativeTimeUnit
+                view.setSelectedTimeUnit(timeRange.relativeTimeUnit)
             }
         }
 
@@ -120,7 +120,7 @@ class QueryEditorDialog(
             )
         }
 
-        val query = if (view.queryLogGroupsRadioButton.isSelected) {
+        val query = if (view.searchTerm.isSelected) {
             QueryString.SearchTermQueryString(
                 searchTerm = view.querySearchTerm.text
             )
