@@ -171,7 +171,7 @@ class QueryActorTest : BaseCoroutineTest() {
             )
             .thenAnswer {
                 runBlocking {
-                    delay(5_000)
+                    delay(90_000)
                 }
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).results(firstSampleResultList, secondSampleResultList).build()
             }

@@ -10,6 +10,7 @@ import com.intellij.ui.table.TableView
 import com.intellij.util.ExceptionUtil
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -465,7 +466,8 @@ class InsightsQueryResultsActor(
         }
     }
 
-    private fun startLoading() = launch {
+    // run on a separate context so we don't lock up the message listener
+    private fun startLoading() = launch(Dispatchers.Default) {
         tableLoading()
         val loadedQueryResults = mutableSetOf<String>()
         var response: GetQueryResultsResponse
