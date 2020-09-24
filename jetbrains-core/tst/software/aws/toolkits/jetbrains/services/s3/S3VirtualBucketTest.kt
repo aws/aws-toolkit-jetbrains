@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.aws.toolkits.core.utils.delegateMock
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import java.io.ByteArrayInputStream
@@ -203,13 +204,11 @@ class S3VirtualBucketTest {
 
     @Test
     fun getUrl() {
-        val s3Client = mockClientManager.create<S3Client>()
+        // Use real manager for this since it can affect the S3Configuration that goes into S3Utilities
+        AwsClientManager(projectRule.project).getClient<S3Client>().use {
+            val sut = S3VirtualBucket(Bucket.builder().name("test-bucket").build(), it)
 
-        s3Client.stub {
-            on { utilities() } doReturn S3Utilities.builder().region(Region.US_WEST_2).build()
+            assertThat(sut.generateUrl("prefix/key")).isEqualTo(URL("https://test-bucket.s3.amazonaws.com/prefix/key"))
         }
-
-        val sut = S3VirtualBucket(Bucket.builder().name("TestBucket").build(), s3Client)
-        assertThat(sut.generateUrl("prefix/key")).isEqualTo(URL("https://s3.us-west-2.amazonaws.com/TestBucket/prefix/key"))
     }
 }
