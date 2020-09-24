@@ -18,7 +18,9 @@ import org.junit.Test
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.core.sync.ResponseTransformer
 import software.amazon.awssdk.http.AbortableInputStream
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.S3Utilities
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse
@@ -38,6 +40,7 @@ import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import java.io.ByteArrayInputStream
+import java.net.URL
 import java.time.Instant
 
 class S3VirtualBucketTest {
@@ -196,5 +199,17 @@ class S3VirtualBucketTest {
         assertThat(request.bucket()).isEqualTo("TestBucket")
         assertThat(request.prefix()).isEqualTo("prefix/")
         assertThat(request.delimiter()).isEqualTo("/")
+    }
+
+    @Test
+    fun getUrl() {
+        val s3Client = mockClientManager.create<S3Client>()
+
+        s3Client.stub {
+            on { utilities() } doReturn S3Utilities.builder().region(Region.US_WEST_2).build()
+        }
+
+        val sut = S3VirtualBucket(Bucket.builder().name("TestBucket").build(), s3Client)
+        assertThat(sut.generateUrl("prefix/key")).isEqualTo(URL("https://s3.us-west-2.amazonaws.com/TestBucket/prefix/key"))
     }
 }

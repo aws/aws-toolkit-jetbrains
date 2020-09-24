@@ -15,7 +15,8 @@ class DelegateSdkConsumers : Answer<Any> {
     override fun answer(invocation: InvocationOnMock): Any? {
         val method = invocation.method
         return if (method.isDefault &&
-            method?.parameters?.getOrNull(0)?.type?.kotlin?.isSubclassOf(SdkRequest::class) != true
+            method?.parameters?.getOrNull(0)?.type?.kotlin?.isSubclassOf(SdkRequest::class) != true &&
+            method.name !in setOf("utilities", "waiter")
         ) {
             invocation.callRealMethod()
         } else {
