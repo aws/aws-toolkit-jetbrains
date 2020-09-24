@@ -35,7 +35,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Duration
 
-sealed class CloudWatchLogsActor<T, Message>(
+sealed class CloudWatchActor<T, Message>(
     protected val project: Project,
     protected val client: CloudWatchLogsClient,
     protected val table: TableView<T>
@@ -46,7 +46,7 @@ sealed class CloudWatchLogsActor<T, Message>(
     protected abstract val tableErrorMessage: String
     protected abstract val notFoundText: String
 
-    protected val edtContext = getCoroutineUiContext(disposable = this@CloudWatchLogsActor)
+    protected val edtContext = getCoroutineUiContext(disposable = this@CloudWatchActor)
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
@@ -98,15 +98,15 @@ sealed class CloudWatchLogsActor<T, Message>(
     }
 
     companion object {
-        private val LOG = getLogger<CloudWatchLogsActor<*, *>>()
+        private val LOG = getLogger<CloudWatchActor<*, *>>()
     }
 }
 
-abstract class LogActor<T>(
+abstract class CloudWatchLogsActor<T>(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<T>
-) : CloudWatchLogsActor<T, LogActor.Message>(project, client, table) {
+) : CloudWatchActor<T, CloudWatchLogsActor.Message>(project, client, table) {
     sealed class Message {
         object LoadInitial : Message()
         class LoadInitialRange(val previousEvent: LogStreamEntry, val duration: Duration) : Message()
@@ -209,7 +209,7 @@ abstract class LogActor<T>(
     }
 
     companion object {
-        private val LOG = getLogger<LogActor<*>>()
+        private val LOG = getLogger<CloudWatchLogsActor<*>>()
     }
 }
 
@@ -219,7 +219,7 @@ class LogStreamFilterActor(
     table: TableView<LogStreamEntry>,
     private val logGroup: String,
     private val logStream: String
-) : LogActor<LogStreamEntry>(project, client, table) {
+) : CloudWatchLogsActor<LogStreamEntry>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_events_query", logStream)
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
     override val notFoundText = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
@@ -266,7 +266,7 @@ class LogStreamListActor(
     private val logGroup: String,
     private val logStream: String
 ) :
-    LogActor<LogStreamEntry>(project, client, table) {
+    CloudWatchLogsActor<LogStreamEntry>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_events")
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
     override val notFoundText = message("cloudwatch.logs.log_stream_does_not_exist", logStream)
@@ -334,7 +334,7 @@ class LogGroupActor(
     client: CloudWatchLogsClient,
     table: TableView<LogStream>,
     private val logGroup: String
-) : LogActor<LogStream>(project, client, table) {
+) : CloudWatchLogsActor<LogStream>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_log_streams")
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
     override val notFoundText = message("cloudwatch.logs.log_group_does_not_exist", logGroup)
@@ -379,7 +379,7 @@ class LogGroupSearchActor(
     client: CloudWatchLogsClient,
     table: TableView<LogStream>,
     private val logGroup: String
-) : LogActor<LogStream>(project, client, table) {
+) : CloudWatchLogsActor<LogStream>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_log_streams")
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
     override val notFoundText = message("cloudwatch.logs.log_group_does_not_exist", logGroup)
@@ -424,7 +424,7 @@ class InsightsQueryResultsActor(
     client: CloudWatchLogsClient,
     table: TableView<LogResult>,
     private val queryId: String
-) : CloudWatchLogsActor<LogResult, InsightsQueryResultsActor.Message>(project, client, table) {
+) : CloudWatchActor<LogResult, InsightsQueryResultsActor.Message>(project, client, table) {
     sealed class Message {
         object StartLoadingAll : Message()
         object StopLoading : Message()

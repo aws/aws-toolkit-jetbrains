@@ -9,8 +9,10 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -37,6 +39,11 @@ class QueryActorTest : BaseCoroutineTest() {
         tableModel = ListTableModel()
         table = TableView(tableModel)
         queryactor = InsightsQueryResultsActor(projectRule.project, client, table, "1234")
+    }
+
+    @After
+    fun tearDown() {
+        Mockito.reset(client)
     }
 
     @Test
@@ -163,7 +170,7 @@ class QueryActorTest : BaseCoroutineTest() {
                 GetQueryResultsResponse.builder().status(QueryStatus.RUNNING).results(firstSampleResultList).build()
             )
             .thenAnswer {
-                runBlockingTest {
+                runBlocking {
                     delay(5_000)
                 }
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).results(firstSampleResultList, secondSampleResultList).build()
