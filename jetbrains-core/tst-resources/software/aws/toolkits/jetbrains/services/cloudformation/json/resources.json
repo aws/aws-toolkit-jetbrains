@@ -1,0 +1,31 @@
+{
+    "Resources": {
+        "MyInstance": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn" : "MyQueue",
+            "Condition" : "CreateProdResources",
+            "Properties": {
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "Queue=",
+                                {
+                                    "Ref": "MyQueue"
+                                }
+                            ]
+                        ]
+                    }
+                },
+                "AvailabilityZone": "us-east-1a",
+                "ImageId": "ami-0ff8a91507f77f867"
+            }
+        },
+        "MyQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+            }
+        }
+    }
+}

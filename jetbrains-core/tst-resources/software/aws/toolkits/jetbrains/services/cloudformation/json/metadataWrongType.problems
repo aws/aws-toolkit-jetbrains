@@ -1,0 +1,3 @@
+{
+    <problem description="Expected an object">"Metadata"</problem>: ["NotAnObject"]
+}
