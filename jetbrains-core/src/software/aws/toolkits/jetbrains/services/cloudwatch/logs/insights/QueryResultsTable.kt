@@ -50,9 +50,10 @@ class QueryResultsTable(
         }
 
         installDetailedLogRecordOpenListener()
-        insightsQueryActor = InsightsQueryResultsActor(project, client, resultsTable, queryId)
+        insightsQueryActor = InsightsQueryResultsActor(project, client, resultsTable, queryId).also {
+            Disposer.register(this, it)
+        }
         channel = insightsQueryActor.channel
-        Disposer.register(this, insightsQueryActor)
         component = ScrollPaneFactory.createScrollPane(resultsTable)
     }
 
