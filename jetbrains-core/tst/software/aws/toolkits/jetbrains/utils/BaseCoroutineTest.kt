@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
  * BaseCoroutineTest contains utilities that are useful for testing corutines which would otherwise
  * have to be copy pasted. It is abstract so it is not implemented.
  */
-abstract class BaseCoroutineTest(timeoutSeconds: Int = 30) {
+abstract class BaseCoroutineTest(timeoutSeconds: Int = 15) {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
