@@ -13,6 +13,7 @@ import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.core.sync.RequestBody
@@ -207,6 +208,18 @@ class S3VirtualBucketTest {
             val sut = S3VirtualBucket(Bucket.builder().name("test-bucket").build(), it)
 
             assertThat(sut.generateUrl("prefix/key")).isEqualTo(URL("https://test-bucket.s3.amazonaws.com/prefix/key"))
+        }
+    }
+
+    @Test
+    fun getUrlError() {
+        // Use real manager for this since it can affect the S3Configuration that goes into S3Utilities
+        AwsClientManager(projectRule.project).getClient<S3Client>().use {
+            val sut = S3VirtualBucket(Bucket.builder().name("test-bucket").build(), it)
+
+            assertThatThrownBy {
+                sut.generateUrl("")
+            }
         }
     }
 }
