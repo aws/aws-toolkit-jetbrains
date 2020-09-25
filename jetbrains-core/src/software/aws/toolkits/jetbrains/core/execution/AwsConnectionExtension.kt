@@ -28,7 +28,14 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
     private val credentialManager = CredentialManager.getInstance()
 
     fun addEnvironmentVariables(configuration: T, environment: MutableMap<String, String>, runtimeString: () -> String? = { null }) {
-        val credentialConfiguration = configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: return
+        val credentialConfiguration = configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: run {
+            // if the user just runs without opening and saving the settings, this never gets set. So, we have to check for it here as well
+            if (AwsSettings.getInstance().injectRunConfigurations == InjectCredentials.On) {
+                AwsConnectionRunConfigurationExtensionOptions { useCurrentConnection = true }
+            } else {
+                null
+            }
+        } ?: return
 
         try {
             val connection = if (credentialConfiguration.useCurrentConnection) {

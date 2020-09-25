@@ -9,6 +9,8 @@ import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.InjectCredentials
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
 import javax.swing.JComponent
 
@@ -24,7 +26,11 @@ class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private
     }
 
     override fun resetEditorFrom(configuration: T) {
-        configuration?.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)?.let { config ->
+        val config = configuration?.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)
+        // If we inject by default, we select that option by default as well
+        if (config == null && AwsSettings.getInstance().injectRunConfigurations == InjectCredentials.On) {
+            view.useCurrentConnection.isSelected = true
+        } else if (config != null) {
             view.region.isEnabled = false
             view.credentialProvider.isEnabled = false
             when {
