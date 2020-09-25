@@ -8,10 +8,7 @@ import java.time.temporal.ChronoUnit
 
 enum class TimeUnit(val unit: ChronoUnit, val text: String) {
     MINUTES(ChronoUnit.MINUTES, message("cloudwatch.logs.time_minutes")),
-
     HOURS(ChronoUnit.HOURS, message("cloudwatch.logs.time_hours")),
-
     DAYS(ChronoUnit.DAYS, message("cloudwatch.logs.time_days")),
-
     WEEKS(ChronoUnit.WEEKS, message("cloudwatch.logs.time_weeks"))
 }
