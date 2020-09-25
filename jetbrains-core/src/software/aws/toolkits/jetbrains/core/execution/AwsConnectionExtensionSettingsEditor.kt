@@ -62,7 +62,7 @@ class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private
     override fun applyEditorTo(configuration: T) {
         configuration?.putCopyableUserData(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
-            AwsConnectionRunConfigurationExtensionOptions().also {
+            AwsCredInjectionOptions().also {
                 when {
                     view.useCurrentConnection.isSelected -> it.useCurrentConnection = true
                     view.manuallyConfiguredConnection.isSelected -> {

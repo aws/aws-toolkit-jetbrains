@@ -23,7 +23,7 @@ class JavaAwsConnectionExtensionTest {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
 
-        val data = AwsConnectionRunConfigurationExtensionOptions {
+        val data = AwsCredInjectionOptions {
             region = "abc123"
             credential = "mockCredential"
         }

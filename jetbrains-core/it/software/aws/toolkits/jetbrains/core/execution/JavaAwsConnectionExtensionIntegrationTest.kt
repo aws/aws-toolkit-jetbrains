@@ -82,7 +82,7 @@ class JavaAwsConnectionExtensionIntegrationTest {
         val runConfiguration = configuration.configuration as ApplicationConfiguration
         runConfiguration.putCopyableUserData(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
-            AwsConnectionRunConfigurationExtensionOptions {
+            AwsCredInjectionOptions {
                 region = mockRegion
                 credential = DUMMY_PROVIDER_IDENTIFIER.id
             }

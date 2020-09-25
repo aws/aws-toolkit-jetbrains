@@ -112,22 +112,22 @@ class AwsConnectionExtensionSettingsEditorTest {
         assertThat(editor.view.credentialProvider.isEnabled).isTrue()
     }
 
-    private fun createConfiguration(optionBuilder: AwsConnectionRunConfigurationExtensionOptions.() -> Unit): ApplicationConfiguration {
+    private fun createConfiguration(optionBuilder: AwsCredInjectionOptions.() -> Unit): ApplicationConfiguration {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
-        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsConnectionRunConfigurationExtensionOptions().apply(optionBuilder))
+        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsCredInjectionOptions().apply(optionBuilder))
         return configuration
     }
 
     private fun ApplicationConfiguration.extensionOptions() = getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)
 
     private fun ObjectAssert<AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>>.isPersistedAs(
-        expected: AwsConnectionRunConfigurationExtensionOptions.() -> Unit
+        expected: AwsCredInjectionOptions.() -> Unit
     ) {
         satisfies {
             val updatedConfiguration = createConfiguration { }
             it.applyTo(updatedConfiguration)
-            assertThat(updatedConfiguration.extensionOptions()).isEqualToComparingFieldByField(AwsConnectionRunConfigurationExtensionOptions(expected))
+            assertThat(updatedConfiguration.extensionOptions()).isEqualToComparingFieldByField(AwsCredInjectionOptions(expected))
         }
     }
 }

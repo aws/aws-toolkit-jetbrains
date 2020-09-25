@@ -31,7 +31,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
         val credentialConfiguration = configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: run {
             // if the user just runs without opening and saving the settings, this never gets set. So, we have to check for it here as well
             if (AwsSettings.getInstance().injectRunConfigurations == InjectCredentials.On) {
-                AwsConnectionRunConfigurationExtensionOptions { useCurrentConnection = true }
+                AwsCredInjectionOptions { useCurrentConnection = true }
             } else {
                 null
             }
@@ -67,7 +67,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
             XmlSerializer.deserialize(
                 element,
-                AwsConnectionRunConfigurationExtensionOptions::class.java
+                AwsCredInjectionOptions::class.java
             )
         )
     }
@@ -95,17 +95,16 @@ fun <T : RunConfigurationBase<*>?> connectionSettingsEditor(configuration: T): A
     configuration?.getProject()?.let { AwsConnectionExtensionSettingsEditor(it) }
 
 val AWS_CONNECTION_RUN_CONFIGURATION_KEY =
-    Key.create<AwsConnectionRunConfigurationExtensionOptions>(
+    Key.create<AwsCredInjectionOptions>(
         "aws.toolkit.runConfigurationConnection"
     )
 
-class AwsConnectionRunConfigurationExtensionOptions {
+class AwsCredInjectionOptions {
     var useCurrentConnection: Boolean = false
     var region: String? = null
     var credential: String? = null
 
     companion object {
-        operator fun invoke(block: AwsConnectionRunConfigurationExtensionOptions.() -> Unit) =
-            AwsConnectionRunConfigurationExtensionOptions().apply(block)
+        operator fun invoke(block: AwsCredInjectionOptions.() -> Unit) = AwsCredInjectionOptions().apply(block)
     }
 }
