@@ -19,9 +19,10 @@ class CopyUrlAction(private val project: Project, treeTable: S3TreeTable) : Sing
     override fun performAction(node: S3TreeNode) {
         try {
             CopyPasteManager.getInstance().setContents(StringSelection(treeTable.bucket.generateUrl(node.key).toString()))
-            S3Telemetry.copyUrl(project, presigned = false)
+            S3Telemetry.copyUrl(project, presigned = false, success = true)
         } catch (e: Exception) {
             e.notifyError(project = project, title = message("s3.copy.url.failed"))
+            S3Telemetry.copyUrl(project, presigned = false, success = false)
         }
     }
 }
