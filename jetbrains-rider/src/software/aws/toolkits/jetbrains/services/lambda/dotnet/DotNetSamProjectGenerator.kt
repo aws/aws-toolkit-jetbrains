@@ -1,7 +1,7 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.ui.wizard
+package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.DumbProgressIndicator
@@ -29,11 +29,11 @@ import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SamInitSelectionPanel
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
 import java.io.File
 import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
@@ -224,17 +224,6 @@ class DotNetSamProjectGenerator(
 
     private fun initSolutionTextField() {
         solutionNameField.text = getPossibleName(SAM_HELLO_WORLD_PROJECT_NAME)
-
-        // "ReSharperTemplateGeneratorBase" base class has a logic that synchronize solution and project names.
-        // Project name has a constant value for SAM template. This is a workaround to persist project name unchanged.
-        // Please use "changeProjectName" flags when switch to 193 min version FIX_WHEN_MIN_IS_193
-        solutionNameField.addKeyListener(
-            object : KeyAdapter() {
-                override fun keyReleased(e: KeyEvent?) {
-                    projectNameField.text = SAM_HELLO_WORLD_PROJECT_NAME
-                }
-            }
-        )
     }
 
     /**
@@ -244,6 +233,7 @@ class DotNetSamProjectGenerator(
     private fun initProjectTextField() {
         projectNameField.text = SAM_HELLO_WORLD_PROJECT_NAME
         projectNameField.isEnabled = false
+        projectNameSetByUser = true
 
         sameDirectoryCheckBox.isEnabled = false
     }
