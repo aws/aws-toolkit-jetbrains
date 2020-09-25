@@ -17,6 +17,7 @@ class MockAwsSettings() : AwsSettings {
         isTelemetryEnabled = true
         promptedForTelemetry = false
         useDefaultCredentialRegion = UseAwsCredentialRegion.Prompt
+        injectRunConfigurations = InjectCredentials.Never
     }
 }
 

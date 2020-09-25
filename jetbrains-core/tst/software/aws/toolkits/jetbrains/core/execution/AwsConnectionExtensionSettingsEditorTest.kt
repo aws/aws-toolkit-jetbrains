@@ -11,12 +11,17 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ObjectAssert
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 
 class AwsConnectionExtensionSettingsEditorTest {
 
     @Rule
     @JvmField
     val projectRule = ProjectRule()
+
+    @Rule
+    @JvmField
+    val settingsRule = AwsSettingsRule()
 
     @Test
     fun baseState() {
