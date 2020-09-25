@@ -7,6 +7,7 @@ import com.intellij.execution.RunManager
 import com.intellij.execution.application.ApplicationConfiguration
 import com.intellij.execution.application.ApplicationConfigurationType
 import com.intellij.testFramework.ProjectRule
+import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.Element
@@ -14,6 +15,7 @@ import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
+import software.aws.toolkits.jetbrains.settings.InjectCredentials
 
 class JavaAwsConnectionExtensionTest {
 
@@ -50,22 +52,27 @@ class JavaAwsConnectionExtensionTest {
 
     @Test
     fun `ignores gradle based run configs`() {
+        settingsRule.settings.injectRunConfigurations = InjectCredentials.On
         val configuration = mock<GradleRunConfiguration>()
         assertThat(JavaAwsConnectionExtension().isApplicableFor(configuration)).isFalse()
     }
 
     @Test
     fun `doesn't apply when not set`() {
-
+        settingsRule.settings.injectRunConfigurations = InjectCredentials.Never
+        val configuration = mock<ApplicationConfiguration>()
+        assertThat(JavaAwsConnectionExtension().isApplicableFor(configuration)).isFalse()
     }
 
     @Test
     fun `Injects when the global setting is set`() {
+        settingsRule.settings.injectRunConfigurations = InjectCredentials.On
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
         val extension = JavaAwsConnectionExtension()
-
-        extension.
+        val map = mutableMapOf<String, String>()
+        extension.updateJavaParameters(configuration, mock { on { env } doAnswer { map } }, null)
+        assertThat(map).hasSize(8)
     }
 
     @Test
