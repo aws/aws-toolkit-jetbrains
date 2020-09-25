@@ -20,6 +20,7 @@ import java.util.prefs.Preferences
 interface AwsSettings {
     var isTelemetryEnabled: Boolean
     var promptedForTelemetry: Boolean
+    var injectRunConfigurations: Boolean
     var useDefaultCredentialRegion: UseAwsCredentialRegion
     val clientId: UUID
 
@@ -61,6 +62,12 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
             state.promptedForTelemetry = value
         }
 
+    override var injectRunConfigurations: Boolean
+        get() = state.injectRunConfiguration ?: false
+        set(value) {
+            state.injectRunConfiguration = value
+        }
+
     override var useDefaultCredentialRegion: UseAwsCredentialRegion
         get() = state.useDefaultCredentialRegion?.let { UseAwsCredentialRegion.valueOf(it) } ?: UseAwsCredentialRegion.Prompt
         set(value) {
@@ -80,7 +87,8 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
 data class AwsConfiguration(
     var isTelemetryEnabled: Boolean? = null,
     var promptedForTelemetry: Boolean? = null,
-    var useDefaultCredentialRegion: String? = null
+    var useDefaultCredentialRegion: String? = null,
+    var injectRunConfiguration: Boolean? = null
 )
 
 class ShowSettingsAction : AnAction(message("aws.settings.show.label")), DumbAware {

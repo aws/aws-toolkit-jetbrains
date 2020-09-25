@@ -3,9 +3,6 @@
 
 package software.aws.toolkits.jetbrains.settings;
 
-import static com.intellij.openapi.application.ActionsKt.runInEdt;
-import static software.aws.toolkits.resources.Localization.message;
-
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -20,22 +17,26 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.util.ui.SwingHelper;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance;
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager;
+import software.aws.toolkits.jetbrains.core.executables.ExecutableType;
+import software.aws.toolkits.jetbrains.core.help.HelpIds;
+import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable;
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
+
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.CompletionException;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable;
-import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance;
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager;
-import software.aws.toolkits.jetbrains.core.executables.ExecutableType;
-import software.aws.toolkits.jetbrains.core.help.HelpIds;
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
+
+import static com.intellij.openapi.application.ActionsKt.runInEdt;
+import static software.aws.toolkits.resources.Localization.message;
 
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String CLOUDDEBUG = "clouddebug";
@@ -52,6 +53,8 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private JBCheckBox showAllHandlerGutterIcons;
     @NotNull
     JBCheckBox enableTelemetry;
+    @NotNull
+    private JBCheckBox runConfigInjection;
     private JPanel serverlessSettings;
     private JPanel remoteDebugSettings;
     private JPanel applicationLevelSettings;
@@ -101,24 +104,25 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         LambdaSettings lambdaSettings = LambdaSettings.getInstance(project);
 
         return !Objects.equals(getSamTextboxInput(), getSavedExecutablePath(getSamExecutableInstance(), false)) ||
-               !Objects.equals(getCloudDebugTextboxInput(), getSavedExecutablePath(getCloudDebugExecutableInstance(), false)) ||
-               isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons()) ||
-               isModified(enableTelemetry, awsSettings.isTelemetryEnabled()) ||
-               isModified(defaultRegionHandling, awsSettings.getUseDefaultCredentialRegion());
+            !Objects.equals(getCloudDebugTextboxInput(), getSavedExecutablePath(getCloudDebugExecutableInstance(), false)) ||
+            isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons()) ||
+            isModified(enableTelemetry, awsSettings.isTelemetryEnabled()) ||
+            isModified(runConfigInjection, awsSettings.getInjectRunConfigurations()) ||
+            isModified(defaultRegionHandling, awsSettings.getUseDefaultCredentialRegion());
     }
 
     @Override
     public void apply() throws ConfigurationException {
         validateAndSaveCliSettings((JBTextField) samExecutablePath.getTextField(),
-                                   "sam",
-                                   getSamExecutableInstance(),
-                                   getSavedExecutablePath(getSamExecutableInstance(), false),
-                                   getSamTextboxInput());
+            "sam",
+            getSamExecutableInstance(),
+            getSavedExecutablePath(getSamExecutableInstance(), false),
+            getSamTextboxInput());
         validateAndSaveCliSettings((JBTextField) cloudDebugExecutablePath.getTextField(),
-                                   "cloud-debug",
-                                   getCloudDebugExecutableInstance(),
-                                   getSavedExecutablePath(getCloudDebugExecutableInstance(), false),
-                                   getCloudDebugTextboxInput());
+            "cloud-debug",
+            getCloudDebugExecutableInstance(),
+            getSavedExecutablePath(getCloudDebugExecutableInstance(), false),
+            getCloudDebugTextboxInput());
 
         saveAwsSettings();
         saveLambdaSettings();
@@ -133,6 +137,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         cloudDebugExecutablePath.setText(getSavedExecutablePath(getCloudDebugExecutableInstance(), false));
         showAllHandlerGutterIcons.setSelected(lambdaSettings.getShowAllHandlerGutterIcons());
         enableTelemetry.setSelected(awsSettings.isTelemetryEnabled());
+        runConfigInjection.setSelected(awsSettings.getInjectRunConfigurations());
         defaultRegionHandling.setSelectedItem(awsSettings.getUseDefaultCredentialRegion());
     }
 
@@ -219,18 +224,18 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         if (currentInput == null) {
             ExecutableManager.getInstance().removeExecutable(executableType);
             ExecutableManager.getInstance()
-                             .getExecutable(executableType)
-                             .thenRun(() -> {
-                                 String autoDetectPath = getSavedExecutablePath(executableType, true);
-                                 runInEdt(ModalityState.any(), () -> {
-                                     if (autoDetectPath != null) {
-                                         textField.getEmptyText().setText(autoDetectPath);
-                                     } else {
-                                         textField.getEmptyText().setText("");
-                                     }
-                                     return null;
-                                 });
-                             });
+                .getExecutable(executableType)
+                .thenRun(() -> {
+                    String autoDetectPath = getSavedExecutablePath(executableType, true);
+                    runInEdt(ModalityState.any(), () -> {
+                        if (autoDetectPath != null) {
+                            textField.getEmptyText().setText(autoDetectPath);
+                        } else {
+                            textField.getEmptyText().setText("");
+                        }
+                        return null;
+                    });
+                });
             return;
         }
 
@@ -261,6 +266,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private void saveAwsSettings() {
         AwsSettings awsSettings = AwsSettings.getInstance();
         awsSettings.setTelemetryEnabled(enableTelemetry.isSelected());
+        awsSettings.setInjectRunConfigurations(runConfigInjection.isSelected());
         awsSettings.setUseDefaultCredentialRegion((UseAwsCredentialRegion) Objects.requireNonNull(defaultRegionHandling.getSelectedItem()));
     }
 
