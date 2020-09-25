@@ -26,6 +26,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.StopQueryRequest
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.InsightsQueryResultsActor
 import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class QueryActorTest : BaseCoroutineTest() {
     private lateinit var client: CloudWatchLogsClient
@@ -165,7 +167,7 @@ class QueryActorTest : BaseCoroutineTest() {
             .value("5678")
             .build()
         val secondSampleResultList = listOf(sampleResult2)
-        whenever(client.getQueryResults(Mockito.any<GetQueryResultsRequest>()))
+        whenever(client.getQueryResults(any<GetQueryResultsRequest>()))
             .thenReturn(
                 GetQueryResultsResponse.builder().status(QueryStatus.RUNNING).results(firstSampleResultList).build()
             )
@@ -174,6 +176,12 @@ class QueryActorTest : BaseCoroutineTest() {
                     delay(90_000)
                 }
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).results(firstSampleResultList, secondSampleResultList).build()
+            }
+
+        val latch = CountDownLatch(1)
+        whenever(client.stopQuery(any<StopQueryRequest>()))
+            .thenAnswer {
+                latch.countDown()
             }
 
         runBlockingTest {
@@ -186,8 +194,9 @@ class QueryActorTest : BaseCoroutineTest() {
             }
         }
 
-        verify(client).stopQuery(StopQueryRequest.builder().queryId("1234").build())
         assertThat(tableModel.items.size).isEqualTo(1)
         assertThat(tableModel.items[0].values).isEqualTo(setOf("p1234"))
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue()
+        verify(client).stopQuery(StopQueryRequest.builder().queryId("1234").build())
     }
 }
