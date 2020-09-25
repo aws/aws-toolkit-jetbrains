@@ -12,7 +12,6 @@ import com.intellij.ui.SortedComboBoxModel
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.ui.ProjectFileBrowseListener
 import java.util.Comparator
-import java.util.function.Function
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComboBox
 import javax.swing.JLabel
@@ -30,7 +29,7 @@ class DownloadCodeForSchemaPanel(project: Project) {
     private fun createUIComponents() {
         versionModel = DefaultComboBoxModel()
         version = ComboBox(versionModel)
-        languageModel = SortedComboBoxModel(Comparator.comparing(Function { obj: SchemaCodeLangs -> obj.toString() }, Comparator.naturalOrder()))
+        languageModel = SortedComboBoxModel(compareBy(Comparator.naturalOrder()) { it: SchemaCodeLangs -> it.toString() })
         language = ComboBox(languageModel)
     }
 

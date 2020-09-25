@@ -20,7 +20,7 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class PerContainerSettings internal constructor(private val project: Project, private val containerName: String, parent: Disposable) {
+class PerContainerSettings(private val project: Project, private val containerName: String, parent: Disposable) {
     lateinit var panel: JPanel
     lateinit var platform: ComboBox<CloudDebuggingPlatform>
     lateinit var startCommand: StartupCommandWithAutoFill
