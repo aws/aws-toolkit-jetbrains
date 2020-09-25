@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.settings;
 
+import static com.intellij.openapi.application.ActionsKt.runInEdt;
+import static software.aws.toolkits.resources.Localization.message;
+
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -17,6 +20,13 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.util.ui.SwingHelper;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.concurrent.CompletionException;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,17 +36,6 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableType;
 import software.aws.toolkits.jetbrains.core.help.HelpIds;
 import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable;
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable;
-
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.concurrent.CompletionException;
-
-import static com.intellij.openapi.application.ActionsKt.runInEdt;
-import static software.aws.toolkits.resources.Localization.message;
 
 public class AwsSettingsConfigurable implements SearchableConfigurable {
     private static final String CLOUDDEBUG = "clouddebug";
@@ -53,13 +52,12 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private JBCheckBox showAllHandlerGutterIcons;
     @NotNull
     JBCheckBox enableTelemetry;
-    @NotNull
-    private JBCheckBox runConfigInjection;
     private JPanel serverlessSettings;
     private JPanel remoteDebugSettings;
     private JPanel applicationLevelSettings;
 
     private ComboBox<UseAwsCredentialRegion> defaultRegionHandling;
+    private ComboBox<InjectCredentials> credentialInjection;
 
     public AwsSettingsConfigurable(Project project) {
         this.project = project;
@@ -84,6 +82,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         samHelp = createHelpLink(HelpIds.SAM_CLI_INSTALL);
         samExecutablePath = createCliConfigurationElement(getSamExecutableInstance(), SAM);
         defaultRegionHandling = new ComboBox<>(UseAwsCredentialRegion.values());
+        credentialInjection = new ComboBox<>(InjectCredentials.values());
     }
 
     @NotNull
@@ -107,7 +106,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
             !Objects.equals(getCloudDebugTextboxInput(), getSavedExecutablePath(getCloudDebugExecutableInstance(), false)) ||
             isModified(showAllHandlerGutterIcons, lambdaSettings.getShowAllHandlerGutterIcons()) ||
             isModified(enableTelemetry, awsSettings.isTelemetryEnabled()) ||
-            isModified(runConfigInjection, awsSettings.getInjectRunConfigurations()) ||
+            isModified(credentialInjection, awsSettings.getInjectRunConfigurations()) ||
             isModified(defaultRegionHandling, awsSettings.getUseDefaultCredentialRegion());
     }
 
@@ -137,7 +136,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
         cloudDebugExecutablePath.setText(getSavedExecutablePath(getCloudDebugExecutableInstance(), false));
         showAllHandlerGutterIcons.setSelected(lambdaSettings.getShowAllHandlerGutterIcons());
         enableTelemetry.setSelected(awsSettings.isTelemetryEnabled());
-        runConfigInjection.setSelected(awsSettings.getInjectRunConfigurations());
+        credentialInjection.setSelectedItem(awsSettings.getInjectRunConfigurations());
         defaultRegionHandling.setSelectedItem(awsSettings.getUseDefaultCredentialRegion());
     }
 
@@ -266,7 +265,7 @@ public class AwsSettingsConfigurable implements SearchableConfigurable {
     private void saveAwsSettings() {
         AwsSettings awsSettings = AwsSettings.getInstance();
         awsSettings.setTelemetryEnabled(enableTelemetry.isSelected());
-        awsSettings.setInjectRunConfigurations(runConfigInjection.isSelected());
+        awsSettings.setInjectRunConfigurations((InjectCredentials) Objects.requireNonNull(credentialInjection.getSelectedItem()));
         awsSettings.setUseDefaultCredentialRegion((UseAwsCredentialRegion) Objects.requireNonNull(defaultRegionHandling.getSelectedItem()));
     }
 

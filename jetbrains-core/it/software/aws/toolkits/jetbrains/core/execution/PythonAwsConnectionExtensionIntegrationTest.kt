@@ -30,10 +30,11 @@ class PythonAwsConnectionExtensionIntegrationTest {
     fun happyPathPythonConnectionInjection() {
         assertThat(pythonExecutable).isNotBlank()
         val file = projectRule.fixture.addFileToProject(
-            "hello.py", """ 
+            "hello.py",
+            """ 
             import os
             print(os.environ["AWS_REGION"])
-        """.trimIndent()
+            """.trimIndent()
         )
 
         val runManager = RunManager.getInstance(projectRule.project)
@@ -49,7 +50,8 @@ class PythonAwsConnectionExtensionIntegrationTest {
             AwsConnectionRunConfigurationExtensionOptions {
                 region = mockRegion
                 credential = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id
-            })
+            }
+        )
 
         VfsRootAccess.allowRootAccess(projectRule.fixture.testRootDisposable, pythonExecutable)
 

@@ -16,6 +16,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.InjectCredentials
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result.Failed
@@ -68,6 +70,8 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             XmlSerializer.serializeInto(it, element)
         }
     }
+
+    fun isApplicable(): Boolean = AwsSettings.getInstance().injectRunConfigurations != InjectCredentials.Never
 
     private companion object {
         val LOG = getLogger<AwsConnectionRunConfigurationExtension<*>>()

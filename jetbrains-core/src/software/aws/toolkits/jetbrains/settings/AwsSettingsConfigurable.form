@@ -83,14 +83,19 @@
             </constraints>
             <properties/>
           </component>
-          <component id="682a9" class="com.intellij.ui.components.JBCheckBox" binding="runConfigInjection">
+          <component id="30603" class="javax.swing.JLabel">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="5" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="run_configuration_extension.setting"/>
-              <toolTipText value=""/>
             </properties>
+          </component>
+          <component id="c8dfe" class="com.intellij.openapi.ui.ComboBox" binding="credentialInjection" custom-create="true">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
           </component>
         </children>
       </grid>

@@ -20,7 +20,7 @@ import java.util.prefs.Preferences
 interface AwsSettings {
     var isTelemetryEnabled: Boolean
     var promptedForTelemetry: Boolean
-    var injectRunConfigurations: Boolean
+    var injectRunConfigurations: InjectCredentials
     var useDefaultCredentialRegion: UseAwsCredentialRegion
     val clientId: UUID
 
@@ -34,6 +34,14 @@ enum class UseAwsCredentialRegion(private val description: String) {
     Always(message("settings.credentials.prompt_for_default_region_switch.always.description")),
     Prompt(message("settings.credentials.prompt_for_default_region_switch.ask.description")),
     Never(message("settings.credentials.prompt_for_default_region_switch.never.description"));
+
+    override fun toString(): String = description
+}
+
+enum class InjectCredentials(private val description: String) {
+    Never(message("run_configuration_extension.setting.never")),
+    Manual(message("run_configuration_extension.setting.manual")),
+    On(message("run_configuration_extension.setting.on"));
 
     override fun toString(): String = description
 }
@@ -62,10 +70,10 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
             state.promptedForTelemetry = value
         }
 
-    override var injectRunConfigurations: Boolean
-        get() = state.injectRunConfiguration ?: false
+    override var injectRunConfigurations: InjectCredentials
+        get() = state.injectRunConfiguration?.let { InjectCredentials.valueOf(it) } ?: InjectCredentials.Manual
         set(value) {
-            state.injectRunConfiguration = value
+            state.injectRunConfiguration = value.name
         }
 
     override var useDefaultCredentialRegion: UseAwsCredentialRegion
@@ -88,7 +96,7 @@ data class AwsConfiguration(
     var isTelemetryEnabled: Boolean? = null,
     var promptedForTelemetry: Boolean? = null,
     var useDefaultCredentialRegion: String? = null,
-    var injectRunConfiguration: Boolean? = null
+    var injectRunConfiguration: String? = null
 )
 
 class ShowSettingsAction : AnAction(message("aws.settings.show.label")), DumbAware {

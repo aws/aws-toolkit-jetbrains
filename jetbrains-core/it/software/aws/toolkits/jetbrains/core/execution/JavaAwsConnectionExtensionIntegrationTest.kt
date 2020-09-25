@@ -85,7 +85,8 @@ class JavaAwsConnectionExtensionIntegrationTest {
             AwsConnectionRunConfigurationExtensionOptions {
                 region = mockRegion
                 credential = DUMMY_PROVIDER_IDENTIFIER.id
-            })
+            }
+        )
         runConfiguration.setMainClass(psiClass)
         compileModule(module)
 

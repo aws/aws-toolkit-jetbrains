@@ -14,7 +14,7 @@ import software.aws.toolkits.resources.message
 class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
     private val delegate = AwsConnectionRunConfigurationExtension<AbstractPythonRunConfiguration<*>>()
 
-    override fun isApplicableFor(configuration: AbstractPythonRunConfiguration<*>): Boolean = true
+    override fun isApplicableFor(configuration: AbstractPythonRunConfiguration<*>): Boolean = delegate.isApplicable()
 
     override fun isEnabledFor(applicableConfiguration: AbstractPythonRunConfiguration<*>, runnerSettings: RunnerSettings?): Boolean = true
 
