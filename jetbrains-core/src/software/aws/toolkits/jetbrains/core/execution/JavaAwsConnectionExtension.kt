@@ -8,11 +8,11 @@ import com.intellij.execution.application.ApplicationConfiguration
 import com.intellij.execution.configurations.JavaParameters
 import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.execution.configurations.RunnerSettings
+import com.intellij.openapi.externalSystem.service.execution.ExternalSystemRunConfiguration
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.roots.ModuleRootManager
 import org.jdom.Element
-import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import software.aws.toolkits.resources.message
 
 class JavaAwsConnectionExtension : RunConfigurationExtension() {
@@ -20,10 +20,11 @@ class JavaAwsConnectionExtension : RunConfigurationExtension() {
 
     /*
      * This works with Maven and IntelliJ managed, but breaks for Gradle. In gradle the run config runs another run config (the actual Gradle one), which
-     * does not pass down the environment variables.
+     * does not pass down the environment variables. The base that controls this is ExternalSystemRunConfiguration, so we should use that to be safe
+     * so that we don't encounter a similar situation with a different class based on it.
      */
     override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean =
-        configuration !is GradleRunConfiguration && delegate.isApplicable()
+        configuration !is ExternalSystemRunConfiguration && delegate.isApplicable()
 
     override fun <T : RunConfigurationBase<*>?> updateJavaParameters(configuration: T, params: JavaParameters, runnerSettings: RunnerSettings?) {
         configuration ?: return

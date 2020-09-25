@@ -104,6 +104,11 @@ class AwsConnectionExtensionSettingsEditorTest {
     }
 
     @Test
+    fun setsInjectionOnWhenGlobalSettingIsSet() {
+
+    }
+
+    @Test
     fun manualConnectionEnablesDropDowns() {
         val editor = AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
         editor.view.manuallyConfiguredConnection.doClick()
