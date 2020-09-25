@@ -12,6 +12,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAware
+import software.aws.toolkits.core.utils.valueOfOrNull
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 import java.util.UUID
@@ -71,13 +72,13 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
         }
 
     override var injectRunConfigurations: InjectCredentials
-        get() = state.injectRunConfiguration?.let { InjectCredentials.valueOf(it) } ?: InjectCredentials.Manual
+        get() = state.injectRunConfiguration?.let { valueOfOrNull<InjectCredentials>(it) } ?: InjectCredentials.Manual
         set(value) {
             state.injectRunConfiguration = value.name
         }
 
     override var useDefaultCredentialRegion: UseAwsCredentialRegion
-        get() = state.useDefaultCredentialRegion?.let { UseAwsCredentialRegion.valueOf(it) } ?: UseAwsCredentialRegion.Prompt
+        get() = state.useDefaultCredentialRegion?.let { valueOfOrNull<UseAwsCredentialRegion>(it) } ?: UseAwsCredentialRegion.Prompt
         set(value) {
             state.useDefaultCredentialRegion = value.name
         }

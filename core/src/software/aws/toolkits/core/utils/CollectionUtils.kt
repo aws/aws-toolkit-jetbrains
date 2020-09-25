@@ -7,3 +7,8 @@ package software.aws.toolkits.core.utils
  * Replace with [kotlin.collections.buildMap] when experimental is removed
  */
 fun <K, V> buildMap(builder: MutableMap<K, V>.() -> Unit): Map<K, V> = mutableMapOf<K, V>().apply(builder).toMap()
+
+/*
+ * <enum>.valueOf(item) will throw if item is not in the enum, so make a safe version
+ */
+inline fun <reified T : Enum<T>> valueOfOrNull(name: String): T? = enumValues<T>().firstOrNull { it.name == name }
