@@ -60,8 +60,7 @@ class QueryEditor internal constructor(
         // arbitrary length
         relativeTimeNumber.columns = 5
         comboBoxModel = EnumComboBoxModel(TimeUnit::class.java)
-        relativeTimeUnit = ComboBox()
-        relativeTimeUnit.model
+        relativeTimeUnit = ComboBox(comboBoxModel)
         relativeTimeUnit.renderer = timeUnitComboBoxRenderer
     }
 
