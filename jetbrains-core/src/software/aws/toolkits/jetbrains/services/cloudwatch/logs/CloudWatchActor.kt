@@ -92,6 +92,7 @@ sealed class CloudWatchActor<T, Message>(
     protected suspend fun tableDoneLoading() = withContext(edtContext) {
         table.tableViewModel.fireTableDataChanged()
         table.setPaintBusy(false)
+        table.emptyText.text = message("cloudwatch.logs.no_results_found")
     }
 
     override fun dispose() {
@@ -527,13 +528,17 @@ class InsightsQueryResultsActor(
             }
         }
 
-        try {
-            client.stopQuery {
-                it.queryId(queryId)
+        launch {
+            // network call; run off EDT
+            try {
+                // needs to be off UI thread
+                client.stopQuery {
+                    it.queryId(queryId)
+                }
+            } catch (e: Exception) {
+                // best effort; this will fail if the query raced to completion or user does not have permission
+                LOG.warn("Failed to stop query", e)
             }
-        } catch (e: Exception) {
-            // best effort; this will fail if the query raced to completion or user does not have permission
-            LOG.warn("Failed to stop query", e)
         }
     }
 
