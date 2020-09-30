@@ -531,7 +531,6 @@ class InsightsQueryResultsActor(
         launch {
             // network call; run off EDT
             try {
-                // needs to be off UI thread
                 client.stopQuery {
                     it.queryId(queryId)
                 }

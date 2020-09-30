@@ -47,7 +47,9 @@ class InsightsQueryTest {
 
     private val cloudWatchExplorerLabel = "CloudWatch Logs"
 
-    // test consts
+    private val executeButtonText = "Execute"
+    private val defaultRelativeTimeAmount = "10"
+    private val testRelativeTimeAmount = "359"
     private val logGroupName = "uitest-${UUID.randomUUID()}"
     private val logStreamName1 = "uitest-${UUID.randomUUID()}"
     private val logStreamName2 = "uitest-${UUID.randomUUID()}"
@@ -70,7 +72,7 @@ class InsightsQueryTest {
             it.logStreamName(logStreamName2)
         }
 
-        val res1 = client.putLogEvents {
+        client.putLogEvents {
             it.logGroupName(logGroupName)
             it.logStreamName(logStreamName1)
             it.logEvents(
@@ -81,7 +83,7 @@ class InsightsQueryTest {
             )
         }
 
-        val res2 = client.putLogEvents {
+        client.putLogEvents {
             it.logGroupName(logGroupName)
             it.logStreamName(logStreamName2)
             it.logEvents(
@@ -92,7 +94,6 @@ class InsightsQueryTest {
             )
         }
 
-        // unfortunately logs are eventually consistent
         runBlocking {
             client.waitForResults(logGroupName)
         }
@@ -117,8 +118,10 @@ class InsightsQueryTest {
             step("Query with default settings returns results") {
                 openInsightsQueryDialogFromExplorer(logGroupName)
                 step("Execute") {
-                    findAndClick("//div[@text='Execute']")
+                    findAndClick("//div[@text='$executeButtonText']")
                 }
+                // Wait for stability
+                Thread.sleep(1000)
                 assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
                     assertThat(it.text).contains("group1")
                 }
@@ -131,11 +134,11 @@ class InsightsQueryTest {
                 val currentQueryId = find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel']")).findAllText().first().text
                 openInsightsQueryDialogFromResults()
                 step("Change relative time values") {
-                    find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='10']")).text = "35"
+                    find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='$defaultRelativeTimeAmount']")).text = testRelativeTimeAmount
                     find<ComboBoxFixture>(byXpath("//div[@class='ComboBox']")).selectItem("Hours")
                 }
                 step("Execute") {
-                    findAndClick("//div[@text='Execute']")
+                    findAndClick("//div[@text='$executeButtonText']")
                 }
                 step("Verify new result tab selected") {
                     // close the old one
@@ -144,6 +147,8 @@ class InsightsQueryTest {
 
                     find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and @visible_text!='$currentQueryId']")).click()
                 }
+                // Wait for stability
+                Thread.sleep(1000)
                 assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
                     assertThat(it.text).contains("group1")
                 }
@@ -153,7 +158,7 @@ class InsightsQueryTest {
 
                 step("Verify new query settings have persisted") {
                     openInsightsQueryDialogFromResults()
-                    find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='35']"))
+                    find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='$testRelativeTimeAmount']"))
                     assertThat(find<ComboBoxFixture>(byXpath("//div[@class='ComboBox']")).selectedText()).isEqualTo("Hours")
                 }
             }
@@ -197,6 +202,7 @@ class InsightsQueryTest {
     }
 
     private suspend fun CloudWatchLogsClient.waitForResults(logGroup: String) {
+        // unfortunately logs are eventually consistent
         withTimeout(Duration.ofMinutes(5).toMillis()) {
             while (true) {
                 val stopTime = Instant.now()
@@ -218,7 +224,7 @@ class InsightsQueryTest {
                         log.info("query returned enough results, continuing")
                         return@withTimeout
                     } else if (result.status() in setOf(QueryStatus.FAILED, QueryStatus.CANCELLED)) {
-                        throw IllegalStateException("Reached terminal condition while waiting for log propagation")
+                        throw IllegalStateException("Reached terminal condition while waiting for log propagation: queryId: $queryId, status: ${result.statusAsString()}")
                     } else if (result.status() == QueryStatus.COMPLETE) {
                         log.info("query returned no results, restarting query")
                         break
