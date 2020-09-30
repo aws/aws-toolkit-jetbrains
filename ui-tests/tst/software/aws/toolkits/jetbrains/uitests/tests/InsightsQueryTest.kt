@@ -120,9 +120,7 @@ class InsightsQueryTest {
                 step("Execute") {
                     findAndClick("//div[@text='$executeButtonText']")
                 }
-                // Wait for stability
-                Thread.sleep(1000)
-                assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
+                assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']"), Duration.ofSeconds(5)).findAllText()).anySatisfy {
                     assertThat(it.text).contains("group1")
                 }
                 assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
@@ -134,7 +132,8 @@ class InsightsQueryTest {
                 val currentQueryId = find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel']")).findAllText().first().text
                 openInsightsQueryDialogFromResults()
                 step("Change relative time values") {
-                    find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='$defaultRelativeTimeAmount']")).text = testRelativeTimeAmount
+                    find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='$defaultRelativeTimeAmount']")).text =
+                        testRelativeTimeAmount
                     find<ComboBoxFixture>(byXpath("//div[@class='ComboBox']")).selectItem("Hours")
                 }
                 step("Execute") {
@@ -147,9 +146,7 @@ class InsightsQueryTest {
 
                     find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and @visible_text!='$currentQueryId']")).click()
                 }
-                // Wait for stability
-                Thread.sleep(1000)
-                assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
+                assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']"), Duration.ofSeconds(5)).findAllText()).anySatisfy {
                     assertThat(it.text).contains("group1")
                 }
                 assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
@@ -224,7 +221,9 @@ class InsightsQueryTest {
                         log.info("query returned enough results, continuing")
                         return@withTimeout
                     } else if (result.status() in setOf(QueryStatus.FAILED, QueryStatus.CANCELLED)) {
-                        throw IllegalStateException("Reached terminal condition while waiting for log propagation: queryId: $queryId, status: ${result.statusAsString()}")
+                        throw IllegalStateException(
+                            "Reached terminal condition while waiting for log propagation: queryId: $queryId, status: ${result.statusAsString()}"
+                        )
                     } else if (result.status() == QueryStatus.COMPLETE) {
                         log.info("query returned no results, restarting query")
                         break
