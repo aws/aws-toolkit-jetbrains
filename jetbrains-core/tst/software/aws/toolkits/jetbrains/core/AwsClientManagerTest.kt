@@ -178,13 +178,10 @@ class AwsClientManagerTest {
     private fun getClientManager() = AwsClientManager()
 
     // Back-ported from 2020.1 for 2019.3 compat FIX_WHEN_MIN_IS_201
-    private inline fun <T : Disposable, R> T.use(block: (T) -> R): R {
-        try {
-            return block(this)
-        }
-        finally {
-            Disposer.dispose(this)
-        }
+    private inline fun <T : Disposable, R> T.use(block: (T) -> R): R = try {
+        block(this)
+    } finally {
+        Disposer.dispose(this)
     }
 
     class DummyServiceClient(val httpClient: SdkHttpClient) : TestClient() {
