@@ -1,0 +1,178 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+package software.aws.toolkits.jetbrains.services.lambda.wizard
+
+import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.ColoredListCellRenderer
+import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.layout.panel
+import com.intellij.util.text.SemVer
+import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.BadExecutable
+import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.core.executables.ExecutableType.Companion.getExecutable
+import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup.Companion.find
+import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import java.awt.BorderLayout
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JList
+import javax.swing.JPanel
+import javax.swing.JTextField
+
+class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFilter: (Runtime) -> Boolean = { true }) {
+    lateinit var mainPanel: JPanel
+    private lateinit var runtimeComboBox: ComboBox<Runtime>
+    private lateinit var samExecutableField: JTextField
+    private lateinit var editSamExecutableButton: JButton
+    private lateinit var samLabel: JBLabel
+    private lateinit var templateComboBox: ComboBox<SamProjectTemplate>
+    private lateinit var fragments: Wrapper
+
+    private val wizardFragments: Map<WizardFragment, JComponent>
+
+    init {
+        // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
+        val supportedRuntimeGroups = LambdaBuilder.supportedRuntimeGroups()
+        SamProjectTemplate.SAM_TEMPLATES.asSequence()
+            .flatMap { it.supportedRuntimes().asSequence() }
+            .filter(runtimeFilter)
+            .filter { supportedRuntimeGroups.contains(find { runtimeGroup: RuntimeGroup -> runtimeGroup.runtimes.contains(it) }) }
+            .distinct()
+            .sorted()
+            .forEach { runtimeComboBox.addItem(it) }
+
+        setupSamSelectionElements(samExecutableField, editSamExecutableButton, samLabel)
+
+        runtimeComboBox.addActionListener {
+            runtimeUpdate()
+            wizardUpdate()
+        }
+        templateComboBox.addActionListener { wizardUpdate() }
+
+        templateComboBox.renderer = object : ColoredListCellRenderer<SamProjectTemplate?>() {
+            override fun customizeCellRenderer(
+                list: JList<out SamProjectTemplate?>,
+                value: SamProjectTemplate?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean
+            ) {
+                if (value == null) {
+                    return
+                }
+                append(value.getName())
+            }
+        }
+
+        wizardFragments = wizardFragmentList.associateWith {
+            val panel = JPanel(BorderLayout())
+            val fragmentTitle = it.title()
+            if (fragmentTitle != null) {
+                panel.border = IdeBorderFactory.createTitledBorder(it.title(), false)
+            }
+            panel.add(it.component(), BorderLayout.CENTER)
+            panel
+        }
+
+        fragments.setContent(
+            panel {
+                wizardFragments.values.forEach {
+                    row() {
+                        it(grow)
+                    }
+                }
+            }
+        )
+
+        runtimeUpdate()
+        wizardUpdate()
+    }
+
+    fun setRuntime(runtime: Runtime) {
+        val itemCount = runtimeComboBox.itemCount
+        for (itemIndex in 0 until itemCount) {
+            if (runtimeComboBox.getItemAt(itemIndex) == runtime) {
+                runtimeComboBox.selectedItem = runtime
+                return
+            }
+        }
+    }
+
+    private fun runtimeUpdate() {
+        val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
+        templateComboBox.removeAllItems()
+
+        // if selected runtimeComboBox is null, we're on an unsupported platform
+        if (selectedRuntime == null) {
+            return
+        }
+        SamProjectTemplate.SAM_TEMPLATES.stream()
+            .filter { template: SamProjectTemplate -> template.supportedRuntimes().contains(selectedRuntime) }
+            .forEach { template: SamProjectTemplate -> templateComboBox.addItem(template) }
+    }
+
+    private fun wizardUpdate() {
+        val selectedRuntime = runtimeComboBox.selectedItem as Runtime
+        val selectedTemplate = templateComboBox.selectedItem as SamProjectTemplate
+        wizardFragments.forEach { (wizardFragment: WizardFragment, jComponent: JComponent) ->
+            wizardFragment.update(selectedRuntime, selectedTemplate)
+            jComponent.isVisible = wizardFragment.isApplicable(selectedTemplate)
+        }
+    }
+
+    fun validate(): ValidationInfo? {
+        val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent(getExecutable(SamExecutable::class.java))
+        if (samExecutable is BadExecutable) {
+            return ValidationInfo((samExecutable as BadExecutable).validationError, samExecutableField)
+        }
+
+        // TODO: Why does this have no validation on it?
+        val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
+        if (selectedRuntime != null) {
+            val samVersion: SemVer = SemVer.parseFromText(samExecutable.version)!!
+            val runtimeGroup: RuntimeGroup = selectedRuntime.runtimeGroup!!
+            try {
+                runtimeGroup.validateSamVersion(selectedRuntime, samVersion)
+            } catch (e: Exception) {
+                return ValidationInfo(e.message!!, runtimeComboBox)
+            }
+        }
+
+        // TODO: Why does this have no validation on it?
+        val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
+
+        return wizardFragments.keys
+            .filter { it.isApplicable(samProjectTemplate) }
+            .mapNotNull { it.validateFragment() }
+            .firstOrNull()
+    }
+
+    fun registerValidators() {
+        //        if (sdkSelectionUi != null) {
+        //            sdkSelectionUi.registerListeners();
+        //        }
+    }
+
+    val newProjectSettings: SamNewProjectSettings
+        get() {
+            val lambdaRuntime = runtimeComboBox.selectedItem as? Runtime
+            val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
+            if (lambdaRuntime == null) {
+                throw RuntimeException("No Runtime is supported in this Platform.")
+            }
+            if (samProjectTemplate == null) {
+                throw RuntimeException("No SAM template is supported for this runtime: $lambdaRuntime")
+            }
+            return SamNewProjectSettings(
+                lambdaRuntime,
+                samProjectTemplate
+            )
+        }
+}

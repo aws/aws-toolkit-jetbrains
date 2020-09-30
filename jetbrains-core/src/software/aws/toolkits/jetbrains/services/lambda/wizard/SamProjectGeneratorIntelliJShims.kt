@@ -59,11 +59,11 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
                 override fun run(indicator: ProgressIndicator) {
                     ModuleRootModificationUtil.updateModel(rootModel.module) { model ->
                         val samTemplate = settings.template
-                        samTemplate.build(project, rootModel.module.name, selectedRuntime, settings.schemaParameters, outputDir)
+                        samTemplate.build(project, rootModel.module.name, selectedRuntime, null, outputDir)
                         VfsUtil.markDirtyAndRefresh(false, true, true, outputDir)
                         runInEdt {
                             try {
-                                samTemplate.postCreationAction(settings, outputDir, model, generator.defaultSourceCreatingProject, indicator)
+                                samTemplate.postCreationAction(settings, outputDir, model, indicator)
                             } catch (t: Throwable) {
                                 LOG.error(t) { "Exception thrown during postCreationAction!" }
                             }
@@ -103,7 +103,7 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
 }
 
 class SamProjectGeneratorIntelliJAdapter : ProjectTemplatesFactory() {
-    override fun createTemplates(group: String?, context: WizardContext?) = arrayOf(SamProjectGenerator())
+    override fun createTemplates(group: String?, context: WizardContext) = arrayOf(SamProjectGenerator())
 
     override fun getGroupIcon(group: String?) = AwsIcons.Logos.AWS
 

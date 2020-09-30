@@ -16,6 +16,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.Alarm
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.schemas.SchemaViewer
 import software.aws.toolkits.jetbrains.services.schemas.code.DownloadCodeForSchemaDialog
@@ -317,7 +318,7 @@ abstract class SchemasSearchDialogBase(
     abstract fun createResultRenderer(): (SchemaSearchResultWithRegistry) -> JComponent
 
     private fun downloadSchemaContent(schema: SchemaSearchResultWithRegistry, version: String): CompletionStage<String> =
-        schemaViewer.downloadPrettySchema(schema.name, schema.registry, version, contentPanel)
+        schemaViewer.downloadPrettySchema(schema.name, schema.registry, version, AwsConnectionManager.getInstance(project).connectionSettings()!!)
 
     abstract fun searchSchemas(
         searchText: String,

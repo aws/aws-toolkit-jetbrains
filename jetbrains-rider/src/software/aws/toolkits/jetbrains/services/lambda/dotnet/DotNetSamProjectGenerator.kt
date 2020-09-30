@@ -55,7 +55,7 @@ class DotNetSamProjectGenerator(
     }
 
     private val generator = SamProjectGenerator()
-    private val samPanel = SamInitSelectionPanel(generator) {
+    private val samPanel = SamInitSelectionPanel(generator.wizardFragments) {
         // Only show templates for DotNet in Rider
         RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).runtimes.contains(it)
     }
@@ -167,7 +167,7 @@ class DotNetSamProjectGenerator(
         val progressManager = ProgressManager.getInstance()
         progressManager.runProcessWithProgressSynchronously(
             {
-                samSettings.template.build(context.project, projectNameField.text, samSettings.runtime, samSettings.schemaParameters, outDirVf)
+//                samSettings.template.build(context.project, projectNameField.text, samSettings.runtime, samSettings.schemaParameters, outDirVf)
             },
             message("sam.init.generating.template"),
             false,
@@ -206,7 +206,6 @@ class DotNetSamProjectGenerator(
                 settings = samSettings,
                 contentRoot = outDirVf,
                 rootModel = modifiableModel,
-                sourceCreatingProject = generator.defaultSourceCreatingProject,
                 indicator = progressIndicator
             )
         } finally {

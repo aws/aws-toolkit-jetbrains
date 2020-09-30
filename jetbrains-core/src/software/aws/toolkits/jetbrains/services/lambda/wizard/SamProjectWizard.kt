@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.intellij.execution.RunManager
-import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -13,12 +12,13 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ModifiableRootModel
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.utils.AttributeBag
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer
@@ -42,23 +42,15 @@ interface SamProjectWizard {
     /**
      * Return an instance of UI section for selecting SDK for the [RuntimeGroup]
      */
-    fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel
-
-    /**
-     * Return an instance of UI section for selecting Schema for the [RuntimeGroup]
-     */
-    fun createSchemaSelectionPanel(
-        generator: SamProjectGenerator
-    ): SchemaSelectionPanel
+    fun createSdkSelectionPanel(generator: SamProjectGenerator?): SdkSelector?
 
     companion object : RuntimeGroupExtensionPointObject<SamProjectWizard>(ExtensionPointName("aws.toolkit.lambda.sam.projectWizard"))
 }
 
 data class SamNewProjectSettings(
     val runtime: Runtime,
-    val schemaParameters: SchemaTemplateParameters?,
     val template: SamProjectTemplate,
-    val sdkSettings: SdkSettings
+    val attributeBag: AttributeBag = AttributeBag()
 )
 
 interface SdkSettings
@@ -66,9 +58,7 @@ interface SdkSettings
 /**
  * Sdk settings that supports [Sdk] as the language's SDK, such as Java, Python.
  */
-data class SdkBasedSdkSettings(
-    val sdk: Sdk?
-) : SdkSettings
+data class SdkBasedSdkSettings(val sdk: Sdk?) : SdkSettings
 
 sealed class TemplateParameters {
     data class LocationBasedTemplate(val location: String) : TemplateParameters()
@@ -85,23 +75,22 @@ abstract class SamProjectTemplate {
     override fun toString() = getName()
 
     open fun setupSdk(rootModel: ModifiableRootModel, settings: SamNewProjectSettings) {
-        val sdkSettings = settings.sdkSettings
-
-        if (sdkSettings is SdkBasedSdkSettings) {
-            // project sdk
-            runWriteAction {
-                ProjectRootManager.getInstance(rootModel.project).projectSdk = sdkSettings.sdk
-            }
-            // module sdk
-            rootModel.inheritSdk()
-        }
+//        val sdkSettings = settings.sdkSettings
+//
+//        if (sdkSettings is SdkBasedSdkSettings) {
+//             project sdk
+//            runWriteAction {
+//                ProjectRootManager.getInstance(rootModel.project).projectSdk = sdkSettings.sdk
+//            }
+//             module sdk
+//            rootModel.inheritSdk()
+//        }
     }
 
     open fun postCreationAction(
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        sourceCreatingProject: Project,
         indicator: ProgressIndicator
     ) {
         SamCommon.excludeSamDirectory(contentRoot, rootModel)

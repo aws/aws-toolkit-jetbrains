@@ -5,21 +5,16 @@ package software.aws.toolkits.jetbrains.services.lambda.nodejs
 
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreter
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterField
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef
 import com.intellij.lang.javascript.dialects.JSLanguageLevel
-import com.intellij.lang.javascript.settings.JSRootConfiguration
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.wizard.NoOpSchemaSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SchemaSelectionPanel
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelectionPanel
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters.AppBasedTemplate
@@ -28,41 +23,32 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 
 class NodeJsSamProjectWizard : SamProjectWizard {
-    override fun createSchemaSelectionPanel(
-        generator: SamProjectGenerator
-    ): SchemaSelectionPanel =
-        NoOpSchemaSelectionPanel()
-
-    override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
-        NodeJsSdkSelectionPanel()
+    override fun createSdkSelectionPanel(generator: SamProjectGenerator?): SdkSelector? = NodeJsSdkSelectionPanel()
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
         SamHelloWorldNodeJs()
     )
 }
 
-class NodeJsSdkSelectionPanel : SdkSelectionPanel {
-    private var interpreterPanel: NodeJsInterpreterField? = null
+class NodeJsSdkSelectionPanel : SdkSelector {
+    private val interpreterPanel: NodeJsInterpreterField = createInterpreterField()
 
-    override val sdkSelectionLabel: JLabel?
-        get() = JLabel(message("sam.init.node_interpreter.label"))
-
-    override val sdkSelectionPanel: JComponent
-        get() {
-            val project = ProjectManager.getInstance().defaultProject
-            val nodeJsInterpreterField = object : NodeJsInterpreterField(project, false) {
-                override fun isDefaultProjectInterpreterField(): Boolean = true
-            }
-            nodeJsInterpreterField.interpreterRef = NodeJsInterpreterManager.getInstance(project).interpreterRef
-            interpreterPanel = nodeJsInterpreterField
-            return nodeJsInterpreterField
+    private fun createInterpreterField(): NodeJsInterpreterField {
+        val project = ProjectManager.getInstance().defaultProject
+        return object : NodeJsInterpreterField(project, false) {
+            override fun isDefaultProjectInterpreterField(): Boolean = true
         }
+    }
 
-    override fun registerListeners() { }
+    override fun sdkSelectionLabel() = JLabel(message("sam.init.node_interpreter.label"))
 
-    override fun validateAll(): List<ValidationInfo>? = null
+    override fun sdkSelectionPanel(): JComponent = interpreterPanel
 
-    override fun getSdkSettings(): SdkSettings = NodeJsSdkSettings(interpreter = interpreterPanel?.interpreter)
+    override fun getSdkSettings(): SdkSettings = NodeJsSdkSettings(interpreter = interpreterPanel.interpreter)
+
+    override fun validateAll(): List<ValidationInfo>? {
+        TODO("not implemented")
+    }
 }
 
 class NodeJsSdkSettings(
@@ -74,9 +60,9 @@ abstract class SamNodeJsProjectTemplate : SamProjectTemplate() {
     override fun supportedRuntimes(): Set<Runtime> = setOf(Runtime.NODEJS10_X, Runtime.NODEJS12_X)
 
     override fun setupSdk(rootModel: ModifiableRootModel, settings: SamNewProjectSettings) {
-        val nodeJsSdkSettings = settings.sdkSettings as NodeJsSdkSettings
-        NodeJsInterpreterManager.getInstance(rootModel.project).setInterpreterRef(NodeJsInterpreterRef.create(nodeJsSdkSettings.interpreter))
-        JSRootConfiguration.getInstance(rootModel.project).storeLanguageLevelAndUpdateCaches(nodeJsSdkSettings.languageLevel)
+//        val nodeJsSdkSettings = settings.sdkSettings as NodeJsSdkSettings
+//        NodeJsInterpreterManager.getInstance(rootModel.project).setInterpreterRef(NodeJsInterpreterRef.create(nodeJsSdkSettings.interpreter))
+//        JSRootConfiguration.getInstance(rootModel.project).storeLanguageLevelAndUpdateCaches(nodeJsSdkSettings.languageLevel)
     }
 }
 

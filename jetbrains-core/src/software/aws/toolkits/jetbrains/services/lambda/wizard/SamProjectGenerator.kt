@@ -11,7 +11,6 @@ import com.intellij.ide.util.projectWizard.SettingsStep
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -24,7 +23,6 @@ import com.intellij.platform.HideableProjectGenerator
 import com.intellij.platform.ProjectGeneratorPeer
 import com.intellij.platform.ProjectTemplate
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
@@ -41,15 +39,13 @@ class SamProjectGenerator :
     ProjectTemplate,
     CustomStepProjectGenerator<SamNewProjectSettings>,
     HideableProjectGenerator {
-    val builder = SamProjectBuilder(this)
-    val step = SamProjectRuntimeSelectionStep(this)
-    val peer = SamProjectGeneratorSettingsPeer(this)
+    val wizardFragments = listOf(
+        SdkSelectionPanel(),
+        SchemaSelectionPanel()
+    )
 
-    // Stable source-creating project for creating new SAM application and making API calls safely,
-    // as AWSToolkit assumes across the board it's operating with an active project
-    // Independent of lastUsedProject because it may not be set,
-    // or could be disposed if the user chooses to create a new project in the same window as their previous
-    val defaultSourceCreatingProject = createDefaultSourceCreatingProject()
+    val builder = SamProjectBuilder(this)
+    val peer = SamProjectGeneratorSettingsPeer(this, wizardFragments)
 
     // Only show the generator if we have SAM templates to show
     override fun isHidden(): Boolean = SamProjectTemplate.SAM_TEMPLATES.isEmpty()
@@ -57,9 +53,9 @@ class SamProjectGenerator :
     override fun createStep(
         projectGenerator: DirectoryProjectGenerator<SamNewProjectSettings>?,
         callback: AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>?
-    ): AbstractActionWithPanel = step
+    ): AbstractActionWithPanel = SamProjectRuntimeSelectionStep(this)
 
-    // non-IntelliJ project commit step
+    // entry point for the Wizard, both light and heavy IDEs eventually hit this spot through our shims
     override fun generateProject(
         project: Project,
         baseDir: VirtualFile,
@@ -75,14 +71,6 @@ class SamProjectGenerator :
                 rootModel.commit()
             }
         }
-    }
-
-    private fun createDefaultSourceCreatingProject(): Project {
-        val newDefaultProject = DefaultProjectFactory.getInstance().defaultProject
-
-        // Explicitly eager load ProjectAccountSettingsManager for the project to subscribe to credential change events
-        AwsConnectionManager.getInstance(newDefaultProject)
-        return newDefaultProject
     }
 
     // the peer is in control of the first pane
@@ -115,15 +103,12 @@ class SamProjectRuntimeSelectionStep(
     AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>()
 ) {
     fun getLocationField(): TextFieldWithBrowseButton = myLocationField
-
-    override fun registerValidators() {
-        super.registerValidators()
-        (peer as SamProjectGeneratorSettingsPeer).registerValidators()
-    }
 }
 
-class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator) : ProjectGeneratorPeer<SamNewProjectSettings> {
-    private val samInitSelectionPanel by lazy { SamInitSelectionPanel(generator) }
+class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator, wizardFragments: List<WizardFragment>) : ProjectGeneratorPeer<SamNewProjectSettings> {
+    private val samInitSelectionPanel by lazy {
+        SamInitSelectionPanel(wizardFragments)
+    }
 
     /**
      * This hook is used in PyCharm and is called via {@link SamProjectBuilder#modifySettingsStep} for IntelliJ
@@ -141,13 +126,6 @@ class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator) : Proj
     override fun buildUI(settingsStep: SettingsStep) {
         // delegate to another panel instead of trying to write UI as code
         settingsStep.addSettingsComponent(component)
-    }
-
-    // order matters! we build the peer UI before we build the step UI,
-    // so validators should be done after BOTH have been constructed
-    fun registerValidators() {
-        // register any IDE-specific behavior
-        samInitSelectionPanel.registerValidators()
     }
 
     override fun isBackgroundJobRunning(): Boolean = false

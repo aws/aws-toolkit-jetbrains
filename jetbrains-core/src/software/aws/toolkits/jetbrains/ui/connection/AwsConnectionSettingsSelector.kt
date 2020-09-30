@@ -6,13 +6,14 @@ package software.aws.toolkits.jetbrains.ui.connection
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import javax.swing.JComponent
 
 class AwsConnectionSettingsSelector(
     project: Project,
-    private val settingsChangedListener: (AwsRegion?, String?) -> Unit = { _, _ -> }
+    private val settingsChangedListener: (ConnectionSettings?) -> Unit = { _ -> }
 ) {
     private val regionProvider = AwsRegionProvider.getInstance()
     private val credentialManager = CredentialManager.getInstance()
@@ -23,11 +24,13 @@ class AwsConnectionSettingsSelector(
         view.credentialProvider.setCredentialsProviders(credentialManager.getCredentialIdentifiers())
 
         val accountSettingsManager = AwsConnectionManager.getInstance(project)
-        view.region.selectedRegion = accountSettingsManager.activeRegion
         if (accountSettingsManager.isValidConnectionSettings()) {
+            view.region.selectedRegion = accountSettingsManager.activeRegion
             accountSettingsManager.selectedCredentialIdentifier?.let {
                 view.credentialProvider.setSelectedCredentialsProvider(it)
             }
+
+            fireChange()
         }
         view.region.addActionListener {
             fireChange()
@@ -38,7 +41,16 @@ class AwsConnectionSettingsSelector(
     }
 
     private fun fireChange() {
-        settingsChangedListener(view.region.selectedRegion, view.credentialProvider.getSelectedCredentialsProvider())
+        val connectionSettings = view.region.selectedRegion?.let { region ->
+            view.credentialProvider.getSelectedCredentialsProvider()?.let { credId ->
+                val manager = CredentialManager.getInstance()
+                manager.getCredentialIdentifierById(credId)?.let {
+                    ConnectionSettings(manager.getAwsCredentialProvider(it, region), region)
+                }
+            }
+        }
+
+        settingsChangedListener(connectionSettings)
     }
 
     fun selectorPanel(): JComponent = view.panel

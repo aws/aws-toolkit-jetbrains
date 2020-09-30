@@ -73,14 +73,14 @@ class SchemaSelectionPanelTest {
     private val mockResourceBuilderOptions = mock<ResourceSelector.ResourceBuilderOptions<SchemaSelectionItem>>()
     private val mockResourceSelectorBuilder = mock<ResourceSelector.ResourceBuilder>()
 
-    private lateinit var schemaSelectionPanel: SchemaResourceSelectorSelectionPanel
+    private lateinit var schemaSelectionPanel: SchemaResourceSelector
 
     @Before
     fun setUp() {
         initMockResourceCache()
         initMockResourceSelector()
 
-        schemaSelectionPanel = SchemaResourceSelectorSelectionPanel(
+        schemaSelectionPanel = SchemaResourceSelector(
             mockSamProjectBuilder,
             projectRule.project,
             resourceSelectorBuilder = mockResourceSelectorBuilder,
