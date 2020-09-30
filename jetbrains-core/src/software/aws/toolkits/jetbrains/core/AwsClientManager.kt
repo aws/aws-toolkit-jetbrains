@@ -52,15 +52,13 @@ open class AwsClientManager(project: Project) : ToolkitClientManager(), Disposab
 
     override val userAgent = AwsClientManager.userAgent
 
-    override fun getCredentialsProvider(): ToolkitCredentialsProvider {
-        try {
-            return accountSettingsManager.activeCredentialProvider
-        } catch (e: CredentialProviderNotFoundException) {
-            // TODO: Notify user
+    override fun getCredentialsProvider(): ToolkitCredentialsProvider = try {
+        accountSettingsManager.activeCredentialProvider
+    } catch (e: CredentialProviderNotFoundException) {
+        // TODO: Notify user
 
-            // Throw canceled exception to stop any task relying on this call
-            throw ProcessCanceledException(e)
-        }
+        // Throw canceled exception to stop any task relying on this call
+        throw ProcessCanceledException(e)
     }
 
     override fun getRegion(): AwsRegion = accountSettingsManager.activeRegion
