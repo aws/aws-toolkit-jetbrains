@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core
 
 import com.intellij.openapi.components.service
-import com.intellij.testFramework.ApplicationRule
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.ToolkitClientManager
