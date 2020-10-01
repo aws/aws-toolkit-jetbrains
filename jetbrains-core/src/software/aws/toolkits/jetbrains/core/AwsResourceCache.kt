@@ -166,13 +166,13 @@ fun <T> Project.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = 
 /**
  * Clears the contents of the cache for the specific [resource] type, in the currently active [ConnectionSettings]
  */
-fun Project.clearResourceCache(resource: Resource<*>) =
+fun Project.clearResourceForCurrentConnection(resource: Resource<*>) =
     AwsResourceCache.getInstance().clear(resource, this.getConnectionSettings())
 
 /**
  * Clears the contents of the cache of all resource types for the currently active [ConnectionSettings]
  */
-fun Project.clearResourceCache() =
+fun Project.clearResourceForCurrentConnection() =
     AwsResourceCache.getInstance().clear(this.getConnectionSettings())
 
 private fun Project.getConnectionSettings(): ConnectionSettings = AwsConnectionManager.getInstance(this).connectionSettings()
