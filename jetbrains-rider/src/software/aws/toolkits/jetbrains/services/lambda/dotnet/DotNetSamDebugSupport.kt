@@ -77,7 +77,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
             """
                 for i in `ls /proc/*/exe` ; do
                     symlink=`readlink  ${'$'}i 2>/dev/null`;
-                    if [[ " ${'$'}symlink" == *"/dotnet" ]]; then
+                    if [[ "${'$'}symlink" == *"/dotnet" ]]; then
                         echo  ${'$'}i | sed -n 's/.*\/proc\/\(.*\)\/exe.*/\1/p'
                     fi;
                 done;
@@ -256,7 +256,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
                 dockerContainer,
                 "/bin/sh",
                 "-c",
-               FIND_PID_SCRIPT
+                FIND_PID_SCRIPT
             )
         ).stdout.trim().nullize()
     }.toInt()
