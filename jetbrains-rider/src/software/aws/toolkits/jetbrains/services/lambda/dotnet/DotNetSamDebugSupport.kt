@@ -41,7 +41,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
-import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.SamRunningState
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -76,18 +75,6 @@ class DotNetSamDebugSupport : SamDebugSupport {
     }
 
     override fun getDebugPorts(): List<Int> = NetUtils.findAvailableSocketPorts(NUMBER_OF_DEBUG_PORTS).toList()
-
-    /**
-     * Check whether the JatBrains.Rider.Worker.Launcher app (that is required to run Debugger) is downloaded into Rider SDK.
-     */
-    override fun isSupported(runtime: Runtime): Boolean {
-        // TODO: Remove when SAM adds debug support
-        if (runtime == Runtime.DOTNETCORE3_1) {
-            return false
-        }
-
-        return true
-    }
 
     override fun patchCommandLine(debugPorts: List<Int>, commandLine: GeneralCommandLine) {
         commandLine.withParameters("--debugger-path")
