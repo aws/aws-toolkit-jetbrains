@@ -78,7 +78,7 @@ class AwsResourceCacheTest {
 
         connectionSettings = ConnectionSettings(credentialsManager.createCredentialProvider(), regionProviderRule.createAwsRegion())
 
-        sut = DefaultAwsResourceCache(projectRule.project, mockClock, 1000, Duration.ofMinutes(1))
+        sut = DefaultAwsResourceCache(mockClock, 1000, Duration.ofMinutes(1))
         sut.clear()
 
         reset(mockClock, mockResource)
@@ -200,7 +200,7 @@ class AwsResourceCacheTest {
         val usw2Cred1 = sut.getResource(mockResource, US_WEST_2, cred1Provider).value
         val usw2Cred2 = sut.getResource(mockResource, US_WEST_2, cred2Provider).value
 
-        sut.clear(mockResource, region = US_WEST_1, credentialProvider = cred1Provider)
+        sut.clear(mockResource, ConnectionSettings(cred1Provider, US_WEST_1))
 
         assertThat(sut.getResource(mockResource, US_WEST_1, cred1Provider)).wait().isCompletedWithValueMatching { it != usw1Cred1 }
         assertThat(sut.getResource(mockResource, US_WEST_1, cred2Provider)).hasValue(usw1Cred2)
@@ -262,7 +262,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun cacheIsRegularlyPrunedToEnsureItDoesntGrowTooLarge() {
-        val localSut = DefaultAwsResourceCache(projectRule.project, mockClock, 5, Duration.ofMillis(50))
+        val localSut = DefaultAwsResourceCache(mockClock, 5, Duration.ofMillis(50))
 
         val now = Instant.now()
         whenever(mockClock.instant()).thenReturn(now)
@@ -284,7 +284,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun pruningConsidersCollectionEntriesBasedOnTheirSize() {
-        val localSut = DefaultAwsResourceCache(projectRule.project, mockClock, 5, Duration.ofMillis(50))
+        val localSut = DefaultAwsResourceCache(mockClock, 5, Duration.ofMillis(50))
 
         val listResource = DummyResource("list", listOf("a", "b", "c", "d"))
         val now = Instant.now()

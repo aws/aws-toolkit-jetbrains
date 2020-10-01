@@ -68,10 +68,10 @@ class MockResourceCache : AwsResourceCache {
         }
     }
 
-    override fun clear(resource: Resource<*>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider) {
+    override fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings) {
         when (resource) {
-            is Resource.Cached<*> -> map.remove(CacheKey(resource.id, region.id, credentialProvider.id))
-            is Resource.View<*, *> -> clear(resource.underlying, region, credentialProvider)
+            is Resource.Cached<*> -> map.remove(CacheKey(resource.id, connectionSettings.region.id, connectionSettings.credentials.id))
+            is Resource.View<*, *> -> clear(resource.underlying, connectionSettings)
         }
     }
 

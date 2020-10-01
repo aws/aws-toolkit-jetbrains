@@ -46,10 +46,10 @@ private val DEFAULT_TIMEOUT = Duration.ofSeconds(30)
  */
 interface AwsResourceCache {
     /**
-     * @see [getResource]
+     * Get a [resource] either by making a call or returning it from the cache if present and unexpired.
      *
-     * @param[region] the specific [AwsRegion] to use for this resource
-     * @param[credentialProvider] the specific [ToolkitCredentialsProvider] to use for this resource
+     * @param[useStale] if an exception occurs attempting to refresh the resource return a cached version if it exists (even if it's expired). Default: true
+     * @param[forceFetch] force the resource to refresh (and update cache) even if a valid cache version exists. Default: false
      */
     fun <T> getResource(
         resource: Resource<T>,
@@ -60,7 +60,7 @@ interface AwsResourceCache {
     ): CompletionStage<T>
 
     /**
-     * Blocking version of [getResource]
+     * @see [getResource]
      */
     fun <T> getResource(
         resource: Resource<T>,
@@ -122,13 +122,7 @@ interface AwsResourceCache {
     /**
      * Clears the contents of the cache for the specific [resource] type] & [ConnectionSettings]
      */
-    fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings) =
-        clear(resource, connectionSettings.region, connectionSettings.credentials)
-
-    /**
-     * Clears the contents of the cache for the specific [resource] type, [AwsRegion] & [ToolkitCredentialsProvider]
-     */
-    fun clear(resource: Resource<*>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider)
+    fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings)
 
     companion object {
         @JvmStatic
@@ -264,17 +258,15 @@ class ExecutableBackedCacheResource<ReturnType, ExecType : ExecutableType<*>>(
 }
 
 class DefaultAwsResourceCache(
-    private val project: Project,
     private val clock: Clock,
     private val maximumCacheEntries: Int,
     private val maintenanceInterval: Duration
 ) : AwsResourceCache, Disposable, ToolkitCredentialsChangeListener {
 
     @Suppress("unused")
-    constructor(project: Project) : this(project, Clock.systemDefaultZone(), MAXIMUM_CACHE_ENTRIES, DEFAULT_MAINTENANCE_INTERVAL)
+    constructor() : this(Clock.systemDefaultZone(), MAXIMUM_CACHE_ENTRIES, DEFAULT_MAINTENANCE_INTERVAL)
 
     private val cache = ConcurrentHashMap<CacheKey, Entry<*>>()
-    private val accountSettings by lazy { AwsConnectionManager.getInstance(project) }
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
 
     init {
@@ -342,10 +334,10 @@ class DefaultAwsResourceCache(
             is Resource.View<*, T> -> getResourceIfPresent(resource.underlying, region, credentialProvider, useStale)?.let { resource.doMap(it) }
         }
 
-    override fun clear(resource: Resource<*>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider) {
+    override fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings) {
         when (resource) {
-            is Resource.Cached<*> -> cache.remove(CacheKey(resource.id, region.id, credentialProvider.id))
-            is Resource.View<*, *> -> clear(resource.underlying, region, credentialProvider)
+            is Resource.Cached<*> -> cache.remove(CacheKey(resource.id, connectionSettings.region.id, connectionSettings.credentials.id))
+            is Resource.View<*, *> -> clear(resource.underlying, connectionSettings)
         }
     }
 
