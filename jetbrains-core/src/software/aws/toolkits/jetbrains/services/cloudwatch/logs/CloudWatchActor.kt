@@ -92,7 +92,6 @@ sealed class CloudWatchActor<T, Message>(
     protected suspend fun tableDoneLoading() = withContext(edtContext) {
         table.tableViewModel.fireTableDataChanged()
         table.setPaintBusy(false)
-        table.emptyText.text = message("cloudwatch.logs.no_results_found")
     }
 
     override fun dispose() {
@@ -484,6 +483,7 @@ class InsightsQueryResultsActor(
                     title = message("cloudwatch.logs.exception"),
                     content = ExceptionUtil.getThrowableText(e)
                 )
+                table.emptyText.text = tableErrorMessage
 
                 channel.close()
                 return@launch
@@ -504,14 +504,15 @@ class InsightsQueryResultsActor(
             }.chunked(1000)
 
             dedupedResults.forEach { chunk ->
-                LOG.warn("loading block of ${chunk.size}")
+                LOG.info("loading block of ${chunk.size}")
                 table.listTableModel.addRows(chunk)
             }
         } while (isQueryRunning(response.status()))
 
-        LOG.warn("done, ${loadedQueryResults.size} entries in set")
+        LOG.info("done, ${loadedQueryResults.size} entries in set")
         tableDoneLoading()
-        LOG.warn("total items in table: ${table.listTableModel.items.size}")
+        table.emptyText.text = emptyText
+        LOG.info("total items in table: ${table.listTableModel.items.size}")
         channel.close()
     }.also {
         loadJob = it
