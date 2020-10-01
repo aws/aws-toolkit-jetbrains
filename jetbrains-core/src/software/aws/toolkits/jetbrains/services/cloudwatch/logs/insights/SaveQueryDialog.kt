@@ -21,6 +21,8 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CloudwatchinsightsTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.awt.event.ActionEvent
 import javax.swing.Action
 import javax.swing.JComponent
@@ -53,6 +55,11 @@ class SaveQueryDialog(
         title = message("cloudwatch.logs.save_query_dialog_name")
     }
 
+    override fun doCancelAction() {
+        CloudwatchinsightsTelemetry.saveQuery(project, Result.Cancelled)
+        super.doCancelAction()
+    }
+
     override fun createCenterPanel(): JComponent? = view.saveQueryPanel
     override fun doValidate(): ValidationInfo? = validateQueryName(view)
     override fun getOKAction(): Action = action
@@ -71,6 +78,7 @@ class SaveQueryDialog(
     }
 
     fun saveQuery() = launch {
+        var result = Result.Succeeded
         try {
             val queryName = view.queryName.text
             action.isEnabled = false
@@ -92,8 +100,10 @@ class SaveQueryDialog(
         } catch (e: Exception) {
             LOG.error(e) { "Failed to save insights query" }
             notifyError(message("cloudwatch.logs.failed_to_save_query"), e.toString())
+            result = Result.Failed
         } finally {
             action.isEnabled = true
+            CloudwatchinsightsTelemetry.saveQuery(project, result)
         }
     }
 
