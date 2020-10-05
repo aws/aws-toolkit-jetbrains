@@ -36,7 +36,7 @@ class ResourceSelectorTest {
     @Test
     fun canSpecifyADefaultItem() {
         resourceCache.addEntry(projectRule.project, mockResource, listOf("foo", "bar", "baz"))
-        val comboBox = ResourceSelector.builder().resource(mockResource).activeAwsConnection(projectRule.project).build()
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         comboBox.selectedItem = "bar"
 
@@ -50,7 +50,7 @@ class ResourceSelectorTest {
     @Test
     fun canSpecifyADefaultItemMatcher() {
         resourceCache.addEntry(projectRule.project, mockResource, listOf("foo", "bar", "baz"))
-        val comboBox = ResourceSelector.builder().resource(mockResource).activeAwsConnection(projectRule.project).build()
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         comboBox.reload()
 
@@ -72,7 +72,7 @@ class ResourceSelectorTest {
     fun loadFailureShowsAnErrorAndDisablesTheBox() {
         val future = CompletableFuture<List<String>>()
         resourceCache.addEntry(projectRule.project, mockResource, future)
-        val comboBox = ResourceSelector.builder().resource(mockResource).activeAwsConnection(projectRule.project).build()
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         future.completeExceptionally(RuntimeException("boom"))
 
@@ -87,7 +87,7 @@ class ResourceSelectorTest {
     @Test
     fun usePreviouslySelectedItemAfterReloadUnlessSelectItemSet() {
         resourceCache.addEntry(projectRule.project, mockResource, listOf("foo", "bar", "baz"))
-        val comboBox = ResourceSelector.builder().resource(mockResource).activeAwsConnection(projectRule.project).build()
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         runInEdtAndWait {
             comboBox.selectedItem = "bar"
@@ -106,7 +106,7 @@ class ResourceSelectorTest {
     fun comboBoxIsDisabledWhileEntriesAreLoading() {
         val future = CompletableFuture<List<String>>()
         resourceCache.addEntry(projectRule.project, mockResource, future)
-        val comboBox = ResourceSelector.builder().resource(mockResource).activeAwsConnection(projectRule.project).build()
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         assertThat(comboBox.selected()).isNull()
 
@@ -129,7 +129,7 @@ class ResourceSelectorTest {
     fun actionListenerIsInvokedOnLoadingCorrectly() {
         val future = CompletableFuture<List<String>>() // Use the future to force slow load
         resourceCache.addEntry(projectRule.project, mockResource, future)
-        val comboBox = ResourceSelector.builder().resource(mockResource).activeAwsConnection(projectRule.project).disableAutomaticLoading().build()
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).disableAutomaticLoading().build()
 
         val loadingStatus = mutableListOf<Boolean>()
         comboBox.addActionListener { loadingStatus.add(comboBox.isLoading) }
@@ -153,7 +153,7 @@ class ResourceSelectorTest {
     @Test
     fun aSingleResultWillAutoSelect() {
         resourceCache.addEntry(projectRule.project, mockResource, listOf("bar"))
-        val comboBox = ResourceSelector.builder().resource(mockResource).activeAwsConnection(projectRule.project).build()
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         runInEdtAndWait {
             comboBox.selectedItem = "bar"
@@ -208,7 +208,7 @@ class ResourceSelectorTest {
         var counter = 0
         val comboBox = ResourceSelector.builder()
             .resource { resultList[counter].first }
-            .activeAwsConnection(projectRule.project)
+            .awsConnection(projectRule.project)
             .disableAutomaticLoading()
             .build()
 

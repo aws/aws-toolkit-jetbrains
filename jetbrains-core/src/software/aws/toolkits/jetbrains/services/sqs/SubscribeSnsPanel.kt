@@ -32,7 +32,7 @@ class SubscribeSnsPanel(private val project: Project) {
         topicSelector = ResourceSelector.builder()
             .resource(SnsResources.LIST_TOPICS)
             .customRenderer { value, component -> component.append(value.getName()); component }
-            .activeAwsConnection(project)
+            .awsConnection(project)
             .build()
     }
 }

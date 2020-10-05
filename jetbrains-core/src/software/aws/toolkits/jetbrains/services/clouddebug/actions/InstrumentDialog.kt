@@ -41,7 +41,7 @@ class InstrumentDialog(private val project: Project, val clusterArn: String, val
     private fun createUIComponents() {
         iamRole = ResourceSelector.builder()
             .resource { IamResources.LIST_ALL }
-            .activeAwsConnection(project)
+            .awsConnection(project)
             .build()
 
         iamRole.addItemListener {

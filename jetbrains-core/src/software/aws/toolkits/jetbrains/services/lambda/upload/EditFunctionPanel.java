@@ -87,8 +87,8 @@ public class EditFunctionPanel {
         envVars = new EnvironmentVariablesTextField();
         memorySlider = LambdaWidgets.lambdaMemory();
         timeoutSlider = LambdaWidgets.lambdaTimeout();
-        iamRole = ResourceSelector.builder().resource(IamResources.LIST_LAMBDA_ROLES).activeAwsConnection(project).build();
-        sourceBucket = ResourceSelector.builder().resource(S3Resources.listBucketNamesByActiveRegion(project)).activeAwsConnection(project).build();
+        iamRole = ResourceSelector.builder().resource(IamResources.LIST_LAMBDA_ROLES).awsConnection(project).build();
+        sourceBucket = ResourceSelector.builder().resource(S3Resources.listBucketNamesByActiveRegion(project)).awsConnection(project).build();
     }
 
     public void setRuntimes(Collection<Runtime> runtimes) {

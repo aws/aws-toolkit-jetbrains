@@ -255,7 +255,7 @@ class ResourceSelector<T> private constructor(
 
         fun disableAutomaticSorting(): ResourceBuilderOptions<T> = also { it.sortOnLoad = false }
 
-        fun activeAwsConnection(project: Project): ResourceBuilderOptions<T> = awsConnection { AwsConnectionManager.getInstance(project).connectionSettings() }
+        fun awsConnection(project: Project): ResourceBuilderOptions<T> = awsConnection { AwsConnectionManager.getInstance(project).connectionSettings() }
 
         fun awsConnection(connectionSettings: ConnectionSettings): ResourceBuilderOptions<T> = awsConnection { connectionSettings }
 

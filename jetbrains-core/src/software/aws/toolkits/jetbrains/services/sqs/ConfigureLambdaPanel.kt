@@ -31,7 +31,7 @@ class ConfigureLambdaPanel(private val project: Project) {
         lambdaFunction = ResourceSelector.builder()
             .resource(LambdaResources.LIST_FUNCTIONS)
             .customRenderer { value, component -> component.append(value.functionName()); component }
-            .activeAwsConnection(project)
+            .awsConnection(project)
             .build()
     }
 }

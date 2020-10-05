@@ -91,8 +91,8 @@ public class DeployServerlessApplicationPanel {
     private void createUIComponents() {
         environmentVariablesTable = new EnvVariablesTable();
         stackParameters = new Wrapper();
-        stacks = ResourceSelector.builder().resource(ACTIVE_STACKS).activeAwsConnection(project).build();
-        s3Bucket = ResourceSelector.builder().resource(S3Resources.listBucketNamesByActiveRegion(project)).activeAwsConnection(project).build();
+        stacks = ResourceSelector.builder().resource(ACTIVE_STACKS).awsConnection(project).build();
+        s3Bucket = ResourceSelector.builder().resource(S3Resources.listBucketNamesByActiveRegion(project)).awsConnection(project).build();
 
         if (!ApplicationManager.getApplication().isUnitTestMode()) {
             JComponent tableComponent = environmentVariablesTable.getComponent();
