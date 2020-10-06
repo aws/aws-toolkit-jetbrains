@@ -321,7 +321,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
         val name = this.name()
         val defaultRegion = this.properties()[ProfileProperty.REGION]
         val requestedProfileType = this.toCredentialType()
-        
+
         return when {
             this.requiresMfa(profiles) -> ProfileCredentialsIdentifierMfa(name, defaultRegion, requestedProfileType)
             this.requiresSso(profiles) -> ProfileCredentialsIdentifierSso(
@@ -344,10 +344,12 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
 
 private fun Profile.toCredentialType(): CredentialType? = when {
     this.propertyExists(SSO_URL) -> CredentialType.SsoProfile
-    this.propertyExists(ProfileProperty.ROLE_ARN) -> if (this.propertyExists(ProfileProperty.MFA_SERIAL))
-        CredentialType.AssumeMfaRoleProfile
-    else
-        CredentialType.AssumeRoleProfile
+    this.propertyExists(ProfileProperty.ROLE_ARN) -> {
+        if (this.propertyExists(ProfileProperty.MFA_SERIAL))
+            CredentialType.AssumeMfaRoleProfile
+        else
+            CredentialType.AssumeRoleProfile
+    }
     this.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> CredentialType.StaticSessionProfile
     this.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> CredentialType.StaticProfile
     this.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> CredentialType.CredentialProcessProfile
