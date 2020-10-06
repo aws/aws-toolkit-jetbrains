@@ -5,6 +5,14 @@ package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
+enum class CredentialType {
+    StaticProfile,
+    CredentialProcessProfile,
+    AssumeRoleProfile,
+    AssumeMfaRoleProfile,
+    SsoProfile
+}
+
 /**
  * Represents a possible credential provider that can be used within the toolkit.
  *
@@ -34,12 +42,17 @@ interface CredentialIdentifier {
     val factoryId: String
 
     /**
+     * The type of credential
+     */
+    val credentialType: CredentialType?
+
+    /**
      * Some ID types (e.g. Profile) have a concept of a default region, this is optional.
      */
     val defaultRegionId: String? get() = null
 }
 
-abstract class CredentialIdentifierBase : CredentialIdentifier {
+abstract class CredentialIdentifierBase(override val credentialType: CredentialType?) : CredentialIdentifier {
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

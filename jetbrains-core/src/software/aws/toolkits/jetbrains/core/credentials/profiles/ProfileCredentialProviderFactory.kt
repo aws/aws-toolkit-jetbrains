@@ -22,6 +22,7 @@ import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
+import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.sso.SSO_ACCOUNT
@@ -51,7 +52,8 @@ const val DEFAULT_PROFILE_ID = "profile:default"
 
 private const val PROFILE_FACTORY_ID = "ProfileCredentialProviderFactory"
 
-private open class ProfileCredentialsIdentifier(val profileName: String, override val defaultRegionId: String?) : CredentialIdentifierBase() {
+private open class ProfileCredentialsIdentifier(val profileName: String, override val defaultRegionId: String?, credentialType: CredentialType?) :
+    CredentialIdentifierBase(credentialType) {
     override val id = "profile:$profileName"
     override val displayName = message("credentials.profile.name", profileName)
     override val factoryId = PROFILE_FACTORY_ID
@@ -59,14 +61,14 @@ private open class ProfileCredentialsIdentifier(val profileName: String, overrid
 }
 
 private class ProfileCredentialsIdentifierMfa(profileName: String, defaultRegionId: String?) :
-    ProfileCredentialsIdentifier(profileName, defaultRegionId), MfaRequiredInteractiveCredentials
+    ProfileCredentialsIdentifier(profileName, defaultRegionId, CredentialType.AssumeMfaRoleProfile), MfaRequiredInteractiveCredentials
 
 private class ProfileCredentialsIdentifierSso(
     profileName: String,
     defaultRegionId: String?,
     override val ssoCache: SsoCache,
     override val ssoUrl: String
-) : ProfileCredentialsIdentifier(profileName, defaultRegionId),
+) : ProfileCredentialsIdentifier(profileName, defaultRegionId, CredentialType.SsoProfile),
     SsoRequiredInteractiveCredentials
 
 class ProfileCredentialProviderFactory : CredentialProviderFactory {
@@ -326,7 +328,7 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
                 diskCache,
                 this.requiredProperty(SSO_URL)
             )
-            else -> ProfileCredentialsIdentifier(name, defaultRegion)
+            else -> ProfileCredentialsIdentifier(name, defaultRegion, this.toCredentialType())
         }
     }
 
@@ -335,6 +337,13 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
 
     private fun Profile.requiresSso(profiles: Map<String, Profile>) = this.traverseCredentialChain(profiles)
         .any { it.propertyExists(SSO_URL) }
+}
+
+private fun Profile.toCredentialType(): CredentialType? = when {
+    this.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> CredentialType.StaticProfile
+    this.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> CredentialType.StaticProfile
+    this.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> CredentialType.CredentialProcessProfile
+    else -> null
 }
 
 private class ProfileHolder {
