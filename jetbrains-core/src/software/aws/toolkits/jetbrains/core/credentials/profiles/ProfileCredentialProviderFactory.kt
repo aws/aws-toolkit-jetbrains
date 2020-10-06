@@ -60,15 +60,16 @@ private open class ProfileCredentialsIdentifier(val profileName: String, overrid
     override val shortName: String = profileName
 }
 
-private class ProfileCredentialsIdentifierMfa(profileName: String, defaultRegionId: String?) :
-    ProfileCredentialsIdentifier(profileName, defaultRegionId, CredentialType.AssumeMfaRoleProfile), MfaRequiredInteractiveCredentials
+private class ProfileCredentialsIdentifierMfa(profileName: String, defaultRegionId: String?, credentialType: CredentialType?) :
+    ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType), MfaRequiredInteractiveCredentials
 
 private class ProfileCredentialsIdentifierSso(
     profileName: String,
     defaultRegionId: String?,
     override val ssoCache: SsoCache,
-    override val ssoUrl: String
-) : ProfileCredentialsIdentifier(profileName, defaultRegionId, CredentialType.SsoProfile),
+    override val ssoUrl: String,
+    credentialType: CredentialType?
+) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
     SsoRequiredInteractiveCredentials
 
 class ProfileCredentialProviderFactory : CredentialProviderFactory {
@@ -319,16 +320,18 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
     private fun Profile.asId(profiles: Map<String, Profile>): ProfileCredentialsIdentifier {
         val name = this.name()
         val defaultRegion = this.properties()[ProfileProperty.REGION]
-
+        val requestedProfileType = this.toCredentialType()
+        
         return when {
-            this.requiresMfa(profiles) -> ProfileCredentialsIdentifierMfa(name, defaultRegion)
+            this.requiresMfa(profiles) -> ProfileCredentialsIdentifierMfa(name, defaultRegion, requestedProfileType)
             this.requiresSso(profiles) -> ProfileCredentialsIdentifierSso(
                 name,
                 defaultRegion,
                 diskCache,
-                this.requiredProperty(SSO_URL)
+                this.requiredProperty(SSO_URL),
+                requestedProfileType
             )
-            else -> ProfileCredentialsIdentifier(name, defaultRegion, this.toCredentialType())
+            else -> ProfileCredentialsIdentifier(name, defaultRegion, requestedProfileType)
         }
     }
 
@@ -340,7 +343,12 @@ class ProfileCredentialProviderFactory : CredentialProviderFactory {
 }
 
 private fun Profile.toCredentialType(): CredentialType? = when {
-    this.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> CredentialType.StaticProfile
+    this.propertyExists(SSO_URL) -> CredentialType.SsoProfile
+    this.propertyExists(ProfileProperty.ROLE_ARN) -> if (this.propertyExists(ProfileProperty.MFA_SERIAL))
+        CredentialType.AssumeMfaRoleProfile
+    else
+        CredentialType.AssumeRoleProfile
+    this.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> CredentialType.StaticSessionProfile
     this.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> CredentialType.StaticProfile
     this.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> CredentialType.CredentialProcessProfile
     else -> null

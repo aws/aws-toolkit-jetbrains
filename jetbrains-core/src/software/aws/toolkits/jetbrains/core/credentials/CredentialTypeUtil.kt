@@ -8,6 +8,7 @@ import software.aws.toolkits.telemetry.CredentialType as TelemetryCredentialType
 
 fun CredentialType?.toTelemetryType(): TelemetryCredentialType = when (this) {
     CredentialType.StaticProfile -> TelemetryCredentialType.StaticProfile
+    CredentialType.StaticSessionProfile -> TelemetryCredentialType.StaticSessionProfile
     CredentialType.CredentialProcessProfile -> TelemetryCredentialType.CredentialProcessProfile
     CredentialType.AssumeRoleProfile -> TelemetryCredentialType.AssumeRoleProfile
     CredentialType.AssumeMfaRoleProfile -> TelemetryCredentialType.AssumeMfaRoleProfile

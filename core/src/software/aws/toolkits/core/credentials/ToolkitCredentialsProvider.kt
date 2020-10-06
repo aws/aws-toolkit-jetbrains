@@ -7,6 +7,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
 enum class CredentialType {
     StaticProfile,
+    StaticSessionProfile,
     CredentialProcessProfile,
     AssumeRoleProfile,
     AssumeMfaRoleProfile,
