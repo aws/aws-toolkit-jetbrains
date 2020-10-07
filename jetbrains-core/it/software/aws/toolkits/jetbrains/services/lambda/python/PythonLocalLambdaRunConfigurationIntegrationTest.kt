@@ -215,8 +215,8 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
-            .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
-            .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
+            .containsEntry("AWS_ACCESS_KEY_ID", mockSessionCreds.accessKeyId())
+            .containsEntry("AWS_SECRET_ACCESS_KEY", mockSessionCreds.secretAccessKey())
             .containsEntry("AWS_SESSION_TOKEN", mockSessionCreds.sessionToken())
     }
 
