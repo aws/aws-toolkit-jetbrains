@@ -31,6 +31,7 @@ import javax.swing.Icon
 import javax.swing.JComponent
 
 /**
+ * [DirectoryProjectGeneratorBase] so it shows up in Light IDEs
  * [ProjectTemplate] To allow for us to shim it into ProjectTemplatesFactory and use this in IntelliJ
  * [CustomStepProjectGenerator] so we have full control over the panel
  * [HideableProjectGenerator] so that we can hide it if the IDE doesnt support any of our runtimes
