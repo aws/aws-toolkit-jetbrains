@@ -35,7 +35,8 @@ import javax.swing.JComponent
  * [CustomStepProjectGenerator] so we have full control over the panel
  * [HideableProjectGenerator] so that we can hide it if the IDE doesnt support any of our runtimes
  */
-class SamProjectGenerator : DirectoryProjectGeneratorBase<SamNewProjectSettings>(),
+class SamProjectGenerator :
+    DirectoryProjectGeneratorBase<SamNewProjectSettings>(),
     ProjectTemplate,
     CustomStepProjectGenerator<SamNewProjectSettings>,
     HideableProjectGenerator {
