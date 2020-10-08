@@ -16,12 +16,14 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.ExceptionUtil
 import software.amazon.awssdk.services.schemas.model.DescribeSchemaResponse
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.SchemasTelemetry
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import kotlin.math.min
@@ -32,33 +34,32 @@ class SchemaViewer(
     private val schemaFormatter: SchemaFormatter = SchemaFormatter(),
     private val schemaPreviewer: SchemaPreviewer = SchemaPreviewer()
 ) {
-    fun downloadAndViewSchema(schemaName: String, registryName: String): CompletionStage<Void> = TODO()
-//        schemaDownloader.getSchemaContent(registryName, schemaName)
-//            .thenCompose { schemaContent ->
-//                SchemasTelemetry.download(project, success = true)
-//                schemaFormatter.prettySchemaContent(schemaContent.content())
-//                    .thenCompose { prettySchemaContent ->
-//                        schemaPreviewer.openFileInEditor(
-//                            registryName,
-//                            schemaName,
-//                            prettySchemaContent,
-//                            schemaContent.schemaVersion(),
-//                            project
-//                        )
-//                    }
-//            }
-//            .exceptionally { error ->
-//                notifyError(message("schemas.schema.could_not_open", schemaName), ExceptionUtil.getThrowableText(error), project)
-//                SchemasTelemetry.download(project, success = false)
-//                null
-//            }
+    fun downloadAndViewSchema(schemaName: String, registryName: String): CompletionStage<Void> =
+        schemaDownloader.getSchemaContent(registryName, schemaName, connectionSettings = connectionSettings())
+            .thenCompose { schemaContent ->
+                SchemasTelemetry.download(project, success = true)
+                schemaFormatter.prettySchemaContent(schemaContent.content())
+                    .thenCompose { prettySchemaContent ->
+                        schemaPreviewer.openFileInEditor(
+                            registryName,
+                            schemaName,
+                            prettySchemaContent,
+                            schemaContent.schemaVersion(),
+                            project
+                        )
+                    }
+            }
+            .exceptionally { error ->
+                notifyError(message("schemas.schema.could_not_open", schemaName), ExceptionUtil.getThrowableText(error), project)
+                SchemasTelemetry.download(project, success = false)
+                null
+            }
 
     fun downloadPrettySchema(
         schemaName: String,
         registryName: String,
-        version: String?,
-        connectionSettings: ConnectionSettings
-    ): CompletionStage<String> = schemaDownloader.getSchemaContent(registryName, schemaName, version, connectionSettings)
+        version: String?
+    ): CompletionStage<String> = schemaDownloader.getSchemaContent(registryName, schemaName, version, connectionSettings())
         .thenCompose { schemaContent ->
             schemaFormatter.prettySchemaContent(schemaContent.content())
         }
@@ -66,6 +67,9 @@ class SchemaViewer(
             notifyError(message("schemas.schema.could_not_open", schemaName), ExceptionUtil.getThrowableText(error), project)
             null
         }
+
+    private fun connectionSettings() = AwsConnectionManager.getInstance(project).connectionSettings()
+        ?: throw IllegalStateException("SchemaViewer can't be used without a valid AWS connection")
 }
 
 class SchemaDownloader {

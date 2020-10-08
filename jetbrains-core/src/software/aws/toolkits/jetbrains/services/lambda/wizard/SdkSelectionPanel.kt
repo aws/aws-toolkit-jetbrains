@@ -21,7 +21,9 @@ interface SdkSelector {
 
     fun getSdkSettings(): SdkSettings
 
-    fun applySdkSettings(model: ModifiableRootModel) {TODO()}
+    fun applySdkSettings(model: ModifiableRootModel) {
+        TODO()
+    }
 
     // Validate the SDK selection panel, return a list of violations if any, otherwise null
     fun validateAll(): List<ValidationInfo>?
