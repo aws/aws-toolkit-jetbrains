@@ -7,6 +7,8 @@ import com.intellij.ide.util.projectWizard.EmptyModuleBuilder
 import com.intellij.ide.util.projectWizard.SdkSettingsStep
 import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.ValidationInfo
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
@@ -31,6 +33,20 @@ class IntelliJSdkSelectionPanel(private val runtimeGroupId: String) : SdkSelecto
         // okay to return null here since any ConfigurationError in the validate() call will propagate up to the ModuleWizardStep
         // validation checker and do-the-right-thing for us
         return null
+    }
+
+    override fun applySdkSettings(model: ModifiableRootModel) {
+        currentSdk?.let { sdk ->
+            val project = model.project
+
+            val projectRootManager = ProjectRootManager.getInstance(project)
+            if (projectRootManager.projectSdk == null) {
+                projectRootManager.projectSdk = sdk
+                model.inheritSdk()
+            } else {
+                model.sdk = sdk
+            }
+        }
     }
 
     // TODO: This should probably be EP based

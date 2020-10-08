@@ -167,8 +167,8 @@ abstract class SamProjectTemplate {
     companion object {
         private val LOG = getLogger<SamProjectTemplate>()
 
-        @JvmField
-        val SAM_TEMPLATES = SamProjectWizard.supportedRuntimeGroups().flatMap {
+        // Dont cache this since it is not compatible in a dynamic plugin world / waste memory if no longer needed
+        fun supportedTemplates() = SamProjectWizard.supportedRuntimeGroups().flatMap {
             SamProjectWizard.getInstance(it).listTemplates()
         }
     }

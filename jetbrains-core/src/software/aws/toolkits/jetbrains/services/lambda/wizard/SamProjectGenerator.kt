@@ -39,6 +39,7 @@ class SamProjectGenerator :
     ProjectTemplate,
     CustomStepProjectGenerator<SamNewProjectSettings>,
     HideableProjectGenerator {
+
     val wizardFragments = listOf(
         SdkSelectionPanel(),
         SchemaSelectionPanel()
@@ -47,8 +48,8 @@ class SamProjectGenerator :
     val builder = SamProjectBuilder(this)
     val peer = SamProjectGeneratorSettingsPeer(this, wizardFragments)
 
-    // Only show the generator if we have SAM templates to show
-    override fun isHidden(): Boolean = SamProjectTemplate.SAM_TEMPLATES.isEmpty()
+    // Only show our wizard if we have SAM templates to show
+    override fun isHidden(): Boolean = SamProjectTemplate.supportedTemplates().isEmpty()
 
     override fun createStep(
         projectGenerator: DirectoryProjectGenerator<SamNewProjectSettings>?,

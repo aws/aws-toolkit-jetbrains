@@ -5,7 +5,10 @@ package software.aws.toolkits.jetbrains.services.lambda.nodejs
 
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreter
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterField
+import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
+import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef
 import com.intellij.lang.javascript.dialects.JSLanguageLevel
+import com.intellij.lang.javascript.settings.JSRootConfiguration
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.ui.ValidationInfo
@@ -31,7 +34,7 @@ class NodeJsSamProjectWizard : SamProjectWizard {
 }
 
 class NodeJsSdkSelectionPanel : SdkSelector {
-    private val interpreterPanel: NodeJsInterpreterField = createInterpreterField()
+    private val interpreterPanel = createInterpreterField()
 
     private fun createInterpreterField(): NodeJsInterpreterField {
         val project = ProjectManager.getInstance().defaultProject
@@ -45,6 +48,11 @@ class NodeJsSdkSelectionPanel : SdkSelector {
     override fun sdkSelectionPanel(): JComponent = interpreterPanel
 
     override fun getSdkSettings(): SdkSettings = NodeJsSdkSettings(interpreter = interpreterPanel.interpreter)
+
+    override fun applySdkSettings(model: ModifiableRootModel) {
+        NodeJsInterpreterManager.getInstance(model.project).setInterpreterRef(NodeJsInterpreterRef.create(interpreterPanel.interpreter))
+        JSRootConfiguration.getInstance(model.project).storeLanguageLevelAndUpdateCaches(JSLanguageLevel.ES6)
+    }
 
     override fun validateAll(): List<ValidationInfo>? {
         TODO("not implemented")

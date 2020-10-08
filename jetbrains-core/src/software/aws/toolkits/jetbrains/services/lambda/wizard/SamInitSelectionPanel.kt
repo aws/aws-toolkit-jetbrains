@@ -39,7 +39,7 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
     init {
         // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
         val supportedRuntimeGroups = LambdaBuilder.supportedRuntimeGroups()
-        SamProjectTemplate.SAM_TEMPLATES.asSequence()
+        SamProjectTemplate.supportedTemplates().asSequence()
             .flatMap { it.supportedRuntimes().asSequence() }
             .filter(runtimeFilter)
             .filter { supportedRuntimeGroups.contains(find { runtimeGroup: RuntimeGroup -> runtimeGroup.runtimes.contains(it) }) }
@@ -102,7 +102,7 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
         if (selectedRuntime == null) {
             return
         }
-        SamProjectTemplate.SAM_TEMPLATES.stream()
+        SamProjectTemplate.supportedTemplates().stream()
             .filter { it.supportedRuntimes().contains(selectedRuntime) }
             .forEach { templateComboBox.addItem(it) }
     }

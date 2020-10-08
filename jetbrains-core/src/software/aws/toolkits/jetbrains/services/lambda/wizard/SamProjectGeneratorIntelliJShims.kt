@@ -7,21 +7,15 @@ import com.intellij.ide.util.projectWizard.ModuleBuilder
 import com.intellij.ide.util.projectWizard.ModuleWizardStep
 import com.intellij.ide.util.projectWizard.SettingsStep
 import com.intellij.ide.util.projectWizard.WizardContext
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
-import com.intellij.openapi.roots.ContentEntry
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ModuleRootModificationUtil
-import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ProjectTemplatesFactory
 import icons.AwsIcons
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.resources.message
 
@@ -32,6 +26,7 @@ class ValidationException : Exception()
 
 // IntelliJ shim requires a ModuleBuilder
 // UI is centralized in generator and is passed in to have access to UI elements
+// TODO: Kill this, it doesnt need to be tied to a module builder?
 class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuilder() {
     // hide this from the new project menu
     override fun isAvailable() = false
@@ -50,8 +45,8 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         val moduleType = selectedRuntime.runtimeGroup?.getModuleType() ?: ModuleType.EMPTY
         rootModel.module.setModuleType(moduleType.id)
 
-        val contentEntry: ContentEntry = doAddContentEntry(rootModel) ?: throw Exception(message("sam.init.error.no.project.basepath"))
-        val outputDir: VirtualFile = contentEntry.file ?: throw Exception(message("sam.init.error.no.virtual.file"))
+        val contentEntry = doAddContentEntry(rootModel) ?: throw Exception(message("sam.init.error.no.project.basepath"))
+        val outputDir = contentEntry.file ?: throw Exception(message("sam.init.error.no.virtual.file"))
 
         // ModifiableRootModel takes a final ProjectRootManagerImpl which has a final project, so we have guaranteed access to project here
         ProgressManager.getInstance().run(
@@ -60,14 +55,11 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
                     ModuleRootModificationUtil.updateModel(rootModel.module) { model ->
                         val samTemplate = settings.template
                         samTemplate.build(project, rootModel.module.name, selectedRuntime, null, outputDir)
-                        VfsUtil.markDirtyAndRefresh(false, true, true, outputDir)
-                        runInEdt {
-                            try {
-                                samTemplate.postCreationAction(settings, outputDir, model, indicator)
-                            } catch (t: Throwable) {
-                                LOG.error(t) { "Exception thrown during postCreationAction!" }
-                            }
-                        }
+
+                        generator.wizardFragments.forEach { it.postProjectGeneration(model, indicator) }
+
+                        // TODO: Rip the following out of the template class
+                        samTemplate.postCreationAction(settings, outputDir, model, indicator)
                     }
                 }
             }
@@ -95,10 +87,6 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
                 return true
             }
         }
-    }
-
-    private companion object {
-        val LOG = getLogger<SamProjectBuilder>()
     }
 }
 

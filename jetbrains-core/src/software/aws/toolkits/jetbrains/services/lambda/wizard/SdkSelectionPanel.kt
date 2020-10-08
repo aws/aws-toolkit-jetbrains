@@ -3,7 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
-import com.intellij.openapi.module.Module
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.ErrorLabel
 import com.intellij.ui.components.panels.Wrapper
@@ -20,7 +21,7 @@ interface SdkSelector {
 
     fun getSdkSettings(): SdkSettings
 
-    fun applySdkSettings(module: Module) {TODO()}
+    fun applySdkSettings(model: ModifiableRootModel) {TODO()}
 
     // Validate the SDK selection panel, return a list of violations if any, otherwise null
     fun validateAll(): List<ValidationInfo>?
@@ -56,6 +57,13 @@ class SdkSelectionPanel : WizardFragment {
                     }
                 }
             )
+        }
+    }
+
+    override fun postProjectGeneration(model: ModifiableRootModel, progressIndicator: ProgressIndicator) {
+        sdkSelector?.let {
+            progressIndicator.text = "Setting up SDK"
+            it.applySdkSettings(model)
         }
     }
 }
