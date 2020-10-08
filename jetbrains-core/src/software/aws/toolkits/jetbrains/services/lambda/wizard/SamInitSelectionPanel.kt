@@ -111,7 +111,7 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
         val selectedRuntime = runtimeComboBox.selectedItem as Runtime
         val selectedTemplate = templateComboBox.selectedItem as SamProjectTemplate
         wizardFragments.forEach { (wizardFragment, jComponent) ->
-            wizardFragment.update(selectedRuntime, selectedTemplate)
+            wizardFragment.updateUi(selectedRuntime, selectedTemplate)
             jComponent.isVisible = wizardFragment.isApplicable(selectedTemplate)
         }
     }

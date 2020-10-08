@@ -48,5 +48,5 @@ class SchemaSelectionPanel : WizardFragment {
 
     override fun isApplicable(template: SamProjectTemplate?): Boolean = template?.supportsDynamicSchemas() == true
 
-    override fun update(runtime: Runtime?, template: SamProjectTemplate?) {}
+    override fun updateUi(runtime: Runtime?, template: SamProjectTemplate?) {}
 }

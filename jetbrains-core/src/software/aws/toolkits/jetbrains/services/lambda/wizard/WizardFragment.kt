@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.Runtime
 import javax.swing.JComponent
@@ -16,5 +18,9 @@ interface WizardFragment {
 
     fun isApplicable(template: SamProjectTemplate?): Boolean
 
-    fun update(runtime: Runtime?, template: SamProjectTemplate?)
+    fun updateUi(runtime: Runtime?, template: SamProjectTemplate?)
+
+    fun postTemplateGeneration(progressIndicator: ProgressIndicator) {}
+
+    fun mutateSamCommand(command: GeneralCommandLine) {}
 }
