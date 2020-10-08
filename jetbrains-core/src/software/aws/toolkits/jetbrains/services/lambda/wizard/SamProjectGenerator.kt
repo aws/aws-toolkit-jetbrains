@@ -115,7 +115,7 @@ class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator, wizard
      */
     override fun validate(): ValidationInfo? = samInitSelectionPanel.validate()
 
-    override fun getSettings(): SamNewProjectSettings = samInitSelectionPanel.newProjectSettings
+    override fun getSettings(): SamNewProjectSettings = samInitSelectionPanel.getNewProjectSettings()
 
     // "Deprecated" but required to implement. Not importing to avoid the import deprecation warning.
     @Suppress("OverridingDeprecatedMember", "DEPRECATION")

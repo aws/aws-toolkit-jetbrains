@@ -151,7 +151,7 @@ class DotNetSamProjectGenerator(
     }
 
     override fun expand() {
-        val samSettings = samPanel.newProjectSettings
+        val samSettings = samPanel.getNewProjectSettings()
 
         val solutionDirectory = getSolutionDirectory()
             ?: throw Exception(message("sam.init.error.no.solution.basepath"))

@@ -4,8 +4,8 @@ package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.layout.panel
@@ -22,7 +22,6 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import java.awt.BorderLayout
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JTextField
 
@@ -54,21 +53,11 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
             runtimeUpdate()
             wizardUpdate()
         }
-        templateComboBox.addActionListener { wizardUpdate() }
 
-        templateComboBox.renderer = object : ColoredListCellRenderer<SamProjectTemplate?>() {
-            override fun customizeCellRenderer(
-                list: JList<out SamProjectTemplate?>,
-                value: SamProjectTemplate?,
-                index: Int,
-                selected: Boolean,
-                hasFocus: Boolean
-            ) {
-                if (value == null) {
-                    return
-                }
-                append(value.getName())
-            }
+        templateComboBox.addActionListener { wizardUpdate() }
+        templateComboBox.renderer = SimpleListCellRenderer.create { label, value, _ ->
+            label.text = value.getName()
+            label.toolTipText = value.getDescription()
         }
 
         wizardFragments = wizardFragmentList.associateWith {
@@ -114,14 +103,14 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
             return
         }
         SamProjectTemplate.SAM_TEMPLATES.stream()
-            .filter { template: SamProjectTemplate -> template.supportedRuntimes().contains(selectedRuntime) }
-            .forEach { template: SamProjectTemplate -> templateComboBox.addItem(template) }
+            .filter { it.supportedRuntimes().contains(selectedRuntime) }
+            .forEach { templateComboBox.addItem(it) }
     }
 
     private fun wizardUpdate() {
         val selectedRuntime = runtimeComboBox.selectedItem as Runtime
         val selectedTemplate = templateComboBox.selectedItem as SamProjectTemplate
-        wizardFragments.forEach { (wizardFragment: WizardFragment, jComponent: JComponent) ->
+        wizardFragments.forEach { (wizardFragment, jComponent) ->
             wizardFragment.update(selectedRuntime, selectedTemplate)
             jComponent.isVisible = wizardFragment.isApplicable(selectedTemplate)
         }
@@ -130,14 +119,14 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
     fun validate(): ValidationInfo? {
         val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent(getExecutable(SamExecutable::class.java))
         if (samExecutable is BadExecutable) {
-            return ValidationInfo((samExecutable as BadExecutable).validationError, samExecutableField)
+            return ValidationInfo(samExecutable.validationError, samExecutableField)
         }
 
         // TODO: Why does this have no validation on it?
         val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
         if (selectedRuntime != null) {
-            val samVersion: SemVer = SemVer.parseFromText(samExecutable.version)!!
-            val runtimeGroup: RuntimeGroup = selectedRuntime.runtimeGroup!!
+            val samVersion = SemVer.parseFromText(samExecutable.version)!!
+            val runtimeGroup = selectedRuntime.runtimeGroup!!
             try {
                 runtimeGroup.validateSamVersion(selectedRuntime, samVersion)
             } catch (e: Exception) {
@@ -160,19 +149,17 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
         //        }
     }
 
-    val newProjectSettings: SamNewProjectSettings
-        get() {
-            val lambdaRuntime = runtimeComboBox.selectedItem as? Runtime
-            val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
-            if (lambdaRuntime == null) {
-                throw RuntimeException("No Runtime is supported in this Platform.")
-            }
-            if (samProjectTemplate == null) {
-                throw RuntimeException("No SAM template is supported for this runtime: $lambdaRuntime")
-            }
-            return SamNewProjectSettings(
-                lambdaRuntime,
-                samProjectTemplate
-            )
+    fun getNewProjectSettings(): SamNewProjectSettings {
+        val lambdaRuntime = runtimeComboBox.selectedItem as? Runtime
+        val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
+
+        if (lambdaRuntime == null) {
+            throw RuntimeException("No Runtime is supported in this Platform.")
         }
+        if (samProjectTemplate == null) {
+            throw RuntimeException("No SAM template is supported for this runtime: $lambdaRuntime")
+        }
+
+        return SamNewProjectSettings(lambdaRuntime, samProjectTemplate)
+    }
 }
