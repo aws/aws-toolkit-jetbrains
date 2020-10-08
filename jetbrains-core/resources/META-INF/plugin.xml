@@ -220,7 +220,6 @@
         <fileTypeDetector implementation="software.aws.toolkits.jetbrains.services.cloudformation.CfnFileTypeDetector"/>
 
         <!-- Project Wizard components -->
-        <moduleType id="AWS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.wizard.AwsModuleType" />
         <directoryProjectGenerator implementation="software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator" />
         <projectTemplatesFactory implementation="software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGeneratorIntelliJAdapter" />
 
