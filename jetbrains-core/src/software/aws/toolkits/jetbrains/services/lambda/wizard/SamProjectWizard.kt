@@ -32,7 +32,6 @@ import software.aws.toolkits.telemetry.Runtime as TelemetryRuntime
  * Used to manage SAM project information for different [RuntimeGroup]s
  */
 interface SamProjectWizard {
-
     /**
      * Return a collection of templates supported by the [RuntimeGroup]
      */
@@ -61,8 +60,6 @@ abstract class SamProjectTemplate {
     abstract fun getName(): String
 
     open fun getDescription(): String? = null
-
-    open fun functionName(): String = "HelloWorldFunction"
 
     override fun toString() = getName()
 

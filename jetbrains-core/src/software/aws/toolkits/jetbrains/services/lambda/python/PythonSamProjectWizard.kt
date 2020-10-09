@@ -84,8 +84,6 @@ class SamEventBridgeStarterApp : PythonSamProjectTemplate() {
 
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "pip")
 
-    override fun functionName(): String = "hello_world_function"
-
     override fun supportsDynamicSchemas(): Boolean = true
 
     override fun postCreationAction(

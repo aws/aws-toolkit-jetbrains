@@ -119,8 +119,6 @@ class SamEventBridgeStarterAppGradle : JavaGradleSamProjectTemplate() {
 
     override fun getDescription() = message("sam.init.template.eventBridge_starterApp.description")
 
-    override fun functionName(): String = "HelloWorldFunction"
-
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "gradle")
 
     override fun supportsDynamicSchemas(): Boolean = true
@@ -152,8 +150,6 @@ class SamEventBridgeStarterAppMaven : JavaGradleSamProjectTemplate() {
     override fun getName() = message("sam.init.template.eventBridge_starterApp_maven.name")
 
     override fun getDescription() = message("sam.init.template.eventBridge_starterApp.description")
-
-    override fun functionName(): String = "HelloWorldFunction"
 
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "maven")
 
