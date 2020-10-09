@@ -27,7 +27,7 @@ import javax.swing.JTextField
 
 class SamInitSelectionPanel(
     wizardFragmentList: List<WizardFragment>,
-    private val projectLocation: TextFieldWithBrowseButton? = null, /* Only available in PyChar! */
+    private val projectLocation: TextFieldWithBrowseButton? = null, /* Only available in PyCharm! */
     runtimeFilter: (Runtime) -> Boolean = { true }
 ) {
     lateinit var mainPanel: JPanel
@@ -129,9 +129,9 @@ class SamInitSelectionPanel(
         // TODO: Why does this have no validation on it?
         val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
         if (selectedRuntime != null) {
-            val samVersion = SemVer.parseFromText(samExecutable.version)!!
-            val runtimeGroup = selectedRuntime.runtimeGroup!!
             try {
+                val samVersion = SemVer.parseFromText(samExecutable.version)!!
+                val runtimeGroup = selectedRuntime.runtimeGroup!!
                 runtimeGroup.validateSamVersion(selectedRuntime, samVersion)
             } catch (e: Exception) {
                 return ValidationInfo(e.message!!, runtimeComboBox)

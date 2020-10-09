@@ -3,30 +3,23 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
-import com.intellij.execution.RunManager
 import com.intellij.openapi.extensions.ExtensionPointName
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
-import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
-import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.AttributeBag
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
-import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
-import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources.AWS_EVENTS_REGISTRY
 import software.aws.toolkits.telemetry.SamTelemetry
+import java.nio.file.Paths
 import software.aws.toolkits.telemetry.Runtime as TelemetryRuntime
 
 /**
@@ -70,35 +63,27 @@ abstract class SamProjectTemplate {
         rootModel: ModifiableRootModel,
         indicator: ProgressIndicator
     ) {
-        SamCommon.excludeSamDirectory(contentRoot, rootModel)
-        val project = rootModel.project
-        openReadmeFile(contentRoot, project)
-        createRunConfigurations(contentRoot, project)
+        excludeSamDirectory(rootModel, contentRoot)
     }
 
-    private fun openReadmeFile(contentRoot: VirtualFile, project: Project) {
-        VfsUtil.findRelativeFile(contentRoot, "README.md")?.let { readme ->
-            // it's only available since the first non-EAP version of intellij, so it is fine
-            readme.putUserData(TextEditorWithPreview.DEFAULT_LAYOUT_FOR_FILE, TextEditorWithPreview.Layout.SHOW_PREVIEW)
-
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            fileEditorManager.openTextEditor(OpenFileDescriptor(project, readme), true) ?: LOG.warn { "Failed to open README.md" }
+    protected fun addSourceRoots(project: Project, modifiableModel: ModifiableRootModel, projectRoot: VirtualFile) {
+        val template = SamCommon.getTemplateFromDirectory(projectRoot) ?: return
+        val codeUris = SamCommon.getCodeUrisFromTemplate(project, template)
+        modifiableModel.contentEntries.forEach { contentEntry ->
+            if (contentEntry.file == projectRoot) {
+                codeUris.forEach { contentEntry.addSourceFolder(it, false) }
+            }
         }
     }
 
-    private fun createRunConfigurations(contentRoot: VirtualFile, project: Project) {
-        val template = SamCommon.getTemplateFromDirectory(contentRoot) ?: return
-
-        val factory = LocalLambdaRunConfigurationProducer.getFactory()
-        val runManager = RunManager.getInstance(project)
-        SamTemplateUtils.findFunctionsFromTemplate(project, template).forEach {
-            val runConfigurationAndSettings = runManager.createConfiguration(it.logicalName, factory)
-            val runConfiguration = runConfigurationAndSettings.configuration as LocalLambdaRunConfiguration
-            runConfiguration.useTemplate(template.path, it.logicalName)
-            runConfiguration.setGeneratedName()
-            runManager.addConfiguration(runConfigurationAndSettings)
-            if (runManager.selectedConfiguration == null) {
-                runManager.selectedConfiguration = runConfigurationAndSettings
+    protected fun excludeSamDirectory(modifiableModel: ModifiableRootModel, projectRoot: VirtualFile) {
+        modifiableModel.contentEntries.forEach { contentEntry ->
+            if (contentEntry.file == projectRoot) {
+                contentEntry.addExcludeFolder(
+                    VfsUtilCore.pathToUrl(
+                        Paths.get(projectRoot.path, SamCommon.SAM_BUILD_DIR).toString()
+                    )
+                )
             }
         }
     }

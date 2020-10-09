@@ -6,10 +6,8 @@ package software.aws.toolkits.jetbrains.services.lambda.sam
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
@@ -59,28 +57,6 @@ class SamCommon {
             val localFileSystem = LocalFileSystem.getInstance()
             return codeDirs.mapNotNull { localFileSystem.refreshAndFindFileByIoFile(it.toFile()) }
                 .filter { it.isDirectory }
-        }
-
-        fun setSourceRoots(projectRoot: VirtualFile, project: Project, modifiableModel: ModifiableRootModel) {
-            val template = getTemplateFromDirectory(projectRoot) ?: return
-            val codeUris = getCodeUrisFromTemplate(project, template)
-            modifiableModel.contentEntries.forEach { contentEntry ->
-                if (contentEntry.file == projectRoot) {
-                    codeUris.forEach { contentEntry.addSourceFolder(it, false) }
-                }
-            }
-        }
-
-        fun excludeSamDirectory(projectRoot: VirtualFile, modifiableModel: ModifiableRootModel) {
-            modifiableModel.contentEntries.forEach { contentEntry ->
-                if (contentEntry.file == projectRoot) {
-                    contentEntry.addExcludeFolder(
-                        VfsUtilCore.pathToUrl(
-                            Paths.get(projectRoot.path, SAM_BUILD_DIR).toString()
-                        )
-                    )
-                }
-            }
         }
     }
 }

@@ -8,7 +8,6 @@ import com.intellij.ide.util.projectWizard.CustomStepProjectGenerator
 import com.intellij.ide.util.projectWizard.ModuleBuilder
 import com.intellij.ide.util.projectWizard.ProjectSettingsStepBase
 import com.intellij.ide.util.projectWizard.SettingsStep
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
@@ -45,7 +44,7 @@ class SamProjectGenerator :
         SchemaSelectionPanel()
     )
 
-    val builder = SamProjectBuilder(this)
+    private val builder = SamProjectBuilder(this)
     val peer = SamProjectGeneratorSettingsPeer(this, wizardFragments)
 
     // Only show our wizard if we have SAM templates to show
@@ -63,14 +62,12 @@ class SamProjectGenerator :
         settings: SamNewProjectSettings,
         module: Module
     ) {
-        runInEdt {
-            val rootModel = ModuleRootManager.getInstance(module).modifiableModel
-            builder.contentEntryPath = baseDir.path
-            builder.setupRootModel(rootModel)
+        val rootModel = ModuleRootManager.getInstance(module).modifiableModel
+        builder.contentEntryPath = baseDir.path
+        builder.setupRootModel(rootModel)
 
-            runWriteAction {
-                rootModel.commit()
-            }
+        runWriteAction {
+            rootModel.commit()
         }
     }
 

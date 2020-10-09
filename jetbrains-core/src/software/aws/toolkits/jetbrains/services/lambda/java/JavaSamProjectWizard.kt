@@ -65,6 +65,20 @@ abstract class JavaSamProjectTemplate : SamProjectTemplate() {
     }
 }
 
+abstract class JavaMavenSamProjectTemplate : JavaSamProjectTemplate() {
+    override fun postCreationAction(
+        settings: SamNewProjectSettings,
+        contentRoot: VirtualFile,
+        rootModel: ModifiableRootModel,
+        indicator: ProgressIndicator
+    ) {
+        super.postCreationAction(settings, contentRoot, rootModel, indicator)
+        val pomFile = locateBuildFile(contentRoot, "pom.xml") ?: return
+        val projectsManager = MavenProjectsManager.getInstance(rootModel.project)
+        projectsManager.addManagedFilesOrUnignore(listOf(pomFile))
+    }
+}
+
 abstract class JavaGradleSamProjectTemplate : JavaSamProjectTemplate() {
     override fun postCreationAction(
         settings: SamNewProjectSettings,
@@ -86,24 +100,12 @@ abstract class JavaGradleSamProjectTemplate : JavaSamProjectTemplate() {
     }
 }
 
-class SamHelloWorldMaven : JavaSamProjectTemplate() {
+class SamHelloWorldMaven : JavaMavenSamProjectTemplate() {
     override fun getName() = message("sam.init.template.hello_world_maven.name")
 
     override fun getDescription() = message("sam.init.template.hello_world.description")
 
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("hello-world", "maven")
-
-    override fun postCreationAction(
-        settings: SamNewProjectSettings,
-        contentRoot: VirtualFile,
-        rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
-    ) {
-        super.postCreationAction(settings, contentRoot, rootModel, indicator)
-        val pomFile = locateBuildFile(contentRoot, "pom.xml") ?: return
-        val projectsManager = MavenProjectsManager.getInstance(rootModel.project)
-        projectsManager.addManagedFilesOrUnignore(listOf(pomFile))
-    }
 }
 
 class SamHelloWorldGradle : JavaGradleSamProjectTemplate() {
@@ -146,7 +148,7 @@ class SamEventBridgeStarterAppGradle : JavaGradleSamProjectTemplate() {
     }
 }
 
-class SamEventBridgeStarterAppMaven : JavaGradleSamProjectTemplate() {
+class SamEventBridgeStarterAppMaven : JavaMavenSamProjectTemplate() {
     override fun getName() = message("sam.init.template.eventBridge_starterApp_maven.name")
 
     override fun getDescription() = message("sam.init.template.eventBridge_starterApp.description")
