@@ -9,4 +9,5 @@ import com.jetbrains.python.sdk.add.PyAddSdkPanel
 import java.util.function.Supplier
 
 fun createPythonSdkPanel(panels: List<PyAddSdkPanel>, defaultPanel: PyAddSdkPanel): PyAddSdkGroupPanel =
-    PyAddSdkGroupPanel(Supplier { "FAF" }, EmptyIcon.ICON_16, panels, defaultPanel)
+    // String and icon aren't used, just echo fields for the getters on the panel
+    PyAddSdkGroupPanel(Supplier { "Python SDK" }, EmptyIcon.ICON_16, panels, defaultPanel)

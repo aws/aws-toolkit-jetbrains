@@ -74,23 +74,5 @@ class PyCharmSdkSelectionPanel : SdkSelector {
 //        sdkSelectionPanel.newProjectPath = step.getLocationField().text.trim()
 //    }
 
-//    override fun getSdkSettings(): SdkSettings =
-//        getSdk()?.let {
-//            SdkBasedSdkSettings(sdk = it)
-//        } ?: throw RuntimeException(message("sam.init.python.bad_sdk"))
-
-//    private fun getSdk(): Sdk? =
-//        when (val panel = sdkSelectionPanel.selectedPanel) {
-//            // this list should be exhaustive
-//            is PyAddNewEnvironmentPanel -> {
-//                FileUtil.createDirectory(File(step.getLocationField().text.trim()))
-//                panel.getOrCreateSdk()?.also {
-//                    SdkConfigurationUtil.addSdk(it)
-//                }
-//            }
-//            is PyAddExistingSdkPanel -> panel.sdk
-//            else -> null
-//        }
-
     override fun validateAll(): List<ValidationInfo>? = sdkPanel.validateAll()
 }
