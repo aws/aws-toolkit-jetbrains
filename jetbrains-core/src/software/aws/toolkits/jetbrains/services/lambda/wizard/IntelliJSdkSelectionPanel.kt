@@ -9,26 +9,25 @@ import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel
 
 class IntelliJSdkSelectionPanel(private val runtimeGroupId: String) : SdkSelector {
-    private var currentSdk: Sdk? = null
     private val dummyContext = object : WizardContext(null, {}) {}
-
     private val currentSdkPanel: SdkSettingsStep = buildSdkSettingsPanel()
+
+    private var currentSdk: Sdk? = null
 
     override fun sdkSelectionPanel(): JComponent = currentSdkPanel.component
 
-    override fun sdkSelectionLabel(): JLabel? = JLabel(message("sam.init.project_sdk.label"))
+    override fun sdkSelectionLabel(): JLabel? = JLabel(message("sam.init.sdk.label"))
 
-    override fun validateAll(): List<ValidationInfo>? {
+    override fun validateSelection(): ValidationInfo? {
         if (!currentSdkPanel.validate()) {
-            throw ValidationException()
+            return currentSdkPanel.component.validationInfo(message("sam.init.sdk.error"))
         }
-        // okay to return null here since any ConfigurationError in the validate() call will propagate up to the ModuleWizardStep
-        // validation checker and do-the-right-thing for us
         return null
     }
 

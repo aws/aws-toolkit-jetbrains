@@ -147,12 +147,6 @@ class SamInitSelectionPanel(
             .firstOrNull()
     }
 
-    fun registerValidators() {
-        //        if (sdkSelectionUi != null) {
-        //            sdkSelectionUi.registerListeners();
-        //        }
-    }
-
     fun getNewProjectSettings(): SamNewProjectSettings {
         val lambdaRuntime = runtimeComboBox.selectedItem as? Runtime
         val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate

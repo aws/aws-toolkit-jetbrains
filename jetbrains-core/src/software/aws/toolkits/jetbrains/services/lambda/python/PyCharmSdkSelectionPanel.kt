@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.python
 
 import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.DocumentAdapter
@@ -59,7 +60,13 @@ class PyCharmSdkSelectionPanel(private val projectLocation: TextFieldWithBrowseB
         .sortedWith(PreferredSdkComparator())
         .toList()
 
-    override fun getSdk(): Sdk? = sdkPanel.getOrCreateSdk()
+    override fun getSdk(): Sdk? {
+        val sdk = sdkPanel.getOrCreateSdk() ?: return null
+        if (sdkPanel.selectedPanel is PyAddNewEnvironmentPanel) {
+            SdkConfigurationUtil.addSdk(sdk)
+        }
+        return sdk
+    }
 
-    override fun validateAll(): List<ValidationInfo>? = sdkPanel.validateAll()
+    override fun validateSelection(): ValidationInfo? = sdkPanel.validateAll().firstOrNull()
 }

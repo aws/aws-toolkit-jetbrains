@@ -7,7 +7,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -30,8 +29,6 @@ interface SdkSelector {
         getSdk()?.let { sdk ->
             val project = model.project
 
-            SdkConfigurationUtil.addSdk(sdk)
-
             val projectRootManager = ProjectRootManager.getInstance(project)
             WriteAction.runAndWait(
                 ThrowableRunnable<Exception> {
@@ -49,8 +46,7 @@ interface SdkSelector {
     fun getSdk(): Sdk? = null
 
     // Validate the SDK selection panel, return a list of violations if any, otherwise null
-    // TODO: Why is this a list? Also it never turns anything..it always throws...
-    fun validateAll(): List<ValidationInfo>?
+    fun validateSelection(): ValidationInfo?
 }
 
 class SdkSelectionPanel : WizardFragment {
@@ -62,7 +58,7 @@ class SdkSelectionPanel : WizardFragment {
 
     override fun component(): JComponent = component
 
-    override fun validateFragment(): ValidationInfo? = null
+    override fun validateFragment(): ValidationInfo? = sdkSelector?.validateSelection()
 
     override fun isApplicable(template: SamProjectTemplate?): Boolean = true
 

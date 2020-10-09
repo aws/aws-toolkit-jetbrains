@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters.AppBasedTemplate
+import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -49,8 +50,10 @@ class NodeJsSdkSelectionPanel : SdkSelector {
         JSRootConfiguration.getInstance(model.project).storeLanguageLevelAndUpdateCaches(JSLanguageLevel.ES6)
     }
 
-    override fun validateAll(): List<ValidationInfo>? {
-        TODO("not implemented")
+    override fun validateSelection(): ValidationInfo? {
+        return interpreterPanel.interpreter?.validate(null)?.let {
+            interpreterPanel.validationInfo(it)
+        }
     }
 }
 
