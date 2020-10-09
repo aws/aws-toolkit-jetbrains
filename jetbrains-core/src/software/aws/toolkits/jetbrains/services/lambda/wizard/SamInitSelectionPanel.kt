@@ -60,8 +60,8 @@ class SamInitSelectionPanel(
 
         templateComboBox.addActionListener { wizardUpdate() }
         templateComboBox.renderer = SimpleListCellRenderer.create { label, value, _ ->
-            label.text = value.getName()
-            label.toolTipText = value.getDescription()
+            label.text = value?.getName()
+            label.toolTipText = value?.getDescription()
         }
 
         wizardFragments = wizardFragmentList.associateWith {
@@ -112,8 +112,8 @@ class SamInitSelectionPanel(
     }
 
     private fun wizardUpdate() {
-        val selectedRuntime = runtimeComboBox.selectedItem as Runtime
-        val selectedTemplate = templateComboBox.selectedItem as SamProjectTemplate
+        val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
+        val selectedTemplate = templateComboBox.selectedItem as? SamProjectTemplate
         wizardFragments.forEach { (wizardFragment, jComponent) ->
             wizardFragment.updateUi(projectLocation, selectedRuntime, selectedTemplate)
             jComponent.isVisible = wizardFragment.isApplicable(selectedTemplate)
