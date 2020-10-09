@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.java
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
@@ -19,7 +20,6 @@ import software.aws.toolkits.core.utils.logWhenNull
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.wizard.IntelliJSdkSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
@@ -28,7 +28,7 @@ import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.resources.message
 
 class JavaSamProjectWizard : SamProjectWizard {
-    override fun createSdkSelectionPanel(generator: SamProjectGenerator?): SdkSelector? =
+    override fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector? =
         IntelliJSdkSelectionPanel(BuiltInRuntimeGroups.Java)
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(

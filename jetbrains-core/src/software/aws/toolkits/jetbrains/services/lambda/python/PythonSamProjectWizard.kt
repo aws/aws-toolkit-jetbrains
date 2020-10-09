@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.python
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.PlatformUtils
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -12,7 +13,6 @@ import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.wizard.IntelliJSdkSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
@@ -22,8 +22,8 @@ import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.resources.message
 
 class PythonSamProjectWizard : SamProjectWizard {
-    override fun createSdkSelectionPanel(generator: SamProjectGenerator?): SdkSelector? = when {
-        PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel()
+    override fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector? = when {
+        PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel(projectLocation)
         else -> IntelliJSdkSelectionPanel(BuiltInRuntimeGroups.Python)
     }
 

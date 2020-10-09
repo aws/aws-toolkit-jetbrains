@@ -10,6 +10,7 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.ErrorLabel
 import com.intellij.ui.components.panels.Wrapper
@@ -65,14 +66,14 @@ class SdkSelectionPanel : WizardFragment {
 
     override fun isApplicable(template: SamProjectTemplate?): Boolean = true
 
-    override fun updateUi(runtime: Runtime?, template: SamProjectTemplate?) {
+    override fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtime: Runtime?, template: SamProjectTemplate?) {
         val runtimeGroup = runtime?.runtimeGroup
         if (runtimeGroup == null) {
             component.setContent(ErrorLabel("No runtime selected"))
             return
         }
 
-        sdkSelector = SamProjectWizard.getInstance(runtimeGroup).createSdkSelectionPanel(null).also {
+        sdkSelector = SamProjectWizard.getInstance(runtimeGroup).createSdkSelectionPanel(projectLocation).also {
             component.setContent(
                 panel {
                     it?.let {

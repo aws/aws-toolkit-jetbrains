@@ -97,19 +97,12 @@ class SamProjectGenerator :
 /**
  * Used to overwrite the entire panel in the "light" IDEs so we don't put our settings under "More Settings"
  */
-class SamProjectRuntimeSelectionStep(
-    projectGenerator: SamProjectGenerator
-) : ProjectSettingsStepBase<SamNewProjectSettings>(
-    projectGenerator,
-    AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>()
-) {
-    fun getLocationField(): TextFieldWithBrowseButton = myLocationField
-}
+class SamProjectRuntimeSelectionStep(projectGenerator: SamProjectGenerator) :
+    ProjectSettingsStepBase<SamNewProjectSettings>(projectGenerator, AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>())
 
-class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator, wizardFragments: List<WizardFragment>) : ProjectGeneratorPeer<SamNewProjectSettings> {
-    private val samInitSelectionPanel by lazy {
-        SamInitSelectionPanel(wizardFragments)
-    }
+class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator, private val wizardFragments: List<WizardFragment>) :
+    ProjectGeneratorPeer<SamNewProjectSettings> {
+    private lateinit var samInitSelectionPanel: SamInitSelectionPanel
 
     /**
      * This hook is used in PyCharm and is called via {@link SamProjectBuilder#modifySettingsStep} for IntelliJ
@@ -131,5 +124,17 @@ class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator, wizard
 
     override fun isBackgroundJobRunning(): Boolean = false
 
-    override fun getComponent(): JComponent = samInitSelectionPanel.mainPanel
+    // PyCharm uses this
+    override fun getComponent(locationField: TextFieldWithBrowseButton, checkValid: Runnable): JComponent {
+        samInitSelectionPanel = SamInitSelectionPanel(wizardFragments, locationField)
+
+        return samInitSelectionPanel.mainPanel
+    }
+
+    // IntelliJ uses this
+    override fun getComponent(): JComponent {
+        samInitSelectionPanel = SamInitSelectionPanel(wizardFragments)
+
+        return samInitSelectionPanel.mainPanel
+    }
 }

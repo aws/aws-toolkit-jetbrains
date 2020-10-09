@@ -3,6 +3,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SimpleListCellRenderer
@@ -14,7 +15,6 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.BadExecutable
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType.Companion.getExecutable
-import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup.Companion.find
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
@@ -25,7 +25,11 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTextField
 
-class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFilter: (Runtime) -> Boolean = { true }) {
+class SamInitSelectionPanel(
+    wizardFragmentList: List<WizardFragment>,
+    private val projectLocation: TextFieldWithBrowseButton? = null, /* Only available in PyChar! */
+    runtimeFilter: (Runtime) -> Boolean = { true }
+) {
     lateinit var mainPanel: JPanel
     private lateinit var runtimeComboBox: ComboBox<Runtime>
     private lateinit var samExecutableField: JTextField
@@ -38,11 +42,11 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
 
     init {
         // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
-        val supportedRuntimeGroups = LambdaBuilder.supportedRuntimeGroups()
+        val supportedRuntimeGroups = RuntimeGroup.registeredRuntimeGroups()
         SamProjectTemplate.supportedTemplates().asSequence()
             .flatMap { it.supportedRuntimes().asSequence() }
             .filter(runtimeFilter)
-            .filter { supportedRuntimeGroups.contains(find { runtimeGroup: RuntimeGroup -> runtimeGroup.runtimes.contains(it) }) }
+            .filter { supportedRuntimeGroups.contains(find { runtimeGroup -> runtimeGroup.runtimes.contains(it) }) }
             .distinct()
             .sorted()
             .forEach { runtimeComboBox.addItem(it) }
@@ -102,7 +106,7 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
         if (selectedRuntime == null) {
             return
         }
-        SamProjectTemplate.supportedTemplates().stream()
+        SamProjectTemplate.supportedTemplates()
             .filter { it.supportedRuntimes().contains(selectedRuntime) }
             .forEach { templateComboBox.addItem(it) }
     }
@@ -111,7 +115,7 @@ class SamInitSelectionPanel(wizardFragmentList: List<WizardFragment>, runtimeFil
         val selectedRuntime = runtimeComboBox.selectedItem as Runtime
         val selectedTemplate = templateComboBox.selectedItem as SamProjectTemplate
         wizardFragments.forEach { (wizardFragment, jComponent) ->
-            wizardFragment.updateUi(selectedRuntime, selectedTemplate)
+            wizardFragment.updateUi(projectLocation, selectedRuntime, selectedTemplate)
             jComponent.isVisible = wizardFragment.isApplicable(selectedTemplate)
         }
     }

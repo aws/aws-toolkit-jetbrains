@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.intellij.openapi.project.DefaultProjectFactory
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.layout.panel
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -48,5 +49,5 @@ class SchemaSelectionPanel : WizardFragment {
 
     override fun isApplicable(template: SamProjectTemplate?): Boolean = template?.supportsDynamicSchemas() == true
 
-    override fun updateUi(runtime: Runtime?, template: SamProjectTemplate?) {}
+    override fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtime: Runtime?, template: SamProjectTemplate?) {}
 }

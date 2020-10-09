@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
@@ -12,5 +12,5 @@ class DotNetSamProjectWizard : SamProjectWizard {
     override fun listTemplates(): Collection<SamProjectTemplate> =
         listOf(DotNetSamProjectTemplate())
 
-    override fun createSdkSelectionPanel(generator: SamProjectGenerator?): SdkSelector? = null
+    override fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector? = null
 }

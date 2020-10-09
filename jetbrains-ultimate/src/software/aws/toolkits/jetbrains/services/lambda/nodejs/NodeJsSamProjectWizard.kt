@@ -10,9 +10,9 @@ import com.intellij.lang.javascript.dialects.JSLanguageLevel
 import com.intellij.lang.javascript.settings.JSRootConfiguration
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
@@ -23,7 +23,7 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 
 class NodeJsSamProjectWizard : SamProjectWizard {
-    override fun createSdkSelectionPanel(generator: SamProjectGenerator?): SdkSelector? = NodeJsSdkSelectionPanel()
+    override fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector? = NodeJsSdkSelectionPanel()
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
         SamHelloWorldNodeJs()

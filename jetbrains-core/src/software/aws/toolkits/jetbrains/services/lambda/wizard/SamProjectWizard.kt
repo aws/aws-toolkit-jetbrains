@@ -11,6 +11,7 @@ import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -40,7 +41,7 @@ interface SamProjectWizard {
     /**
      * Return an instance of UI section for selecting SDK for the [RuntimeGroup]
      */
-    fun createSdkSelectionPanel(generator: SamProjectGenerator?): SdkSelector?
+    fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector?
 
     companion object : RuntimeGroupExtensionPointObject<SamProjectWizard>(ExtensionPointName("aws.toolkit.lambda.sam.projectWizard"))
 }
