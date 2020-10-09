@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runWriteActionAndWait
+import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
@@ -14,6 +14,7 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.ErrorLabel
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.layout.panel
+import com.intellij.util.ThrowableRunnable
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import javax.swing.JComponent
@@ -31,14 +32,16 @@ interface SdkSelector {
             SdkConfigurationUtil.addSdk(sdk)
 
             val projectRootManager = ProjectRootManager.getInstance(project)
-            runWriteActionAndWait {
-                if (projectRootManager.projectSdk == null) {
-                    projectRootManager.projectSdk = sdk
-                    model.inheritSdk()
-                } else {
-                    model.sdk = sdk
+            WriteAction.runAndWait(
+                ThrowableRunnable<Exception> {
+                    if (projectRootManager.projectSdk == null) {
+                        projectRootManager.projectSdk = sdk
+                        model.inheritSdk()
+                    } else {
+                        model.sdk = sdk
+                    }
                 }
-            }
+            )
         }
     }
 

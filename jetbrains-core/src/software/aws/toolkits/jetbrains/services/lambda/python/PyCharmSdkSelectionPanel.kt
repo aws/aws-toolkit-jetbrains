@@ -49,30 +49,5 @@ class PyCharmSdkSelectionPanel : SdkSelector {
 
     override fun getSdk(): Sdk? = sdkPanel.getOrCreateSdk()
 
-//     fun registerListeners() {
-//        val document = step.getLocationField().textField.document
-// cleanup because generators are re-used
-//        if (documentListener != null) {
-//            document.removeDocumentListener(documentListener)
-//        }
-//
-//        documentListener = object : DocumentAdapter() {
-//            val locationField = step.getLocationField()
-//            override fun textChanged(e: DocumentEvent) {
-//                sdkSelectionPanel.newProjectPath = locationField.text.trim()
-//            }
-//        }
-//
-//        document.addDocumentListener(documentListener)
-//
-//        sdkSelectionPanel.addChangeListener(
-//            Runnable {
-//                step.checkValid()
-//            }
-//        )
-//
-//        sdkSelectionPanel.newProjectPath = step.getLocationField().text.trim()
-//    }
-
     override fun validateAll(): List<ValidationInfo>? = sdkPanel.validateAll()
 }
