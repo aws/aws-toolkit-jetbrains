@@ -3,59 +3,51 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import com.intellij.ide.util.projectWizard.AbstractNewProjectStep
+import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.util.ui.UIUtil
-import com.jetbrains.python.newProject.PyNewProjectSettings
-import com.jetbrains.python.newProject.PythonProjectGenerator
-import com.jetbrains.python.newProject.steps.ProjectSpecificSettingsStep
+import com.jetbrains.python.configuration.PyConfigurableInterpreterList
+import com.jetbrains.python.newProject.steps.PyAddExistingSdkPanel
+import com.jetbrains.python.newProject.steps.PyAddNewEnvironmentPanel
+import com.jetbrains.python.sdk.PreferredSdkComparator
+import com.jetbrains.python.sdk.PySdkSettings
+import com.jetbrains.python.sdk.PythonSdkType
+import com.jetbrains.python.sdk.PythonSdkUtil
 import com.jetbrains.python.sdk.add.PyAddSdkGroupPanel
-import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSettings
-import software.aws.toolkits.resources.message
-import javax.swing.Icon
+import javax.swing.JComponent
 import javax.swing.JLabel
-import javax.swing.JPanel
-import javax.swing.event.DocumentListener
 
 class PyCharmSdkSelectionPanel : SdkSelector {
-    private var documentListener: DocumentListener? = null
+    private val sdkPanel by lazy {
+        sdkPanel()
+    }
 
-    override fun sdkSelectionPanel(): PyAddSdkGroupPanel = newSdkPanel()
+    override fun sdkSelectionPanel(): JComponent = sdkPanel
 
     override fun sdkSelectionLabel(): JLabel? = null
-    override fun getSdkSettings(): SdkSettings = object : SdkSettings { }
 
-    private fun newSdkPanel(): PyAddSdkGroupPanel =
-        // construct a py-specific settings step and grab its sdk panel instance
-        object : ProjectSpecificSettingsStep<PyNewProjectSettings>(
-            object : PythonProjectGenerator<PyNewProjectSettings>() {
-                override fun getLogo(): Icon? = AwsIcons.Logos.AWS
+    private fun sdkPanel(): PyAddSdkGroupPanel {
+        // Based on PyCharm's ProjectSpecificSettingsStep
+        val existingSdks = getValidPythonSdks()
+        val newEnvironmentPanel = PyAddNewEnvironmentPanel(existingSdks, "ff", null)
+        val existingSdkPanel = PyAddExistingSdkPanel(null, null, existingSdks, "ff", existingSdks.firstOrNull())
 
-                override fun getName(): String = message("sam.init.name")
-            },
-            AbstractNewProjectStep.AbstractCallback<PyNewProjectSettings>()
-        ) {
-            // shim validation back to the user UI...
-            override fun setErrorText(text: String?) {
-//                step.setErrorText(text)
-            }
+        val defaultPanel = if (PySdkSettings.instance.useNewEnvironmentForNewProject) newEnvironmentPanel else existingSdkPanel
 
-            override fun createPanel(): JPanel {
-                val panel = super.createPanel()
-                // patch the default create button that gets generated
-                myCreateButton.isVisible = false
-                // we only want this panel for its' sdk selector
-                myLocationField.isEnabled = false
-                // hide label and textbox
-                myLocationField.parent.isVisible = false
-                val myInterpreterPanel = UIUtil.findComponentOfType(panel, PyAddSdkGroupPanel::class.java)
+        val interpreterPanel = createPythonSdkPanel(listOf(newEnvironmentPanel, existingSdkPanel), defaultPanel)
 
-                return myInterpreterPanel
-                    ?: throw RuntimeException("Could not find PyAddSdkGroupPanel in UI Tree")
-            }
-        }.createPanel() as PyAddSdkGroupPanel
+        // TODO need a way to backdoor the project location interpreterPanel.newProjectPath = getNewProjectPath()
+
+        return interpreterPanel
+    }
+
+    private fun getValidPythonSdks(): List<Sdk> = PyConfigurableInterpreterList.getInstance(null).allPythonSdks
+        .asSequence()
+        .filter { it.sdkType is PythonSdkType && !PythonSdkUtil.isInvalid(it) }
+        .sortedWith(PreferredSdkComparator())
+        .toList()
+
+    override fun getSdk(): Sdk? = sdkPanel.getOrCreateSdk()
 
 //     fun registerListeners() {
 //        val document = step.getLocationField().textField.document
@@ -100,5 +92,5 @@ class PyCharmSdkSelectionPanel : SdkSelector {
 //            else -> null
 //        }
 
-    override fun validateAll(): List<ValidationInfo>? = null
+    override fun validateAll(): List<ValidationInfo>? = sdkPanel.validateAll()
 }

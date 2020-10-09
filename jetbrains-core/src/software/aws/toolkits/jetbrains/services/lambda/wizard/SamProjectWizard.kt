@@ -10,7 +10,6 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
@@ -53,13 +52,6 @@ data class SamNewProjectSettings(
     val attributeBag: AttributeBag = AttributeBag()
 )
 
-interface SdkSettings
-
-/**
- * Sdk settings that supports [Sdk] as the language's SDK, such as Java, Python.
- */
-data class SdkBasedSdkSettings(val sdk: Sdk?) : SdkSettings
-
 sealed class TemplateParameters {
     data class LocationBasedTemplate(val location: String) : TemplateParameters()
     data class AppBasedTemplate(val appTemplate: String, val dependencyManager: String) : TemplateParameters()
@@ -73,19 +65,6 @@ abstract class SamProjectTemplate {
     open fun functionName(): String = "HelloWorldFunction"
 
     override fun toString() = getName()
-
-    open fun setupSdk(rootModel: ModifiableRootModel, settings: SamNewProjectSettings) {
-//        val sdkSettings = settings.sdkSettings
-//
-//        if (sdkSettings is SdkBasedSdkSettings) {
-//             project sdk
-//            runWriteAction {
-//                ProjectRootManager.getInstance(rootModel.project).projectSdk = sdkSettings.sdk
-//            }
-//             module sdk
-//            rootModel.inheritSdk()
-//        }
-    }
 
     open fun postCreationAction(
         settings: SamNewProjectSettings,

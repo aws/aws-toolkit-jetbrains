@@ -7,10 +7,7 @@ import com.intellij.ide.util.projectWizard.EmptyModuleBuilder
 import com.intellij.ide.util.projectWizard.SdkSettingsStep
 import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.roots.ModifiableRootModel
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.ValidationInfo
-import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
@@ -35,26 +32,7 @@ class IntelliJSdkSelectionPanel(private val runtimeGroupId: String) : SdkSelecto
         return null
     }
 
-    override fun applySdkSettings(model: ModifiableRootModel) {
-        currentSdk?.let { sdk ->
-            val project = model.project
-
-            val projectRootManager = ProjectRootManager.getInstance(project)
-            if (projectRootManager.projectSdk == null) {
-                projectRootManager.projectSdk = sdk
-                model.inheritSdk()
-            } else {
-                model.sdk = sdk
-            }
-        }
-    }
-
-    // TODO: This should probably be EP based
-    override fun getSdkSettings(): SdkSettings = when (runtimeGroupId) {
-        BuiltInRuntimeGroups.Java, BuiltInRuntimeGroups.Python -> SdkBasedSdkSettings(sdk = currentSdk)
-        BuiltInRuntimeGroups.Dotnet -> object : SdkSettings {}
-        else -> throw RuntimeException("Unrecognized runtime group ID: $runtimeGroupId")
-    }
+    override fun getSdk(): Sdk? = currentSdk
 
     // don't validate on init of the SettingsStep or weird things will happen if the user has no SDK
     private fun buildSdkSettingsPanel(): SdkSettingsStep =

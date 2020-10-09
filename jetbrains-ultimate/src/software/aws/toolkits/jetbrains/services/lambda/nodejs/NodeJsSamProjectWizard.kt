@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.nodejs
 
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreter
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterField
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef
@@ -13,12 +12,10 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters.AppBasedTemplate
 import software.aws.toolkits.resources.message
@@ -47,8 +44,6 @@ class NodeJsSdkSelectionPanel : SdkSelector {
 
     override fun sdkSelectionPanel(): JComponent = interpreterPanel
 
-    override fun getSdkSettings(): SdkSettings = NodeJsSdkSettings(interpreter = interpreterPanel.interpreter)
-
     override fun applySdkSettings(model: ModifiableRootModel) {
         NodeJsInterpreterManager.getInstance(model.project).setInterpreterRef(NodeJsInterpreterRef.create(interpreterPanel.interpreter))
         JSRootConfiguration.getInstance(model.project).storeLanguageLevelAndUpdateCaches(JSLanguageLevel.ES6)
@@ -59,19 +54,8 @@ class NodeJsSdkSelectionPanel : SdkSelector {
     }
 }
 
-class NodeJsSdkSettings(
-    val interpreter: NodeJsInterpreter? = null,
-    val languageLevel: JSLanguageLevel = JSLanguageLevel.ES6
-) : SdkSettings
-
 abstract class SamNodeJsProjectTemplate : SamProjectTemplate() {
     override fun supportedRuntimes(): Set<Runtime> = setOf(Runtime.NODEJS10_X, Runtime.NODEJS12_X)
-
-    override fun setupSdk(rootModel: ModifiableRootModel, settings: SamNewProjectSettings) {
-//        val nodeJsSdkSettings = settings.sdkSettings as NodeJsSdkSettings
-//        NodeJsInterpreterManager.getInstance(rootModel.project).setInterpreterRef(NodeJsInterpreterRef.create(nodeJsSdkSettings.interpreter))
-//        JSRootConfiguration.getInstance(rootModel.project).storeLanguageLevelAndUpdateCaches(nodeJsSdkSettings.languageLevel)
-    }
 }
 
 class SamHelloWorldNodeJs : SamNodeJsProjectTemplate() {

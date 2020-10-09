@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -44,22 +45,20 @@ class SamCommon {
         }
 
         fun getCodeUrisFromTemplate(project: Project, template: VirtualFile): List<VirtualFile> {
-            val cfTemplate = CloudFormationTemplate.parse(project, template)
-
-            val codeUris = mutableListOf<VirtualFile>()
             val templatePath = Paths.get(template.parent.path)
-            val localFileSystem = LocalFileSystem.getInstance()
 
-            cfTemplate.resources().filter { it.isType(SERVERLESS_FUNCTION_TYPE) }.forEach { resource ->
-                val codeUriValue = resource.getScalarProperty("CodeUri")
-                val codeUriPath = templatePath.resolve(codeUriValue)
-                localFileSystem.refreshAndFindFileByIoFile(codeUriPath.toFile())
-                    ?.takeIf { it.isDirectory }
-                    ?.let { codeUri ->
-                        codeUris.add(codeUri)
-                    }
+            val codeDirs = runReadAction {
+                val cfTemplate = CloudFormationTemplate.parse(project, template)
+
+                cfTemplate.resources()
+                    .filter { it.isType(SERVERLESS_FUNCTION_TYPE) }
+                    .map { templatePath.resolve(it.getScalarProperty("CodeUri")) }
+                    .toList()
             }
-            return codeUris
+
+            val localFileSystem = LocalFileSystem.getInstance()
+            return codeDirs.mapNotNull { localFileSystem.refreshAndFindFileByIoFile(it.toFile()) }
+                .filter { it.isDirectory }
         }
 
         fun setSourceRoots(projectRoot: VirtualFile, project: Project, modifiableModel: ModifiableRootModel) {
@@ -77,10 +76,7 @@ class SamCommon {
                 if (contentEntry.file == projectRoot) {
                     contentEntry.addExcludeFolder(
                         VfsUtilCore.pathToUrl(
-                            Paths.get(
-                                projectRoot.path,
-                                SAM_BUILD_DIR
-                            ).toString()
+                            Paths.get(projectRoot.path, SAM_BUILD_DIR).toString()
                         )
                     )
                 }

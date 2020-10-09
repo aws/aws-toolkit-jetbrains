@@ -38,8 +38,6 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
     override fun setupRootModel(rootModel: ModifiableRootModel) {
         val settings = generator.peer.settings
 
-        settings.template.setupSdk(rootModel, settings)
-
         // Set module type
         val selectedRuntime = settings.runtime
         val moduleType = selectedRuntime.runtimeGroup?.getModuleType() ?: ModuleType.EMPTY
@@ -50,7 +48,7 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
 
         // ModifiableRootModel takes a final ProjectRootManagerImpl which has a final project, so we have guaranteed access to project here
         ProgressManager.getInstance().run(
-            object : Task.Backgroundable(rootModel.project, message("sam.init.generating.template"), false) {
+            object : Task.Modal(rootModel.project, message("sam.init.generating.template"), false) {
                 override fun run(indicator: ProgressIndicator) {
                     ModuleRootModificationUtil.updateModel(rootModel.module) { model ->
                         val samTemplate = settings.template
@@ -58,7 +56,6 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
 
                         generator.wizardFragments.forEach { it.postProjectGeneration(model, indicator) }
 
-                        // TODO: Rip the following out of the template class
                         samTemplate.postCreationAction(settings, outputDir, model, indicator)
                     }
                 }
