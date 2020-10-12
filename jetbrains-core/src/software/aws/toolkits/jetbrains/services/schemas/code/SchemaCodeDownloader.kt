@@ -70,7 +70,7 @@ class SchemaCodeDownloader(
     companion object {
         fun create(project: Project): SchemaCodeDownloader {
             val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
-                ?: TODO()
+                ?: throw IllegalStateException("Attempting to use SchemaCodeDownload without valid AWS connection")
             return create(connectionSettings)
         }
 

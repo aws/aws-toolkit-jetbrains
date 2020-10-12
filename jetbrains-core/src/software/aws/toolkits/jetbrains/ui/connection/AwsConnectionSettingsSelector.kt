@@ -47,16 +47,21 @@ class AwsConnectionSettingsSelector(
     fun selectorPanel(): JComponent = view.panel
 
     fun resetAwsConnectionOptions(regionId: String?, credentialProviderId: String?) {
-        regionId?.let { view.region.selectedRegion = regionProvider[it] }
+        if (regionId != null) {
+            view.region.selectedRegion = regionProvider[regionId]
+        }
 
-        credentialProviderId?.let { providerId ->
-            try {
-                credentialManager.getCredentialIdentifierById(providerId)?.let {
-                    view.credentialProvider.setSelectedCredentialsProvider(it)
-                }
-            } catch (_: Exception) {
-                view.credentialProvider.setSelectedInvalidCredentialsProvider(providerId)
+        if(credentialProviderId == null) {
+            return
+        }
+
+        try {
+            val credentialIdentifier = credentialManager.getCredentialIdentifierById(credentialProviderId)
+            if (credentialIdentifier != null) {
+                view.credentialProvider.setSelectedCredentialsProvider(credentialIdentifier)
             }
+        } catch (_: Exception) {
+            view.credentialProvider.setSelectedInvalidCredentialsProvider(credentialProviderId)
         }
     }
 
