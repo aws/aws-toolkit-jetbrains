@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.SamTelemetry
+import software.aws.toolkits.telemetry.Runtime.Companion as TelemetryRuntime
 
 // Meshing of two worlds. IntelliJ wants validation errors to be thrown exceptions. Non-IntelliJ wants validation errors
 // to be returned as a ValidationInfo object. We have a shim to convert thrown exceptions into objects,
@@ -64,30 +65,23 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         val contentEntry = doAddContentEntry(rootModel) ?: throw Exception(message("sam.init.error.no.project.basepath"))
         val outputDir = contentEntry.file ?: throw Exception(message("sam.init.error.no.virtual.file"))
 
-        // ModifiableRootModel takes a final ProjectRootManagerImpl which has a final project, so we have guaranteed access to project here
         val project = rootModel.project
-
         ProgressManager.getInstance().run(
             object : Task.Backgroundable(project, message("sam.init.generating.template"), false) {
                 override fun run(indicator: ProgressIndicator) {
                     ModuleRootModificationUtil.updateModel(rootModel.module) { model ->
                         val samTemplate = settings.template
 
-                        build(project, rootModel.module.name, samTemplate, selectedRuntime, generator.schemaPanel.schemaInfo(), outputDir)
+                        runSamInit(project, rootModel.module.name, samTemplate, selectedRuntime, generator.schemaPanel.schemaInfo(), outputDir)
 
-                        generator.wizardFragments.forEach { it.postProjectGeneration(model, samTemplate, selectedRuntime, indicator) }
-
-                        samTemplate.postCreationAction(settings, outputDir, model, indicator)
-
-                        openReadmeFile(project, outputDir)
-                        createRunConfigurations(project, outputDir)
+                        runPostSamInit(project, model, indicator, settings, outputDir)
                     }
                 }
             }
         )
     }
 
-    private fun build(
+    fun runSamInit(
         project: Project?,
         name: String,
         samTemplate: SamProjectTemplate,
@@ -109,12 +103,27 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
             SamTelemetry.init(
                 project = project,
                 success = success,
-                runtime = software.aws.toolkits.telemetry.Runtime.from(runtime.toString()),
+                runtime = TelemetryRuntime.from(runtime.toString()),
                 version = SamCommon.getVersionString(),
                 templateName = getName(),
                 eventBridgeSchema = if (schemaParameters?.schema?.registryName == SchemasResources.AWS_EVENTS_REGISTRY) schemaParameters.schema.name else null
             )
         }
+    }
+
+    fun runPostSamInit(
+        project: Project,
+        model: ModifiableRootModel,
+        indicator: ProgressIndicator,
+        settings: SamNewProjectSettings,
+        outputDir: VirtualFile
+    ) {
+        generator.wizardFragments.forEach { it.postProjectGeneration(model, settings.template, settings.runtime, indicator) }
+
+        settings.template.postCreationAction(settings, outputDir, model, indicator)
+
+        openReadmeFile(project, outputDir)
+        createRunConfigurations(project, outputDir)
     }
 
     private fun openReadmeFile(project: Project, contentRoot: VirtualFile) {

@@ -54,6 +54,7 @@ class DotNetSamProjectGenerator(
         private const val SAM_HELLO_WORLD_PROJECT_NAME = "HelloWorld"
     }
 
+    // TODO: Decouple SamProjectGenerator from the framework wizards so we can re-use its panels
     private val generator = SamProjectGenerator()
     private val samPanel = SamInitSelectionPanel(generator.wizardFragments) {
         // Only show templates for DotNet in Rider
@@ -165,9 +166,17 @@ class DotNetSamProjectGenerator(
             ?: throw Exception(message("sam.init.error.no.virtual.file"))
 
         val progressManager = ProgressManager.getInstance()
+        val samProjectBuilder = generator.createModuleBuilder()
         progressManager.runProcessWithProgressSynchronously(
             {
-//                samSettings.template.build(context.project, projectNameField.text, samSettings.runtime, samSettings.schemaParameters, outDirVf)
+                samProjectBuilder.runSamInit(
+                    context.project,
+                    projectNameField.text,
+                    samSettings.template,
+                    samSettings.runtime,
+                    null,
+                    outDirVf
+                )
             },
             message("sam.init.generating.template"),
             false,
@@ -202,12 +211,7 @@ class DotNetSamProjectGenerator(
         try {
             val progressIndicator = if (progressManager.hasProgressIndicator()) progressManager.progressIndicator else DumbProgressIndicator()
 
-            samSettings.template.postCreationAction(
-                settings = samSettings,
-                contentRoot = outDirVf,
-                rootModel = modifiableModel,
-                indicator = progressIndicator
-            )
+            samProjectBuilder.runPostSamInit(project, modifiableModel, progressIndicator, samSettings, outDirVf)
         } finally {
             modifiableModel.dispose()
         }

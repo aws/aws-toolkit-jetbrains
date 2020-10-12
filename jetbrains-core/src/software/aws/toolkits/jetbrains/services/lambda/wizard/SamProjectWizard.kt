@@ -91,12 +91,3 @@ abstract class SamProjectTemplate {
         }
     }
 }
-
-abstract class AppBasedSamTemplate(private val templateName: String, private val dependencyManager: String) : SamProjectTemplate() {
-    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
-        projectName,
-        runtime,
-        displayName(),
-        dependencyManager
-    )
-}

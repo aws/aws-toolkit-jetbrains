@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.intellij.ide.util.projectWizard.AbstractNewProjectStep
 import com.intellij.ide.util.projectWizard.CustomStepProjectGenerator
-import com.intellij.ide.util.projectWizard.ModuleBuilder
 import com.intellij.ide.util.projectWizard.ProjectSettingsStepBase
 import com.intellij.ide.util.projectWizard.SettingsStep
 import com.intellij.openapi.application.runWriteAction
@@ -86,7 +85,7 @@ class SamProjectGenerator :
 
     override fun getIcon(): Icon = logo
 
-    override fun createModuleBuilder(): ModuleBuilder = builder
+    override fun createModuleBuilder(): SamProjectBuilder = builder
 
     // validation is done in the peer
     override fun validateSettings(): ValidationInfo? = null

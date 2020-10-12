@@ -26,21 +26,24 @@ interface SdkSelector {
     fun sdkSelectionLabel(): JLabel?
 
     fun applySdkSettings(model: ModifiableRootModel) {
-        getSdk()?.let { sdk ->
-            val project = model.project
+        val sdk = getSdk() ?: return
+        val project = model.project
 
-            val projectRootManager = ProjectRootManager.getInstance(project)
-            WriteAction.runAndWait(
-                ThrowableRunnable<Exception> {
-                    if (projectRootManager.projectSdk == null) {
-                        projectRootManager.projectSdk = sdk
-                        model.inheritSdk()
-                    } else {
-                        model.sdk = sdk
-                    }
+        val projectRootManager = ProjectRootManager.getInstance(project)
+        WriteAction.runAndWait(
+            ThrowableRunnable<Exception> {
+                if (projectRootManager.projectSdk == null) {
+                    projectRootManager.projectSdk = sdk
                 }
-            )
-        }
+
+                // If requested SDK matches project SDK, inherit it, else only set it for the module
+                if (sdk == projectRootManager.projectSdk) {
+                    model.inheritSdk()
+                } else {
+                    model.sdk = sdk
+                }
+            }
+        )
     }
 
     fun getSdk(): Sdk? = null
