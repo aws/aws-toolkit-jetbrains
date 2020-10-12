@@ -3,8 +3,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
@@ -15,7 +13,6 @@ import java.nio.file.Path
 class SamSchemaDownloadPostCreationAction {
     fun downloadCodeIntoWorkspace(
         schemaTemplateParameters: SchemaTemplateParameters,
-        contentRoot: VirtualFile,
         schemaSourceRoot: Path,
         language: SchemaCodeLangs,
         connectionSettings: ConnectionSettings,
@@ -32,7 +29,5 @@ class SamSchemaDownloadPostCreationAction {
             ),
             indicator
         ).toCompletableFuture().get()
-
-        VfsUtil.markDirtyAndRefresh(false, true, true, contentRoot)
     }
 }

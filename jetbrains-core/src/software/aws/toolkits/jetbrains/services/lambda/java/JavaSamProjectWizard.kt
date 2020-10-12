@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.roots.ModifiableRootModel
@@ -75,7 +76,9 @@ abstract class JavaMavenSamProjectTemplate : JavaSamProjectTemplate() {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
         val pomFile = locateBuildFile(contentRoot, "pom.xml") ?: return
         val projectsManager = MavenProjectsManager.getInstance(rootModel.project)
-        projectsManager.addManagedFilesOrUnignore(listOf(pomFile))
+        runInEdt {
+            projectsManager.addManagedFilesOrUnignore(listOf(pomFile))
+        }
     }
 }
 
@@ -124,28 +127,6 @@ class SamEventBridgeStarterAppGradle : JavaGradleSamProjectTemplate() {
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "gradle")
 
     override fun supportsDynamicSchemas(): Boolean = true
-
-    override fun postCreationAction(
-        settings: SamNewProjectSettings,
-        contentRoot: VirtualFile,
-        rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
-    ) {
-//        settings.schemaParameters?.let {
-//            val functionRoot = Paths.get(contentRoot.path, functionName())
-//
-//            SamSchemaDownloadPostCreationAction().downloadCodeIntoWorkspace(
-//                it,
-//                contentRoot,
-//                functionRoot,
-//                SchemaCodeLangs.JAVA8,
-//                rootModel.project,
-//                indicator
-//            )
-//        }
-
-        super.postCreationAction(settings, contentRoot, rootModel, indicator)
-    }
 }
 
 class SamEventBridgeStarterAppMaven : JavaMavenSamProjectTemplate() {
@@ -156,28 +137,6 @@ class SamEventBridgeStarterAppMaven : JavaMavenSamProjectTemplate() {
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "maven")
 
     override fun supportsDynamicSchemas(): Boolean = true
-
-    override fun postCreationAction(
-        settings: SamNewProjectSettings,
-        contentRoot: VirtualFile,
-        rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
-    ) {
-//        settings.schemaParameters?.let {
-//            val functionRoot = Paths.get(contentRoot.path, functionName())
-//
-//            SamSchemaDownloadPostCreationAction().downloadCodeIntoWorkspace(
-//                it,
-//                contentRoot,
-//                functionRoot,
-//                SchemaCodeLangs.JAVA8,
-//                rootModel.project,
-//                indicator
-//            )
-//        }
-
-        super.postCreationAction(settings, contentRoot, rootModel, indicator)
-    }
 }
 
 class SamEventBridgeHelloWorldGradle : JavaGradleSamProjectTemplate() {
@@ -188,7 +147,7 @@ class SamEventBridgeHelloWorldGradle : JavaGradleSamProjectTemplate() {
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-hello-world", "gradle")
 }
 
-class SamEventBridgeHelloWorldMaven : JavaGradleSamProjectTemplate() {
+class SamEventBridgeHelloWorldMaven : JavaMavenSamProjectTemplate() {
     override fun getName() = message("sam.init.template.eventBridge_helloWorld_maven.name")
 
     override fun getDescription() = message("sam.init.template.eventBridge_helloWorld.description")

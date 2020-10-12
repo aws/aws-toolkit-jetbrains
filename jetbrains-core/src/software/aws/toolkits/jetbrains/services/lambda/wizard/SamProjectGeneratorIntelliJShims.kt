@@ -8,6 +8,7 @@ import com.intellij.ide.util.projectWizard.ModuleBuilder
 import com.intellij.ide.util.projectWizard.ModuleWizardStep
 import com.intellij.ide.util.projectWizard.SettingsStep
 import com.intellij.ide.util.projectWizard.WizardContext
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
@@ -23,6 +24,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ProjectTemplatesFactory
 import icons.AwsIcons
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
@@ -30,7 +32,10 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLamb
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
+import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.SamTelemetry
 
 // Meshing of two worlds. IntelliJ wants validation errors to be thrown exceptions. Non-IntelliJ wants validation errors
 // to be returned as a ValidationInfo object. We have a shim to convert thrown exceptions into objects,
@@ -39,7 +44,7 @@ class ValidationException : Exception()
 
 // IntelliJ shim requires a ModuleBuilder
 // UI is centralized in generator and is passed in to have access to UI elements
-// TODO: Kill this, it doesnt need to be tied to a module builder?
+// TODO: Does this need to be a module builder, or can we decouple it?
 class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuilder() {
     // hide this from the new project menu
     override fun isAvailable() = false
@@ -60,23 +65,58 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         val outputDir = contentEntry.file ?: throw Exception(message("sam.init.error.no.virtual.file"))
 
         // ModifiableRootModel takes a final ProjectRootManagerImpl which has a final project, so we have guaranteed access to project here
+        val project = rootModel.project
+
         ProgressManager.getInstance().run(
-            object : Task.Backgroundable(rootModel.project, message("sam.init.generating.template"), false) {
+            object : Task.Backgroundable(project, message("sam.init.generating.template"), false) {
                 override fun run(indicator: ProgressIndicator) {
                     ModuleRootModificationUtil.updateModel(rootModel.module) { model ->
                         val samTemplate = settings.template
-                        samTemplate.build(project, rootModel.module.name, selectedRuntime, null, outputDir)
 
-                        generator.wizardFragments.forEach { it.postProjectGeneration(model, indicator) }
+                        build(project, rootModel.module.name, samTemplate, selectedRuntime, generator.schemaPanel.schemaInfo(), outputDir)
 
-                        openReadmeFile(rootModel.project, outputDir)
-                        createRunConfigurations(rootModel.project, outputDir)
+                        generator.wizardFragments.forEach { it.postProjectGeneration(model, samTemplate, selectedRuntime, indicator) }
 
                         samTemplate.postCreationAction(settings, outputDir, model, indicator)
+
+                        openReadmeFile(project, outputDir)
+                        createRunConfigurations(project, outputDir)
                     }
                 }
             }
         )
+    }
+
+    private fun build(
+        project: Project?,
+        name: String,
+        samTemplate: SamProjectTemplate,
+        runtime: Runtime,
+        schemaParameters: SchemaTemplateParameters?,
+        outputDir: VirtualFile
+    ) {
+        var success = true
+        try {
+            SamInitRunner.execute(
+                name,
+                outputDir,
+                runtime,
+                samTemplate.templateParameters(),
+                schemaParameters?.takeIf { samTemplate.supportsDynamicSchemas() }
+            )
+        } catch (e: Throwable) {
+            success = false
+            throw e
+        } finally {
+            SamTelemetry.init(
+                project = project,
+                success = success,
+                runtime = software.aws.toolkits.telemetry.Runtime.from(runtime.toString()),
+                version = SamCommon.getVersionString(),
+                templateName = getName(),
+                eventBridgeSchema = if (schemaParameters?.schema?.registryName == SchemasResources.AWS_EVENTS_REGISTRY) schemaParameters.schema.name else null
+            )
+        }
     }
 
     private fun openReadmeFile(project: Project, contentRoot: VirtualFile) {
@@ -86,7 +126,9 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
             readme.putUserData(TextEditorWithPreview.DEFAULT_LAYOUT_FOR_FILE, TextEditorWithPreview.Layout.SHOW_PREVIEW)
 
             val fileEditorManager = FileEditorManager.getInstance(project)
-            fileEditorManager.openTextEditor(OpenFileDescriptor(project, readme), true) ?: LOG.warn { "Failed to open README.md" }
+            runInEdt {
+                fileEditorManager.openTextEditor(OpenFileDescriptor(project, readme), true) ?: LOG.warn { "Failed to open README.md" }
+            }
         }
     }
 

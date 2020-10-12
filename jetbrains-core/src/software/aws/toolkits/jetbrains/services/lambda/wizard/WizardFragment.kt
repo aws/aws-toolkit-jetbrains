@@ -19,7 +19,7 @@ interface WizardFragment {
 
     fun isApplicable(template: SamProjectTemplate?): Boolean
 
-    fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtime: Runtime?, template: SamProjectTemplate?)
+    fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtime: Runtime?, template: SamProjectTemplate?) {}
 
-    fun postProjectGeneration(model: ModifiableRootModel, progressIndicator: ProgressIndicator) {}
+    fun postProjectGeneration(model: ModifiableRootModel, template: SamProjectTemplate, runtime: Runtime, progressIndicator: ProgressIndicator) {}
 }

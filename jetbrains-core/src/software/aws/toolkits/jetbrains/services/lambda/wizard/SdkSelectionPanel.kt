@@ -82,7 +82,7 @@ class SdkSelectionPanel : WizardFragment {
         }
     }
 
-    override fun postProjectGeneration(model: ModifiableRootModel, progressIndicator: ProgressIndicator) {
+    override fun postProjectGeneration(model: ModifiableRootModel, template: SamProjectTemplate, runtime: Runtime, progressIndicator: ProgressIndicator) {
         sdkSelector?.let {
             progressIndicator.text = "Setting up SDK"
             ApplicationManager.getApplication().invokeAndWait {

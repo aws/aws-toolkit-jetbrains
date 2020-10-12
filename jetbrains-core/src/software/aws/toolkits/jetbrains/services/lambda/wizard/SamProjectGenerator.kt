@@ -39,9 +39,12 @@ class SamProjectGenerator :
     CustomStepProjectGenerator<SamNewProjectSettings>,
     HideableProjectGenerator {
 
+    // Public for the metrics..is there a better way?
+    val schemaPanel = SchemaSelectionPanel()
+
     val wizardFragments = listOf(
         SdkSelectionPanel(),
-        SchemaSelectionPanel()
+        schemaPanel
     )
 
     private val builder = SamProjectBuilder(this)
@@ -122,16 +125,16 @@ class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator, privat
     override fun isBackgroundJobRunning(): Boolean = false
 
     // PyCharm uses this
-    override fun getComponent(locationField: TextFieldWithBrowseButton, checkValid: Runnable): JComponent {
-        samInitSelectionPanel = SamInitSelectionPanel(wizardFragments, locationField)
-
-        return samInitSelectionPanel.mainPanel
-    }
+    override fun getComponent(locationField: TextFieldWithBrowseButton, checkValid: Runnable): JComponent = getPanel(locationField).mainPanel
 
     // IntelliJ uses this
-    override fun getComponent(): JComponent {
-        samInitSelectionPanel = SamInitSelectionPanel(wizardFragments)
+    override fun getComponent(): JComponent = getPanel(null).mainPanel
 
-        return samInitSelectionPanel.mainPanel
+    private fun getPanel(locationField: TextFieldWithBrowseButton?): SamInitSelectionPanel {
+        if (!::samInitSelectionPanel.isInitialized) {
+            samInitSelectionPanel = SamInitSelectionPanel(wizardFragments, locationField)
+        }
+
+        return samInitSelectionPanel
     }
 }

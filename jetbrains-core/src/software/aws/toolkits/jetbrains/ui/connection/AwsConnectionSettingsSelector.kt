@@ -41,16 +41,7 @@ class AwsConnectionSettingsSelector(
     }
 
     private fun fireChange() {
-        val connectionSettings = view.region.selectedRegion?.let { region ->
-            view.credentialProvider.getSelectedCredentialsProvider()?.let { credId ->
-                val manager = CredentialManager.getInstance()
-                manager.getCredentialIdentifierById(credId)?.let {
-                    ConnectionSettings(manager.getAwsCredentialProvider(it, region), region)
-                }
-            }
-        }
-
-        settingsChangedListener(connectionSettings)
+        settingsChangedListener(connectionSettings())
     }
 
     fun selectorPanel(): JComponent = view.panel
@@ -72,4 +63,13 @@ class AwsConnectionSettingsSelector(
     fun selectedCredentialProvider(): String? = view.credentialProvider.getSelectedCredentialsProvider()
 
     fun selectedRegion(): AwsRegion? = view.region.selectedRegion
+
+    fun connectionSettings() = view.region.selectedRegion?.let { region ->
+        view.credentialProvider.getSelectedCredentialsProvider()?.let { credId ->
+            val manager = CredentialManager.getInstance()
+            manager.getCredentialIdentifierById(credId)?.let {
+                ConnectionSettings(manager.getAwsCredentialProvider(it, region), region)
+            }
+        }
+    }
 }

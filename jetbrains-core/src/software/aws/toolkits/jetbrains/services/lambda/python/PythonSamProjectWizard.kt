@@ -84,26 +84,4 @@ class SamEventBridgeStarterApp : PythonSamProjectTemplate() {
     override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "pip")
 
     override fun supportsDynamicSchemas(): Boolean = true
-
-    override fun postCreationAction(
-        settings: SamNewProjectSettings,
-        contentRoot: VirtualFile,
-        rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
-    ) {
-//        settings.schemaParameters?.let {
-//            val functionRoot = Paths.get(contentRoot.path, functionName())
-//
-//            SamSchemaDownloadPostCreationAction().downloadCodeIntoWorkspace(
-//                it,
-//                contentRoot,
-//                functionRoot,
-//                SchemaCodeLangs.PYTHON3_6,
-//                rootModel.project,
-//                indicator
-//            )
-//        }
-
-        super.postCreationAction(settings, contentRoot, rootModel, indicator)
-    }
 }

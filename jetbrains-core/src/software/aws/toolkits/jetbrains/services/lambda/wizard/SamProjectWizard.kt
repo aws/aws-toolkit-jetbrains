@@ -12,15 +12,10 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.AttributeBag
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
-import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
-import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources.AWS_EVENTS_REGISTRY
-import software.aws.toolkits.telemetry.SamTelemetry
 import java.nio.file.Paths
-import software.aws.toolkits.telemetry.Runtime as TelemetryRuntime
 
 /**
  * Used to manage SAM project information for different [RuntimeGroup]s
@@ -76,7 +71,7 @@ abstract class SamProjectTemplate {
         }
     }
 
-    protected fun excludeSamDirectory(modifiableModel: ModifiableRootModel, projectRoot: VirtualFile) {
+    private fun excludeSamDirectory(modifiableModel: ModifiableRootModel, projectRoot: VirtualFile) {
         modifiableModel.contentEntries.forEach { contentEntry ->
             if (contentEntry.file == projectRoot) {
                 contentEntry.addExcludeFolder(
@@ -88,37 +83,7 @@ abstract class SamProjectTemplate {
         }
     }
 
-    fun build(project: Project?, name: String, runtime: Runtime, schemaParameters: SchemaTemplateParameters?, outputDir: VirtualFile) {
-        var success = true
-        try {
-            doBuild(name, runtime, schemaParameters, outputDir)
-        } catch (e: Throwable) {
-            success = false
-            throw e
-        } finally {
-            SamTelemetry.init(
-                project = project,
-                name = getName(),
-                success = success,
-                runtime = TelemetryRuntime.from(runtime.toString()),
-                version = SamCommon.getVersionString(),
-                templateName = this.javaClass.simpleName,
-                eventBridgeSchema = if (schemaParameters?.schema?.registryName == AWS_EVENTS_REGISTRY) schemaParameters.schema.name else null
-            )
-        }
-    }
-
-    private fun doBuild(name: String, runtime: Runtime, schemaParameters: SchemaTemplateParameters?, outputDir: VirtualFile) {
-        SamInitRunner.execute(
-            name,
-            outputDir,
-            runtime,
-            templateParameters(),
-            if (supportsDynamicSchemas()) schemaParameters else null
-        )
-    }
-
-    protected abstract fun templateParameters(): TemplateParameters
+    abstract fun templateParameters(): TemplateParameters
 
     abstract fun supportedRuntimes(): Set<Runtime>
 
@@ -127,8 +92,6 @@ abstract class SamProjectTemplate {
     open fun supportsDynamicSchemas(): Boolean = false
 
     companion object {
-        private val LOG = getLogger<SamProjectTemplate>()
-
         // Dont cache this since it is not compatible in a dynamic plugin world / waste memory if no longer needed
         fun supportedTemplates() = SamProjectWizard.supportedRuntimeGroups().flatMap {
             SamProjectWizard.getInstance(it).listTemplates()
