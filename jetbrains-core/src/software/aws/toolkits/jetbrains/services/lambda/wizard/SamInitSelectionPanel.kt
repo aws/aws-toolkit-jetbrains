@@ -60,8 +60,8 @@ class SamInitSelectionPanel(
 
         templateComboBox.addActionListener { wizardUpdate() }
         templateComboBox.renderer = SimpleListCellRenderer.create { label, value, _ ->
-            label.text = value?.getName()
-            label.toolTipText = value?.getDescription()
+            label.text = value?.displayName()
+            label.toolTipText = value?.description()
         }
 
         wizardFragments = wizardFragmentList.associateWith {

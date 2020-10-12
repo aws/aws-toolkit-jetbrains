@@ -10,14 +10,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.PlatformUtils
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
+import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.IntelliJSdkSelectionPanel
+import software.aws.toolkits.jetbrains.services.lambda.wizard.LocationBasedTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
-import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters.AppBasedTemplate
-import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters.LocationBasedTemplate
 import software.aws.toolkits.resources.message
 
 class PythonSamProjectWizard : SamProjectWizard {
@@ -49,39 +49,56 @@ abstract class PythonSamProjectTemplate : SamProjectTemplate() {
 }
 
 class SamHelloWorldPython : PythonSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.hello_world.name")
+    override fun displayName() = message("sam.init.template.hello_world.name")
 
-    override fun getDescription() = message("sam.init.template.hello_world.description")
+    override fun description() = message("sam.init.template.hello_world.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("hello-world", "pip")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "hello-world",
+        "pip"
+    )
 }
 
 class SamDynamoDBCookieCutter : PythonSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.dynamodb_cookiecutter.name")
+    override fun displayName() = message("sam.init.template.dynamodb_cookiecutter.name")
 
-    override fun getDescription() = message("sam.init.template.dynamodb_cookiecutter.description")
+    override fun description() = message("sam.init.template.dynamodb_cookiecutter.description")
 
-    override fun templateParameters(): TemplateParameters = LocationBasedTemplate("gh:aws-samples/cookiecutter-aws-sam-dynamodb-python")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = LocationBasedTemplate(
+        "gh:aws-samples/cookiecutter-aws-sam-dynamodb-python"
+    )
 }
 
 class SamEventBridgeHelloWorld : PythonSamProjectTemplate() {
     override fun supportedRuntimes() = setOf(Runtime.PYTHON3_6, Runtime.PYTHON3_7, Runtime.PYTHON3_8)
 
-    override fun getName() = message("sam.init.template.eventBridge_helloWorld.name")
+    override fun displayName() = message("sam.init.template.eventBridge_helloWorld.name")
 
-    override fun getDescription() = message("sam.init.template.eventBridge_helloWorld.description")
+    override fun description() = message("sam.init.template.eventBridge_helloWorld.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-hello-world", "pip")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "eventBridge-hello-world",
+        "pip"
+    )
 }
 
 class SamEventBridgeStarterApp : PythonSamProjectTemplate() {
     override fun supportedRuntimes() = setOf(Runtime.PYTHON3_6, Runtime.PYTHON3_7, Runtime.PYTHON3_8)
 
-    override fun getName() = message("sam.init.template.eventBridge_starterApp.name")
+    override fun displayName() = message("sam.init.template.eventBridge_starterApp.name")
 
-    override fun getDescription() = message("sam.init.template.eventBridge_starterApp.description")
+    override fun description() = message("sam.init.template.eventBridge_starterApp.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "pip")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "eventBridge-schema-app",
+        "pip"
+    )
 
     override fun supportsDynamicSchemas(): Boolean = true
 }

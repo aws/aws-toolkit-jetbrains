@@ -19,13 +19,13 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.logWhenNull
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
+import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.IntelliJSdkSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
-import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters.AppBasedTemplate
 import software.aws.toolkits.resources.message
 
 class JavaSamProjectWizard : SamProjectWizard {
@@ -104,53 +104,83 @@ abstract class JavaGradleSamProjectTemplate : JavaSamProjectTemplate() {
 }
 
 class SamHelloWorldMaven : JavaMavenSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.hello_world_maven.name")
+    override fun displayName() = message("sam.init.template.hello_world_maven.name")
 
-    override fun getDescription() = message("sam.init.template.hello_world.description")
+    override fun description() = message("sam.init.template.hello_world.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("hello-world", "maven")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "hello-world",
+        "maven"
+    )
 }
 
 class SamHelloWorldGradle : JavaGradleSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.hello_world_gradle.name")
+    override fun displayName() = message("sam.init.template.hello_world_gradle.name")
 
-    override fun getDescription() = message("sam.init.template.hello_world.description")
+    override fun description() = message("sam.init.template.hello_world.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("hello-world", "gradle")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "hello-world",
+        "gradle"
+    )
 }
 
 class SamEventBridgeStarterAppGradle : JavaGradleSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.eventBridge_starterApp_gradle.name")
+    override fun displayName() = message("sam.init.template.eventBridge_starterApp_gradle.name")
 
-    override fun getDescription() = message("sam.init.template.eventBridge_starterApp.description")
+    override fun description() = message("sam.init.template.eventBridge_starterApp.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "gradle")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "eventBridge-schema-app",
+        "gradle"
+    )
 
     override fun supportsDynamicSchemas(): Boolean = true
 }
 
 class SamEventBridgeStarterAppMaven : JavaMavenSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.eventBridge_starterApp_maven.name")
+    override fun displayName() = message("sam.init.template.eventBridge_starterApp_maven.name")
 
-    override fun getDescription() = message("sam.init.template.eventBridge_starterApp.description")
+    override fun description() = message("sam.init.template.eventBridge_starterApp.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "maven")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "eventBridge-schema-app",
+        "maven"
+    )
 
     override fun supportsDynamicSchemas(): Boolean = true
 }
 
 class SamEventBridgeHelloWorldGradle : JavaGradleSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.eventBridge_helloWorld_gradle.name")
+    override fun displayName() = message("sam.init.template.eventBridge_helloWorld_gradle.name")
 
-    override fun getDescription() = message("sam.init.template.eventBridge_helloWorld.description")
+    override fun description() = message("sam.init.template.eventBridge_helloWorld.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-hello-world", "gradle")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "eventBridge-hello-world",
+        "gradle"
+    )
 }
 
 class SamEventBridgeHelloWorldMaven : JavaMavenSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.eventBridge_helloWorld_maven.name")
+    override fun displayName() = message("sam.init.template.eventBridge_helloWorld_maven.name")
 
-    override fun getDescription() = message("sam.init.template.eventBridge_helloWorld.description")
+    override fun description() = message("sam.init.template.eventBridge_helloWorld.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-hello-world", "maven")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "eventBridge-hello-world",
+        "maven"
+    )
 }

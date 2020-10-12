@@ -11,7 +11,6 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.utils.AttributeBag
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
@@ -36,21 +35,23 @@ interface SamProjectWizard {
 
 data class SamNewProjectSettings(
     val runtime: Runtime,
-    val template: SamProjectTemplate,
-    val attributeBag: AttributeBag = AttributeBag()
+    val template: SamProjectTemplate
 )
 
-sealed class TemplateParameters {
-    data class LocationBasedTemplate(val location: String) : TemplateParameters()
-    data class AppBasedTemplate(val appTemplate: String, val dependencyManager: String) : TemplateParameters()
-}
-
 abstract class SamProjectTemplate {
-    abstract fun getName(): String
+    abstract fun displayName(): String
 
-    open fun getDescription(): String? = null
+    open fun description(): String? = null
 
-    override fun toString() = getName()
+    override fun toString() = displayName()
+
+    abstract fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters
+
+    abstract fun supportedRuntimes(): Set<Runtime>
+
+    // Gradual opt-in for Schema support on a template by-template basis.
+    // All SAM templates should support schema selection, but for launch include only EventBridge for most optimal customer experience
+    open fun supportsDynamicSchemas(): Boolean = false
 
     open fun postCreationAction(
         settings: SamNewProjectSettings,
@@ -83,18 +84,19 @@ abstract class SamProjectTemplate {
         }
     }
 
-    abstract fun templateParameters(): TemplateParameters
-
-    abstract fun supportedRuntimes(): Set<Runtime>
-
-    // Gradual opt-in for Schema support on a template by-template basis.
-    // All SAM templates should support schema selection, but for launch include only EventBridge for most optimal customer experience
-    open fun supportsDynamicSchemas(): Boolean = false
-
     companion object {
         // Dont cache this since it is not compatible in a dynamic plugin world / waste memory if no longer needed
         fun supportedTemplates() = SamProjectWizard.supportedRuntimeGroups().flatMap {
             SamProjectWizard.getInstance(it).listTemplates()
         }
     }
+}
+
+abstract class AppBasedSamTemplate(private val templateName: String, private val dependencyManager: String) : SamProjectTemplate() {
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        displayName(),
+        dependencyManager
+    )
 }

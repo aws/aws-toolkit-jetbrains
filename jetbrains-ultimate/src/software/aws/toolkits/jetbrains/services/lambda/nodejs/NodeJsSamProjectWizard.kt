@@ -60,9 +60,9 @@ abstract class SamNodeJsProjectTemplate : SamProjectTemplate() {
 }
 
 class SamHelloWorldNodeJs : SamNodeJsProjectTemplate() {
-    override fun getName() = message("sam.init.template.hello_world.name")
+    override fun displayName() = message("sam.init.template.hello_world.name")
 
-    override fun getDescription() = message("sam.init.template.hello_world.description")
+    override fun description() = message("sam.init.template.hello_world.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("hello-world", "npm")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(projectName, runtime, "hello-world", "npm")
 }

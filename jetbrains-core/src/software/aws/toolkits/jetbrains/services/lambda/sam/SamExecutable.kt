@@ -14,7 +14,7 @@ import software.aws.toolkits.jetbrains.core.executables.Validatable
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.LocationBasedTemplate
-import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters2
+import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.jetbrains.settings.ExecutableDetector
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -153,7 +153,7 @@ private fun escapeParameter(param: String): String {
 
 fun GeneralCommandLine.samInitCommand(
     outputDir: Path,
-    parameters: TemplateParameters2,
+    parameters: TemplateParameters,
     extraContent: Map<String, String>
 ) = this.apply {
     addParameter("init")
