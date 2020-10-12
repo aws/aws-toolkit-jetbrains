@@ -122,6 +122,9 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
 
         settings.template.postCreationAction(settings, outputDir, model, indicator)
 
+        // Perform a refresh to load any generated files
+        outputDir.refresh(false, true)
+
         openReadmeFile(project, outputDir)
         createRunConfigurations(project, outputDir)
     }
