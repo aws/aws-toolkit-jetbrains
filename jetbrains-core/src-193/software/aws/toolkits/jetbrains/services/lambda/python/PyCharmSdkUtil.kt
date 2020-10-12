@@ -8,5 +8,5 @@ import com.jetbrains.python.sdk.add.PyAddSdkGroupPanel
 import com.jetbrains.python.sdk.add.PyAddSdkPanel
 
 fun createPythonSdkPanel(panels: List<PyAddSdkPanel>, defaultPanel: PyAddSdkPanel): PyAddSdkGroupPanel =
-    // String and icon aren't used, just echo fields for the getters on the panel
+    // String and icon aren't used, they are just returned again in the icon and panelName val's
     PyAddSdkGroupPanel("Python SDK", EmptyIcon.ICON_16, panels, defaultPanel)

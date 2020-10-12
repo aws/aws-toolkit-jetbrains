@@ -74,9 +74,9 @@ class SamDynamoDBCookieCutter : PythonSamProjectTemplate() {
 class SamEventBridgeHelloWorld : PythonSamProjectTemplate() {
     override fun supportedRuntimes() = setOf(Runtime.PYTHON3_6, Runtime.PYTHON3_7, Runtime.PYTHON3_8)
 
-    override fun displayName() = message("sam.init.template.eventBridge_helloWorld.name")
+    override fun displayName() = message("sam.init.template.event_bridge_hello_world.name")
 
-    override fun description() = message("sam.init.template.eventBridge_helloWorld.description")
+    override fun description() = message("sam.init.template.event_bridge_hello_world.description")
 
     override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
         projectName,
@@ -89,9 +89,9 @@ class SamEventBridgeHelloWorld : PythonSamProjectTemplate() {
 class SamEventBridgeStarterApp : PythonSamProjectTemplate() {
     override fun supportedRuntimes() = setOf(Runtime.PYTHON3_6, Runtime.PYTHON3_7, Runtime.PYTHON3_8)
 
-    override fun displayName() = message("sam.init.template.eventBridge_starterApp.name")
+    override fun displayName() = message("sam.init.template.event_bridge_starter_app.name")
 
-    override fun description() = message("sam.init.template.eventBridge_starterApp.description")
+    override fun description() = message("sam.init.template.event_bridge_starter_app.description")
 
     override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
         projectName,

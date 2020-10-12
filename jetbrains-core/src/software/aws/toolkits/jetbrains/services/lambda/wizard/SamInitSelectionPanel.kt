@@ -89,13 +89,7 @@ class SamInitSelectionPanel(
     }
 
     fun setRuntime(runtime: Runtime) {
-        val itemCount = runtimeComboBox.itemCount
-        for (itemIndex in 0 until itemCount) {
-            if (runtimeComboBox.getItemAt(itemIndex) == runtime) {
-                runtimeComboBox.selectedItem = runtime
-                return
-            }
-        }
+        runtimeComboBox.selectedItem = runtime
     }
 
     private fun runtimeUpdate() {
@@ -114,7 +108,7 @@ class SamInitSelectionPanel(
     private fun wizardUpdate() {
         val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
         val selectedTemplate = templateComboBox.selectedItem as? SamProjectTemplate
-        wizardFragments.forEach { (wizardFragment, jComponent) ->
+        wizardFragments.forEach { wizardFragment, jComponent ->
             wizardFragment.updateUi(projectLocation, selectedRuntime, selectedTemplate)
             jComponent.isVisible = wizardFragment.isApplicable(selectedTemplate)
         }
@@ -149,14 +143,9 @@ class SamInitSelectionPanel(
 
     fun getNewProjectSettings(): SamNewProjectSettings {
         val lambdaRuntime = runtimeComboBox.selectedItem as? Runtime
+            ?: throw RuntimeException("No Runtime is supported in this Platform.")
         val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
-
-        if (lambdaRuntime == null) {
-            throw RuntimeException("No Runtime is supported in this Platform.")
-        }
-        if (samProjectTemplate == null) {
-            throw RuntimeException("No SAM template is supported for this runtime: $lambdaRuntime")
-        }
+            ?: throw RuntimeException("No SAM template is supported for this runtime: $lambdaRuntime")
 
         return SamNewProjectSettings(lambdaRuntime, samProjectTemplate)
     }

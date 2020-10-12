@@ -130,9 +130,9 @@ class SamHelloWorldGradle : JavaGradleSamProjectTemplate() {
 }
 
 class SamEventBridgeStarterAppGradle : JavaGradleSamProjectTemplate() {
-    override fun displayName() = message("sam.init.template.eventBridge_starterApp_gradle.name")
+    override fun displayName() = message("sam.init.template.event_bridge_starter_app_gradle.name")
 
-    override fun description() = message("sam.init.template.eventBridge_starterApp.description")
+    override fun description() = message("sam.init.template.event_bridge_starter_app.description")
 
     override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
         projectName,
@@ -145,9 +145,9 @@ class SamEventBridgeStarterAppGradle : JavaGradleSamProjectTemplate() {
 }
 
 class SamEventBridgeStarterAppMaven : JavaMavenSamProjectTemplate() {
-    override fun displayName() = message("sam.init.template.eventBridge_starterApp_maven.name")
+    override fun displayName() = message("sam.init.template.event_bridge_starter_app_maven.name")
 
-    override fun description() = message("sam.init.template.eventBridge_starterApp.description")
+    override fun description() = message("sam.init.template.event_bridge_starter_app.description")
 
     override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
         projectName,
@@ -160,9 +160,9 @@ class SamEventBridgeStarterAppMaven : JavaMavenSamProjectTemplate() {
 }
 
 class SamEventBridgeHelloWorldGradle : JavaGradleSamProjectTemplate() {
-    override fun displayName() = message("sam.init.template.eventBridge_helloWorld_gradle.name")
+    override fun displayName() = message("sam.init.template.event_bridge_hello_world_gradle.name")
 
-    override fun description() = message("sam.init.template.eventBridge_helloWorld.description")
+    override fun description() = message("sam.init.template.event_bridge_hello_world.description")
 
     override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
         projectName,
@@ -173,9 +173,9 @@ class SamEventBridgeHelloWorldGradle : JavaGradleSamProjectTemplate() {
 }
 
 class SamEventBridgeHelloWorldMaven : JavaMavenSamProjectTemplate() {
-    override fun displayName() = message("sam.init.template.eventBridge_helloWorld_maven.name")
+    override fun displayName() = message("sam.init.template.event_bridge_hello_world_maven.name")
 
-    override fun description() = message("sam.init.template.eventBridge_helloWorld.description")
+    override fun description() = message("sam.init.template.event_bridge_hello_world.description")
 
     override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
         projectName,
