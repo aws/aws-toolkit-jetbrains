@@ -50,10 +50,8 @@ class NodeJsSdkSelectionPanel : SdkSelector {
         JSRootConfiguration.getInstance(model.project).storeLanguageLevelAndUpdateCaches(JSLanguageLevel.ES6)
     }
 
-    override fun validateSelection(): ValidationInfo? {
-        return interpreterPanel.interpreter?.validate(null)?.let {
-            interpreterPanel.validationInfo(it)
-        }
+    override fun validateSelection(): ValidationInfo? = interpreterPanel.interpreter?.validate(null)?.let {
+        interpreterPanel.validationInfo(it)
     }
 }
 

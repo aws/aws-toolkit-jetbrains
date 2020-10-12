@@ -51,7 +51,7 @@ class AwsConnectionSettingsSelector(
             view.region.selectedRegion = regionProvider[regionId]
         }
 
-        if(credentialProviderId == null) {
+        if (credentialProviderId == null) {
             return
         }
 
