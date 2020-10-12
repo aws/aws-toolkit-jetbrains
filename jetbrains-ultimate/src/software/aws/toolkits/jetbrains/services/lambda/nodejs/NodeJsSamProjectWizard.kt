@@ -13,11 +13,11 @@ import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
-import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters.AppBasedTemplate
 import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
@@ -64,5 +64,10 @@ class SamHelloWorldNodeJs : SamNodeJsProjectTemplate() {
 
     override fun description() = message("sam.init.template.hello_world.description")
 
-    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(projectName, runtime, "hello-world", "npm")
+    override fun templateParameters(projectName: String, runtime: Runtime): TemplateParameters = AppBasedTemplate(
+        projectName,
+        runtime,
+        "hello-world",
+        "npm"
+    )
 }
