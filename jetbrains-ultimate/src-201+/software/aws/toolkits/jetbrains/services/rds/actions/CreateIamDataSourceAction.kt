@@ -20,23 +20,17 @@ import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
-import software.aws.toolkits.jetbrains.services.rds.auroraMysqlEngineType
-import software.aws.toolkits.jetbrains.services.rds.auroraPostgresEngineType
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_HOST_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_PORT_PROPERTY
-import software.aws.toolkits.jetbrains.services.rds.jdbcMariadb
-import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
-import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
-import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
-import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
+import software.aws.toolkits.jetbrains.services.rds.rdsEngine
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.DatabaseCredentials
 import software.aws.toolkits.telemetry.RdsTelemetry
 import software.aws.toolkits.telemetry.Result
 
@@ -69,7 +63,7 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
             private fun recordTelemetry(result: Result) = RdsTelemetry.createConnectionConfiguration(
                 selected.nodeProject,
                 result,
-                DatabaseCredentials.IAM,
+                CreateCapabilities.IAM,
                 selected.dbInstance.engine()
             )
         }.queue()
@@ -113,39 +107,19 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
 }
 
 fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
-    val dbEngine = config.dbInstance.engine()
+    val engine = config.dbInstance.rdsEngine()
     val port = config.dbInstance.endpoint().port()
     val host = config.dbInstance.endpoint().address()
-    val url = "$host:$port"
+    val endpoint = "$host:$port"
 
-    val builder = builder
+    builder
         .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, config.credentialId)
         .withJdbcAdditionalProperty(REGION_ID_PROPERTY, config.regionId)
         .withJdbcAdditionalProperty(RDS_SIGNING_HOST_PROPERTY, host)
         .withJdbcAdditionalProperty(RDS_SIGNING_PORT_PROPERTY, port.toString())
-    when (dbEngine) {
-        mysqlEngineType -> {
-            builder
-                .withUrl("jdbc:$jdbcMysql://$url/")
-                .withUser(config.username)
-        }
-        postgresEngineType, auroraPostgresEngineType -> {
-            builder
-                .withUrl("jdbc:$jdbcPostgres://$url/")
-                // In postgres this is case sensitive as lower case. If you add a db user for
-                // IAM role "Admin", it is inserted to the db as "admin"
-                .withUser(config.username.toLowerCase())
-        }
-        auroraMysqlEngineType -> {
-            builder
-                // The docs recommend using MariaDB instead of MySQL to connect to MySQL Aurora DBs:
-                // https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Connecting.html#Aurora.Connecting.AuroraMySQL
-                .withUrl("jdbc:$jdbcMariadb://$url/")
-                .withUser(config.username)
-        }
-        else -> throw IllegalArgumentException("Engine $dbEngine is not supported for IAM auth!")
-    }
-    builder.commit()
+        .withUrl(engine.iamConnectionStringUrl(endpoint))
+        .withUser(engine.iamUsernameHook(config.username))
+        .commit()
     // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder. There is no way to set it in the builder,
     // so we have to set it after the fact. However, that means we need to pull it out after it is built.
     // The builder doesn't return a reference to it, so we have to pull it out of the committed data sources.
