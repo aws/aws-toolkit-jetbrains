@@ -34,17 +34,21 @@ class AwsConnectionSettingsSelector(
 
             fireChange()
         }
-        view.credentialProvider.addPopupMenuListener(object: PopupMenuListenerAdapter() {
-            override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
-                fireChange()
+        view.credentialProvider.addPopupMenuListener(
+            object : PopupMenuListenerAdapter() {
+                override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
+                    fireChange()
+                }
             }
-        })
+        )
 
-        view.region.addPopupMenuListener(object: PopupMenuListenerAdapter() {
-            override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
-                fireChange()
+        view.region.addPopupMenuListener(
+            object : PopupMenuListenerAdapter() {
+                override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
+                    fireChange()
+                }
             }
-        })
+        )
     }
 
     private fun fireChange() {
