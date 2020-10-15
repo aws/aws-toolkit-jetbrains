@@ -50,7 +50,7 @@ sealed class RdsEngine(val engine: String, val icon: Icon, val additionalInfo: S
     }
 
     companion object {
-        val values: Set<RdsEngine> = setOf(MySql, AuroraMySql, Postgres, AuroraPostgres)
-        fun fromEngine(engine: String) = values.find { it.engine == engine } ?: throw IllegalArgumentException("Unknown RDS engine $engine")
+        fun values(): Set<RdsEngine> = setOf(MySql, AuroraMySql, Postgres, AuroraPostgres)
+        fun fromEngine(engine: String) = values().find { it.engine == engine } ?: throw IllegalArgumentException("Unknown RDS engine $engine")
     }
 }
