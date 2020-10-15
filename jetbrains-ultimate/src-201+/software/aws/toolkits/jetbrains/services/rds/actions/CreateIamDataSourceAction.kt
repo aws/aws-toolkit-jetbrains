@@ -117,8 +117,8 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
         .withJdbcAdditionalProperty(REGION_ID_PROPERTY, config.regionId)
         .withJdbcAdditionalProperty(RDS_SIGNING_HOST_PROPERTY, host)
         .withJdbcAdditionalProperty(RDS_SIGNING_PORT_PROPERTY, port.toString())
-        .withUrl(engine.iamConnectionStringUrl(endpoint))
-        .withUser(engine.iamUsernameHook(config.username))
+        .withUrl(engine.connectionStringUrl(endpoint))
+        .withUser(engine.iamUsername(config.username))
         .commit()
     // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder. There is no way to set it in the builder,
     // so we have to set it after the fact. However, that means we need to pull it out after it is built.

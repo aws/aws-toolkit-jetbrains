@@ -26,6 +26,6 @@ class RdsNode(project: Project, val dbInstance: DBInstance, private val rdsEngin
 ) {
     override fun displayName(): String = dbInstance.dbInstanceIdentifier()
     override fun resourceArn(): String = dbInstance.dbInstanceArn()
-    override fun resourceType(): String = rdsEngine.resourceType
+    override fun resourceType(): String = "instance"
     override fun statusText(): String? = rdsEngine.displayName
 }
