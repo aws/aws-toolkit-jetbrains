@@ -151,7 +151,7 @@ class DotNetSamProjectGenerator(
         validateData()
     }
 
-    override fun expand() {
+    override fun expand() = Runnable {
         val samSettings = samPanel.getNewProjectSettings()
 
         val solutionDirectory = getSolutionDirectory()
@@ -203,11 +203,11 @@ class DotNetSamProjectGenerator(
             projectToClose = null,
             forceOpenInNewFrame = false,
             solutionFile = solutionFile
-        ) ?: return
+        ) ?: return@Runnable
 
-        vcsPanel?.initRepository(project)
+        vcsPanel?.createInitializer()?.execute(project)
 
-        val modifiableModel = ModuleManager.getInstance(project).modules.firstOrNull()?.rootManager?.modifiableModel ?: return
+        val modifiableModel = ModuleManager.getInstance(project).modules.firstOrNull()?.rootManager?.modifiableModel ?: return@Runnable
         try {
             val progressIndicator = if (progressManager.hasProgressIndicator()) progressManager.progressIndicator else DumbProgressIndicator()
 
