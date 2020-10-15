@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
-import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
@@ -31,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.DatabaseCredentials
 import software.aws.toolkits.telemetry.RdsTelemetry
 import software.aws.toolkits.telemetry.Result
 
@@ -63,7 +63,7 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
             private fun recordTelemetry(result: Result) = RdsTelemetry.createConnectionConfiguration(
                 selected.nodeProject,
                 result,
-                CreateCapabilities.IAM,
+                DatabaseCredentials.IAM,
                 selected.dbInstance.engine()
             )
         }.queue()

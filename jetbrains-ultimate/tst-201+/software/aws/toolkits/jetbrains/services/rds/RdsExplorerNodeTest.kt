@@ -39,18 +39,16 @@ class RdsExplorerNodeTest {
             )
         )
         val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).hasSize(4).hasOnlyElementsOfType<RdsNode>().anySatisfy {
+        assertThat(serviceRootNode.children).hasSize(4).hasOnlyElementsOfType<RdsNode>().allSatisfy {
+            assertThat(it.resourceType()).isEqualTo("instance")
+        }.anySatisfy {
             assertThat(it.dbInstance.dbInstanceIdentifier()).isEqualTo(mysqlDatabase)
-            assertThat(it.resourceType()).isEqualTo(RdsEngine.MySql.resourceType)
         }.anySatisfy {
             assertThat(it.dbInstance.dbInstanceIdentifier()).isEqualTo(postgresDatabase)
-            assertThat(it.resourceType()).isEqualTo(RdsEngine.Postgres.resourceType)
         }.anySatisfy {
             assertThat(it.dbInstance.dbInstanceIdentifier()).isEqualTo(auroraMySqlDatabase)
-            assertThat(it.resourceType()).isEqualTo(RdsEngine.AuroraMySql.resourceType)
         }.anySatisfy {
             assertThat(it.dbInstance.dbInstanceIdentifier()).isEqualTo(auroraPostgresDatabase)
-            assertThat(it.resourceType()).isEqualTo(RdsEngine.AuroraPostgres.resourceType)
         }
     }
 
