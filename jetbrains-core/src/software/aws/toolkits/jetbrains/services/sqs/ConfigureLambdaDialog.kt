@@ -80,9 +80,7 @@ class ConfigureLambdaDialog(
                 }
                 notifyInfo(message("sqs.service_name"), message("sqs.configure.lambda.success", functionSelected()), project)
                 SqsTelemetry.configureLambdaTrigger(project, Result.Succeeded, queue.telemetryType())
-            } catch (e: InvalidParameterValueException) {
-                // Exception thrown for invalid permission
-                
+            } catch (e: InvalidParameterValueException) { // Exception thrown for invalid permission
                 // DO NOT change to withCoroutineUiContext, it breaks the panel with the wrong state
                 runInEdt(ModalityState.any()) {
                     if (ConfirmIamPolicyDialog(project, iamClient, lambdaClient, functionSelected(), queue, view.component).showAndGet()) {
