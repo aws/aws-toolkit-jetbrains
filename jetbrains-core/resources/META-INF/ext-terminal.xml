@@ -1,0 +1,8 @@
+<!-- Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<idea-plugin>
+    <actions>
+        <action id="aws.toolkit.startTerminal" class="software.aws.toolkits.jetbrains.core.StartAwsTerminal"/>
+    </actions>
+</idea-plugin>

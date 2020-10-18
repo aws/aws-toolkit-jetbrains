@@ -30,6 +30,8 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
             toolWindow.setTitleActions(
                 actionManager.getAction("aws.settings.refresh"),
                 Separator.create(),
+                actionManager.getAction("aws.toolkit.startTerminal"),
+                Separator.create(),
                 FeedbackDialog.getAction(project)
             )
             toolWindow.setAdditionalGearActions(
