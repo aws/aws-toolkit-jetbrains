@@ -1,21 +1,18 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core
+package software.aws.toolkits.jetbrains.core.terminal
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.project.Project
 import icons.TerminalIcons
-import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import org.jetbrains.plugins.terminal.TerminalTabState
 import org.jetbrains.plugins.terminal.TerminalView
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.safelyApplyTo
 import software.aws.toolkits.jetbrains.core.credentials.shortName
 import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
 import software.aws.toolkits.resources.message
@@ -59,13 +56,5 @@ class StartAwsTerminal : AnAction(
             }
             return null
         }
-    }
-}
-
-@Suppress("UnstableApiUsage") // TODO move to [LocalTerminalDirectRunner.getInitialCommand] after 2020.3
-class AwsTerminalRunner(project: Project, private val connection: ConnectionSettings) : LocalTerminalDirectRunner(project) {
-    override fun getCommand(envs: MutableMap<String, String>): Array<String> {
-        connection.safelyApplyTo(envs)
-        return super.getCommand(envs)
     }
 }
