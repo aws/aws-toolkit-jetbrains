@@ -62,9 +62,10 @@ class StartAwsTerminal : AnAction(
     }
 }
 
+@Suppress("UnstableApiUsage") // TODO move to [LocalTerminalDirectRunner.getInitialCommand] after 2020.3
 class AwsTerminalRunner(project: Project, private val connection: ConnectionSettings) : LocalTerminalDirectRunner(project) {
-    override fun getCommands(envs: MutableMap<String, String>): MutableList<String> {
+    override fun getCommand(envs: MutableMap<String, String>): Array<String> {
         connection.safelyApplyTo(envs)
-        return super.getCommands(envs)
+        return super.getCommand(envs)
     }
 }
