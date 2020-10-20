@@ -19,6 +19,7 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeA
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.FullSslValidation
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
@@ -127,6 +128,6 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
     // SSL config has the same problem
     newDataSources.firstOrNull()?.let {
         it.authProviderId = IamAuth.providerId
-        it.sslCfg = engine.sslConfiguration()
+        it.sslCfg = FullSslValidation
     } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
 }

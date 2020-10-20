@@ -24,13 +24,6 @@ sealed class RdsEngine(val engines: Set<String>, val icon: Icon, val additionalI
      */
     open fun iamUsername(username: String) = username
 
-    /**
-     * Some engines (like MariaDB) require SSL. Since users have a lot of different configurations, and mostly use
-     * tunneling to connect to RDS databases, we should usually leave the ssl settings at their default as to not create
-     * a broken configuration out of the box.
-     */
-    open fun sslConfiguration(): DataSourceSslConfiguration? = null
-
     companion object {
         fun values(): Set<RdsEngine> = setOf(MySql, AuroraMySql, Postgres, AuroraPostgres)
         fun fromEngine(engine: String) = values().find { it.engines.contains(engine) } ?: throw IllegalArgumentException("Unknown RDS engine $engine")
@@ -59,9 +52,6 @@ object AuroraMySql : MySqlBase(setOf("aurora", "aurora-mysql"), additionalInfo =
     // The docs recommend using MariaDB instead of MySQL to connect to MySQL Aurora DBs:
     // https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Connecting.html#Aurora.Connecting.AuroraMySQL
     override fun connectionStringUrl(endpoint: String) = "jdbc:$jdbcMysqlAurora://$endpoint/"
-
-    // Aurora MySQL uses the MariaDB driver which requires SSL to be turned on
-    override fun sslConfiguration(): DataSourceSslConfiguration? =  DataSourceSslConfiguration("","","",true, SslMode.REQUIRE)
 }
 
 object Postgres : PostgresBase(setOf("postgres"))
