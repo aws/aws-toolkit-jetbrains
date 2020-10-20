@@ -23,8 +23,8 @@ import software.aws.toolkits.core.utils.unwrap
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
-import software.aws.toolkits.jetbrains.datagrip.FullSslValidation
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.RequireSsl
 import software.aws.toolkits.resources.message
 
 class IamAuthTest {
@@ -87,15 +87,6 @@ class IamAuthTest {
     }
 
     @Test
-    fun `Valid mysql aurora connection`() {
-        val authInformation = iamAuth.getAuthInformation(buildConnection(dbmsType = Dbms.MYSQL_AURORA))
-        assertThat(authInformation.port.toString()).isEqualTo(instancePort)
-        assertThat(authInformation.user).isEqualTo(username)
-        assertThat(authInformation.connectionSettings.region.id).isEqualTo(defaultRegion)
-        assertThat(authInformation.address).isEqualTo(dbHost)
-    }
-
-    @Test
     fun `No username`() {
         assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasUsername = false)) }
             .isInstanceOf(IllegalArgumentException::class.java)
@@ -114,13 +105,6 @@ class IamAuthTest {
         assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasCredentials = false)) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage(message("settings.credentials.none_selected"))
-    }
-
-    @Test
-    fun `No ssl config aurora mysql throws`() {
-        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(dbmsType = Dbms.MYSQL_AURORA, hasSslConfig = false)) }
-            .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage(message("rds.validation.aurora_mysql_ssl_required"))
     }
 
     @Test
@@ -165,7 +149,7 @@ class IamAuthTest {
             on { driverClass } doReturn "org.postgresql.Driver"
             on { username } doReturn if (hasUsername) username else ""
             on { dbms } doReturn dbmsType
-            on { sslCfg } doReturn if (hasSslConfig) FullSslValidation else null
+            on { sslCfg } doReturn if (hasSslConfig) RequireSsl else null
         }
         val dbConnectionPoint = mock<DatabaseConnectionPoint> {
             on { url } doAnswer { if (hasBadHost) null else "jdbc:postgresql://$dbHost:$connectionPort/dev" }

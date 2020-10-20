@@ -24,7 +24,9 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
 import software.aws.toolkits.jetbrains.datagrip.hostFromJdbcString
+import software.aws.toolkits.jetbrains.datagrip.iamIsApplicable
 import software.aws.toolkits.jetbrains.datagrip.portFromJdbcString
+import software.aws.toolkits.jetbrains.datagrip.validateIamConfiguration
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DatabaseCredentials.IAM
@@ -46,9 +48,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     override fun getId(): String = providerId
     override fun getDisplayName(): String = message("rds.iam_connection_display_name")
 
-    override fun isApplicable(dataSource: LocalDataSource): Boolean =
-        dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES || dataSource.dbms == Dbms.MYSQL_AURORA
-
+    override fun isApplicable(dataSource: LocalDataSource): Boolean = iamIsApplicable(dataSource)
     override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
 
     override fun intercept(
@@ -71,7 +71,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     }
 
     internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
-        validateConfiguration(connection)
+        validateIamConfiguration(connection)
         val signingUrl = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_HOST_PROPERTY]
             ?: connection.connectionPoint.url.hostFromJdbcString()
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_host"))
@@ -120,17 +120,6 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         val authInformation = getAuthInformation(connection)
         val authToken = generateAuthToken(authInformation)
         return Credentials(authInformation.user, authToken)
-    }
-
-    private fun validateConfiguration(connection: ProtoConnection) {
-        // MariaDB/Mysql aurora will never work if SSL is turned off, so validate and give
-        // a good message if it is not enabled
-        if (
-            connection.connectionPoint.dataSource.dbms == Dbms.MYSQL_AURORA &&
-            connection.connectionPoint.dataSource.sslCfg == null
-        ) {
-            throw IllegalArgumentException(message("rds.validation.aurora_mysql_ssl_required"))
-        }
     }
 
     companion object {
