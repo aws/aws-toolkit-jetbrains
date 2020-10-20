@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.datagrip
 
 import com.intellij.database.dataSource.DataSourceSslConfiguration
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
-import com.intellij.database.remote.jdbc.helpers.JdbcSettings
+import com.intellij.database.remote.jdbc.helpers.JdbcSettings.SslMode
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -20,7 +20,8 @@ import software.aws.toolkits.resources.message
 const val CREDENTIAL_ID_PROPERTY = "AWS.CredentialId"
 const val REGION_ID_PROPERTY = "AWS.RegionId"
 
-val FullSslValidation = DataSourceSslConfiguration("", "", "", true, JdbcSettings.SslMode.VERIFY_FULL)
+val FullSslValidation = DataSourceSslConfiguration("", "", "", true, SslMode.VERIFY_FULL)
+val RequireSsl = DataSourceSslConfiguration("", "", "", true, SslMode.REQUIRE)
 
 fun ProtoConnection.getAwsConnectionSettings(): ConnectionSettings {
     val credentialManager = CredentialManager.getInstance()
