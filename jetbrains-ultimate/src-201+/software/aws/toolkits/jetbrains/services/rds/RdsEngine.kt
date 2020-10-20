@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.rds
 
-import com.intellij.database.dataSource.DataSourceSslConfiguration
-import com.intellij.database.remote.jdbc.helpers.JdbcSettings.SslMode
 import icons.AwsIcons
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
@@ -29,7 +27,6 @@ sealed class RdsEngine(val engines: Set<String>, val icon: Icon, val additionalI
         fun fromEngine(engine: String) = values().find { it.engines.contains(engine) } ?: throw IllegalArgumentException("Unknown RDS engine $engine")
     }
 }
-
 
 abstract class MySqlBase(engine: Set<String>, additionalInfo: String? = null) : RdsEngine(engine, AwsIcons.Resources.Rds.MYSQL, additionalInfo)
 
