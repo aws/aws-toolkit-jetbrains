@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.rds.actions
 
 import com.intellij.database.autoconfig.DataSourceRegistry
+import com.intellij.database.remote.jdbc.helpers.JdbcSettings.SslMode
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
@@ -162,6 +163,7 @@ class CreateConfigurationActionTest {
             assertThat(it.username).isEqualTo(username)
             assertThat(it.driverClass).contains("mysql")
             assertThat(it.url).contains(jdbcMysql)
+            assertThat(it.sslCfg).isNull()
         }
     }
 
@@ -179,8 +181,9 @@ class CreateConfigurationActionTest {
         )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
             assertThat(it.username).isEqualTo(username)
-            assertThat(it.driverClass).contains("mysql")
+            assertThat(it.driverClass).contains("mariadb")
             assertThat(it.url).contains(jdbcMysqlAurora)
+            assertThat(it.sslCfg?.myMode).isEqualTo(SslMode.REQUIRE)
         }
     }
 
@@ -198,8 +201,9 @@ class CreateConfigurationActionTest {
         )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
             assertThat(it.username).isEqualTo(username)
-            assertThat(it.driverClass).contains("mysql")
+            assertThat(it.driverClass).contains("mariadb")
             assertThat(it.url).contains(jdbcMysqlAurora)
+            assertThat(it.sslCfg?.myMode).isEqualTo(SslMode.REQUIRE)
         }
     }
 
@@ -242,7 +246,7 @@ class CreateConfigurationActionTest {
             Endpoint.builder().address(address).port(port).build()
         }
         on { engine() } doAnswer { engineType }
-        on { dbName() } doAnswer { dbName }
+        on { dbInstanceIdentifier() } doAnswer { dbName }
         on { masterUsername() } doAnswer { masterUsername }
     }
 }

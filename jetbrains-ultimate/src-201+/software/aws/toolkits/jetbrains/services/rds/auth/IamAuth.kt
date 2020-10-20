@@ -70,13 +70,8 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
         }
     }
 
-    private fun getCredentials(connection: ProtoConnection): Credentials {
-        val authInformation = getAuthInformation(connection)
-        val authToken = generateAuthToken(authInformation)
-        return Credentials(authInformation.user, authToken)
-    }
-
     internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
+        validateConfiguration(connection)
         val signingUrl = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_HOST_PROPERTY]
             ?: connection.connectionPoint.url.hostFromJdbcString()
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_host"))
@@ -109,7 +104,7 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             .putRawQueryParameter("Action", "connect")
             .build()
 
-        // TODO consider configurable expiration time
+        // TODO consider configurable expiration time (but 15 is the max)
         val expirationTime = Instant.now().plus(15, ChronoUnit.MINUTES)
         val presignRequest = Aws4PresignerParams.builder()
             .expirationTime(expirationTime)
@@ -119,6 +114,23 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
             .build()
 
         return Aws4Signer.create().presign(httpRequest, presignRequest).uri.toString().removePrefix("https://")
+    }
+
+    private fun getCredentials(connection: ProtoConnection): Credentials {
+        val authInformation = getAuthInformation(connection)
+        val authToken = generateAuthToken(authInformation)
+        return Credentials(authInformation.user, authToken)
+    }
+
+    private fun validateConfiguration(connection: ProtoConnection) {
+        // MariaDB/Mysql aurora will never work if SSL is turned off, so validate and give
+        // a good message if it is not enabled
+        if (
+            connection.connectionPoint.dataSource.dbms == Dbms.MYSQL_AURORA &&
+            connection.connectionPoint.dataSource.sslCfg == null
+        ) {
+            throw IllegalArgumentException(message("rds.validation.aurora_mysql_ssl_required"))
+        }
     }
 
     companion object {
