@@ -1,10 +1,8 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-
 // FIX_WHEN_MIN_IS_202 merge this with the normal one
 class CreateConfigurationActionTest202 {
-
     @Test
     fun `Add Aurora MySQL data source`() {
         val instance = createDbInstance(address = address, port = port, engineType = "aurora")

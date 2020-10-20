@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.rds
 
+import com.intellij.openapi.application.ApplicationInfo
 import software.amazon.awssdk.services.rds.RdsClient
 import software.amazon.awssdk.services.rds.model.DBInstance
 import software.amazon.awssdk.services.rds.model.Filter
@@ -31,8 +32,25 @@ object RdsResources {
     fun extractRegionFromUrl(url: String?): String? = url?.let { RDS_REGION_REGEX.find(url)?.groupValues?.get(1) }
 
     val LIST_SUPPORTED_INSTANCES: Resource.Cached<List<DBInstance>> = ClientBackedCachedResource(RdsClient::class, "rds.list_supported_instances") {
+        // FIX_WHEN_MIN_IS_202 Do not show Aurora MySQL < 202 because it's not supported by DataGrip
+        val filterOutAuroraMySql = ApplicationInfo.getInstance().let { info -> info.majorVersion == "2020" && info.minorVersionMainPart == "1" }
         describeDBInstancesPaginator {
-            it.filters(Filter.builder().name(ENGINE_FILTER).values(RdsEngine.values().flatMap { e -> e.engines }).build())
+            it.filters(
+                Filter.builder()
+                    .name(ENGINE_FILTER)
+                    .values(
+                        RdsEngine
+                            .values()
+                            .flatMap { e -> e.engines }
+                            .filter { engine ->
+                                if (!filterOutAuroraMySql) {
+                                    true
+                                } else {
+                                    !AuroraMySql.engines.contains(engine)
+                                }
+                            }
+                    ).build()
+            )
         }.dbInstances().toList()
     }
 }

@@ -14,7 +14,8 @@ fun secretsManagerIsApplicable(dataSource: LocalDataSource): Boolean {
 }
 
 // FIX_WHEN_MIN_IS_202 merge this one and the 202+ version together into iamAuth, 201 is missing Aurora MySQL
-fun iamIsApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES || dataSource.dbms == Dbms.MYSQL_AURORA
+fun iamIsApplicable(dataSource: LocalDataSource): Boolean =
+    dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES || dataSource.dbms == Dbms.MYSQL_AURORA
 
 // FIX_WHEN_MIN_IS_202 merge this one and the 202+ version together into IamAuth, 201 is missing Aurora MySQL
 fun validateIamConfiguration(connection: ProtoConnection) {
@@ -27,4 +28,3 @@ fun validateIamConfiguration(connection: ProtoConnection) {
         throw IllegalArgumentException(message("rds.validation.aurora_mysql_ssl_required"))
     }
 }
-

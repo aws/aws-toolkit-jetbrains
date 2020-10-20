@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.rds.auth
 
 import com.intellij.credentialStore.Credentials
-import com.intellij.database.Dbms
 import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DatabaseAuthProvider
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
