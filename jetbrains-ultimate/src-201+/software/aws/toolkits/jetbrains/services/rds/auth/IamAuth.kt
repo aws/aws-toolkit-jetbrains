@@ -46,7 +46,8 @@ class IamAuth : DatabaseAuthProvider, CoroutineScope by ApplicationThreadPoolSco
     override fun getId(): String = providerId
     override fun getDisplayName(): String = message("rds.iam_connection_display_name")
 
-    override fun isApplicable(dataSource: LocalDataSource): Boolean = dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES
+    override fun isApplicable(dataSource: LocalDataSource): Boolean =
+        dataSource.dbms == Dbms.MYSQL || dataSource.dbms == Dbms.POSTGRES || dataSource.dbms == Dbms.MYSQL_AURORA
 
     override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
 

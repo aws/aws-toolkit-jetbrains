@@ -21,7 +21,7 @@ import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
-import software.aws.toolkits.jetbrains.services.rds.jdbcMariadb
+import software.aws.toolkits.jetbrains.services.rds.jdbcMysqlAurora
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
 import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
@@ -179,8 +179,8 @@ class CreateConfigurationActionTest {
         )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
             assertThat(it.username).isEqualTo(username)
-            assertThat(it.driverClass).contains("mariadb")
-            assertThat(it.url).contains(jdbcMariadb)
+            assertThat(it.driverClass).contains("mysql")
+            assertThat(it.url).contains(jdbcMysqlAurora)
         }
     }
 
@@ -198,8 +198,8 @@ class CreateConfigurationActionTest {
         )
         assertThat(registry.newDataSources).hasOnlyOneElementSatisfying {
             assertThat(it.username).isEqualTo(username)
-            assertThat(it.driverClass).contains("mariadb")
-            assertThat(it.url).contains(jdbcMariadb)
+            assertThat(it.driverClass).contains("mysql")
+            assertThat(it.url).contains(jdbcMysqlAurora)
         }
     }
 

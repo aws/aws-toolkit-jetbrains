@@ -42,7 +42,7 @@ class SecretsManagerAuth : DatabaseAuthProvider, CoroutineScope by ApplicationTh
     override fun getId(): String = providerId
     override fun isApplicable(dataSource: LocalDataSource): Boolean {
         val dbms = dataSource.dbms
-        return dbms == Dbms.MYSQL || dbms == Dbms.POSTGRES || dbms == Dbms.REDSHIFT
+        return dbms == Dbms.MYSQL || dbms == Dbms.POSTGRES || dbms == Dbms.REDSHIFT || dbms == Dbms.MYSQL_AURORA
     }
 
     override fun getDisplayName(): String = message("datagrip.auth.secrets_manager")

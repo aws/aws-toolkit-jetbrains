@@ -16,7 +16,7 @@ const val postgresEngineType = "postgres"
 fun DBInstance.rdsEngine(): RdsEngine = RdsEngine.fromEngine(engine())
 
 const val jdbcMysql = "mysql"
-const val jdbcMariadb = "mariadb"
+const val jdbcMysqlAurora = "mysql:aurora"
 const val jdbcPostgres = "postgresql"
 
 // Filters are also just a string
