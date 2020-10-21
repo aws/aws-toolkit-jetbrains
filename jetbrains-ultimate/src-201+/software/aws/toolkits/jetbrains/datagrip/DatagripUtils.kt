@@ -20,11 +20,6 @@ import software.aws.toolkits.resources.message
 const val CREDENTIAL_ID_PROPERTY = "AWS.CredentialId"
 const val REGION_ID_PROPERTY = "AWS.RegionId"
 
-/**
- * SSL is not turned on by default by DataGrip. We would like it turn on, and Aurora MySQL requires it turned on, so
- * we have to patch it into the configuration. REQUIRE is the lowest level and seems to be the one that works all the time.
- * VERIFY_FULL consistently breaks RDS connections and VERIFY_CA breaks them sometimes.
- */
 val RequireSsl = DataSourceSslConfiguration("", "", "", true, SslMode.REQUIRE)
 
 fun ProtoConnection.getAwsConnectionSettings(): ConnectionSettings {

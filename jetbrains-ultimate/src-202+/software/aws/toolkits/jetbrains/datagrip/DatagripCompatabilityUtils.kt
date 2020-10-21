@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.datagrip
 import com.intellij.database.Dbms
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.LocalDataSource
+import software.aws.toolkits.resources.message
 
 // FIX_WHEN_MIN_IS_202 merge this one and the 202+ version together into secretsManagerAuth, 201 is missing Aurora MySQL
 fun secretsManagerIsApplicable(dataSource: LocalDataSource): Boolean {

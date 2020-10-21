@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.rds
 
+import com.intellij.database.dataSource.DataSourceSslConfiguration
 import icons.AwsIcons
+import software.aws.toolkits.jetbrains.datagrip.RequireSsl
 import software.aws.toolkits.resources.message
 import javax.swing.Icon
 
@@ -22,13 +24,22 @@ sealed class RdsEngine(val engines: Set<String>, val icon: Icon, val additionalI
      */
     open fun iamUsername(username: String) = username
 
+    /**
+     * SSL is not turned on by default by DataGrip. We would like it turn on, and Aurora MySQL requires it turned on, so
+     * we have to patch it into the configuration. Postgres breaks by default with this configuration though, so we have to
+     * configure it on a per database basis.
+     */
+    open fun sslConfig(): DataSourceSslConfiguration? = null
+
     companion object {
         fun values(): Set<RdsEngine> = setOf(MySql, AuroraMySql, Postgres, AuroraPostgres)
         fun fromEngine(engine: String) = values().find { it.engines.contains(engine) } ?: throw IllegalArgumentException("Unknown RDS engine $engine")
     }
 }
 
-abstract class MySqlBase(engine: Set<String>, additionalInfo: String? = null) : RdsEngine(engine, AwsIcons.Resources.Rds.MYSQL, additionalInfo)
+abstract class MySqlBase(engine: Set<String>, additionalInfo: String? = null) : RdsEngine(engine, AwsIcons.Resources.Rds.MYSQL, additionalInfo) {
+    override fun sslConfig(): DataSourceSslConfiguration = RequireSsl
+}
 
 abstract class PostgresBase(engine: Set<String>, additionalInfo: String? = null) : RdsEngine(engine, AwsIcons.Resources.Rds.POSTGRES, additionalInfo) {
     override fun connectionStringUrl(endpoint: String) = "jdbc:$jdbcPostgres://$endpoint/"

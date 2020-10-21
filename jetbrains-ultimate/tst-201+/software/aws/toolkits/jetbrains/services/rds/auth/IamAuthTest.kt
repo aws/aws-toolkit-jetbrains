@@ -133,7 +133,8 @@ class IamAuthTest {
             .doesNotStartWith("https://")
     }
 
-    private fun buildConnection(
+    // FIX_WHEN_MIN_IS_202 merge IamAuthTest202 and make this private again
+    fun buildConnection(
         hasUsername: Boolean = true,
         hasRegion: Boolean = true,
         hasHost: Boolean = true,

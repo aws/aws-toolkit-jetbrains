@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
-import software.aws.toolkits.jetbrains.datagrip.RequireSsl
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
 import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
@@ -128,7 +127,6 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
     // SSL config has the same problem
     newDataSources.firstOrNull()?.let {
         it.authProviderId = IamAuth.providerId
-        // Full verification throws a `Communications link failure`, so only require ssl. This works for Aurora as well as non-Aurora
-        it.sslCfg = RequireSsl
+        it.sslCfg = engine.sslConfig()
     } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
 }
