@@ -19,10 +19,12 @@ internal class ResourceActionPopup(private val selected: () -> SelectedResource?
     private val actionManager = ActionManager.getInstance()
     override fun invokePopup(comp: Component?, x: Int, y: Int) {
         val selected = selected() ?: return
-        val actionGroup = DefaultActionGroup(listOf(
-            CopyAction(message("cloudformation.stack.logical_id.copy"), selected.logicalId),
-            CopyAction(message("cloudformation.stack.physical_id.copy"), selected.physicalId)
-        ))
+        val actionGroup = DefaultActionGroup(
+            listOf(
+                CopyAction(message("cloudformation.stack.logical_id.copy"), selected.logicalId),
+                CopyAction(message("cloudformation.stack.physical_id.copy"), selected.physicalId)
+            )
+        )
         val popupMenu = actionManager.createActionPopupMenu(STACK_TOOL_WINDOW.id, actionGroup)
         popupMenu.component.show(comp, x, y)
     }

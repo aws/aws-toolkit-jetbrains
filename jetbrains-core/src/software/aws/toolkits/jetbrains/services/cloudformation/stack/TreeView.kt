@@ -4,19 +4,13 @@ package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
 import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
-import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import one.util.streamex.StreamEx
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.resources.message
-import java.awt.Component
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.tree.DefaultMutableTreeNode
