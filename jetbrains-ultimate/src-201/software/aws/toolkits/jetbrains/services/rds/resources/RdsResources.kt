@@ -24,7 +24,7 @@ val LIST_SUPPORTED_INSTANCES: Resource.Cached<List<DBInstance>> = ClientBackedCa
                     RdsEngine
                         .values()
                         // Filter out AuroraMySql because it is only supported on 202+
-                        .filter { e -> e != AuroraMySql }
+                        .filterNot { e -> e == AuroraMySql }
                         .flatMap { e -> e.engines }
                 ).build()
         )
