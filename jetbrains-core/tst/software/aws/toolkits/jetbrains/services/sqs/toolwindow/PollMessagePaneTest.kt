@@ -50,7 +50,11 @@ class PollMessagePaneTest : BaseCoroutineTest() {
         val message = aMessage()
         val anotherMessage = aMessage()
         whenever(client.receiveMessage(Mockito.any<ReceiveMessageRequest>())).thenReturn(
-            ReceiveMessageResponse.builder().messages(message, message, anotherMessage).build()
+            ReceiveMessageResponse.builder().messages(
+                message,
+                message,
+                anotherMessage
+            ).build()
         )
         val pane = PollMessagePane(projectRule.project, client, queue)
         val tableModel = pane.messagesTable.tableModel
