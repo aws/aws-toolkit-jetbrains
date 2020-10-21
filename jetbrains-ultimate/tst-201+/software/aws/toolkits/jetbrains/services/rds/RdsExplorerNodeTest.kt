@@ -33,7 +33,7 @@ class RdsExplorerNodeTest {
             databases.map { dbInstance(it.key, it.value) }
         )
         val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).hasSize(numberOfDb).hasOnlyElementsOfType<RdsNode>().allSatisfy {
+        assertThat(serviceRootNode.children).hasSize(databases.size).hasOnlyElementsOfType<RdsNode>().allSatisfy {
             assertThat(it.resourceType()).isEqualTo("instance")
         }.extracting<String> {
             it.dbInstance.dbInstanceIdentifier()
