@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -10,7 +13,10 @@ import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.sns.SnsClient
+import software.amazon.awssdk.services.sqs.SqsClient
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -27,6 +33,9 @@ class SubscribeSnsDialog(
     private val queue: Queue
 ) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("SubscribeSnsDialog") {
     private val snsClient: SnsClient = project.awsClient()
+    private val sqsClient: SqsClient = project.awsClient()
+    private val iamClient: IamClient = project.awsClient()
+
     val view = SubscribeSnsPanel(project)
 
     init {
@@ -61,7 +70,40 @@ class SubscribeSnsDialog(
 
         launch {
             try {
-                subscribe(topicSelected())
+                val topicArn = topicSelected()
+
+                val policy = sqsClient.getQueueAttributes {
+                    it.queueUrl(queue.queueUrl)
+                    it.attributeNames(QueueAttributeName.POLICY)
+                }.attributes()[QueueAttributeName.POLICY]
+
+                // policy can be null, if so we can skip simulating
+/*
+                val allowed = iamClient.simulateCustomPolicy {
+                    it.contextEntries(
+                        ContextEntry.builder().contextKeyType(ContextKeyTypeEnum.STRING).contextKeyName("aws:SourceArn").contextKeyValues(topicArn).build()
+                    )
+                    it.actionNames("sqs:SendMessage")
+                    it.resourceArns(queue.arn)
+                    it.policyInputList(policy)
+                }.evaluationResults().first()
+*/
+
+                val policyStatement = mapper.readTree(createSqsSnsSubscribePolicyStatement(queue.arn, topicArn))
+                val document = mapper.readTree(policy ?: createSqsPolicy(queue.arn)) as ObjectNode
+                // TODO > 7 size throw
+                val policyArray = document[sqsPolicyStatementArray] as? ArrayNode ?: document.putArray(sqsPolicyStatementArray)
+                policyArray.add(policyStatement)
+                println(document.toPrettyString())
+                sqsClient.setQueueAttributes {
+                    it.queueUrl(queue.queueUrl)
+                    it.attributes(
+                        mutableMapOf(
+                            QueueAttributeName.POLICY to document.toPrettyString()
+                        )
+                    )
+                }
+                subscribe(topicArn)
                 withContext(getCoroutineUiContext(ModalityState.any())) {
                     close(OK_EXIT_CODE)
                 }
@@ -89,6 +131,7 @@ class SubscribeSnsDialog(
 
     private companion object {
         val LOG = getLogger<SubscribeSnsDialog>()
+        val mapper = jacksonObjectMapper()
         const val PROTOCOL = "sqs"
     }
 }
