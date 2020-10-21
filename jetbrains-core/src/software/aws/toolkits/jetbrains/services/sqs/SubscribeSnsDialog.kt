@@ -81,7 +81,7 @@ class SubscribeSnsDialog(
                         ConfirmQueuePolicyDialog(project, sqsClient, queue, topicArn, policy, view.component).showAndGet()
                     }
                     if (!continueAdding) {
-                        setOKButtonText(message("sqs.subscribe.sns.in_progress"))
+                        setOKButtonText(message("sqs.subscribe.sns.subscribe"))
                         isOKActionEnabled = true
                         return@launch
                     }
