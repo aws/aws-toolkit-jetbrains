@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.notification
 
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationNamesInfo
 import software.aws.toolkits.resources.message
@@ -40,4 +41,5 @@ class JetBrainsMinimumVersionChange : NoticeType {
     }
 
     override fun getNoticeContents(): NoticeContents = noticeContents
+    override fun getNoticeType(): NotificationType = NotificationType.WARNING
 }
