@@ -3,17 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.iam.IamClient
+import software.amazon.awssdk.services.iam.model.ContextEntry
+import software.amazon.awssdk.services.iam.model.ContextKeyTypeEnum
+import software.amazon.awssdk.services.iam.model.PolicyEvaluationDecisionType
 import software.amazon.awssdk.services.sns.SnsClient
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
@@ -21,7 +22,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
@@ -77,38 +77,30 @@ class SubscribeSnsDialog(
                     it.attributeNames(QueueAttributeName.POLICY)
                 }.attributes()[QueueAttributeName.POLICY]
 
-                // policy can be null, if so we can skip simulating
-/*
-                val allowed = iamClient.simulateCustomPolicy {
-                    it.contextEntries(
-                        ContextEntry.builder().contextKeyType(ContextKeyTypeEnum.STRING).contextKeyName("aws:SourceArn").contextKeyValues(topicArn).build()
-                    )
-                    it.actionNames("sqs:SendMessage")
-                    it.resourceArns(queue.arn)
-                    it.policyInputList(policy)
-                }.evaluationResults().first()
-*/
-
-                val policyStatement = mapper.readTree(createSqsSnsSubscribePolicyStatement(queue.arn, topicArn))
-                val document = mapper.readTree(policy ?: createSqsPolicy(queue.arn)) as ObjectNode
-                // TODO > 7 size throw
-                val policyArray = document[sqsPolicyStatementArray] as? ArrayNode ?: document.putArray(sqsPolicyStatementArray)
-                policyArray.add(policyStatement)
-                println(document.toPrettyString())
-                sqsClient.setQueueAttributes {
-                    it.queueUrl(queue.queueUrl)
-                    it.attributes(
-                        mutableMapOf(
-                            QueueAttributeName.POLICY to document.toPrettyString()
-                        )
-                    )
+                try {
+                    if (determineIfNeedPolicy(policy)) {
+                        // DO NOT change to withCoroutineUiContext, it breaks the panel with the wrong state
+                        runInEdt(ModalityState.any()) {
+                            if (!ConfirmQueuePolicyDialog(
+                                    project,
+                                    sqsClient,
+                                    queue,
+                                    topicSelected(),
+                                    policy,
+                                    view.component
+                                ).showAndGet()
+                            ) {
+                                close(CANCEL_EXIT_CODE)
+                            } else {
+                                continueSubscribing()
+                            }
+                        }
+                    } else {
+                        continueSubscribing()
+                    }
+                } catch (e: Exception) {
+                    // give warning that we don't know
                 }
-                subscribe(topicArn)
-                withContext(getCoroutineUiContext(ModalityState.any())) {
-                    close(OK_EXIT_CODE)
-                }
-                notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)
-                SqsTelemetry.subscribeSns(project, Result.Succeeded, queue.telemetryType())
             } catch (e: Exception) {
                 LOG.warn(e) { message("sqs.subscribe.sns.failed", queue.queueName, topicSelected()) }
                 setErrorText(e.message)
@@ -119,6 +111,15 @@ class SubscribeSnsDialog(
         }
     }
 
+    private fun continueSubscribing() {
+        subscribe(topicSelected())
+        runInEdt(ModalityState.any()) {
+            close(OK_EXIT_CODE)
+        }
+        notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)
+        SqsTelemetry.subscribeSns(project, Result.Succeeded, queue.telemetryType())
+    }
+
     private fun topicSelected(): String = view.topicSelector.selected()?.topicArn() ?: ""
 
     internal fun subscribe(arn: String) {
@@ -127,6 +128,31 @@ class SubscribeSnsDialog(
             it.protocol(PROTOCOL)
             it.endpoint(queue.arn)
         }
+    }
+
+    private fun determineIfNeedPolicy(existingPolicy: String?): Boolean {
+        if (existingPolicy == null) {
+            return true
+        }
+
+        val allowed = iamClient.simulateCustomPolicy {
+            it.contextEntries(
+                ContextEntry.builder()
+                    .contextKeyType(ContextKeyTypeEnum.STRING)
+                    .contextKeyName("aws:SourceArn")
+                    .contextKeyValues(topicSelected())
+                    .build()
+            )
+            it.actionNames("sqs:SendMessage")
+            it.resourceArns(queue.arn)
+            it.policyInputList(existingPolicy)
+        }.evaluationResults().first()
+
+        if (allowed.evalDecision() != PolicyEvaluationDecisionType.ALLOWED) {
+            return true
+        }
+
+        return false
     }
 
     private companion object {
