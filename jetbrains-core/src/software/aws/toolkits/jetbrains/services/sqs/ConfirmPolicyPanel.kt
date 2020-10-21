@@ -7,12 +7,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.EditorTextFieldProvider
 import com.intellij.ui.components.JBLabel
-import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 
 class ConfirmPolicyPanel(
     private val project: Project,
-    warning: String = message("sqs.confirm.iam.warning.text")
+    warning: String
 ) {
     lateinit var component: JPanel
     lateinit var policyDocument: EditorTextField

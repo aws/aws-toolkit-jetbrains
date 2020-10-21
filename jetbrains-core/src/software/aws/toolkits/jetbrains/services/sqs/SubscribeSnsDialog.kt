@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.sqs
 
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
@@ -88,7 +87,7 @@ class SubscribeSnsDialog(
                     }
                 }
                 subscribe(topicArn)
-                runInEdt(ModalityState.any()) {
+                withContext(getCoroutineUiContext(ModalityState.any())) {
                     close(OK_EXIT_CODE)
                 }
                 notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)
