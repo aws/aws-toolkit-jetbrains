@@ -4,13 +4,19 @@ package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
 import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
+import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import one.util.streamex.StreamEx
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.resources.message
+import java.awt.Component
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.tree.DefaultMutableTreeNode
@@ -80,7 +86,7 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
             val resource = nameAndResource.value
 
             val status = resource.resourceStatus()
-            val newDescriptor = StackNodeDescriptor(project, name, status.type, status.name, rootDescriptor)
+            val newDescriptor = StackNodeDescriptor(project, name, status.type, status.name, rootDescriptor, physicalId = resource.physicalResourceId())
             rootNode.add(DefaultMutableTreeNode(newDescriptor, false))
         }
     }
@@ -89,9 +95,19 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
         val descriptor = StackNodeDescriptor(project, stackName, StatusType.UNKNOWN, message("loading_resource.loading"))
         val rootNode = DefaultMutableTreeNode(descriptor, true)
         model = DefaultTreeModel(rootNode)
-        tree = Tree(model)
+        tree = Tree(model).also { it.name = "$stackName.tree" }
+        tree.addMouseListener(ResourceActionPopup(this::selected))
         tree.setPaintBusy(true)
         component = JBScrollPane(tree)
+    }
+
+    private fun selected(): SelectedResource? {
+        val node = tree.selectionPaths ?: return null
+        if (node.size != 1) {
+            return null
+        }
+        val selectedNode = (node.first().lastPathComponent as? DefaultMutableTreeNode)?.userObject as? StackNodeDescriptor ?: return null
+        return SelectedResource(selectedNode.name, selectedNode.physicalId)
     }
 
     override fun getIconsAndUpdaters() =
@@ -119,10 +135,11 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
 
 private class StackNodeDescriptor(
     project: Project,
-    name: String,
+    val name: String,
     private var statusType: StatusType,
     private var status: String,
-    parent: StackNodeDescriptor? = null
+    parent: StackNodeDescriptor? = null,
+    var physicalId: String? = null
 ) : NodeDescriptor<String>(project, parent) {
 
     init {

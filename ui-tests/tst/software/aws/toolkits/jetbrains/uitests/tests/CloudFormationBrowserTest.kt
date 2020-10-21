@@ -8,6 +8,7 @@ import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.waitFor
 import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.swing.core.MouseButton
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -26,10 +27,13 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
+import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.UUID
+import java.util.function.Predicate
 
 @TestInstance(Lifecycle.PER_CLASS)
 class CloudFormationBrowserTest {
@@ -38,6 +42,7 @@ class CloudFormationBrowserTest {
     private val stack = "uitest-${UUID.randomUUID()}"
 
     private val CloudFormation = "CloudFormation"
+    private val queueName = "SQSQueue"
     private val deleteStackText = "Delete Stack..."
 
     @TempDir
@@ -92,6 +97,20 @@ class CloudFormationBrowserTest {
                     assertThat(createComplete).hasSize(1)
                 }
             }
+            step("Can copy logical ID") {
+                findText(Predicate { it.text.startsWith(queueName) }).click(MouseButton.RIGHT_BUTTON)
+                findAndClick("//div[@text='Copy Logical ID']")
+
+                assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
+            }
+            step("Can copy physical ID") {
+                findText(Predicate { it.text.startsWith(queueName) }).click(MouseButton.RIGHT_BUTTON)
+                findAndClick("//div[@text='Copy Physical ID']")
+
+                assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
+                    assertThat(it).startsWith("https").contains(queueName)
+                }
+            }
             step("Delete stack $stack") {
                 showAwsExplorer()
                 awsExplorer {
@@ -125,13 +144,6 @@ class CloudFormationBrowserTest {
 
     private fun IdeaFrame.clickOn(tab: String) {
         findAndClick("//div[@accessiblename='$tab' and @class='JLabel' and @text='$tab']")
-    }
-    private fun IdeaFrame.clickOnOutputs() {
-        findAndClick("//div[@accessiblename='Outputs' and @class='JLabel' and @text='Outputs']")
-    }
-
-    private fun IdeaFrame.clickOnEvents() {
-        findAndClick("//div[@accessiblename='Events' and @class='JLabel' and @text='Events']")
     }
 
     private fun waitForStackDeletion() {
