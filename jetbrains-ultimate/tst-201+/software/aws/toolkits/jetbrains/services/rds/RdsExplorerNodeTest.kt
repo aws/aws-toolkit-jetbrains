@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.rds
 
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
@@ -12,6 +13,7 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.test.hasOnlyElementsOfType
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode
+import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_INSTANCES
 
 class RdsExplorerNodeTest {
     @JvmField
@@ -25,13 +27,21 @@ class RdsExplorerNodeTest {
     @Test
     fun `database resources are listed`() {
         val databases = RdsEngine.values().flatMap { it.engines }.associateWith { RuleUtils.randomName(prefix = "$it-") }
+
+        // FIX_WHEN_MIN_IS_202 remove this, 2020.1 has 2 less DBs because no aurora/aurora-mysql
+        val numberOfDb = if (ApplicationInfo.getInstance().let { info -> info.majorVersion == "2020" && info.minorVersionMainPart == "1" }) {
+            databases.size - 2
+        } else {
+            databases.size
+        }
+
         resourceCache.addEntry(
             projectRule.project,
-            RdsResources.LIST_SUPPORTED_INSTANCES,
+            LIST_SUPPORTED_INSTANCES,
             databases.map { dbInstance(it.key, it.value) }
         )
         val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).hasSize(databases.size).hasOnlyElementsOfType<RdsNode>().allSatisfy {
+        assertThat(serviceRootNode.children).hasSize(numberOfDb).hasOnlyElementsOfType<RdsNode>().allSatisfy {
             assertThat(it.resourceType()).isEqualTo("instance")
         }.extracting<String> {
             it.dbInstance.dbInstanceIdentifier()
