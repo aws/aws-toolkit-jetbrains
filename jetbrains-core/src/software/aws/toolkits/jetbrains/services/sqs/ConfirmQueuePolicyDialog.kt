@@ -27,16 +27,16 @@ class ConfirmQueuePolicyDialog(
     project: Project,
     private val sqsClient: SqsClient,
     private val queue: Queue,
-    private val topicArn: String,
+    topicArn: String,
     private val existingPolicy: String?,
     parent: Component? = null
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT), CoroutineScope by ApplicationThreadPoolScope("ConfirmQueuePolicy") {
     private val policyStatement = createSqsSnsSubscribePolicyStatement(queue.arn, topicArn)
 
-    val view = ConfirmIamPolicyPanel(project)
+    val view = ConfirmPolicyPanel(project, message("sqs.confirm.iam.warning.sqs_queue_permissions"))
 
     init {
-        title = message("sqs.confirm.iam")
+        title = message("sqs.confirm.iam.create")
         setOKButtonText(message("sqs.confirm.iam.create"))
         view.policyDocument.formatAndSet(policyStatement, JsonLanguage.INSTANCE)
         init()
@@ -53,17 +53,7 @@ class ConfirmQueuePolicyDialog(
         isOKActionEnabled = false
         launch {
             try {
-                val document = mapper.readTree(existingPolicy ?: createSqsPolicy(queue.arn)) as ObjectNode
-                val policyArray = document[sqsPolicyStatementArray] as? ArrayNode ?: document.putArray(sqsPolicyStatementArray)
-                policyArray.add(mapper.readTree(policyStatement))
-                sqsClient.setQueueAttributes {
-                    it.queueUrl(queue.queueUrl)
-                    it.attributes(
-                        mutableMapOf(
-                            QueueAttributeName.POLICY to document.toPrettyString()
-                        )
-                    )
-                }
+                addPolicy()
                 runInEdt(ModalityState.any()) {
                     close(OK_EXIT_CODE)
                 }
@@ -73,6 +63,20 @@ class ConfirmQueuePolicyDialog(
                 setOKButtonText(message("sqs.confirm.iam.create"))
                 isOKActionEnabled = true
             }
+        }
+    }
+
+    private fun addPolicy() {
+        val document = mapper.readTree(existingPolicy ?: createSqsPolicy(queue.arn)) as ObjectNode
+        val policyArray = document[sqsPolicyStatementArray] as? ArrayNode ?: document.putArray(sqsPolicyStatementArray)
+        policyArray.add(mapper.readTree(policyStatement))
+        sqsClient.setQueueAttributes {
+            it.queueUrl(queue.queueUrl)
+            it.attributes(
+                mutableMapOf(
+                    QueueAttributeName.POLICY to document.toPrettyString()
+                )
+            )
         }
     }
 
