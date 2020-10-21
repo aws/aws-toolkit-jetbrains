@@ -25,9 +25,9 @@ sealed class RdsEngine(val engines: Set<String>, val icon: Icon, val additionalI
     open fun iamUsername(username: String) = username
 
     /**
-     * SSL is not turned on by default by DataGrip. We would like it turn on, and Aurora MySQL requires it turned on, so
-     * we have to patch it into the configuration. Postgres breaks by default with this configuration though, so we have to
-     * configure it on a per database basis.
+     * SSL is not turned on by default by DataGrip. We would like it to be turned on, and Aurora MySQL requires it turned on, so
+     * we have to patch it into the configuration. Postgres breaks by default with ssl (due to requring adding a trust store manually),
+     * so we have to configure it on a per database basis.
      */
     open fun sslConfig(): DataSourceSslConfiguration? = null
 
