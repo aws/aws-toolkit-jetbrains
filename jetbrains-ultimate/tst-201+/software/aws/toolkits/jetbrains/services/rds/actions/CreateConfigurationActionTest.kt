@@ -161,7 +161,7 @@ class CreateConfigurationActionTest {
             assertThat(it.username).isEqualTo(username)
             assertThat(it.driverClass).contains("mysql")
             assertThat(it.url).contains(jdbcMysql)
-            assertThat(it.sslCfg).isNull()
+            assertThat(it.sslCfg).isNotNull
         }
     }
 

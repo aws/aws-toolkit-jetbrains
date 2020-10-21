@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.rds
 
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
@@ -27,13 +26,6 @@ class RdsExplorerNodeTest {
     @Test
     fun `database resources are listed`() {
         val databases = RdsEngine.values().flatMap { it.engines }.associateWith { RuleUtils.randomName(prefix = "$it-") }
-
-        // FIX_WHEN_MIN_IS_202 remove this, 2020.1 has 2 less DBs because no aurora/aurora-mysql
-        val numberOfDb = if (ApplicationInfo.getInstance().let { info -> info.majorVersion == "2020" && info.minorVersionMainPart == "1" }) {
-            databases.size - 2
-        } else {
-            databases.size
-        }
 
         resourceCache.addEntry(
             projectRule.project,
