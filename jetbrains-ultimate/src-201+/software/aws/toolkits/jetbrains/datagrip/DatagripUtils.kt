@@ -9,10 +9,13 @@ import com.intellij.database.remote.jdbc.helpers.JdbcSettings.SslMode
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.services.rds.AuroraMySql
+import software.aws.toolkits.jetbrains.services.rds.AuroraPostgres
+import software.aws.toolkits.jetbrains.services.rds.MySql
+import software.aws.toolkits.jetbrains.services.rds.Postgres
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysql
+import software.aws.toolkits.jetbrains.services.rds.jdbcMysqlAurora
 import software.aws.toolkits.jetbrains.services.rds.jdbcPostgres
-import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
-import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
 import software.aws.toolkits.jetbrains.services.redshift.RedshiftResources.jdbcRedshift
 import software.aws.toolkits.jetbrains.services.redshift.RedshiftResources.redshiftEngineType
 import software.aws.toolkits.resources.message
@@ -39,8 +42,10 @@ fun ProtoConnection.getAwsConnectionSettings(): ConnectionSettings {
 }
 
 fun jdbcAdapterFromRuntime(runtime: String?): String? = when (runtime) {
-    postgresEngineType -> jdbcPostgres
-    mysqlEngineType -> jdbcMysql
+    in Postgres.engines -> jdbcPostgres
+    in MySql.engines -> jdbcMysql
+    in AuroraMySql.engines -> jdbcMysqlAurora
+    in AuroraPostgres.engines -> jdbcPostgres
     redshiftEngineType -> jdbcRedshift
     else -> null
 }
