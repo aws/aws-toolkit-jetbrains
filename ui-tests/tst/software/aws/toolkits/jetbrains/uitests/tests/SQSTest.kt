@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
+import software.amazon.awssdk.services.sns.SnsClient
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry
@@ -50,16 +51,21 @@ class SQSTest {
     private val createQueueText = "Create Queue..."
     private val deleteQueueText = "Delete Queue..."
     private val purgeQueueText = "Purge Queue..."
+    private val subscribeToSnsText = "Subscribe to SNS topic..."
     private val editQueueAttributesAction = "Edit Queue Attributes..."
     private val editQueueAttributesTitle = "Edit Queue Attributes"
 
     private val queueName = "uitest-${UUID.randomUUID()}"
+    private val snsTopicName = "uitest-${UUID.randomUUID()}"
+    private var snsTopicArn = ""
     private val fifoQueueName = "fifouitest-${UUID.randomUUID()}.fifo"
 
     @Test
     @CoreTest
     fun testSqs() = uiTest {
+        val snsClient = SnsClient.create()
         val client = SqsClient.create()
+        snsTopicArn = snsClient.createTopic { it.name(snsTopicName) }.topicArn()
         welcomeFrame {
             openFolder(tempDir)
         }
@@ -162,6 +168,31 @@ class SQSTest {
                 pressYes()
                 assertThat(findToast().hasText { it.text.contains("Purge queue request already in progress for queue") })
             }
+            step("Subscribe queue to sns topic") {
+                awsExplorer {
+                    openExplorerActionMenu(sqsNodeLabel, queueName)
+                }
+                findAndClick("//div[@text='$subscribeToSnsText']")
+                comboBox(byXpath("//div[@class='ResourceSelector']")).selectItem(snsTopicName)
+                step("Press subscribe") {
+                    findAndClick("//div[@class='JButton' and @text='Subscribe']")
+                }
+                step("Add the policy") {
+                    findAndClick("//div[@class='JButton' and @text='Add Policy']")
+                }
+                assertThat(findToast().hasText { it.text.contains("Subscribed successfully to topic") })
+                step("Subscribe again, policy should not show again") {
+                    awsExplorer {
+                        openExplorerActionMenu(sqsNodeLabel, queueName)
+                    }
+                    findAndClick("//div[@text='$subscribeToSnsText']")
+                    comboBox(byXpath("//div[@class='ResourceSelector']")).selectItem(snsTopicName)
+                    step("Press subscribe") {
+                        findAndClick("//div[@class='JButton' and @text='Subscribe']")
+                    }
+                    assertThat(findToast().hasText { it.text.contains("Subscribed successfully to topic") })
+                }
+            }
             step("Delete queues") {
                 step("Delete queue $queueName") {
                     awsExplorer {
@@ -186,17 +217,22 @@ class SQSTest {
     }
 
     @AfterAll
-    // Make sure the two queues are deleted, and if not, delete them
+    // Make sure the two queues and sns topic are deleted, and if not, delete them
     fun cleanup() {
-        var client: SqsClient? = null
         try {
-            client = SqsClient.create()
-            client.verifyDeleted(queueName)
-            client.verifyDeleted(fifoQueueName)
+            SqsClient.create().use { client ->
+                client.verifyDeleted(queueName)
+                client.verifyDeleted(fifoQueueName)
+            }
         } catch (e: Exception) {
             log.error("Unable to verify the queues were removed", e)
-        } finally {
-            client?.close()
+        }
+        try {
+            SnsClient.create().use { client ->
+                client.deleteTopic { it.topicArn(snsTopicArn) }
+            }
+        } catch (e: Exception) {
+            log.error("Unable to verify the topic was removed", e)
         }
     }
 

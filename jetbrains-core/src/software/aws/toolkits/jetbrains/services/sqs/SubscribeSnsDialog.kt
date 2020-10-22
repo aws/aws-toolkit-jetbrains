@@ -129,11 +129,7 @@ class SubscribeSnsDialog(
             it.policyInputList(existingPolicy)
         }.evaluationResults().first()
 
-        if (allowed.evalDecision() != PolicyEvaluationDecisionType.ALLOWED) {
-            return true
-        }
-
-        return false
+        return allowed.evalDecision() != PolicyEvaluationDecisionType.ALLOWED
     }
 
     private companion object {
