@@ -58,13 +58,16 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
             object : PsiElementVisitor() {
                 override fun visitElement(element: PsiElement) {
                     super.visitElement(element)
-                    val parent = element.parent as? YAMLKeyValue ?: return
-                    if (parent.value != this) return
+                    // element is nullable in versions prior to 2020.1 FIX_WHEN_MIN_IS_201
+                    element?.run {
+                        val parent = element.parent as? YAMLKeyValue ?: return
+                        if (parent.value != this) return
 
-                    val resource = YamlCloudFormationTemplate.convertPsiToResource(parent) ?: return
-                    val resourceType = resource.type() ?: return
-                    IndexedResource.from(resource)?.let {
-                        indexedResources.computeIfAbsent(resourceType) { mutableListOf() }.add(it)
+                        val resource = YamlCloudFormationTemplate.convertPsiToResource(parent) ?: return
+                        val resourceType = resource.type() ?: return
+                        IndexedResource.from(resource)?.let {
+                            indexedResources.computeIfAbsent(resourceType) { mutableListOf() }.add(it)
+                        }
                     }
                 }
             }
