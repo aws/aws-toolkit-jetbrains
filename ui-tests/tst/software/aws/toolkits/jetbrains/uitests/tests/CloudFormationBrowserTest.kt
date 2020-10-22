@@ -77,6 +77,23 @@ class CloudFormationBrowserTest {
                     doubleClickExplorer(CloudFormation, stack)
                 }
             }
+            step("Can copy IDs from tree") {
+                val queueNode = findText(Predicate { it.text.startsWith(queueName) })
+                step("Logical ID") {
+                    queueNode.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Logical ID']")
+
+                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
+                }
+                step("Physical ID") {
+                    queueNode.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Physical ID']")
+
+                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
+                        assertThat(it).startsWith("https").contains(queueName)
+                    }
+                }
+            }
             step("Check events") {
                 clickOn("Events")
                 step("Assert that there are two CREATE_COMPLETE events shown") {
@@ -86,29 +103,45 @@ class CloudFormationBrowserTest {
             }
             step("Check outputs") {
                 clickOn("Outputs")
-                step("Assert that the stack output is there") {
+                val output = step("Assert that the stack output is there") {
                     findText("Cool description")
+                }
+                step("Check Logical ID action") {
+                    output.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Logical ID']")
+
+                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
+                }
+                step("Check Physical ID action") {
+                    output.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Physical ID']")
+
+                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
+                        assertThat(it).startsWith("https").contains(queueName)
+                    }
                 }
             }
             step("Check resources") {
                 clickOn("Resources")
-                step("Assert that the stack resource is there") {
+                val resource = step("Assert that the stack resource is there") {
                     val createComplete = findAllText("CREATE_COMPLETE")
                     assertThat(createComplete).hasSize(1)
+                    createComplete.first()
                 }
-            }
-            step("Can copy logical ID") {
-                findText(Predicate { it.text.startsWith(queueName) }).click(MouseButton.RIGHT_BUTTON)
-                findAndClick("//div[@text='Copy Logical ID']")
 
-                assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
-            }
-            step("Can copy physical ID") {
-                findText(Predicate { it.text.startsWith(queueName) }).click(MouseButton.RIGHT_BUTTON)
-                findAndClick("//div[@text='Copy Physical ID']")
+                step("Check Logical ID action") {
+                    resource.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Logical ID']")
 
-                assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
-                    assertThat(it).startsWith("https").contains(queueName)
+                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
+                }
+                step("Check Physical ID action") {
+                    resource.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Physical ID']")
+
+                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
+                        assertThat(it).startsWith("https").contains(queueName)
+                    }
                 }
             }
             step("Delete stack $stack") {
