@@ -22,12 +22,9 @@ class StartAwsTerminal : AnAction(
     message("aws.terminal.action.tooltip"),
     TerminalIcons.OpenTerminal_13x13
 ) {
-    private val enabled by lazy {
-        pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")
-    }
 
     override fun update(e: AnActionEvent) {
-        if (!enabled) {
+        if (!pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")) {
             e.presentation.isEnabled = false
             e.presentation.isVisible = false
             return
