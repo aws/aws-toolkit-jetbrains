@@ -43,7 +43,7 @@ internal class EventsTableImpl : EventsTable, Disposable {
     private val logicalId = DynamicTableView.Field<StackEvent>(message("cloudformation.stack.logical_id")) { e -> e.logicalResourceId() }
     private val physicalId = DynamicTableView.Field<StackEvent>(message("cloudformation.stack.physical_id")) { e -> e.physicalResourceId() }
 
-    private val table = DynamicTableView<StackEvent>(
+    private val table = DynamicTableView(
         DynamicTableView.Field(message("general.time")) { e -> e.timestamp() },
         // CFN Resource Status does not match what we expect (StackStatus enum)
         DynamicTableView.Field(message("cloudformation.stack.status"), renderer = StatusCellRenderer()) { e -> e.resourceStatusAsString() },
