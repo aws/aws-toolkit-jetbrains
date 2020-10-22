@@ -45,6 +45,10 @@ class CodeStoragePanel(private val project: Project) : JPanel(BorderLayout()) {
     }
 
     fun validatePanel(): ValidationInfo? {
+        if (sourceBucket.isLoading) {
+            return sourceBucket.validationInfo(message("serverless.application.deploy.validation.s3.bucket.loading"))
+        }
+
         if (sourceBucket.selected() == null) {
             return sourceBucket.validationInfo(message("lambda.upload_validation.source_bucket"))
         }

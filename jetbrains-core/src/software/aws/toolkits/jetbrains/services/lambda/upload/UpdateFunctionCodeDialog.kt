@@ -30,7 +30,11 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
     private val view = UpdateFunctionCodePanel(project)
     private val updateSettings = UpdateLambdaSettings.getInstance(initialSettings.arn)
 
-    private val action: OkAction = UpdateFunctionOkAction()
+    private val action: OkAction = object : OkAction() {
+        init {
+            putValue(Action.NAME, message("lambda.upload.update_settings_button.title"))
+        }
+    }
 
     init {
         super.init()
@@ -113,13 +117,6 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
                     LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
                 }
             }
-        }
-    }
-
-    // Using an OkAction to force the validation logic to trigger as well
-    private inner class UpdateFunctionOkAction : OkAction() {
-        init {
-            putValue(Action.NAME, message("lambda.upload.update_settings_button.title"))
         }
     }
 
