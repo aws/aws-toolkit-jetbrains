@@ -89,10 +89,6 @@
         <xi:fallback/>
     </xi:include>
 
-    <xi:include href="/META-INF/plugin-extra.xml" xpointer="xpointer(/idea-plugin/*)">
-        <xi:fallback/>
-    </xi:include>
-
     <projectListeners>
         <listener class="software.aws.toolkits.jetbrains.core.credentials.CredentialStatusNotification"
                   topic="software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier"/>
