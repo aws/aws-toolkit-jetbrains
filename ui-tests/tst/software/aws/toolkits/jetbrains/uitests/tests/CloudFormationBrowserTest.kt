@@ -7,6 +7,7 @@ import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.waitFor
 import com.intellij.remoterobot.utils.waitForIgnoringError
+import org.assertj.core.api.AbstractStringAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.swing.core.MouseButton
 import org.junit.jupiter.api.AfterAll
@@ -33,7 +34,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.UUID
-import java.util.function.Predicate
 
 @TestInstance(Lifecycle.PER_CLASS)
 class CloudFormationBrowserTest {
@@ -78,47 +78,49 @@ class CloudFormationBrowserTest {
                 }
             }
             step("Can copy IDs from tree") {
-                val queueNode = findText(Predicate { it.text.startsWith(queueName) })
+                val queueNode = findText("$queueName [CREATE_COMPLETE]")
                 step("Logical ID") {
                     queueNode.click(MouseButton.RIGHT_BUTTON)
                     findAndClick("//div[@text='Copy Logical ID']")
 
-                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
+                    assertClipboardContents().isEqualTo(queueName)
                 }
                 step("Physical ID") {
                     queueNode.click(MouseButton.RIGHT_BUTTON)
                     findAndClick("//div[@text='Copy Physical ID']")
-
-                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
-                        assertThat(it).startsWith("https").contains(queueName)
-                    }
+                    assertClipboardContents().startsWith("https").contains(queueName)
                 }
             }
             step("Check events") {
                 clickOn("Events")
-                step("Assert that there are two CREATE_COMPLETE events shown") {
+                val resource = step("Assert that there are two CREATE_COMPLETE events shown") {
                     val createComplete = findAllText("CREATE_COMPLETE")
                     assertThat(createComplete).hasSize(2)
+                    createComplete.first()
+                }
+
+                step("Check Logical ID action") {
+                    resource.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Logical ID']")
+                    assertClipboardContents().satisfiesAnyOf(
+                        { assertThat(it).isEqualTo(queueName) },
+                        { assertThat(it).startsWith("uitest") }
+                    )
+                }
+                step("Check Physical ID action") {
+                    resource.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Physical ID']")
+
+                    assertClipboardContents().satisfiesAnyOf(
+                        { assertThat(it).startsWith("https").contains(queueName) },
+                        { assertThat(it).startsWith("arn") }
+                    )
                 }
             }
             step("Check outputs") {
                 clickOn("Outputs")
-                val output = step("Assert that the stack output is there") {
+                step("Assert that the stack output is there") {
                     findText("Cool description")
-                }
-                step("Check Logical ID action") {
-                    output.click(MouseButton.RIGHT_BUTTON)
-                    findAndClick("//div[@text='Copy Logical ID']")
-
-                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
-                }
-                step("Check Physical ID action") {
-                    output.click(MouseButton.RIGHT_BUTTON)
-                    findAndClick("//div[@text='Copy Physical ID']")
-
-                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
-                        assertThat(it).startsWith("https").contains(queueName)
-                    }
                 }
             }
             step("Check resources") {
@@ -133,15 +135,13 @@ class CloudFormationBrowserTest {
                     resource.click(MouseButton.RIGHT_BUTTON)
                     findAndClick("//div[@text='Copy Logical ID']")
 
-                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isEqualTo(queueName)
+                    assertClipboardContents().isEqualTo(queueName)
                 }
                 step("Check Physical ID action") {
                     resource.click(MouseButton.RIGHT_BUTTON)
                     findAndClick("//div[@text='Copy Physical ID']")
 
-                    assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor)).isInstanceOfSatisfying(String::class.java) {
-                        assertThat(it).startsWith("https").contains(queueName)
-                    }
+                    assertClipboardContents().startsWith("https").contains(queueName)
                 }
             }
             step("Delete stack $stack") {
@@ -174,6 +174,9 @@ class CloudFormationBrowserTest {
         }
         waitForStackDeletion()
     }
+
+    private fun assertClipboardContents(): AbstractStringAssert<*> =
+        assertThat(Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor) as String)
 
     private fun IdeaFrame.clickOn(tab: String) {
         findAndClick("//div[@accessiblename='$tab' and @class='JLabel' and @text='$tab']")
