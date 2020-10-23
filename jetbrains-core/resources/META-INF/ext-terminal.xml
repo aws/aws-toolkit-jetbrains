@@ -3,6 +3,6 @@
 
 <idea-plugin>
     <actions>
-        <action id="aws.toolkit.startTerminal" class="software.aws.toolkits.jetbrains.core.terminal.StartAwsTerminal"/>
+        <action id="aws.toolkit.startTerminal" class="software.aws.toolkits.jetbrains.core.terminal.OpenAwsLocalTerminal"/>
     </actions>
 </idea-plugin>

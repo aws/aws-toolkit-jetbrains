@@ -21,7 +21,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result
 
-class StartAwsTerminal : AnAction(
+class OpenAwsLocalTerminal : AnAction(
     message("aws.terminal.action"),
     message("aws.terminal.action.tooltip"),
     TerminalIcons.OpenTerminal_13x13
@@ -49,7 +49,7 @@ class StartAwsTerminal : AnAction(
                     return
                 }
                 runInEdt {
-                    val runner = AwsTerminalRunner(project, connection.region, credentials)
+                    val runner = AwsLocalTerminalRunner(project, connection.region, credentials)
                     TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().apply { this.myTabName = connection.shortName })
                     AwsTelemetry.openLocalTerminal(project, result = Result.Succeeded)
                 }
@@ -62,6 +62,6 @@ class StartAwsTerminal : AnAction(
     }
 
     private companion object {
-        private val LOG = getLogger<StartAwsTerminal>()
+        private val LOG = getLogger<OpenAwsLocalTerminal>()
     }
 }

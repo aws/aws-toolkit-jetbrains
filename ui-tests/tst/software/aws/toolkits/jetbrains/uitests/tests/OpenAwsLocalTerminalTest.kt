@@ -15,11 +15,12 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
+import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.util.function.Predicate
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ConnectedTerminalTest {
+class OpenAwsLocalTerminalTest {
 
     @TempDir
     lateinit var tempDir: Path
@@ -41,7 +42,7 @@ class ConnectedTerminalTest {
 
         idea {
             step("click terminal button") {
-                findAndClick("//div[@accessiblename='Start AWS Terminal' and @class='ActionButton']")
+                findAndClick("//div[@accessiblename='${message("aws.terminal.action")}' and @class='ActionButton']")
             }
             step("assert terminal shown") {
                 val connection = step("find current connection") {
