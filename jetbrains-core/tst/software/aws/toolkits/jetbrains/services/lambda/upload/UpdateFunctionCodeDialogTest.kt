@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
@@ -48,8 +49,11 @@ class UpdateFunctionCodeDialogTest {
             UpdateFunctionCodeDialog(project = projectRule.project, initialSettings = aLambdaFunction().copy(arn = arn))
         }
         dialog.getViewForTestAssertions().codeStorage.sourceBucket.waitToLoad()
-        assertThat(dialog.getViewForTestAssertions().buildSettings.buildInContainerCheckbox.isSelected).isEqualTo(true)
-        assertThat(dialog.getViewForTestAssertions().codeStorage.sourceBucket.selectedItem?.toString()).isEqualTo("hello2")
+
+        retryableAssert {
+            assertThat(dialog.getViewForTestAssertions().buildSettings.buildInContainerCheckbox.isSelected).isEqualTo(true)
+            assertThat(dialog.getViewForTestAssertions().codeStorage.sourceBucket.selectedItem?.toString()).isEqualTo("hello2")
+        }
     }
 
     @Test
@@ -66,8 +70,11 @@ class UpdateFunctionCodeDialogTest {
             UpdateFunctionCodeDialog(project = projectRule.project, initialSettings = aLambdaFunction().copy(arn = "not$arn"))
         }
         dialog.getViewForTestAssertions().codeStorage.sourceBucket.waitToLoad()
-        assertThat(dialog.getViewForTestAssertions().buildSettings.buildInContainerCheckbox.isSelected).isEqualTo(false)
-        assertThat(dialog.getViewForTestAssertions().codeStorage.sourceBucket.selectedItem?.toString()).isNull()
+
+        retryableAssert {
+            assertThat(dialog.getViewForTestAssertions().buildSettings.buildInContainerCheckbox.isSelected).isEqualTo(false)
+            assertThat(dialog.getViewForTestAssertions().codeStorage.sourceBucket.selectedItem?.toString()).isNull()
+        }
     }
 
     private fun mockBuckets() {
