@@ -21,11 +21,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result
 
-class OpenAwsLocalTerminal : AnAction(
-    message("aws.terminal.action"),
-    message("aws.terminal.action.tooltip"),
-    TerminalIcons.OpenTerminal_13x13
-) {
+class OpenAwsLocalTerminal : AnAction(message("aws.terminal.action"), message("aws.terminal.action.tooltip"), TerminalIcons.OpenTerminal_13x13) {
 
     override fun update(e: AnActionEvent) {
         if (!pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")) {
