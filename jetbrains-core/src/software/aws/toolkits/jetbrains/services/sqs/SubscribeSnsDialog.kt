@@ -115,7 +115,6 @@ class SubscribeSnsDialog(
     private fun needToEditPolicy(existingPolicy: String?): Boolean {
         existingPolicy ?: return true
 
-        // This does not actually make API calls
         val allowed = iamClient.simulateCustomPolicy {
             it.contextEntries(
                 ContextEntry.builder()
