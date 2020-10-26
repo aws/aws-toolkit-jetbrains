@@ -165,12 +165,12 @@ internal class ChangeRegionAction(private val region: AwsRegion) : ToggleAction(
 
             if (oldRegion?.partitionId != region.partitionId) {
                 AwsTelemetry.setPartition(
-                    partitionid = region.partitionId
+                    partitionId = region.partitionId
                 )
             }
 
             AwsTelemetry.setRegion(
-                regionid = region.id
+                regionId = region.id
             )
         }
     }
@@ -184,6 +184,9 @@ internal class ChangeCredentialsAction(private val credentialsProvider: Credenti
     override fun setSelected(e: AnActionEvent, state: Boolean) {
         if (state) {
             getAccountSetting(e).changeCredentialProvider(credentialsProvider)
+
+            // Set credentials is not considered passive, so only send it when they are actively changed
+            AwsTelemetry.setCredentials(e.project, credentialsProvider.credentialType.toTelemetryType())
         }
     }
 }

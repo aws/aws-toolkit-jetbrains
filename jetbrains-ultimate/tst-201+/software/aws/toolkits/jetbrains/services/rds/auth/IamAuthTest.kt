@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.rds.auth
 
+import com.intellij.database.Dbms
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
@@ -23,6 +24,8 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.RequireSsl
+import software.aws.toolkits.resources.message
 
 class IamAuthTest {
     @Rule
@@ -62,16 +65,16 @@ class IamAuthTest {
 
     @Test
     fun `Intercept credentials fails no port`() {
-        assertThatThrownBy { iamAuth.intercept(buildConnection(hasPort = false, hasBadHost = true), false)?.unwrap() }.isInstanceOf(
-            IllegalArgumentException::class.java
-        )
+        assertThatThrownBy { iamAuth.intercept(buildConnection(hasPort = false, hasBadHost = true), false)?.unwrap() }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage(message("rds.validation.no_instance_port"))
     }
 
     @Test
     fun `Intercept credentials fails no host`() {
-        assertThatThrownBy { iamAuth.intercept(buildConnection(hasHost = false, hasBadHost = true), false)?.unwrap() }.isInstanceOf(
-            IllegalArgumentException::class.java
-        )
+        assertThatThrownBy { iamAuth.intercept(buildConnection(hasHost = false, hasBadHost = true), false)?.unwrap() }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage(message("rds.validation.no_instance_host"))
     }
 
     @Test
@@ -85,17 +88,23 @@ class IamAuthTest {
 
     @Test
     fun `No username`() {
-        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasUsername = false)) }.isInstanceOf(IllegalArgumentException::class.java)
+        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasUsername = false)) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage(message("rds.validation.username"))
     }
 
     @Test
     fun `No region`() {
-        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasUsername = false)) }.isInstanceOf(IllegalArgumentException::class.java)
+        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasRegion = false)) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage(message("settings.regions.none_selected"))
     }
 
     @Test
     fun `No credentials`() {
-        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasCredentials = false)) }.isInstanceOf(IllegalArgumentException::class.java)
+        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasCredentials = false)) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage(message("settings.credentials.none_selected"))
     }
 
     @Test
@@ -124,19 +133,24 @@ class IamAuthTest {
             .doesNotStartWith("https://")
     }
 
-    private fun buildConnection(
+    // FIX_WHEN_MIN_IS_202 merge IamAuthTest202 and make this private again
+    fun buildConnection(
         hasUsername: Boolean = true,
         hasRegion: Boolean = true,
         hasHost: Boolean = true,
         hasPort: Boolean = true,
         hasCredentials: Boolean = true,
-        hasBadHost: Boolean = false
+        hasBadHost: Boolean = false,
+        hasSslConfig: Boolean = true,
+        dbmsType: Dbms = Dbms.POSTGRES
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doReturn "jdbc:postgresql://$dbHost:$connectionPort/dev"
             on { databaseDriver } doReturn null
             on { driverClass } doReturn "org.postgresql.Driver"
             on { username } doReturn if (hasUsername) username else ""
+            on { dbms } doReturn dbmsType
+            on { sslCfg } doReturn if (hasSslConfig) RequireSsl else null
         }
         val dbConnectionPoint = mock<DatabaseConnectionPoint> {
             on { url } doAnswer { if (hasBadHost) null else "jdbc:postgresql://$dbHost:$connectionPort/dev" }

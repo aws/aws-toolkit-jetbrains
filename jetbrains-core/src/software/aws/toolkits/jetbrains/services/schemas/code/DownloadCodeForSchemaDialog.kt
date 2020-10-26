@@ -18,8 +18,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import org.apache.commons.lang.exception.ExceptionUtils
 import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.schemas.Schema
@@ -103,11 +102,10 @@ class DownloadCodeForSchemaDialog(
         return null
     }
 
-    private fun loadSchemaVersions(): List<String> =
-        AwsResourceCache.getInstance(project)
-            .getResourceNow(SchemasResources.getSchemaVersions(registryName, schemaName))
-            .map(SchemaVersionSummary::schemaVersion)
-            .sortedByDescending { s -> s.toIntOrNull() }
+    private fun loadSchemaVersions(): List<String> = project
+        .getResourceNow(SchemasResources.getSchemaVersions(registryName, schemaName))
+        .map(SchemaVersionSummary::schemaVersion)
+        .sortedByDescending { s -> s.toIntOrNull() }
 
     private fun getLanguageForCurrentRuntime(): SchemaCodeLangs? {
         val currentRuntimeGroup = RuntimeGroup.determineRuntimeGroup(project) ?: return null
@@ -136,7 +134,11 @@ class DownloadCodeForSchemaDialog(
         val schemaCodeDownloadDetails = viewToSchemaCodeDownloadDetails()
 
         // Telemetry for download code language
-        SchemasTelemetry.download(project, success = true, schemalanguage = SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue))
+        SchemasTelemetry.download(
+            project = project,
+            success = true,
+            schemaLanguage = SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue)
+        )
 
         val schemaName = schemaCodeDownloadDetails.schema.name
         ProgressManager.getInstance().run(
@@ -245,7 +247,7 @@ class DownloadCodeForSchemaDialog(
             super.doAction(e)
             if (doValidateAll().isNotEmpty()) return
 
-            downloadSchemaCode(SchemaCodeDownloader.create(AwsClientManager.getInstance(project)))
+            downloadSchemaCode(SchemaCodeDownloader.create(project))
         }
     }
 

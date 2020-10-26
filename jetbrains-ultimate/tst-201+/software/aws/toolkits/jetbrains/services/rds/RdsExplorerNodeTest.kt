@@ -8,13 +8,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.rds.model.DBInstance
-import software.amazon.awssdk.utils.CompletableFutureUtils
 import software.aws.toolkits.core.utils.RuleUtils
+import software.aws.toolkits.core.utils.test.hasOnlyElementsOfType
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
-import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.RdsExplorerRootNode
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_INSTANCES
 
 class RdsExplorerNodeTest {
     @JvmField
@@ -23,133 +21,28 @@ class RdsExplorerNodeTest {
 
     @JvmField
     @Rule
-    val resourceCache = MockResourceCacheRule(projectRule)
+    val resourceCache = MockResourceCacheRule()
 
     @Test
-    fun `MySQL resources are listed`() {
-        val name = RuleUtils.randomName()
-        val name2 = RuleUtils.randomName()
-        resourceCache.get().addEntry(
-            RdsResources.LIST_INSTANCES_MYSQL,
-            listOf(
-                DBInstance.builder().engine(mysqlEngineType).dbName(name).dbInstanceArn("").build(),
-                DBInstance.builder().engine(mysqlEngineType).dbName(name2).dbInstanceArn("").build()
-            )
+    fun `database resources are listed`() {
+        val databases = RdsEngine.values().flatMap { it.engines }.associateWith { RuleUtils.randomName(prefix = "$it-") }
+
+        resourceCache.addEntry(
+            projectRule.project,
+            LIST_SUPPORTED_INSTANCES,
+            databases.map { dbInstance(it.key, it.value) }
         )
         val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).anyMatch { it.displayName() == message("rds.mysql") }
-        val mySqlNode = serviceRootNode.children.first { it.displayName() == message("rds.mysql") }
-        assertThat(mySqlNode.children).hasSize(2)
-        assertThat(mySqlNode.children).anyMatch {
-            (it as RdsNode).dbInstance.dbName() == name
-        }
-        assertThat(mySqlNode.children).anyMatch {
-            (it as RdsNode).dbInstance.dbName() == name2
-        }
-    }
-
-    @Test
-    fun `Aurora MySQL resources are listed`() {
-        val name = RuleUtils.randomName()
-        val name2 = RuleUtils.randomName()
-        resourceCache.get().addEntry(
-            RdsResources.LIST_INSTANCES_AURORA_MYSQL,
-            listOf(
-                DBInstance.builder().engine(auroraMysqlEngineType).dbName(name).dbInstanceArn("").build(),
-                DBInstance.builder().engine(auroraMysqlEngineType).dbName(name2).dbInstanceArn("").build()
-            )
-        )
-        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).anyMatch { it.displayName() == message("rds.aurora") }
-        val auroraNode = serviceRootNode.children.first { it.displayName() == message("rds.aurora") }
-        assertThat(auroraNode).isInstanceOf(AuroraParentNode::class.java)
-        assertThat(auroraNode.children).hasSize(2)
-        val mysqlNode = (auroraNode as AuroraParentNode).children.first { it.displayName() == message("rds.mysql") }
-        assertThat(mysqlNode.children).hasSize(2)
-        assertThat(mysqlNode.children).anyMatch { (it as RdsNode).dbInstance.dbName() == name }
-        assertThat(mysqlNode.children).anyMatch { (it as RdsNode).dbInstance.dbName() == name2 }
-    }
-
-    @Test
-    fun `PostgreSQL resources are listed`() {
-        val name = RuleUtils.randomName()
-        val name2 = RuleUtils.randomName()
-        resourceCache.get().addEntry(
-            RdsResources.LIST_INSTANCES_POSTGRES,
-            listOf(
-                DBInstance.builder().engine(postgresEngineType).dbName(name).dbInstanceArn("").build(),
-                DBInstance.builder().engine(postgresEngineType).dbName(name2).dbInstanceArn("").build()
-            )
-        )
-        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).anyMatch { it.displayName() == message("rds.postgres") }
-        val postgresNode = serviceRootNode.children.first { it.displayName() == message("rds.postgres") }
-        assertThat(postgresNode.children).hasSize(2)
-        assertThat(postgresNode.children).anyMatch { (it as RdsNode).dbInstance.dbName() == name }
-        assertThat(postgresNode.children).anyMatch { (it as RdsNode).dbInstance.dbName() == name2 }
-    }
-
-    @Test
-    fun `Aurora PostgreSQL resources are listed`() {
-        val name = RuleUtils.randomName()
-        val name2 = RuleUtils.randomName()
-        resourceCache.get().addEntry(
-            RdsResources.LIST_INSTANCES_AURORA_POSTGRES,
-            listOf(
-                DBInstance.builder().engine(auroraPostgresEngineType).dbName(name).dbInstanceArn("").build(),
-                DBInstance.builder().engine(auroraPostgresEngineType).dbName(name2).dbInstanceArn("").build()
-            )
-        )
-        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).anyMatch { it.displayName() == message("rds.aurora") }
-        val auroraNode = serviceRootNode.children.first { it.displayName() == message("rds.aurora") }
-        assertThat(auroraNode).isInstanceOf(AuroraParentNode::class.java)
-        assertThat(auroraNode.children).hasSize(2)
-        val postgresNode = (auroraNode as AuroraParentNode).children.first { it.displayName() == message("rds.postgres") }
-        assertThat(postgresNode.children).hasSize(2)
-        assertThat(postgresNode.children).anyMatch { (it as RdsNode).dbInstance.dbName() == name }
-        assertThat(postgresNode.children).anyMatch { (it as RdsNode).dbInstance.dbName() == name2 }
-    }
-
-    @Test
-    fun `No resources leads to empty nodes`() {
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_MYSQL, listOf())
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_POSTGRES, listOf())
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_AURORA_MYSQL, listOf())
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_AURORA_POSTGRES, listOf())
-        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).isNotEmpty
-        serviceRootNode.children.forEach { node ->
-            if (node is AuroraParentNode) {
-                node.children.forEach {
-                    assertThat(it.children).hasOnlyOneElementSatisfying { it is AwsExplorerEmptyNode }
-                }
-            } else {
-                assertThat(node.children).hasOnlyOneElementSatisfying { it is AwsExplorerEmptyNode }
-            }
-        }
-    }
-
-    @Test
-    fun `Exception makes error nodes`() {
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_MYSQL, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_POSTGRES, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_AURORA_MYSQL, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
-        resourceCache.get().addEntry(RdsResources.LIST_INSTANCES_AURORA_POSTGRES, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
-        val serviceRootNode = sut.buildServiceRootNode(projectRule.project)
-        assertThat(serviceRootNode.children).isNotEmpty
-        serviceRootNode.children.forEach { node ->
-            if (node is AuroraParentNode) {
-                node.children.forEach {
-                    assertThat(it.children).hasOnlyOneElementSatisfying { it is AwsExplorerErrorNode }
-                }
-            } else {
-                assertThat(node.children).hasOnlyOneElementSatisfying { it is AwsExplorerErrorNode }
-            }
-        }
+        assertThat(serviceRootNode.children).hasSize(databases.size).hasOnlyElementsOfType<RdsNode>().allSatisfy {
+            assertThat(it.resourceType()).isEqualTo("instance")
+        }.extracting<String> {
+            it.dbInstance.dbInstanceIdentifier()
+        }.containsOnly(*databases.values.toTypedArray())
     }
 
     private companion object {
         val sut = RdsExplorerRootNode()
+        fun dbInstance(engine: String, name: String): DBInstance =
+            DBInstance.builder().engine(engine).dbName(name).dbInstanceIdentifier(name).dbInstanceArn("").build()
     }
 }

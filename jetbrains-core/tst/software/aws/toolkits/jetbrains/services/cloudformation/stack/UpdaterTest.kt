@@ -41,12 +41,13 @@ class UpdaterTest {
 
     @JvmField
     @Rule
-    val mockClientManagerRule = MockClientManagerRule(projectRule)
+    val mockClientManagerRule = MockClientManagerRule()
 
     private val treeView = mock(TreeView::class.java)
     private val eventsTable = mock(EventsTable::class.java)
     private val outputTable = mock(OutputsListener::class.java)
     private val updateListener = mock(UpdateListener::class.java)
+    private val resourceListener = mock(ResourceListener::class.java)
 
     @Before
     fun setUp() {
@@ -93,6 +94,7 @@ class UpdaterTest {
             Updater(
                 treeView = treeView,
                 eventsTable = eventsTable,
+                resourceListener = resourceListener,
                 outputsTable = outputTable,
                 stackName = "MyStack",
                 updateEveryMs = 1,

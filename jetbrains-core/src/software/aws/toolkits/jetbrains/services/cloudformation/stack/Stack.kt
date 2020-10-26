@@ -17,7 +17,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.ui.JBUI
 import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
@@ -42,7 +42,7 @@ class StackWindowManager(private val project: Project) {
     fun openStack(stackName: String, stackId: String) {
         assert(SwingUtilities.isEventDispatchThread())
         toolWindow.find(stackId)?.run { show() } ?: StackUI(project, stackName, stackId, toolWindow).start()
-        CloudformationTelemetry.open(project)
+        CloudformationTelemetry.open(project, success = true)
     }
 
     companion object {
@@ -66,6 +66,7 @@ private class StackUI(private val project: Project, private val stackName: Strin
 
     private val eventsTable: EventsTableImpl
     private val outputsTable = OutputsTableView()
+    private val resourcesTable = ResourceTableView()
 
     init {
         val tree = TreeViewImpl(project, stackName)
@@ -120,10 +121,18 @@ private class StackUI(private val project: Project, private val stackName: Strin
                 )
 
                 this.add(
+                    message("cloudformation.stack.tab_labels.resources"),
+                    JPanel().apply {
+                        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                        add(resourcesTable.component)
+                    }
+                )
+
+                this.add(
                     message("cloudformation.stack.tab_labels.outputs"),
                     JPanel().apply {
                         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                        add(outputsTable.component)
+                        add(add(outputsTable.component))
                     }
                 )
             }
@@ -133,15 +142,16 @@ private class StackUI(private val project: Project, private val stackName: Strin
             tree,
             eventsTable = eventsTable,
             outputsTable = outputsTable,
+            resourceListener = resourcesTable,
             stackName = stackName,
             updateEveryMs = UPDATE_STACK_STATUS_INTERVAL,
             listener = this,
-            client = AwsClientManager.getInstance(project).getClient(),
+            client = project.awsClient(),
             setPagesAvailable = pageButtons::setPagesAvailable
         )
 
         toolWindowTab = toolWindow.addTab(stackName, mainPanel, id = stackId)
-        listOf(tree, updater, animator, eventsTable, outputsTable, pageButtons).forEach { Disposer.register(toolWindowTab, it) }
+        listOf(tree, updater, animator, eventsTable, outputsTable, resourcesTable, pageButtons).forEach { Disposer.register(toolWindowTab, it) }
     }
 
     fun start() {

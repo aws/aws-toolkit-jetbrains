@@ -78,7 +78,7 @@ class ExecutableBackedCacheResourceTest {
         createMockExecutable("validBinary")
 
         executeCacheResource {
-            assertThat(this.environment).containsKey("AWS_ACCESS_KEY").containsKey("AWS_SECRET_KEY")
+            assertThat(this.environment).containsKey("AWS_ACCESS_KEY_ID").containsKey("AWS_SECRET_ACCESS_KEY")
         }
     }
 
@@ -103,7 +103,7 @@ class ExecutableBackedCacheResourceTest {
             assertionBlock.invoke(this)
         }
 
-        return cacheResource.fetch(projectRule.project, MockRegionProvider.getInstance().defaultRegion(), mockCredentials())
+        return cacheResource.fetch(MockRegionProvider.getInstance().defaultRegion(), mockCredentials())
     }
 
     private fun mockCredentials(): ToolkitCredentialsProvider {

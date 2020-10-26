@@ -9,13 +9,13 @@ import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
-import software.aws.toolkits.core.credentials.CredentialIdentifierBase
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
+import software.aws.toolkits.core.credentials.aCredentialsIdentifier
+import software.aws.toolkits.core.credentials.aToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.test.retryableAssert
-import software.aws.toolkits.jetbrains.core.MockResourceCache
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.Resource
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 
@@ -24,16 +24,18 @@ class ResourceSelectorTest {
     @JvmField
     val projectRule = ProjectRule()
 
+    @JvmField
+    @Rule
+    val resourceCache = MockResourceCacheRule()
+
     private val mockResource = mock<Resource.Cached<List<String>>> {
         on { id }.thenReturn("mockResource")
     }
 
-    private val mockResourceCache = MockResourceCache.getInstance(projectRule.project)
-
     @Test
     fun canSpecifyADefaultItem() {
-        mockResourceCache.addEntry(mockResource, listOf("foo", "bar", "baz"))
-        val comboBox = ResourceSelector.builder(projectRule.project).resource(mockResource).build()
+        resourceCache.addEntry(projectRule.project, mockResource, listOf("foo", "bar", "baz"))
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         comboBox.selectedItem = "bar"
 
@@ -46,8 +48,8 @@ class ResourceSelectorTest {
 
     @Test
     fun canSpecifyADefaultItemMatcher() {
-        mockResourceCache.addEntry(mockResource, listOf("foo", "bar", "baz"))
-        val comboBox = ResourceSelector.builder(projectRule.project).resource(mockResource).build()
+        resourceCache.addEntry(projectRule.project, mockResource, listOf("foo", "bar", "baz"))
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         comboBox.reload()
 
@@ -68,8 +70,8 @@ class ResourceSelectorTest {
     @Test
     fun loadFailureShowsAnErrorAndDisablesTheBox() {
         val future = CompletableFuture<List<String>>()
-        mockResourceCache.addEntry(mockResource, future)
-        val comboBox = ResourceSelector.builder(projectRule.project).resource(mockResource).build()
+        resourceCache.addEntry(projectRule.project, mockResource, future)
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         future.completeExceptionally(RuntimeException("boom"))
 
@@ -83,8 +85,8 @@ class ResourceSelectorTest {
 
     @Test
     fun usePreviouslySelectedItemAfterReloadUnlessSelectItemSet() {
-        mockResourceCache.addEntry(mockResource, listOf("foo", "bar", "baz"))
-        val comboBox = ResourceSelector.builder(projectRule.project).resource(mockResource).build()
+        resourceCache.addEntry(projectRule.project, mockResource, listOf("foo", "bar", "baz"))
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         runInEdtAndWait {
             comboBox.selectedItem = "bar"
@@ -102,8 +104,8 @@ class ResourceSelectorTest {
     @Test
     fun comboBoxIsDisabledWhileEntriesAreLoading() {
         val future = CompletableFuture<List<String>>()
-        mockResourceCache.addEntry(mockResource, future)
-        val comboBox = ResourceSelector.builder(projectRule.project).resource(mockResource).build()
+        resourceCache.addEntry(projectRule.project, mockResource, future)
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         assertThat(comboBox.selected()).isNull()
 
@@ -125,8 +127,8 @@ class ResourceSelectorTest {
     @Test
     fun actionListenerIsInvokedOnLoadingCorrectly() {
         val future = CompletableFuture<List<String>>() // Use the future to force slow load
-        mockResourceCache.addEntry(mockResource, future)
-        val comboBox = ResourceSelector.builder(projectRule.project).resource(mockResource).disableAutomaticLoading().build()
+        resourceCache.addEntry(projectRule.project, mockResource, future)
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).disableAutomaticLoading().build()
 
         val loadingStatus = mutableListOf<Boolean>()
         comboBox.addActionListener { loadingStatus.add(comboBox.isLoading) }
@@ -149,8 +151,8 @@ class ResourceSelectorTest {
 
     @Test
     fun aSingleResultWillAutoSelect() {
-        mockResourceCache.addEntry(mockResource, listOf("bar"))
-        val comboBox = ResourceSelector.builder(projectRule.project).resource(mockResource).build()
+        resourceCache.addEntry(projectRule.project, mockResource, listOf("bar"))
+        val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         runInEdtAndWait {
             comboBox.selectedItem = "bar"
@@ -167,10 +169,10 @@ class ResourceSelectorTest {
 
     @Test
     fun canSpecifyWhichRegionAndCredentialsToUse() {
-        mockResourceCache.addEntry(mockResource, "region1", "credential1", listOf("foo"))
-        val comboBox = ResourceSelector.builder(projectRule.project)
+        resourceCache.addEntry(mockResource, "region1", "credential1", listOf("foo"))
+        val comboBox = ResourceSelector.builder()
             .resource(mockResource)
-            .awsConnection(AwsRegion("region1", "", "aws") to mockCred("credential1"))
+            .awsConnection(ConnectionSettings(mockCred("credential1"), AwsRegion("region1", "", "aws")))
             .build()
 
         retryableAssert {
@@ -188,7 +190,7 @@ class ResourceSelectorTest {
                 on { id }.thenReturn(name)
             }
 
-            mockResourceCache.addEntry(resource, future)
+            resourceCache.addEntry(projectRule.project, resource, future)
 
             return Triple(resource, future, listOf(name))
         }
@@ -203,7 +205,11 @@ class ResourceSelectorTest {
         )
 
         var counter = 0
-        val comboBox = ResourceSelector.builder(projectRule.project).resource { resultList[counter].first }.disableAutomaticLoading().build()
+        val comboBox = ResourceSelector.builder()
+            .resource { resultList[counter].first }
+            .awsConnection(projectRule.project)
+            .disableAutomaticLoading()
+            .build()
 
         val loadingStatus = mutableListOf<Boolean>()
         comboBox.addActionListener { loadingStatus.add(comboBox.isLoading) }
@@ -231,13 +237,6 @@ class ResourceSelectorTest {
     }
 
     private companion object {
-        fun mockCred(id: String) = ToolkitCredentialsProvider(
-            object : CredentialIdentifierBase() {
-                override val id: String = id
-                override val displayName: String = id
-                override val factoryId: String = "mockFactory"
-            },
-            AnonymousCredentialsProvider.create()
-        )
+        fun mockCred(id: String) = aToolkitCredentialsProvider(aCredentialsIdentifier(id))
     }
 }
