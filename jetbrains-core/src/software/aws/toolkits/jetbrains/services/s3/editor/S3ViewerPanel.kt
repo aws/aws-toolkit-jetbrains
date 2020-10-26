@@ -39,7 +39,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, privat
             SimpleTreeStructure.Impl(rootNode),
             null,
             // TODO this has a concurrency of 1, do we want to adjust this?
-            Invoker.Background(disposable),
+            Invoker.forBackgroundThreadWithoutReadAction(disposable),
             disposable
         )
         val model = S3TreeTableModel(
