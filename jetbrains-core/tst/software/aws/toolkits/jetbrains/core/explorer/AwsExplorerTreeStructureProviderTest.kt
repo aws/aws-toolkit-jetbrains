@@ -70,7 +70,8 @@ class AwsExplorerTreeStructureProviderTest {
 
     private fun createTreeModel(): TreeModel {
         val awsTreeModel = AwsExplorerTreeStructure(projectRule.project)
-        val structureTreeModel = StructureTreeModel(awsTreeModel, null, Invoker.forBackgroundThreadWithoutReadAction(disposableRule.disposable), disposableRule.disposable)
+        val structureTreeModel =
+            StructureTreeModel(awsTreeModel, null, Invoker.forBackgroundThreadWithoutReadAction(disposableRule.disposable), disposableRule.disposable)
         return AsyncTreeModel(structureTreeModel, false, disposableRule.disposable)
     }
 }
