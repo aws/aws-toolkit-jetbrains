@@ -15,7 +15,6 @@ import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
-import software.aws.toolkits.jetbrains.settings.InjectCredentials
 
 class JavaAwsConnectionExtensionTest {
 
@@ -29,7 +28,6 @@ class JavaAwsConnectionExtensionTest {
 
     @Test
     fun `Round trip persistence`() {
-        settingsRule.settings.injectRunConfigurations = InjectCredentials.Manual
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
 
@@ -53,23 +51,33 @@ class JavaAwsConnectionExtensionTest {
 
     @Test
     fun `ignores gradle based run configs`() {
-        settingsRule.settings.injectRunConfigurations = InjectCredentials.On
-        val configuration = mock<GradleRunConfiguration>()
+        val configuration = mock<GradleRunConfiguration>().apply {
+            putCopyableUserData<AwsCredInjectionOptions>(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsCredInjectionOptions {
+                region = "abc123"
+                credential = "mockCredential"
+            })
+        }
+
         assertThat(JavaAwsConnectionExtension().isApplicableFor(configuration)).isFalse()
     }
 
     @Test
-    fun `doesn't apply when not set`() {
-        settingsRule.settings.injectRunConfigurations = InjectCredentials.Never
-        val configuration = mock<ApplicationConfiguration>()
-        assertThat(JavaAwsConnectionExtension().isApplicableFor(configuration)).isFalse()
-    }
-
-    @Test
-    fun `Injects when the global setting is set`() {
-        settingsRule.settings.injectRunConfigurations = InjectCredentials.On
+    fun `Does not inject by default`() {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
+        assertThat(configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)).isNull()
+    }
+
+    @Test
+    fun `Inject injects environment variables`() {
+        val runManager = RunManager.getInstance(projectRule.project)
+        val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
+        val data = AwsCredInjectionOptions {
+            region = "abc123"
+            credential = "mockCredential"
+        }
+        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, data)
+
         val extension = JavaAwsConnectionExtension()
         val map = mutableMapOf<String, String>()
         extension.updateJavaParameters(configuration, mock { on { env } doAnswer { map } }, null)
@@ -82,33 +90,5 @@ class JavaAwsConnectionExtensionTest {
             "AWS_SECRET_KEY",
             "AWS_SECRET_ACCESS_KEY"
         ).forEach { assertThat(map[it]).isNotNull() }
-    }
-
-    @Test
-    fun `Global setting does not overwrite run setting`() {
-        settingsRule.settings.injectRunConfigurations = InjectCredentials.On
-        val runManager = RunManager.getInstance(projectRule.project)
-        val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
-        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsCredInjectionOptions())
-        val extension = JavaAwsConnectionExtension()
-        val map = mutableMapOf<String, String>()
-        extension.updateJavaParameters(configuration, mock { on { env } doAnswer { map } }, null)
-        assertThat(map).isEmpty()
-    }
-
-    @Test
-    fun `Global off does not inject`() {
-        settingsRule.settings.injectRunConfigurations = InjectCredentials.On
-        val runManager = RunManager.getInstance(projectRule.project)
-        val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
-        val data = AwsCredInjectionOptions {
-            region = "abc123"
-            credential = "mockCredential"
-        }
-        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, data)
-        val extension = JavaAwsConnectionExtension()
-        val map = mutableMapOf<String, String>()
-        extension.updateJavaParameters(configuration, mock { on { env } doAnswer { map } }, null)
-        assertThat(map).isEmpty()
     }
 }

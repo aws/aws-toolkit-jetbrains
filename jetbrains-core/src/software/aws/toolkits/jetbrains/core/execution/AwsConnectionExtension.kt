@@ -17,7 +17,6 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.settings.InjectCredentials
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result.Failed
@@ -28,14 +27,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
     private val credentialManager = CredentialManager.getInstance()
 
     fun addEnvironmentVariables(configuration: T, environment: MutableMap<String, String>, runtimeString: () -> String? = { null }) {
-        val credentialConfiguration = configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: run {
-            // if the user just runs without opening and saving the settings, this never gets set. So, we have to check for it here as well
-            if (AwsSettings.getInstance().injectRunConfigurations == InjectCredentials.On) {
-                AwsCredInjectionOptions { useCurrentConnection = true }
-            } else {
-                null
-            }
-        } ?: return
+        val credentialConfiguration = configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: return
 
         try {
             val connection = if (credentialConfiguration.useCurrentConnection) {
@@ -55,9 +47,9 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             }
 
             connection.toEnvironmentVariables().forEach { (key, value) -> environment[key] = value }
-            AwsTelemetry.injectCredentials(configuration.project, result = Succeeded, runtimestring = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = Succeeded, runtimeString = tryOrNull { runtimeString() })
         } catch (e: Exception) {
-            AwsTelemetry.injectCredentials(configuration.project, result = Failed, runtimestring = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = Failed, runtimeString = tryOrNull { runtimeString() })
             LOG.error(e) { message("run_configuration_extension.inject_aws_connection_exception") }
         }
     }
@@ -77,8 +69,6 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             XmlSerializer.serializeInto(it, element)
         }
     }
-
-    fun isApplicable(): Boolean = AwsSettings.getInstance().injectRunConfigurations != InjectCredentials.Never
 
     private companion object {
         val LOG = getLogger<AwsConnectionRunConfigurationExtension<*>>()

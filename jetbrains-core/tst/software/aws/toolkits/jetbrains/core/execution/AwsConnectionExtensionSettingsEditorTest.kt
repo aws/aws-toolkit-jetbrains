@@ -12,7 +12,6 @@ import org.assertj.core.api.ObjectAssert
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
-import software.aws.toolkits.jetbrains.settings.InjectCredentials
 
 class AwsConnectionExtensionSettingsEditorTest {
 
@@ -104,30 +103,6 @@ class AwsConnectionExtensionSettingsEditorTest {
 
         assertThat(editor).isPersistedAs {
             useCurrentConnection = false
-            region = null
-            credential = null
-        }
-    }
-
-    @Test
-    fun setsInjectionOnWhenGlobalSettingIsSet() {
-        settingsRule.settings.injectRunConfigurations = InjectCredentials.On
-        val runManager = RunManager.getInstance(projectRule.project)
-        val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
-
-        val editor = AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
-        editor.resetFrom(configuration)
-
-        assertThat(editor.view.useCurrentConnection.isSelected).isTrue()
-
-        assertThat(editor.view.credentialProvider.isEnabled).isFalse()
-        assertThat(editor.view.credentialProvider.itemCount).isZero() // We don't want to eagerly load for every RunConfiguration
-
-        assertThat(editor.view.region.isEnabled).isFalse()
-        assertThat(editor.view.region.itemCount).isZero() // We don't want to eagerly load for every RunConfiguration
-
-        assertThat(editor).isPersistedAs {
-            useCurrentConnection = true
             region = null
             credential = null
         }

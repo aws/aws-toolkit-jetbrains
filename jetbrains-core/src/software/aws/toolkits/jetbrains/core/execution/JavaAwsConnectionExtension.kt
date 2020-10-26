@@ -23,8 +23,7 @@ class JavaAwsConnectionExtension : RunConfigurationExtension() {
      * does not pass down the environment variables. The base that controls this is ExternalSystemRunConfiguration, so we should use that to be safe
      * so that we don't encounter a similar situation with a different class based on it.
      */
-    override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean =
-        configuration !is ExternalSystemRunConfiguration && delegate.isApplicable()
+    override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean = configuration !is ExternalSystemRunConfiguration
 
     override fun <T : RunConfigurationBase<*>?> updateJavaParameters(configuration: T, params: JavaParameters, runnerSettings: RunnerSettings?) {
         configuration ?: return

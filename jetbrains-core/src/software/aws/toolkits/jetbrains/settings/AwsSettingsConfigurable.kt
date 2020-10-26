@@ -42,7 +42,6 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
     private lateinit var remoteDebugSettings: JPanel
     private lateinit var applicationLevelSettings: JPanel
     private lateinit var defaultRegionHandling: ComboBox<UseAwsCredentialRegion>
-    private lateinit var credentialInjection: ComboBox<InjectCredentials>
     lateinit var samExecutablePath: TextFieldWithBrowseButton
     lateinit var enableTelemetry: JBCheckBox
     lateinit var cloudDebugExecutablePath: TextFieldWithBrowseButton
@@ -64,7 +63,6 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
         samHelp = createHelpLink(HelpIds.SAM_CLI_INSTALL)
         samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
         defaultRegionHandling = ComboBox(UseAwsCredentialRegion.values())
-        credentialInjection = ComboBox(InjectCredentials.values())
     }
 
     init {
@@ -85,8 +83,7 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
             cloudDebugTextboxInput != getSavedExecutablePath(cloudDebugExecutableInstance, false) ||
             isModified(showAllHandlerGutterIcons, lambdaSettings.showAllHandlerGutterIcons) ||
             isModified(enableTelemetry, awsSettings.isTelemetryEnabled) ||
-            isModified(defaultRegionHandling, awsSettings.useDefaultCredentialRegion) ||
-            isModified(credentialInjection, awsSettings.injectRunConfigurations)
+            isModified(defaultRegionHandling, awsSettings.useDefaultCredentialRegion)
     }
 
     override fun apply() {
@@ -116,7 +113,6 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
         showAllHandlerGutterIcons.isSelected = lambdaSettings.showAllHandlerGutterIcons
         enableTelemetry.isSelected = awsSettings.isTelemetryEnabled
         defaultRegionHandling.selectedItem = awsSettings.useDefaultCredentialRegion
-        credentialInjection.selectedItem = awsSettings.injectRunConfigurations
     }
 
     private fun createHelpLink(helpId: HelpIds): LinkLabel<*> = LinkLabel.create(message("aws.settings.learn_more")) { BrowserUtil.browse(helpId.url) }
@@ -213,7 +209,6 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
         val awsSettings = AwsSettings.getInstance()
         awsSettings.isTelemetryEnabled = enableTelemetry.isSelected
         awsSettings.useDefaultCredentialRegion = defaultRegionHandling.selectedItem as? UseAwsCredentialRegion ?: UseAwsCredentialRegion.Never
-        awsSettings.injectRunConfigurations = credentialInjection.selectedItem as? InjectCredentials ?: InjectCredentials.Manual
     }
 
     private fun saveLambdaSettings() {
