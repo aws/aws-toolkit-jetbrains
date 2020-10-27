@@ -52,10 +52,13 @@ class JavaAwsConnectionExtensionTest {
     @Test
     fun `ignores gradle based run configs`() {
         val configuration = mock<GradleRunConfiguration>().apply {
-            putCopyableUserData<AwsCredInjectionOptions>(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsCredInjectionOptions {
-                region = "abc123"
-                credential = "mockCredential"
-            })
+            putCopyableUserData<AwsCredInjectionOptions>(
+                AWS_CONNECTION_RUN_CONFIGURATION_KEY,
+                AwsCredInjectionOptions {
+                    region = "abc123"
+                    credential = "mockCredential"
+                }
+            )
         }
 
         assertThat(JavaAwsConnectionExtension().isApplicableFor(configuration)).isFalse()
