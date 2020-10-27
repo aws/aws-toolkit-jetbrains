@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.lambda.upload
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.IdeBorderFactory
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.FUNCTION_NAME_PATTERN
+import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.MAX_FUNCTION_NAME_LENGTH
 import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
 import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
@@ -44,14 +46,10 @@ class CreateFunctionPanel(private val project: Project) {
             return name.validationInfo(message("lambda.upload_validation.function_name_invalid"))
         }
 
-        if (nameValue.length > 64) {
+        if (nameValue.length > MAX_FUNCTION_NAME_LENGTH) {
             return name.validationInfo(message("lambda.upload_validation.function_name_too_long", 64))
         }
 
         return configSettings.validatePanel(handlerMustExist = true) ?: codeStorage.validatePanel()
-    }
-
-    companion object {
-        private val FUNCTION_NAME_PATTERN = "[a-zA-Z0-9-_]+".toRegex()
     }
 }

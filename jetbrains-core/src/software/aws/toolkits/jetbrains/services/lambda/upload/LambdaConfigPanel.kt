@@ -111,15 +111,11 @@ class LambdaConfigPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     fun validatePanel(handlerMustExist: Boolean): ValidationInfo? {
         // Check runtime first, since handler panel needs it to be there
-        runtimeModel.selectedItem
-            ?: return runtime.validationInfo(message("lambda.upload_validation.runtime"))
+        runtimeModel.selectedItem ?: return runtime.validationInfo(message("lambda.upload_validation.runtime"))
 
-        handlerPanel.validateHandler(handlerMustExist)?.let {
-            return it
-        }
+        handlerPanel.validateHandler(handlerMustExist)?.let { return it }
 
-        iamRole.selected()
-            ?: return iamRole.validationInfo(message("lambda.upload_validation.iam_role"))
+        iamRole.selected() ?: return iamRole.validationInfo(message("lambda.upload_validation.iam_role"))
 
         return timeoutSlider.validate() ?: memorySlider.validate()
     }
