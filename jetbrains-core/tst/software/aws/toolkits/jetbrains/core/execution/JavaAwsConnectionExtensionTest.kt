@@ -12,8 +12,12 @@ import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.Element
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 
 class JavaAwsConnectionExtensionTest {
@@ -25,6 +29,13 @@ class JavaAwsConnectionExtensionTest {
     @Rule
     @JvmField
     val settingsRule = AwsSettingsRule()
+
+    private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+
+    @Before
+    fun setUp() {
+        MockCredentialsManager.getInstance().addCredentials("MockCredentials", mockCreds)
+    }
 
     @Test
     fun `Round trip persistence`() {
@@ -76,21 +87,19 @@ class JavaAwsConnectionExtensionTest {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
         val data = AwsCredInjectionOptions {
-            region = "abc123"
-            credential = "mockCredential"
+            region = MockRegionProvider.getInstance().defaultRegion().id
+            credential = "MockCredentials"
         }
         configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, data)
 
         val extension = JavaAwsConnectionExtension()
         val map = mutableMapOf<String, String>()
         extension.updateJavaParameters(configuration, mock { on { env } doAnswer { map } }, null)
-        assertThat(map).hasSize(6)
+        assertThat(map).hasSize(4)
         listOf(
-            "AWS_ACCESS_KEY",
             "AWS_ACCESS_KEY_ID",
             "AWS_REGION",
             "AWS_DEFAULT_REGION",
-            "AWS_SECRET_KEY",
             "AWS_SECRET_ACCESS_KEY"
         ).forEach { assertThat(map[it]).isNotNull() }
     }
