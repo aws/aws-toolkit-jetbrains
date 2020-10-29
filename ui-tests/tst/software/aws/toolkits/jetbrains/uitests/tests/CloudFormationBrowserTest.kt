@@ -78,7 +78,9 @@ class CloudFormationBrowserTest {
                 }
             }
             step("Can copy IDs from tree") {
-                val queueNode = findText("$queueName [CREATE_COMPLETE]")
+                val queueNode = step ("Finding '$queueName [CREATE_COMPLETE]'") {
+                    findText("$queueName [CREATE_COMPLETE]")
+                }
                 step("Logical ID") {
                     queueNode.click(MouseButton.RIGHT_BUTTON)
                     findAndClick("//div[@text='Copy Logical ID']")
