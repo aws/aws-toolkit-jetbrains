@@ -22,10 +22,9 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry
 import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
-import software.aws.toolkits.jetbrains.uitests.fixtures.DialogFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
-import software.aws.toolkits.jetbrains.uitests.fixtures.NewProjectWizardDialog
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
+import software.aws.toolkits.jetbrains.uitests.fixtures.dialog
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillAllJBTextFields
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleJBTextArea
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
@@ -140,19 +139,25 @@ class SQSTest {
             }
             closeToolWindowTab()
             step("Edit queue attributes") {
-                awsExplorer { openExplorerActionMenu(sqsNodeLabel, queueName) }
-                findAndClick("//div[@text='$editQueueAttributesAction']")
-                val dialog = find<NewProjectWizardDialog>(DialogFixture.byTitle(editQueueAttributesTitle))
-                // Change visibility timeout to a different value
-                find<JTextFieldFixture>(byXpath("//div[@class='JTextField' and @visible_text='30']")).text = "24"
-                dialog.pressSave()
+                step("Open queue attributes and change visibility to a different value") {
+                    awsExplorer { openExplorerActionMenu(sqsNodeLabel, queueName) }
+                    findAndClick("//div[@text='$editQueueAttributesAction']")
+                    dialog(editQueueAttributesTitle) {
+                        step("change visibility") {
+                            find<JTextFieldFixture>(byXpath("//div[@class='JTextField' and @visible_text='30']")).text = "24"
+                            pressSave()
+                        }
+                    }
+                }
                 assertThat(findToast().hasText { it.text.contains("Updated queue attributes") })
-                // Reopen the dialog to make sure the new value was saved
-                awsExplorer { openExplorerActionMenu(sqsNodeLabel, queueName) }
-                findAndClick("//div[@text='$editQueueAttributesAction']")
-                val updatedDialog = find<NewProjectWizardDialog>(DialogFixture.byTitle(editQueueAttributesTitle))
-                find<JTextFieldFixture>(byXpath("//div[@class='JTextField' and @visible_text='24']"))
-                updatedDialog.close()
+                step("Reopen the dialog to make sure the new value was saved") {
+                    awsExplorer { openExplorerActionMenu(sqsNodeLabel, queueName) }
+                    findAndClick("//div[@text='$editQueueAttributesAction']")
+                    dialog(editQueueAttributesTitle) {
+                        find<JTextFieldFixture>(byXpath("//div[@class='JTextField' and @visible_text='24']"))
+                        close()
+                    }
+                }
             }
             step("Purge queue") {
                 awsExplorer {
@@ -173,7 +178,9 @@ class SQSTest {
                     openExplorerActionMenu(sqsNodeLabel, queueName)
                 }
                 findAndClick("//div[@text='$subscribeToSnsText']")
-                comboBox(byXpath("//div[@class='ResourceSelector']")).selectItem(snsTopicName)
+                // Wait for the resource selector to load, we don't have a visual cue for this
+                Thread.sleep(2000)
+                comboBox(byXpath("//div[@class='ResourceSelector']")).selectItemContains(snsTopicName)
                 step("Press subscribe") {
                     findAndClick("//div[@class='JButton' and @text='Subscribe']")
                 }
@@ -186,7 +193,7 @@ class SQSTest {
                         openExplorerActionMenu(sqsNodeLabel, queueName)
                     }
                     findAndClick("//div[@text='$subscribeToSnsText']")
-                    comboBox(byXpath("//div[@class='ResourceSelector']")).selectItem(snsTopicName)
+                    comboBox(byXpath("//div[@class='ResourceSelector']")).selectItemContains(snsTopicName)
                     step("Press subscribe") {
                         findAndClick("//div[@class='JButton' and @text='Subscribe']")
                     }
@@ -231,6 +238,7 @@ class SQSTest {
             SnsClient.create().use { client ->
                 client.deleteTopic { it.topicArn(snsTopicArn) }
             }
+            log.info("Deleted sns topic $snsTopicArn")
         } catch (e: Exception) {
             log.error("Unable to verify the topic was removed", e)
         }
