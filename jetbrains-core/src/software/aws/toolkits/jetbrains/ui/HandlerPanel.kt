@@ -24,7 +24,7 @@ class HandlerPanel(private val project: Project) : JPanel(MigLayout("novisualpad
     private val simpleHandler = EditorTextField()
     private val handlerWithCompletion = TextFieldWithCompletion(project, handlerCompletionProvider, "", true, true, true, true)
 
-    private var runtime: Runtime = Runtime.UNKNOWN_TO_SDK_VERSION
+    private var runtime: Runtime? = null
 
     val handler: EditorTextField
         get() = if (handlerCompletionProvider.isCompletionSupported) handlerWithCompletion
@@ -59,7 +59,7 @@ class HandlerPanel(private val project: Project) : JPanel(MigLayout("novisualpad
         switchCompletion()
     }
 
-    fun setRuntime(runtime: Runtime) {
+    fun setRuntime(runtime: Runtime?) {
         this.runtime = runtime
         handlerCompletionProvider = HandlerCompletionProvider(project, runtime)
         switchCompletion()
@@ -95,15 +95,20 @@ class HandlerPanel(private val project: Project) : JPanel(MigLayout("novisualpad
         simpleHandler.isVisible = !isCompletionSupported
     }
 
-    fun validateHandler(): ValidationInfo? {
+    fun validateHandler(handlerMustExist: Boolean): ValidationInfo? {
         val handlerValue = handler.text.nullize(true)
             ?: return handler.validationInfo(message("lambda.upload_validation.handler"))
 
-        val psiFile = findPsiElementsForHandler(project, runtime, handlerValue).firstOrNull()?.containingFile
-            ?: return handler.validationInfo(message("lambda.upload_validation.handler_not_found"))
+        if (handlerMustExist) {
+            val runtime = runtime
+                ?: throw IllegalStateException("Runtime was not set in the HandlerPanel")
 
-        ModuleUtil.findModuleForFile(psiFile)
-            ?: return handler.validationInfo(message("lambda.upload_validation.module_not_found", psiFile))
+            val psiFile = findPsiElementsForHandler(project, runtime, handlerValue).firstOrNull()?.containingFile
+                ?: return handler.validationInfo(message("lambda.upload_validation.handler_not_found"))
+
+            ModuleUtil.findModuleForFile(psiFile)
+                ?: return handler.validationInfo(message("lambda.upload_validation.module_not_found", psiFile))
+        }
 
         return null
     }

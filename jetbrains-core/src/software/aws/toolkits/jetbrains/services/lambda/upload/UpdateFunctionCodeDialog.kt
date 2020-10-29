@@ -21,24 +21,16 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
-import javax.swing.Action
 import javax.swing.JComponent
-
-private val NOTIFICATION_TITLE = message("lambda.service_name")
 
 class UpdateFunctionCodeDialog(private val project: Project, private val initialSettings: LambdaFunction) : DialogWrapper(project) {
     private val view = UpdateFunctionCodePanel(project)
     private val updateSettings = UpdateLambdaSettings.getInstance(initialSettings.arn)
 
-    private val action: OkAction = object : OkAction() {
-        init {
-            putValue(Action.NAME, message("lambda.upload.update_settings_button.title"))
-        }
-    }
-
     init {
         super.init()
         title = message("lambda.upload.updateCode.title", initialSettings.name)
+        setOKButtonText(message("general.update_button"))
 
         view.handlerPanel.handler.text = initialSettings.handler
         view.handlerPanel.setRuntime(initialSettings.runtime)
@@ -54,8 +46,6 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
 
     override fun doValidate(): ValidationInfo? = view.validatePanel()
 
-    override fun getOKAction(): Action = action
-
     override fun doCancelAction() {
         LambdaTelemetry.editFunction(project, result = Result.Cancelled)
         super.doCancelAction()
@@ -64,7 +54,6 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
     override fun doOKAction() {
         saveSettings()
         upsertLambdaCode()
-        close(OK_EXIT_CODE)
     }
 
     override fun getHelpId(): String? = HelpIds.UPDATE_FUNCTION_CODE_DIALOG.id
@@ -107,17 +96,18 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
                 null -> {
                     notifyInfo(
                         project = project,
-                        title = NOTIFICATION_TITLE,
+                        title = message("lambda.service_name"),
                         content = message("lambda.function.code_updated.notification", functionDetails.name)
                     )
                     LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
                 }
                 is Exception -> {
-                    error.notifyError(project = project, title = NOTIFICATION_TITLE)
+                    error.notifyError(project = project, title = message("lambda.service_name"))
                     LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
                 }
             }
         }
+        close(OK_EXIT_CODE)
     }
 
     private fun loadSettings() {
