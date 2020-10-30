@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.tests
 
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.attempt
 import com.intellij.remoterobot.utils.waitFor
 import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.assertj.core.api.AbstractStringAssert
@@ -34,6 +35,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.UUID
+import java.util.function.Predicate
 
 @TestInstance(Lifecycle.PER_CLASS)
 class CloudFormationBrowserTest {
@@ -78,8 +80,10 @@ class CloudFormationBrowserTest {
                 }
             }
             step("Can copy IDs from tree") {
-                val queueNode = step ("Finding '$queueName [CREATE_COMPLETE]'") {
-                    findText("$queueName [CREATE_COMPLETE]")
+                val queueNode = step("Finding '$queueName [CREATE_COMPLETE]'") {
+                    attempt(5) {
+                        findText("$queueName [CREATE_COMPLETE]")
+                    }
                 }
                 step("Logical ID") {
                     queueNode.click(MouseButton.RIGHT_BUTTON)
