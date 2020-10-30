@@ -35,7 +35,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.UUID
-import java.util.function.Predicate
 
 @TestInstance(Lifecycle.PER_CLASS)
 class CloudFormationBrowserTest {
