@@ -9,6 +9,7 @@ import com.intellij.build.events.impl.FinishEventImpl
 import com.intellij.build.events.impl.OutputBuildEventImpl
 import com.intellij.build.events.impl.StartEventImpl
 import com.intellij.build.events.impl.SuccessResultImpl
+import com.intellij.util.ExceptionUtil
 
 class MessageEmitter private constructor(
     private val buildListener: BuildProgressListener,
@@ -55,7 +56,7 @@ class MessageEmitter private constructor(
     }
 
     fun finishExceptionally(e: Throwable) {
-        emitMessage("$stepName finished exceptionally: $e", true)
+        emitMessage("$stepName finished exceptionally: ${ExceptionUtil.getMessage(e)}", true)
         if (hidden) return
         buildListener.onEvent(
             rootObject,
@@ -83,7 +84,8 @@ class MessageEmitter private constructor(
     }
 
     companion object {
-        fun createRoot(buildListener: BuildProgressListener, rootStepName: String, hidden: Boolean = false): MessageEmitter =
-            MessageEmitter(buildListener, rootStepName, rootStepName, rootStepName, hidden, null)
+        // TODO: Decouple step name from the build ID
+        fun createRoot(buildListener: BuildProgressListener, rootStepName: String): MessageEmitter =
+            MessageEmitter(buildListener, rootStepName, rootStepName, rootStepName, hidden = false, parent = null)
     }
 }

@@ -44,7 +44,7 @@ abstract class LambdaBuilder {
     /**
      * Returns the build directory of the project. Create this if it doesn't exist yet.
      */
-    protected open fun getBuildDirectory(module: Module): Path {
+    open fun getBuildDirectory(module: Module): Path {
         val contentRoot = module.rootManager.contentRoots.firstOrNull()
             ?: throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))
         return Paths.get(contentRoot.path, ".aws-sam", "build")

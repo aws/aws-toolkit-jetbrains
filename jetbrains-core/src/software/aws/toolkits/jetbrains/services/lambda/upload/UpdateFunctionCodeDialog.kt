@@ -16,11 +16,11 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
-import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.nio.file.Paths
 import javax.swing.JComponent
 
 class UpdateFunctionCodeDialog(private val project: Project, private val initialSettings: LambdaFunction) : DialogWrapper(project) {
@@ -37,8 +37,6 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
 
         loadSettings()
     }
-
-    private fun configurationChanged(): Boolean = initialSettings.handler != view.handlerPanel.handler.text
 
     override fun createCenterPanel(): JComponent? = view.content
 
@@ -74,11 +72,13 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             timeout = initialSettings.timeout,
             memorySize = initialSettings.memorySize,
             xrayEnabled = initialSettings.xrayEnabled,
-            samOptions = SamOptions(
+            samOptions = SamOptions( // TODO: Remove this from details data class
                 buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
             )
         )
 
+        // TODO: Move this so we can share it with CreateFunctionDialog, but don't move it lower since passing PsiELement lower needs to go away since
+        // it is causing customer complaints. We need to prompt for baseDir and try to infer it if we can but only as a default value...
         val element = findPsiElementsForHandler(project, functionDetails.runtime, functionDetails.handler).first()
         val psiFile = element.containingFile
         val module = ModuleUtil.findModuleForFile(psiFile)
@@ -87,26 +87,34 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             ?: throw IllegalStateException("LambdaBuilder for ${initialSettings.runtime} not found")
 
         val s3Bucket = view.codeStorage.sourceBucket.selected() as String
+        val workflow = updateLambdaCodeWorkflow(
+            project,
+            functionDetails, // TODO: Really we only need runtime, handler, codeUri so we should make a dataclass for just that
+            lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
+            Paths.get(lambdaBuilder.handlerBaseDirectory(module, element)), // TODO: Make this return a Path
+            s3Bucket,
+            functionDetails.samOptions,
+            functionDetails.takeIf { it.handler != initialSettings.handler }
+        )
 
-        val lambdaCreator = LambdaCreatorFactory.create(project, lambdaBuilder)
-
-        val future = lambdaCreator.updateLambda(module, element, functionDetails, s3Bucket, configurationChanged())
-        future.whenComplete { _, error ->
-            when (error) {
-                null -> {
-                    notifyInfo(
-                        project = project,
-                        title = message("lambda.service_name"),
-                        content = message("lambda.function.code_updated.notification", functionDetails.name)
-                    )
-                    LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
-                }
-                is Exception -> {
-                    error.notifyError(project = project, title = message("lambda.service_name"))
-                    LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
-                }
-            }
-        }
+        // TODO: Add callback tp startExecution, onSuccess, onError? onFinished(e: Exception?)?
+        StepExecutor(project, "Update Function Code", workflow, initialSettings.name).startExecution()
+//         { _, error ->
+//            when (error) {
+//                null -> {
+//                    notifyInfo(
+//                        project = project,
+//                        title = message("lambda.service_name"),
+//                        content = message("lambda.function.code_updated.notification", functionDetails.name)
+//                    )
+//                    LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+//                }
+//                is Exception -> {
+//                    error.notifyError(project = project, title = message("lambda.service_name"))
+//                    LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
+//                }
+//            }
+//        }
         close(OK_EXIT_CODE)
     }
 

@@ -20,14 +20,13 @@ import software.aws.toolkits.resources.message
 import java.io.OutputStream
 
 /**
- * Executor for a tree of [Step]
+ * Executor for a [StepWorkflow]
  */
 class StepExecutor(
     private val project: Project,
     private val title: String,
-    private val rootStep: Step,
-    private val uniqueId: String,
-    private val progressListener: BuildProgressListener = project.service<BuildViewManager>()
+    private val workflow: StepWorkflow,
+    private val uniqueId: String
 ) {
     fun startExecution(): ProcessHandler {
         val context = Context(project)
@@ -38,16 +37,18 @@ class StepExecutor(
             "/unused/working/directory",
             System.currentTimeMillis()
         )
+        descriptor.isActivateToolWindowWhenAdded = true
 
+        val progressListener: BuildProgressListener = project.service<BuildViewManager>()
         val messageEmitter = MessageEmitter.createRoot(progressListener, uniqueId)
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
                 executionStarted(descriptor, progressListener)
-                rootStep.run(context, messageEmitter)
-                executionFinishedSuccessfully(descriptor, processHandler, progressListener)
+                workflow.run(context, messageEmitter)
+                executionFinishedSuccessfully(processHandler, progressListener)
             } catch (e: Throwable) {
-                executionFinishedExceptionally(descriptor, processHandler, progressListener, e)
+                executionFinishedExceptionally(processHandler, progressListener, e)
             }
         }
 
@@ -55,16 +56,12 @@ class StepExecutor(
     }
 
     private fun executionStarted(descriptor: BuildDescriptor, progressListener: BuildProgressListener) {
-        progressListener.onEvent(descriptor, StartBuildEventImpl(descriptor, message("cloud_debug.execution.running")))
+        progressListener.onEvent(uniqueId, StartBuildEventImpl(descriptor, message("general.execution.running")))
     }
 
-    private fun executionFinishedSuccessfully(
-        descriptor: BuildDescriptor,
-        processHandler: DummyProcessHandler,
-        progressListener: BuildProgressListener
-    ) {
+    private fun executionFinishedSuccessfully(processHandler: DummyProcessHandler, progressListener: BuildProgressListener) {
         progressListener.onEvent(
-            descriptor,
+            uniqueId,
             FinishBuildEventImpl(
                 uniqueId,
                 null,
@@ -77,12 +74,7 @@ class StepExecutor(
         processHandler.notifyProcessTerminated(0)
     }
 
-    private fun executionFinishedExceptionally(
-        descriptor: BuildDescriptor,
-        processHandler: DummyProcessHandler,
-        progressListener: BuildProgressListener,
-        e: Throwable
-    ) {
+    private fun executionFinishedExceptionally(processHandler: DummyProcessHandler, progressListener: BuildProgressListener, e: Throwable) {
         val message = if (e is ProcessCanceledException) {
             message("general.execution.cancelled")
         } else {
@@ -90,7 +82,7 @@ class StepExecutor(
         }
 
         progressListener.onEvent(
-            descriptor,
+            uniqueId,
             FinishBuildEventImpl(
                 uniqueId,
                 null,

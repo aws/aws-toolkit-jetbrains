@@ -21,7 +21,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.RootStep
+import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.CloudDebugWorkflow
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.SetUpPortForwarding
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.StopApplications
 import software.aws.toolkits.jetbrains.services.ecs.execution.EcsServiceCloudDebuggingRunSettings
@@ -55,7 +55,7 @@ class CloudDebugRunState(
             }
         )
 
-        val rootStep = RootStep(settings, environment)
+        val rootStep = CloudDebugWorkflow(settings, environment)
         val context = Context(project)
         val processHandler = CloudDebugProcessHandler(context)
 
