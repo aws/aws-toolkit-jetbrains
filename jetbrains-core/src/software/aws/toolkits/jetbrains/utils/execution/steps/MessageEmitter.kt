@@ -56,7 +56,7 @@ class MessageEmitter private constructor(
     }
 
     fun finishExceptionally(e: Throwable) {
-        emitMessage("$stepName finished exceptionally: ${ExceptionUtil.getMessage(e)}", true)
+        emitMessage("$stepName finished exceptionally: ${ExceptionUtil.getNonEmptyMessage(e, e.javaClass.simpleName)}", true)
         if (hidden) return
         buildListener.onEvent(
             rootObject,
