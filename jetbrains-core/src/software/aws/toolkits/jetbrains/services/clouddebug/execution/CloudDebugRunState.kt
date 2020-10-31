@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.SetUp
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.StopApplications
 import software.aws.toolkits.jetbrains.services.ecs.execution.EcsServiceCloudDebuggingRunSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
+import software.aws.toolkits.jetbrains.utils.execution.steps.DefaultMessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.ClouddebugTelemetry
@@ -60,7 +61,7 @@ class CloudDebugRunState(
         val processHandler = CloudDebugProcessHandler(context)
 
         ApplicationManager.getApplication().executeOnPooledThread {
-            val messageEmitter = MessageEmitter.createRoot(buildView, runConfigId())
+            val messageEmitter = DefaultMessageEmitter.createRoot(buildView, runConfigId())
             var result = Result.Succeeded
             try {
                 startRunConfiguration(descriptor, buildView)

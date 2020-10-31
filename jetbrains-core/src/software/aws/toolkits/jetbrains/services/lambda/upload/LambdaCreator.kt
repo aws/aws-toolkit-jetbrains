@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuildLambda
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambda
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UpdateLambda
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UpdateLambdaCode
 import software.aws.toolkits.jetbrains.services.s3.upload
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
 import software.aws.toolkits.resources.message
@@ -73,7 +73,7 @@ fun updateLambdaCodeWorkflow(
     return StepWorkflow(
         BuildLambda(dummyTemplate, buildDir, samOptions),
         PackageLambda(dummyTemplate, packagedTemplate, dummyLogicalId, codeStorageLocation, envVars),
-        UpdateLambda(project.awsClient(), functionUploadDetails.name, updatedFunctionDetails)
+        UpdateLambdaCode(project.awsClient(), functionUploadDetails.name, updatedFunctionDetails)
     )
 }
 

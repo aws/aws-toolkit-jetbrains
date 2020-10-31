@@ -40,7 +40,7 @@ class StepExecutor(
         descriptor.isActivateToolWindowWhenAdded = true
 
         val progressListener: BuildProgressListener = project.service<BuildViewManager>()
-        val messageEmitter = MessageEmitter.createRoot(progressListener, uniqueId)
+        val messageEmitter = DefaultMessageEmitter.createRoot(progressListener, uniqueId)
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {

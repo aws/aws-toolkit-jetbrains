@@ -70,12 +70,11 @@ class PackageLambda(
         )
     }
 
-    private fun convertCodeUriObject(codeUri: JsonNode): UploadedCode =
-        UploadedCode(
-            bucket = codeUri.required("Bucket").textValue(),
-            key = codeUri.required("Key").textValue(),
-            version = codeUri.get("Version").textValue()
-        )
+    private fun convertCodeUriObject(codeUri: JsonNode): UploadedCode = UploadedCode(
+        bucket = codeUri.required("Bucket").textValue(),
+        key = codeUri.required("Key").textValue(),
+        version = codeUri.get("Version").textValue()
+    )
 
     companion object {
         private const val S3_PREFIX = "s3://"

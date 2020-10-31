@@ -27,7 +27,7 @@ class MessageEmitterTest {
     val mockRule: MockitoRule = MockitoJUnit.rule()
 
     private val buildView = mock<BuildView>()
-    private val rootEmitter = MessageEmitter.createRoot(buildView, PARENT_ID)
+    private val rootEmitter = DefaultMessageEmitter.createRoot(buildView, PARENT_ID)
 
     @Test
     fun startEventIsWritten() {

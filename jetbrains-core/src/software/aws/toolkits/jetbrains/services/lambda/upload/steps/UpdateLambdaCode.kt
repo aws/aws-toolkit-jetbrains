@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 
-class UpdateLambda(private val lambdaClient: LambdaClient, private val functionName: String, private val updatedDetails: FunctionUploadDetails?) : Step() {
+class UpdateLambdaCode(private val lambdaClient: LambdaClient, private val functionName: String, private val updatedDetails: FunctionUploadDetails?) : Step() {
     override val stepName = "Updating Lambda"
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
