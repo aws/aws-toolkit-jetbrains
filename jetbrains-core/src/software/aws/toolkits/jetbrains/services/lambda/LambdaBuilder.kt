@@ -12,9 +12,7 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.rootManager
-import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
-import com.intellij.util.io.Compressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -24,8 +22,6 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.PathMapping
-import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
-import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
@@ -148,22 +144,6 @@ abstract class LambdaBuilder {
 
             return@runBlocking BuiltLambda(builtTemplate, buildDir.resolve(logicalId), pathMappings)
         }
-    }
-
-    fun packageLambda(
-        module: Module,
-        handlerElement: PsiElement,
-        handler: String,
-        runtime: Runtime,
-        samOptions: SamOptions,
-        onStart: (ProcessHandler) -> Unit = {}
-    ): Path {
-        val builtLambda = buildLambda(module, handlerElement, handler, runtime, DEFAULT_TIMEOUT, DEFAULT_MEMORY_SIZE, emptyMap(), samOptions, onStart)
-        val zipLocation = FileUtil.createTempFile("builtLambda", "zip", true)
-        Compressor.Zip(zipLocation).use {
-            it.addDirectory(builtLambda.codeLocation.toFile())
-        }
-        return zipLocation.toPath()
     }
 
     protected open fun additionalEnvironmentVariables(module: Module, samOptions: SamOptions): Map<String, String> = emptyMap()
