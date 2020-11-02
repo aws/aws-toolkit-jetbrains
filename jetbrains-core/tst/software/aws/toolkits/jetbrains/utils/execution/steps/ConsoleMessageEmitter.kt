@@ -6,9 +6,7 @@ package software.aws.toolkits.jetbrains.utils.execution.steps
 import com.intellij.util.ExceptionUtil
 
 class ConsoleMessageEmitter(private val stepName: String) : MessageEmitter {
-    override fun createChild(stepName: String, hidden: Boolean): MessageEmitter {
-        return ConsoleMessageEmitter(stepName)
-    }
+    override fun createChild(stepName: String, hidden: Boolean): MessageEmitter = ConsoleMessageEmitter(stepName)
 
     override fun startStep() {
         println("[$stepName] [StartEvent]")

@@ -46,7 +46,6 @@ import software.aws.toolkits.jetbrains.services.ecs.EcsServiceNode
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources.describeService
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources.listServiceArns
 import software.aws.toolkits.jetbrains.utils.execution.steps.DefaultMessageEmitter
-import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
