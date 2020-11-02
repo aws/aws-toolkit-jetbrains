@@ -65,4 +65,3 @@ class CreateLambdaFunctionAction(
         e.presentation.isVisible = allowAction
     }
 }
-
