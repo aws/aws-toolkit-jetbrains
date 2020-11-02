@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
-import java.nio.file.Paths
 import javax.swing.JComponent
 
 class UpdateFunctionCodeDialog(private val project: Project, private val initialSettings: LambdaFunction) : DialogWrapper(project) {
@@ -98,7 +97,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             project,
             functionDetails, // TODO: Really we only need runtime, handler, codeUri so we should make a dataclass for just that
             lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
-            Paths.get(lambdaBuilder.handlerBaseDirectory(module, element)), // TODO: Make this return a Path
+            lambdaBuilder.handlerBaseDirectory(module, element),
             s3Bucket,
             samOptions,
             functionDetails.takeIf { it.handler != initialSettings.handler }

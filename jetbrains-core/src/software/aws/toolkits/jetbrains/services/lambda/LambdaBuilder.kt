@@ -35,7 +35,7 @@ abstract class LambdaBuilder {
     /**
      * Returns the base directory of the Lambda handler
      */
-    abstract fun handlerBaseDirectory(module: Module, handlerElement: PsiElement): String
+    abstract fun handlerBaseDirectory(module: Module, handlerElement: PsiElement): Path
 
     /**
      * Returns the build directory of the project. Create this if it doesn't exist yet.
@@ -60,7 +60,7 @@ abstract class LambdaBuilder {
         samOptions: SamOptions,
         onStart: (ProcessHandler) -> Unit = {}
     ): BuiltLambda {
-        val baseDir = handlerBaseDirectory(module, handlerElement)
+        val baseDir = handlerBaseDirectory(module, handlerElement).toString()
 
         val customTemplate = getBuildDirectory(module).resolve("template.yaml")
 
