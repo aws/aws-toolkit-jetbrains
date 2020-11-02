@@ -17,6 +17,8 @@ import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -97,24 +99,20 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             functionDetails.takeIf { it.handler != initialSettings.handler }
         )
 
-        // TODO: Add callback tp startExecution, onSuccess, onError? onFinished(e: Exception?)?
-        StepExecutor(project, "Update Function Code", workflow, initialSettings.name).startExecution()
-//         { _, error ->
-//            when (error) {
-//                null -> {
-//                    notifyInfo(
-//                        project = project,
-//                        title = message("lambda.service_name"),
-//                        content = message("lambda.function.code_updated.notification", functionDetails.name)
-//                    )
-//                    LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
-//                }
-//                is Exception -> {
-//                    error.notifyError(project = project, title = message("lambda.service_name"))
-//                    LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
-//                }
-//            }
-//        }
+        StepExecutor(project, "Update Function Code", workflow, initialSettings.name).startExecution(
+            onSuccess = {
+                notifyInfo(
+                    project = project,
+                    title = message("lambda.service_name"),
+                    content = message("lambda.function.code_updated.notification", initialSettings.name)
+                )
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+            },
+            onError = {
+                it.notifyError(project = project, title = message("lambda.service_name"))
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
+            }
+        )
         close(OK_EXIT_CODE)
     }
 

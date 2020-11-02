@@ -28,7 +28,7 @@ class StepExecutor(
     private val workflow: StepWorkflow,
     private val uniqueId: String
 ) {
-    fun startExecution(): ProcessHandler {
+    fun startExecution(onSuccess: (Context) -> Unit = {}, onError: (Throwable) -> Unit = {}): ProcessHandler {
         val context = Context(project)
         val processHandler = DummyProcessHandler(context)
         val descriptor = DefaultBuildDescriptor(
@@ -47,8 +47,10 @@ class StepExecutor(
                 executionStarted(descriptor, progressListener)
                 workflow.run(context, messageEmitter)
                 executionFinishedSuccessfully(processHandler, progressListener)
+                onSuccess(context)
             } catch (e: Throwable) {
                 executionFinishedExceptionally(processHandler, progressListener, e)
+                onError(e)
             }
         }
 
