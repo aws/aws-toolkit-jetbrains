@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuildLambda
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambda
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UpdateLambdaCode
 import software.aws.toolkits.jetbrains.services.s3.upload
@@ -40,6 +41,40 @@ object LambdaCreatorFactory {
         builder,
         CodeUploader(project.awsClient()),
         LambdaFunctionCreator(project.awsClient())
+    )
+}
+
+fun createLambdaWorkflow(
+    project: Project,
+    functionUploadDetails: FunctionUploadDetails,
+    buildDir: Path,
+    codeUri: Path,
+    codeStorageLocation: String,
+    samOptions: SamOptions,
+    functionDetails: FunctionUploadDetails
+): StepWorkflow {
+    Files.createDirectories(buildDir)
+
+    val dummyTemplate = Files.createTempFile("temp-template", ".yaml")
+    val dummyLogicalId = "Function"
+    SamTemplateUtils.writeDummySamTemplate(
+        tempFile = dummyTemplate,
+        logicalId = dummyLogicalId,
+        runtime = functionUploadDetails.runtime,
+        handler = functionUploadDetails.handler,
+        codeUri = codeUri.toString()
+    )
+    val packagedTemplate = buildDir.resolve("packaged-temp-template.yaml")
+
+    val connectSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+        ?: throw IllegalStateException("Tried to update a lambda without valid AWS connection")
+
+    val envVars = connectSettings.credentials.resolveCredentials().toEnvironmentVariables() + connectSettings.region.toEnvironmentVariables()
+
+    return StepWorkflow(
+        BuildLambda(dummyTemplate, buildDir, samOptions),
+        PackageLambda(dummyTemplate, packagedTemplate, dummyLogicalId, codeStorageLocation, envVars),
+        CreateLambda(project.awsClient(), functionDetails)
     )
 }
 
@@ -90,16 +125,6 @@ class LambdaCreator internal constructor(
     ): CompletionStage<LambdaFunction> = packageLambda(handler, functionDetails, module, builder)
         .thenCompose { uploader.upload(functionDetails, it, s3Bucket, module.project) }
         .thenCompose { functionCreator.create(functionDetails, it) }
-
-    fun updateLambda(
-        module: Module,
-        handler: PsiElement,
-        functionDetails: FunctionUploadDetails,
-        s3Bucket: String,
-        replaceConfiguration: Boolean = true
-    ): CompletionStage<Nothing> = packageLambda(handler, functionDetails, module, builder)
-        .thenCompose { uploader.upload(functionDetails, it, s3Bucket, module.project) }
-        .thenCompose { functionCreator.update(functionDetails, it, replaceConfiguration) }
 
     private fun packageLambda(
         handler: PsiElement,

@@ -19,13 +19,16 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIME
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda.Companion.FUNCTION_ARN
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
+import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.nio.file.Paths
 import javax.swing.JComponent
 
 class CreateFunctionDialog(private val project: Project, private val initialRuntime: Runtime?, private val handlerName: String?) : DialogWrapper(project) {
@@ -74,39 +77,51 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
         if (!okAction.isEnabled) {
             return
         }
+        FileDocumentManager.getInstance().saveAllDocuments()
+
         val functionDetails = viewToFunctionDetails()
+        val samOptions = SamOptions(
+            buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
+        )
+
+        // TODO: Move this so we can share it with CreateFunctionDialog, but don't move it lower since passing PsiELement lower needs to go away since
+        // it is causing customer complaints. We need to prompt for baseDir and try to infer it if we can but only as a default value...
         val element = findPsiElementsForHandler(project, functionDetails.runtime, functionDetails.handler).first()
         val psiFile = element.containingFile
-        val module = ModuleUtil.findModuleForFile(psiFile) ?: throw IllegalStateException("Failed to locate module for $psiFile")
+        val module = ModuleUtil.findModuleForFile(psiFile)
+            ?: throw IllegalStateException("Failed to locate module for $psiFile")
+        val lambdaBuilder = functionDetails.runtime.runtimeGroup?.let { LambdaBuilder.getInstanceOrNull(it) }
+            ?: throw IllegalStateException("LambdaBuilder for ${functionDetails.runtime} not found")
 
         val s3Bucket = view.codeStorage.sourceBucket.selectedItem as String
 
-        val lambdaBuilder = psiFile.language.runtimeGroup?.let { LambdaBuilder.getInstanceOrNull(it) } ?: return
-        val lambdaCreator = LambdaCreatorFactory.create(project, lambdaBuilder)
+        val workflow = createLambdaWorkflow(
+            project,
+            functionDetails, // TODO: Really we only need runtime, handler, codeUri so we should make a dataclass for just that
+            lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
+            Paths.get(lambdaBuilder.handlerBaseDirectory(module, element)), // TODO: Make this return a Path
+            s3Bucket,
+            samOptions,
+            functionDetails
+        )
 
-        FileDocumentManager.getInstance().saveAllDocuments()
+        StepExecutor(project, "Update Function Code", workflow, functionDetails.name).startExecution(
+            onSuccess = {
+                saveSettings(it.getRequiredAttribute(FUNCTION_ARN))
 
-        val future = lambdaCreator.createLambda(module, element, functionDetails, s3Bucket)
-        future.whenComplete { function, error ->
-            when (error) {
-                null -> {
-                    saveSettings(function.arn)
-
-                    notifyInfo(
-                        title = message("lambda.service_name"),
-                        content = message("lambda.function.created.notification", functionDetails.name),
-                        project = project
-                    )
-                    LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
-                    // If we created a new lambda, clear the resource cache for LIST_FUNCTIONS
-                    project.refreshAwsTree(LambdaResources.LIST_FUNCTIONS)
-                }
-                is Exception -> {
-                    error.notifyError(title = message("lambda.service_name"))
-                    LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
-                }
+                notifyInfo(
+                    project = project,
+                    title = message("lambda.service_name"),
+                    content = message("lambda.function.created.notification", functionDetails.name)
+                )
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+                project.refreshAwsTree(LambdaResources.LIST_FUNCTIONS)
+            },
+            onError = {
+                it.notifyError(project = project, title = message("lambda.service_name"))
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
             }
-        }
+        )
         close(OK_EXIT_CODE)
     }
 

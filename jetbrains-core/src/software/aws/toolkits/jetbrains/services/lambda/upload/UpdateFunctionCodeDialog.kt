@@ -79,6 +79,10 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             )
         )
 
+        val samOptions = SamOptions(
+            buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
+        )
+
         // TODO: Move this so we can share it with CreateFunctionDialog, but don't move it lower since passing PsiELement lower needs to go away since
         // it is causing customer complaints. We need to prompt for baseDir and try to infer it if we can but only as a default value...
         val element = findPsiElementsForHandler(project, functionDetails.runtime, functionDetails.handler).first()
@@ -95,7 +99,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
             Paths.get(lambdaBuilder.handlerBaseDirectory(module, element)), // TODO: Make this return a Path
             s3Bucket,
-            functionDetails.samOptions,
+            samOptions,
             functionDetails.takeIf { it.handler != initialSettings.handler }
         )
 

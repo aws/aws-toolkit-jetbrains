@@ -20,8 +20,6 @@ import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse
 import software.amazon.awssdk.services.lambda.model.EnvironmentResponse
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingConfigResponse
-import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest
-import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse
 import software.amazon.awssdk.services.s3.S3Client
@@ -110,68 +108,6 @@ abstract class LambdaCreatorTestBase(private val functionDetails: FunctionUpload
         assertThat(createRequest.code().s3Bucket()).isEqualTo(s3Bucket)
         assertThat(createRequest.code().s3Key()).isEqualTo("${functionDetails.name}.zip")
         assertThat(createRequest.code().s3ObjectVersion()).isEqualTo("VersionFoo")
-    }
-
-    @Test
-    fun testUpdateCodeAndSettings() {
-        val s3Bucket = "TestBucket"
-
-        val uploadCaptor = uploadCaptor()
-
-        val updateConfigCaptor = argumentCaptor<UpdateFunctionConfigurationRequest>()
-        val updateCodeCaptor = argumentCaptor<UpdateFunctionCodeRequest>()
-        mockClientManager.create<LambdaClient>().stub {
-            on { updateFunctionCode(updateCodeCaptor.capture()) } doReturn UpdateFunctionCodeResponse.builder()
-                .build()
-
-            on { updateFunctionConfiguration(updateConfigCaptor.capture()) } doReturn UpdateFunctionConfigurationResponse.builder()
-                .functionName(functionDetails.name)
-                .functionArn("TestFunctionArn")
-                .description(functionDetails.description)
-                .lastModified(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-                .handler(functionDetails.handler)
-                .runtime(functionDetails.runtime)
-                .timeout(functionDetails.timeout)
-                .memorySize(functionDetails.memorySize)
-                .environment(EnvironmentResponse.builder().variables(functionDetails.envVars).build())
-                .tracingConfig(TracingConfigResponse.builder().mode(functionDetails.tracingMode).build())
-                .role(functionDetails.iamRole.arn)
-                .build()
-        }
-
-        val tempFile = FileUtil.createTempFile("lambda", ".zip")
-
-        val lambdaBuilder = mock<LambdaBuilder> {
-            on { packageLambda(any(), any(), any(), any(), any(), any()) } doReturn tempFile.toPath()
-        }
-
-        val psiFile = projectRule.fixture.addClass(
-            """
-            package com.example;
-
-            public class UsefulUtils {
-                public static String upperCase(String input) {
-                    return input.toUpperCase();
-                }
-            }
-            """
-        ).containingFile
-
-        val lambdaCreator = LambdaCreatorFactory.create(projectRule.project, lambdaBuilder)
-        lambdaCreator.updateLambda(projectRule.module, psiFile, functionDetails, s3Bucket).toCompletableFuture()
-            .get(5, TimeUnit.SECONDS)
-
-        val uploadRequest = uploadCaptor.firstValue
-        assertThat(uploadRequest.bucket()).isEqualTo(s3Bucket)
-        assertThat(uploadRequest.key()).isEqualTo("${functionDetails.name}.zip")
-
-        val configurationRequest = updateConfigCaptor.firstValue
-        assertConfigurationRequestMatchesFunctionDetails(configurationRequest)
-
-        val codeRequest = updateCodeCaptor.firstValue
-        assertThat(codeRequest.s3Bucket()).isEqualTo(s3Bucket)
-        assertThat(codeRequest.s3Key()).isEqualTo("${functionDetails.name}.zip")
-        assertThat(codeRequest.s3ObjectVersion()).isEqualTo("VersionFoo")
     }
 
     private fun uploadCaptor(): KArgumentCaptor<PutObjectRequest> {

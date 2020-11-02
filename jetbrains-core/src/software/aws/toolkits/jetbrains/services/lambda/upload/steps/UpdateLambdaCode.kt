@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.upload.steps
 
 import software.amazon.awssdk.services.lambda.LambdaClient
+import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse
 import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionUploadDetails
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambda.Companion.UPLOADED_CODE_LOCATION
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
@@ -23,21 +24,23 @@ class UpdateLambdaCode(private val lambdaClient: LambdaClient, private val funct
         }
 
         updatedDetails?.let {
-            lambdaClient.updateFunctionConfiguration {
-                it.functionName(updatedDetails.name)
-                it.description(updatedDetails.description)
-                it.handler(updatedDetails.handler)
-                it.role(updatedDetails.iamRole.arn)
-                it.runtime(updatedDetails.runtime)
-                it.timeout(updatedDetails.timeout)
-                it.memorySize(updatedDetails.memorySize)
-                it.environment { env ->
-                    env.variables(updatedDetails.envVars)
-                }
-                it.tracingConfig { tracing ->
-                    tracing.mode(updatedDetails.tracingMode)
-                }
-            }
+            lambdaClient.updateFunctionConfiguration(it)
         }
+    }
+}
+
+fun LambdaClient.updateFunctionConfiguration(config: FunctionUploadDetails): UpdateFunctionConfigurationResponse = this.updateFunctionConfiguration {
+    it.functionName(config.name)
+    it.description(config.description)
+    it.handler(config.handler)
+    it.role(config.iamRole.arn)
+    it.runtime(config.runtime)
+    it.timeout(config.timeout)
+    it.memorySize(config.memorySize)
+    it.environment { env ->
+        env.variables(config.envVars)
+    }
+    it.tracingConfig { tracing ->
+        tracing.mode(config.tracingMode)
     }
 }

@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionUploadDetails
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambda.Companion.UploadedCode
 import software.aws.toolkits.jetbrains.utils.execution.steps.ConsoleMessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
@@ -102,6 +103,7 @@ class UpdateLambdaCodeTest {
         verify(lambdaClient).updateFunctionCode(any<UpdateFunctionCodeRequest>())
         with(codeRequestCaptor) {
             assertThat(allValues).hasSize(1)
+
             assertThat(firstValue.functionName()).isEqualTo(functionName)
             assertThat(firstValue.s3Bucket()).isEqualTo(codeLocation.bucket)
             assertThat(firstValue.s3Key()).isEqualTo(codeLocation.key)
@@ -114,6 +116,7 @@ class UpdateLambdaCodeTest {
             verify(lambdaClient).updateFunctionConfiguration(any<UpdateFunctionConfigurationRequest>())
             with(configRequestCaptor) {
                 assertThat(allValues).hasSize(1)
+
                 assertThat(firstValue.functionName()).isEqualTo(functionName)
                 assertThat(firstValue.handler()).isEqualTo(handler)
             }

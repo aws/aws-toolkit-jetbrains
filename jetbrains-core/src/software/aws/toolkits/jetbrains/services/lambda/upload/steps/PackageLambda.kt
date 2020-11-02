@@ -77,9 +77,9 @@ class PackageLambda(
     )
 
     companion object {
+        data class UploadedCode(val bucket: String, val key: String, val version: String?)
+
         private const val S3_PREFIX = "s3://"
         val UPLOADED_CODE_LOCATION = AttributeBagKey.create<UploadedCode>("UPLOADED_CODE_LOCATION")
     }
 }
-
-data class UploadedCode(val bucket: String, val key: String, val version: String?)
