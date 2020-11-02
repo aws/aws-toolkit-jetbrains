@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda.Companion.FUNCTION_ARN
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createLambdaWorkflow
 import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
