@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.lambda.upload
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.aws.toolkits.jetbrains.services.iam.IamRole
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 
 data class FunctionDetails(
     val name: String,
@@ -17,8 +16,7 @@ data class FunctionDetails(
     val envVars: Map<String, String>,
     val timeout: Int,
     val memorySize: Int,
-    val xrayEnabled: Boolean,
-    val samOptions: SamOptions
+    val xrayEnabled: Boolean
 ) {
     val tracingMode: TracingMode =
         if (xrayEnabled) {

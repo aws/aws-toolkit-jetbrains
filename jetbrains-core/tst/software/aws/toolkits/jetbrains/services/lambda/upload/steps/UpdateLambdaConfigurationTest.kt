@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationR
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.iam.IamRole
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
 
 class UpdateLambdaConfigurationTest {
@@ -36,15 +35,14 @@ class UpdateLambdaConfigurationTest {
         validate(
             FunctionDetails(
                 name = aString(),
-                description = aString(),
                 handler = aString(),
-                runtime = Runtime.knownValues().random(),
                 iamRole = IamRole(aString()),
+                runtime = Runtime.knownValues().random(),
+                description = aString(),
                 envVars = mapOf(aString() to aString()),
-                memorySize = 1024,
                 timeout = 300,
-                xrayEnabled = true,
-                samOptions = SamOptions()
+                memorySize = 1024,
+                xrayEnabled = true
             )
         )
     }

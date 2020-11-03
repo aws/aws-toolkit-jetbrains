@@ -132,17 +132,14 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
 
     private fun viewToFunctionDetails(): FunctionDetails = FunctionDetails(
         name = view.name.text.trim(),
-        description = view.description.text,
         handler = view.configSettings.handlerPanel.handler.text,
         iamRole = view.configSettings.iamRole.selected()!!,
         runtime = view.configSettings.runtime.selectedItem as Runtime,
+        description = view.description.text,
         envVars = view.configSettings.envVars.envVars,
         timeout = view.configSettings.timeoutSlider.value,
         memorySize = view.configSettings.memorySlider.value,
-        xrayEnabled = view.configSettings.xrayEnabled.isSelected,
-        samOptions = SamOptions(
-            buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
-        )
+        xrayEnabled = view.configSettings.xrayEnabled.isSelected
     )
 
     private fun saveSettings(arn: String) {

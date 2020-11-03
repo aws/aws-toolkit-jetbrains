@@ -73,10 +73,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             envVars = initialSettings.envVariables ?: emptyMap(),
             timeout = initialSettings.timeout,
             memorySize = initialSettings.memorySize,
-            xrayEnabled = initialSettings.xrayEnabled,
-            samOptions = SamOptions( // TODO: Remove this from details data class
-                buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
-            )
+            xrayEnabled = initialSettings.xrayEnabled
         )
 
         val samOptions = SamOptions(

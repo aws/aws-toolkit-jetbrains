@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationR
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.iam.IamRole
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambda.Companion.UploadedCode
 import software.aws.toolkits.jetbrains.utils.execution.steps.ConsoleMessageEmitter
@@ -86,15 +85,14 @@ class UpdateLambdaCodeTest {
         val functionDetails = handler?.let {
             FunctionDetails(
                 name = functionName,
-                description = null,
                 handler = handler,
                 iamRole = IamRole(aString()),
                 runtime = Runtime.JAVA8,
+                description = null,
                 envVars = emptyMap(),
                 timeout = 0,
                 memorySize = 0,
-                xrayEnabled = false,
-                samOptions = SamOptions()
+                xrayEnabled = false
             )
         }
 

@@ -16,7 +16,6 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.updateFunctionConfiguration
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -91,15 +90,14 @@ class UpdateFunctionConfigDialog(private val project: Project, private val initi
 
     private fun viewToFunctionDetails(): FunctionDetails = FunctionDetails(
         name = initialSettings.name,
-        description = view.description.text,
         handler = view.configSettings.handlerPanel.handler.text,
         iamRole = view.configSettings.iamRole.selected()!!,
         runtime = view.configSettings.runtime.selectedItem as Runtime,
+        description = view.description.text,
         envVars = view.configSettings.envVars.envVars,
         timeout = view.configSettings.timeoutSlider.value,
         memorySize = view.configSettings.memorySlider.value,
-        xrayEnabled = view.configSettings.xrayEnabled.isSelected,
-        samOptions = SamOptions()
+        xrayEnabled = view.configSettings.xrayEnabled.isSelected
     )
 
     override fun getHelpId(): String? = HelpIds.UPDATE_FUNCTION_CONFIGURATION_DIALOG.id
