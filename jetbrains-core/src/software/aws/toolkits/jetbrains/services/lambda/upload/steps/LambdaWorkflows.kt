@@ -34,6 +34,12 @@ fun createLambdaWorkflow(
     )
 }
 
+/**
+ * Creates a [StepWorkflow] for updating a Lambda's code and optionally its handler
+ *
+ * @param updatedFunctionDetails If provided, we will call update function configuration with the provided values.
+ * This enables changing a handler at the same time. TODO: Can we build a better way that only has us passing handler?
+ */
 fun updateLambdaCodeWorkflow(
     project: Project,
     functionName: String,

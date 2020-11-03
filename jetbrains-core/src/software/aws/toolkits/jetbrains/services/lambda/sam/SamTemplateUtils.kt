@@ -63,7 +63,6 @@ object SamTemplateUtils {
         envVars: Map<String, String> = emptyMap()
     ) {
         if (!tempFile.exists()) {
-            Files.createDirectories(tempFile.parent)
             Files.createFile(tempFile)
         }
         tempFile.writeText(

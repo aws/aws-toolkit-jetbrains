@@ -9,15 +9,15 @@ class ConsoleMessageEmitter(private val stepName: String) : MessageEmitter {
     override fun createChild(stepName: String, hidden: Boolean): MessageEmitter = ConsoleMessageEmitter(stepName)
 
     override fun startStep() {
-        println("[$stepName] [StartEvent]")
+        println("[$stepName] [Start Event]")
     }
 
     override fun finishSuccessfully() {
-        println("[$stepName] [FinishEvent] Success")
+        println("[$stepName] [Finish Event] Success")
     }
 
     override fun finishExceptionally(e: Throwable) {
-        println("[$stepName] [FinishedExceptionally] ${ExceptionUtil.getNonEmptyMessage(e, e.javaClass.simpleName)}")
+        println("[$stepName] [Finished Exceptionally] ${ExceptionUtil.getNonEmptyMessage(e, e.javaClass.simpleName)}")
     }
 
     override fun emitMessage(message: String, isError: Boolean) {

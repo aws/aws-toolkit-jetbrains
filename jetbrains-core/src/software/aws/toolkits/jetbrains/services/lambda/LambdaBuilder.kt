@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.samBuildCommand
 import software.aws.toolkits.resources.message
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -61,6 +62,8 @@ abstract class LambdaBuilder {
         onStart: (ProcessHandler) -> Unit = {}
     ): BuiltLambda {
         val baseDir = handlerBaseDirectory(module, handlerElement).toString()
+        val buildDir = getBuildDirectory(module)
+        Files.createDirectories(buildDir)
 
         val customTemplate = getBuildDirectory(module).resolve("template.yaml")
 
