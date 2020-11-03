@@ -15,6 +15,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Key
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
 
@@ -84,7 +85,7 @@ abstract class CliBasedStep : Step() {
      * @return null if the failure should be ignored. You're probably doing something wrong if you want this.
      */
     protected open fun handleErrorResult(exitCode: Int, output: String, messageEmitter: MessageEmitter): Nothing? {
-        throw IllegalStateException("Command did not exist successfully, exit code: $exitCode \n")
+        throw IllegalStateException(message("general.execution.cli_error", exitCode))
     }
 
     private companion object {

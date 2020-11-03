@@ -149,7 +149,7 @@ abstract class LambdaBuilder {
         }
     }
 
-    protected open fun additionalEnvironmentVariables(module: Module, samOptions: SamOptions): Map<String, String> = emptyMap()
+    open fun additionalEnvironmentVariables(module: Module, samOptions: SamOptions): Map<String, String> = emptyMap()
 
     companion object : RuntimeGroupExtensionPointObject<LambdaBuilder>(ExtensionPointName("aws.toolkit.lambda.builder"))
 }

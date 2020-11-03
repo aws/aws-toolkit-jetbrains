@@ -19,6 +19,7 @@ fun createLambdaWorkflow(
     project: Project,
     codeDetails: CodeDetails,
     buildDir: Path,
+    buildEnvVars: Map<String, String>,
     codeStorageLocation: String,
     samOptions: SamOptions,
     functionDetails: FunctionDetails
@@ -28,7 +29,7 @@ fun createLambdaWorkflow(
     val envVars = createAwsEnvVars(project)
 
     return StepWorkflow(
-        BuildLambda(dummyTemplate, buildDir, samOptions),
+        BuildLambda(dummyTemplate, buildDir, buildEnvVars, samOptions),
         PackageLambda(dummyTemplate, packagedTemplate, dummyLogicalId, codeStorageLocation, envVars),
         CreateLambda(project.awsClient(), functionDetails)
     )
@@ -45,6 +46,7 @@ fun updateLambdaCodeWorkflow(
     functionName: String,
     codeDetails: CodeDetails,
     buildDir: Path,
+    buildEnvVars: Map<String, String>,
     codeStorageLocation: String,
     samOptions: SamOptions,
     updatedFunctionDetails: FunctionDetails?
@@ -54,7 +56,7 @@ fun updateLambdaCodeWorkflow(
     val envVars = createAwsEnvVars(project)
 
     return StepWorkflow(
-        BuildLambda(dummyTemplate, buildDir, samOptions),
+        BuildLambda(dummyTemplate, buildDir, buildEnvVars, samOptions),
         PackageLambda(dummyTemplate, packagedTemplate, dummyLogicalId, codeStorageLocation, envVars),
         UpdateLambdaCode(project.awsClient(), functionName, updatedFunctionDetails)
     )

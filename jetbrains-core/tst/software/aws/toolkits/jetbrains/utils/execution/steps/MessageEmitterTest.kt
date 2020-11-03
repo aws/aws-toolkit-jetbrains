@@ -111,7 +111,7 @@ class MessageEmitterTest {
     }
 
     @Test
-    fun exceptionsWithoutAMessageGivesType() {
+    fun exceptionsWithoutAMessagePrintsStacktrace() {
         val parentId = "ParentStep"
 
         rootEmitter.finishExceptionally(NullPointerException())
@@ -122,7 +122,7 @@ class MessageEmitterTest {
             assertThat(firstValue).satisfies {
                 assertThat(it.parentId).isEqualTo(parentId)
             }.isInstanceOfSatisfying(OutputBuildEvent::class.java) {
-                assertThat(it.message).isEqualTo("ParentStep finished exceptionally: NullPointerException")
+                assertThat(it.message).contains("ParentStep finished exceptionally: java.lang.NullPointerException", "at")
                 assertThat(it.isStdOut).isFalse()
             }
         }

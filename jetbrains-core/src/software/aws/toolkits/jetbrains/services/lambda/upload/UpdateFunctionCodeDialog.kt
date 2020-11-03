@@ -99,6 +99,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             functionName = initialSettings.name,
             codeDetails = codeDetails,
             buildDir = lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
+            buildEnvVars = lambdaBuilder.additionalEnvironmentVariables(module, samOptions),
             codeStorageLocation = s3Bucket,
             samOptions = samOptions,
             updatedFunctionDetails = functionDetails.takeIf { it.handler != initialSettings.handler }
