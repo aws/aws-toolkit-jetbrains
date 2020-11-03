@@ -64,7 +64,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
         }
         FileDocumentManager.getInstance().saveAllDocuments()
 
-        val functionDetails = FunctionUploadDetails(
+        val functionDetails = FunctionDetails(
             name = initialSettings.name,
             handler = view.handlerPanel.handler.text,
             iamRole = initialSettings.role,
@@ -92,15 +92,21 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
         val lambdaBuilder = initialSettings.runtime.runtimeGroup?.let { LambdaBuilder.getInstanceOrNull(it) }
             ?: throw IllegalStateException("LambdaBuilder for ${initialSettings.runtime} not found")
 
+        val codeDetails = CodeDetails(
+            baseDir = lambdaBuilder.handlerBaseDirectory(module, element),
+            handler = functionDetails.handler,
+            runtime = initialSettings.runtime
+        )
+
         val s3Bucket = view.codeStorage.sourceBucket.selected() as String
         val workflow = updateLambdaCodeWorkflow(
-            project,
-            functionDetails, // TODO: Really we only need runtime, handler, codeUri so we should make a dataclass for just that
-            lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
-            lambdaBuilder.handlerBaseDirectory(module, element),
-            s3Bucket,
-            samOptions,
-            functionDetails.takeIf { it.handler != initialSettings.handler }
+            project = project,
+            functionName = initialSettings.name,
+            codeDetails = codeDetails,
+            buildDir = lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
+            codeStorageLocation = s3Bucket,
+            samOptions = samOptions,
+            updatedFunctionDetails = functionDetails.takeIf { it.handler != initialSettings.handler }
         )
 
         StepExecutor(project, "Update Function Code", workflow, initialSettings.name).startExecution(

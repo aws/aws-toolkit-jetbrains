@@ -9,21 +9,21 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
-import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionUploadDetails
+import software.aws.toolkits.jetbrains.services.lambda.upload.CodeDetails
+import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
 import java.nio.file.Files
 import java.nio.file.Path
 
 fun createLambdaWorkflow(
     project: Project,
-    functionUploadDetails: FunctionUploadDetails,
+    codeDetails: CodeDetails,
     buildDir: Path,
-    codeUri: Path,
     codeStorageLocation: String,
     samOptions: SamOptions,
-    functionDetails: FunctionUploadDetails
+    functionDetails: FunctionDetails
 ): StepWorkflow {
-    val (dummyTemplate, dummyLogicalId) = createTemporaryTemplate(buildDir, functionUploadDetails, codeUri)
+    val (dummyTemplate, dummyLogicalId) = createTemporaryTemplate(buildDir, codeDetails)
     val packagedTemplate = buildDir.resolve("packaged-temp-template.yaml")
     val envVars = createAwsEnvVars(project)
 
@@ -36,21 +36,21 @@ fun createLambdaWorkflow(
 
 fun updateLambdaCodeWorkflow(
     project: Project,
-    functionUploadDetails: FunctionUploadDetails,
+    functionName: String,
+    codeDetails: CodeDetails,
     buildDir: Path,
-    codeUri: Path,
     codeStorageLocation: String,
     samOptions: SamOptions,
-    updatedFunctionDetails: FunctionUploadDetails?
+    updatedFunctionDetails: FunctionDetails?
 ): StepWorkflow {
-    val (dummyTemplate, dummyLogicalId) = createTemporaryTemplate(buildDir, functionUploadDetails, codeUri)
+    val (dummyTemplate, dummyLogicalId) = createTemporaryTemplate(buildDir, codeDetails)
     val packagedTemplate = buildDir.resolve("packaged-temp-template.yaml")
     val envVars = createAwsEnvVars(project)
 
     return StepWorkflow(
         BuildLambda(dummyTemplate, buildDir, samOptions),
         PackageLambda(dummyTemplate, packagedTemplate, dummyLogicalId, codeStorageLocation, envVars),
-        UpdateLambdaCode(project.awsClient(), functionUploadDetails.name, updatedFunctionDetails)
+        UpdateLambdaCode(project.awsClient(), functionName, updatedFunctionDetails)
     )
 }
 
@@ -61,17 +61,18 @@ private fun createAwsEnvVars(project: Project): Map<String, String> {
     return connectSettings.credentials.resolveCredentials().toEnvironmentVariables() + connectSettings.region.toEnvironmentVariables()
 }
 
-private fun createTemporaryTemplate(buildDir: Path, functionUploadDetails: FunctionUploadDetails, codeUri: Path): Pair<Path, String> {
+private fun createTemporaryTemplate(buildDir: Path, codeDetails: CodeDetails): Pair<Path, String> {
     Files.createDirectories(buildDir)
 
     val dummyTemplate = Files.createTempFile("temp-template", ".yaml")
     val dummyLogicalId = "Function"
+
     SamTemplateUtils.writeDummySamTemplate(
         tempFile = dummyTemplate,
         logicalId = dummyLogicalId,
-        runtime = functionUploadDetails.runtime,
-        handler = functionUploadDetails.handler,
-        codeUri = codeUri.toString()
+        runtime = codeDetails.runtime,
+        handler = codeDetails.handler,
+        codeUri = codeDetails.baseDir.toString()
     )
 
     return Pair(dummyTemplate, dummyLogicalId)

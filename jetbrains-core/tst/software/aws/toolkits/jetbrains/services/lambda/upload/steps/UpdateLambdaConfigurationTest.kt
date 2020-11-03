@@ -20,7 +20,7 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
-import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionUploadDetails
+import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
 
 class UpdateLambdaConfigurationTest {
     @Rule
@@ -34,7 +34,7 @@ class UpdateLambdaConfigurationTest {
     @Test
     fun `can update the configuration`() {
         validate(
-            FunctionUploadDetails(
+            FunctionDetails(
                 name = aString(),
                 description = aString(),
                 handler = aString(),
@@ -49,7 +49,7 @@ class UpdateLambdaConfigurationTest {
         )
     }
 
-    private fun validate(functionDetails: FunctionUploadDetails) {
+    private fun validate(functionDetails: FunctionDetails) {
         val configRequestCaptor = argumentCaptor<UpdateFunctionConfigurationRequest>()
         val lambdaClient = clientManagerRule.create<LambdaClient>().stub {
             on { updateFunctionConfiguration(configRequestCaptor.capture()) } doReturn UpdateFunctionConfigurationResponse.builder().build()

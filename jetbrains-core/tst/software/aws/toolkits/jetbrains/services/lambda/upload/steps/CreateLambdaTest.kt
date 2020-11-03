@@ -20,7 +20,7 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
-import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionUploadDetails
+import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda.Companion.FUNCTION_ARN
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambda.Companion.UploadedCode
 import software.aws.toolkits.jetbrains.utils.execution.steps.ConsoleMessageEmitter
@@ -43,7 +43,7 @@ class CreateLambdaTest {
                 key = aString(),
                 version = null
             ),
-            FunctionUploadDetails(
+            FunctionDetails(
                 name = aString(),
                 description = aString(),
                 handler = aString(),
@@ -66,7 +66,7 @@ class CreateLambdaTest {
                 key = aString(),
                 version = aString()
             ),
-            FunctionUploadDetails(
+            FunctionDetails(
                 name = aString(),
                 description = aString(),
                 handler = aString(),
@@ -89,7 +89,7 @@ class CreateLambdaTest {
                 key = aString(),
                 version = null
             ),
-            FunctionUploadDetails(
+            FunctionDetails(
                 name = aString(),
                 description = aString(),
                 handler = aString(),
@@ -104,7 +104,7 @@ class CreateLambdaTest {
         )
     }
 
-    private fun validate(codeLocation: UploadedCode, details: FunctionUploadDetails) {
+    private fun validate(codeLocation: UploadedCode, details: FunctionDetails) {
         val requestCaptor = argumentCaptor<CreateFunctionRequest>()
         val lambdaClient = clientManagerRule.create<LambdaClient>().stub {
             on { createFunction(requestCaptor.capture()) } doReturn CreateFunctionResponse.builder().functionArn("arn of ${details.name}").build()

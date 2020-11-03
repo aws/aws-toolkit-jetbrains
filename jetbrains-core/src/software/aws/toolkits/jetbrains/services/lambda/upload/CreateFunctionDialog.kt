@@ -95,14 +95,19 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
 
         val s3Bucket = view.codeStorage.sourceBucket.selectedItem as String
 
+        val codeDetails = CodeDetails(
+            baseDir = lambdaBuilder.handlerBaseDirectory(module, element),
+            handler = functionDetails.handler,
+            runtime = functionDetails.runtime
+        )
+
         val workflow = createLambdaWorkflow(
-            project,
-            functionDetails, // TODO: Really we only need runtime, handler, codeUri so we should make a dataclass for just that
-            lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
-            lambdaBuilder.handlerBaseDirectory(module, element),
-            s3Bucket,
-            samOptions,
-            functionDetails
+            project = project,
+            codeDetails = codeDetails,
+            buildDir = lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
+            codeStorageLocation = s3Bucket,
+            samOptions = samOptions,
+            functionDetails = functionDetails
         )
 
         StepExecutor(project, "Update Function Code", workflow, functionDetails.name).startExecution(
@@ -125,7 +130,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
         close(OK_EXIT_CODE)
     }
 
-    private fun viewToFunctionDetails(): FunctionUploadDetails = FunctionUploadDetails(
+    private fun viewToFunctionDetails(): FunctionDetails = FunctionDetails(
         name = view.name.text.trim(),
         description = view.description.text,
         handler = view.configSettings.handlerPanel.handler.text,

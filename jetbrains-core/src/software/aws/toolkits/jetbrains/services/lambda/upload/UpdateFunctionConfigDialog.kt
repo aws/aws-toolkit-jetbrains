@@ -89,7 +89,7 @@ class UpdateFunctionConfigDialog(private val project: Project, private val initi
         }
     }
 
-    private fun viewToFunctionDetails(): FunctionUploadDetails = FunctionUploadDetails(
+    private fun viewToFunctionDetails(): FunctionDetails = FunctionDetails(
         name = initialSettings.name,
         description = view.description.text,
         handler = view.configSettings.handlerPanel.handler.text,

@@ -6,14 +6,14 @@ package software.aws.toolkits.jetbrains.services.lambda.upload.steps
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest
 import software.aws.toolkits.core.utils.AttributeBagKey
-import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionUploadDetails
+import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambda.Companion.UPLOADED_CODE_LOCATION
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.resources.message
 
-class CreateLambda(private val lambdaClient: LambdaClient, private val details: FunctionUploadDetails) : Step() {
+class CreateLambda(private val lambdaClient: LambdaClient, private val details: FunctionDetails) : Step() {
     override val stepName = message("lambda.create.step.create_lambda")
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {

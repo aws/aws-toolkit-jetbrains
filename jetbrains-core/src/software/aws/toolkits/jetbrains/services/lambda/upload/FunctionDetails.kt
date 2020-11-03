@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.lambda.model.TracingMode
 import software.aws.toolkits.jetbrains.services.iam.IamRole
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 
-data class FunctionUploadDetails(
+data class FunctionDetails(
     val name: String,
     val handler: String,
     val iamRole: IamRole,
