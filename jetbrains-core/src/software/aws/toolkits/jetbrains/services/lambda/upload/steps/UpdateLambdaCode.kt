@@ -10,9 +10,10 @@ import software.aws.toolkits.jetbrains.services.lambda.upload.steps.PackageLambd
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
+import software.aws.toolkits.resources.message
 
 class UpdateLambdaCode(private val lambdaClient: LambdaClient, private val functionName: String, private val updatedDetails: FunctionUploadDetails?) : Step() {
-    override val stepName = "Updating Lambda"
+    override val stepName = message("lambda.create.step.update_lambda")
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val codeLocation = context.getRequiredAttribute(UPLOADED_CODE_LOCATION)

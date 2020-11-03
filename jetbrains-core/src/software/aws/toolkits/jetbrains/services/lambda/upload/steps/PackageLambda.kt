@@ -12,6 +12,7 @@ import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.services.lambda.sam.samPackageCommand
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
+import software.aws.toolkits.resources.message
 import java.nio.file.Path
 
 class PackageLambda(
@@ -21,7 +22,7 @@ class PackageLambda(
     private val s3Bucket: String,
     private val envVars: Map<String, String>
 ) : SamCliStep() {
-    override val stepName: String = "SAM Package"
+    override val stepName: String = message("lambda.create.step.package")
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samPackageCommand(
         templatePath = templatePath,
