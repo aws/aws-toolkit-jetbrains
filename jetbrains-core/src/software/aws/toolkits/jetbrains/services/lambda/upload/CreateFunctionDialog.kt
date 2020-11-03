@@ -84,15 +84,12 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
             buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
         )
 
-        // TODO: Move this so we can share it with CreateFunctionDialog, but don't move it lower since passing PsiELement lower needs to go away since
+        // TODO: Move this so we can share it with UpdateCodeDialog, but don't move it lower since passing PsiElement lower needs to go away since
         // it is causing customer complaints. We need to prompt for baseDir and try to infer it if we can but only as a default value...
         val element = findPsiElementsForHandler(project, functionDetails.runtime, functionDetails.handler).first()
-        val psiFile = element.containingFile
-        val module = ModuleUtil.findModuleForFile(psiFile)
-            ?: throw IllegalStateException("Failed to locate module for $psiFile")
+        val module = ModuleUtil.findModuleForPsiElement(element) ?: throw IllegalStateException("Failed to locate module for $element")
         val lambdaBuilder = functionDetails.runtime.runtimeGroup?.let { LambdaBuilder.getInstanceOrNull(it) }
             ?: throw IllegalStateException("LambdaBuilder for ${functionDetails.runtime} not found")
-
         val s3Bucket = view.codeStorage.sourceBucket.selectedItem as String
 
         val codeDetails = CodeDetails(
@@ -110,7 +107,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
             functionDetails = functionDetails
         )
 
-        StepExecutor(project, "Update Function Code", workflow, functionDetails.name).startExecution(
+        StepExecutor(project, message("lambda.workflow.create_new.name"), workflow, functionDetails.name).startExecution(
             onSuccess = {
                 saveSettings(it.getRequiredAttribute(FUNCTION_ARN))
 
