@@ -33,7 +33,7 @@ class PackageLambda(
 
     override fun handleSuccessResult(output: String, messageEmitter: MessageEmitter, context: Context) {
         // We finished the upload, extract out the uploaded code location
-        val mapper = ObjectMapper(YAMLFactory()) // TODO: Better to force JSON with SAM --use-json?
+        val mapper = ObjectMapper(YAMLFactory())
         val packagedYaml = packagedTemplatePath.inputStream().use { mapper.readTree(it) }
         val codeUri = packagedYaml.requiredAt("/Resources/$logicalId/Properties/CodeUri")
 
