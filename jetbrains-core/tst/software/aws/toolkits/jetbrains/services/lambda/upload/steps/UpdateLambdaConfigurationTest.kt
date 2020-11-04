@@ -60,14 +60,7 @@ class UpdateLambdaConfigurationTest {
             assertThat(allValues).hasSize(1)
 
             assertThat(firstValue.functionName()).isEqualTo(functionDetails.name)
-            assertThat(firstValue.description()).isEqualTo(functionDetails.description)
-            assertThat(firstValue.environment().variables()).isEqualTo(functionDetails.envVars)
             assertThat(firstValue.handler()).isEqualTo(functionDetails.handler)
-            assertThat(firstValue.runtime()).isEqualTo(functionDetails.runtime)
-            assertThat(firstValue.role()).isEqualTo(functionDetails.iamRole.arn)
-            assertThat(firstValue.memorySize()).isEqualTo(functionDetails.memorySize)
-            assertThat(firstValue.timeout()).isEqualTo(functionDetails.timeout)
-            assertThat(firstValue.tracingConfig().mode()).isEqualTo(functionDetails.tracingMode)
         }
     }
 }
