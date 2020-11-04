@@ -30,4 +30,3 @@ class UpdateLambdaCode(private val lambdaClient: LambdaClient, private val funct
         }
     }
 }
-
