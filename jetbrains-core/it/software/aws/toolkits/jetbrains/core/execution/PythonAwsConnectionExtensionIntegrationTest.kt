@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.utils.execute
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import kotlin.test.assertNotNull
 
-class PythonAwsConnectionRunConfigurationExtensionIntegrationTest {
+class PythonAwsConnectionExtensionIntegrationTest {
 
     @Rule
     @JvmField
@@ -30,10 +30,11 @@ class PythonAwsConnectionRunConfigurationExtensionIntegrationTest {
     fun happyPathPythonConnectionInjection() {
         assertThat(pythonExecutable).isNotBlank()
         val file = projectRule.fixture.addFileToProject(
-            "hello.py", """ 
+            "hello.py",
+            """ 
             import os
             print(os.environ["AWS_REGION"])
-        """.trimIndent()
+            """.trimIndent()
         )
 
         val runManager = RunManager.getInstance(projectRule.project)
@@ -44,12 +45,13 @@ class PythonAwsConnectionRunConfigurationExtensionIntegrationTest {
         runConfiguration.sdkHome = pythonExecutable
         val mockRegion = MockRegionProvider.getInstance().defaultRegion().id
 
-        runConfiguration.putCopyableUserData<AwsConnectionRunConfigurationExtensionOptions>(
+        runConfiguration.putCopyableUserData<AwsCredentialInjectionOptions>(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
-            AwsConnectionRunConfigurationExtensionOptions {
+            AwsCredentialInjectionOptions {
                 region = mockRegion
                 credential = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id
-            })
+            }
+        )
 
         VfsRootAccess.allowRootAccess(projectRule.fixture.testRootDisposable, pythonExecutable)
 

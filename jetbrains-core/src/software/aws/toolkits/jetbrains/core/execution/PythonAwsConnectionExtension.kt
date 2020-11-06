@@ -11,7 +11,7 @@ import com.jetbrains.python.run.PythonRunConfigurationExtension
 import org.jdom.Element
 import software.aws.toolkits.resources.message
 
-class PythonAwsConnectionRunConfigurationExtension : PythonRunConfigurationExtension() {
+class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
     private val delegate = AwsConnectionRunConfigurationExtension<AbstractPythonRunConfiguration<*>>()
 
     override fun isApplicableFor(configuration: AbstractPythonRunConfiguration<*>): Boolean = true

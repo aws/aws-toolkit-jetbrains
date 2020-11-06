@@ -11,16 +11,21 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ObjectAssert
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 
-class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
+class AwsConnectionExtensionSettingsEditorTest {
 
     @Rule
     @JvmField
     val projectRule = ProjectRule()
 
+    @Rule
+    @JvmField
+    val settingsRule = AwsSettingsRule()
+
     @Test
     fun baseState() {
-        val editor = AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
+        val editor = AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
 
         assertThat(editor.view.none.isSelected).isTrue()
 
@@ -37,7 +42,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
             useCurrentConnection = true
         }
 
-        val editor = AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
+        val editor = AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
 
         editor.resetFrom(configuration)
 
@@ -63,7 +68,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
             credential = "DUMMY"
         }
 
-        val editor = AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
+        val editor = AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
 
         editor.resetFrom(configuration)
 
@@ -84,7 +89,7 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
     fun canLoadNone() {
         val configuration = createConfiguration { }
 
-        val editor = AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
+        val editor = AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
 
         editor.resetFrom(configuration)
 
@@ -105,29 +110,29 @@ class AwsConnectionRunConfigurationExtensionSettingsEditorTest {
 
     @Test
     fun manualConnectionEnablesDropDowns() {
-        val editor = AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
+        val editor = AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>(projectRule.project)
         editor.view.manuallyConfiguredConnection.doClick()
 
         assertThat(editor.view.region.isEnabled).isTrue()
         assertThat(editor.view.credentialProvider.isEnabled).isTrue()
     }
 
-    private fun createConfiguration(optionBuilder: AwsConnectionRunConfigurationExtensionOptions.() -> Unit): ApplicationConfiguration {
+    private fun createConfiguration(optionBuilder: AwsCredentialInjectionOptions.() -> Unit): ApplicationConfiguration {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
-        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsConnectionRunConfigurationExtensionOptions().apply(optionBuilder))
+        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsCredentialInjectionOptions().apply(optionBuilder))
         return configuration
     }
 
     private fun ApplicationConfiguration.extensionOptions() = getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)
 
-    private fun ObjectAssert<AwsConnectionRunConfigurationExtensionSettingsEditor<ApplicationConfiguration>>.isPersistedAs(
-        expected: AwsConnectionRunConfigurationExtensionOptions.() -> Unit
+    private fun ObjectAssert<AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>>.isPersistedAs(
+        expected: AwsCredentialInjectionOptions.() -> Unit
     ) {
         satisfies {
             val updatedConfiguration = createConfiguration { }
             it.applyTo(updatedConfiguration)
-            assertThat(updatedConfiguration.extensionOptions()).isEqualToComparingFieldByField(AwsConnectionRunConfigurationExtensionOptions(expected))
+            assertThat(updatedConfiguration.extensionOptions()).isEqualToComparingFieldByField(AwsCredentialInjectionOptions(expected))
         }
     }
 }

@@ -46,9 +46,9 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             }
 
             connection.toEnvironmentVariables().forEach { (key, value) -> environment[key] = value }
-            AwsTelemetry.injectCredentials(configuration.project, result = Succeeded, runtimestring = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = Succeeded, runtimeString = tryOrNull { runtimeString() })
         } catch (e: Exception) {
-            AwsTelemetry.injectCredentials(configuration.project, result = Failed, runtimestring = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = Failed, runtimeString = tryOrNull { runtimeString() })
             LOG.error(e) { message("run_configuration_extension.inject_aws_connection_exception") }
         }
     }
@@ -58,7 +58,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
             XmlSerializer.deserialize(
                 element,
-                AwsConnectionRunConfigurationExtensionOptions::class.java
+                AwsCredentialInjectionOptions::class.java
             )
         )
     }
@@ -80,21 +80,20 @@ fun <T : RunConfigurationBase<*>> AwsConnectionRunConfigurationExtension<T>.addE
     runtimeString: () -> String? = { null }
 ) = addEnvironmentVariables(configuration, cmdLine.environment, runtimeString)
 
-fun <T : RunConfigurationBase<*>?> connectionSettingsEditor(configuration: T): AwsConnectionRunConfigurationExtensionSettingsEditor<T>? =
-    configuration?.getProject()?.let { AwsConnectionRunConfigurationExtensionSettingsEditor(it) }
+fun <T : RunConfigurationBase<*>?> connectionSettingsEditor(configuration: T): AwsConnectionExtensionSettingsEditor<T>? =
+    configuration?.getProject()?.let { AwsConnectionExtensionSettingsEditor(it) }
 
 val AWS_CONNECTION_RUN_CONFIGURATION_KEY =
-    Key.create<AwsConnectionRunConfigurationExtensionOptions>(
+    Key.create<AwsCredentialInjectionOptions>(
         "aws.toolkit.runConfigurationConnection"
     )
 
-class AwsConnectionRunConfigurationExtensionOptions {
+class AwsCredentialInjectionOptions {
     var useCurrentConnection: Boolean = false
     var region: String? = null
     var credential: String? = null
 
     companion object {
-        operator fun invoke(block: AwsConnectionRunConfigurationExtensionOptions.() -> Unit) =
-            AwsConnectionRunConfigurationExtensionOptions().apply(block)
+        operator fun invoke(block: AwsCredentialInjectionOptions.() -> Unit) = AwsCredentialInjectionOptions().apply(block)
     }
 }

@@ -41,7 +41,7 @@ import software.aws.toolkits.jetbrains.utils.rules.addModule
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
-class JavaAwsConnectionRunConfigurationExtensionIntegrationTest {
+class JavaAwsConnectionExtensionIntegrationTest {
 
     @Before
     fun setUp() {
@@ -82,10 +82,11 @@ class JavaAwsConnectionRunConfigurationExtensionIntegrationTest {
         val runConfiguration = configuration.configuration as ApplicationConfiguration
         runConfiguration.putCopyableUserData(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
-            AwsConnectionRunConfigurationExtensionOptions {
+            AwsCredentialInjectionOptions {
                 region = mockRegion
                 credential = DUMMY_PROVIDER_IDENTIFIER.id
-            })
+            }
+        )
         runConfiguration.setMainClass(psiClass)
         compileModule(module)
 
