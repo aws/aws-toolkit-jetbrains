@@ -1,7 +1,7 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.clouddebug.execution
+package software.aws.toolkits.jetbrains.utils.execution.steps
 
 import com.intellij.build.BuildView
 import com.intellij.build.events.BuildEvent
@@ -21,7 +21,6 @@ import org.junit.Test
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 
-@Suppress("UnstableApiUsage")
 class MessageEmitterTest {
     @Rule
     @JvmField
@@ -32,7 +31,6 @@ class MessageEmitterTest {
 
     @Test
     fun startEventIsWritten() {
-
         val stepId = "ChildStep"
 
         val messageEmitter = rootEmitter.createChild(stepId)
@@ -91,14 +89,14 @@ class MessageEmitterTest {
             assertThat(firstValue).satisfies {
                 assertThat(it.parentId).isEqualTo(parentId)
             }.isInstanceOfSatisfying(OutputBuildEvent::class.java) {
-                assertThat(it.message).isEqualTo("ChildStep finished exceptionally: java.lang.NullPointerException: Test exception")
+                assertThat(it.message).isEqualTo("ChildStep finished exceptionally: Test exception")
                 assertThat(it.isStdOut).isFalse()
             }
 
             assertThat(secondValue).satisfies {
                 assertThat(it.parentId).isEqualTo(stepId)
             }.isInstanceOfSatisfying(OutputBuildEvent::class.java) {
-                assertThat(it.message).isEqualTo("ChildStep finished exceptionally: java.lang.NullPointerException: Test exception")
+                assertThat(it.message).isEqualTo("ChildStep finished exceptionally: Test exception")
                 assertThat(it.isStdOut).isFalse()
             }
 
@@ -108,6 +106,24 @@ class MessageEmitterTest {
             }.isInstanceOfSatisfying(FinishEvent::class.java) {
                 assertThat(it.message).isEqualTo(stepId)
                 assertThat(it.result).isInstanceOf(FailureResult::class.java)
+            }
+        }
+    }
+
+    @Test
+    fun exceptionsWithoutAMessagePrintsStacktrace() {
+        val parentId = "ParentStep"
+
+        rootEmitter.finishExceptionally(NullPointerException())
+
+        argumentCaptor<BuildEvent>().apply {
+            verify(buildView, times(2)).onEvent(eq(PARENT_ID), capture())
+
+            assertThat(firstValue).satisfies {
+                assertThat(it.parentId).isEqualTo(parentId)
+            }.isInstanceOfSatisfying(OutputBuildEvent::class.java) {
+                assertThat(it.message).contains("ParentStep finished exceptionally: java.lang.NullPointerException", "at")
+                assertThat(it.isStdOut).isFalse()
             }
         }
     }

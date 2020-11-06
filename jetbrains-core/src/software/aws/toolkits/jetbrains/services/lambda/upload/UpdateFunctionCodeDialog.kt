@@ -15,7 +15,9 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.updateLambdaCodeWorkflow
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
+import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -38,8 +40,6 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
         loadSettings()
     }
 
-    private fun configurationChanged(): Boolean = initialSettings.handler != view.handlerPanel.handler.text
-
     override fun createCenterPanel(): JComponent? = view.content
 
     override fun getPreferredFocusedComponent(): JComponent? = view.handlerPanel.handler
@@ -54,7 +54,6 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
     override fun doOKAction() {
         saveSettings()
         upsertLambdaCode()
-        close(OK_EXIT_CODE)
     }
 
     override fun getHelpId(): String? = HelpIds.UPDATE_FUNCTION_CODE_DIALOG.id
@@ -65,49 +64,53 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
         }
         FileDocumentManager.getInstance().saveAllDocuments()
 
-        val functionDetails = FunctionUploadDetails(
-            name = initialSettings.name,
-            handler = view.handlerPanel.handler.text,
-            iamRole = initialSettings.role,
-            runtime = initialSettings.runtime,
-            description = initialSettings.description,
-            envVars = initialSettings.envVariables ?: emptyMap(),
-            timeout = initialSettings.timeout,
-            memorySize = initialSettings.memorySize,
-            xrayEnabled = initialSettings.xrayEnabled,
-            samOptions = SamOptions(
-                buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
-            )
+        val runtime = initialSettings.runtime
+        val handler = view.handlerPanel.handler.text
+
+        val samOptions = SamOptions(
+            buildInContainer = view.buildSettings.buildInContainerCheckbox.isSelected
         )
 
-        val element = findPsiElementsForHandler(project, functionDetails.runtime, functionDetails.handler).first()
-        val psiFile = element.containingFile
-        val module = ModuleUtil.findModuleForFile(psiFile)
-            ?: throw IllegalStateException("Failed to locate module for $psiFile")
+        // TODO: Move this so we can share it with CreateFunctionDialog, but don't move it lower since passing PsiElement lower needs to go away since
+        // it is causing customer complaints. We need to prompt for baseDir and try to infer it if we can but only as a default value...
+        val element = findPsiElementsForHandler(project, runtime, handler).first()
+        val module = ModuleUtil.findModuleForPsiElement(element) ?: throw IllegalStateException("Failed to locate module for $element")
         val lambdaBuilder = initialSettings.runtime.runtimeGroup?.let { LambdaBuilder.getInstanceOrNull(it) }
             ?: throw IllegalStateException("LambdaBuilder for ${initialSettings.runtime} not found")
 
+        val codeDetails = CodeDetails(
+            baseDir = lambdaBuilder.handlerBaseDirectory(module, element),
+            handler = handler,
+            runtime = runtime
+        )
+
         val s3Bucket = view.codeStorage.sourceBucket.selected() as String
+        val workflow = updateLambdaCodeWorkflow(
+            project = project,
+            functionName = initialSettings.name,
+            codeDetails = codeDetails,
+            buildDir = lambdaBuilder.getBuildDirectory(module), // TODO ... how do we kill module here? Can we use a temp dir?
+            buildEnvVars = lambdaBuilder.additionalEnvironmentVariables(module, samOptions),
+            codeStorageLocation = s3Bucket,
+            samOptions = samOptions,
+            updatedHandler = handler.takeIf { it != initialSettings.handler }
+        )
 
-        val lambdaCreator = LambdaCreatorFactory.create(project, lambdaBuilder)
-
-        val future = lambdaCreator.updateLambda(module, element, functionDetails, s3Bucket, configurationChanged())
-        future.whenComplete { _, error ->
-            when (error) {
-                null -> {
-                    notifyInfo(
-                        project = project,
-                        title = message("lambda.service_name"),
-                        content = message("lambda.function.code_updated.notification", functionDetails.name)
-                    )
-                    LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
-                }
-                is Exception -> {
-                    error.notifyError(project = project, title = message("lambda.service_name"))
-                    LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
-                }
+        StepExecutor(project, message("lambda.workflow.update_code.name"), workflow, initialSettings.name).startExecution(
+            onSuccess = {
+                notifyInfo(
+                    project = project,
+                    title = message("lambda.service_name"),
+                    content = message("lambda.function.code_updated.notification", initialSettings.name)
+                )
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+            },
+            onError = {
+                it.notifyError(project = project, title = message("lambda.service_name"))
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
             }
-        }
+        )
+        close(OK_EXIT_CODE)
     }
 
     private fun loadSettings() {
