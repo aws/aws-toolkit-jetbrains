@@ -45,9 +45,9 @@ class PythonAwsConnectionExtensionIntegrationTest {
         runConfiguration.sdkHome = pythonExecutable
         val mockRegion = MockRegionProvider.getInstance().defaultRegion().id
 
-        runConfiguration.putCopyableUserData<AwsCredInjectionOptions>(
+        runConfiguration.putCopyableUserData<AwsCredentialInjectionOptions>(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
-            AwsCredInjectionOptions {
+            AwsCredentialInjectionOptions {
                 region = mockRegion
                 credential = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id
             }

@@ -42,7 +42,7 @@ class JavaAwsConnectionExtensionTest {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
 
-        val data = AwsCredInjectionOptions {
+        val data = AwsCredentialInjectionOptions {
             region = "abc123"
             credential = "mockCredential"
         }
@@ -63,9 +63,9 @@ class JavaAwsConnectionExtensionTest {
     @Test
     fun `ignores gradle based run configs`() {
         val configuration = mock<GradleRunConfiguration>().apply {
-            putCopyableUserData<AwsCredInjectionOptions>(
+            putCopyableUserData<AwsCredentialInjectionOptions>(
                 AWS_CONNECTION_RUN_CONFIGURATION_KEY,
-                AwsCredInjectionOptions {
+                AwsCredentialInjectionOptions {
                     region = "abc123"
                     credential = "mockCredential"
                 }
@@ -86,7 +86,7 @@ class JavaAwsConnectionExtensionTest {
     fun `Inject injects environment variables`() {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
-        val data = AwsCredInjectionOptions {
+        val data = AwsCredentialInjectionOptions {
             region = MockRegionProvider.getInstance().defaultRegion().id
             credential = "MockCredentials"
         }

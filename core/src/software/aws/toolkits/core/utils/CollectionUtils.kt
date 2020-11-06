@@ -12,4 +12,4 @@ fun <K, V> buildMap(builder: MutableMap<K, V>.() -> Unit): Map<K, V> = mutableMa
  * <enum>.valueOf(item) will throw if item is not in the enum, which is really bad in some places
  * like settings, so make a version we get null back from that we can handle easier
  */
-inline fun <reified T : Enum<T>> valueOfOrNull(name: String): T? = enumValues<T>().firstOrNull { it.name == name }
+inline fun <reified T : Enum<T>> valueOfOrNull(name: String): T? = enumValues<T>().find { it.name == name }

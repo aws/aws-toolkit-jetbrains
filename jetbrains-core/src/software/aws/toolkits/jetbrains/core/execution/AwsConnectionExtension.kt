@@ -58,7 +58,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
             XmlSerializer.deserialize(
                 element,
-                AwsCredInjectionOptions::class.java
+                AwsCredentialInjectionOptions::class.java
             )
         )
     }
@@ -84,16 +84,16 @@ fun <T : RunConfigurationBase<*>?> connectionSettingsEditor(configuration: T): A
     configuration?.getProject()?.let { AwsConnectionExtensionSettingsEditor(it) }
 
 val AWS_CONNECTION_RUN_CONFIGURATION_KEY =
-    Key.create<AwsCredInjectionOptions>(
+    Key.create<AwsCredentialInjectionOptions>(
         "aws.toolkit.runConfigurationConnection"
     )
 
-class AwsCredInjectionOptions {
+class AwsCredentialInjectionOptions {
     var useCurrentConnection: Boolean = false
     var region: String? = null
     var credential: String? = null
 
     companion object {
-        operator fun invoke(block: AwsCredInjectionOptions.() -> Unit) = AwsCredInjectionOptions().apply(block)
+        operator fun invoke(block: AwsCredentialInjectionOptions.() -> Unit) = AwsCredentialInjectionOptions().apply(block)
     }
 }
