@@ -11,11 +11,12 @@ import com.intellij.remoterobot.stepsProcessing.step
 import java.time.Duration
 
 fun RemoteRobot.newProjectWizard(
+    title: String = "New Project",
     timeout: Duration = Duration.ofSeconds(20),
     function: NewProjectWizardDialog.() -> Unit
 ) {
     step("Search for new project wizard dialog") {
-        val dialog = find<NewProjectWizardDialog>(DialogFixture.byTitle("New Project"), timeout)
+        val dialog = find<NewProjectWizardDialog>(DialogFixture.byTitle(title), timeout)
 
         dialog.apply(function)
 
@@ -35,7 +36,7 @@ open class NewProjectWizardDialog(
     }
 
     fun selectProjectType(type: String) {
-        jList(byXpath("//div[@class='JBList' and @visible_text='$type']")).click()
+        jList(byXpath("//div[@class='JBList' and contains(@visible_text, '$type')]")).click()
     }
 
     fun setProjectLocation(folder: String) {

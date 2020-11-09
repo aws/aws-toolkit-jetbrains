@@ -42,7 +42,7 @@ open class PreferencesDialog(
     }
 
     override fun pressOk() {
-        super.pressOk()
+        super.pressButton(byXpath("//div[@class='MainButton']"))
 
         assertValidSettings()
     }

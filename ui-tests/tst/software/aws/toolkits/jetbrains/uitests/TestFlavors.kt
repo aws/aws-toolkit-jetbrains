@@ -14,3 +14,8 @@ annotation class CoreTest
 @Retention(AnnotationRetention.RUNTIME)
 @Tag("ultimate")
 annotation class UltimateTest
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+@Tag("rider")
+annotation class RiderTest

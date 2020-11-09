@@ -51,3 +51,17 @@ tasks.register<Test>("uiTestCore") {
         includeTags("core")
     }
 }
+
+tasks.register<Test>("uiTestRider") {
+    // we don't want to cache the results of this.
+    outputs.upToDateWhen { false }
+
+    systemProperty("robot-server.port", remoteRobotPort)
+    systemProperty("junit.jupiter.extensions.autodetection.enabled", true)
+    systemProperty("testDataPath", project.rootDir.toPath().resolve("testdata").toString())
+
+    systemProperty("GRADLE_PROJECT", "jetbrains-rider")
+    useJUnitPlatform {
+        includeTags("rider")
+    }
+}

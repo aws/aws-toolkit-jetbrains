@@ -24,6 +24,28 @@ fun RemoteRobot.idea(function: IdeaFrame.() -> Unit) {
     frame.apply(function)
 }
 
+fun RemoteRobot.waitForBackgroundTasks(timeout: Duration = Duration.ofMinutes(5)) {
+    step("Wait for background tasks to finish") {
+        waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
+            // TODO FIX_WHEN_MIN_IS_202 remove the background process one
+            findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isEmpty() &&
+                // search for the progress bar
+                findAll<ComponentFixture>(byXpath("//div[@class='JProgressBar']")).isEmpty()
+        }
+    }
+}
+
+fun RemoteRobot.waitFoProgress(timeout: Duration = Duration.ofMinutes(5)) {
+    step("Wait for background tasks to start") {
+        waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
+            // TODO FIX_WHEN_MIN_IS_202 remove the background process one
+            findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isNotEmpty() ||
+                // search for the progress bar
+                findAll<ComponentFixture>(byXpath("//div[@class='JProgressBar']")).isNotEmpty()
+        }
+    }
+}
+
 @FixtureName("Idea frame")
 @DefaultXpath("IdeFrameImpl type", "//div[@class='IdeFrameImpl']")
 class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
@@ -43,17 +65,6 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
                 waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
                     isDumbMode().not()
                 }
-            }
-        }
-    }
-
-    fun waitForBackgroundTasks(timeout: Duration = Duration.ofMinutes(5)) {
-        step("Wait for background tasks to finish") {
-            waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
-                // TODO FIX_WHEN_MIN_IS_202 remove the background process one
-                findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isEmpty() &&
-                    // search for the progress bar
-                    findAll<ComponentFixture>(byXpath("//div[@class='JProgressBar']")).isEmpty()
             }
         }
     }

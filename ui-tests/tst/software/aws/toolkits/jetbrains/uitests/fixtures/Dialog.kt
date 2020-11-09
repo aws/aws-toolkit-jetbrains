@@ -8,6 +8,7 @@ import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.search.locators.Locator
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import java.time.Duration
@@ -57,5 +58,9 @@ open class DialogFixture(
 
     fun pressButton(text: String) {
         button(text).click()
+    }
+
+    fun pressButton(locator: Locator) {
+        button(locator).click()
     }
 }

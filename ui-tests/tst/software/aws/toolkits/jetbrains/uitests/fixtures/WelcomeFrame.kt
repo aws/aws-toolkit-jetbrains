@@ -24,8 +24,8 @@ fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
 @FixtureName("Welcome Frame")
 @DefaultXpath("type", "//div[@class='FlatWelcomeFrame' and @visible='true']")
 class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
-    fun openNewProjectWizard() {
-        actionLink(ActionLinkFixture.byTextContains("New Project")).click()
+    fun openNewProjectWizard(actionText: String = "New Project") {
+        actionLink(ActionLinkFixture.byTextContains(actionText)).click()
     }
 
     fun openPreferences() = step("Opening preferences dialog") {
