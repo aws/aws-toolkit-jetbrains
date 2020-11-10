@@ -29,7 +29,7 @@ import java.io.File
 object PsiKotlinGenerator : ExternalGenerator(
     Kotlin11Generator(
         FlowTransform.AsIs,
-        "com.jetbrains.rider.model",
+        "software.aws.toolkits.jetbrains.protocoll",
         File(syspropertyOrInvalid("ktPsiGeneratedOutput"))
     ),
     IdeRoot
@@ -38,7 +38,7 @@ object PsiKotlinGenerator : ExternalGenerator(
 object PsiCSharpGenerator : ExternalGenerator(
     CSharp50Generator(
         FlowTransform.Reversed,
-        "JetBrains.Rider.Model",
+        "AWS.Toolkit.Rider.Model",
         File(syspropertyOrInvalid("csPsiGeneratedOutput"))
     ),
     IdeRoot
@@ -59,6 +59,9 @@ object LambdaPsiModel : Ext(SolutionModel.Solution) {
     }
 
     init {
+        setting(Kotlin11Generator.Namespace, "software.aws.toolkits.jetbrains.protocol")
+        setting(CSharp50Generator.Namespace, "AWS.Toolkit.Rider.Model")
+
         setting(GeneratorBase.AcceptsGenerator) { generator ->
             generator == PsiKotlinGenerator.generator ||
                 generator == PsiCSharpGenerator.generator

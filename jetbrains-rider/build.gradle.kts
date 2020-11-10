@@ -146,6 +146,7 @@ val prepareBuildProps = tasks.register("prepareBuildProps") {
         val configText = """<Project>
   <PropertyGroup>
     <RiderSDKVersion>[$riderSdkVersion]</RiderSDKVersion>
+    <DefineConstants>PROFILE_${ideProfile.name.replace(".", "_")}</DefineConstants>
   </PropertyGroup>
 </Project>
 """
@@ -192,8 +193,7 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     doLast {
         val arguments = listOf(
             "build",
-            "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln",
-            "/p:DefineConstants=\"PROFILE_${ideProfile.name.replace(".", "_")}\""
+            "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
         )
         exec {
             executable = "dotnet"
