@@ -29,7 +29,7 @@ import java.io.File
 object PsiKotlinGenerator : ExternalGenerator(
     Kotlin11Generator(
         FlowTransform.AsIs,
-        "software.aws.toolkits.jetbrains.protocoll",
+        "com.jetbrains.rider.model",
         File(syspropertyOrInvalid("ktPsiGeneratedOutput"))
     ),
     IdeRoot
@@ -38,7 +38,7 @@ object PsiKotlinGenerator : ExternalGenerator(
 object PsiCSharpGenerator : ExternalGenerator(
     CSharp50Generator(
         FlowTransform.Reversed,
-        "AWS.Toolkit.Rider.Model",
+        "JetBrains.Rider.Model",
         File(syspropertyOrInvalid("csPsiGeneratedOutput"))
     ),
     IdeRoot

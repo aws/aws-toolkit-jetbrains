@@ -22,7 +22,7 @@ import java.io.File
 object AwsProjectKotlinGenerator : ExternalGenerator(
     Kotlin11Generator(
         FlowTransform.AsIs,
-        "software.aws.toolkits.jetbrains.protocol",
+        "com.jetbrains.rider.model",
         File(syspropertyOrInvalid("ktAwsProjectGeneratedOutput"))
     ),
     IdeRoot
@@ -31,7 +31,7 @@ object AwsProjectKotlinGenerator : ExternalGenerator(
 object AwsProjectCSharpGenerator : ExternalGenerator(
     CSharp50Generator(
         FlowTransform.Reversed,
-        "AWS.Toolkit.Rider.Model",
+        "JetBrains.Rider.Model",
         File(syspropertyOrInvalid("csAwsProjectGeneratedOutput"))
     ),
     IdeRoot

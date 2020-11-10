@@ -22,7 +22,7 @@ import java.io.File
 object DaemonKotlinGenerator : ExternalGenerator(
     Kotlin11Generator(
         FlowTransform.AsIs,
-        "software.aws.toolkits.jetbrains.protocol",
+        "com.jetbrains.rider.model",
         File(syspropertyOrInvalid("ktDaemonGeneratedOutput"))
     ),
     IdeRoot
@@ -31,7 +31,7 @@ object DaemonKotlinGenerator : ExternalGenerator(
 object DaemonCSharpGenerator : ExternalGenerator(
     CSharp50Generator(
         FlowTransform.Reversed,
-        "AWS.Toolkit.Rider.Model",
+        "JetBrains.Rider.Model",
         File(syspropertyOrInvalid("csDaemonGeneratedOutput"))
     ),
     IdeRoot
