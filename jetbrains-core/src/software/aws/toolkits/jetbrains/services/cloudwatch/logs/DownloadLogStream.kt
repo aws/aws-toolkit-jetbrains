@@ -141,8 +141,7 @@ class LogStreamDownloadToFileTask(
         val descriptor = FileSaverDescriptor(message("cloudwatch.logs.download"), message("cloudwatch.logs.download.description"))
         val saveLocation = withContext(edt) {
             val destination = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-            val baseDir: VirtualFile? = null
-            destination.save(baseDir, logStream)
+            destination.save(null as VirtualFile?, logStream)
         }
         if (saveLocation != null) {
             streamLogStreamToFile(indicator, request, saveLocation.file, buffer)
