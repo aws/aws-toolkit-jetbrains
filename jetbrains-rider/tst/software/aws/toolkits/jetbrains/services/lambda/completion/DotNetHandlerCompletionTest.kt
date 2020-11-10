@@ -11,7 +11,7 @@ import com.jetbrains.rider.test.base.BaseTestWithSolution
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
-import software.aws.toolkits.jetbrains.rider.IconModel
+import software.aws.toolkits.jetbrains.rider.compatability.IconModel
 
 class DotNetHandlerCompletionTest : BaseTestWithSolution() {
 
