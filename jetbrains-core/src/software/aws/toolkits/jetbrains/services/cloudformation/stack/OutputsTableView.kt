@@ -1,6 +1,5 @@
-// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
 import com.intellij.openapi.Disposable
@@ -10,12 +9,12 @@ import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
 class OutputsTableView : View, OutputsListener, Disposable {
-    private val key = DynamicTableView.Field<Output>(message("cloudformation.stack.outputs.key")) { it.outputKey() }
-    private val value = DynamicTableView.Field<Output>(message("cloudformation.stack.outputs.value")) { it.outputValue() }
-    private val description = DynamicTableView.Field<Output>(message("cloudformation.stack.outputs.description")) { it.description() }
-    private val export = DynamicTableView.Field<Output>(message("cloudformation.stack.outputs.export")) { it.exportName() }
-
-    private val table = DynamicTableView(key, value, description, export).apply { component.border = JBUI.Borders.empty() }
+    private val table = DynamicTableView<Output>(
+        DynamicTableView.Field(message("cloudformation.stack.outputs.key")) { it.outputKey() },
+        DynamicTableView.Field(message("cloudformation.stack.outputs.value")) { it.outputValue() },
+        DynamicTableView.Field(message("cloudformation.stack.outputs.description")) { it.description() },
+        DynamicTableView.Field(message("cloudformation.stack.outputs.export")) { it.exportName() }
+    ).apply { component.border = JBUI.Borders.empty() }
 
     override val component: JComponent = table.component
 
