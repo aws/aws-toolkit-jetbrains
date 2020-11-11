@@ -17,20 +17,7 @@ class OutputsTableView : View, OutputsListener, Disposable {
 
     private val table = DynamicTableView(key, value, description, export).apply { component.border = JBUI.Borders.empty() }
 
-    init {
-        table.addMouseListener(OutputActionPopup(this::selected))
-    }
-
     override val component: JComponent = table.component
-
-    private fun selected(): SelectedOutput? {
-        val row = table.selectedRow() ?: return null
-        return SelectedOutput(
-            row[key] as? String,
-            row[value] as? String,
-            row[export] as? String
-        )
-    }
 
     override fun updatedOutputs(outputs: List<Output>) = table.updateItems(outputs.sortedBy { it.outputKey() }, clearExisting = true)
 

@@ -127,18 +127,6 @@ class CloudFormationBrowserTest {
                 val resource = step("Assert that the stack output is there") {
                     findText("Cool description")
                 }
-                step("Check copy export key") {
-                    resource.click(MouseButton.RIGHT_BUTTON)
-                    findAndClick("//div[@text='Copy Key']")
-
-                    assertClipboardContents().isEqualTo("QueueArn")
-                }
-                step("Check copy export value") {
-                    resource.click(MouseButton.RIGHT_BUTTON)
-                    findAndClick("//div[@text='Copy Value']")
-
-                    assertClipboardContents().contains(queueName)
-                }
             }
             step("Check resources") {
                 clickOn("Resources")
@@ -146,19 +134,6 @@ class CloudFormationBrowserTest {
                     val createComplete = findAllText("CREATE_COMPLETE")
                     assertThat(createComplete).hasSize(1)
                     createComplete.first()
-                }
-
-                step("Check Logical ID action") {
-                    resource.click(MouseButton.RIGHT_BUTTON)
-                    findAndClick("//div[@text='Copy Logical ID']")
-
-                    assertClipboardContents().isEqualTo(queueName)
-                }
-                step("Check Physical ID action") {
-                    resource.click(MouseButton.RIGHT_BUTTON)
-                    findAndClick("//div[@text='Copy Physical ID']")
-
-                    assertClipboardContents().startsWith("https").contains(queueName)
                 }
             }
             step("Delete stack $stack") {
