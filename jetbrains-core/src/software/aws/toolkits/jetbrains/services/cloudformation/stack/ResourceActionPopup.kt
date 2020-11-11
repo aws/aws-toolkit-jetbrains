@@ -30,8 +30,7 @@ internal class ResourceActionPopup(private val selected: () -> SelectedResource?
     }
 }
 
-private class CopyAction(name: String, private val value: String?) : AnAction(name, null, AllIcons.Actions.Copy), DumbAware {
-
+class CopyAction(name: String, private val value: String?) : AnAction(name, null, AllIcons.Actions.Copy), DumbAware {
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabledAndVisible = value != null
     }
