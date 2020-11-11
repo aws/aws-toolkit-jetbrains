@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsAc
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.CopyFromTableAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundActionGroup
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.bottomReached
@@ -103,8 +102,6 @@ class LogStreamTable(
 
     private fun addActionsToTable() {
         val actionGroup = DefaultActionGroup().apply {
-            add(CopyFromTableAction(logsTable))
-            add(Separator())
             add(ShowLogsAroundActionGroup(project, logGroup, logStream, logsTable))
         }
         PopupHandler.installPopupHandler(
