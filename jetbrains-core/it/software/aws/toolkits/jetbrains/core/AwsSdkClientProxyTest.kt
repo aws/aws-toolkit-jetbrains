@@ -26,6 +26,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.aws.toolkits.core.utils.createIntegrationTestCredentialProvider
 
 class AwsSdkClientProxyTest {
     @Rule
@@ -110,6 +111,7 @@ class AwsSdkClientProxyTest {
 
     private fun makeAwsCall() {
         S3Client.builder()
+            .credentialsProvider(createIntegrationTestCredentialProvider())
             .region(Region.US_WEST_2)
             .httpClient(AwsSdkClient.getInstance().sdkHttpClient)
             .build().use {

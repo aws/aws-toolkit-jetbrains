@@ -8,17 +8,16 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.rules.S3TemporaryBucketRule
+import software.aws.toolkits.core.utils.createIntegrationTestCredentialProvider
 import software.aws.toolkits.jetbrains.utils.value
 
 class TransferUtilsIntegrationTest {
     private val s3Client = S3Client.builder()
-        .httpClient(ApacheHttpClient.builder().build())
+        .credentialsProvider(createIntegrationTestCredentialProvider())
         .region(Region.US_WEST_2)
-        .serviceConfiguration { it.pathStyleAccessEnabled(true) }
         .build()
 
     @JvmField

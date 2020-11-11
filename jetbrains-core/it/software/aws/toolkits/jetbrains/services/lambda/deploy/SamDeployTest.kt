@@ -11,13 +11,15 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.Parameter
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.rules.S3TemporaryBucketRule
+import software.aws.toolkits.core.utils.createIntegrationTestCredentialProvider
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.runUnderRealCredentials
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -29,13 +31,7 @@ import java.util.concurrent.TimeUnit
 
 class SamDeployTest {
     private val s3Client = S3Client.builder()
-        .httpClient(ApacheHttpClient.builder().build())
-        .region(Region.US_WEST_2)
-        .serviceConfiguration { it.pathStyleAccessEnabled(true) }
-        .build()
-
-    private val cfnClient = CloudFormationClient.builder()
-        .httpClient(ApacheHttpClient.builder().build())
+        .credentialsProvider(createIntegrationTestCredentialProvider())
         .region(Region.US_WEST_2)
         .build()
 
@@ -47,11 +43,19 @@ class SamDeployTest {
 
     @Rule
     @JvmField
+    val clientManager = MockClientManagerRule()
+
+    @Rule
+    @JvmField
     val bucketRule = S3TemporaryBucketRule(s3Client)
+
+    private lateinit var cfnClient: CloudFormationClient
 
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
+
+        cfnClient = projectRule.project.awsClient()
 
         MockAwsConnectionManager.getInstance(projectRule.project).changeRegion(AwsRegion(Region.US_WEST_2.id(), "us-west-2", "aws"))
     }
@@ -65,9 +69,11 @@ class SamDeployTest {
 
             assertThat(changeSetArn).isNotNull()
 
-            val describeChangeSetResponse = cfnClient.describeChangeSet {
-                it.stackName(stackName)
-                it.changeSetName(changeSetArn)
+            val describeChangeSetResponse = runUnderRealCredentials(projectRule.project) {
+                cfnClient.describeChangeSet {
+                    it.stackName(stackName)
+                    it.changeSetName(changeSetArn)
+                }
             }
 
             assertThat(describeChangeSetResponse).isNotNull
@@ -90,9 +96,11 @@ class SamDeployTest {
 
             assertThat(changeSetArn).isNotNull()
 
-            val describeChangeSetResponse = cfnClient.describeChangeSet {
-                it.stackName(stackName)
-                it.changeSetName(changeSetArn)
+            val describeChangeSetResponse = runUnderRealCredentials(projectRule.project) {
+                cfnClient.describeChangeSet {
+                    it.stackName(stackName)
+                    it.changeSetName(changeSetArn)
+                }
             }
 
             assertThat(describeChangeSetResponse).isNotNull
@@ -114,9 +122,11 @@ class SamDeployTest {
 
             assertThat(changeSetArn).isNotNull()
 
-            val describeChangeSetResponse = cfnClient.describeChangeSet {
-                it.stackName(stackName)
-                it.changeSetName(changeSetArn)
+            val describeChangeSetResponse = runUnderRealCredentials(projectRule.project) {
+                cfnClient.describeChangeSet {
+                    it.stackName(stackName)
+                    it.changeSetName(changeSetArn)
+                }
             }
 
             assertThat(describeChangeSetResponse).isNotNull
