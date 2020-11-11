@@ -124,8 +124,20 @@ class CloudFormationBrowserTest {
             }
             step("Check outputs") {
                 clickOn("Outputs")
-                step("Assert that the stack output is there") {
+                val resource = step("Assert that the stack output is there") {
                     findText("Cool description")
+                }
+                step("Check copy export key") {
+                    resource.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Key']")
+
+                    assertClipboardContents().isEqualTo("QueueArn")
+                }
+                step("Check copy export value") {
+                    resource.click(MouseButton.RIGHT_BUTTON)
+                    findAndClick("//div[@text='Copy Value']")
+
+                    assertClipboardContents().contains(queueName)
                 }
             }
             step("Check resources") {

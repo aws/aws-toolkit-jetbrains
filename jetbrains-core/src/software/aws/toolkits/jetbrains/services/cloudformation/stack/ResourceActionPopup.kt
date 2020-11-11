@@ -3,17 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.ide.CopyPasteManager
-import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.PopupHandler
+import software.aws.toolkits.jetbrains.ui.CopyAction
 import software.aws.toolkits.resources.message
 import java.awt.Component
-import java.awt.datatransfer.StringSelection
 
 internal class ResourceActionPopup(private val selected: () -> SelectedResource?) : PopupHandler() {
     private val actionManager = ActionManager.getInstance()
@@ -27,16 +22,6 @@ internal class ResourceActionPopup(private val selected: () -> SelectedResource?
         )
         val popupMenu = actionManager.createActionPopupMenu(STACK_TOOL_WINDOW.id, actionGroup)
         popupMenu.component.show(comp, x, y)
-    }
-}
-
-class CopyAction(name: String, private val value: String?) : AnAction(name, null, AllIcons.Actions.Copy), DumbAware {
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = value != null
-    }
-
-    override fun actionPerformed(e: AnActionEvent) {
-        CopyPasteManager.getInstance().setContents(StringSelection(value))
     }
 }
 
