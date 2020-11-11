@@ -12,10 +12,11 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.aws.toolkits.core.rules.S3TemporaryBucketRule
+import software.aws.toolkits.core.utils.createIntegrationTestCredentialProvider
 
 class BucketUtilsTest {
-    private val usEast2Client = S3Client.builder().region(Region.US_EAST_2).build()
-    private val euWest2Client = S3Client.builder().region(Region.EU_WEST_2).build()
+    private val usEast2Client = S3Client.builder().credentialsProvider(createIntegrationTestCredentialProvider()).region(Region.US_EAST_2).build()
+    private val euWest2Client = S3Client.builder().credentialsProvider(createIntegrationTestCredentialProvider()).region(Region.EU_WEST_2).build()
 
     @Rule
     @JvmField

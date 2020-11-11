@@ -7,10 +7,10 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ProjectRule
 import org.junit.rules.ExternalResource
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.createIntegrationTestCredentialProvider
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.spinUntil
 import java.time.Duration
@@ -71,12 +71,10 @@ class MockAwsConnectionManager(project: Project) : AwsConnectionManager(project)
 }
 
 fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
-    val credentials = DefaultCredentialsProvider.create().resolveCredentials()
-
     val manager = MockAwsConnectionManager.getInstance(project)
     val credentialsManager = MockCredentialsManager.getInstance()
     val oldActive = manager.connectionSettings()?.credentials
-    val realCredentialsProvider = credentialsManager.addCredentials("RealCredentials", credentials)
+    val realCredentialsProvider = credentialsManager.addCredentials("RealCredentials", createIntegrationTestCredentialProvider())
     try {
         println("Running using real credentials")
 
