@@ -15,14 +15,7 @@ class OutputsTableView : View, OutputsListener, Disposable {
     private val description = DynamicTableView.Field<Output>(message("cloudformation.stack.outputs.description")) { it.description() }
     private val export = DynamicTableView.Field<Output>(message("cloudformation.stack.outputs.export")) { it.exportName() }
 
-    private val table = DynamicTableView(
-        key,
-        value,
-        description,
-        export
-    ).apply {
-        component.border = JBUI.Borders.empty()
-    }
+    private val table = DynamicTableView(key, value, description, export).apply { component.border = JBUI.Borders.empty() }
 
     init {
         table.addMouseListener(OutputActionPopup(this::selected))
