@@ -49,7 +49,7 @@ class EditAttributesAction : SingleResourceNodeAction<SqsQueueNode>(message("sqs
                             title = message("sqs.service_name"),
                             content = message("sqs.edit.attributes.failed", queue.queueName)
                         )
-                        SqsTelemetry.editQueueAttributes(project, Result.Failed, queue.telemetryType())
+                        SqsTelemetry.editQueueParameters(project, Result.Failed, queue.telemetryType())
                         return
                     }
                     runInEdt {

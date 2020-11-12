@@ -56,7 +56,7 @@ class EditAttributesDialog(
     }
 
     override fun doCancelAction() {
-        SqsTelemetry.editQueueAttributes(project, Result.Cancelled, queue.telemetryType())
+        SqsTelemetry.editQueueParameters(project, Result.Cancelled, queue.telemetryType())
         super.doCancelAction()
     }
 
@@ -73,7 +73,7 @@ class EditAttributesDialog(
                     title = message("sqs.service_name"),
                     content = message("sqs.edit.attributes.updated", queue.queueName)
                 )
-                SqsTelemetry.editQueueAttributes(project, Result.Succeeded, queue.telemetryType())
+                SqsTelemetry.editQueueParameters(project, Result.Succeeded, queue.telemetryType())
                 withContext(getCoroutineUiContext(ModalityState.any())) {
                     close(OK_EXIT_CODE)
                 }
@@ -81,7 +81,7 @@ class EditAttributesDialog(
                 LOG.error(e) { "Updating queue parameters failed" }
                 setErrorText(e.message)
                 isOKActionEnabled = true
-                SqsTelemetry.editQueueAttributes(project, Result.Failed, queue.telemetryType())
+                SqsTelemetry.editQueueParameters(project, Result.Failed, queue.telemetryType())
             }
         }
     }
