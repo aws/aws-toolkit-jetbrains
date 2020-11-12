@@ -78,7 +78,7 @@ class EditAttributesDialog(
                     close(OK_EXIT_CODE)
                 }
             } catch (e: SqsException) {
-                LOG.error(e) { "Updating queue attributes failed" }
+                LOG.error(e) { "Updating queue parameters failed" }
                 setErrorText(e.message)
                 isOKActionEnabled = true
                 SqsTelemetry.editQueueAttributes(project, Result.Failed, queue.telemetryType())
