@@ -9,8 +9,9 @@ import com.intellij.openapi.project.DumbAwareAction
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
+import software.aws.toolkits.resources.message
 
-class CreateRepositoryAction : DumbAwareAction("create repo or whatever") {
+class CreateRepositoryAction : DumbAwareAction(message("ecr.create.repo.action")) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: EcrClient = project.awsClient()
