@@ -20,7 +20,7 @@ class EcrServiceNode(project: Project, service: AwsExplorerServiceNode) : AwsExp
 }
 
 class EcrRepositoryNode(project: Project, val repository: Repository) :
-    AwsExplorerResourceNode<String>(project, EcrClient.SERVICE_NAME, repository.repositoryName, EmptyIcon.ICON_16) {
+    AwsExplorerResourceNode<String>(project, EcrClient.SERVICE_NAME, repository.repositoryName) {
 
     override fun resourceType(): String = "repository"
 
