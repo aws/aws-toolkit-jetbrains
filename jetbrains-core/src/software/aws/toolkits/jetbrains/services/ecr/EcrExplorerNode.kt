@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.ecr
 
 import com.intellij.openapi.project.Project
-import com.intellij.util.ui.EmptyIcon
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode

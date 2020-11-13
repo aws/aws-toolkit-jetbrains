@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.ecr
 
 import com.intellij.testFramework.ProjectRule
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.utils.CompletableFutureUtils
@@ -37,23 +37,23 @@ class EcrServiceNodeTest {
 
         val children = EcrServiceNode(projectRule.project, ECR_EXPLORER_NODE).children
 
-        Assertions.assertThat(children).allMatch { it is EcrRepositoryNode }
-        Assertions.assertThat(children.map { it.displayName() }).containsExactlyInAnyOrder("repo1", "repo2")
-        Assertions.assertThat(children.filterIsInstance<EcrRepositoryNode>().map { it.resourceArn() }).containsExactlyInAnyOrder("arn2", "arn3")
+        assertThat(children).allMatch { it is EcrRepositoryNode }
+        assertThat(children.map { it.displayName() }).containsExactlyInAnyOrder("repo1", "repo2")
+        assertThat(children.filterIsInstance<EcrRepositoryNode>().map { it.resourceArn() }).containsExactlyInAnyOrder("arn2", "arn3")
     }
 
     @Test
     fun `No repositories listed`() {
         resourceCache.addEntry(projectRule.project, EcrResources.LIST_REPOS, listOf())
         val children = EcrServiceNode(projectRule.project, ECR_EXPLORER_NODE).children
-        Assertions.assertThat(children).hasOnlyOneElementSatisfying { it is AwsExplorerEmptyNode }
+        assertThat(children).hasOnlyOneElementSatisfying { it is AwsExplorerEmptyNode }
     }
 
     @Test
     fun `Error loading repositories`() {
-        resourceCache.addEntry(projectRule.project, EcrResources.LIST_REPOS, CompletableFutureUtils.failedFuture(RuntimeException("Simulated error")))
+        resourceCache.addEntry(projectRule.project, EcrResources.LIST_REPOS, CompletableFutureUtils.failedFuture(RuntimeException("network broke")))
         val children = EcrServiceNode(projectRule.project, ECR_EXPLORER_NODE).children
-        Assertions.assertThat(children).hasOnlyOneElementSatisfying { it is AwsExplorerErrorNode }
+        assertThat(children).hasOnlyOneElementSatisfying { it is AwsExplorerErrorNode }
     }
 
     private companion object {

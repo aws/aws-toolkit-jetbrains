@@ -13,5 +13,4 @@ class EcrExplorerRootNode : AwsExplorerServiceNode {
     override val displayName: String = message("explorer.node.ecr")
 
     override fun buildServiceRootNode(project: Project) = EcrServiceNode(project, this)
-
 }
