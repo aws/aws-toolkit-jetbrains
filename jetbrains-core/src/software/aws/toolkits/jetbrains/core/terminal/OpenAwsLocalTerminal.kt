@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.project.DumbAware
 import com.intellij.util.ExceptionUtil
 import icons.TerminalIcons
 import org.jetbrains.plugins.terminal.TerminalTabState
@@ -21,7 +22,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result
 
-class OpenAwsLocalTerminal : AnAction(message("aws.terminal.action"), message("aws.terminal.action.tooltip"), TerminalIcons.OpenTerminal_13x13) {
+class OpenAwsLocalTerminal : AnAction(message("aws.terminal.action"), message("aws.terminal.action.tooltip"), TerminalIcons.OpenTerminal_13x13), DumbAware {
 
     override fun update(e: AnActionEvent) {
         if (!pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")) {
