@@ -21,6 +21,7 @@ plugins {
 dependencies {
     testImplementation(gradleApi())
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+    testImplementation(project(":resources"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit5Version")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     testImplementation("com.intellij.remoterobot:remote-robot:$remoteRobotVersion")
