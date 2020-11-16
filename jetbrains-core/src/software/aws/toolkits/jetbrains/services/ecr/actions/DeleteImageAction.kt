@@ -27,7 +27,7 @@ import software.aws.toolkits.telemetry.Result
 
 class DeleteImageAction : ExplorerNodeAction<EcrImageNode>(message("ecr.delete.image.action", 0), null, AllIcons.Actions.Cancel) {
     override fun update(selected: List<EcrImageNode>, e: AnActionEvent) {
-        // Only show up if the selected are part of one node
+        // Only show up if the selected are part of one repository
         e.presentation.isVisible = selected.map { it.parent.repositoryArn }.toSet().size == 1
         e.presentation.text = message("ecr.delete.image.action", selected.size)
     }
@@ -37,12 +37,12 @@ class DeleteImageAction : ExplorerNodeAction<EcrImageNode>(message("ecr.delete.i
         if (selected.isEmpty()) {
             return
         }
-        val repository = selected.first().parent
+        val repositoryName = selected.first().parent.repositoryName
         val response = Messages.showOkCancelDialog(
             project,
-            message("ecr.delete.image.description", selected.size, repository.repositoryName),
-            message("ecr.delete.image.action", selected.size, repository.repositoryName),
-            message("s3.delete.object.delete"),
+            message("ecr.delete.image.description", selected.size, repositoryName),
+            message("ecr.delete.image.action", selected.size),
+            message("general.delete"),
             Messages.getCancelButton(),
             Messages.getWarningIcon()
         )
@@ -64,7 +64,7 @@ class DeleteImageAction : ExplorerNodeAction<EcrImageNode>(message("ecr.delete.i
                         val client: EcrClient = project.awsClient()
                         client.batchDeleteImage {
                             it
-                                .repositoryName(selected.first().parent.repositoryName)
+                                .repositoryName(repositoryName)
                                 .imageIds(
                                     selected.map { node ->
                                         ImageIdentifier.builder().imageTag(node.tag).build()
@@ -74,15 +74,15 @@ class DeleteImageAction : ExplorerNodeAction<EcrImageNode>(message("ecr.delete.i
                         notifyInfo(
                             project = project,
                             title = message("aws.notification.title"),
-                            content = message("ecr.delete.image.succeeded", selected.size, repository.repositoryName)
+                            content = message("ecr.delete.image.succeeded", selected.size, repositoryName)
                         )
-                        project.refreshAwsTree(EcrResources.listTags(repository.repositoryName))
+                        project.refreshAwsTree(EcrResources.listTags(repositoryName))
                         EcrTelemetry.deleteTags(project, Result.Succeeded, selected.size.toDouble())
                     } catch (e: Exception) {
                         LOG.error(e) { "Exception thrown while trying to delete ${selected.size} tags" }
                         notifyError(
                             project = project,
-                            content = message("ecr.delete.image.failed", selected.size, repository.repositoryName)
+                            content = message("ecr.delete.image.failed", selected.size, repositoryName)
                         )
                         EcrTelemetry.deleteTags(project, Result.Failed, selected.size.toDouble())
                     }

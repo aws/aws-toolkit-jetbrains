@@ -59,11 +59,12 @@ class EcrServiceNodeTest {
 
     @Test
     fun `Repository has tags as children`() {
+        val tags = listOf(aString(), aString())
         val repo = Repository(aString(), aString(), aString())
         val node = EcrRepositoryNode(projectRule.project, repo)
-        resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), listOf())
+        resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), tags)
         val children = node.children
-        assertThat(children).hasSize(1)
+        assertThat(children).hasSize(2)
     }
 
     @Test
@@ -72,16 +73,19 @@ class EcrServiceNodeTest {
         val node = EcrRepositoryNode(projectRule.project, repo)
         resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), listOf())
         val children = node.children
-        assertThat(children).hasSize(1)
+        assertThat(children).hasOnlyOneElementSatisfying { it is AwsExplorerEmptyNode }
     }
 
     @Test
     fun `Repository lists tags fails`() {
         val repo = Repository(aString(), aString(), aString())
         val node = EcrRepositoryNode(projectRule.project, repo)
-        resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), CompletableFutureUtils.failedFuture(RuntimeException("network broke")))
+        resourceCache.addEntry(
+            projectRule.project, EcrResources.listTags(repo.repositoryName),
+            CompletableFutureUtils.failedFuture(RuntimeException("network broke"))
+        )
         val children = node.children
-        assertThat(children).hasSize(1)
+        assertThat(children).hasOnlyOneElementSatisfying { it is AwsExplorerErrorNode }
     }
 
     private companion object {
