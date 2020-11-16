@@ -28,7 +28,7 @@ import software.aws.toolkits.telemetry.Result
 class DeleteImageAction : ExplorerNodeAction<EcrImageNode>(message("ecr.delete.image.action", 0), null, AllIcons.Actions.Cancel) {
     override fun update(selected: List<EcrImageNode>, e: AnActionEvent) {
         // Only show up if the selected are part of one repository
-        e.presentation.isVisible = selected.map { it.parent.repositoryArn }.toSet().size == 1
+        e.presentation.isVisible = selected.map { it.repository.repositoryName }.toSet().size == 1
         e.presentation.text = message("ecr.delete.image.action", selected.size)
     }
 
@@ -37,7 +37,7 @@ class DeleteImageAction : ExplorerNodeAction<EcrImageNode>(message("ecr.delete.i
         if (selected.isEmpty()) {
             return
         }
-        val repositoryName = selected.first().parent.repositoryName
+        val repositoryName = selected.first().repository.repositoryName
         val response = Messages.showOkCancelDialog(
             project,
             message("ecr.delete.image.description", selected.size, repositoryName),

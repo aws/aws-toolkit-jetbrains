@@ -13,6 +13,6 @@ import java.awt.datatransfer.StringSelection
 class CopyImageUriAction : SingleExplorerNodeAction<EcrImageNode>(message("ecr.copy_image_uri.action"), null, null) {
     override fun actionPerformed(selected: EcrImageNode, e: AnActionEvent) {
         val copyPasteManager = CopyPasteManager.getInstance()
-        copyPasteManager.setContents(StringSelection("${selected.parent.repositoryUri}:${selected.tag}"))
+        copyPasteManager.setContents(StringSelection("${selected.repository.repositoryUri}:${selected.tag}"))
     }
 }

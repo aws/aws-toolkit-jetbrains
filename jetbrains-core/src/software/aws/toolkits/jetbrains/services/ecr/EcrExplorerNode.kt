@@ -42,8 +42,9 @@ class EcrRepositoryNode(
         .map { EcrImageNode(nodeProject, repository, it) }
 }
 
-class EcrImageNode(project: Project, val parent: Repository, val tag: String) : AwsExplorerNode<String>(project, tag, null), ResourceActionNode {
+class EcrImageNode(project: Project, val repository: Repository, val tag: String) : AwsExplorerNode<String>(project, tag, null), ResourceActionNode {
     override fun actionGroupName(): String = "aws.toolkit.explorer.ecr.image"
     override fun isAlwaysShowPlus(): Boolean = false
+    override fun isAlwaysLeaf(): Boolean = true
     override fun getChildren(): List<AbstractTreeNode<*>> = emptyList()
 }
