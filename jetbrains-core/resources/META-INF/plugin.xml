@@ -18,7 +18,6 @@ If you come across bugs with the toolkit or have feature requests, please raise 
 See the <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/">user guide</a> for how to get started, along
 with more detail on how to use each feature.
 </p>
-<br/>
 
 <p><h2><strong>Features</strong></h2></p>
 
@@ -26,19 +25,14 @@ with more detail on how to use each feature.
 
 <ul>
     <li>
-        <strong>New Project Wizard</strong> - Get started quickly by using one of the quickstart serverless application
-        templates <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/new-project">Learn More</a>
+        <strong>Resource Explorer</strong> - View your AWS resources
+        <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer">Learn More</a>
     </li>
 
     <li>
         <strong>Run/Debug Local Lambda Functions</strong> - Locally test and step-through debug functions in a
         Lambda-like execution environment provided by the AWS SAM CLI
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/lambda-local">Learn More</a>
-    </li>
-
-    <li>
-        <strong>Resource Explorer</strong> - View your AWS Lambda remote functions & related CloudFormation stacks
-        <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer">Learn More</a>
     </li>
 
     <li>
