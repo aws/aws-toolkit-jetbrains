@@ -53,6 +53,8 @@ Please see [CONTRIBUTING](CONTRIBUTING.md#building-from-source) for instructions
 selected account/region. This does not represent all resources available in your account, only a sub-set of those 
 resource types supported by the plugin.
 [Learn More](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer)
+* **Authentication** - Connect to AWS using static credentials, credential process, or AWS SSO. [Learn more about
+authentication options](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/credentials)
 
 ### Services
 
