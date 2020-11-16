@@ -1,0 +1,18 @@
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.ecr.actions
+
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.ide.CopyPasteManager
+import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
+import software.aws.toolkits.jetbrains.services.ecr.EcrImageNode
+import software.aws.toolkits.resources.message
+import java.awt.datatransfer.StringSelection
+
+class CopyImageUriAction : SingleExplorerNodeAction<EcrImageNode>(message("ecr.copy_image_uri.action"), null, null) {
+    override fun actionPerformed(selected: EcrImageNode, e: AnActionEvent) {
+        val copyPasteManager = CopyPasteManager.getInstance()
+        copyPasteManager.setContents(StringSelection("${selected.parent.repositoryUri}:${selected.tag}"))
+    }
+}

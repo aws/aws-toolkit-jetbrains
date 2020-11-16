@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.utils.CompletableFutureUtils
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
@@ -54,6 +55,33 @@ class EcrServiceNodeTest {
         resourceCache.addEntry(projectRule.project, EcrResources.LIST_REPOS, CompletableFutureUtils.failedFuture(RuntimeException("network broke")))
         val children = EcrServiceNode(projectRule.project, ECR_EXPLORER_NODE).children
         assertThat(children).hasOnlyOneElementSatisfying { it is AwsExplorerErrorNode }
+    }
+
+    @Test
+    fun `Repository has tags as children`() {
+        val repo = Repository(aString(), aString(), aString())
+        val node = EcrRepositoryNode(projectRule.project, repo)
+        resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), listOf())
+        val children = node.children
+        assertThat(children).hasSize(1)
+    }
+
+    @Test
+    fun `Repository has no tags`() {
+        val repo = Repository(aString(), aString(), aString())
+        val node = EcrRepositoryNode(projectRule.project, repo)
+        resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), listOf())
+        val children = node.children
+        assertThat(children).hasSize(1)
+    }
+
+    @Test
+    fun `Repository lists tags fails`() {
+        val repo = Repository(aString(), aString(), aString())
+        val node = EcrRepositoryNode(projectRule.project, repo)
+        resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), CompletableFutureUtils.failedFuture(RuntimeException("network broke")))
+        val children = node.children
+        assertThat(children).hasSize(1)
     }
 
     private companion object {
