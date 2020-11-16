@@ -10,7 +10,7 @@ AWS Toolkit for JetBrains is a plugin for JetBrains IDEs that
 make it easier to write applications built on [Amazon Web Services](https://aws.amazon.com/)
 
 The AWS Toolkit for JetBrains is open source because we want you to be involved. We appreciate issues, feature requests, pull 
-requests, code reviews or any other contribution.
+requests, code reviews or any other contributions.
 
 ## Feedback
 
