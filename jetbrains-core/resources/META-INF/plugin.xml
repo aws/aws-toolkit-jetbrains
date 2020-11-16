@@ -18,7 +18,7 @@ See the <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/">use
 with what features/services are supported.
 </p>
 
-<p><h2><strong>Features</strong></h2></p>
+<p><h2><strong>Features:</strong></h2></p>
 
 <ul>
     <li>
@@ -44,6 +44,10 @@ with what features/services are supported.
 
     <li>
         <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/s3-tasks">S3 Explorer</a> - Manage S3 buckets, and upload to/download from S3 buckets
+    </li>
+
+    <li>
+        <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/services">See the user guide</a> for a full list of services and features supported
     </li>
 </ul>
     ]]></description>
