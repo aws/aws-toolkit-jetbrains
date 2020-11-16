@@ -20,7 +20,7 @@ import java.time.Duration
 fun RemoteRobot.idea(function: IdeaFrame.() -> Unit) {
     val frame = find<IdeaFrame>(timeout = Duration.ofSeconds(10))
     // FIX_WHEN_MIN_IS_203 remove this and set the system property "ide.show.tips.on.startup.default.value"
-    frame.apply { tryCloseTips() }
+    frame.apply { dumbAware {  tryCloseTips() } }
     frame.apply(function)
 }
 
