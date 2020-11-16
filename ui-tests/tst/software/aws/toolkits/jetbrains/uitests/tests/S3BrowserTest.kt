@@ -75,8 +75,7 @@ class S3BrowserTest {
         idea {
             waitForBackgroundTasks()
             showAwsExplorer()
-        }
-        idea {
+
             step("Create bucket named $bucket") {
                 awsExplorer {
                     openExplorerActionMenu(S3)
