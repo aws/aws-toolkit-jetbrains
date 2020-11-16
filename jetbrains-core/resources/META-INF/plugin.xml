@@ -8,24 +8,17 @@
 
     <description><![CDATA[
 <p>
-    The AWS Toolkit is an open-source plug-in for JetBrains IDEs that makes it easier to develop applications built on
-    AWS. The toolkit helps you create, test, and debug serverless applications built using the AWS Serverless
-    Application Model (<a href="https://aws.amazon.com/serverless/sam/">SAM</a>).</p>
-<br/>
-<br/>
-<p>To use this AWS Toolkit, you will first need an AWS account, a user within that account, and an access key for that
-    user.
-</p>
-<br/>
-<p>To use the AWS Toolkit to do AWS serverless application development and to run/debug AWS Lambda functions locally,
-    you will also need to install the AWS CLI, Docker, and the AWS SAM CLI. The preceding link covers setting up all of
-    these prerequisites.
+    The AWS Toolkit for JetBrains is a plugin for JetBrains IDEs that
+make it easier to write applications built on <a href="https://aws.amazon.com/">Amazon Web Services</a>.
+If you come across bugs with the toolkit or have feature requests, please raise an
+<a href="https://github.com/aws/aws-toolkit-jetbrains/issues">issue</a> on our GitHub repository.
 </p>
 <br/>
 <p>
-    If you come across bugs with the toolkit or have feature requests, please raise an <a
-        href="https://github.com/aws/aws-toolkit-jetbrains/issues">issue</a>.
+See the <a href="https://docs.aws.amazon.com/console/toolkit-for-jetbrains/">user guide</a> for how to get started, along
+with more detail on how to use each feature.
 </p>
+<br/>
 
 <p><h2><strong>Features</strong></h2></p>
 

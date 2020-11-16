@@ -7,7 +7,7 @@
 # AWS Toolkit for JetBrains
 
 AWS Toolkit for JetBrains is a plugin for JetBrains IDEs that 
-make it easier to write applications on [Amazon Web Services](https://aws.amazon.com/)
+make it easier to write applications built on [Amazon Web Services](https://aws.amazon.com/)
 
 The AWS Toolkit for JetBrains is open source because we want you to be involved. We appreciate issues, feature requests, pull 
 requests, code reviews or any other contribution.
@@ -56,6 +56,10 @@ resource types supported by the plugin.
 
 ### Services
 
+#### ![CloudFormation][cloudformation-icon] AWS CloudFormation
+* View events, resources, and outputs for your CloudFormation stacks
+#### ![CloudWatch Logs][cloudwatch-logs-icon] CloudWatch Logs 
+* View and search your CloudWatch log streams
 #### ![AWS Lambda][lambda-icon] AWS Lambda
 
 Many of these features require the [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli) to be installed, see the 
@@ -77,9 +81,13 @@ environment provided by the SAM CLI.
 *Note: Python features are available in both PyCharm and IntelliJ with the 
 [Python Plugin](https://www.jetbrains.com/help/idea/plugin-overview.html) installed.*
 
-#### ![Amazon S3][s3-icon] Amazon S3 - View and manage your S3 buckets
-#### ![CloudWatch Logs][cloudwatch-logs-icon] CloudWatch Logs - View and search your CloudWatch log streams
+#### ![Amazon Redshift][redshift-icon] Amazon RDS/Redshift
+* Connect to RDS/Redshift databases using temporary credentials with IAM/SecretsManager, no copy paste required
 
+*Note: database features require using a paid JetBrains product*
+#### ![Amazon S3][s3-icon] Amazon S3
+* View and manage your S3 buckets
+* Upload/Download to from buckets
 
 ## Licensing
 
@@ -88,3 +96,5 @@ The plugin is distributed according to the terms outlined in our [LICENSE](LICEN
 [lambda-icon]: jetbrains-core/resources/icons/resources/LambdaFunction.svg
 [s3-icon]: jetbrains-core/resources/icons/resources/S3Bucket.svg
 [cloudwatch-logs-icon]: jetbrains-core/resources/icons/resources/cloudwatchlogs/CloudWatchLogs.svg
+[cloudformation-icon]: jetbrains-core/resources/icons/resources/CloudFormationStack.svg
+[redshift-icon]: jetbrains-core/resources/icons/resources/Redshift.svg
