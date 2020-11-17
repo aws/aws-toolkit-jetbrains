@@ -65,7 +65,7 @@ class EcrServiceNodeTest {
         resourceCache.addEntry(projectRule.project, EcrResources.listTags(repo.repositoryName), tags)
         val children = node.children
         assertThat(children).hasSize(2)
-        assertThat(children.map { (it as EcrImageNode).tag }).containsExactlyInAnyOrder(*tags.toTypedArray())
+        assertThat(children.map { (it as EcrTagNode).tag }).containsExactlyInAnyOrder(*tags.toTypedArray())
     }
 
     @Test

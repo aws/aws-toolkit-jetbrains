@@ -39,11 +39,11 @@ class EcrRepositoryNode(
     override fun getChildren(): List<AwsExplorerNode<*>> = super<ResourceParentNode>.getChildren()
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = nodeProject
         .getResourceNow(EcrResources.listTags(repository.repositoryName))
-        .map { EcrImageNode(nodeProject, repository, it) }
+        .map { EcrTagNode(nodeProject, repository, it) }
 }
 
-class EcrImageNode(project: Project, val repository: Repository, val tag: String) : AwsExplorerNode<String>(project, tag, null), ResourceActionNode {
-    override fun actionGroupName(): String = "aws.toolkit.explorer.ecr.image"
+class EcrTagNode(project: Project, val repository: Repository, val tag: String) : AwsExplorerNode<String>(project, tag, null), ResourceActionNode {
+    override fun actionGroupName(): String = "aws.toolkit.explorer.ecr.tag"
     override fun isAlwaysShowPlus(): Boolean = false
     override fun isAlwaysLeaf(): Boolean = true
     override fun getChildren(): List<AbstractTreeNode<*>> = emptyList()

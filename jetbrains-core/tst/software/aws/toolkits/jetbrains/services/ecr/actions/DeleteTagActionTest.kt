@@ -8,10 +8,10 @@ import com.intellij.testFramework.TestActionEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.services.ecr.EcrImageNode
+import software.aws.toolkits.jetbrains.services.ecr.EcrTagNode
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 
-class DeleteImageActionTest {
+class DeleteTagActionTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
@@ -19,10 +19,10 @@ class DeleteImageActionTest {
     @Test
     fun `Hides when selected nodes have different repositories`() {
         val action = TestActionEvent()
-        DeleteImageAction().update(
+        DeleteTagAction().update(
             listOf(
-                EcrImageNode(projectRule.project, Repository("name", "", ""), "tag1"),
-                EcrImageNode(projectRule.project, Repository("differentName", "", ""), "tag1")
+                EcrTagNode(projectRule.project, Repository("name", "", ""), "tag1"),
+                EcrTagNode(projectRule.project, Repository("differentName", "", ""), "tag1")
             ),
             action
         )
@@ -32,10 +32,10 @@ class DeleteImageActionTest {
     @Test
     fun `Shows when multiple nodes selected with the same repository`() {
         val action = TestActionEvent()
-        DeleteImageAction().update(
+        DeleteTagAction().update(
             listOf(
-                EcrImageNode(projectRule.project, Repository("name", "", ""), "tag1"),
-                EcrImageNode(projectRule.project, Repository("name", "", ""), "tag1")
+                EcrTagNode(projectRule.project, Repository("name", "", ""), "tag1"),
+                EcrTagNode(projectRule.project, Repository("name", "", ""), "tag1")
             ),
             action
         )

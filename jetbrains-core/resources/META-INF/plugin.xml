@@ -251,10 +251,10 @@ with what features/services are supported.
             <action id="ecr.repository.delete" class="software.aws.toolkits.jetbrains.services.ecr.actions.DeleteRepositoryAction"/>
         </group>
 
-        <group id="aws.toolkit.explorer.ecr.image" popup="true" compact="false">
-            <action id="ecr.image.copyUri" class="software.aws.toolkits.jetbrains.services.ecr.actions.CopyImageUriAction"/>
+        <group id="aws.toolkit.explorer.ecr.tag" popup="true" compact="false">
+            <action id="ecr.image.copyUri" class="software.aws.toolkits.jetbrains.services.ecr.actions.CopyTagUriAction"/>
             <separator/>
-            <action id="ecr.image.delete" class="software.aws.toolkits.jetbrains.services.ecr.actions.DeleteImageAction"/>
+            <action id="ecr.image.delete" class="software.aws.toolkits.jetbrains.services.ecr.actions.DeleteTagAction"/>
         </group>
 
         <group id="aws.toolkit.explorer.ecs.cluster" popup="true" compact="false">
