@@ -26,7 +26,11 @@ class EcrRepositoryNode(
     project: Project,
     val repository: Repository
 ) :
-    AwsExplorerResourceNode<String>(project, EcrClient.SERVICE_NAME, repository.repositoryName, AwsIcons.Resources.ECR_REPOSITORY),
+    AwsExplorerResourceNode<String>(
+        project, EcrClient.SERVICE_NAME,
+        repository.repositoryName,
+        AwsIcons.Resources.ECR_REPOSITORY
+    ),
     ResourceParentNode {
 
     override fun resourceType(): String = "repository"
