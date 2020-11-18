@@ -18,7 +18,6 @@ import software.amazon.awssdk.services.sns.SnsClient
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry
-import software.aws.toolkits.core.utils.Waiters.waitUntilBlocking
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
@@ -38,6 +37,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.rightClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -287,8 +287,19 @@ class SQSTest {
 
     private fun SqsClient.waitForDeletion(queueName: String) {
         try {
-            waitUntilBlocking(exceptionsToStopOn = setOf(QueueDoesNotExistException::class)) {
-                getQueueUrl { it.queueName(queueName) }
+            val beginning = Instant.now()
+            while (true) {
+                Thread.sleep(5000)
+                if (Duration.between(beginning, Instant.now()).toMinutes() > 5) {
+                    throw RuntimeException("Verify delete queue timed out: $queueName")
+                }
+                try {
+                    getQueueUrl { it.queueName(queueName) }
+                } catch (e: QueueDoesNotExistException) {
+                    break
+                } catch (e: Exception) {
+                    continue
+                }
             }
             log.info("Verified $queueName is deleted")
         } catch (e: Exception) {
@@ -301,9 +312,17 @@ class SQSTest {
             // getQueueUrl can get before list works, so we can't use it to check if it exists.
             // So, use getQueuesPaginator instead. This can also take more than 1 minute sometimes,
             // so give it a 5 min timeout
-            waitUntilBlocking(succeedOn = { it }, maxDuration = Duration.ofMinutes(5)) {
-                listQueuesPaginator().queueUrls().toList().any {
-                    it.contains(queueName)
+            val beginning = Instant.now()
+            while (true) {
+                Thread.sleep(5000)
+                if (Duration.between(beginning, Instant.now()).toMinutes() > 5) {
+                    throw RuntimeException("Verify create queue timed out: $queueName")
+                }
+                try {
+                    if (listQueuesPaginator().queueUrls().toList().any { it.contains(queueName) }) {
+                        break
+                    }
+                } catch (e: Exception) {
                 }
             }
             log.info("Verified $queueName is created")
