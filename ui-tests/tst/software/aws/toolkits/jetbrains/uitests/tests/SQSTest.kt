@@ -9,6 +9,9 @@ import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
@@ -37,7 +40,6 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.rightClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 import java.time.Duration
-import java.time.Instant
 import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -285,49 +287,44 @@ class SQSTest {
         waitForDeletion(queueName)
     }
 
-    private fun SqsClient.waitForDeletion(queueName: String) {
+    private fun SqsClient.waitForDeletion(queueName: String) = runBlocking {
         try {
-            val beginning = Instant.now()
-            while (true) {
-                Thread.sleep(5000)
-                if (Duration.between(beginning, Instant.now()).toMinutes() > 5) {
-                    throw RuntimeException("Verify delete queue timed out: $queueName")
-                }
-                try {
-                    getQueueUrl { it.queueName(queueName) }
-                } catch (e: QueueDoesNotExistException) {
-                    break
-                } catch (e: Exception) {
-                    continue
+            withTimeout(Duration.ofMinutes(5).toMillis()) {
+                while (true) {
+                    delay(2000)
+                    try {
+                        getQueueUrl { it.queueName(queueName) }
+                    } catch (e: QueueDoesNotExistException) {
+                        return@withTimeout
+                    } catch (e: Exception) {
+                    }
                 }
             }
             log.info("Verified $queueName is deleted")
         } catch (e: Exception) {
-            log.error("Unknown exception thrown by waitForDeletion", e)
+            log.error("Exception thrown by waitForDeletion", e)
         }
     }
 
-    private fun SqsClient.waitForCreation(queueName: String) {
+    private fun SqsClient.waitForCreation(queueName: String) = runBlocking {
         try {
             // getQueueUrl can get before list works, so we can't use it to check if it exists.
             // So, use getQueuesPaginator instead. This can also take more than 1 minute sometimes,
             // so give it a 5 min timeout
-            val beginning = Instant.now()
-            while (true) {
-                Thread.sleep(5000)
-                if (Duration.between(beginning, Instant.now()).toMinutes() > 5) {
-                    throw RuntimeException("Verify create queue timed out: $queueName")
-                }
-                try {
-                    if (listQueuesPaginator().queueUrls().toList().any { it.contains(queueName) }) {
-                        break
+            withTimeout(Duration.ofMinutes(5).toMillis()) {
+                while (true) {
+                    delay(2000)
+                    try {
+                        if (listQueuesPaginator().queueUrls().toList().any { it.contains(queueName) }) {
+                            return@withTimeout
+                        }
+                    } catch (e: Exception) {
                     }
-                } catch (e: Exception) {
                 }
             }
             log.info("Verified $queueName is created")
         } catch (e: Exception) {
-            log.error("Unknown exception thrown by waitForDeletion", e)
+            log.error("Exception thrown by waitForDeletion", e)
         }
     }
 }
