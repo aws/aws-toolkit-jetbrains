@@ -44,6 +44,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.SamRunningState
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -68,15 +69,15 @@ import kotlin.concurrent.schedule
  * 4. Send the command to the worker to attach to the correct PID.
  */
 class DotNetSamDebugSupport : SamDebugSupport {
-    companion object {
-        private val LOG = getLogger<DotNetSamDebugSupport>()
-        private const val DEBUGGER_MODE = "server"
+    private companion object {
+        val LOG = getLogger<DotNetSamDebugSupport>()
+        const val DEBUGGER_MODE = "server"
 
-        private const val REMOTE_DEBUGGER_DIR = "/tmp/lambci_debug_files"
-        private const val REMOTE_NETCORE_CLI_PATH = "/var/lang/bin/dotnet"
-        private const val NUMBER_OF_DEBUG_PORTS = 2
+        const val REMOTE_DEBUGGER_DIR = "/tmp/lambci_debug_files"
+        const val REMOTE_NETCORE_CLI_PATH = "/var/lang/bin/dotnet"
+        const val NUMBER_OF_DEBUG_PORTS = 2
 
-        private const val FIND_PID_SCRIPT =
+        const val FIND_PID_SCRIPT =
             """
                 for i in `ls /proc/*/exe` ; do
                     symlink=`readlink  ${'$'}i 2>/dev/null`;
@@ -217,7 +218,7 @@ class DotNetSamDebugSupport : SamDebugSupport {
                     }
                 }
             } catch (t: Throwable) {
-                LOG.warn("Failed to start debugger", t)
+                LOG.warn(t) { "Failed to start debugger" }
                 debuggerLifetimeDefinition.terminate(true)
                 promise.setError(t)
             }
