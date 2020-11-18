@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.uitests.tests
 
-/* TODO uncomment to enable Logs Insights
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComboBoxFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.DEFAULT_INSIGHTS_QUERY_STRING
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
@@ -54,6 +52,16 @@ class InsightsQueryTest {
     private val logGroupName = "uitest-${UUID.randomUUID()}"
     private val logStreamName1 = "uitest-${UUID.randomUUID()}"
     private val logStreamName2 = "uitest-${UUID.randomUUID()}"
+
+    /**
+     * We can't reach into jetbrains-core by design, so copy the default string out of
+     * QueryEditorUtils.kt . If the string changes it needs to change in both places
+     */
+    private val DEFAULT_INSIGHTS_QUERY_STRING =
+        """fields @timestamp, @message
+        | sort @timestamp desc
+        | limit 20
+        """
 
     @BeforeAll
     fun setup() {
@@ -238,4 +246,3 @@ class InsightsQueryTest {
         }
     }
 }
-*/
