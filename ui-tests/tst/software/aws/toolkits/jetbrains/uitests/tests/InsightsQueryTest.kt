@@ -146,7 +146,7 @@ class InsightsQueryTest {
                     .findAllText()
                     .first()
                     .text
-                val currentTab = find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and contains(@accessiblename, '${currentQueryId}')]"))
+                val currentTab = find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and contains(@accessiblename, '$currentQueryId')]"))
                 openInsightsQueryDialogFromResults()
                 step("Change relative time values") {
                     find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='$defaultRelativeTimeAmount']")).text =
