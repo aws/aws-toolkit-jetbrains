@@ -35,7 +35,7 @@ fun createLambdaWorkflowForZip(
     val envVars = createAwsEnvVars(project)
 
     return StepWorkflow(
-        BuildLambda(dummyTemplate, buildDir, buildEnvVars, samOptions),
+        BuildLambda(templatePath = dummyTemplate, buildDir = buildDir, buildEnvVars = buildEnvVars, samOptions = samOptions),
         PackageLambda(builtTemplate, packagedTemplate, dummyLogicalId, envVars, s3Bucket = codeStorageLocation),
         CreateLambda(project.awsClient(), functionDetails)
     )
@@ -55,7 +55,7 @@ fun createLambdaWorkflowForImage(
     val envVars = createAwsEnvVars(project)
 
     return StepWorkflow(
-        BuildLambda(dummyTemplate, buildDir, emptyMap(), samOptions),
+        BuildLambda(templatePath = dummyTemplate, buildDir = buildDir, samOptions = samOptions),
         PackageLambda(builtTemplate, packagedTemplate, dummyLogicalId, envVars, ecrRepo = codeStorageLocation),
         CreateLambda(project.awsClient(), functionDetails)
     )
@@ -82,7 +82,7 @@ fun updateLambdaCodeWorkflowForZip(
     val envVars = createAwsEnvVars(project)
 
     return StepWorkflow(
-        BuildLambda(dummyTemplate, buildDir, buildEnvVars, samOptions),
+        BuildLambda(templatePath = dummyTemplate, buildDir = buildDir, buildEnvVars = buildEnvVars, samOptions = samOptions),
         PackageLambda(builtTemplate, packagedTemplate, dummyLogicalId, envVars, s3Bucket = codeStorageLocation),
         UpdateLambdaCode(project.awsClient(), functionName, updatedHandler)
     )
@@ -102,7 +102,7 @@ fun updateLambdaCodeWorkflowForImage(
     val envVars = createAwsEnvVars(project)
 
     return StepWorkflow(
-        BuildLambda(dummyTemplate, buildDir, emptyMap(), samOptions),
+        BuildLambda(templatePath = dummyTemplate, buildDir = buildDir, samOptions = samOptions),
         PackageLambda(builtTemplate, packagedTemplate, dummyLogicalId, envVars, ecrRepo = codeStorageLocation),
         UpdateLambdaCode(project.awsClient(), functionName, updatedHandler = null)
     )
@@ -128,7 +128,7 @@ fun createDeployWorkflow(
     Files.createDirectories(buildDir)
 
     return StepWorkflow(
-        BuildLambda(templatePath, buildDir, envVars, SamOptions(buildInContainer = useContainer)),
+        BuildLambda(templatePath, null, buildDir, envVars, SamOptions(buildInContainer = useContainer)),
         PackageLambda(builtTemplate, packagedTemplate, null, envVars, s3Bucket, ecrRepo),
         DeployLambda(packagedTemplate, stackName, s3Bucket, ecrRepo, capabilities, parameters, envVars, region)
     )

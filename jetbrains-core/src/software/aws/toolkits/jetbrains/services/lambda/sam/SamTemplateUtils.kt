@@ -83,6 +83,19 @@ object SamTemplateUtils {
         version = codeUri.get("Version").textValue()
     )
 
+    fun getCodeLocation(template: Path, logicalId: String): String = readTemplate(template) {
+        val function = requiredAt("/Resources/$logicalId")
+        if (function.isServerlessFunction()) {
+            if (function.isImageBased()) {
+                function.requiredAt("/Properties/DockerContext").textValue()
+            } else {
+                function.requiredAt("/Properties/CodeUri").textValue()
+            }
+        } else {
+            function.requiredAt("/Properties/Code").textValue()
+        }
+    }
+
     private fun JsonNode.isImageBased(): Boolean = this.packageType() == PackageType.IMAGE
 
     private fun JsonNode.packageType(): PackageType {
@@ -90,6 +103,8 @@ object SamTemplateUtils {
         return PackageType.knownValues().firstOrNull { it.toString() == type }
             ?: throw IllegalStateException(message("cloudformation.invalid_property", "PackageType", type))
     }
+
+    private fun JsonNode.isServerlessFunction(): Boolean = this.get("Type")?.textValue() == SERVERLESS_FUNCTION_TYPE
 
     private fun <T> readTemplate(template: Path, function: JsonNode.() -> T): T = template.inputStream().use {
         function(MAPPER.readTree(it))
