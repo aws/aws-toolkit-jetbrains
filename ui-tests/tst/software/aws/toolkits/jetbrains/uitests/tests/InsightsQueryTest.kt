@@ -32,7 +32,6 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.rightClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
-import java.lang.IllegalStateException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
@@ -117,8 +116,6 @@ class InsightsQueryTest {
         idea {
             waitForBackgroundTasks()
             showAwsExplorer()
-        }
-        idea {
             step("Expand log groups node") {
                 awsExplorer {
                     expandExplorerNode(cloudWatchExplorerLabel)
@@ -137,8 +134,19 @@ class InsightsQueryTest {
                 }
             }
             step("Revising query from current results") {
-                val currentTab = find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel']"))
-                val currentQueryId = find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel']")).findAllText().first().text
+                // Find query ID. Query ID is a GUID with dashes, which makes it 36 characters long.
+                val currentQueryId = findAll<JLabelFixture>(byXpath("//div[@class='ContentTabLabel']"))
+                    .first {
+                        try {
+                            it.findAllText().firstOrNull()?.text?.length == 36
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+                    .findAllText()
+                    .first()
+                    .text
+                val currentTab = find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and contains(@accessiblename, '${currentQueryId}')]"))
                 openInsightsQueryDialogFromResults()
                 step("Change relative time values") {
                     find<JTextFieldFixture>(byXpath("//div[@class='JFormattedTextField' and @visible_text='$defaultRelativeTimeAmount']")).text =
