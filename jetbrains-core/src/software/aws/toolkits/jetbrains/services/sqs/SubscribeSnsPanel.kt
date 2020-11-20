@@ -32,7 +32,7 @@ class SubscribeSnsPanel(private val project: Project) {
     private fun createUIComponents() {
         topicSelector = ResourceSelector.builder()
             .resource(SnsResources.LIST_TOPICS)
-            .customRenderer(SimpleListCellRenderer.create { label, value, _ -> label.text = value.getName() })
+            .customRenderer(SimpleListCellRenderer.create("") { it.getName() })
             .awsConnection(project)
             .build()
     }
