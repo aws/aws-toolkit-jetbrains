@@ -3,23 +3,25 @@
 
 package software.aws.toolkits.jetbrains.uitests.utils
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.time.Duration
-import java.time.Instant
 
 fun recheckAssert(
     timeout: Duration = Duration.ofSeconds(1),
     interval: Duration = Duration.ofMillis(100),
     assertion: () -> Unit
 ) {
-    val expiry = Instant.now().plus(timeout)
-    while (true) {
-        try {
-            assertion()
-            return
-        } catch (e: AssertionError) { // deliberately narrowed to an AssertionError - this is intended to be used in a test assertion
-            when {
-                Instant.now().isAfter(expiry) -> throw e
-                else -> Thread.sleep(interval.toMillis())
+    runBlocking {
+        withTimeout(timeout.toMillis()) {
+            while (true) {
+                try {
+                    assertion()
+                    return@withTimeout
+                } catch (e: AssertionError) { // deliberately narrowed to an AssertionError - this is intended to be used in a test assertion
+                    delay(interval.toMillis())
+                }
             }
         }
     }
