@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.sqs
 import com.intellij.icons.AllIcons
 import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.project.Project
-import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SimpleListCellRenderer
 import software.amazon.awssdk.services.sns.model.Topic
 import software.aws.toolkits.jetbrains.services.sns.resources.SnsResources
@@ -21,7 +20,6 @@ class SubscribeSnsPanel(private val project: Project) {
     lateinit var selectContextHelp: JLabel
 
     init {
-        component.border = IdeBorderFactory.createTitledBorder(message("sqs.subscribe.sns.select"))
         selectContextHelp.icon = AllIcons.General.ContextHelp
         HelpTooltip().apply {
             setDescription(message("sqs.subscribe.sns.select.tooltip"))
