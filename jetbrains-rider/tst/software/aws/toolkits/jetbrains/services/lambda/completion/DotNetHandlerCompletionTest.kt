@@ -3,27 +3,19 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.completion
 
-import base.allowCustomDotnetRoots
+import base.AwsReuseSolutionTestBase
 import com.intellij.openapi.util.IconLoader
 import com.jetbrains.rdclient.icons.toIdeaIcon
 import com.jetbrains.rider.test.annotations.TestEnvironment
-import com.jetbrains.rider.test.base.BaseTestWithSolution
 import org.assertj.core.api.Assertions.assertThat
-import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.rider.compatability.IconModel
 
-class DotNetHandlerCompletionTest : BaseTestWithSolution() {
+class DotNetHandlerCompletionTest : AwsReuseSolutionTestBase() {
 
-    override fun getSolutionDirectoryName(): String = ""
+    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
 
     override val waitForCaches = true
-
-    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_203
-    @BeforeSuite
-    fun allowDotnetRoots() {
-        allowCustomDotnetRoots()
-    }
 
     @Test(description = "Check a single handler is show in lookup when one is defined in a project.")
     @TestEnvironment(solution = "SamHelloWorldApp")
