@@ -20,6 +20,8 @@ import org.testng.annotations.BeforeClass
 // To avoid such errors we need to explicitly set toolset and MSBuild to be selected on an instance.
 // Please use this class for any Highlighting tests
 open class AwsMarkupBaseTest : BaseTestWithMarkup() {
+    override val restoreNuGetPackages = true
+
     @BeforeClass
     fun setUpBuildToolPath() {
         if (SystemInfo.isWindows) {
