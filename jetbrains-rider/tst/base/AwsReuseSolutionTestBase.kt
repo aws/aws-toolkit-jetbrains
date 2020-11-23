@@ -30,7 +30,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
 
     protected open val waitForCaches: Boolean get() = false
     protected open val persistCaches: Boolean get() = false
-    protected open val restoreNuGetPackages: Boolean get() = true
+    protected open val restoreNuGetPackages: Boolean get() = false
 
     protected abstract fun getSolutionDirectoryName(): String
 

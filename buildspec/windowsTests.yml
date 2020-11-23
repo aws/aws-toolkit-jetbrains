@@ -15,14 +15,11 @@ phases:
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             choco install -y --no-progress codecov
         }
-      - Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile 'dotnet-install.ps1'
-      - ./dotnet-install.ps1 -InstallDir "C:\Program Files\dotnet" -Channel 2.1
-      - ./dotnet-install.ps1 -InstallDir "C:\Program Files\dotnet" -Channel 3.1
       - dotnet --list-sdks
 
   build:
     commands:
-      - ./gradlew :jetbrains-rider:check --info --console plain
+      - ./gradlew check coverageReport --info --full-stacktrace --console plain
 
   post_build:
     commands:

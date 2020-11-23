@@ -27,7 +27,6 @@ object IdeVersions {
                 "com.intellij.database",
                 "Pythonid:201.6668.31"
             ),
-            riderSdkOverride = "2020.1.4",
             rdGenVersion = "0.203.161",
             nugetVersion = "2020.1.0"
         ),
