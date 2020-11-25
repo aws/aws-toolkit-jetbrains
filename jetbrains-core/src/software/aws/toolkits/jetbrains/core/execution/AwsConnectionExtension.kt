@@ -8,6 +8,7 @@ import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.openapi.util.Key
 import com.intellij.util.xmlb.XmlSerializer
 import org.jdom.Element
+import software.aws.toolkits.core.region.toEnvironmentVariables
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
@@ -44,8 +45,8 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
 
                 ConnectionSettings(credentialProvider, region)
             }
-
-            connection.toEnvironmentVariables().forEach { (key, value) -> environment[key] = value }
+            connection.region.toEnvironmentVariables(environment)
+            connection.credentials.resolveCredentials().toEnvironmentVariables(environment)
             AwsTelemetry.injectCredentials(configuration.project, result = Succeeded, runtimeString = tryOrNull { runtimeString() })
         } catch (e: Exception) {
             AwsTelemetry.injectCredentials(configuration.project, result = Failed, runtimeString = tryOrNull { runtimeString() })
