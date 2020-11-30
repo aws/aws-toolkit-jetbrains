@@ -11,9 +11,6 @@ class ReleaseCreator(private val unreleasedFiles: Collection<File>, private val 
         if (nextReleaseFile.exists()) {
             throw RuntimeException("Release file $nextReleaseFile already exists!")
         }
-        if (unreleasedFiles.isEmpty()) {
-            throw RuntimeException("No unreleased changes!")
-        }
     }
 
     fun create(version: String, date: LocalDate = LocalDate.now()) {

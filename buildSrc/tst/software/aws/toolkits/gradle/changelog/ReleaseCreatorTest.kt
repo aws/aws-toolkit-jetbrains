@@ -75,10 +75,4 @@ class ReleaseCreatorTest {
         nextReleaseFile.createNewFile()
         ReleaseCreator(listOf(folder.newFile()), nextReleaseFile)
     }
-
-    @Test(expected = RuntimeException::class)
-    fun noChangesThrows() {
-        val nextReleaseFile = folder.newFolder().resolve("2.0.0.json")
-        ReleaseCreator(listOf(), nextReleaseFile)
-    }
 }
