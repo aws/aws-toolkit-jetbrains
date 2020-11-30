@@ -33,8 +33,14 @@ class MockCredentialsManager : CredentialManager() {
         id: String,
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
         regionId: String? = null
+    ): CredentialIdentifier = addCredentials(id, StaticCredentialsProvider.create(credentials), regionId)
+
+    fun addCredentials(
+        id: String,
+        credentials: AwsCredentialsProvider,
+        regionId: String? = null
     ): CredentialIdentifier {
-        val credentialIdentifier = MockCredentialIdentifier(id, StaticCredentialsProvider.create(credentials), regionId)
+        val credentialIdentifier = MockCredentialIdentifier(id, credentials, regionId)
 
         addProvider(credentialIdentifier)
 

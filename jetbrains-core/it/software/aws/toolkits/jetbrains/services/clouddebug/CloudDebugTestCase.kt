@@ -9,7 +9,6 @@ import com.nhaarman.mockitokotlin2.mock
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
-import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.ecs.EcsClient
@@ -18,6 +17,7 @@ import software.amazon.awssdk.services.ecs.model.LaunchType
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.rules.ECSTemporaryServiceRule
+import software.aws.toolkits.core.utils.createIntegrationTestCredentialProvider
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
@@ -163,12 +163,12 @@ abstract class CloudDebugTestCase(private val taskDefName: String) {
 
     companion object {
         private val cloudFormationClient = CloudFormationClient.builder()
-            .httpClient(ApacheHttpClient.builder().build())
+            .credentialsProvider(createIntegrationTestCredentialProvider())
             .region(Region.US_WEST_2)
             .build()
 
         private val ecsClient = EcsClient.builder()
-            .httpClient(ApacheHttpClient.builder().build())
+            .credentialsProvider(createIntegrationTestCredentialProvider())
             .region(Region.US_WEST_2)
             .build()
     }
