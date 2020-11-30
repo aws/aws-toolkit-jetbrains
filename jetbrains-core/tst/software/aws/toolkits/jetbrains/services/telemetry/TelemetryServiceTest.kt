@@ -194,13 +194,10 @@ class TelemetryServiceTest {
     }
 
     private fun assertMetricEventsContains(events: Collection<MetricEvent>, event: String, awsAccount: String, awsRegion: String) {
-        events.find { e ->
-            e.data.find { it.name == event } != null && e.awsAccount == awsAccount && e.awsRegion == awsRegion
-        } ?: throw IllegalStateException(
-            "Event '$event' not found in metricevents with AWS account $awsAccount and region $awsRegion:\n" +
-                events.joinToString("\n") {
-                    "name: ${it.data.firstOrNull()?.name} account: ${it.awsAccount} region: ${it.awsRegion}"
-                }
-        )
+        assertThat(events).anySatisfy { e ->
+            assertThat(e.data).anySatisfy { assertThat(it.name).isEqualTo(event) }
+            assertThat(e.awsAccount).isEqualTo(awsAccount)
+            assertThat(e.awsRegion).isEqualTo(awsRegion)
+        }
     }
 }
