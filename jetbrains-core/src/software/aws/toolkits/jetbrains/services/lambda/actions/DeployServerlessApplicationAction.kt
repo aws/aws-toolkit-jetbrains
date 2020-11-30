@@ -31,17 +31,22 @@ import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTempla
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.SamDeployDialog
+import software.aws.toolkits.jetbrains.services.lambda.deploy.createDeployWorkflow
+import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.Operation
 import software.aws.toolkits.jetbrains.utils.TaggingResourceType
+import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.jetbrains.utils.notifySamCliNotValidError
 import software.aws.toolkits.jetbrains.utils.warnResourceOperationAgainstCodePipeline
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 
@@ -111,6 +116,31 @@ class DeployServerlessApplicationAction : AnAction(
     }
 
     private fun continueDeployment(project: Project, stackName: String, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
+        val workflow = createDeployWorkflow(
+            project,
+            templateFile,
+            stackDialog.bucket,
+            stackDialog.useContainer
+        )
+
+        StepExecutor(project, message("lambda.workflow.create_new.name"), workflow, stackName).startExecution(
+            onSuccess = {
+                // saveSettings(it.getRequiredAttribute(CreateLambda.FUNCTION_ARN))
+
+                notifyInfo(
+                    project = project,
+                    title = message("lambda.service_name"),
+                    content = message("lambda.function.created.notification", stackName)
+                )
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+                project.refreshAwsTree(LambdaResources.LIST_FUNCTIONS)
+            },
+            onError = {
+                it.notifyError(project = project, title = message("lambda.service_name"))
+                LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
+            }
+        )
+        /*
         val deployDialog = SamDeployDialog(
             project,
             stackName,
@@ -124,7 +154,7 @@ class DeployServerlessApplicationAction : AnAction(
 
         deployDialog.show()
         if (!deployDialog.isOK) return
-
+        */
         val cfnClient = project.awsClient<CloudFormationClient>()
 
         cfnClient.describeStack(stackName) {
@@ -136,7 +166,7 @@ class DeployServerlessApplicationAction : AnAction(
         }
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                cfnClient.executeChangeSetAndWait(stackName, deployDialog.changeSetName)
+              //  cfnClient.executeChangeSetAndWait(stackName, deployDialog.changeSetName)
                 notifyInfo(
                     message("cloudformation.execute_change_set.success.title"),
                     message("cloudformation.execute_change_set.success", stackName),
