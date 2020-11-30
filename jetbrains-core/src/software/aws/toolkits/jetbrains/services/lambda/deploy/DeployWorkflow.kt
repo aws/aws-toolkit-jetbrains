@@ -20,9 +20,12 @@ import java.nio.file.Paths
 
 fun createDeployWorkflow(
     project: Project,
+    stackName: String,
     template: VirtualFile,
     s3Bucket: String,
-    useContainer: Boolean
+    useContainer: Boolean,
+    parameters: Map<String, String>,
+    capabilities: List<CreateCapabilities>
 ): StepWorkflow {
     val credentialsProvider = AwsConnectionManager.getInstance(project).activeCredentialProvider
     val region = AwsConnectionManager.getInstance(project).activeRegion
@@ -36,7 +39,7 @@ fun createDeployWorkflow(
     return StepWorkflow(
         BuildLambda(templatePath, buildDir, createCommonEnvVars(credentialsProvider, region), SamOptions(buildInContainer = useContainer)),
         PackageLambda(builtTemplate, packagedTemplate, null, s3Bucket, createCommonEnvVars(credentialsProvider, region)),
-        DeployLambda()
+        DeployLambda(packagedTemplate, stackName, s3Bucket, capabilities, parameters, createCommonEnvVars(credentialsProvider, region), region)
     )
 }
 

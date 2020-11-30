@@ -35,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.lambda.deploy.createDeployWorkfl
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.DeployLambda
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.Operation
@@ -118,14 +119,42 @@ class DeployServerlessApplicationAction : AnAction(
     private fun continueDeployment(project: Project, stackName: String, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
         val workflow = createDeployWorkflow(
             project,
+            stackName,
             templateFile,
             stackDialog.bucket,
-            stackDialog.useContainer
+            stackDialog.useContainer,
+            stackDialog.parameters,
+            stackDialog.capabilities
         )
 
         StepExecutor(project, message("lambda.workflow.create_new.name"), workflow, stackName).startExecution(
             onSuccess = {
-                // saveSettings(it.getRequiredAttribute(CreateLambda.FUNCTION_ARN))
+                val changeSetArn = it.getRequiredAttribute(DeployLambda.CHANGE_SET_ARN)
+                val cfnClient = project.awsClient<CloudFormationClient>()
+
+                cfnClient.describeStack(stackName) {
+                    it?.run {
+                        runInEdt {
+                            StackWindowManager.getInstance(project).openStack(stackName(), stackId())
+                        }
+                    }
+                }
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    try {
+                        cfnClient.executeChangeSetAndWait(stackName, changeSetArn)
+                        notifyInfo(
+                            message("cloudformation.execute_change_set.success.title"),
+                            message("cloudformation.execute_change_set.success", stackName),
+                            project
+                        )
+                        SamTelemetry.deploy(project, Result.Succeeded)
+                        // Since we could update anything, do a full refresh of the resource cache and explorer
+                        project.refreshAwsTree()
+                    } catch (e: Exception) {
+                        e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
+                        SamTelemetry.deploy(project, Result.Failed)
+                    }
+                }
 
                 notifyInfo(
                     project = project,
@@ -140,46 +169,6 @@ class DeployServerlessApplicationAction : AnAction(
                 LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
             }
         )
-        /*
-        val deployDialog = SamDeployDialog(
-            project,
-            stackName,
-            templateFile,
-            stackDialog.parameters,
-            stackDialog.bucket,
-            stackDialog.autoExecute,
-            stackDialog.useContainer,
-            stackDialog.capabilities
-        )
-
-        deployDialog.show()
-        if (!deployDialog.isOK) return
-        */
-        val cfnClient = project.awsClient<CloudFormationClient>()
-
-        cfnClient.describeStack(stackName) {
-            it?.run {
-                runInEdt {
-                    StackWindowManager.getInstance(project).openStack(stackName(), stackId())
-                }
-            }
-        }
-        ApplicationManager.getApplication().executeOnPooledThread {
-            try {
-              //  cfnClient.executeChangeSetAndWait(stackName, deployDialog.changeSetName)
-                notifyInfo(
-                    message("cloudformation.execute_change_set.success.title"),
-                    message("cloudformation.execute_change_set.success", stackName),
-                    project
-                )
-                SamTelemetry.deploy(project, Result.Succeeded)
-                // Since we could update anything, do a full refresh of the resource cache and explorer
-                project.refreshAwsTree()
-            } catch (e: Exception) {
-                e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
-                SamTelemetry.deploy(project, Result.Failed)
-            }
-        }
     }
 
     override fun update(e: AnActionEvent) {
