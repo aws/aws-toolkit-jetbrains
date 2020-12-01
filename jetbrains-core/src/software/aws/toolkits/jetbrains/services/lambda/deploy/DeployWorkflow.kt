@@ -23,6 +23,7 @@ fun createDeployWorkflow(
     stackName: String,
     template: VirtualFile,
     s3Bucket: String,
+    ecrRepo: String?,
     useContainer: Boolean,
     parameters: Map<String, String>,
     capabilities: List<CreateCapabilities>
@@ -38,7 +39,7 @@ fun createDeployWorkflow(
 
     return StepWorkflow(
         BuildLambda(templatePath, buildDir, createCommonEnvVars(credentialsProvider, region), SamOptions(buildInContainer = useContainer)),
-        PackageLambda(builtTemplate, packagedTemplate, null, s3Bucket, createCommonEnvVars(credentialsProvider, region)),
+        PackageLambda(builtTemplate, packagedTemplate, null, createCommonEnvVars(credentialsProvider, region), s3Bucket, ecrRepo),
         DeployLambda(packagedTemplate, stackName, s3Bucket, capabilities, parameters, createCommonEnvVars(credentialsProvider, region), region)
     )
 }
