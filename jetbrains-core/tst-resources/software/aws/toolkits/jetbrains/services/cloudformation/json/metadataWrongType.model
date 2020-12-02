@@ -1,0 +1,15 @@
+CfnRootNode{
+  metadataNode=CfnMetadataNode{
+    value=<null>,
+    name=CfnScalarValueNode{
+      value=Metadata
+    }
+  },
+  transformNode=<null>,
+  parametersNode=<null>,
+  mappingsNode=<null>,
+  conditionsNode=<null>,
+  resourcesNode=<null>,
+  globalsNode=<null>,
+  outputsNode=<null>
+}

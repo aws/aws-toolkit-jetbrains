@@ -14,6 +14,9 @@ import software.aws.toolkits.core.utils.wait
 import software.aws.toolkits.resources.message
 import java.time.Duration
 
+const val SERVERLESS_TRANSFORM = "AWS::Serverless-2016-10-31"
+const val CFN_FORMAT_VERSION = "AWSTemplateFormatVersion"
+
 fun CloudFormationClient.executeChangeSetAndWait(stackName: String, changeSet: String) {
     val isCreate = try {
         val describeStack = this.describeStacks { it.stackName(stackName) }

@@ -1,0 +1,19 @@
+{
+    "Metadata": {
+        "Instances": {
+            "Description": "Information about the instances"
+        },
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Create app"
+                    },
+                    "Parameters": [
+                        "appName"
+                    ]
+                }
+            ]
+        }
+    }
+}
