@@ -4,7 +4,7 @@
 package software.aws.toolkits.core.utils
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider
 import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
@@ -17,7 +17,8 @@ import java.util.UUID
  * If it is not set, we will just use the default credential provider chain
  */
 fun createIntegrationTestCredentialProvider(): AwsCredentialsProvider {
-    val defaultCredentials = DefaultCredentialsProvider.create()
+    // TODO: Finish https://github.com/aws/aws-toolkit-jetbrains/pull/2193 and revert back to Default Chain
+    val defaultCredentials = ContainerCredentialsProvider.builder().asyncCredentialUpdateEnabled(false).build()
 
     return System.getenv("ASSUME_ROLE_ARN")?.takeIf { it.isNotEmpty() }?.let { role ->
         val sessionName = UUID.randomUUID().toString()

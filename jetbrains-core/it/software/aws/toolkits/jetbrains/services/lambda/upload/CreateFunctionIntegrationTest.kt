@@ -11,7 +11,6 @@ import com.intellij.util.ThrowableRunnable
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.regions.Region
@@ -48,7 +47,6 @@ import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.waitToLoad
 import java.time.Duration
 
-@Ignore
 class CreateFunctionIntegrationTest {
     private val projectRule = HeavyJavaCodeInsightTestFixtureRule()
     private val resourceCache = MockResourceCacheRule()
@@ -83,11 +81,10 @@ class CreateFunctionIntegrationTest {
         setSamExecutableFromEnvironment()
         projectRule.fixture.addModule("main")
 
-        // TODO: Move this to us-west-2
-        val region = regionProvider.addRegion(Region.SA_EAST_1)
+        val region = regionProvider.addRegion(Region.US_WEST_2)
         val credentials = credentialManager.addCredentials("ReadCreds", createIntegrationTestCredentialProvider(), region)
 
-        settingsManager.settingsManager.changeRegion(regionProvider.addRegion(Region.SA_EAST_1))
+        settingsManager.settingsManager.changeRegion(region)
         settingsManager.settingsManager.changeCredentialProviderAndWait(credentials)
 
         MockClientManager.useRealImplementations(disposableRule.disposable)
