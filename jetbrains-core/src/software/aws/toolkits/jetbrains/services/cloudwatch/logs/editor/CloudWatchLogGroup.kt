@@ -6,10 +6,9 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
@@ -114,7 +113,7 @@ class CloudWatchLogGroup(
     private fun addToolbar() {
         val actionGroup = DefaultActionGroup()
         actionGroup.addAction(
-            object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
+            object : DumbAwareAction(message("general.refresh"), null, AllIcons.Actions.Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
                     CloudwatchlogsTelemetry.refreshGroup(project)
                     refreshTable()
@@ -122,7 +121,7 @@ class CloudWatchLogGroup(
             }
         )
         actionGroup.addAction(
-            object : AnAction(message("cloudwatch.logs.query"), null, AllIcons.Actions.Find), DumbAware {
+            object : DumbAwareAction(message("cloudwatch.logs.query"), null, AllIcons.Actions.Find) {
                 override fun actionPerformed(e: AnActionEvent) {
                     QueryEditorDialog(project, connection, logGroup).show()
                     // TODO: replace 'Unknown' with log-group-window when new telemetry definition in place

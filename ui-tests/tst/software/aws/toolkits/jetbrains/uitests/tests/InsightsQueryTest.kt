@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
+import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.waitUntilLoaded
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
@@ -179,7 +180,19 @@ class InsightsQueryTest {
                 }
             }
             step("Open query from log group") {
-
+                step("Open log group") {
+                    awsExplorer {
+                        doubleClickExplorer(cloudWatchExplorerLabel, logGroupName)
+                    }
+                    find<ComponentFixture>(byXpath("//div[@accessiblename='View Log Streams']")).click()
+                }
+                step("Click query button") {
+                    findAndClick("//div[@accessiblename='Query']")
+                }
+                step("Verify dialog and close it") {
+                    findByXpath("//div[@accessiblename='Query Log Groups' and @class='MyDialog']")
+                    findAndClick("//div[@text='Cancel']")
+                }
             }
         }
     }
