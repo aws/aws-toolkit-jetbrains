@@ -7,12 +7,12 @@ import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
@@ -196,7 +196,7 @@ private class StackUI(
 
     private fun createToolbar(): JComponent {
         val actionGroup = DefaultActionGroup()
-        actionGroup.addAction(object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
+        actionGroup.addAction(object : DumbAwareAction(message("general.refresh"), null, AllIcons.Actions.Refresh) {
             override fun actionPerformed(e: AnActionEvent) {
                 updater.start()
             }
