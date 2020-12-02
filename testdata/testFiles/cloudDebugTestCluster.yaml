@@ -21,7 +21,36 @@ Resources:
       TaskRoleArn: !Ref TaskRole
       ContainerDefinitions:
         - Name: 'ContainerName'
-          Image: "amazoncorretto"
+          Image: "public.ecr.aws/bitnami/java:14"
+          Command:
+            - 'tail -f /dev/null'
+          EntryPoint:
+            - 'sh'
+            - '-c'
+          PortMappings:
+            - ContainerPort: 80
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref LogGroup
+              awslogs-stream-prefix: ecs
+  TaskDefinitionWithPython:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: LogGroup
+    Properties:
+      Family: !Join [ '', [ !Ref Cluster, TaskDefinitionWithJava ] ]
+      # awsvpc is required for Fargate
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 1024
+      Memory: 2GB
+      ExecutionRoleArn: !Ref ExecutionRole
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+        - Name: 'ContainerName'
+          Image: "public.ecr.aws/bitnami/python:2"
           Command:
             - 'tail -f /dev/null'
           EntryPoint:
@@ -50,7 +79,7 @@ Resources:
       TaskRoleArn: !Ref TaskRole
       ContainerDefinitions:
         - Name: 'ContainerName'
-          Image: "node"
+          Image: "public.ecr.aws/bitnami/node:14"
           Command:
             - 'tail -f /dev/null'
           EntryPoint:
