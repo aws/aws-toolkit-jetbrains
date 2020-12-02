@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.nio.file.Paths
@@ -61,14 +62,18 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
         }
     }
 
-    override fun createCenterPanel(): JComponent? = view.content
+    override fun createCenterPanel(): JComponent = view.content
 
-    override fun getPreferredFocusedComponent(): JComponent? = view.name
+    override fun getPreferredFocusedComponent(): JComponent = view.name
 
     override fun doValidate(): ValidationInfo? = view.validatePanel()
 
     override fun doCancelAction() {
-        LambdaTelemetry.editFunction(project, result = Result.Cancelled)
+        LambdaTelemetry.editFunction(
+            project,
+            lambdaPackageType = LambdaPackageType.from(view.configSettings.packageType().toString()),
+            result = Result.Cancelled
+        )
         super.doCancelAction()
     }
 
@@ -76,7 +81,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
         upsertLambdaCode()
     }
 
-    override fun getHelpId(): String? = HelpIds.CREATE_FUNCTION_DIALOG.id
+    override fun getHelpId(): String = HelpIds.CREATE_FUNCTION_DIALOG.id
 
     private fun upsertLambdaCode() {
         if (!okAction.isEnabled) {
@@ -94,13 +99,23 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
                 title = message("lambda.service_name"),
                 content = message("lambda.function.created.notification", functionName)
             )
-            LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+            LambdaTelemetry.editFunction(
+                project,
+                lambdaPackageType = LambdaPackageType.from(view.configSettings.packageType().toString()),
+                update = false,
+                result = Result.Succeeded
+            )
             project.refreshAwsTree(LambdaResources.LIST_FUNCTIONS)
         }
 
         workflow.onError = {
             it.notifyError(project = project, title = message("lambda.service_name"))
-            LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
+            LambdaTelemetry.editFunction(
+                project,
+                lambdaPackageType = LambdaPackageType.from(view.configSettings.packageType().toString()),
+                update = false,
+                result = Result.Failed
+            )
         }
 
         workflow.startExecution()
