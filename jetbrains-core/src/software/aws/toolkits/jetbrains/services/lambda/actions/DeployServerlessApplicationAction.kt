@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.actions
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
@@ -14,8 +15,11 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
@@ -37,6 +41,7 @@ import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.Operation
 import software.aws.toolkits.jetbrains.utils.TaggingResourceType
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
@@ -52,6 +57,7 @@ class DeployServerlessApplicationAction : AnAction(
     null,
     AwsIcons.Resources.SERVERLESS_APP
 ) {
+    private val edtContext = getCoroutineUiContext()
     private val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -127,38 +133,58 @@ class DeployServerlessApplicationAction : AnAction(
         )
 
         workflow.onSuccess = {
-            val changeSetArn = it.getRequiredAttribute(DeployLambda.CHANGE_SET_ARN)
-            val cfnClient = project.awsClient<CloudFormationClient>()
+            runBlocking {
+                val changeSetArn = it.getRequiredAttribute(DeployLambda.CHANGE_SET_ARN)
 
-            cfnClient.describeStack(stackName) {
-                it?.run {
-                    runInEdt {
-                        StackWindowManager.getInstance(project).openStack(stackName(), stackId())
+                if (!stackDialog.autoExecute) {
+                    val result = withContext(edtContext) {
+                        Messages.showOkCancelDialog(
+                            project,
+                            "TODO fix wnat to deploy? $changeSetArn",
+                            "TODO Fix Want To Deploy?",
+                            Messages.getOkButton(),
+                            Messages.getCancelButton(),
+                            AllIcons.General.InformationDialog
+                        )
+                    }
+                    if (result != Messages.OK) {
+                        // TODO telemetry
+                        return@runBlocking
                     }
                 }
-            }
-            ApplicationManager.getApplication().executeOnPooledThread {
-                try {
-                    cfnClient.executeChangeSetAndWait(stackName, changeSetArn)
-                    notifyInfo(
-                        message("cloudformation.execute_change_set.success.title"),
-                        message("cloudformation.execute_change_set.success", stackName),
-                        project
-                    )
-                    SamTelemetry.deploy(project, Result.Succeeded)
-                    // Since we could update anything, do a full refresh of the resource cache and explorer
-                    project.refreshAwsTree()
-                } catch (e: Exception) {
-                    e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
-                    SamTelemetry.deploy(project, Result.Failed)
-                }
-            }
 
-            notifyInfo(
-                project = project,
-                title = message("lambda.service_name"),
-                content = message("lambda.function.created.notification", stackName)
-            )
+                val cfnClient = project.awsClient<CloudFormationClient>()
+
+                cfnClient.describeStack(stackName) {
+                    it?.run {
+                        runInEdt {
+                            StackWindowManager.getInstance(project).openStack(stackName(), stackId())
+                        }
+                    }
+                }
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    try {
+                        cfnClient.executeChangeSetAndWait(stackName, changeSetArn)
+                        notifyInfo(
+                            message("cloudformation.execute_change_set.success.title"),
+                            message("cloudformation.execute_change_set.success", stackName),
+                            project
+                        )
+                        SamTelemetry.deploy(project, Result.Succeeded)
+                        // Since we could update anything, do a full refresh of the resource cache and explorer
+                        project.refreshAwsTree()
+                    } catch (e: Exception) {
+                        e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
+                        SamTelemetry.deploy(project, Result.Failed)
+                    }
+                }
+
+                notifyInfo(
+                    project = project,
+                    title = message("lambda.service_name"),
+                    content = message("lambda.function.created.notification", stackName)
+                )
+            }
         }
 
         workflow.onError = {
