@@ -22,7 +22,7 @@ class DeployLambda(
     private val envVars: Map<String, String>,
     region: AwsRegion
 ) : SamCliStep() {
-    override val stepName = "TODO fix deploy"
+    override val stepName = message("serverless.application.deploy.step_name.create_change_set")
     private val changeSetRegex = "(arn:${region.partitionId}:cloudformation:.*changeSet/[^\\s]*)".toRegex()
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samDeployCommand(
