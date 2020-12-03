@@ -63,6 +63,7 @@ class UpdateFunctionConfigDialog(private val project: Project, private val initi
     override fun doCancelAction() {
         LambdaTelemetry.editFunction(
             project,
+            update = true,
             lambdaPackageType = LambdaPackageType.from(view.configSettings.packageType().toString()),
             result = Result.Cancelled
         )
