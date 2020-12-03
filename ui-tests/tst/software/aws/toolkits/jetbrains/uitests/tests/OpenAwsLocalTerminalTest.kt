@@ -28,12 +28,8 @@ class OpenAwsLocalTerminalTest {
     @Test
     @CoreTest
     fun `can open a terminal from explorer`() = uiTest {
-        try {
-            welcomeFrame {
-                openFolder(tempDir)
-            }
-        } catch (e: Exception) {
-            println(e)
+        welcomeFrame {
+            openFolder(tempDir)
         }
         idea {
             waitForBackgroundTasks()
