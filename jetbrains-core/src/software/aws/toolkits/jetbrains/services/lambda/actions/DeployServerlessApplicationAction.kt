@@ -119,7 +119,9 @@ class DeployServerlessApplicationAction : AnAction(
 
     private fun continueDeployment(project: Project, stackName: String, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
         val workflow = StepExecutor(
-            project, message("serverless.application.deploy_in_progress.title", stackName), createDeployWorkflow(
+            project,
+            message("serverless.application.deploy_in_progress.title", stackName),
+            createDeployWorkflow(
                 project,
                 stackName,
                 templateFile,
@@ -128,7 +130,8 @@ class DeployServerlessApplicationAction : AnAction(
                 stackDialog.useContainer,
                 stackDialog.parameters,
                 stackDialog.capabilities
-            ), stackName
+            ),
+            stackName
         )
 
         workflow.onSuccess = {

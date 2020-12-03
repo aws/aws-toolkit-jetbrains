@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.deploy
 
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ExceptionUtil
@@ -15,14 +14,21 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.Parameter
+import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
 import software.aws.toolkits.core.rules.S3TemporaryBucketRule
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.runUnderRealCredentials
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.DeployLambda
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createDeployWorkflow
 import software.aws.toolkits.jetbrains.utils.assumeImageSupport
+import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
+import software.aws.toolkits.jetbrains.utils.readProject
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
+import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Paths
 import java.time.Year
@@ -41,6 +47,11 @@ class SamDeployTest {
         .region(Region.US_WEST_2)
         .build()
 
+    private val ecrClient = EcrClient.builder()
+        .httpClient(ApacheHttpClient.builder().build())
+        .region(Region.US_WEST_2)
+        .build()
+
     private val largeTemplateLocation = Paths.get(System.getProperty("testDataPath"), "testFiles", "LargeTemplate.yml").toString()
 
     @Rule
@@ -50,6 +61,10 @@ class SamDeployTest {
     @Rule
     @JvmField
     val bucketRule = S3TemporaryBucketRule(s3Client)
+
+    @Rule
+    @JvmField
+    val repositoryRule = EcrTemporaryRepositoryRule(ecrClient)
 
     @Before
     fun setUp() {
@@ -63,7 +78,7 @@ class SamDeployTest {
         val stackName = "SamDeployTest-${UUID.randomUUID()}"
         val templateFile = setUpProject()
         runAssertsAndClean(stackName) {
-            val changeSetArn = createChangeSet(templateFile, stackName)
+            val changeSetArn = createChangeSet(templateFile, stackName, hasImage = false)
 
             assertThat(changeSetArn).isNotNull()
 
@@ -88,7 +103,7 @@ class SamDeployTest {
         val stackName = "SamDeployTest-${UUID.randomUUID()}"
         val templateFile = setUpProject(largeTemplateLocation)
         runAssertsAndClean(stackName) {
-            val changeSetArn = createChangeSet(templateFile, stackName, mapOf("InstanceType" to "t2.small"))
+            val changeSetArn = createChangeSet(templateFile, stackName, mapOf("InstanceType" to "t2.small"), false)
 
             assertThat(changeSetArn).isNotNull()
 
@@ -112,7 +127,7 @@ class SamDeployTest {
         val stackName = "SamDeployTest-${UUID.randomUUID()}"
         val templateFile = setUpProject()
         runAssertsAndClean(stackName) {
-            val changeSetArn = createChangeSet(templateFile, stackName, mapOf("TestParameter" to "FooBar"))
+            val changeSetArn = createChangeSet(templateFile, stackName, mapOf("TestParameter" to "FooBar"), false)
 
             assertThat(changeSetArn).isNotNull()
 
@@ -134,8 +149,25 @@ class SamDeployTest {
     @Test
     fun deployImageBasedSamApp() {
         assumeImageSupport()
-        // TODO write this test once we have cfn support (or blow up if we take too long :D)
-        assertThat(Year.now().value).isEqualTo(2020)
+        val stackName = "SamDeployTest-${UUID.randomUUID()}"
+        val (_, templateFile) = readProject(
+            projectRule = projectRule,
+            relativePath = "samProjects/image/python3.7",
+            sourceFileName = "app.py"
+        )
+        runAssertsAndClean(stackName) {
+            val changeSetArn = createChangeSet(templateFile, stackName, hasImage = true)
+
+            assertThat(changeSetArn).isNotNull()
+
+            val describeChangeSetResponse = cfnClient.describeChangeSet {
+                it.stackName(stackName)
+                it.changeSetName(changeSetArn)
+            }
+
+            assertThat(describeChangeSetResponse).isNotNull
+            assertThat(describeChangeSetResponse.parameters()).isEmpty()
+        }
     }
 
     private fun setUpProject(templateFilePath: String? = null): VirtualFile {
@@ -180,26 +212,36 @@ class SamDeployTest {
         }
     }
 
-    private fun createChangeSet(templateFile: VirtualFile, stackName: String, parameters: Map<String, String> = emptyMap()): String? =
+    private fun createChangeSet(templateFile: VirtualFile, stackName: String, parameters: Map<String, String> = emptyMap(), hasImage: Boolean): String? =
         runUnderRealCredentials(projectRule.project) {
+            var changeSetArn: String? = null
             val deployDialog = runInEdtAndGet {
-
-                SamDeployDialog(
+                val workflow = StepExecutor(
                     projectRule.project,
-                    stackName,
-                    templateFile,
-                    parameters,
-                    bucketRule.createBucket(stackName),
-                    null,
-                    false,
-                    true,
-                    CreateCapabilities.values().toList()
-                ).also {
-                    Disposer.register(projectRule.fixture.testRootDisposable, it.disposable)
+                    message("serverless.application.deploy_in_progress.title", stackName),
+                    createDeployWorkflow(
+                        projectRule.project,
+                        stackName,
+                        templateFile,
+                        bucketRule.createBucket(stackName),
+                        if (hasImage) repositoryRule.createRepository(stackName) else null,
+                        true,
+                        parameters,
+                        CreateCapabilities.values().toList()
+                    ),
+                    stackName
+                )
+
+                workflow.onSuccess = {
+                    changeSetArn = it.getRequiredAttribute(DeployLambda.CHANGE_SET_ARN)
                 }
+
+                workflow.startExecution()
             }
 
-            deployDialog.deployFuture.get(5, TimeUnit.MINUTES)
+            deployDialog.waitFor(TimeUnit.MINUTES.toMillis(5))
+
+            changeSetArn
         }
 
     private fun runAssertsAndClean(stackName: String, asserts: () -> Unit) {

@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.lambda.upload.steps
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
-import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
