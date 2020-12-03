@@ -5,6 +5,7 @@ package software.aws.toolkits.core.rules
 
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.services.ecr.EcrClient
+import software.amazon.awssdk.services.ecr.model.Repository
 import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException
 import software.aws.toolkits.core.utils.RuleUtils
 
@@ -16,17 +17,16 @@ class EcrTemporaryRepositoryRule(private val ecrClientSupplier: () -> EcrClient)
     /**
      * Creates a temporary repository with the optional prefix (or calling class if prefix is omitted)
      */
-    fun createRepository(prefix: String = RuleUtils.prefixFromCallingClass()): String {
+    fun createRepository(prefix: String = RuleUtils.prefixFromCallingClass()): Repository {
         val repositoryName: String = RuleUtils.randomName(prefix).toLowerCase()
         val client = ecrClientSupplier()
 
         // note there is no waiter for this
-        client.createRepository { it.repositoryName(repositoryName) }
-
+        val repo = client.createRepository { it.repositoryName(repositoryName) }
 
         repositories.add(repositoryName)
 
-        return repositoryName
+        return repo.repository()
     }
 
     override fun after() {

@@ -27,11 +27,11 @@ import software.aws.toolkits.jetbrains.utils.assumeImageSupport
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.readProject
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Paths
-import java.time.Year
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -71,6 +71,9 @@ class SamDeployTest {
         setSamExecutableFromEnvironment()
 
         MockAwsConnectionManager.getInstance(projectRule.project).changeRegion(AwsRegion(Region.US_WEST_2.id(), "us-west-2", "aws"))
+
+        // we need at least one module for deploy image (for read project)
+        projectRule.fixture.addModule("main")
     }
 
     @Test
@@ -152,8 +155,8 @@ class SamDeployTest {
         val stackName = "SamDeployTest-${UUID.randomUUID()}"
         val (_, templateFile) = readProject(
             projectRule = projectRule,
-            relativePath = "samProjects/image/python3.7",
-            sourceFileName = "app.py"
+            relativePath = "samProjects/image/java11/maven",
+            sourceFileName = "App.java"
         )
         runAssertsAndClean(stackName) {
             val changeSetArn = createChangeSet(templateFile, stackName, hasImage = true)
@@ -224,7 +227,7 @@ class SamDeployTest {
                         stackName,
                         templateFile,
                         bucketRule.createBucket(stackName),
-                        if (hasImage) repositoryRule.createRepository(stackName) else null,
+                        if (hasImage) repositoryRule.createRepository(stackName).repositoryUri() else null,
                         true,
                         parameters,
                         CreateCapabilities.values().toList()
