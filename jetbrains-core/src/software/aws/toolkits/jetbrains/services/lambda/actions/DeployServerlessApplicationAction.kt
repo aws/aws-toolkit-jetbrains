@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.actions
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
@@ -15,7 +14,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import kotlinx.coroutines.runBlocking
@@ -33,9 +31,10 @@ import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindow
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
-import software.aws.toolkits.jetbrains.services.lambda.deploy.createDeployWorkflow
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.upload.UploadFunctionContinueDialog
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.DeployLambda
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createDeployWorkflow
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.Operation
@@ -120,7 +119,7 @@ class DeployServerlessApplicationAction : AnAction(
 
     private fun continueDeployment(project: Project, stackName: String, templateFile: VirtualFile, stackDialog: DeployServerlessApplicationDialog) {
         val workflow = StepExecutor(
-            project, message("lambda.workflow.create_new.name"), createDeployWorkflow(
+            project, message("serverless.application.deploy_in_progress.title", stackName), createDeployWorkflow(
                 project,
                 stackName,
                 templateFile,
@@ -137,17 +136,8 @@ class DeployServerlessApplicationAction : AnAction(
                 val changeSetArn = it.getRequiredAttribute(DeployLambda.CHANGE_SET_ARN)
 
                 if (!stackDialog.autoExecute) {
-                    val result = withContext(edtContext) {
-                        Messages.showOkCancelDialog(
-                            project,
-                            "TODO fix wnat to deploy? $changeSetArn",
-                            "TODO Fix Want To Deploy?",
-                            Messages.getOkButton(),
-                            Messages.getCancelButton(),
-                            AllIcons.General.InformationDialog
-                        )
-                    }
-                    if (result != Messages.OK) {
+                    val response = withContext(edtContext) { UploadFunctionContinueDialog(project, changeSetArn).showAndGet() }
+                    if (!response) {
                         // TODO telemetry
                         return@runBlocking
                     }
