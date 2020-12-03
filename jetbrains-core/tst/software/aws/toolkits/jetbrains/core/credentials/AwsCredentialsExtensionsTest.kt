@@ -33,7 +33,7 @@ class AwsCredentialsExtensionsTest {
         val credentials = AwsSessionCredentials.create(aString(), aString(), aString())
         val env = mutableMapOf<String, String>()
 
-        credentials.toEnvironmentVariables(env)
+        credentials.mergeWithExistingEnvironmentVariables(env)
 
         assertThat(env).containsOnlyKeys("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
     }
@@ -44,7 +44,7 @@ class AwsCredentialsExtensionsTest {
         val existingToken = aString()
         val env = mutableMapOf("AWS_SESSION_TOKEN" to existingToken)
 
-        credentials.toEnvironmentVariables(env)
+        credentials.mergeWithExistingEnvironmentVariables(env)
 
         assertThat(env).hasSize(1).containsEntry("AWS_SESSION_TOKEN", existingToken)
     }
@@ -55,7 +55,7 @@ class AwsCredentialsExtensionsTest {
         val existingToken = aString()
         val env = mutableMapOf("AWS_SESSION_TOKEN" to existingToken)
 
-        credentials.toEnvironmentVariables(env, replace = true)
+        credentials.mergeWithExistingEnvironmentVariables(env, replace = true)
 
         assertThat(env).hasSize(2)
             .containsEntry("AWS_ACCESS_KEY_ID", credentials.accessKeyId())

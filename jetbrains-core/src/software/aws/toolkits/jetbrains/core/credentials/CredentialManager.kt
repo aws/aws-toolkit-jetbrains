@@ -167,7 +167,7 @@ fun AwsCredentials.toEnvironmentVariables(): Map<String, String> {
     return map
 }
 
-fun AwsCredentials.toEnvironmentVariables(existing: MutableMap<String, String>, replace: Boolean = false) {
+fun AwsCredentials.mergeWithExistingEnvironmentVariables(existing: MutableMap<String, String>, replace: Boolean = false) {
     val envVars = toEnvironmentVariables()
     if (replace || existing.keys.none { it in CREDENTIAL_ENVIRONMENT_VARIABLES }) {
         CREDENTIAL_ENVIRONMENT_VARIABLES.forEach { existing.remove(it) }

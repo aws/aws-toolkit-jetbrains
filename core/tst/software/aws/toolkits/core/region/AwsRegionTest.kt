@@ -53,7 +53,7 @@ class AwsRegionTest {
         fun `toEnvironmentVariables puts basic settings in the map`() {
             val env = mutableMapOf<String, String>()
 
-            region.toEnvironmentVariables(env)
+            region.mergeWithExistingEnvironmentVariables(env)
 
             assertThat(env).hasSize(2)
                 .containsEntry("AWS_REGION", region.id)
@@ -67,7 +67,7 @@ class AwsRegionTest {
                 "AWS_REGION" to existing
             )
 
-            region.toEnvironmentVariables(env)
+            region.mergeWithExistingEnvironmentVariables(env)
 
             assertThat(env).hasSize(1).containsEntry("AWS_REGION", existing)
         }
@@ -79,7 +79,7 @@ class AwsRegionTest {
                 "AWS_DEFAULT_REGION" to existing
             )
 
-            region.toEnvironmentVariables(env)
+            region.mergeWithExistingEnvironmentVariables(env)
 
             assertThat(env).hasSize(1).containsEntry("AWS_DEFAULT_REGION", existing)
         }
@@ -92,7 +92,7 @@ class AwsRegionTest {
                 "AWS_DEFAULT_REGION" to existing
             )
 
-            region.toEnvironmentVariables(env, replace = true)
+            region.mergeWithExistingEnvironmentVariables(env, replace = true)
 
             assertThat(env).hasSize(2)
                 .containsEntry("AWS_REGION", region.id)

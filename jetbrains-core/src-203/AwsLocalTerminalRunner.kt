@@ -7,14 +7,14 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.region.toEnvironmentVariables
+import software.aws.toolkits.core.region.mergeWithExistingEnvironmentVariables
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
+import software.aws.toolkits.jetbrains.core.credentials.mergeWithExistingEnvironmentVariables
 
 class AwsLocalTerminalRunner(project: Project, private val region: AwsRegion, private val credentials: AwsCredentials) : LocalTerminalDirectRunner(project) {
     override fun getInitialCommand(envs: MutableMap<String, String>): MutableList<String> {
-        region.toEnvironmentVariables(envs, replace = true)
-        credentials.toEnvironmentVariables(envs, replace = true)
+        region.mergeWithExistingEnvironmentVariables(envs, replace = true)
+        credentials.mergeWithExistingEnvironmentVariables(envs, replace = true)
         return super.getInitialCommand(envs)
     }
 

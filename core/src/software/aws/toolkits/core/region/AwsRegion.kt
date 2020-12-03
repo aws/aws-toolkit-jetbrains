@@ -36,7 +36,7 @@ data class AwsRegion(val id: String, val name: String, val partitionId: String) 
     }
 }
 
-fun AwsRegion.toEnvironmentVariables(existing: MutableMap<String, String>, replace: Boolean = false) {
+fun AwsRegion.mergeWithExistingEnvironmentVariables(existing: MutableMap<String, String>, replace: Boolean = false) {
     val regionEnvs = this.toEnvironmentVariables()
     if (replace || regionEnvs.keys.none { it in existing.keys }) {
         existing.putAll(regionEnvs)
