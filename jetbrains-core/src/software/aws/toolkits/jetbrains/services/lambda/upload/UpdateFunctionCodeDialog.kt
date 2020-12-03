@@ -11,6 +11,7 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.lambda.model.PackageType
+import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
@@ -24,7 +25,6 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.nio.file.Paths
@@ -54,7 +54,12 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
     override fun doValidate(): ValidationInfo? = view.validatePanel()
 
     override fun doCancelAction() {
-        LambdaTelemetry.editFunction(project, lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()), result = Result.Cancelled)
+        LambdaTelemetry.deploy(
+            project,
+            result = Result.Cancelled,
+            regionId = project.activeRegion().id,
+            initialDeploy = false
+        )
         super.doCancelAction()
     }
 
@@ -78,21 +83,21 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
                 title = message("lambda.service_name"),
                 content = message("lambda.function.code_updated.notification", initialSettings.name)
             )
-            LambdaTelemetry.editFunction(
+            LambdaTelemetry.deploy(
                 project,
-                lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
-                update = false,
-                result = Result.Succeeded
+                result = Result.Succeeded,
+                regionId = project.activeRegion().id,
+                initialDeploy = false
             )
         }
 
         workflow.onError = {
             it.notifyError(project = project, title = message("lambda.service_name"))
-            LambdaTelemetry.editFunction(
+            LambdaTelemetry.deploy(
                 project,
-                lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
-                update = false,
-                result = Result.Failed
+                result = Result.Failed,
+                regionId = project.activeRegion().id,
+                initialDeploy = false
             )
         }
 
