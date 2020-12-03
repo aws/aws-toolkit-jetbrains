@@ -88,7 +88,7 @@ class FeedbackDialog(private val project: Project) : DialogWrapper(project), Cor
     internal fun getViewForTesting(): SubmitFeedbackPanel = panel
 }
 
-class ShowFeedbackDialogAction: DumbAwareAction(message("feedback.title"), message("feedback.description"), AwsIcons.Misc.SMILE_GREY) {
+class ShowFeedbackDialogAction : DumbAwareAction(message("feedback.title"), message("feedback.description"), AwsIcons.Misc.SMILE_GREY) {
     override fun actionPerformed(e: AnActionEvent) {
         FeedbackDialog(e.getRequiredData(LangDataKeys.PROJECT)).showAndGet()
     }
