@@ -27,13 +27,8 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
         toolWindow.helpId = HelpIds.EXPLORER_WINDOW.id
         if (toolWindow is ToolWindowEx) {
             val actionManager = ActionManager.getInstance()
-            toolWindow.setTitleActions(
-                actionManager.getAction("aws.settings.refresh"),
-                Separator.create(),
-                actionManager.getAction("aws.toolkit.startTerminal"),
-                Separator.create(),
-                FeedbackDialog.getAction(project)
-            )
+
+            toolWindow.setTitleActions(actionManager.getAction("aws.toolkit.explorer.titleBar"))
             toolWindow.setAdditionalGearActions(
                 DefaultActionGroup().apply {
                     add(
@@ -56,7 +51,7 @@ class AwsExplorerFactory : ToolWindowFactory, DumbAware {
                             url = "https://github.com/aws/aws-toolkit-jetbrains/issues/new/choose"
                         )
                     )
-                    add(FeedbackDialog.getAction(project))
+                    add(actionManager.getAction("aws.toolkit.showFeedback"))
                     add(actionManager.getAction("aws.settings.show"))
                 }
             )

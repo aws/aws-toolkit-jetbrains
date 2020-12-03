@@ -5,4 +5,11 @@
     <actions>
         <action id="aws.toolkit.startTerminal" class="software.aws.toolkits.jetbrains.core.terminal.OpenAwsLocalTerminal"/>
     </actions>
+    <actions>
+        <group id="aws.toolkit.explorer.titleBar.terminal">
+            <add-to-group group-id="aws.toolkit.explorer.titleBar" anchor="after" relative-to-action="aws.settings.refresh"/>
+            <separator/>
+            <reference id="aws.toolkit.startTerminal"/>
+        </group>
+    </actions>
 </idea-plugin>
