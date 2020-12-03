@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core.terminal
 
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.ExceptionUtil
 import icons.TerminalIcons
 import org.jetbrains.plugins.terminal.TerminalTabState
@@ -21,7 +21,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result
 
-class OpenAwsLocalTerminal : AnAction(message("aws.terminal.action"), message("aws.terminal.action.tooltip"), TerminalIcons.OpenTerminal_13x13), DumbAware {
+class OpenAwsLocalTerminal : DumbAwareAction(message("aws.terminal.action"), message("aws.terminal.action.tooltip"), TerminalIcons.OpenTerminal_13x13) {
 
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabled = e.project?.let { AwsConnectionManager.getInstance(it) }?.isValidConnectionSettings() == true
@@ -32,17 +32,19 @@ class OpenAwsLocalTerminal : AnAction(message("aws.terminal.action"), message("a
         when (val state = AwsConnectionManager.getInstance(project).connectionState) {
             is ConnectionState.ValidConnection -> {
                 val connection = state.connection
-                val credentials = try {
-                    connection.credentials.resolveCredentials()
-                } catch (e: Exception) {
-                    LOG.error(e) { message("aws.terminal.exception.failed_to_resolve_credentials", ExceptionUtil.getThrowableText(e)) }
-                    AwsTelemetry.openLocalTerminal(project, result = Result.Failed)
-                    return
-                }
-                runInEdt {
-                    val runner = AwsLocalTerminalRunner(project, connection.region, credentials)
-                    TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().apply { this.myTabName = connection.shortName })
-                    AwsTelemetry.openLocalTerminal(project, result = Result.Succeeded)
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    val credentials = try {
+                        connection.credentials.resolveCredentials()
+                    } catch (e: Exception) {
+                        LOG.error(e) { message("aws.terminal.exception.failed_to_resolve_credentials", ExceptionUtil.getThrowableText(e)) }
+                        AwsTelemetry.openLocalTerminal(project, result = Result.Failed)
+                        return@executeOnPooledThread
+                    }
+                    runInEdt {
+                        val runner = AwsLocalTerminalRunner(project, connection.region, credentials)
+                        TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().apply { this.myTabName = connection.shortName })
+                        AwsTelemetry.openLocalTerminal(project, result = Result.Succeeded)
+                    }
                 }
             }
             else -> {
