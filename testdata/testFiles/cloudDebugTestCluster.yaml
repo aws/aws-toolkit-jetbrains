@@ -39,7 +39,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     DependsOn: LogGroup
     Properties:
-      Family: !Join [ '', [ !Ref Cluster, TaskDefinitionWithJava ] ]
+      Family: !Join [ '', [ !Ref Cluster, TaskDefinitionWithPython ] ]
       # awsvpc is required for Fargate
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -50,7 +50,7 @@ Resources:
       TaskRoleArn: !Ref TaskRole
       ContainerDefinitions:
         - Name: 'ContainerName'
-          Image: "public.ecr.aws/bitnami/python:2"
+          Image: "public.ecr.aws/bitnami/python:3.9"
           Command:
             - 'tail -f /dev/null'
           EntryPoint:
