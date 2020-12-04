@@ -209,11 +209,13 @@ private class StackUI(
             }
         })
 
-        actionGroup.addAction(object : ToggleAction(
-            message("cloudformation.stack.filter.show_completed"),
-            null,
-            AllIcons.RunConfigurations.ShowPassed
-        ), DumbAware {
+        actionGroup.addAction(createFilterAction())
+
+        return ActionManager.getInstance().createActionToolbar("", actionGroup, false).component
+    }
+
+    private fun createFilterAction() =
+        object : ToggleAction(message("cloudformation.stack.filter.show_completed"), null, AllIcons.RunConfigurations.ShowPassed), DumbAware {
             private val state = AtomicBoolean(true)
             override fun isSelected(e: AnActionEvent): Boolean = state.get()
 
@@ -226,10 +228,7 @@ private class StackUI(
                     }
                 }
             }
-        })
-
-        return ActionManager.getInstance().createActionToolbar("", actionGroup, false).component
-    }
+        }
 
     fun onPageButtonClick(page: Page) {
         eventsTable.showBusyIcon()
