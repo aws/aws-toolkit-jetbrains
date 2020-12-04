@@ -10,6 +10,8 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.actionSystem.ToggleAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
@@ -33,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationSta
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudformationTelemetry
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.BoxLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -203,6 +206,21 @@ private class StackUI(
 
             override fun update(e: AnActionEvent) {
                 e.presentation.isEnabled = !updater.running
+            }
+        })
+
+        actionGroup.addAction(object : ToggleAction("Show Completed", null, AllIcons.RunConfigurations.ShowPassed) {
+            private val state = AtomicBoolean(true)
+            override fun isSelected(e: AnActionEvent): Boolean = state.get()
+
+            override fun setSelected(e: AnActionEvent, newState: Boolean) {
+                if (state.getAndSet(newState) != newState) {
+                    ApplicationManager.getApplication().executeOnPooledThread {
+                        updater.applyFilter {
+                            newState || it.resourceStatus().type != StatusType.COMPLETED
+                        }
+                    }
+                }
             }
         })
 
