@@ -209,7 +209,11 @@ private class StackUI(
             }
         })
 
-        actionGroup.addAction(object : ToggleAction("Show Completed", null, AllIcons.RunConfigurations.ShowPassed) {
+        actionGroup.addAction(object : ToggleAction(
+            message("cloudformation.stack.filter.show_completed"),
+            null,
+            AllIcons.RunConfigurations.ShowPassed
+        ), DumbAware {
             private val state = AtomicBoolean(true)
             override fun isSelected(e: AnActionEvent): Boolean = state.get()
 
