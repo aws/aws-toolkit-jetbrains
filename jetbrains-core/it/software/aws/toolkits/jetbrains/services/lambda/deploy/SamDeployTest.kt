@@ -37,18 +37,15 @@ import java.util.concurrent.TimeUnit
 
 class SamDeployTest {
     private val s3Client = S3Client.builder()
-        .httpClient(ApacheHttpClient.builder().build())
         .region(Region.US_WEST_2)
         .serviceConfiguration { it.pathStyleAccessEnabled(true) }
         .build()
 
     private val cfnClient = CloudFormationClient.builder()
-        .httpClient(ApacheHttpClient.builder().build())
         .region(Region.US_WEST_2)
         .build()
 
     private val ecrClient = EcrClient.builder()
-        .httpClient(ApacheHttpClient.builder().build())
         .region(Region.US_WEST_2)
         .build()
 
