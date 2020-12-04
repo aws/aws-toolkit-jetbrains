@@ -124,8 +124,7 @@ class CloudWatchLogGroup(
             object : DumbAwareAction(message("cloudwatch.logs.query"), null, AllIcons.Actions.Find) {
                 override fun actionPerformed(e: AnActionEvent) {
                     QueryEditorDialog(project, connection, logGroup).show()
-                    // TODO: replace 'Unknown' with log-group-window when new telemetry definition in place
-                    CloudwatchinsightsTelemetry.openEditor(project, InsightsDialogOpenSource.Unknown)
+                    CloudwatchinsightsTelemetry.openEditor(project, InsightsDialogOpenSource.LogGroup)
                 }
             }
         )
