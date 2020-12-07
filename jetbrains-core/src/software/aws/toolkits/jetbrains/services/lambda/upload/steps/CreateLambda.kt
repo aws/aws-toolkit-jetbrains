@@ -51,6 +51,8 @@ class CreateLambda(private val lambdaClient: LambdaClient, private val details: 
             }
         }
 
+        println("WEE $details")
+
         messageEmitter.emitMessage(message("lambda.workflow.update_code.wait_for_stable"), isError = false)
         val response = lambdaClient.waiter().waitUntilFunctionExists() { it.functionName(details.name) }.response()
 

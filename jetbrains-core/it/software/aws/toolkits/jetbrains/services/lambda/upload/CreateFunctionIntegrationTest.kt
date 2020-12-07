@@ -100,6 +100,7 @@ class CreateFunctionIntegrationTest {
 
         // Give a few secs to allow the IAM propagation
         Thread.sleep(5000)
+        println("MY ROLE IS: ${iamRole.arn()}")
 
         resourceCache.addEntry(
             projectRule.project,
@@ -121,7 +122,7 @@ class CreateFunctionIntegrationTest {
                 }
             },
             ThrowableRunnable {
-                iamClient.deleteRole { it.roleName(iamRole.roleName()) }
+//                iamClient.deleteRole { it.roleName(iamRole.roleName()) }
             }
         )
     }
