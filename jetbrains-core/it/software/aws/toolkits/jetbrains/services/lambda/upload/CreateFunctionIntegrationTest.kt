@@ -97,6 +97,7 @@ class CreateFunctionIntegrationTest {
 
         lambdaName = RuleUtils.randomName("CreateFunctionIntegrationTest")
         iamRole = iamClient.createRoleWithPolicy(RuleUtils.randomName(), DEFAULT_LAMBDA_ASSUME_ROLE_POLICY)
+        iamClient.waiter().waitUntilRoleExists { it.roleName(iamRole.roleName()) }
 
         resourceCache.addEntry(
             projectRule.project,
@@ -139,12 +140,14 @@ class CreateFunctionIntegrationTest {
                 CreateFunctionDialog(projectRule.project, Runtime.JAVA8, "com.example.SomeClass").apply {
                     val view = getViewForTestAssertions()
                     view.name.text = lambdaName
+                    view.configSettings.iamRole.selectedItem { iamRole.arn() == it.arn }
                     view.codeStorage.sourceBucket.selectedItem = s3Bucket
                 }
             }
 
             val view = dialog.getViewForTestAssertions()
             view.codeStorage.sourceBucket.waitToLoad()
+            view.configSettings.iamRole.waitToLoad()
 
             runInEdtAndGet {
                 assertThat(view.validatePanel()?.message).isNull() // Validate we set everything up
@@ -177,12 +180,14 @@ class CreateFunctionIntegrationTest {
                         view.name.text = lambdaName
                         view.configSettings.packageImage.isSelected = true
                         view.configSettings.dockerFile.textField.text = dockerfile.path
+                        view.configSettings.iamRole.selectedItem { iamRole.arn() == it.arn }
                         view.codeStorage.ecrRepo.selectedItem = repository
                     }
                 }
 
                 val view = dialog.getViewForTestAssertions()
                 view.codeStorage.ecrRepo.waitToLoad()
+                view.configSettings.iamRole.waitToLoad()
 
                 runInEdtAndGet {
                     assertThat(view.validatePanel()?.message).isNull() // Validate we set everything up
