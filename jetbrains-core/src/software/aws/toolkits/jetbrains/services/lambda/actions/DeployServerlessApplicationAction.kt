@@ -141,7 +141,9 @@ class DeployServerlessApplicationAction : AnAction(
                 if (!stackDialog.autoExecute) {
                     val response = withContext(edtContext) { UploadFunctionContinueDialog(project, changeSetArn).showAndGet() }
                     if (!response) {
-                        // TODO telemetry
+                        // TODO this telemetry needs to be improved. The user can finish the deployment later so we do not know if
+                        // it is actually cancelled or not
+                        SamTelemetry.deploy(project = project, result = Result.Cancelled)
                         return@runBlocking
                     }
                 }
@@ -182,7 +184,6 @@ class DeployServerlessApplicationAction : AnAction(
 
         workflow.onError = {
             it.notifyError(project = project, title = message("lambda.service_name"))
-            LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
             SamTelemetry.deploy(project = project, result = Result.Failed)
         }
 
