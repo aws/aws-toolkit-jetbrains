@@ -95,11 +95,11 @@ class CreateFunctionIntegrationTest {
         iamClient = projectRule.project.awsClient()
         ecrClient = projectRule.project.awsClient()
 
-        lambdaName = RuleUtils.randomName("CreateFunctionIntegrationTest")
-        iamRole = iamClient.createRoleWithPolicy(RuleUtils.randomName("CreateFunctionIntegrationTest"), DEFAULT_LAMBDA_ASSUME_ROLE_POLICY)
+        lambdaName = RuleUtils.randomName()
+        iamRole = iamClient.createRoleWithPolicy(RuleUtils.randomName(), DEFAULT_LAMBDA_ASSUME_ROLE_POLICY)
 
         // Give a few secs to allow the IAM propagation
-        Thread.sleep(5000)
+        Thread.sleep(Duration.ofSeconds(30).toMillis())
 
         resourceCache.addEntry(
             projectRule.project,
@@ -128,7 +128,7 @@ class CreateFunctionIntegrationTest {
 
     @Test
     fun `zip based lambda can be created`() {
-        val s3Bucket = temporaryBucket.createBucket("CreateFunctionIntegrationTest")
+        val s3Bucket = temporaryBucket.createBucket()
         resourceCache.addEntry(
             projectRule.project,
             S3Resources.LIST_REGIONALIZED_BUCKETS,
@@ -163,7 +163,7 @@ class CreateFunctionIntegrationTest {
         assumeImageSupport()
         val (dockerfile, _) = readProject("samProjects/image/java8/maven", "Dockerfile", projectRule)
         val ecrRepo = ecrClient.createRepository {
-            it.repositoryName(RuleUtils.randomName("CreateFunctionIntegrationTest").toLowerCase())
+            it.repositoryName(RuleUtils.randomName().toLowerCase())
         }.repository()
 
         val repository = Repository(ecrRepo.repositoryName(), ecrRepo.repositoryArn(), ecrRepo.repositoryUri())
