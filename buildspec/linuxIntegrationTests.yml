@@ -38,7 +38,7 @@ phases:
       - echo "SAM CLI location $SAM_CLI_EXEC"
       - $SAM_CLI_EXEC --version
       - chmod +x gradlew
-      - env AWS_ACCESS_KEY_ID=$KEY_ID AWS_SECRET_ACCESS_KEY=$SECRET AWS_SESSION_TOKEN=$TOKEN ./gradlew :jetbrains-core:integrationTest --tests "software.aws.toolkits.jetbrains.services.lambda.upload.CreateFunctionIntegrationTest.zip based lambda can be created"
+      - env AWS_ACCESS_KEY_ID=$KEY_ID AWS_SECRET_ACCESS_KEY=$SECRET AWS_SESSION_TOKEN=$TOKEN ./gradlew integrationTest coverageReport --info --full-stacktrace --console plain
       - VCS_COMMIT_ID="${CODEBUILD_RESOLVED_SOURCE_VERSION}"
       - CI_BUILD_URL=$(echo $CODEBUILD_BUILD_URL | sed 's/#/%23/g') # Encode `#` in the URL because otherwise the url is clipped in the Codecov.io site
       - CI_BUILD_ID="${CODEBUILD_BUILD_ID}"
