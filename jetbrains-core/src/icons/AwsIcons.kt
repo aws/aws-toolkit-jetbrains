@@ -60,7 +60,5 @@ object AwsIcons {
         @JvmField val SCHEMA_SEARCH: Icon = AllIcons.Actions.Search
     }
 
-    private fun load(path: String): Icon {
-        return IconLoader.getIcon(path, AwsIcons::class.java)
-    }
+    private fun load(path: String): Icon = IconLoader.getIcon(path, AwsIcons::class.java)
 }
