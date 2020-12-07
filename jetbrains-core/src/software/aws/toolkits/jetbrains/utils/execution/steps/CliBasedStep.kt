@@ -64,7 +64,15 @@ abstract class CliBasedStep : Step() {
 
     private class CliOutputEmitter(private val messageEmitter: MessageEmitter) : ProcessAdapter() {
         override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-            LOG.debug { event.text.trim() }
+            LOG.debug {
+                val prefix = if (outputType == ProcessOutputTypes.STDERR) {
+                    "[STDERR]"
+                } else {
+                    "[STDOUT]"
+                }
+
+                "$prefix ${event.text.trim()}"
+            }
             messageEmitter.emitMessage(event.text, outputType == ProcessOutputTypes.STDERR)
         }
     }
