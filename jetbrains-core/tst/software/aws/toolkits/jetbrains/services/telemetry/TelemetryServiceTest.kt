@@ -23,10 +23,9 @@ import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.waitUntilConnectionStateIsStable
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider.RegionProviderRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.util.concurrent.CountDownLatch
@@ -45,7 +44,11 @@ class TelemetryServiceTest {
 
     @JvmField
     @Rule
-    val regionProvider = RegionProviderRule()
+    val regionProvider = MockRegionProviderRule()
+
+    @JvmField
+    @Rule
+    val credentialManager = MockCredentialManagerRule()
 
     @JvmField
     @Rule
@@ -54,8 +57,6 @@ class TelemetryServiceTest {
     @After
     fun tearDown() {
         AwsSettings.getInstance().isTelemetryEnabled = false
-
-        MockCredentialsManager.getInstance().reset()
     }
 
     @Test

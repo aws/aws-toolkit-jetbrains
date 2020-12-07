@@ -16,8 +16,7 @@ import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.core.utils.test.aString
 
-@Deprecated("Use MockRegionProviderRule")
-class MockRegionProvider : ToolkitRegionProvider() {
+private class MockRegionProvider : ToolkitRegionProvider() {
     private val overrideRegions: MutableMap<String, AwsRegion> = mutableMapOf()
     private val services: MutableMap<String, Service> = mutableMapOf()
 
@@ -37,7 +36,8 @@ class MockRegionProvider : ToolkitRegionProvider() {
 
     override fun partitionData(): Map<String, PartitionData> {
         val combinedRegions = regions + overrideRegions
-        return combinedRegions.asSequence()
+        return combinedRegions
+            .asSequence()
             .associate {
                 it.value.partitionId to PartitionData(
                     it.value.partitionId,
@@ -85,12 +85,15 @@ class MockRegionProvider : ToolkitRegionProvider() {
     }
 }
 
-@Suppress("DEPRECATION")
 class MockRegionProviderRule : ExternalResource() {
     private lateinit var regionManager: MockRegionProvider
 
     override fun before() {
         regionManager = service<ToolkitRegionProvider>() as MockRegionProvider
+    }
+
+    override fun after() {
+        reset()
     }
 
     fun addRegion(region: AwsRegion): AwsRegion = regionManager.addRegion(region)
@@ -102,11 +105,24 @@ class MockRegionProviderRule : ExternalResource() {
         )
     )
 
-    fun addService(serviceName: String, service: Service) = regionManager.addService(serviceName, service)
+    fun createAwsRegion(id: String = uniqueRegionId(), partitionId: String = aString()): AwsRegion =
+        anAwsRegion(id = id, partitionId = partitionId).also { regionManager.addRegion(it) }
 
-    override fun after() {
-        reset()
+    private fun uniqueRegionId(): String {
+        repeat(10) {
+            val generatedId = aRegionId()
+            if (regionManager[generatedId] == null) {
+                return generatedId
+            }
+        }
+        throw IllegalStateException("Failed to generate a unique region ID")
     }
+
+    fun defaultPartition(): AwsPartition = regionManager.defaultPartition()
+
+    fun defaultRegion(): AwsRegion = regionManager.defaultRegion()
+
+    fun addService(serviceName: String, service: Service) = regionManager.addService(serviceName, service)
 
     fun reset() {
         @Suppress("DEPRECATION")

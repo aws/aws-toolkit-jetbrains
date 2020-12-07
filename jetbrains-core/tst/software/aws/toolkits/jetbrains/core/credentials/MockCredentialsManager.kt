@@ -16,11 +16,10 @@ import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
 
-@Deprecated("Use MockCredentialManagerRule")
-class MockCredentialsManager : CredentialManager() {
+private class MockCredentialsManager : CredentialManager() {
     init {
         reset()
     }
@@ -47,8 +46,8 @@ class MockCredentialsManager : CredentialManager() {
 
     fun createCredentialProvider(
         id: String = aString(),
-        credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
-        region: AwsRegion = MockRegionProvider.getInstance().defaultRegion()
+        credentials: AwsCredentials,
+        region: AwsRegion
     ): ToolkitCredentialsProvider {
         val credentialIdentifier = MockCredentialIdentifier(id, StaticCredentialsProvider.create(credentials), null)
 
@@ -61,7 +60,8 @@ class MockCredentialsManager : CredentialManager() {
         removeProvider(credentialIdentifier)
     }
 
-    override fun factoryMapping(): Map<String, CredentialProviderFactory> = mapOf(MockCredentialProviderFactory.id to MockCredentialProviderFactory)
+    override fun factoryMapping(): Map<String, CredentialProviderFactory> =
+        mapOf<String, CredentialProviderFactory>(MockCredentialProviderFactory.id to MockCredentialProviderFactory)
 
     companion object {
         fun getInstance(): MockCredentialsManager = ServiceManager.getService(CredentialManager::class.java) as MockCredentialsManager
@@ -92,7 +92,6 @@ class MockCredentialsManager : CredentialManager() {
     }
 }
 
-@Suppress("DEPRECATION")
 class MockCredentialManagerRule : ExternalResource() {
     private lateinit var credentialManager: MockCredentialsManager
 
@@ -115,8 +114,12 @@ class MockCredentialManagerRule : ExternalResource() {
     fun createCredentialProvider(
         id: String = aString(),
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
-        region: AwsRegion = MockRegionProvider.getInstance().defaultRegion()
+        // Do not store this value as we should be able to dynamically change it
+        region: AwsRegion = ServiceManager.getService(ToolkitRegionProvider::class.java).defaultRegion()
     ): ToolkitCredentialsProvider = credentialManager.createCredentialProvider(id, credentials, region)
+
+    fun getAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): ToolkitCredentialsProvider =
+        credentialManager.getAwsCredentialProvider(providerId, region)
 
     fun removeCredentials(credentialIdentifier: CredentialIdentifier) = credentialManager.removeCredentials(credentialIdentifier)
 

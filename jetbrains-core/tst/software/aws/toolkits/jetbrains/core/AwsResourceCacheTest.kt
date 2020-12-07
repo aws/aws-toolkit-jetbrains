@@ -30,9 +30,8 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider.RegionProviderRule
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
 import software.aws.toolkits.jetbrains.utils.value
@@ -53,7 +52,11 @@ class AwsResourceCacheTest {
 
     @Rule
     @JvmField
-    val regionProviderRule = RegionProviderRule()
+    val regionProvider = MockRegionProviderRule()
+
+    @Rule
+    @JvmField
+    val credentialsManager = MockCredentialManagerRule()
 
     private val mockClock = mock<Clock>()
     private val mockResource = mock<Resource.Cached<String>>()
@@ -68,16 +71,13 @@ class AwsResourceCacheTest {
 
     @Before
     fun setUp() {
-        val credentialsManager = MockCredentialsManager.getInstance()
-        credentialsManager.reset()
-
         cred1Identifier = credentialsManager.addCredentials("Cred1")
-        cred1Provider = credentialsManager.getAwsCredentialProvider(cred1Identifier, MockRegionProvider.getInstance().defaultRegion())
+        cred1Provider = credentialsManager.getAwsCredentialProvider(cred1Identifier, regionProvider.defaultRegion())
 
         cred2Identifier = credentialsManager.addCredentials("Cred2")
-        cred2Provider = credentialsManager.getAwsCredentialProvider(cred2Identifier, MockRegionProvider.getInstance().defaultRegion())
+        cred2Provider = credentialsManager.getAwsCredentialProvider(cred2Identifier, regionProvider.defaultRegion())
 
-        connectionSettings = ConnectionSettings(credentialsManager.createCredentialProvider(), regionProviderRule.createAwsRegion())
+        connectionSettings = ConnectionSettings(credentialsManager.createCredentialProvider(), regionProvider.createAwsRegion())
 
         sut = DefaultAwsResourceCache(mockClock, 1000, Duration.ofMinutes(1))
         runBlocking { sut.clear() }
@@ -86,11 +86,6 @@ class AwsResourceCacheTest {
         whenever(mockResource.expiry()).thenReturn(DEFAULT_EXPIRY)
         whenever(mockResource.id).thenReturn("mock")
         whenever(mockClock.instant()).thenReturn(Instant.now())
-    }
-
-    @After
-    fun tearDown() {
-        MockCredentialsManager.getInstance().reset()
     }
 
     @Test

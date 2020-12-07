@@ -9,8 +9,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.auth.SECRET_ID_PROPERTY
@@ -21,6 +21,14 @@ class AddSecretsManagerConnectionTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
+
+    @Rule
+    @JvmField
+    val regionProvider = MockRegionProviderRule()
+
+    @Rule
+    @JvmField
+    val credentialManager = MockCredentialManagerRule()
 
     @Test
     fun `Add data source`() {
@@ -41,8 +49,8 @@ class AddSecretsManagerConnectionTest {
             assertThat(it.isTemporary).isFalse()
             assertThat(it.sslCfg?.myEnabled).isTrue()
             assertThat(it.url).isEqualTo("jdbc:adapter://$address:$port")
-            assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.displayName)
-            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(MockRegionProvider.getInstance().defaultRegion().id)
+            assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(credentialManager.MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.displayName)
+            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(regionProvider.defaultRegion().id)
             assertThat(it.additionalJdbcProperties[SECRET_ID_PROPERTY]).isEqualTo(secretArn)
             assertThat(it.authProviderId).isEqualTo(SecretsManagerAuth.providerId)
         }
