@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.util.Disposer
+import com.intellij.testFramework.ThreadTracker
 import com.intellij.testFramework.replaceService
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.core.SdkClient
@@ -70,6 +71,8 @@ class MockClientManager : AwsClientManager() {
 
             // Make a new http client that is scoped to the disposable and replace the global one with it, otherwise the apache connection reaper thread
             // is detected as leaking threads and fails the tests
+            ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "idle-connection-reaper")
+
             val httpClient = AwsSdkClient()
             Disposer.register(disposable, httpClient)
             ApplicationManager.getApplication().replaceService(AwsSdkClient::class.java, httpClient, disposable)

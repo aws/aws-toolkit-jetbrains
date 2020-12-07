@@ -96,7 +96,7 @@ class CreateFunctionIntegrationTest {
         ecrClient = projectRule.project.awsClient()
 
         lambdaName = RuleUtils.randomName("CreateFunctionIntegrationTest")
-        iamRole = iamClient.createRoleWithPolicy(RuleUtils.randomName(), DEFAULT_LAMBDA_ASSUME_ROLE_POLICY)
+        iamRole = iamClient.createRoleWithPolicy(RuleUtils.randomName("CreateFunctionIntegrationTest"), DEFAULT_LAMBDA_ASSUME_ROLE_POLICY)
 
         // Give a few secs to allow the IAM propagation
         Thread.sleep(5000)
