@@ -70,7 +70,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         treeTable.setDefaultRenderer(Any::class.java, tableRenderer)
         PopupHandler.installPopupHandler(
             treeTable,
-            createCommonActionGroup(treeTable).also {
+            createCommonActionGroup(treeTable, addCopy = true).also {
                 it.addAction(RefreshSubTreeAction(treeTable))
             },
             ActionPlaces.EDITOR_POPUP,
@@ -79,13 +79,14 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
     }
 
     private fun addToolbar(): ToolbarDecorator {
-        val group = createCommonActionGroup(treeTable).also {
+        val group = createCommonActionGroup(treeTable, addCopy = false).also {
             it.addAction(RefreshTreeAction(treeTable, rootNode))
         }
         return ToolbarDecorator.createDecorator(treeTable).setActionGroup(group)
     }
 
-    private fun createCommonActionGroup(table: S3TreeTable): DefaultActionGroup = DefaultActionGroup().also {
+    // addCopy is here vs doing it in the `also`'s because it makes it easier to get actions in the right order
+    private fun createCommonActionGroup(table: S3TreeTable, addCopy: Boolean): DefaultActionGroup = DefaultActionGroup().also {
         it.add(DownloadObjectAction(project, table))
         it.add(UploadObjectAction(project, table))
         it.add(Separator())
@@ -95,20 +96,22 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
                 registerCustomShortcutSet(CommonShortcuts.getRename(), table)
             }
         )
-        it.add(object : ActionGroup(message("s3.copy.actiongroup.label"), null, AllIcons.Actions.Copy) {
-            override fun isPopup(): Boolean = true
-            override fun update(e: AnActionEvent) {
-                // Only enable it if we have some selection. We hide the root node so it means we have no selection if that is the node passed in
-                val selected = treeTable.getSelectedNodes().firstOrNull()
-                e.presentation.isEnabled = selected != null && selected != treeTable.rootNode
-            }
+        if (addCopy) {
+            it.add(object : ActionGroup(message("s3.copy.actiongroup.label"), null, AllIcons.Actions.Copy) {
+                override fun isPopup(): Boolean = true
+                override fun update(e: AnActionEvent) {
+                    // Only enable it if we have some selection. We hide the root node so it means we have no selection if that is the node passed in
+                    val selected = treeTable.getSelectedNodes().firstOrNull()
+                    e.presentation.isEnabled = selected != null && selected != treeTable.rootNode
+                }
 
-            override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-                CopyPathAction(project, table),
-                CopyUrlAction(project, table),
-                CopyUriAction(project, table)
-            )
-        })
+                override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
+                    CopyPathAction(project, table),
+                    CopyUrlAction(project, table),
+                    CopyUriAction(project, table)
+                )
+            })
+        }
         it.add(DeleteObjectAction(project, table))
         it.add(Separator())
     }
