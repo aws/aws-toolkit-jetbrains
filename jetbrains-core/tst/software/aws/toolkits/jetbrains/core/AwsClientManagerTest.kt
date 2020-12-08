@@ -9,8 +9,6 @@ import com.intellij.openapi.util.use
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -56,7 +54,7 @@ class AwsClientManagerTest {
     @Test
     fun canGetAnInstanceOfAClient() {
         val sut = getClientManager()
-        val client = sut.getClient<DummyServiceClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion())
+        val client = sut.getClient<DummyServiceClient>(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
         assertThat(client.serviceName()).isEqualTo("dummyClient")
     }
 
@@ -77,7 +75,7 @@ class AwsClientManagerTest {
         val sut = getClientManager()
 
         val credentialsIdentifier = credentialManager.addCredentials("profile:admin")
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, MockRegionProvider.getInstance().defaultRegion())
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, regionProvider.defaultRegion())
 
         sut.getClient<DummyServiceClient>(credentialProvider, anAwsRegion())
 
@@ -98,7 +96,7 @@ class AwsClientManagerTest {
             val sut = getClientManager()
             Disposer.register(parent, sut)
 
-            sut.getClient<DummyServiceClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()).also {
+            sut.getClient<DummyServiceClient>(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion()).also {
                 assertThat(it.closed).isFalse()
             }
         }
@@ -119,7 +117,7 @@ class AwsClientManagerTest {
     fun clientWithoutBuilderFailsDescriptively() {
         val sut = getClientManager()
 
-        assertThatThrownBy { sut.getClient<InvalidServiceClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()) }
+        assertThatThrownBy { sut.getClient<InvalidServiceClient>(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion()) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("builder()")
     }
@@ -128,7 +126,7 @@ class AwsClientManagerTest {
     fun clientInterfaceWithoutNameFieldFailsDescriptively() {
         val sut = getClientManager()
 
-        assertThatThrownBy { sut.getClient<NoServiceNameClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()) }
+        assertThatThrownBy { sut.getClient<NoServiceNameClient>(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion()) }
             .isInstanceOf(NoSuchFieldException::class.java)
             .hasMessageContaining("SERVICE_NAME")
     }
@@ -138,8 +136,8 @@ class AwsClientManagerTest {
         val sut = getClientManager()
         val credProvider = mockCredentialManager.createCredentialProvider()
 
-        val firstRegion = sut.getClient<DummyServiceClient>(credProvider, regionProviderRule.createAwsRegion())
-        val secondRegion = sut.getClient<DummyServiceClient>(credProvider, regionProviderRule.createAwsRegion())
+        val firstRegion = sut.getClient<DummyServiceClient>(credProvider, regionProvider.createAwsRegion())
+        val secondRegion = sut.getClient<DummyServiceClient>(credProvider, regionProvider.createAwsRegion())
 
         assertThat(secondRegion).isNotSameAs(firstRegion)
     }
@@ -147,7 +145,7 @@ class AwsClientManagerTest {
     @Test
     fun globalServicesCanBeGivenAnyRegion() {
         val sut = getClientManager()
-        MockRegionProvider.getInstance().addService(
+        regionProvider.addService(
             "DummyService",
             Service(
                 endpoints = mapOf("global" to Endpoint()),
@@ -155,10 +153,10 @@ class AwsClientManagerTest {
                 partitionEndpoint = "global"
             )
         )
-        val credProvider = mockCredentialManager.createCredentialProvider()
+        val credProvider = credentialManager.createCredentialProvider()
 
-        val first = sut.getClient<DummyServiceClient>(credProvider, regionProviderRule.createAwsRegion(partitionId = "test"))
-        val second = sut.getClient<DummyServiceClient>(credProvider, regionProviderRule.createAwsRegion(partitionId = "test"))
+        val first = sut.getClient<DummyServiceClient>(credProvider, regionProvider.createAwsRegion(partitionId = "test"))
+        val second = sut.getClient<DummyServiceClient>(credProvider, regionProvider.createAwsRegion(partitionId = "test"))
 
         assertThat(first.serviceName()).isEqualTo("dummyClient")
         assertThat(second).isSameAs(first)

@@ -62,27 +62,6 @@ private class MockRegionProvider : ToolkitRegionProvider() {
         private val regions = mapOf(US_EAST_1.id to US_EAST_1)
         fun getInstance(): MockRegionProvider = ServiceManager.getService(ToolkitRegionProvider::class.java) as MockRegionProvider
     }
-
-    class RegionProviderRule : ApplicationRule() {
-        val regionProvider by lazy { getInstance() }
-
-        override fun after() {
-            regionProvider.reset()
-        }
-
-        fun createAwsRegion(id: String = uniqueRegionId(), partitionId: String = aString()): AwsRegion =
-            anAwsRegion(id = id, partitionId = partitionId).also { regionProvider.addRegion(it) }
-
-        private fun uniqueRegionId(): String {
-            repeat(10) {
-                val generatedId = aRegionId()
-                if (regionProvider[generatedId] == null) {
-                    return generatedId
-                }
-            }
-            throw IllegalStateException("Failed to generate a unique region ID")
-        }
-    }
 }
 
 class MockRegionProviderRule : ExternalResource() {

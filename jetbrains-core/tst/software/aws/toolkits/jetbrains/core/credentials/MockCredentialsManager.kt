@@ -129,7 +129,6 @@ class MockCredentialManagerRule : ExternalResource() {
     }
 
     fun reset() {
-        @Suppress("DEPRECATION")
         credentialManager.reset()
     }
 }
