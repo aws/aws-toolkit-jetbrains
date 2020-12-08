@@ -10,13 +10,6 @@ import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.s3.S3ClientBuilder
-import software.amazon.awssdk.services.s3.internal.handlers.CreateBucketInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.DecodeUrlEncodedResponseInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.DisableDoubleUrlEncodingInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.EnableChunkedEncodingInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.EndpointAddressInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.PutObjectInterceptor
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.ToolkitRegionProvider
