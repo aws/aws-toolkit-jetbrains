@@ -125,15 +125,6 @@ abstract class ToolkitClientManager {
                 .region(region)
                 .overrideConfiguration {
                     it.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, userAgent)
-                    if (builder is S3ClientBuilder) {
-                        // TODO: Remove after SDK code-gens these instead of uses class loader
-                        it.addExecutionInterceptor(EndpointAddressInterceptor())
-                        it.addExecutionInterceptor(CreateBucketInterceptor())
-                        it.addExecutionInterceptor(PutObjectInterceptor())
-                        it.addExecutionInterceptor(EnableChunkedEncodingInterceptor())
-                        it.addExecutionInterceptor(DisableDoubleUrlEncodingInterceptor())
-                        it.addExecutionInterceptor(DecodeUrlEncodedResponseInterceptor())
-                    }
                 }
                 .also { _ ->
                     endpointOverride?.let {
