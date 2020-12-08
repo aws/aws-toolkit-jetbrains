@@ -26,9 +26,8 @@ import software.aws.toolkits.core.region.Service
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider.RegionProviderRule
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible
 
@@ -44,37 +43,28 @@ class AwsClientManagerTest {
 
     @Rule
     @JvmField
-    val regionProviderRule = RegionProviderRule()
+    val regionProvider = MockRegionProviderRule()
+
+    @Rule
+    @JvmField
+    val credentialManager = MockCredentialManagerRule()
 
     @Rule
     @JvmField
     val projectSettingsRule = ProjectAccountSettingsManagerRule(projectRule)
 
-    private lateinit var mockCredentialManager: MockCredentialsManager
-
-    @Before
-    fun setUp() {
-        mockCredentialManager = MockCredentialsManager.getInstance()
-        mockCredentialManager.reset()
-    }
-
-    @After
-    fun tearDown() {
-        mockCredentialManager.reset()
-    }
-
     @Test
     fun canGetAnInstanceOfAClient() {
         val sut = getClientManager()
-        val client = sut.getClient<DummyServiceClient>(mockCredentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion())
+        val client = sut.getClient<DummyServiceClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion())
         assertThat(client.serviceName()).isEqualTo("dummyClient")
     }
 
     @Test
     fun clientsAreCached() {
         val sut = getClientManager()
-        val credProvider = mockCredentialManager.createCredentialProvider()
-        val region = regionProviderRule.createAwsRegion()
+        val credProvider = credentialManager.createCredentialProvider()
+        val region = regionProvider.createAwsRegion()
 
         val fooClient = sut.getClient<DummyServiceClient>(credProvider, region)
         val barClient = sut.getClient<DummyServiceClient>(credProvider, region)
@@ -86,8 +76,8 @@ class AwsClientManagerTest {
     fun oldClientsAreRemovedWhenCredentialsAreRemoved() {
         val sut = getClientManager()
 
-        val credentialsIdentifier = mockCredentialManager.addCredentials("profile:admin")
-        val credentialProvider = mockCredentialManager.getAwsCredentialProvider(credentialsIdentifier, MockRegionProvider.getInstance().defaultRegion())
+        val credentialsIdentifier = credentialManager.addCredentials("profile:admin")
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, MockRegionProvider.getInstance().defaultRegion())
 
         sut.getClient<DummyServiceClient>(credentialProvider, anAwsRegion())
 
@@ -108,7 +98,7 @@ class AwsClientManagerTest {
             val sut = getClientManager()
             Disposer.register(parent, sut)
 
-            sut.getClient<DummyServiceClient>(mockCredentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()).also {
+            sut.getClient<DummyServiceClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()).also {
                 assertThat(it.closed).isFalse()
             }
         }
@@ -119,8 +109,8 @@ class AwsClientManagerTest {
     @Test
     fun httpClientIsSharedAcrossClients() {
         val sut = getClientManager()
-        val dummy = sut.getClient<DummyServiceClient>(mockCredentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion())
-        val secondDummy = sut.getClient<SecondDummyServiceClient>(mockCredentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion())
+        val dummy = sut.getClient<DummyServiceClient>(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
+        val secondDummy = sut.getClient<SecondDummyServiceClient>(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
 
         assertThat(dummy.httpClient.delegate).isSameAs(secondDummy.httpClient.delegate)
     }
@@ -129,7 +119,7 @@ class AwsClientManagerTest {
     fun clientWithoutBuilderFailsDescriptively() {
         val sut = getClientManager()
 
-        assertThatThrownBy { sut.getClient<InvalidServiceClient>(mockCredentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()) }
+        assertThatThrownBy { sut.getClient<InvalidServiceClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("builder()")
     }
@@ -138,7 +128,7 @@ class AwsClientManagerTest {
     fun clientInterfaceWithoutNameFieldFailsDescriptively() {
         val sut = getClientManager()
 
-        assertThatThrownBy { sut.getClient<NoServiceNameClient>(mockCredentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()) }
+        assertThatThrownBy { sut.getClient<NoServiceNameClient>(credentialManager.createCredentialProvider(), regionProviderRule.createAwsRegion()) }
             .isInstanceOf(NoSuchFieldException::class.java)
             .hasMessageContaining("SERVICE_NAME")
     }

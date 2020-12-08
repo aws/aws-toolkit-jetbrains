@@ -18,6 +18,7 @@ import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 
 private class MockCredentialsManager : CredentialManager() {
     init {
@@ -115,7 +116,7 @@ class MockCredentialManagerRule : ExternalResource() {
         id: String = aString(),
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
         // Do not store this value as we should be able to dynamically change it
-        region: AwsRegion = ServiceManager.getService(ToolkitRegionProvider::class.java).defaultRegion()
+        region: AwsRegion = getDefaultRegion()
     ): ToolkitCredentialsProvider = credentialManager.createCredentialProvider(id, credentials, region)
 
     fun getAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): ToolkitCredentialsProvider =

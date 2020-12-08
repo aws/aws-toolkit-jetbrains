@@ -134,7 +134,7 @@ class TelemetryServiceTest {
 
     @Test
     fun metricEventMetadataIsSet() {
-        val credentials = MockCredentialsManager.getInstance().addCredentials("profile:admin")
+        val credentials = credentialManager.addCredentials("profile:admin")
         val mockRegion = regionProvider.createAwsRegion()
 
         markConnectionSettingsAsValid(credentials, mockRegion)
@@ -162,13 +162,13 @@ class TelemetryServiceTest {
     @Test
     fun metricEventMetadataIsOverridden() {
         val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
-        val credentials = MockCredentialsManager.getInstance().addCredentials("profile:admin")
+        val credentials = credentialManager.addCredentials("profile:admin")
 
         markConnectionSettingsAsValid(credentials, accountSettings.activeRegion)
         accountSettings.changeCredentialProvider(credentials)
 
         val mockRegion = AwsRegion("foo-region", "foo-region", "aws")
-        MockRegionProvider.getInstance().addRegion(mockRegion)
+        regionProvider.addRegion(mockRegion)
         accountSettings.changeRegion(mockRegion)
 
         val eventCaptor = argumentCaptor<MetricEvent>()
