@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.core.region
 
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.service
-import org.jetbrains.annotations.TestOnly
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.regions.Region
 import software.aws.toolkits.core.region.AwsPartition
@@ -110,4 +109,4 @@ class MockRegionProviderRule : ExternalResource() {
 }
 
 // dynamically get the default region from whatever is currently registered
-fun getDefaultRegion() = ServiceManager.getService(ToolkitRegionProvider::class.java).defaultRegion()
+fun getDefaultRegion() = service<ToolkitRegionProvider>().defaultRegion()

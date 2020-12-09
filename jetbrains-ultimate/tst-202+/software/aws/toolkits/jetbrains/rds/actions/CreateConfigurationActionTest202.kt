@@ -16,10 +16,8 @@ import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.DUMMY_PROVIDER_IDENTIFIER
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
-import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.actions.createRdsDatasource
 import software.aws.toolkits.jetbrains.services.rds.jdbcMysqlAurora
-import software.aws.toolkits.jetbrains.services.rds.mysqlEngineType
 import software.aws.toolkits.jetbrains.services.rds.postgresEngineType
 
 // FIX_WHEN_MIN_IS_202 merge this with the normal one
