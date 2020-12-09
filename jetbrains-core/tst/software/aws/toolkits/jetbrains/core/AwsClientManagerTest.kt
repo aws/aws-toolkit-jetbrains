@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.use
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.RuleChain
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
@@ -30,26 +31,21 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible
 
 class AwsClientManagerTest {
+    private val projectRule = ProjectRule()
+    private val temporaryDirectory = TemporaryFolder()
+    private val regionProvider = MockRegionProviderRule()
+    private val credentialManager = MockCredentialManagerRule()
+    private val projectSettingsRule = ProjectAccountSettingsManagerRule(projectRule)
 
     @Rule
     @JvmField
-    val projectRule = ProjectRule()
-
-    @Rule
-    @JvmField
-    val temporaryDirectory = TemporaryFolder()
-
-    @Rule
-    @JvmField
-    val regionProvider = MockRegionProviderRule()
-
-    @Rule
-    @JvmField
-    val credentialManager = MockCredentialManagerRule()
-
-    @Rule
-    @JvmField
-    val projectSettingsRule = ProjectAccountSettingsManagerRule(projectRule)
+    val ruleChain = RuleChain(
+        projectRule,
+        temporaryDirectory,
+        credentialManager,
+        regionProvider,
+        projectSettingsRule
+    )
 
     @Test
     fun canGetAnInstanceOfAClient() {

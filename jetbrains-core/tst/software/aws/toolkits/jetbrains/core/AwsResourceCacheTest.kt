@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.RuleChain
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.nhaarman.mockitokotlin2.doAnswer
@@ -45,17 +46,19 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
 class AwsResourceCacheTest {
-    @Rule
-    @JvmField
-    val projectRule = ProjectRule()
+    private val projectRule = ProjectRule()
+    private val credentialsManager = MockCredentialManagerRule()
+    private val regionProvider = MockRegionProviderRule()
 
+    // If we don't control the order manually, regionProvider can run its before
+    // before projectRule which causes a NPE
     @Rule
     @JvmField
-    val regionProvider = MockRegionProviderRule()
-
-    @Rule
-    @JvmField
-    val credentialsManager = MockCredentialManagerRule()
+    val ruleChain = RuleChain(
+        projectRule,
+        credentialsManager,
+        regionProvider
+    )
 
     private val mockClock = mock<Clock>()
     private val mockResource = mock<Resource.Cached<String>>()
