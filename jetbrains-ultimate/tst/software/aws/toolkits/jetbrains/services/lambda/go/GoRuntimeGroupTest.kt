@@ -18,6 +18,13 @@ class GoRuntimeGroupTest {
     private val sut = GoRuntimeGroup()
 
     @Test
+    fun testRuntime0x() {
+        projectRule.project.setGoSdkVersion("0.0.1")
+        val runtime = sut.determineRuntime(projectRule.project)
+        assertThat(runtime).isEqualTo(null)
+    }
+
+    @Test
     fun testRuntime1x() {
         projectRule.project.setGoSdkVersion("1.0.0")
         val runtime = sut.determineRuntime(projectRule.project)
