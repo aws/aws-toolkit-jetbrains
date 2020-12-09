@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.utils.rules
 import com.goide.GoConstants
 import com.goide.sdk.GoSdkType
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
