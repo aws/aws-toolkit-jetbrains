@@ -50,7 +50,7 @@ class AwsRegionTest {
         private val region = anAwsRegion()
 
         @Test
-        fun `toEnvironmentVariables puts basic settings in the map`() {
+        fun `mergeWithExistingEnvironmentVariables puts basic settings in the map`() {
             val env = mutableMapOf<String, String>()
 
             region.mergeWithExistingEnvironmentVariables(env)
@@ -61,7 +61,7 @@ class AwsRegionTest {
         }
 
         @Test
-        fun `toEnvironmentVariables does not replace existing AWS_REGION`() {
+        fun `mergeWithExistingEnvironmentVariables does not replace existing AWS_REGION`() {
             val existing = aString()
             val env = mutableMapOf(
                 "AWS_REGION" to existing
@@ -73,7 +73,7 @@ class AwsRegionTest {
         }
 
         @Test
-        fun `toEnvironmentVariables does not replace existing AWS_DEFAULT_REGION`() {
+        fun `mergeWithExistingEnvironmentVariables does not replace existing AWS_DEFAULT_REGION`() {
             val existing = aString()
             val env = mutableMapOf(
                 "AWS_DEFAULT_REGION" to existing
@@ -85,7 +85,7 @@ class AwsRegionTest {
         }
 
         @Test
-        fun `toEnvironmentVariables can force replace existing`() {
+        fun `mergeWithExistingEnvironmentVariables can force replace existing`() {
             val existing = aString()
             val env = mutableMapOf(
                 "AWS_REGION" to existing,
