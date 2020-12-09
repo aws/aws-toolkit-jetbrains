@@ -16,11 +16,10 @@ import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 
-private class MockCredentialsManager : CredentialManager() {
+class MockCredentialsManager : CredentialManager() {
     init {
         reset()
     }
@@ -66,12 +65,6 @@ private class MockCredentialsManager : CredentialManager() {
 
     companion object {
         fun getInstance(): MockCredentialsManager = ServiceManager.getService(CredentialManager::class.java) as MockCredentialsManager
-
-        val DUMMY_PROVIDER_IDENTIFIER: CredentialIdentifier = MockCredentialIdentifier(
-            "DUMMY_CREDENTIALS",
-            StaticCredentialsProvider.create(AwsBasicCredentials.create("DummyAccess", "DummySecret")),
-            null
-        )
     }
 
     class MockCredentialIdentifier(override val displayName: String, val credentials: AwsCredentialsProvider, override val defaultRegionId: String?) :
@@ -106,12 +99,6 @@ class MockCredentialManagerRule : ExternalResource() {
         region: AwsRegion? = null
     ): CredentialIdentifier = credentialManager.addCredentials(id, credentials, region?.id)
 
-    fun addCredentials(
-        id: String,
-        credentials: AwsCredentialsProvider,
-        region: AwsRegion? = null
-    ): CredentialIdentifier = credentialManager.addCredentials(id, credentials, region?.id)
-
     fun createCredentialProvider(
         id: String = aString(),
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
@@ -132,3 +119,9 @@ class MockCredentialManagerRule : ExternalResource() {
         credentialManager.reset()
     }
 }
+
+val DUMMY_PROVIDER_IDENTIFIER: CredentialIdentifier = MockCredentialsManager.MockCredentialIdentifier(
+    "DUMMY_CREDENTIALS",
+    StaticCredentialsProvider.create(AwsBasicCredentials.create("DummyAccess", "DummySecret")),
+    null
+)

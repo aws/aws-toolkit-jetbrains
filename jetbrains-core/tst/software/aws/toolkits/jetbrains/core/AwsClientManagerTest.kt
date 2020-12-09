@@ -134,7 +134,7 @@ class AwsClientManagerTest {
     @Test
     fun clientsAreScopedToRegion() {
         val sut = getClientManager()
-        val credProvider = mockCredentialManager.createCredentialProvider()
+        val credProvider = credentialManager.createCredentialProvider()
 
         val firstRegion = sut.getClient<DummyServiceClient>(credProvider, regionProvider.createAwsRegion())
         val secondRegion = sut.getClient<DummyServiceClient>(credProvider, regionProvider.createAwsRegion())

@@ -13,7 +13,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

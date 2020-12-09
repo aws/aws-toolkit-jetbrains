@@ -104,9 +104,8 @@ class ExecutableBackedCacheResourceTest {
         return cacheResource.fetch(getDefaultRegion(), mockCredentials())
     }
 
-    private fun mockCredentials(): ToolkitCredentialsProvider {
-        return credentialManager.getAwsCredentialProvider(credentialManager.addCredentials("Cred2"), getDefaultRegion())
-    }
+    private fun mockCredentials(): ToolkitCredentialsProvider =
+        credentialManager.getAwsCredentialProvider(credentialManager.addCredentials("Cred2"), getDefaultRegion())
 
     private object MockExecutable : ExecutableType<String>, Validatable {
         override val id: String = "Mock"
