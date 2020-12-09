@@ -45,12 +45,13 @@ private fun createMockSdk(version: String): Sdk {
     return sdk
 }
 
-fun Project.setGoSdkVersion(version: String) {
+fun CodeInsightTestFixtureRule.setGoSdkVersion(version: String): Sdk {
+    val sdk = createMockSdk(version)
     runInEdtAndWait {
         ApplicationManager.getApplication().runWriteAction {
-            val sdk: Sdk = createMockSdk(version)
-            ProjectJdkTable.getInstance().addJdk(sdk)
-            ProjectRootManager.getInstance(this).projectSdk = sdk
+            ProjectJdkTable.getInstance().addJdk(sdk, fixture.projectDisposable)
+            ProjectRootManager.getInstance(project).projectSdk = sdk
         }
     }
+    return sdk
 }

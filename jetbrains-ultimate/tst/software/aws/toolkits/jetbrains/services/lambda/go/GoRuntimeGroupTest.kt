@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
+import com.intellij.openapi.projectRoots.ProjectJdkTable
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -19,22 +20,25 @@ class GoRuntimeGroupTest {
 
     @Test
     fun testRuntime0x() {
-        projectRule.project.setGoSdkVersion("0.0.1")
+        val sdk = projectRule.setGoSdkVersion("0.0.1")
         val runtime = sut.determineRuntime(projectRule.project)
         assertThat(runtime).isEqualTo(null)
+        ProjectJdkTable.getInstance().removeJdk(sdk)
     }
 
     @Test
     fun testRuntime1x() {
-        projectRule.project.setGoSdkVersion("1.0.0")
+        val sdk = projectRule.setGoSdkVersion("1.0.0")
         val runtime = sut.determineRuntime(projectRule.project)
         assertThat(runtime).isEqualTo(Runtime.GO1_X)
+        ProjectJdkTable.getInstance().removeJdk(sdk)
     }
 
     @Test
     fun testRuntime2x() {
-        projectRule.project.setGoSdkVersion("2.0.0")
+        val sdk = projectRule.setGoSdkVersion("2.0.0")
         val runtime = sut.determineRuntime(projectRule.project)
         assertThat(runtime).isEqualTo(null)
+        ProjectJdkTable.getInstance().removeJdk(sdk)
     }
 }
