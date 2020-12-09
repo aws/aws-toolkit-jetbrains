@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.datagrip.auth
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.RuleChain
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
@@ -22,17 +23,19 @@ import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 
 class SecretsManagerAuthWidgetTest {
-    @Rule
-    @JvmField
-    val projectRule = ProjectRule()
+    private val projectRule = ProjectRule()
+    private val credentialManager = MockCredentialManagerRule()
+    private val regionProvider = MockRegionProviderRule()
 
+    // If we don't control the order manually, regionProvider can run its before
+    // before projectRule which causes a NPE
     @Rule
     @JvmField
-    val credentialManager = MockCredentialManagerRule()
-
-    @Rule
-    @JvmField
-    val regionProvider = MockRegionProviderRule()
+    val ruleChain = RuleChain(
+        projectRule,
+        credentialManager,
+        regionProvider
+    )
 
     private lateinit var widget: SecretsManagerAuthWidget
     private val credentialId = RuleUtils.randomName()
