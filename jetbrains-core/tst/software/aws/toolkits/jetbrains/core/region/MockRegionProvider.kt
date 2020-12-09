@@ -110,5 +110,4 @@ class MockRegionProviderRule : ExternalResource() {
 }
 
 // dynamically get the default region from whatever is currently registered
-@TestOnly
 fun getDefaultRegion() = ServiceManager.getService(ToolkitRegionProvider::class.java).defaultRegion()
