@@ -19,6 +19,7 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 
+@Deprecated("Use MockCredentialManagerRule")
 class MockCredentialsManager : CredentialManager() {
     init {
         reset()
@@ -86,6 +87,7 @@ class MockCredentialsManager : CredentialManager() {
     }
 }
 
+@Suppress("DEPRECATION")
 class MockCredentialManagerRule : ExternalResource() {
     private lateinit var credentialManager: MockCredentialsManager
 
@@ -98,6 +100,12 @@ class MockCredentialManagerRule : ExternalResource() {
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
         region: AwsRegion? = null
     ): CredentialIdentifier = credentialManager.addCredentials(id, credentials, region?.id)
+
+    fun addCredentials(
+        id: String,
+        credentials: AwsCredentialsProvider,
+        regionId: String? = null
+    ): MockCredentialsManager.MockCredentialIdentifier = credentialManager.addCredentials(id, credentials, regionId)
 
     fun createCredentialProvider(
         id: String = aString(),
@@ -120,6 +128,11 @@ class MockCredentialManagerRule : ExternalResource() {
     }
 }
 
+@Deprecated(
+    "DUMMY_PROVIDER_IDENTIFIER should not be used outside of the MockCredentialsManager, if you " +
+        "need mock credentials set them up in the test instead of relying on the global one"
+)
+@Suppress("DEPRECATION")
 val DUMMY_PROVIDER_IDENTIFIER: CredentialIdentifier = MockCredentialsManager.MockCredentialIdentifier(
     "DUMMY_CREDENTIALS",
     StaticCredentialsProvider.create(AwsBasicCredentials.create("DummyAccess", "DummySecret")),

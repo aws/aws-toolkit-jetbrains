@@ -14,8 +14,8 @@ import software.amazon.awssdk.services.rds.model.DBInstance
 import software.amazon.awssdk.services.rds.model.Endpoint
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.core.credentials.DUMMY_PROVIDER_IDENTIFIER
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
@@ -36,6 +36,10 @@ class CreateConfigurationActionTest {
     @Rule
     @JvmField
     val resourceCache = MockResourceCacheRule()
+
+    @Rule
+    @JvmField
+    val regionProvider = MockRegionProviderRule()
 
     private val port = RuleUtils.randomNumber()
     private val address = RuleUtils.randomName()
@@ -92,8 +96,8 @@ class CreateConfigurationActionTest {
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 username = username,
-                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = regionProvider.defaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -101,8 +105,8 @@ class CreateConfigurationActionTest {
             assertThat(it.isTemporary).isFalse()
             assertThat(it.url).contains(port.toString())
             assertThat(it.url).contains(address)
-            assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.displayName)
-            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(MockRegionProvider.getInstance().defaultRegion().id)
+            assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(DUMMY_PROVIDER_IDENTIFIER.displayName)
+            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(regionProvider.defaultRegion().id)
             assertThat(it.authProviderId).isEqualTo(IamAuth.providerId)
         }
     }
@@ -114,8 +118,8 @@ class CreateConfigurationActionTest {
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 username = username,
-                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = regionProvider.defaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -133,8 +137,8 @@ class CreateConfigurationActionTest {
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 username = username,
-                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = regionProvider.defaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -152,8 +156,8 @@ class CreateConfigurationActionTest {
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 username = username,
-                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = regionProvider.defaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -172,8 +176,8 @@ class CreateConfigurationActionTest {
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 username = username,
-                credentialId = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = MockRegionProvider.getInstance().defaultRegion().id,
+                credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
+                regionId = regionProvider.defaultRegion().id,
                 dbInstance = instance
             )
         )
