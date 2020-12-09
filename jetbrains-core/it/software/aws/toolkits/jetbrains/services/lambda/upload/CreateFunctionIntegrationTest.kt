@@ -98,7 +98,7 @@ class CreateFunctionIntegrationTest {
         lambdaName = RuleUtils.randomName()
         iamRole = iamClient.createRoleWithPolicy(RuleUtils.randomName(), DEFAULT_LAMBDA_ASSUME_ROLE_POLICY)
 
-        // Give a few secs to allow the IAM propagation
+        // Sleep for a while to allow the new IAM role to propagate to other regions
         Thread.sleep(Duration.ofSeconds(30).toMillis())
 
         resourceCache.addEntry(
