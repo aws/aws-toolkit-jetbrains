@@ -10,10 +10,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.auth.SECRET_ID_PROPERTY
@@ -27,10 +26,6 @@ class AddSecretsManagerConnectionTest {
 
     @Rule
     @JvmField
-    val regionProvider = MockRegionProviderRule()
-
-    @Rule
-    @JvmField
     val credentialManager = MockCredentialManagerRule()
 
     private val credentialId = RuleUtils.randomName()
@@ -40,7 +35,6 @@ class AddSecretsManagerConnectionTest {
     @Before
     fun setUp() {
         credentialManager.addCredentials(credentialId, mockCreds)
-        regionProvider.addRegion(AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName()))
     }
 
     @Test
@@ -63,7 +57,7 @@ class AddSecretsManagerConnectionTest {
             assertThat(it.sslCfg?.myEnabled).isTrue()
             assertThat(it.url).isEqualTo("jdbc:adapter://$address:$port")
             assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(credentialId)
-            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(defaultRegion)
+            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(getDefaultRegion().id)
             assertThat(it.additionalJdbcProperties[SECRET_ID_PROPERTY]).isEqualTo(secretArn)
             assertThat(it.authProviderId).isEqualTo(SecretsManagerAuth.providerId)
         }

@@ -11,7 +11,7 @@ import org.junit.Test
 import software.amazon.awssdk.services.redshift.model.Cluster
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.DUMMY_PROVIDER_IDENTIFIER
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.redshift.auth.CLUSTER_ID_PROPERTY
@@ -22,10 +22,6 @@ class CreateDataSourceActionTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
-
-    @Rule
-    @JvmField
-    val regionProvider = MockRegionProviderRule()
 
     @Test
     fun `Add data source`() {
@@ -48,7 +44,7 @@ class CreateDataSourceActionTest {
             assertThat(it.sslCfg?.myEnabled).isTrue()
             assertThat(it.url).isEqualTo("jdbc:redshift://$address:$port/$dbName")
             assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(DUMMY_PROVIDER_IDENTIFIER.displayName)
-            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(regionProvider.defaultRegion().id)
+            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(getDefaultRegion().id)
             assertThat(it.additionalJdbcProperties[CLUSTER_ID_PROPERTY]).isEqualTo(address)
             assertThat(it.authProviderId).isEqualTo(IamAuth.providerId)
         }
