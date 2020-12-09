@@ -5,11 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.buildMap
 
 data class ConnectionSettings(val credentials: ToolkitCredentialsProvider, val region: AwsRegion)
 
-fun ConnectionSettings.toEnvironmentVariables(): Map<String, String> = buildMap {
-    putAll(region.toEnvironmentVariables())
-    putAll(credentials.resolveCredentials().toEnvironmentVariables())
-}
+val ConnectionSettings.shortName get() = "${credentials.shortName}@${region.id}"
