@@ -37,7 +37,7 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
         // we only want to pick up the identifier otherwise we will get 4 gutter icons
         // `func` is also a GoTokenType and we don't have any way to extract
         // that information (without using the internal name for debug)
-        if (element.elementType !is GoTokenType || element.text != "func") {
+        if (element.elementType !is GoTokenType || element.text == "func") {
             return null
         }
 
@@ -73,10 +73,10 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
         // 0, 1, or 2 returned values. 0 is always valid so check 1 and 2
         if (returnType is GoTypeList) {
             val types = returnType.typeList
-            if ((types.size > 2) || (types.size == 2 && !GoTypeUtil.isError(types[1], types[1].context))) {
+            if ((types.size > 2) || (types.size == 2 && !types[1].textMatches("error"))) {
                 return false
             }
-        } else if (returnType is GoType && !GoTypeUtil.isError(returnType, returnType.context)) {
+        } else if (returnType is GoType && !returnType.textMatches("error")) {
             return false
         }
         return true
