@@ -24,4 +24,5 @@ fun getDelve(): File {
     return delveFolder
 }
 
-fun createDelveDebugProcess(session: XDebugSession, executionResult: ExecutionResult) = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.DETACH), executionResult, true)
+fun createDelveDebugProcess(session: XDebugSession, executionResult: ExecutionResult) =
+    DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.DETACH), executionResult, true)

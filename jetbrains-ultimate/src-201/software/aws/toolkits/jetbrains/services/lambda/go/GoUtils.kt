@@ -26,5 +26,5 @@ fun getDelve(): File {
 }
 
 // FIX_WHEN_MIN_IS_202 remove this version
-fun createDelveDebugProcess(session: XDebugSession, executionResult: ExecutionResult) = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.DETACH), executionResult, true, false)
-
+fun createDelveDebugProcess(session: XDebugSession, executionResult: ExecutionResult) =
+    DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.DETACH), executionResult, true, false)

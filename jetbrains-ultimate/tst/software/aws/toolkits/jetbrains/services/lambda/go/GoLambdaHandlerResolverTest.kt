@@ -7,7 +7,7 @@ import com.goide.psi.GoFunctionDeclaration
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.runInEdtAndWait
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
@@ -22,169 +22,278 @@ class GoLambdaHandlerResolverTest {
     val projectRule = GoCodeInsightTestFixtureRule()
 
     @Test
-    fun `No return`() {
+    fun `Determine handler no return or arguments`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler() { 
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler() { 
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, "handler")
     }
 
     @Test
-    fun `One return`() {
+    fun `Determine handler one return`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler() error { 
-                        return nil
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler() error { 
+                return nil
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, "handler")
     }
 
     @Test
-    fun `No arguments two returns`() {
+    fun `Determine handler no arguments two returns`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler() (bool, error) { 
-                        return nil
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler() (bool, error) { 
+                return nil
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, "handler")
     }
 
     @Test
-    fun `Invalid No arguments two returns, second one is not error`() {
+    fun `Determine handler invalid No arguments two returns, second one is not error`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler() (error, bool) { 
-                        return nil
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler() (error, bool) { 
+                return nil
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, null)
     }
 
     @Test
-    fun `Invalid three returns, second one is not error`() {
+    fun `Determine handler invalid three returns, second one is not error`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler() (error, error, error) { 
-                        return nil
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler() (error, error, error) { 
+                return nil
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, null)
     }
 
     @Test
-    fun `One argument`() {
+    fun `Determine handler one argument`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler(abc int) { 
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler(abc int) { 
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, "handler")
     }
 
     @Test
-    fun `Two arguments`() {
+    fun `Determine handler two arguments`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler(a context.Context, abc int) { 
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler(a context.Context, abc int) { 
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, "handler")
     }
 
     @Test
-    fun `Invalid two arguments first is not context`() {
+    fun `Determine handler invalid two arguments first is not context`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler(a int, b int) { 
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler(a int, b int) { 
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, null)
     }
 
     @Test
-    fun `Invalid three arguments`() {
+    fun `Determine handler invalid three arguments`() {
         val handlerElement = projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler(a context.Context, b context.Context, c context.Context) { 
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler(a context.Context, b context.Context, c context.Context) { 
+            }
+            """.trimIndent()
         )
 
         assertDetermineHandler(handlerElement, null)
     }
 
     @Test
-    fun `Two arguments Psi`() {
+    fun `Find psi no return or arguments`() {
         projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler(a context.Context, abc int) { 
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler() { 
+            }
+            """.trimIndent()
         )
 
         assertFindPsiElements("handler", true)
     }
 
     @Test
-    fun `Invalid three arguments Psi`() {
+    fun `Find psi one return`() {
         projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
             fileContent = """
-                    package main
-                    
-                    func handler(a context.Context, b context.Context, c context.Context) { 
-                    }
-                    """.trimIndent()
+            package main
+            
+            func handler() error { 
+                return nil
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", true)
+    }
+
+    @Test
+    fun `Find psi no arguments two returns`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func handler() (bool, error) { 
+                return nil
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", true)
+    }
+
+    @Test
+    fun `Find psi invalid No arguments two returns, second one is not error`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func handler() (error, bool) { 
+                return nil
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", false)
+    }
+
+    @Test
+    fun `Find psi invalid three returns, second one is not error`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func handler() (error, error, error) { 
+                return nil
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", false)
+    }
+
+    @Test
+    fun `Find psi one argument`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func handler(abc int) { 
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", true)
+    }
+
+    @Test
+    fun `Find psi two arguments`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func handler(a context.Context, abc int) { 
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", true)
+    }
+
+    @Test
+    fun `Find psi invalid two arguments first is not context`() {
+        val handlerElement = projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func handler(a int, b int) { 
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", false)
+    }
+
+    @Test
+    fun `Find psi invalid three arguments`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func handler(a context.Context, b context.Context, c context.Context) { 
+            }
+            """.trimIndent()
         )
 
         assertFindPsiElements("handler", false)
@@ -195,9 +304,9 @@ class GoLambdaHandlerResolverTest {
 
         runInEdtAndWait {
             if (expectedHandlerFullName != null) {
-                Assertions.assertThat(resolver.determineHandler(handlerElement)).isEqualTo(expectedHandlerFullName)
+                assertThat(resolver.determineHandler(handlerElement)).isEqualTo(expectedHandlerFullName)
             } else {
-                Assertions.assertThat(resolver.determineHandler(handlerElement)).isNull()
+                assertThat(resolver.determineHandler(handlerElement)).isNull()
             }
         }
     }
@@ -208,10 +317,10 @@ class GoLambdaHandlerResolverTest {
             val project = projectRule.fixture.project
             val lambdas = resolver.findPsiElements(project, handler, GlobalSearchScope.allScope(project))
             if (shouldBeFound) {
-                Assertions.assertThat(lambdas).hasSize(1)
-                Assertions.assertThat(lambdas[0]).isInstanceOf(GoFunctionDeclaration::class.java)
+                assertThat(lambdas).hasSize(1)
+                assertThat(lambdas[0]).isInstanceOf(GoFunctionDeclaration::class.java)
             } else {
-                Assertions.assertThat(lambdas).isEmpty()
+                assertThat(lambdas).isEmpty()
             }
         }
     }
