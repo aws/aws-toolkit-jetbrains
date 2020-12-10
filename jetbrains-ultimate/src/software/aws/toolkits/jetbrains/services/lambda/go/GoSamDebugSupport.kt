@@ -3,19 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
-import com.goide.dlv.DlvDebugProcess
-import com.goide.dlv.DlvDisconnectOption
-import com.goide.dlv.DlvRemoteVmConnection
-import com.goide.execution.GoRunUtil.getBundledDlv
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.runners.ExecutionEnvironment
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.util.concurrency.AppExecutorUtil
-import com.intellij.util.io.connectRetrying
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
@@ -23,7 +17,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
-import org.jetbrains.ide.BuiltInServerManager
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
@@ -63,7 +56,7 @@ class GoSamDebugSupport : SamDebugSupport {
                     promise.setResult(
                         object : XDebugProcessStarter() {
                             override fun start(session: XDebugSession): XDebugProcess {
-                                val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.DETACH), executionResult, true)
+                                val process = createDelveDebugProcess(session, executionResult)
 
                                 val processHandler = executionResult.processHandler
                                 val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
@@ -74,9 +67,11 @@ class GoSamDebugSupport : SamDebugSupport {
                                     processHandler.addProcessListener(
                                         object : ProcessAdapter() {
                                             override fun startNotified(event: ProcessEvent) {
-                                                // TODO if we don't wait, it sometimes connects to the
-                                                // container before the debugger starts which then breaks
-                                                // TODO what else can we do?
+                                                // If we don't wait, then then debugger will try to attach to
+                                                // the container before it starts Devle. So, we have to add a sleep.
+                                                // Delve takes quite a while to start in the sam cli images hence long sleep
+                                                // See https://youtrack.jetbrains.com/issue/GO-10279
+                                                // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
                                                 Thread.sleep(10000)
                                                 process.connect(socketAddress)
                                             }
@@ -98,14 +93,7 @@ class GoSamDebugSupport : SamDebugSupport {
     }
 
     override fun samArguments(runtime: Runtime, packageType: PackageType, debugPorts: List<Int>): List<String> = buildList {
-        // This can take a target platform, but that pulls directly from GOOS, so we have to walk back up the file tree
-        // either way. Goland comes with mac/window/linux dlv since it supports remote debugging, so it is always safe to
-        // pull the linux one
-        val dlvFolder = getBundledDlv(null)?.parentFile?.parentFile?.resolve("linux")
-            ?: throw IllegalStateException("Packaged Devle debugger is not found!")
-        // Delve ships with the IDE, but it is not marked executable. The first time the IDE runs it, Delve is set executable
-        // At that point. Since we don't know if it's executable or not, we have to set it manually. TODO Is there a better way?
-        dlvFolder.resolve("dlv").setExecutable(true, true)
+        val dlvFolder = getDelve()
         add("--debugger-path")
         add(dlvFolder.absolutePath)
         add("--debug-args")
