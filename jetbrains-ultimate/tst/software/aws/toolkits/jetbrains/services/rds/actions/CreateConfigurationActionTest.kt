@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.rds.model.Endpoint
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.DUMMY_PROVIDER_IDENTIFIER
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.RdsDatasourceConfiguration
@@ -36,10 +36,6 @@ class CreateConfigurationActionTest {
     @Rule
     @JvmField
     val resourceCache = MockResourceCacheRule()
-
-    @Rule
-    @JvmField
-    val regionProvider = MockRegionProviderRule()
 
     private val port = RuleUtils.randomNumber()
     private val address = RuleUtils.randomName()
@@ -97,7 +93,7 @@ class CreateConfigurationActionTest {
             RdsDatasourceConfiguration(
                 username = username,
                 credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = regionProvider.defaultRegion().id,
+                regionId = getDefaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -106,7 +102,7 @@ class CreateConfigurationActionTest {
             assertThat(it.url).contains(port.toString())
             assertThat(it.url).contains(address)
             assertThat(it.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]).isEqualTo(DUMMY_PROVIDER_IDENTIFIER.displayName)
-            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(regionProvider.defaultRegion().id)
+            assertThat(it.additionalJdbcProperties[REGION_ID_PROPERTY]).isEqualTo(getDefaultRegion().id)
             assertThat(it.authProviderId).isEqualTo(IamAuth.providerId)
         }
     }
@@ -119,7 +115,7 @@ class CreateConfigurationActionTest {
             RdsDatasourceConfiguration(
                 username = username,
                 credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = regionProvider.defaultRegion().id,
+                regionId = getDefaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -138,7 +134,7 @@ class CreateConfigurationActionTest {
             RdsDatasourceConfiguration(
                 username = username,
                 credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = regionProvider.defaultRegion().id,
+                regionId = getDefaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -157,7 +153,7 @@ class CreateConfigurationActionTest {
             RdsDatasourceConfiguration(
                 username = username,
                 credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = regionProvider.defaultRegion().id,
+                regionId = getDefaultRegion().id,
                 dbInstance = instance
             )
         )
@@ -177,7 +173,7 @@ class CreateConfigurationActionTest {
             RdsDatasourceConfiguration(
                 username = username,
                 credentialId = DUMMY_PROVIDER_IDENTIFIER.id,
-                regionId = regionProvider.defaultRegion().id,
+                regionId = getDefaultRegion().id,
                 dbInstance = instance
             )
         )
