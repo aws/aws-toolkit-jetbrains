@@ -7,8 +7,8 @@ import com.goide.psi.GoFunctionDeclaration
 import com.goide.psi.GoTokenType
 import com.goide.psi.GoType
 import com.goide.psi.GoTypeList
+import com.goide.psi.impl.GoLightType
 import com.goide.psi.impl.GoPsiUtil
-import com.goide.psi.impl.GoTypeUtil
 import com.goide.stubs.index.GoFunctionIndex
 import com.goide.stubs.index.GoIdFilter
 import com.intellij.openapi.project.Project
@@ -24,7 +24,11 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
 
     override fun findPsiElements(project: Project, handler: String, searchScope: GlobalSearchScope): Array<NavigatablePsiElement> =
         // GoFunctionDeclarationImpl is a NavigatablePsiElement
-        GoFunctionIndex.find(handler, project, searchScope, GoIdFilter.getFilesFilter(searchScope)).filterIsInstance<NavigatablePsiElement>().toTypedArray()
+        GoFunctionIndex.find(handler, project, searchScope, GoIdFilter.getFilesFilter(searchScope))
+            .filterIsInstance<GoFunctionDeclaration>()
+            .filter { it.isValidHandlerIdentifier() }
+            .filterIsInstance<NavigatablePsiElement>()
+            .toTypedArray()
 
     override fun determineHandler(element: PsiElement): String? {
         // Go PSI is different, go function declarations are not leaf's like in some other
@@ -41,11 +45,6 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
             return null
         }
 
-        // make sure it's a top level function
-        if (!GoPsiUtil.isTopLevelDeclaration(parent)) {
-            return null
-        }
-
         if (!parent.isValidHandlerIdentifier()) {
             return null
         }
@@ -57,6 +56,11 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
 
     // see https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html for what is valid
     private fun GoFunctionDeclaration.isValidHandlerIdentifier(): Boolean {
+        // make sure it's a top level function
+        if (!GoPsiUtil.isTopLevelDeclaration(this)) {
+            return false
+        }
+
         val params = signature?.parameters?.parameterDeclarationList ?: listOf()
 
         // 0, 1 or 2 parameters
@@ -76,7 +80,7 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
             if ((types.size > 2) || (types.size == 2 && !types[1].textMatches("error"))) {
                 return false
             }
-        } else if (returnType is GoType && !returnType.textMatches("error")) {
+        } else if (returnType is GoType && returnType !is GoLightType.LightVoidType && !returnType.textMatches("error")) {
             return false
         }
         return true

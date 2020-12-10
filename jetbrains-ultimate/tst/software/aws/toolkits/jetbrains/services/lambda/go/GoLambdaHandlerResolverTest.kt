@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
+import com.goide.psi.GoFunctionDeclaration
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.runInEdtAndWait
@@ -28,7 +29,6 @@ class GoLambdaHandlerResolverTest {
                     package main
                     
                     func handler() { 
-                        return nil
                     }
                     """.trimIndent()
         )
@@ -100,6 +100,96 @@ class GoLambdaHandlerResolverTest {
         assertDetermineHandler(handlerElement, null)
     }
 
+    @Test
+    fun `One argument`() {
+        val handlerElement = projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+                    package main
+                    
+                    func handler(abc int) { 
+                    }
+                    """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "handler")
+    }
+
+    @Test
+    fun `Two arguments`() {
+        val handlerElement = projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+                    package main
+                    
+                    func handler(a context.Context, abc int) { 
+                    }
+                    """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "handler")
+    }
+
+    @Test
+    fun `Invalid two arguments first is not context`() {
+        val handlerElement = projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+                    package main
+                    
+                    func handler(a int, b int) { 
+                    }
+                    """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun `Invalid three arguments`() {
+        val handlerElement = projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+                    package main
+                    
+                    func handler(a context.Context, b context.Context, c context.Context) { 
+                    }
+                    """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun `Two arguments Psi`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+                    package main
+                    
+                    func handler(a context.Context, abc int) { 
+                    }
+                    """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", true)
+    }
+
+    @Test
+    fun `Invalid three arguments Psi`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+                    package main
+                    
+                    func handler(a context.Context, b context.Context, c context.Context) { 
+                    }
+                    """.trimIndent()
+        )
+
+        assertFindPsiElements("handler", false)
+    }
+
     private fun assertDetermineHandler(handlerElement: PsiElement, expectedHandlerFullName: String?) {
         val resolver = LambdaHandlerResolver.getInstance(RuntimeGroup.getById(BuiltInRuntimeGroups.Go))
 
@@ -119,7 +209,7 @@ class GoLambdaHandlerResolverTest {
             val lambdas = resolver.findPsiElements(project, handler, GlobalSearchScope.allScope(project))
             if (shouldBeFound) {
                 Assertions.assertThat(lambdas).hasSize(1)
-                //Assertions.assertThat(lambdas[0]).isInstanceOf(JSDefinitionExpression::class.java)
+                Assertions.assertThat(lambdas[0]).isInstanceOf(GoFunctionDeclaration::class.java)
             } else {
                 Assertions.assertThat(lambdas).isEmpty()
             }
