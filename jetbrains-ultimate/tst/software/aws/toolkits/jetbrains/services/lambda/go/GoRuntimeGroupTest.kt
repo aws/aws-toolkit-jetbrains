@@ -3,13 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
-import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.roots.ModuleRootModificationUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.utils.rules.GoCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.setGoSdkVersion
+import software.aws.toolkits.jetbrains.utils.rules.createMockSdk
 
 class GoRuntimeGroupTest {
     @Rule
@@ -20,25 +20,28 @@ class GoRuntimeGroupTest {
 
     @Test
     fun testRuntime0x() {
-        val sdk = projectRule.setGoSdkVersion("0.0.1")
-        val runtime = sut.determineRuntime(projectRule.project)
+        val module = projectRule.module
+        ModuleRootModificationUtil.setModuleSdk(module, createMockSdk("0.99.99"))
+
+        val runtime = sut.determineRuntime(module)
         assertThat(runtime).isEqualTo(null)
-        ProjectJdkTable.getInstance().removeJdk(sdk)
     }
 
     @Test
     fun testRuntime1x() {
-        val sdk = projectRule.setGoSdkVersion("1.0.0")
-        val runtime = sut.determineRuntime(projectRule.project)
+        val module = projectRule.module
+        ModuleRootModificationUtil.setModuleSdk(module, createMockSdk("1.0.0"))
+
+        val runtime = sut.determineRuntime(module)
         assertThat(runtime).isEqualTo(Runtime.GO1_X)
-        ProjectJdkTable.getInstance().removeJdk(sdk)
     }
 
     @Test
     fun testRuntime2x() {
-        val sdk = projectRule.setGoSdkVersion("2.0.0")
-        val runtime = sut.determineRuntime(projectRule.project)
+        val module = projectRule.module
+        ModuleRootModificationUtil.setModuleSdk(module, createMockSdk("2.0.0"))
+
+        val runtime = sut.determineRuntime(module)
         assertThat(runtime).isEqualTo(null)
-        ProjectJdkTable.getInstance().removeJdk(sdk)
     }
 }
