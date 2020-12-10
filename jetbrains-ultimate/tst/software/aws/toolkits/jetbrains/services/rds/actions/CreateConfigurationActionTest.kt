@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.rds.actions
 
 import com.intellij.database.autoconfig.DataSourceRegistry
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.RuleChain
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
@@ -15,6 +16,7 @@ import software.amazon.awssdk.services.rds.model.Endpoint
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.DUMMY_PROVIDER_IDENTIFIER
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
@@ -29,13 +31,17 @@ import software.aws.toolkits.jetbrains.services.sts.StsResources
 import java.util.concurrent.CompletableFuture
 
 class CreateConfigurationActionTest {
-    @Rule
-    @JvmField
-    val projectRule = ProjectRule()
+    private val projectRule = ProjectRule()
+    private val resourceCache = MockResourceCacheRule()
+    private val credentialManager = MockCredentialManagerRule()
 
     @Rule
     @JvmField
-    val resourceCache = MockResourceCacheRule()
+    val ruleChain = RuleChain(
+        projectRule,
+        credentialManager,
+        resourceCache
+    )
 
     private val port = RuleUtils.randomNumber()
     private val address = RuleUtils.randomName()
