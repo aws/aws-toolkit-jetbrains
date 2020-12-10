@@ -11,7 +11,6 @@ import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
-import java.io.File
 
 class GoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
     override fun createTestFixture(): CodeInsightTestFixture {
@@ -32,10 +31,8 @@ class GoLightProjectDescriptor : LightProjectDescriptor() {
 }
 
 fun createMockSdk(version: String): Sdk {
-    val homePath = File("testData/mockSdk-$version/").absolutePath
-    val sdkType = GoSdkType()
-    val sdk = ProjectJdkImpl("Go $version", sdkType, homePath, version)
-    sdkType.setupSdkPaths(sdk)
+    val sdk = ProjectJdkImpl("Go $version", GoSdkType())
     sdk.versionString = version
+    GoSdkType().setupSdkPaths(sdk)
     return sdk
 }

@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
+import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
@@ -21,7 +23,12 @@ class GoRuntimeGroupTest {
     @Test
     fun testRuntime0x() {
         val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, createMockSdk("0.99.99"))
+
+        WriteAction.computeAndWait<Unit, Throwable> {
+            val sdk = createMockSdk("0.99.99")
+            ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.testRootDisposable)
+            ModuleRootModificationUtil.setModuleSdk(module, sdk)
+        }
 
         val runtime = sut.determineRuntime(module)
         assertThat(runtime).isEqualTo(null)
@@ -30,7 +37,12 @@ class GoRuntimeGroupTest {
     @Test
     fun testRuntime1x() {
         val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, createMockSdk("1.0.0"))
+
+        WriteAction.computeAndWait<Unit, Throwable> {
+            val sdk = createMockSdk("1.0.0")
+            ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.testRootDisposable)
+            ModuleRootModificationUtil.setModuleSdk(module, sdk)
+        }
 
         val runtime = sut.determineRuntime(module)
         assertThat(runtime).isEqualTo(Runtime.GO1_X)
@@ -39,7 +51,12 @@ class GoRuntimeGroupTest {
     @Test
     fun testRuntime2x() {
         val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, createMockSdk("2.0.0"))
+
+        WriteAction.computeAndWait<Unit, Throwable> {
+            val sdk = createMockSdk("2.0.0")
+            ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.testRootDisposable)
+            ModuleRootModificationUtil.setModuleSdk(module, sdk)
+        }
 
         val runtime = sut.determineRuntime(module)
         assertThat(runtime).isEqualTo(null)
