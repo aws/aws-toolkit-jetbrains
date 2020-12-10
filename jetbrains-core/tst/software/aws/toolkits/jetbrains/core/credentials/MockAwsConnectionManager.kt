@@ -25,8 +25,7 @@ class MockAwsConnectionManager(project: Project) : AwsConnectionManager(project)
         recentlyUsedRegions.clear()
         recentlyUsedProfiles.clear()
         val regionProvider = AwsRegionProvider.getInstance()
-        val credentialProvider = CredentialManager.getInstance().getCredentialIdentifiers().first()
-        changeConnectionSettings(credentialProvider, regionProvider.defaultRegion())
+        changeConnectionSettings(DUMMY_PROVIDER_IDENTIFIER, regionProvider.defaultRegion())
 
         waitUntilConnectionStateIsStable()
     }
