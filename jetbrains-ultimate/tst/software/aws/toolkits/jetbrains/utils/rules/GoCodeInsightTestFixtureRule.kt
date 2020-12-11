@@ -9,6 +9,7 @@ import com.goide.sdk.GoSdkType
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
@@ -37,7 +38,12 @@ fun CodeInsightTestFixture.addGoLambdaHandler(
     subPath: String = ".",
     fileName: String = "app",
     handlerName: String = "handler",
-    fileContent: String
+    fileContent: String = """
+    package main
+        
+    func handler() { 
+    }
+    """.trimIndent()
 ): PsiElement {
     val psiFile = this.addFileToProject("$subPath/$fileName.go", fileContent) as GoFile
 
@@ -45,6 +51,18 @@ fun CodeInsightTestFixture.addGoLambdaHandler(
         psiFile.findElementAt(fileContent.indexOf(handlerName))!!
     }
 }
+
+fun CodeInsightTestFixture.addGoModFile(
+    subPath: String = ".",
+    content: String =
+        """
+        require github.com/aws/aws-lambda-go v1.13.3
+
+        module hello-world
+
+        go 1.14
+        """.trimIndent()
+): PsiFile = this.addFileToProject("$subPath/go.mod", content)
 
 fun createMockSdk(version: String): Sdk {
     val sdk = ProjectJdkImpl("Go $version", GoSdkType())

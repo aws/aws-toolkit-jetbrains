@@ -3,4 +3,65 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
-class GoHelperTest
+import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.testFramework.runInEdtAndWait
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Rule
+import org.junit.Test
+import software.aws.toolkits.jetbrains.utils.rules.GoCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.addGoLambdaHandler
+import software.aws.toolkits.jetbrains.utils.rules.addGoModFile
+
+class GoHelperTest {
+    @Rule
+    @JvmField
+    val projectRule = GoCodeInsightTestFixtureRule()
+
+    @Test
+    fun inferSourceRoot_noPackageJsonReturnsContentRoot() {
+        val element = projectRule.fixture.addGoLambdaHandler(
+            subPath = "foo/bar"
+        )
+
+        runInEdtAndWait {
+            val contentRoot = ProjectFileIndex.getInstance(projectRule.project).getContentRootForFile(element.containingFile.virtualFile)
+            val sourceRoot = inferSourceRoot(projectRule.project, element.containingFile.virtualFile)
+            assertThat(contentRoot).isEqualTo(sourceRoot)
+        }
+    }
+
+    @Test
+    fun inferSourceRoot_packageJsonInSubFolder() {
+        val element = projectRule.fixture.addGoLambdaHandler(
+            subPath = "foo/bar"
+        )
+
+        projectRule.fixture.addGoModFile(
+            subPath = "foo"
+        )
+
+        runInEdtAndWait {
+            val contentRoot = ProjectFileIndex.getInstance(projectRule.project).getContentRootForFile(element.containingFile.virtualFile)
+            val sourceRoot = inferSourceRoot(projectRule.project, element.containingFile.virtualFile)
+            assertThat(VfsUtilCore.findRelativeFile("foo", contentRoot)).isEqualTo(sourceRoot)
+        }
+    }
+
+    @Test
+    fun inferSourceRoot_packageJsonInRootFolder() {
+        val element = projectRule.fixture.addGoLambdaHandler(
+            subPath = "foo/bar"
+        )
+
+        projectRule.fixture.addGoModFile(
+            subPath = "."
+        )
+
+        runInEdtAndWait {
+            val contentRoot = ProjectFileIndex.getInstance(projectRule.project).getContentRootForFile(element.containingFile.virtualFile)
+            val sourceRoot = inferSourceRoot(projectRule.project, element.containingFile.virtualFile)
+            assertThat(contentRoot).isEqualTo(sourceRoot)
+        }
+    }
+}
