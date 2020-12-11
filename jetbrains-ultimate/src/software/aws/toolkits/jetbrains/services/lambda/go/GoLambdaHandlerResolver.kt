@@ -11,10 +11,6 @@ import com.intellij.psi.search.GlobalSearchScope
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class GoLambdaHandlerResolver : LambdaHandlerResolver {
-    override fun version(): Int {
-        TODO("Not yet implemented")
-    }
-
     override fun findPsiElements(project: Project, handler: String, searchScope: GlobalSearchScope): Array<NavigatablePsiElement> {
         TODO("Not yet implemented")
     }
