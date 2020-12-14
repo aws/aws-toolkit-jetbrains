@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.utils.rules
 import com.goide.GoConstants
 import com.goide.psi.GoFile
 import com.goide.sdk.GoSdkType
-import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.psi.PsiElement
