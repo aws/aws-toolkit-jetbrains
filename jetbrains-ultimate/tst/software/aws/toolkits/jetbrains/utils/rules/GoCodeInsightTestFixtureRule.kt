@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.utils.rules
 import com.goide.GoConstants
 import com.goide.psi.GoFile
 import com.goide.sdk.GoSdkType
+import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.psi.PsiElement
@@ -14,14 +15,28 @@ import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndGet
+import com.intellij.testFramework.runInEdtAndWait
+import com.intellij.xdebugger.XDebuggerUtil
 
 class GoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule(GoLightProjectDescriptor()) {
     override fun createTestFixture(): CodeInsightTestFixture {
         val codeInsightFixture = super.createTestFixture()
-
         PsiTestUtil.addContentRoot(codeInsightFixture.module, codeInsightFixture.tempDirFixture.getFile(".")!!)
-
         return codeInsightFixture
+    }
+
+    fun addBreakpoint() {
+        runInEdtAndWait {
+            val document = fixture.editor.document
+            val psiFile = fixture.file as GoFile
+            val lineNumber = document.getLineNumber(psiFile.functions.first().textOffset)
+
+            XDebuggerUtil.getInstance().toggleLineBreakpoint(
+                project,
+                fixture.file.virtualFile,
+                lineNumber
+            )
+        }
     }
 }
 

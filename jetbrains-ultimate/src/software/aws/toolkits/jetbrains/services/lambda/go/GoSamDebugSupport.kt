@@ -7,14 +7,14 @@ import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.ExpirableExecutor
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
+import com.intellij.openapi.application.runInEdt
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.amazon.awssdk.services.lambda.model.PackageType
@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import java.net.InetSocketAddress
 
 class GoSamDebugSupport : SamDebugSupport {
@@ -46,46 +45,50 @@ class GoSamDebugSupport : SamDebugSupport {
     ): Promise<XDebugProcessStarter?> {
         val promise = AsyncPromise<XDebugProcessStarter?>()
         val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
-        val edtContext = getCoroutineUiContext(ModalityState.any(), environment)
 
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
                 val executionResult = state.execute(environment.executor, environment.runner)
 
-                withContext(edtContext) {
-                    promise.setResult(
-                        object : XDebugProcessStarter() {
-                            override fun start(session: XDebugSession): XDebugProcess {
-                                val process = createDelveDebugProcess(session, executionResult)
+                val debug = object : XDebugProcessStarter() {
+                    override fun start(session: XDebugSession): XDebugProcess {
+                        val process = createDelveDebugProcess(session, executionResult)
 
-                                val processHandler = executionResult.processHandler
-                                val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
+                        val processHandler = executionResult.processHandler
+                        val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
 
-                                if (processHandler == null || processHandler.isStartNotified) {
-                                    process.connect(socketAddress)
-                                } else {
-                                    processHandler.addProcessListener(
-                                        object : ProcessAdapter() {
-                                            override fun startNotified(event: ProcessEvent) {
-                                                // If we don't wait, then then debugger will try to attach to
-                                                // the container before it starts Devle. So, we have to add a sleep.
-                                                // Delve takes quite a while to start in the sam cli images hence long sleep
-                                                // See https://youtrack.jetbrains.com/issue/GO-10279
-                                                // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
-                                                Thread.sleep(10000)
-                                                process.connect(socketAddress)
-                                            }
+                        if (processHandler == null || processHandler.isStartNotified) {
+                            // this branch will never be hit because it gets here too fast, but it's needed for corectness
+                            process.connect(socketAddress)
+                        } else {
+                            processHandler.addProcessListener(
+                                object : ProcessAdapter() {
+                                    override fun startNotified(event: ProcessEvent) {
+                                        ApplicationThreadPoolScope("GoSamDebugAttacher").launch {
+                                            // If we don't wait, then then debugger will try to attach to
+                                            // the container before it starts Devle. So, we have to add a sleep.
+                                            // Delve takes quite a while to start in the sam cli images hence long sleep
+                                            // See https://youtrack.jetbrains.com/issue/GO-10279
+                                            // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
+                                            delay(10000)
+                                            process.connect(socketAddress)
                                         }
-                                    )
+                                    }
                                 }
-                                return process
-                            }
+                            )
                         }
-                    )
+                        return process
+                    }
+                }
+
+                runInEdt {
+                    promise.setResult(debug)
                 }
             } catch (t: Throwable) {
                 LOG.warn(t) { "Failed to start debugger" }
-                promise.setError(t)
+                runInEdt {
+                    promise.setError(t)
+                }
             }
         }
 
