@@ -47,6 +47,10 @@ internal class SamDebugger(runtimeGroup: RuntimeGroup) : SamRunner() {
 
         var isDebuggerAttachDone = false
 
+        // In integration tests this will block for 1 minute per integration test that uses the debugger because we 
+        // run integration tests under edt. In real execution, there's some funky thread switching that leads this call
+        // to not be on edt, but that is not emulated in tests. So, skip this entirely if we are in unit test mode.
+        // Tests have their own timeout which will prevent it running forever without attaching
         if (!ApplicationManager.getApplication().isUnitTestMode) {
             ProgressManager.getInstance().run(
                 object : Task.Backgroundable(environment.project, message("lambda.debug.waiting"), false) {
