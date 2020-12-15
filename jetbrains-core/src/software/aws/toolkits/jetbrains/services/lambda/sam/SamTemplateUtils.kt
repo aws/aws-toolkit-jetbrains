@@ -87,7 +87,7 @@ object SamTemplateUtils {
         val function = requiredAt("/Resources/$logicalId")
         if (function.isServerlessFunction()) {
             if (function.isImageBased()) {
-                function.requiredAt("/Properties/DockerContext").textValue()
+                function.requiredAt("/Metadata/DockerContext").textValue()
             } else {
                 function.requiredAt("/Properties/CodeUri").textValue()
             }
