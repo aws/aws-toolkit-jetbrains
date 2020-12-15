@@ -60,7 +60,7 @@ class PythonLambdaBuilderTest {
     fun buildDirectoryIsCorrect() {
         val baseDir = sut.getBuildDirectory(projectRule.module)
         val root = ModuleRootManager.getInstance(projectRule.module).contentRoots.first().path
-        assertThat(baseDir).isEqualTo(Paths.get(root, SamCommon.SAM_BUILD_DIR).resolve("build"))
+        assertThat(baseDir).isEqualTo(Paths.get(root, SamCommon.SAM_BUILD_DIR, "build"))
     }
 
     @Test

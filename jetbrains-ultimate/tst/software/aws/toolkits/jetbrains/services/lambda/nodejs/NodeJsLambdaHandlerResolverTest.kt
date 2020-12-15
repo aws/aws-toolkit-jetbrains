@@ -185,7 +185,6 @@ class NodeJsLambdaHandlerResolverTest {
             }
             """.trimIndent()
 
-        projectRule.fixture.addPackageJsonFile()
         projectRule.fixture.addFileToProject("app.js", fileContent)
         projectRule.fixture.addPackageJsonFile()
         assertFindPsiElements("app.lambdaHandler", true)
