@@ -44,7 +44,6 @@ import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import software.aws.toolkits.telemetry.Runtime as TelemetryRuntime
@@ -190,7 +189,8 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
         val element = Lambda.findPsiElementsForHandler(project, runtime, handler).first()
         val module = getModule(element.containingFile)
 
-        val dummyTemplate = Files.createTempFile("temp-template", ".yaml")
+        val buildDirectory = lambdaBuilder.getBuildDirectory(module)
+        val dummyTemplate = buildDirectory.parent.resolve("temp-template.yaml")
         val dummyLogicalId = "Function"
 
         SamTemplateUtils.writeDummySamTemplate(
@@ -198,6 +198,8 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
             logicalId = dummyLogicalId,
             runtime = runtime,
             handler = handler,
+            timeout = settings.timeout,
+            memorySize = settings.memorySize,
             codeUri = lambdaBuilder.handlerBaseDirectory(module, element).toAbsolutePath().toString(),
             envVars = settings.environmentVariables
         )
@@ -206,7 +208,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
             dummyTemplate,
             dummyLogicalId,
             lambdaBuilder.additionalBuildEnvironmentVariables(module, samOptions),
-            lambdaBuilder.getBuildDirectory(module)
+            buildDirectory
         )
     }
 
