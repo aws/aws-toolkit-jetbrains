@@ -170,7 +170,7 @@ fun CodeInsightTestFixture.addFileToModule(
     val file = try {
         val contentRoot = ModuleRootManager.getInstance(module).contentRoots[0]
         runWriteAction {
-            contentRoot.writeChild(FileUtil.toSystemDependentName(relativePath), fileText)
+            contentRoot.writeChild(FileUtil.toSystemIndependentName(relativePath), fileText)
         }
     } finally {
         PsiManager.getInstance(project).dropPsiCaches()
