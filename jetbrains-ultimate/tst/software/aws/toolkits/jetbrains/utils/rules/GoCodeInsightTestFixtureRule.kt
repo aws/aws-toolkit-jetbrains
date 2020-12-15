@@ -13,16 +13,12 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.runInEdtAndGet
 
-class GoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
+class GoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule(GoLightProjectDescriptor()) {
     override fun createTestFixture(): CodeInsightTestFixture {
-        val fixtureFactory = IdeaTestFixtureFactory.getFixtureFactory()
-        val projectFixture = fixtureFactory.createLightFixtureBuilder(GoLightProjectDescriptor())
-        val codeInsightFixture = fixtureFactory.createCodeInsightFixture(projectFixture.fixture)
-        codeInsightFixture.testDataPath = testDataPath
-        codeInsightFixture.setUp()
+        val codeInsightFixture = super.createTestFixture()
+
         PsiTestUtil.addContentRoot(codeInsightFixture.module, codeInsightFixture.tempDirFixture.getFile(".")!!)
 
         return codeInsightFixture

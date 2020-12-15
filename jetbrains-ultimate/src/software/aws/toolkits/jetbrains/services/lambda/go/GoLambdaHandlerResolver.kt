@@ -20,8 +20,6 @@ import com.intellij.psi.util.elementType
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class GoLambdaHandlerResolver : LambdaHandlerResolver {
-    override fun version(): Int = 1
-
     override fun findPsiElements(project: Project, handler: String, searchScope: GlobalSearchScope): Array<NavigatablePsiElement> =
         // GoFunctionDeclarationImpl is a NavigatablePsiElement
         GoFunctionIndex.find(handler, project, searchScope, GoIdFilter.getFilesFilter(searchScope))
