@@ -188,7 +188,7 @@ private fun HeavyJavaCodeInsightTestFixtureRule.copyPath(root: Path, path: Path)
     } else {
         fixture.addFileToModule(module, root.relativize(path).toString(), "").also { newFile ->
             runInEdtAndWait {
-                    runWriteAction {
+                runWriteAction {
                     newFile.virtualFile.getOutputStream(null).use { out ->
                         path.inputStream().use { it.copyTo(out) }
                     }
