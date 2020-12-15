@@ -198,7 +198,8 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
             logicalId = dummyLogicalId,
             runtime = runtime,
             handler = handler,
-            codeUri = lambdaBuilder.handlerBaseDirectory(module, element).toAbsolutePath().toString()
+            codeUri = lambdaBuilder.handlerBaseDirectory(module, element).toAbsolutePath().toString(),
+            envVars = settings.environmentVariables
         )
 
         return BuildRequest(
