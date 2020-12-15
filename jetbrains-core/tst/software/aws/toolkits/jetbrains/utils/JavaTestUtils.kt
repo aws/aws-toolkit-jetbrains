@@ -36,6 +36,7 @@ import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.junit.Assert.fail
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.nio.file.Files
@@ -185,7 +186,14 @@ private fun HeavyJavaCodeInsightTestFixtureRule.copyPath(root: Path, path: Path)
             this@copyPath.copyPath(root, it)
         }
     } else {
-        fixture.addFileToModule(module, root.relativize(path).toString(), path.toFile().readText()).also { newFile ->
+        fixture.addFileToModule(module, root.relativize(path).toString(), "").also { newFile ->
+            runInEdtAndWait {
+                    runWriteAction {
+                    newFile.virtualFile.getOutputStream(null).use { out ->
+                        path.inputStream().use { it.copyTo(out) }
+                    }
+                }
+            }
             if (SystemInfo.isUnix) {
                 val newPath = Paths.get(newFile.virtualFile.path)
                 Files.setPosixFilePermissions(newPath, Files.getPosixFilePermissions(path))
