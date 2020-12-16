@@ -17,12 +17,16 @@ import java.nio.file.Path
 import java.time.Duration
 
 fun ContainerFixture.fileBrowser(
-    partialTitle: String,
+    partialTitle: String? = null,
     timeout: Duration = Duration.ofSeconds(20),
     function: FileBrowserFixture.() -> Unit = {}
 ) {
     step("Search for file explorer with title matching $partialTitle") {
-        val dialog = find<FileBrowserFixture>(DialogFixture.byTitleContains(partialTitle), timeout)
+        val dialog: FileBrowserFixture = if (partialTitle == null) {
+            find(byXpath("//div[@class='MyDialog']"), timeout)
+        } else {
+            find(DialogFixture.byTitleContains(partialTitle), timeout)
+        }
 
         dialog.apply(function)
 

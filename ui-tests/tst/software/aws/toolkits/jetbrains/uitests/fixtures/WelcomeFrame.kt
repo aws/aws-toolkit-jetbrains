@@ -76,7 +76,7 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
             selectTab("Projects")
             findAll<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]")).first().click()
         }
-        fileBrowser("Open") {
+        fileBrowser {
             selectFile(path)
         }
     }
