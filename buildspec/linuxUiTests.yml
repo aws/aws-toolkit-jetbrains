@@ -20,7 +20,7 @@ phases:
 
     commands:
       - apt-get update
-      - apt-get install -y xvfb icewm procps ffmpeg libswt-gtk-3-java
+      - apt-get install -y xvfb procps ffmpeg libswt-gtk-3-java
       - mkdir -p /tmp/.aws
       - aws sts assume-role --role-arn $ASSUME_ROLE_ARN --role-session-name ui-test > /tmp/.aws/creds.json
       - export KEY_ID=`jq -r '.Credentials.AccessKeyId' /tmp/.aws/creds.json`
@@ -45,7 +45,6 @@ phases:
       - Xvfb :99 -screen 0 1920x1080x24 &
       - export DISPLAY=:99
       - while [ ! -e /tmp/.X11-unix/X99 ]; do sleep 0.1; done
-      - icewm &
       - chmod +x gradlew
       - ./gradlew buildPlugin --console plain --info
       - >
