@@ -10,6 +10,7 @@ import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitForIgnoringError
 import java.io.File
 import java.nio.file.Path
@@ -67,7 +68,11 @@ class FileBrowserFixture(
             } else {
                 find(byXpath("//div[@class='BorderlessTextField']"), Duration.ofSeconds(5))
             }
-            pathBox.text = path.toString()
+            // clear the path box then type in the path. needs to be typed not set because sometimes it will fail
+            // to load properly if just set (and fail the tests)
+            pathBox.text = ""
+            pathBox.click()
+            keyboard { this.enterText(path.toString()) }
         }
     }
 
