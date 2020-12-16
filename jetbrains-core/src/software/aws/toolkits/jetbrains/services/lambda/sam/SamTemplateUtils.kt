@@ -37,8 +37,7 @@ object SamTemplateUtils {
     private const val S3_URI_PREFIX = "s3://"
 
     fun getUploadedCodeUri(template: Path, logicalId: String): UploadedCode = readTemplate(template) {
-        val function = requiredAt("/Resources").get(logicalId)
-            ?: throw IllegalArgumentException("No resource with the logical ID $logicalId")
+        val function = findFunction(logicalId)
         if (function.isImageBased()) {
             UploadedEcrCode(function.requiredAt("/Properties/ImageUri").textValue())
         } else {
@@ -84,7 +83,7 @@ object SamTemplateUtils {
     )
 
     fun getCodeLocation(template: Path, logicalId: String): String = readTemplate(template) {
-        val function = requiredAt("/Resources/$logicalId")
+        val function = findFunction(logicalId)
         if (function.isServerlessFunction()) {
             if (function.isImageBased()) {
                 function.requiredAt("/Metadata/DockerContext").textValue()
@@ -95,6 +94,9 @@ object SamTemplateUtils {
             function.requiredAt("/Properties/Code").textValue()
         }
     }
+
+    private fun JsonNode.findFunction(logicalId: String): JsonNode = this.requiredAt("/Resources").get(logicalId)
+        ?: throw IllegalArgumentException("No resource with the logical ID $logicalId")
 
     private fun JsonNode.isImageBased(): Boolean = this.packageType() == PackageType.IMAGE
 
