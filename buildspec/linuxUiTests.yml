@@ -51,6 +51,8 @@ phases:
         fi
       - chmod +x gradlew
       - ./gradlew buildPlugin --console plain --info
+      # The SAM cli tests crash the IDE in 2020.3 due to something with icewm. But in 2020.1/2020.2, tests fail without a WM. So, for now, special case it.
+      # this needs to be investigated further, especially when we onboard 2021.1
       - >
         if [ "$RECORD_UI" ]; then
         ffmpeg -loglevel warning -f x11grab -video_size 1920x1080 -i :99 -codec:v libx264 -r 12 /tmp/screen_recording.mp4 &
