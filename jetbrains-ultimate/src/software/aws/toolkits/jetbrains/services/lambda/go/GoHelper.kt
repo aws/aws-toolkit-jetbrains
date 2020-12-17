@@ -15,14 +15,19 @@ import com.intellij.openapi.vfs.VirtualFile
  */
 fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile? {
     val projectFileIndex = ProjectFileIndex.getInstance(project)
-    return projectFileIndex.getContentRootForFile(virtualFile)?.let {
-        findChildGoMod(virtualFile.parent, it)
+    return projectFileIndex.getContentRootForFile(virtualFile)?.let { root ->
+        var file = virtualFile.parent
+        while (file != null) {
+            if ((file.isDirectory && file.children.any { !it.isDirectory && it.name == "go.mod" })) {
+                return file
+            }
+            // If we go up to the root and it's still not found, stop going up and mark source root as
+            // not found, since it will fail to build
+            if (file == root) {
+                return null
+            }
+            file = file.parent
+        }
+        return null
     }
 }
-
-private fun findChildGoMod(file: VirtualFile, contentRoot: VirtualFile): VirtualFile =
-    when {
-        file.isDirectory && file.children.any { !it.isDirectory && it.name == "go.mod" } -> file
-        file == contentRoot -> file
-        else -> findChildGoMod(file.parent, contentRoot)
-    }

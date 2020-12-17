@@ -23,7 +23,6 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
     override fun findPsiElements(project: Project, handler: String, searchScope: GlobalSearchScope): Array<NavigatablePsiElement> =
         // GoFunctionDeclarationImpl is a NavigatablePsiElement
         GoFunctionIndex.find(handler, project, searchScope, GoIdFilter.getFilesFilter(searchScope))
-            .filterIsInstance<GoFunctionDeclaration>()
             .filter { it.isValidHandlerIdentifier() }
             .filterIsInstance<NavigatablePsiElement>()
             .toTypedArray()
