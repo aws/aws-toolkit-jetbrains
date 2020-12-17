@@ -11,6 +11,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.core.SdkClient
@@ -296,7 +298,9 @@ class DefaultAwsResourceCache(
                 val result = cache.compute(context.cacheKey) { _, value ->
                     fetchIfNeeded(context, value as Entry<T>?)
                 } as Entry<T>
-                context.future.complete(result.value)
+                launch {
+                    context.future.complete(result.value.await())
+                }
             } catch (e: Throwable) {
                 context.future.completeExceptionally(e)
             }
@@ -329,9 +333,18 @@ class DefaultAwsResourceCache(
     override fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider, useStale: Boolean): T? =
         when (resource) {
             is Resource.Cached<T> -> {
-                val entry = cache.getTyped<T>(CacheKey(resource.id, region.id, credentialProvider.id))
+                val key = CacheKey(resource.id, region.id, credentialProvider.id)
+                val entry = cache.getTyped<T>(key)
                 when {
-                    entry != null && (useStale || entry.notExpired) -> entry.value
+                    entry != null && (useStale || entry.notExpired) && entry.value.isCompleted -> {
+                        try {
+                            entry.value.getCompleted()
+                        } catch (e: Exception) {
+                            // value was completed exceptionally
+                            LOG.warn("getResourceIfPresent for $key failed", e)
+                            null
+                        }
+                    }
                     else -> null
                 }
             }
@@ -380,7 +393,10 @@ class DefaultAwsResourceCache(
     }
 
     private fun <T> fetch(context: Context<T>): Entry<T> {
-        val value = context.resource.fetch(context.region, context.credentials)
+        val value = async {
+            context.resource.fetch(context.region, context.credentials)
+        }
+
         return Entry(clock.instant().plus(context.resource.expiry()), value)
     }
 
@@ -404,7 +420,7 @@ class DefaultAwsResourceCache(
             val future = CompletableFuture<T>()
         }
 
-        private class Entry<T>(val expiry: Instant, val value: T) {
+        private class Entry<T>(val expiry: Instant, val value: Deferred<T>) {
             val weight = when (value) {
                 is Collection<*> -> value.size
                 else -> 1
