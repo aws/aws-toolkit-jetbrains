@@ -14,7 +14,7 @@ import com.intellij.xdebugger.XDebugSession
 // either way. Goland comes with mac/window/linux dlv since it supports remote debugging, so it is always safe to
 // pull the linux one
 // FIX_WHEN_MIN_IS_202 remove this one in favor of the 202+ one
-fun getDelve(): File = getBundledDlv()?.parentFile?.parentFile?.resolve("linux")
+fun getDelve() = getBundledDlv()?.parentFile?.parentFile?.resolve("linux")
     ?: throw IllegalStateException("Packaged Devle debugger is not found!")
 
 // FIX_WHEN_MIN_IS_202 remove this version
