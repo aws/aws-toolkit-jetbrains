@@ -9,7 +9,6 @@ import com.goide.dlv.DlvRemoteVmConnection
 import com.goide.execution.GoRunUtil.getBundledDlv
 import com.intellij.execution.ExecutionResult
 import com.intellij.xdebugger.XDebugSession
-import java.io.File
 
 // This can take a target platform, but that pulls directly from GOOS, so we have to walk back up the file tree
 // either way. Goland comes with mac/window/linux dlv since it supports remote debugging, so it is always safe to
