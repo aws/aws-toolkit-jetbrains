@@ -19,7 +19,7 @@ class GoHelperTest {
     val projectRule = GoCodeInsightTestFixtureRule()
 
     @Test
-    fun inferSourceRoot_noPackageJsonReturnsContentRoot() {
+    fun inferSourceRoot_noGoModReturnsNull() {
         val element = projectRule.fixture.addGoLambdaHandler(
             subPath = "foo/bar"
         )
@@ -27,12 +27,12 @@ class GoHelperTest {
         runInEdtAndWait {
             val contentRoot = ProjectFileIndex.getInstance(projectRule.project).getContentRootForFile(element.containingFile.virtualFile)
             val sourceRoot = inferSourceRoot(projectRule.project, element.containingFile.virtualFile)
-            assertThat(contentRoot).isEqualTo(sourceRoot)
+            assertThat(sourceRoot).isNull()
         }
     }
 
     @Test
-    fun inferSourceRoot_packageJsonInSubFolder() {
+    fun inferSourceRoot_goModInSubFolder() {
         val element = projectRule.fixture.addGoLambdaHandler(
             subPath = "foo/bar"
         )
@@ -49,7 +49,7 @@ class GoHelperTest {
     }
 
     @Test
-    fun inferSourceRoot_packageJsonInRootFolder() {
+    fun inferSourceRoot_goModInRootFolder() {
         val element = projectRule.fixture.addGoLambdaHandler(
             subPath = "foo/bar"
         )
