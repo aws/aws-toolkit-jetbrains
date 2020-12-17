@@ -15,6 +15,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
@@ -293,13 +294,24 @@ class DefaultAwsResourceCache(
 
     private fun <T> getCachedResource(context: Context<T>) {
         ApplicationManager.getApplication().executeOnPooledThread {
+            var currentValue: Entry<T>? = null
             try {
                 @Suppress("UNCHECKED_CAST")
                 val result = cache.compute(context.cacheKey) { _, value ->
-                    fetchIfNeeded(context, value as Entry<T>?)
+                    currentValue = value as Entry<T>?
+                    fetchIfNeeded(context, currentValue)
                 } as Entry<T>
-                launch {
-                    context.future.complete(result.value.await())
+                runBlocking {
+                    try {
+                        context.future.complete(result.value.await())
+                    } catch (e: Exception) {
+                        val deferred = currentValue
+                        if (context.useStale && deferred != null && deferred.value.isCompleted) {
+                            context.future.complete(deferred.value.getCompleted())
+                        } else {
+                            throw e
+                        }
+                    }
                 }
             } catch (e: Throwable) {
                 context.future.completeExceptionally(e)
@@ -310,7 +322,7 @@ class DefaultAwsResourceCache(
     private fun runCacheMaintenance() {
         try {
             var totalWeight = 0
-            val entries = cache.entries.asSequence().onEach { totalWeight += it.value.weight }.toList()
+            val entries = cache.entries.asSequence().filter { it.value.value.isCompleted }.onEach { totalWeight += it.value.weight }.toList()
             var exceededWeight = totalWeight - maximumCacheEntries
             if (exceededWeight <= 0) return
             entries.sortedBy { it.value.expiry }.forEach { (key, value) ->
@@ -421,10 +433,15 @@ class DefaultAwsResourceCache(
         }
 
         private class Entry<T>(val expiry: Instant, val value: Deferred<T>) {
-            val weight = when (value) {
-                is Collection<*> -> value.size
-                else -> 1
-            }
+            val weight: Int
+                get() = if (value.isCompleted && value.getCompletionExceptionOrNull() == null) {
+                    when (val underlying = value.getCompleted()) {
+                        is Collection<*> -> underlying.size
+                        else -> 1
+                    }
+                } else {
+                    1
+                }
         }
 
         private fun <T> ConcurrentMap<CacheKey, Entry<*>>.getTyped(key: CacheKey) = this[key]?.let {
