@@ -11,6 +11,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.DocumentAdapter
+import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.UserActivityProviderComponent
 import software.aws.toolkits.resources.message
 import java.awt.Component
@@ -27,7 +28,7 @@ import javax.swing.event.DocumentEvent
  * needs but with same UX so users are used to it. Namely we do not support inheriting system env vars, but rest
  * of UX is the same
  */
-class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityProviderComponent {
+class EnvironmentVariablesTextField(private val template: Boolean) : TextFieldWithBrowseButton(), UserActivityProviderComponent {
     private var data = EnvironmentVariablesData.create(emptyMap(), false)
     private val listeners = CopyOnWriteArrayList<ChangeListener>()
 
@@ -40,7 +41,7 @@ class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityP
 
     init {
         addActionListener {
-            EnvironmentVariablesDialog(this).show()
+            EnvironmentVariablesDialog(template, this).show()
         }
 
         textField.document.addDocumentListener(
@@ -97,9 +98,9 @@ class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityP
         }
     }
 
-    private inner class EnvironmentVariablesDialog(parent: Component) : DialogWrapper(parent, true) {
+    private inner class EnvironmentVariablesDialog(template: Boolean, parent: Component) : DialogWrapper(parent, true) {
         private val envVarTable = EnvVariablesTable().apply {
-            setValues(convertToVariables(data.envs, false))
+            setValues(convertToVariables(data.envs, template))
             setPasteActionEnabled(true)
         }
 
@@ -108,7 +109,12 @@ class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityP
             init()
         }
 
-        override fun createCenterPanel(): JComponent = envVarTable.component
+        override fun createCenterPanel(): JComponent = envVarTable.component.apply {
+            if (template) {
+                ToolbarDecorator.findAddButton(this)?.let { it.isVisible = false }
+                ToolbarDecorator.findRemoveButton(this)?.let { it.isVisible = false }
+            }
+        }
 
         override fun doOKAction() {
             envVarTable.stopEditing()

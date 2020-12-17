@@ -120,7 +120,7 @@ class LambdaConfigPanel(private val project: Project, private val isUpdate: Bool
         handlerPanel = HandlerPanel(project)
         runtimeModel = SortedComboBoxModel(Comparator.comparing(Function { obj: Runtime -> obj.toString() }, Comparator.naturalOrder()))
         runtime = ComboBox(runtimeModel)
-        envVars = EnvironmentVariablesTextField()
+        envVars = EnvironmentVariablesTextField(template = false)
         memorySlider = lambdaMemory()
         timeoutSlider = lambdaTimeout()
         iamRole = builder().resource(IamResources.LIST_LAMBDA_ROLES).awsConnection(project).build()

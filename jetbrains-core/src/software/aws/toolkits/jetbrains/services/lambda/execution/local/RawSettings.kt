@@ -41,7 +41,7 @@ class RawSettings(private val project: Project) {
         handlerPanel = HandlerPanel(project)
         timeoutSlider = lambdaTimeout()
         memorySlider = lambdaMemory()
-        environmentVariables = EnvironmentVariablesTextField()
+        environmentVariables = EnvironmentVariablesTextField(template = false)
     }
 
     init {

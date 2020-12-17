@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField
 import software.aws.toolkits.jetbrains.ui.ProjectFileBrowseListener
 import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.jetbrains.utils.ui.selected
@@ -41,6 +42,8 @@ class TemplateSettings(val project: Project) {
     private lateinit var functionModels: DefaultComboBoxModel<Function>
     private lateinit var imageSettingsPanel: JPanel
     private lateinit var runtimeModel: SortedComboBoxModel<Runtime>
+    lateinit var environmentVariables: EnvironmentVariablesTextField
+        private set
 
     val isImage
         get() = function.selected()?.packageType() == PackageType.IMAGE
@@ -49,6 +52,7 @@ class TemplateSettings(val project: Project) {
         // by default, do not show the image settings or path mappings table
         imageSettingsPanel.isVisible = false
         pathMappingsTable.isVisible = false
+        environmentVariables.isEnabled = false
         templateFile.addBrowseFolderListener(
             ProjectFileBrowseListener(
                 project,
@@ -61,9 +65,11 @@ class TemplateSettings(val project: Project) {
             val selected = function.selected()
             if (selected !is SamFunction) {
                 imageSettingsPanel.isVisible = false
+                environmentVariables.isEnabled = false
                 return@addActionListener
             }
             imageSettingsPanel.isVisible = selected.packageType() == PackageType.IMAGE
+            setEnvVars(selected)
         }
         runtime.addActionListener {
             val pathMappingsApplicable = pathMappingsApplicable()
@@ -83,6 +89,7 @@ class TemplateSettings(val project: Project) {
         function = ComboBox(functionModels)
         runtimeModel = SortedComboBoxModel(compareBy(Comparator.naturalOrder()) { it: Runtime -> it.toString() })
         runtime = ComboBox(runtimeModel)
+        environmentVariables = EnvironmentVariablesTextField(template = true)
     }
 
     fun setTemplateFile(file: String?) {
@@ -99,6 +106,18 @@ class TemplateSettings(val project: Project) {
     fun selectFunction(logicalFunctionName: String?) {
         val function = functionModels.find { it.logicalName == logicalFunctionName } ?: return
         functionModels.selectedItem = function
+    }
+
+    fun setEnvVars(function: SamFunction) {
+        //SamTemplateUtils.functionFromElement()
+        environmentVariables.isVisible = true
+        environmentVariables.envVars = mutableMapOf(
+            "abc" to "def",
+            "asewr" to "whaterver"
+        )
+        //function.globals
+        //function.globals["Function"].getOptionalScalarProperty()
+        // SamTemplateUtils.find.findFunctionsFromTemplate(project, File(file))
     }
 
     private fun updateFunctionModel(functions: List<Function>) {
