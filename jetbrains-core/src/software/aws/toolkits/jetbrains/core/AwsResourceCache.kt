@@ -15,7 +15,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
@@ -31,7 +30,6 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.CachingAsyncEvaluator
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -350,7 +348,8 @@ class DefaultAwsResourceCache(
                 val key = CacheKey(resource.id, region.id, credentialProvider.id)
                 val entry = cache.getTyped<T>(key)
                 when {
-                    entry != null && (useStale || entry.notExpired) && entry.value.isCompleted && entry.value.getCompletionExceptionOrNull() == null -> entry.value.getCompleted()
+                    entry != null && (useStale || entry.notExpired) &&
+                        entry.value.isCompleted && entry.value.getCompletionExceptionOrNull() == null -> entry.value.getCompleted()
                     else -> null
                 }
             }
