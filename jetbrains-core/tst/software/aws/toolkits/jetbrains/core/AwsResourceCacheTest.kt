@@ -22,6 +22,9 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.AdditionalAnswers.answer
+import org.mockito.AdditionalAnswers.answersWithDelay
+import org.mockito.internal.stubbing.answers.Returns
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
@@ -32,6 +35,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
 import software.aws.toolkits.jetbrains.utils.value
@@ -40,6 +44,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeoutException
@@ -329,6 +334,30 @@ class AwsResourceCacheTest {
             executor.shutdown()
         }
 
+        verifyResourceCalled(times = 1)
+    }
+
+    @Test
+    fun multipleCallsWhileFetchPendingCallTheUnderlyingResourceOnce() {
+        val latch = CountDownLatch(1)
+        whenever(mockResource.fetch(any(), any())).thenAnswer {
+            // don't allow the task to finish until all futures have been created
+            latch.await()
+            return@thenAnswer "hello"
+        }
+
+        val futures = buildList<CompletableFuture<String>> {
+            repeat(20) {
+                // simulate multiple calls to the same resource
+                add(sut.getResource(mockResource, connectionSettings).toCompletableFuture())
+            }
+        }.toTypedArray()
+        latch.countDown()
+
+        // all futures should complete
+        CompletableFuture.allOf(*futures).value
+
+        // and we should have reused the same task for all of the requests
         verifyResourceCalled(times = 1)
     }
 

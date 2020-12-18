@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.CachingAsyncEvaluator
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -301,15 +302,16 @@ class DefaultAwsResourceCache(
                     currentValue = value as Entry<T>?
                     fetchIfNeeded(context, currentValue)
                 } as Entry<T>
-                runBlocking {
+
+                launch {
                     try {
                         context.future.complete(result.value.await())
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         val deferred = currentValue
                         if (context.useStale && deferred != null && deferred.value.isCompleted) {
                             context.future.complete(deferred.value.getCompleted())
                         } else {
-                            throw e
+                            context.future.completeExceptionally(e)
                         }
                     }
                 }
@@ -348,15 +350,7 @@ class DefaultAwsResourceCache(
                 val key = CacheKey(resource.id, region.id, credentialProvider.id)
                 val entry = cache.getTyped<T>(key)
                 when {
-                    entry != null && (useStale || entry.notExpired) && entry.value.isCompleted -> {
-                        try {
-                            entry.value.getCompleted()
-                        } catch (e: Exception) {
-                            // value was completed exceptionally
-                            LOG.warn("getResourceIfPresent for $key failed", e)
-                            null
-                        }
-                    }
+                    entry != null && (useStale || entry.notExpired) && entry.value.isCompleted && entry.value.getCompletionExceptionOrNull() == null -> entry.value.getCompleted()
                     else -> null
                 }
             }
@@ -412,7 +406,7 @@ class DefaultAwsResourceCache(
         return Entry(clock.instant().plus(context.resource.expiry()), value)
     }
 
-    private val Entry<*>.notExpired get() = clock.instant().isBefore(expiry)
+    private val Entry<*>.notExpired get() = value.isActive || clock.instant().isBefore(expiry)
 
     companion object {
         private val LOG = getLogger<DefaultAwsResourceCache>()
