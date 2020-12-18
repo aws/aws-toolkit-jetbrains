@@ -7,7 +7,7 @@ import com.intellij.testFramework.ApplicationRule
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
-// TODO: Delete this and move back to child classes to have ApplicationRule as the parent FIX_WHEN_MIN_IS_202
+// TODO: Delete this and move back child classes to have ApplicationRule as the parent FIX_WHEN_MIN_IS_202
 open class AppRule : TestWatcher() {
     private val appRule = ApplicationRule()
 
