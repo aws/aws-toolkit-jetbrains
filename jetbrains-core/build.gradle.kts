@@ -102,5 +102,5 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:$coroutinesVersion")
 
     integrationTestImplementation("org.eclipse.jetty:jetty-servlet:9.4.15.v20190215")
-    integrationTestImplementation("org.eclipse.jetty:jetty-proxy:9.4.15.v20190215")
+    integrationTestImplementation("org.eclipse.jetty:jetty-proxy:11.0.0")
 }
