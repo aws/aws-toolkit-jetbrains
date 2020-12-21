@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
+import java.util.concurrent.CopyOnWriteArrayList
 
 class NotificationUtilsTest {
 
@@ -34,7 +35,7 @@ class NotificationUtilsTest {
 }
 
 class NotificationListenerRule(private val projectRule: ProjectRule) : ExternalResource() {
-    val notifications = mutableListOf<Notification>()
+    val notifications = CopyOnWriteArrayList<Notification>()
 
     override fun before() {
         with(projectRule.project.messageBus.connect()) {
