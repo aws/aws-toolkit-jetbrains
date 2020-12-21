@@ -263,9 +263,10 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
         """.trimIndent()
     )
 
-    Disposer.register(this.fixture.testRootDisposable, Disposable {
-        MavenServerManager.getInstance().shutdown(true)
-    })
+    Disposer.register(
+        this.fixture.testRootDisposable,
+        Disposable { MavenServerManager.getInstance().shutdown(true) }
+    )
 
     val projectsManager = MavenProjectsManager.getInstance(project)
     projectsManager.addManagedFilesOrUnignore(listOf(pomFile))
