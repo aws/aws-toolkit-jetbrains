@@ -5,9 +5,12 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitForIgnoringError
+import org.assertj.swing.timing.Pause
 import java.time.Duration
 
 fun RemoteRobot.awsExplorer(
@@ -15,7 +18,7 @@ fun RemoteRobot.awsExplorer(
     function: AwsExplorer.() -> Unit
 ) {
     step("AWS explorer") {
-        find<AwsExplorer>(byXpath("//div[@class='ExplorerToolWindow']"), timeout).apply(function)
+        find<AwsExplorer>(byXpath("//div[@accessiblename='AWS Explorer Tool Window' and @class='InternalDecorator']"), timeout).apply(function)
     }
 }
 
@@ -23,26 +26,59 @@ fun RemoteRobot.awsExplorer(
 open class AwsExplorer(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
-) : DialogFixture(remoteRobot, remoteComponent) {
+) : CommonContainerFixture(remoteRobot, remoteComponent) {
+    private val explorerTree by lazy {
+        find<JTreeFixture>(byXpath("//div[@class='Tree']"))
+    }
+
     fun openExplorerActionMenu(vararg path: String) {
-        findExplorerTree().rightClickPath(*path)
+        explorerTree.rightClickPath(*path)
     }
 
     fun expandExplorerNode(vararg path: String) {
-        findExplorerTree().expandPath(*path)
-        // wait for loading to disappear
-        try {
-            while (true) {
-                findText("loading...")
-                Thread.sleep(100)
+        expandServiceNode(path.first())
+
+        explorerTree.expandPath(*path)
+        waitForLoading()
+    }
+
+    private fun expandServiceNode(serviceName: String) {
+        repeat(MAX_ATTEMPTS) {
+            val attempt = it + 1
+            explorerTree.expandPath(serviceName)
+            waitForLoading()
+
+            if (explorerTree.hasText { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
+                val pauseTime = Duration.ofSeconds(2 * attempt.toLong())
+                step("Error node was returned, will wait and try again in $pauseTime . Attempt $attempt of $MAX_ATTEMPTS") {
+                    Pause.pause(pauseTime.toMillis())
+                    refresh()
+                }
+            } else {
+                return
             }
-        } catch (e: Exception) {
+        }
+    }
+
+    private fun refresh() {
+        step("Pressing Refresh...") {
+            findAndClick("//div[@accessiblename='Refresh AWS Connection']")
+        }
+    }
+
+    private fun waitForLoading() {
+        step("waiting for loading text to go away...") {
+            waitForIgnoringError(duration = Duration.ofMinutes(1)) {
+                !explorerTree.hasText("loading...")
+            }
         }
     }
 
     fun doubleClickExplorer(vararg nodeElements: String) {
-        findExplorerTree().doubleClickPath(*nodeElements)
+        explorerTree.doubleClickPath(*nodeElements)
     }
 
-    private fun findExplorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']"), Duration.ofSeconds(10))
+    private companion object {
+        const val MAX_ATTEMPTS = 5
+    }
 }
