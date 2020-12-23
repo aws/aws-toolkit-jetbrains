@@ -13,12 +13,12 @@ import com.intellij.remoterobot.stepsProcessing.step
 import org.assertj.swing.timing.Pause
 import java.time.Duration
 
-private val locator = byXpath("//div[@accessiblename='AWS Explorer Tool Window' and @class='InternalDecorator']")
-
 fun IdeaFrame.awsExplorer(
     timeout: Duration = Duration.ofSeconds(20),
     function: AwsExplorer.() -> Unit
 ) {
+    private val locator = byXpath("//div[@accessiblename='AWS Explorer Tool Window' and @class='InternalDecorator']")
+
     step("AWS explorer") {
         val explorer = try {
             find<AwsExplorer>(locator, timeout)
@@ -49,14 +49,14 @@ open class AwsExplorer(
         expandServiceNode(path.first())
 
         explorerTree.expandPath(*path)
-        waitForLoading()
+        explorerTree.waitUntilLoaded()
     }
 
     private fun expandServiceNode(serviceName: String) {
         repeat(MAX_ATTEMPTS) {
             val attempt = it + 1
             explorerTree.expandPath(serviceName)
-            waitForLoading()
+            explorerTree.waitUntilLoaded()
 
             if (explorerTree.hasText { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
                 val pauseTime = Duration.ofSeconds(2 * attempt.toLong())
@@ -76,23 +76,7 @@ open class AwsExplorer(
         }
     }
 
-    private fun waitForLoading() {
-        step("waiting for loading text to go away...") {
-            try {
-                while (true) {
-                    explorerTree.findText("loading...")
-                    Thread.sleep(100)
-                }
-            } catch (e: Exception) {
-            }
-        }
-    }
-
     fun doubleClickExplorer(vararg nodeElements: String) {
         explorerTree.doubleClickPath(*nodeElements)
-    }
-
-    private companion object {
-        const val MAX_ATTEMPTS = 5
     }
 }

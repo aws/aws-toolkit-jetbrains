@@ -61,3 +61,15 @@ class JTreeFixture(
         }
     }
 }
+
+fun JTreeFixture.waitUntilLoaded() {
+    step("waiting for loading text to go away...") {
+        try {
+            while (true) {
+                findText("loading...")
+                Thread.sleep(100)
+            }
+        } catch (e: Exception) {
+        }
+    }
+}

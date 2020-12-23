@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressDelete
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
+import software.aws.toolkits.jetbrains.uitests.fixtures.waitUntilLoaded
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -134,6 +135,7 @@ class S3BrowserTest {
                 Thread.sleep(1000)
                 s3Tree {
                     findText(folder).doubleClick()
+                    waitUntilLoaded()
                     findText(jsonFile2)
                 }
             }
