@@ -96,10 +96,6 @@ class S3BrowserTest {
             // Click on the tree to make sure it's there + we aren't selecting anything else
             s3Tree { click() }
 
-            // If the project starts fast enough we start the test before the tip is shown, but if the tip is showing when we go to start using the file browser
-            // it will fail to find them. So check for it one last time.
-            tryCloseTips()
-
             step("Upload object to top-level") {
                 actionButton(upload).click()
                 fileBrowser("Select") {
