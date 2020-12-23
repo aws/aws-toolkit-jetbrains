@@ -17,7 +17,7 @@ fun IdeaFrame.awsExplorer(
     timeout: Duration = Duration.ofSeconds(20),
     function: AwsExplorer.() -> Unit
 ) {
-    private val locator = byXpath("//div[@accessiblename='AWS Explorer Tool Window' and @class='InternalDecorator']")
+    val locator = byXpath("//div[@accessiblename='AWS Explorer Tool Window' and @class='InternalDecorator']")
 
     step("AWS explorer") {
         val explorer = try {
@@ -78,5 +78,9 @@ open class AwsExplorer(
 
     fun doubleClickExplorer(vararg nodeElements: String) {
         explorerTree.doubleClickPath(*nodeElements)
+    }
+
+    private companion object {
+        const val MAX_ATTEMPTS = 5
     }
 }
