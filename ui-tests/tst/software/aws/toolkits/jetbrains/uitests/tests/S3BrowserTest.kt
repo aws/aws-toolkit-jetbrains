@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.uitests.tests
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
@@ -20,6 +19,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.actionButton
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
@@ -74,7 +74,6 @@ class S3BrowserTest {
         }
         idea {
             waitForBackgroundTasks()
-            showAwsExplorer()
 
             step("Create bucket named $bucket") {
                 awsExplorer {
@@ -185,7 +184,6 @@ class S3BrowserTest {
             }
 
             step("Delete bucket named $bucket") {
-                showAwsExplorer()
                 awsExplorer {
                     openExplorerActionMenu(S3, bucket)
                 }
@@ -224,7 +222,7 @@ class S3BrowserTest {
         s3Client.waiter().waitUntilBucketExists { it.bucket(bucket) }
     }
 
-    private fun RemoteRobot.s3Tree(func: (JTreeFixture.() -> Unit)) {
+    private fun IdeaFrame.s3Tree(func: (JTreeFixture.() -> Unit)) {
         find<JTreeFixture>(byXpath("//div[@class='S3TreeTable']"), Duration.ofSeconds(5)).apply(func)
     }
 }

@@ -6,19 +6,29 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.assertj.swing.timing.Pause
 import java.time.Duration
 
-fun RemoteRobot.awsExplorer(
+private val locator = byXpath("//div[@accessiblename='AWS Explorer Tool Window' and @class='InternalDecorator']")
+
+fun IdeaFrame.awsExplorer(
     timeout: Duration = Duration.ofSeconds(20),
     function: AwsExplorer.() -> Unit
 ) {
     step("AWS explorer") {
-        find<AwsExplorer>(byXpath("//div[@accessiblename='AWS Explorer Tool Window' and @class='InternalDecorator']"), timeout).apply(function)
+        val explorer = try {
+            find<AwsExplorer>(locator, timeout)
+        } catch (e: Exception) {
+            // Click the tool window stripe
+            find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
+            find<AwsExplorer>(locator, timeout)
+        }
+
+        explorer.apply(function)
     }
 }
 
@@ -68,8 +78,12 @@ open class AwsExplorer(
 
     private fun waitForLoading() {
         step("waiting for loading text to go away...") {
-            waitForIgnoringError(duration = Duration.ofMinutes(1)) {
-                !explorerTree.hasText("loading...")
+            try {
+                while (true) {
+                    explorerTree.findText("loading...")
+                    Thread.sleep(100)
+                }
+            } catch (e: Exception) {
             }
         }
     }

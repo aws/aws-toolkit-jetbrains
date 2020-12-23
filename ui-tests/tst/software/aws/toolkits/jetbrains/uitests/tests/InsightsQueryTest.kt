@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.uitests.tests
 
-import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ComboBoxFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
@@ -26,6 +25,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
@@ -115,7 +115,6 @@ class InsightsQueryTest {
         }
         idea {
             waitForBackgroundTasks()
-            showAwsExplorer()
             step("Expand log groups node") {
                 awsExplorer {
                     expandExplorerNode(cloudWatchExplorerLabel)
@@ -189,7 +188,7 @@ class InsightsQueryTest {
         }
     }
 
-    private fun RemoteRobot.openInsightsQueryDialogFromExplorer(groupName: String) = step("Open insights query dialog") {
+    private fun IdeaFrame.openInsightsQueryDialogFromExplorer(groupName: String) = step("Open insights query dialog") {
         awsExplorer {
             openExplorerActionMenu(cloudWatchExplorerLabel, groupName)
         }
