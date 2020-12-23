@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.actionButton
+import software.aws.toolkits.jetbrains.uitests.fixtures.actionMenuItem
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fileBrowser
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
@@ -79,7 +80,7 @@ class S3BrowserTest {
                 awsExplorer {
                     openExplorerActionMenu(S3)
                 }
-                find<ComponentFixture>(byXpath("//div[@text='$createBucketText']")).click()
+                actionMenuItem(createBucketText).click()
                 find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = bucket
                 find<ComponentFixture>(byXpath("//div[@text='Create']")).click()
             }
