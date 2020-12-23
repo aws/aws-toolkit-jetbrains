@@ -17,13 +17,13 @@ fun IdeaFrame.projectStructureDialog(
     function: ProjectStructureDialog.() -> Unit
 ) {
     step("Project Structure dialog") {
-        if (remoteRobot.isMac()) {
-            keyboard { hotKey(KeyEvent.VK_META, KeyEvent.VK_SEMICOLON) }
-        } else {
-            keyboard { hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_SHIFT, KeyEvent.VK_S) }
+        keyboard {
+            double(KeyEvent.VK_SHIFT)
+            enterText("Project Structure")
+            enter()
         }
 
-        val dialog = remoteRobot.find<ProjectStructureDialog>(byXpath("//div[@accessiblename='Project Structure']"), timeout)
+        val dialog = find<ProjectStructureDialog>(byXpath("//div[@accessiblename='Project Structure']"), timeout)
 
         dialog.apply(function)
 

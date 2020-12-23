@@ -23,9 +23,11 @@ fun IdeaFrame.awsExplorer(
         val explorer = try {
             find<AwsExplorer>(locator, timeout)
         } catch (e: Exception) {
-            // Click the tool window stripe
-            find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
-            find<AwsExplorer>(locator, timeout)
+            step("Open tool window" ) {
+                // Click the tool window stripe
+                find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
+                find<AwsExplorer>(locator, timeout)
+            }
         }
 
         explorer.apply(function)
@@ -57,6 +59,8 @@ open class AwsExplorer(
             val attempt = it + 1
             explorerTree.expandPath(serviceName)
             explorerTree.waitUntilLoaded()
+
+            step("DEBUG: ${explorerTree.findAllText().joinToString()}") {}
 
             if (explorerTree.hasText { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
                 val pauseTime = Duration.ofSeconds(2 * attempt.toLong())
