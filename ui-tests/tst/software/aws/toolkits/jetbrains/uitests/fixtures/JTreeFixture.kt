@@ -14,6 +14,13 @@ class JTreeFixture(
 ) : ComponentFixture(remoteRobot, remoteComponent) {
     var separator: String = "/"
 
+    fun hasPath(vararg paths: String) = try {
+        runJsPathMethod("node", *paths)
+        true
+    } catch (e: Exception) {
+        false
+    }
+
     fun clickPath(vararg paths: String) = runJsPathMethod("clickPath", *paths)
     fun expandPath(vararg paths: String) = runJsPathMethod("expandPath", *paths)
     fun rightClickPath(vararg paths: String) = runJsPathMethod("rightClickPath", *paths)

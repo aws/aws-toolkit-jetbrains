@@ -10,6 +10,7 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitFor
 import org.assertj.swing.timing.Pause
 import java.time.Duration
 import kotlin.random.Random
@@ -56,6 +57,8 @@ open class AwsExplorer(
     }
 
     private fun expandServiceNode(serviceName: String) {
+        waitFor { explorerTree.hasPath(serviceName) }
+
         repeat(MAX_ATTEMPTS) {
             val attempt = it + 1
             explorerTree.expandPath(serviceName)
