@@ -12,6 +12,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import org.assertj.swing.timing.Pause
 import java.time.Duration
+import kotlin.random.Random
 
 fun IdeaFrame.awsExplorer(
     timeout: Duration = Duration.ofSeconds(20),
@@ -23,7 +24,7 @@ fun IdeaFrame.awsExplorer(
         val explorer = try {
             find<AwsExplorer>(locator, timeout)
         } catch (e: Exception) {
-            step("Open tool window" ) {
+            step("Open tool window") {
                 // Click the tool window stripe
                 find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
                 find<AwsExplorer>(locator, timeout)
@@ -60,10 +61,10 @@ open class AwsExplorer(
             explorerTree.expandPath(serviceName)
             explorerTree.waitUntilLoaded()
 
-            step("DEBUG: ${explorerTree.findAllText().joinToString()}") {}
+            step("DEBUG: ${explorerTree.findAllText().joinToString { it.text }}") {}
 
             if (explorerTree.hasText { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
-                val pauseTime = Duration.ofSeconds(2 * attempt.toLong())
+                val pauseTime = Duration.ofSeconds(30 * attempt.toLong() + Random.nextInt(30))
                 step("Error node was returned, will wait and try again in $pauseTime . Attempt $attempt of $MAX_ATTEMPTS") {
                     Pause.pause(pauseTime.toMillis())
                     refresh()
