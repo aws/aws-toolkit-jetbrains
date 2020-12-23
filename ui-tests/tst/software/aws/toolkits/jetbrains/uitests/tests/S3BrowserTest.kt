@@ -8,6 +8,7 @@ import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -176,10 +177,10 @@ class S3BrowserTest {
                 s3Tree {
                     findText(newJsonName).doubleClick()
                 }
-                // Wait for the item to download and open
-                Thread.sleep(1000)
-                // Find the title bar
-                assertThat(findAll<ComponentFixture>(byXpath("//div[@accessiblename='$newJsonName']"))).isNotEmpty
+
+                waitFor {
+                    findAll<ComponentFixture>(byXpath("//div[@accessiblename='$newJsonName']")).isNotEmpty()
+                }
             }
 
             step("Delete bucket named $bucket") {
