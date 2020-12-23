@@ -56,9 +56,8 @@ open class AwsExplorer(
 
     private fun expandServiceNode(serviceName: String) {
         step("Expand service node '$serviceName'") {
-            waitFor { explorerTree().hasPath(serviceName) }
-
             for (attempt in 1..MAX_ATTEMPTS) {
+                waitFor { explorerTree().hasPath(serviceName) }
                 explorerTree().expandPath(serviceName)
                 explorerTree().waitUntilLoaded()
 
