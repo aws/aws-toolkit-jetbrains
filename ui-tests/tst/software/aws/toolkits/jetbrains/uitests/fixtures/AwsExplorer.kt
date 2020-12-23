@@ -57,23 +57,28 @@ open class AwsExplorer(
     }
 
     private fun expandServiceNode(serviceName: String) {
-        waitFor { explorerTree.hasPath(serviceName) }
+        step("Expand service node '$serviceName'") {
+            waitFor { explorerTree.hasPath(serviceName) }
 
-        repeat(MAX_ATTEMPTS) {
-            val attempt = it + 1
-            explorerTree.expandPath(serviceName)
-            explorerTree.waitUntilLoaded()
+            for (attempt in 1..MAX_ATTEMPTS) {
+                explorerTree.expandPath(serviceName)
+                explorerTree.waitUntilLoaded()
 
-            step("DEBUG: ${explorerTree.findAllText().joinToString { it.text }}") {}
+                step("DEBUG: ${explorerTree.findAllText().joinToString { it.text }}") {}
 
-            if (explorerTree.hasText { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
-                val pauseTime = Duration.ofSeconds(30 * attempt.toLong() + Random.nextInt(30))
-                step("Error node was returned, will wait and try again in $pauseTime . Attempt $attempt of $MAX_ATTEMPTS") {
-                    Pause.pause(pauseTime.toMillis())
-                    refresh()
+                if (explorerTree.hasText { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
+                    if (attempt < MAX_ATTEMPTS) {
+                        val pauseTime = Duration.ofSeconds(30 * attempt.toLong() + Random.nextInt(30))
+                        step("Error node was returned, will wait and try again in $pauseTime . Attempt $attempt of $MAX_ATTEMPTS") {
+                            Pause.pause(pauseTime.toMillis())
+                            refresh()
+                        }
+                    } else {
+                        throw IllegalStateException("Max attempts reached")
+                    }
+                } else {
+                    break
                 }
-            } else {
-                return
             }
         }
     }
