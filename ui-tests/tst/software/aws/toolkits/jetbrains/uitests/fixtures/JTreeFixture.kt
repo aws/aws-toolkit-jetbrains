@@ -75,7 +75,7 @@ fun JTreeFixture.waitUntilLoaded() {
         try {
             while (true) {
                 Pause.pause(100)
-                findText("loading...")
+                findAllText().any { it.text.equals("loading...", ignoreCase = true) }
             }
         } catch (e: Exception) {
         }

@@ -57,13 +57,15 @@ open class AwsExplorer(
     private fun expandServiceNode(serviceName: String) {
         step("Expand service node '$serviceName'") {
             for (attempt in 1..MAX_ATTEMPTS) {
-                waitFor { explorerTree().hasPath(serviceName) }
-                explorerTree().expandPath(serviceName)
-                explorerTree().waitUntilLoaded()
+                val explorerTree = explorerTree()
 
-                step("DEBUG: ${explorerTree().findAllText().joinToString { it.text }}") {}
+                waitFor { explorerTree.hasPath(serviceName) }
+                explorerTree.expandPath(serviceName)
+                explorerTree.waitUntilLoaded()
 
-                if (explorerTree().findAllText().any { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
+                step("DEBUG: ${explorerTree.findAllText().joinToString { it.text }}") {}
+
+                if (explorerTree.findAllText().any { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
                     if (attempt < MAX_ATTEMPTS) {
                         val pauseTime = Duration.ofSeconds(30 * attempt.toLong() + Random.nextInt(30))
                         step("Error node was returned, will wait and try again in $pauseTime . Attempt $attempt of $MAX_ATTEMPTS") {
