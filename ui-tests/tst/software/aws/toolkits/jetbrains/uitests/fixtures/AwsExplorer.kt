@@ -41,32 +41,30 @@ open class AwsExplorer(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : CommonContainerFixture(remoteRobot, remoteComponent) {
-    private val explorerTree by lazy {
-        find<JTreeFixture>(byXpath("//div[@class='Tree']"))
-    }
+    private fun explorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']"))
 
     fun openExplorerActionMenu(vararg path: String) {
-        explorerTree.rightClickPath(*path)
+        explorerTree().rightClickPath(*path)
     }
 
     fun expandExplorerNode(vararg path: String) {
         expandServiceNode(path.first())
 
-        explorerTree.expandPath(*path)
-        explorerTree.waitUntilLoaded()
+        explorerTree().expandPath(*path)
+        explorerTree().waitUntilLoaded()
     }
 
     private fun expandServiceNode(serviceName: String) {
         step("Expand service node '$serviceName'") {
-            waitFor { explorerTree.hasPath(serviceName) }
+            waitFor { explorerTree().hasPath(serviceName) }
 
             for (attempt in 1..MAX_ATTEMPTS) {
-                explorerTree.expandPath(serviceName)
-                explorerTree.waitUntilLoaded()
+                explorerTree().expandPath(serviceName)
+                explorerTree().waitUntilLoaded()
 
-                step("DEBUG: ${explorerTree.findAllText().joinToString { it.text }}") {}
+                step("DEBUG: ${explorerTree().findAllText().joinToString { it.text }}") {}
 
-                if (explorerTree.hasText { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
+                if (explorerTree().findAllText().any { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
                     if (attempt < MAX_ATTEMPTS) {
                         val pauseTime = Duration.ofSeconds(30 * attempt.toLong() + Random.nextInt(30))
                         step("Error node was returned, will wait and try again in $pauseTime . Attempt $attempt of $MAX_ATTEMPTS") {
@@ -90,7 +88,7 @@ open class AwsExplorer(
     }
 
     fun doubleClickExplorer(vararg nodeElements: String) {
-        explorerTree.doubleClickPath(*nodeElements)
+        explorerTree().doubleClickPath(*nodeElements)
     }
 
     private companion object {

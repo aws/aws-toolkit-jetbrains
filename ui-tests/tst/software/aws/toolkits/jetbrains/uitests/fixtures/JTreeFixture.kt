@@ -7,6 +7,7 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.stepsProcessing.step
+import org.assertj.swing.timing.Pause
 
 class JTreeFixture(
     remoteRobot: RemoteRobot,
@@ -73,10 +74,12 @@ fun JTreeFixture.waitUntilLoaded() {
     step("waiting for loading text to go away...") {
         try {
             while (true) {
+                Pause.pause(100)
                 findText("loading...")
-                Thread.sleep(100)
             }
         } catch (e: Exception) {
         }
+
+        Pause.pause(100)
     }
 }
