@@ -37,7 +37,7 @@ class JTreeFixture(
     fun expandRow(row: Int) = runJsRowMethod("expandRow", row)
 
     private fun runJsPathMethod(name: String, vararg paths: String) {
-        val path = paths.joinToString("/")
+        val path = paths.joinToString(separator)
         step("$name $path") {
             runJs(
                 """
