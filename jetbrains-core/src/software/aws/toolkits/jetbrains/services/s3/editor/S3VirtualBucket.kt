@@ -12,6 +12,9 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.GetBucketVersioningResponse
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.aws.toolkits.jetbrains.services.s3.download
@@ -49,6 +52,18 @@ class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtual
         }
     }
 
+    suspend fun getBucketVersioning(): GetBucketVersioningResponse = withContext(Dispatchers.IO) {
+        client.getBucketVersioning {
+            it.bucket(s3Bucket.name())
+        }
+    }
+
+    suspend fun listVersionObjects(key: String): ListObjectVersionsResponse = withContext(Dispatchers.IO) {
+        client.listObjectVersions {
+            it.bucket(s3Bucket.name()).prefix(key).maxKeys(MAX_ITEMS_TO_LOAD)
+        }
+    }
+
     suspend fun deleteObjects(keys: List<String>) {
         withContext(Dispatchers.IO) {
             val keysToDelete = keys.map { ObjectIdentifier.builder().key(it).build() }
@@ -71,7 +86,15 @@ class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtual
 
     suspend fun download(project: Project, key: String, output: OutputStream) {
         withContext(Dispatchers.IO) {
-            client.download(project, s3Bucket.name(), key, output).await()
+            val request = GetObjectRequest.builder().bucket(s3Bucket.name()).key(key).build()
+            client.download(project, request, output).await()
+        }
+    }
+
+    suspend fun downloadObjectVersion(project: Project, key: String, versionId: String, output: OutputStream) {
+        withContext(Dispatchers.IO) {
+            val request = GetObjectRequest.builder().bucket(s3Bucket.name()).key(key).versionId(versionId).build()
+            client.download(project, request, output).await()
         }
     }
 

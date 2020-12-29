@@ -19,7 +19,9 @@ import com.intellij.ui.treeStructure.treetable.TreeTable
 import com.intellij.util.containers.Convertor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -50,6 +52,9 @@ class S3TreeTable(
     private val project: Project
 ) : TreeTable(treeTableModel), CoroutineScope by ApplicationThreadPoolScope("S3TreeTable") {
     private val edt = getCoroutineUiContext()
+    val bucketVersioningStatus: BucketVersioningStatus = runBlocking {
+        bucket.getBucketVersioning().status()
+    }
 
     private val dropTargetListener = object : DropTargetAdapter() {
         override fun drop(dropEvent: DropTargetDropEvent) {
@@ -110,7 +115,8 @@ class S3TreeTable(
             S3Telemetry.downloadObject(project, false)
             return true
         }
-        val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}"))
+        val versionPostfix = if (objectNode is S3TreeObjectVersionNode) "_${objectNode.versionId}" else ""
+        val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}$versionPostfix"))
         // set the file to not be read only so that the S3Client can write to the file
         ApplicationManager.getApplication().runWriteAction {
             fileWrapper.virtualFile?.isWritable = true
@@ -118,7 +124,10 @@ class S3TreeTable(
 
         launch {
             try {
-                bucket.download(project, objectNode.key, fileWrapper.file.outputStream())
+                when (objectNode) {
+                    is S3TreeObjectVersionNode -> bucket.downloadObjectVersion(project, objectNode.key, objectNode.versionId, fileWrapper.file.outputStream())
+                    else -> bucket.download(project, objectNode.key, fileWrapper.file.outputStream())
+                }
                 withContext(edt) {
                     // If the file type is not associated, prompt user to associate. Returns null on cancel
                     fileWrapper.virtualFile?.let {

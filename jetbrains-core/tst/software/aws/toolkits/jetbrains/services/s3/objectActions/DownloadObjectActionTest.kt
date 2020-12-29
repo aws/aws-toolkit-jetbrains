@@ -302,14 +302,15 @@ class DownloadObjectActionTest {
     }
 
     private fun setUpS3TreeTable(s3Client: S3Client, vararg selectedFiles: String): S3TreeTable {
+        val testBucket = S3VirtualBucket(Bucket.builder().name("testBucket").build(), s3Client)
         val objectNodes = selectedFiles.map {
-            S3TreeObjectNode("testBucket", null, it, 1, Instant.now())
+            S3TreeObjectNode(testBucket, null, it, 1, Instant.now())
         }
 
         return mock {
             on { getSelectedNodes() }.thenReturn(objectNodes)
 
-            on { bucket }.thenReturn(S3VirtualBucket(Bucket.builder().name("testBucket").build(), s3Client))
+            on { bucket }.thenReturn(testBucket)
         }
     }
 

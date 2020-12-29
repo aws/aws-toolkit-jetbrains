@@ -65,7 +65,7 @@ class S3TreeDirectoryNode(private val bucket: S3VirtualBucket, parent: S3TreeDir
             .contents()
             ?.filterNotNull()
             ?.filterNot { it.key() == key }
-            ?.map { S3TreeObjectNode(bucketName, this, it.key(), it.size(), it.lastModified()) as S3TreeNode }
+            ?.map { S3TreeObjectNode(bucket, this, it.key(), it.size(), it.lastModified()) as S3TreeNode }
             ?: emptyList()
 
         return (folders + s3Objects).sortedBy { it.key } + continuation
@@ -78,10 +78,37 @@ class S3TreeDirectoryNode(private val bucket: S3VirtualBucket, parent: S3TreeDir
 
 private val fileTypeRegistry = FileTypeRegistry.getInstance()
 
-class S3TreeObjectNode(bucketName: String, parent: S3TreeDirectoryNode?, key: String, val size: Long, val lastModified: Instant) :
-    S3TreeNode(bucketName, parent, key) {
+open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?, key: String, val size: Long, val lastModified: Instant) :
+    S3TreeNode(bucket.name, parent, key) {
 
+    var showHistory: Boolean = false
     private val fileType = fileTypeRegistry.getFileTypeByFileName(name)
+
+    init {
+        fileType.takeIf { it !is UnknownFileType }?.icon.let { icon = it }
+    }
+
+    override fun getChildren(): Array<S3TreeNode> {
+        if (showHistory) {
+            val response = runBlocking {
+                bucket.listVersionObjects(key)
+            }
+            return (
+                response
+                    .versions()
+                    ?.map { S3TreeObjectVersionNode(bucket, parent, key, it.size(), it.lastModified(), it.versionId()) as S3TreeNode }
+                    ?: emptyList()
+                )
+                .toTypedArray()
+        }
+        return emptyArray()
+    }
+}
+
+class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?, key: String, size: Long, lastModified: Instant, val versionId: String) :
+    S3TreeObjectNode(bucket, parent, key, size, lastModified) {
+    override fun getName(): String = "/$versionId"
+    private val fileType = fileTypeRegistry.getFileTypeByFileName(key.substringAfterLast('/'))
 
     init {
         fileType.takeIf { it !is UnknownFileType }?.icon.let { icon = it }
