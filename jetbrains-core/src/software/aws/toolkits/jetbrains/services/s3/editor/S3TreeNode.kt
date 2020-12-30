@@ -107,8 +107,8 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3TreeDirectory
 
 class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?, key: String, size: Long, lastModified: Instant, val versionId: String) :
     S3TreeObjectNode(bucket, parent, key, size, lastModified) {
-    override fun getName(): String = "/$versionId"
-    private val fileType = fileTypeRegistry.getFileTypeByFileName(key.substringAfterLast('/'))
+    override fun getName(): String = "${super.getName()}_$versionId"
+    private val fileType = fileTypeRegistry.getFileTypeByFileName(super.getName())
 
     init {
         fileType.takeIf { it !is UnknownFileType }?.icon.let { icon = it }
