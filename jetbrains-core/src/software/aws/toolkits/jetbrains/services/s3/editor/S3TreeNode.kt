@@ -91,7 +91,7 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3TreeDirectory
     override fun getChildren(): Array<S3TreeNode> {
         if (showHistory) {
             val response = runBlocking {
-                bucket.listVersionObjects(key)
+                bucket.listObjectVersions(key)
             }
             return (
                 response
@@ -113,6 +113,8 @@ class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNo
     init {
         fileType.takeIf { it !is UnknownFileType }?.icon.let { icon = it }
     }
+
+    override fun getChildren(): Array<S3TreeNode> = emptyArray()
 }
 
 class S3TreeContinuationNode(bucketName: String, parent: S3TreeDirectoryNode?, key: String, val token: String) : S3TreeNode(bucketName, parent, key)

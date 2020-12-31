@@ -125,8 +125,8 @@ class S3TreeTable(
         launch {
             try {
                 when (objectNode) {
-                    is S3TreeObjectVersionNode -> bucket.downloadObjectVersion(project, objectNode.key, objectNode.versionId, fileWrapper.file.outputStream())
-                    else -> bucket.download(project, objectNode.key, fileWrapper.file.outputStream())
+                    is S3TreeObjectVersionNode -> bucket.download(project, objectNode.key, objectNode.versionId, fileWrapper.file.outputStream())
+                    else -> bucket.download(project, objectNode.key, null, fileWrapper.file.outputStream())
                 }
                 withContext(edt) {
                     // If the file type is not associated, prompt user to associate. Returns null on cancel

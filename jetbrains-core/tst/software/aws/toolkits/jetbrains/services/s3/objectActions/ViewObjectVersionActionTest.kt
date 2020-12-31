@@ -82,7 +82,7 @@ class ViewObjectVersionActionTest {
 
     private fun setUpVirtualBucket(objectVersion: List<ObjectVersion>): S3VirtualBucket =
         mock {
-            onBlocking { listVersionObjects(any()) }.thenReturn(ListObjectVersionsResponse.builder().versions(objectVersion).build())
+            onBlocking { listObjectVersions(any()) }.thenReturn(ListObjectVersionsResponse.builder().versions(objectVersion).build())
 
             on { name }.thenReturn("testBucket")
         }
