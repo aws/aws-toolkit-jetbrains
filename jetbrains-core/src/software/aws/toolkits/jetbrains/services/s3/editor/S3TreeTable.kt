@@ -19,9 +19,7 @@ import com.intellij.ui.treeStructure.treetable.TreeTable
 import com.intellij.util.containers.Convertor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.s3.model.BucketVersioningStatus
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -52,9 +50,6 @@ class S3TreeTable(
     private val project: Project
 ) : TreeTable(treeTableModel), CoroutineScope by ApplicationThreadPoolScope("S3TreeTable") {
     private val edt = getCoroutineUiContext()
-    val bucketVersioningStatus: BucketVersioningStatus = runBlocking {
-        bucket.getBucketVersioning().status()
-    }
 
     private val dropTargetListener = object : DropTargetAdapter() {
         override fun drop(dropEvent: DropTargetDropEvent) {

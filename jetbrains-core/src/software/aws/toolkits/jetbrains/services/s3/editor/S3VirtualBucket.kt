@@ -12,10 +12,10 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
-import software.amazon.awssdk.services.s3.model.GetBucketVersioningResponse
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.s3.download
 import software.aws.toolkits.jetbrains.services.s3.upload
 import java.io.InputStream
@@ -48,12 +48,6 @@ class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtual
     suspend fun listObjects(prefix: String, continuationToken: String?): ListObjectsV2Response = withContext(Dispatchers.IO) {
         client.listObjectsV2 {
             it.bucket(s3Bucket.name()).delimiter("/").prefix(prefix).maxKeys(MAX_ITEMS_TO_LOAD).continuationToken(continuationToken)
-        }
-    }
-
-    suspend fun getBucketVersioning(): GetBucketVersioningResponse = withContext(Dispatchers.IO) {
-        client.getBucketVersioning {
-            it.bucket(s3Bucket.name())
         }
     }
 

@@ -107,7 +107,12 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3TreeDirectory
 
 class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?, key: String, size: Long, lastModified: Instant, val versionId: String) :
     S3TreeObjectNode(bucket, parent, key, size, lastModified) {
-    override fun getName(): String = "${super.getName()}_$versionId"
+
+    override fun getName(): String {
+        // For not versioned buckets api can return versionId as literal 'null' so we avoid propagating null string to UI.
+        val namePostFix = if (versionId != "null") "_$versionId" else ""
+        return "${super.getName()}$namePostFix"
+    }
     private val fileType = fileTypeRegistry.getFileTypeByFileName(super.getName())
 
     init {
