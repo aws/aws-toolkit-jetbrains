@@ -15,7 +15,6 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.s3.download
 import software.aws.toolkits.jetbrains.services.s3.upload
 import java.io.InputStream
