@@ -151,7 +151,7 @@ class S3TreeTable(
         val parent = continuationNode.parent ?: return false
 
         launch {
-            parent.loadMore(continuationNode.token)
+            parent.loadMore(continuationNode.continuationMarker)
             refresh()
         }
 

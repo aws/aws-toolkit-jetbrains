@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ObjectVersion
+import software.amazon.awssdk.services.s3.paginators.ListObjectVersionsIterable
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
@@ -28,7 +29,7 @@ class ViewObjectVersionActionTest {
 
     @Test
     fun showObjectHistoryOnObjectNode() {
-        val objectNode = S3TreeObjectNode(setUpVirtualBucket(emptyList()), null, "testKey", 1, Instant.now())
+        val objectNode = S3TreeObjectNode(setUpVirtualBucket(setUpIterator(emptyList())), null, "testKey", 1, Instant.now())
         val s3TreeTable = setUpS3TreeTable(objectNode)
         val showHistoryFlagBeforeAction = objectNode.showHistory
         val nodeChildrenBeforeAction = objectNode.children
@@ -49,7 +50,7 @@ class ViewObjectVersionActionTest {
         val testKey = "testKey"
         val testObjectVersion1 = ObjectVersion.builder().size(111).versionId("testVersionKey").lastModified(Instant.MIN).build()
         val testObjectVersion2 = ObjectVersion.builder().size(222).versionId("testVersionKey2").lastModified(Instant.now()).build()
-        val objectNode = S3TreeObjectNode(setUpVirtualBucket(listOf(testObjectVersion1, testObjectVersion2)), null, testKey, 1, Instant.now())
+        val objectNode = S3TreeObjectNode(setUpVirtualBucket(setUpIterator(listOf(testObjectVersion1, testObjectVersion2))), null, testKey, 1, Instant.now())
         val viewObjectVersionAction = ViewObjectVersionAction(setUpS3TreeTable(objectNode))
 
         val nodeChildrenBeforeAction = objectNode.children
@@ -80,10 +81,15 @@ class ViewObjectVersionActionTest {
             on { getSelectedNodes() }.thenReturn(listOf(objectNode))
         }
 
-    private fun setUpVirtualBucket(objectVersion: List<ObjectVersion>): S3VirtualBucket =
+    private fun setUpVirtualBucket(listObjectVersionsIterable: ListObjectVersionsIterable): S3VirtualBucket =
         mock {
-            onBlocking { listObjectVersions(any()) }.thenReturn(ListObjectVersionsResponse.builder().versions(objectVersion).build())
+            onBlocking { listObjectVersionsPaginated(any()) }.thenReturn(listObjectVersionsIterable)
 
             on { name }.thenReturn("testBucket")
+        }
+
+    private fun setUpIterator(objectVersion: List<ObjectVersion>): ListObjectVersionsIterable =
+        mock {
+            on { iterator() }.thenReturn(listOf(ListObjectVersionsResponse.builder().versions(objectVersion).build()).toMutableList().iterator())
         }
 }
