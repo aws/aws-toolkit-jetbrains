@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.s3.editor
 
 import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.fileTypes.UnknownFileType
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.ui.treeStructure.SimpleNode
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.resources.message
@@ -109,15 +110,15 @@ class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNo
     S3TreeObjectNode(bucket, parent, key, size, lastModified) {
 
     override fun getName(): String {
-        // For not versioned buckets api can return versionId as literal 'null' so we avoid propagating null string to UI.
-        val namePostFix = if (versionId != "null") "_$versionId" else ""
-        return "${super.getName()}$namePostFix"
-    }
-    private val fileType = fileTypeRegistry.getFileTypeByFileName(super.getName())
+        val versionIdPostfix = if (versionId != "null") versionId else ""
+        val name = FileUtilRt.getNameWithoutExtension(super.getName())
+        val originalExtension = FileUtilRt.getExtension(super.getName())
+        val extension = if (originalExtension.isNotBlank()) ".$originalExtension" else ""
 
-    init {
-        fileType.takeIf { it !is UnknownFileType }?.icon.let { icon = it }
+        return "${name}_$versionIdPostfix$extension"
     }
+
+    private val fileType = fileTypeRegistry.getFileTypeByFileName(super.getName())
 
     override fun getChildren(): Array<S3TreeNode> = emptyArray()
 }
