@@ -110,6 +110,7 @@ class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNo
     S3TreeObjectNode(bucket, parent, key, size, lastModified) {
 
     override fun getName(): String {
+        // For not versioned buckets api can return versionId as literal 'null' so we avoid propagating null string to UI.
         val versionIdPostfix = if (versionId != "null") versionId else ""
         val name = FileUtilRt.getNameWithoutExtension(super.getName())
         val originalExtension = FileUtilRt.getExtension(super.getName())
