@@ -98,11 +98,10 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3LazyLoadParen
 
     override fun loadObjects(continuationMarker: String?): List<S3TreeNode> {
         if (showHistory) {
-            if (responseIterator == null) {
-                responseIterator = runBlocking {
-                    bucket.listObjectVersionsPaginated(key)
-                }.iterator()
-            }
+            responseIterator = responseIterator ?: runBlocking {
+                bucket.listObjectVersionsPaginated(key)
+            }.iterator()
+
             val nextPage = responseIterator
                 ?.next()
                 ?.versions()
