@@ -199,6 +199,7 @@ fun createDeployWorkflow(
         DeployLambda(
             packagedTemplateFile = packagedTemplate,
             stackName = stackName,
+            ecrRepo = ecrRepo,
             s3Bucket = s3Bucket,
             capabilities = capabilities,
             parameters = parameters,
