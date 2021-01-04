@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.sam
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.convertValue
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -35,6 +36,16 @@ object SamTemplateUtils {
     private val LOG = getLogger<SamTemplateUtils>()
     private val MAPPER = ObjectMapper(YAMLFactory())
     private const val S3_URI_PREFIX = "s3://"
+
+    fun getFunctionEnvironmentVariables(template: Path, logicalId: String): Map<String, String> = readTemplate(template) {
+        val function = requiredAt("/Resources").get(logicalId)
+            ?: throw IllegalArgumentException("No resource with the logical ID $logicalId")
+        val globals = at("/Globals/Function/Environment/Variables")
+        val variables = function.at("/Properties/Environment/Variables")
+        val globalVars = MAPPER.convertValue<Map<String, String>>(globals)
+        val vars = MAPPER.convertValue<Map<String, String>>(variables)
+        globalVars.plus(vars)
+    }
 
     fun getUploadedCodeUri(template: Path, logicalId: String): UploadedCode = readTemplate(template) {
         val function = requiredAt("/Resources").get(logicalId)

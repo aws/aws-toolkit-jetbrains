@@ -7,6 +7,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.intellij.ui.PopupMenuListenerAdapter
 import com.intellij.ui.SortedComboBoxModel
 import com.intellij.util.PathMappingSettings
 import org.jetbrains.yaml.YAMLFileType
@@ -18,6 +19,7 @@ import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils.getFunctionEnvironmentVariables
 import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField
 import software.aws.toolkits.jetbrains.ui.ProjectFileBrowseListener
 import software.aws.toolkits.jetbrains.utils.ui.find
@@ -27,6 +29,7 @@ import java.util.Comparator
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComboBox
 import javax.swing.JPanel
+import javax.swing.event.PopupMenuEvent
 
 class TemplateSettings(val project: Project) {
     lateinit var panel: JPanel
@@ -61,15 +64,27 @@ class TemplateSettings(val project: Project) {
                 setTemplateFile(it.canonicalPath)
             }
         )
+        function.addPopupMenuListener(
+            object : PopupMenuListenerAdapter() {
+                override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
+                    val selected = function.selected() ?: return
+                    setEnvVars(selected)
+                }
+            }
+        )
         function.addActionListener {
             val selected = function.selected()
-            if (selected !is SamFunction) {
-                imageSettingsPanel.isVisible = false
+            if (selected == null) {
                 environmentVariables.isEnabled = false
                 return@addActionListener
             }
-            imageSettingsPanel.isVisible = selected.packageType() == PackageType.IMAGE
-            setEnvVars(selected)
+            if (selected is SamFunction) {
+                imageSettingsPanel.isVisible = selected.packageType() == PackageType.IMAGE
+            } else {
+                imageSettingsPanel.isVisible = false
+            }
+            environmentVariables.isEnabled = true
+
         }
         runtime.addActionListener {
             val pathMappingsApplicable = pathMappingsApplicable()
@@ -89,7 +104,7 @@ class TemplateSettings(val project: Project) {
         function = ComboBox(functionModels)
         runtimeModel = SortedComboBoxModel(compareBy(Comparator.naturalOrder()) { it: Runtime -> it.toString() })
         runtime = ComboBox(runtimeModel)
-        environmentVariables = EnvironmentVariablesTextField(template = true)
+        environmentVariables = EnvironmentVariablesTextField(immutableKeys = true)
     }
 
     fun setTemplateFile(file: String?) {
@@ -108,16 +123,15 @@ class TemplateSettings(val project: Project) {
         functionModels.selectedItem = function
     }
 
-    fun setEnvVars(function: SamFunction) {
-        //SamTemplateUtils.functionFromElement()
-        environmentVariables.isVisible = true
-        environmentVariables.envVars = mutableMapOf(
-            "abc" to "def",
-            "asewr" to "whaterver"
-        )
-        //function.globals
-        //function.globals["Function"].getOptionalScalarProperty()
-        // SamTemplateUtils.find.findFunctionsFromTemplate(project, File(file))
+    private fun setEnvVars(function: Function) {
+        val envVars = getFunctionEnvironmentVariables(File(templateFile.text).toPath(), function.logicalName)
+        environmentVariables.envVars = envVars.map { (key, value) ->
+            if (environmentVariables.envVars[key] != null) {
+                key to environmentVariables.envVars[key]!!
+            } else {
+                key to value
+            }
+        }.toMap()
     }
 
     private fun updateFunctionModel(functions: List<Function>) {
