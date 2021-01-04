@@ -267,7 +267,7 @@ class SamTemplateUtilsTest {
     }
 
     @Test
-    fun `getCodeLocation missing logical id throws`() {
+    fun `getCodeLocation missing logical id throws for serverless function`() {
         val templateFile = tempFolder.newFile().toPath()
         templateFile.writeText(
             """
@@ -280,6 +280,50 @@ class SamTemplateUtilsTest {
                   Runtime: java8.al2
                   Timeout: 300
                   MemorySize: 128
+            """.trimIndent()
+        )
+
+        assertThatThrownBy {
+            SamTemplateUtils.getCodeLocation(templateFile, "MissingFunction")
+        }.hasMessageContaining("No resource with the logical ID MissingFunction")
+    }
+
+    @Test
+    fun `getCodeLocation missing logical id throws for lambda function`() {
+        val templateFile = tempFolder.newFile().toPath()
+        templateFile.writeText(
+            """
+            Resources:
+              Function:
+                Type: AWS::Lambda::Function
+                Properties:
+                  Code: foo.zip
+                  Handler: foobar.App::handleRequest
+                  Runtime: java8
+            """.trimIndent()
+        )
+
+        assertThatThrownBy {
+            SamTemplateUtils.getCodeLocation(templateFile, "MissingFunction")
+        }.hasMessageContaining("No resource with the logical ID MissingFunction")
+    }
+
+    @Test
+    fun `getCodeLocation missing logical id throws for image based function`() {
+        val templateFile = tempFolder.newFile().toPath()
+        templateFile.writeText(
+            """
+            Resources:
+              Function:
+                Type: AWS::Serverless::Function
+                Properties:
+                  PackageType: Image
+                  Timeout: 300
+                  MemorySize: 128
+                Metadata:
+                  DockerTag: v1
+                  DockerContext: src
+                  Dockerfile: Dockerfile
             """.trimIndent()
         )
 

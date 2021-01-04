@@ -10,7 +10,6 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -170,7 +169,7 @@ fun CodeInsightTestFixture.addFileToModule(
     val file = try {
         val contentRoot = ModuleRootManager.getInstance(module).contentRoots[0]
         runWriteAction {
-            contentRoot.writeChild(FileUtil.toSystemIndependentName(relativePath), fileText)
+            contentRoot.writeChild(relativePath, fileText)
         }
     } finally {
         PsiManager.getInstance(project).dropPsiCaches()

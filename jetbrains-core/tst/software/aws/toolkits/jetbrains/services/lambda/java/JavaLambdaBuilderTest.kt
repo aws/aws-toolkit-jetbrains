@@ -106,7 +106,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun javaHomeNotPassedWheInContainer() {
+    fun javaHomeNotPassedWhenInContainer() {
         envVarsRule.remove("JAVA_HOME")
 
         assertThat(sut.additionalBuildEnvironmentVariables(projectRule.module, SamOptions(buildInContainer = true)))
