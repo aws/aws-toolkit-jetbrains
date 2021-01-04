@@ -9,6 +9,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -26,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSup
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import java.net.InetSocketAddress
+import java.nio.file.Files
 
 class GoSamDebugSupport : SamDebugSupport {
     override fun createDebugProcess(
@@ -58,7 +60,7 @@ class GoSamDebugSupport : SamDebugSupport {
                         val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
 
                         if (processHandler == null || processHandler.isStartNotified) {
-                            // this branch will never be hit because it gets here too fast, but it's needed for corectness
+                            // this branch will never be hit because it gets here too fast, but it's needed for correctness
                             process.connect(socketAddress)
                         } else {
                             processHandler.addProcessListener(
@@ -70,7 +72,8 @@ class GoSamDebugSupport : SamDebugSupport {
                                             // Delve takes quite a while to start in the sam cli images hence long sleep
                                             // See https://youtrack.jetbrains.com/issue/GO-10279
                                             // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
-                                            delay(10000)
+                                            // 2000 is what JB uses in this scenario, so use it as our default
+                                            delay(Registry.intValue("aws.sam.goDebuggerDelay", 2000).toLong())
                                             process.connect(socketAddress)
                                         }
                                     }
@@ -96,9 +99,9 @@ class GoSamDebugSupport : SamDebugSupport {
     }
 
     override fun samArguments(runtime: Runtime, packageType: PackageType, debugPorts: List<Int>): List<String> = buildList {
-        val dlvFolder = getDelve()
+        val debugger = copyDlv()
         add("--debugger-path")
-        add(dlvFolder.absolutePath)
+        add(debugger)
         add("--debug-args")
         if (packageType == PackageType.IMAGE) {
             add(
@@ -107,6 +110,15 @@ class GoSamDebugSupport : SamDebugSupport {
         } else {
             add("-delveAPI=2")
         }
+    }
+
+    private fun copyDlv(): String {
+        val dlvFolder = getDelve()
+        val directory = Files.createTempDirectory("goDebugger")
+        Files.copy(dlvFolder.resolve("dlv").toPath(), directory.resolve("dlv"))
+        // Delve that comes packaged with the IDE does not have the executable flag set
+        directory.resolve("dlv").toFile().setExecutable(true)
+        return directory.toAbsolutePath().toString()
     }
 
     private companion object {
