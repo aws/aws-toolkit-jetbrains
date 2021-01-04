@@ -82,6 +82,9 @@ object SamTemplateUtils {
         version = codeUri.get("Version").textValue()
     )
 
+    /**
+     * Returns the location of the Lambda source code as per SAM build requirements
+     */
     fun getCodeLocation(template: Path, logicalId: String): String = readTemplate(template) {
         val function = findFunction(logicalId)
         if (function.isServerlessFunction()) {
