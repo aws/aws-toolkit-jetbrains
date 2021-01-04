@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.nio.file.Paths
@@ -73,6 +74,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
             project,
             result = Result.Cancelled,
             regionId = project.activeRegion().id,
+            lambdaPackageType = LambdaPackageType.from(view.configSettings.packageType().toString()),
             initialDeploy = true
         )
         super.doCancelAction()
@@ -91,6 +93,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
 
         val functionName = view.name.text
         val workflow = createWorkflow()
+        val packageType = LambdaPackageType.from(view.configSettings.packageType().toString())
 
         workflow.onSuccess = {
             saveSettings(it.getRequiredAttribute(FUNCTION_ARN))
@@ -104,6 +107,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
                 project,
                 result = Result.Succeeded,
                 regionId = project.activeRegion().id,
+                lambdaPackageType = packageType,
                 initialDeploy = true
             )
 
@@ -116,6 +120,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
                 project,
                 result = Result.Failed,
                 regionId = project.activeRegion().id,
+                lambdaPackageType = packageType,
                 initialDeploy = true
             )
         }

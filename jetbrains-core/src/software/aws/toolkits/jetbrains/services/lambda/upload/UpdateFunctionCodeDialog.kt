@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.nio.file.Paths
@@ -58,6 +59,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             project,
             result = Result.Cancelled,
             regionId = project.activeRegion().id,
+            lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
             initialDeploy = false
         )
         super.doCancelAction()
@@ -87,6 +89,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
                 project,
                 result = Result.Succeeded,
                 regionId = project.activeRegion().id,
+                lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
                 initialDeploy = false
             )
         }
@@ -97,6 +100,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
                 project,
                 result = Result.Failed,
                 regionId = project.activeRegion().id,
+                lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
                 initialDeploy = false
             )
         }
