@@ -42,9 +42,6 @@ class JTreeFixture(
         }
     }
 
-    fun clickRow(row: Int) = runJsRowMethod("clickRow", row)
-    fun expandRow(row: Int) = runJsRowMethod("expandRow", row)
-
     private fun runJsPathMethod(name: String, vararg paths: String) {
         val path = paths.joinToString(separator)
         step("$name $path") {
@@ -53,18 +50,6 @@ class JTreeFixture(
                 const jTreeFixture = JTreeFixture(robot, component);
                 jTreeFixture.replaceSeparator('$separator')
                 jTreeFixture.$name('$path') 
-                """.trimIndent()
-            )
-        }
-    }
-
-    private fun runJsRowMethod(name: String, row: Int) {
-        step("$name $row") {
-            runJs(
-                """
-                const jTreeFixture = JTreeFixture(robot, component);
-                jTreeFixture.replaceSeparator('$separator')
-                jTreeFixture.$name($row) 
                 """.trimIndent()
             )
         }

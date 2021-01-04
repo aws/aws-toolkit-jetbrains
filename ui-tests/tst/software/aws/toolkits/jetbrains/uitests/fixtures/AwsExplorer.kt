@@ -63,8 +63,6 @@ open class AwsExplorer(
                 explorerTree.expandPath(serviceName)
                 explorerTree.waitUntilLoaded()
 
-                step("DEBUG: ${explorerTree.findAllText().joinToString { it.text }}") {}
-
                 if (explorerTree.findAllText().any { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
                     if (attempt < MAX_ATTEMPTS) {
                         val pauseTime = Duration.ofSeconds(30 * attempt.toLong() + Random.nextInt(30))
