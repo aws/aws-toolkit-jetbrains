@@ -10,6 +10,7 @@ import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitForIgnoringError
 import java.io.File
 import java.nio.file.Path
@@ -47,17 +48,9 @@ class FileBrowserFixture(
     fun selectFile(path: Path) {
         val absolutePath = path.toAbsolutePath()
         step("Select $absolutePath") {
-            step("Fill file explorer with $absolutePath") {
-                val pathBox: JTextFieldFixture = if (remoteRobot.ideMajorVersion() <= 202) {
-                    find(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5))
-                } else {
-                    find(byXpath("//div[@class='BorderlessTextField']"), Duration.ofSeconds(5))
-                }
-                pathBox.text = absolutePath.toString()
-            }
-
             step("Refresh file explorer to make sure the file ${path.fileName} is loaded") {
-                waitForIgnoringError {
+                waitForIgnoringError(duration = Duration.ofSeconds(30), interval = Duration.ofSeconds(10)) {
+                    setFilePath(absolutePath)
                     findAndClick("//div[@accessiblename='Refresh']")
                     tree.requireSelection(*absolutePath.toParts())
                     true
@@ -65,6 +58,21 @@ class FileBrowserFixture(
             }
 
             pressOk()
+        }
+    }
+
+    private fun setFilePath(path: Path) {
+        step("Set file path to $path") {
+            val pathBox: JTextFieldFixture = if (remoteRobot.ideMajorVersion() <= 202) {
+                find(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5))
+            } else {
+                find(byXpath("//div[@class='BorderlessTextField']"), Duration.ofSeconds(5))
+            }
+            // clear the path box then type in the path. needs to be typed not set because sometimes it will fail
+            // to load properly if just set (and fail the tests)
+            pathBox.text = ""
+            pathBox.click()
+            keyboard { this.enterText(path.toString()) }
         }
     }
 
