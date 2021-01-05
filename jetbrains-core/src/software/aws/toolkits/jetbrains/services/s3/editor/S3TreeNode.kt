@@ -105,7 +105,7 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3LazyLoadParen
             val nextPage = responseIterator
                 ?.next()
                 ?.versions()
-                ?.map { S3TreeObjectVersionNode(bucket, parent, key, it.size(), it.lastModified(), it.versionId()) as S3TreeNode }
+                ?.map { S3TreeObjectVersionNode(bucket, this, key, it.size(), it.lastModified(), it.versionId()) as S3TreeNode }
                 ?: emptyList()
 
             if (responseIterator?.hasNext() == true) {
@@ -122,23 +122,20 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3LazyLoadParen
     }
 }
 
-class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3LazyLoadParentNode?, key: String, size: Long, lastModified: Instant, val versionId: String) :
+class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeObjectNode?, key: String, size: Long, lastModified: Instant, val versionId: String) :
     S3TreeObjectNode(bucket, parent, key, size, lastModified) {
 
     override fun getName(): String {
         // For not versioned buckets api can return versionId as literal 'null' so we avoid propagating null string to UI.
-        val versionIdPostfix = if (versionId != "null") versionId else ""
-        val name = FileUtilRt.getNameWithoutExtension(super.getName())
-        val originalExtension = FileUtilRt.getExtension(super.getName())
+        val versionId = if (versionId != "null") versionId else (parent as S3TreeObjectNode).name
+        val originalExtension = FileUtilRt.getExtension((parent as S3TreeObjectNode).name)
         val extension = if (originalExtension.isNotBlank()) ".$originalExtension" else ""
 
-        return "${name}_$versionIdPostfix$extension"
+        return "$versionId$extension"
     }
-
-    private val fileType = fileTypeRegistry.getFileTypeByFileName(super.getName())
 
     override fun getChildren(): Array<S3TreeNode> = emptyArray()
 }
 
-class S3TreeContinuationNode(bucketName: String, parent: S3LazyLoadParentNode?, key: String, val continuationMarker: String) :
+class S3TreeContinuationNode(bucketName: String, parent: S3LazyLoadParentNode, key: String, val continuationMarker: String) :
     S3TreeNode(bucketName, parent, key)

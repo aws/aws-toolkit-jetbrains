@@ -17,6 +17,7 @@ class CopyUrlAction(private val project: Project, treeTable: S3TreeTable) : Sing
     override fun performAction(node: S3TreeNode) = try {
         var url = treeTable.bucket.generateUrl(node.key).toString()
         if (node is S3TreeObjectVersionNode) {
+            // TODO replace with api call one available https://github.com/aws/aws-sdk-java-v2/issues/2224
             url += "?versionId=${node.versionId}"
         }
         CopyPasteManager.getInstance().setContents(StringSelection(url))

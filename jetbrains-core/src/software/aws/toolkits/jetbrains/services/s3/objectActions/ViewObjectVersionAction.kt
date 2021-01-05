@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import software.aws.toolkits.resources.message
 
 class ViewObjectVersionAction constructor(treeTable: S3TreeTable) :
-    SingleS3ObjectAction(treeTable, message("s3.version.history.view"), AllIcons.Actions.Find) {
+    SingleS3ObjectAction(treeTable, message("s3.version.history.view"), AllIcons.Actions.ShowAsTree) {
 
     override fun performAction(node: S3TreeNode) {
         if (node is S3TreeObjectNode) {
