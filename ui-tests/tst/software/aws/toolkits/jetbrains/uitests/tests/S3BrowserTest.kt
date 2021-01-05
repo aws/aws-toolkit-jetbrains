@@ -16,8 +16,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.io.TempDir
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException
+import software.aws.toolkits.core.s3.deleteBucketAndContents
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
@@ -66,7 +68,7 @@ class S3BrowserTest {
 
     @BeforeAll
     fun setUp() {
-        s3Client = S3Client.create()
+        s3Client = S3Client.builder().region(Region.US_WEST_2).build()
     }
 
     @Test
@@ -198,7 +200,7 @@ class S3BrowserTest {
     @AfterAll
     fun cleanup() {
         try {
-            s3Client.deleteBucket { it.bucket(bucket) }
+            s3Client.deleteBucketAndContents(bucket)
             waitForS3BucketDeletion()
         } catch (e: Exception) {
             if (e is NoSuchBucketException) {
