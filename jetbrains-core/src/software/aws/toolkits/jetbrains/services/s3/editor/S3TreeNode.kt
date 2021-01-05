@@ -122,7 +122,7 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3LazyLoadParen
     }
 }
 
-class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeObjectNode?, key: String, size: Long, lastModified: Instant, val versionId: String) :
+class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeObjectNode, key: String, size: Long, lastModified: Instant, val versionId: String) :
     S3TreeObjectNode(bucket, parent, key, size, lastModified) {
 
     override fun getName(): String {

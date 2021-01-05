@@ -324,7 +324,7 @@ class DownloadObjectActionTest {
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue()
 
-        assertThat(destinationFolder.resolve("testFile-1_testVersionId")).hasContent("testFile-1-content-old-version")
+        assertThat(destinationFolder.resolve("testFile-1testVersionId")).hasContent("testFile-1-content-old-version")
     }
 
     @Test
@@ -350,9 +350,9 @@ class DownloadObjectActionTest {
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue()
 
         assertThat(destinationFolder.resolve("testFile-1")).hasContent("testFile-1-content")
-        assertThat(destinationFolder.resolve("testFile-1_testVersionId")).hasContent("testFile-1-content-old-version")
+        assertThat(destinationFolder.resolve("testFile-1testVersionId")).hasContent("testFile-1-content-old-version")
         assertThat(destinationFolder.resolve("testFile-2")).hasContent("testFile-2-content")
-        assertThat(destinationFolder.resolve("testFile-3_testVersionId")).hasContent("testFile-3-content-old-version")
+        assertThat(destinationFolder.resolve("testFile-3testVersionId")).hasContent("testFile-3-content-old-version")
     }
 
     private fun setUpConflictResolutionResponses(choices: List<ConflictResolution>, vararg responses: ConflictResolution) {
@@ -369,9 +369,10 @@ class DownloadObjectActionTest {
 
     private fun setUpS3TreeTable(s3Client: S3Client, selectedFiles: List<Pair<String, Any>>): S3TreeTable {
         val testBucket = S3VirtualBucket(Bucket.builder().name("testBucket").build(), s3Client)
+        val emptyParent = S3TreeObjectNode(testBucket, null, "testBucket", 1, Instant.now())
         val objectNodes = selectedFiles.map {
             when (it.second) {
-                S3TreeObjectVersionNode::class -> S3TreeObjectVersionNode(testBucket, null, it.first, 1, Instant.now(), "testVersionId")
+                S3TreeObjectVersionNode::class -> S3TreeObjectVersionNode(testBucket, emptyParent, it.first, 1, Instant.now(), it.first + "testVersionId")
                 else -> S3TreeObjectNode(testBucket, null, it.first, 1, Instant.now())
             }
         }
