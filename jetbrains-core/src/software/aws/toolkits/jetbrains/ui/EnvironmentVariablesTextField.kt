@@ -103,7 +103,8 @@ class EnvironmentVariablesTextField(private val immutableKeys: Boolean) : TextFi
                 ListTableModel<Any>(NameColumnInfo(), object : ValueColumnInfo() {
                     // Always make the value editable, but not necessarily the key
                     override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean = true
-                })
+                }
+                )
         }.apply {
             setValues(convertToVariables(data.envs, template))
             setPasteActionEnabled(!immutableKeys)
