@@ -10,10 +10,7 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import com.intellij.remoterobot.utils.waitFor
-import org.assertj.swing.timing.Pause
 import java.time.Duration
-import kotlin.random.Random
 
 fun IdeaFrame.awsExplorer(
     timeout: Duration = Duration.ofSeconds(20),
@@ -48,36 +45,8 @@ open class AwsExplorer(
     }
 
     fun expandExplorerNode(vararg path: String) {
-        expandServiceNode(path.first())
-
         explorerTree().expandPath(*path)
         explorerTree().waitUntilLoaded()
-    }
-
-    private fun expandServiceNode(serviceName: String) {
-        step("Expand service node '$serviceName'") {
-            for (attempt in 1..MAX_ATTEMPTS) {
-                val explorerTree = explorerTree()
-
-                waitFor { explorerTree.hasPath(serviceName) }
-                explorerTree.expandPath(serviceName)
-                explorerTree.waitUntilLoaded()
-
-                if (explorerTree.findAllText().any { remoteText -> remoteText.text.startsWith("Error Loading Resources") }) {
-                    if (attempt < MAX_ATTEMPTS) {
-                        val pauseTime = Duration.ofSeconds(30 * attempt.toLong() + Random.nextInt(30))
-                        step("Error node was returned, will wait and try again in $pauseTime . Attempt $attempt of $MAX_ATTEMPTS") {
-                            Pause.pause(pauseTime.toMillis())
-                            refresh()
-                        }
-                    } else {
-                        throw IllegalStateException("Max attempts reached")
-                    }
-                } else {
-                    break
-                }
-            }
-        }
     }
 
     private fun refresh() {
@@ -88,9 +57,5 @@ open class AwsExplorer(
 
     fun doubleClickExplorer(vararg nodeElements: String) {
         explorerTree().doubleClickPath(*nodeElements)
-    }
-
-    private companion object {
-        const val MAX_ATTEMPTS = 5
     }
 }
