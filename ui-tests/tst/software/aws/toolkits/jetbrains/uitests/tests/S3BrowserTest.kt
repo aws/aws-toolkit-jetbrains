@@ -145,6 +145,7 @@ class S3BrowserTest {
 
             step("Rename a file") {
                 s3Tree {
+                    waitUntilLoaded()
                     findText(jsonFile).click()
                 }
                 actionButton(rename).click()
@@ -153,6 +154,7 @@ class S3BrowserTest {
                 // Wait for the item to be renamed
                 Thread.sleep(1000)
                 s3Tree {
+                    waitUntilLoaded()
                     findText(newJsonName)
                 }
             }
@@ -161,6 +163,7 @@ class S3BrowserTest {
                 s3Tree {
                     // Reopen the folder
                     findText(folder).doubleClick()
+                    waitUntilLoaded()
                     findText(jsonFile2).click()
                 }
                 actionButton(delete).click()
@@ -171,12 +174,14 @@ class S3BrowserTest {
                 s3Tree {
                     // Attempt to reopen the folder
                     findText(folder).doubleClick()
+                    waitUntilLoaded()
                     assertThat(findAllText(jsonFile2)).isEmpty()
                 }
             }
 
             step("Open known file-types") {
                 s3Tree {
+                    waitUntilLoaded()
                     findText(newJsonName).doubleClick()
                 }
 
