@@ -7,12 +7,13 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
-import com.intellij.ui.PopupMenuListenerAdapter
 import com.intellij.ui.SortedComboBoxModel
 import com.intellij.util.PathMappingSettings
 import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.cloudformation.Function
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
@@ -29,7 +30,6 @@ import java.util.Comparator
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComboBox
 import javax.swing.JPanel
-import javax.swing.event.PopupMenuEvent
 
 class TemplateSettings(val project: Project) {
     lateinit var panel: JPanel
@@ -64,14 +64,6 @@ class TemplateSettings(val project: Project) {
                 setTemplateFile(it.canonicalPath)
             }
         )
-        function.addPopupMenuListener(
-            object : PopupMenuListenerAdapter() {
-                override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
-                    val selected = function.selected() ?: return
-                    setEnvVars(selected)
-                }
-            }
-        )
         function.addActionListener {
             val selected = function.selected()
             if (selected == null) {
@@ -84,7 +76,7 @@ class TemplateSettings(val project: Project) {
                 imageSettingsPanel.isVisible = false
             }
             environmentVariables.isEnabled = true
-
+            setEnvVars(selected)
         }
         runtime.addActionListener {
             val pathMappingsApplicable = pathMappingsApplicable()
@@ -104,7 +96,7 @@ class TemplateSettings(val project: Project) {
         function = ComboBox(functionModels)
         runtimeModel = SortedComboBoxModel(compareBy(Comparator.naturalOrder()) { it: Runtime -> it.toString() })
         runtime = ComboBox(runtimeModel)
-        environmentVariables = EnvironmentVariablesTextField(immutableKeys = true)
+        environmentVariables = EnvironmentVariablesTextField()
     }
 
     fun setTemplateFile(file: String?) {
@@ -123,15 +115,11 @@ class TemplateSettings(val project: Project) {
         functionModels.selectedItem = function
     }
 
-    private fun setEnvVars(function: Function) {
-        val envVars = getFunctionEnvironmentVariables(File(templateFile.text).toPath(), function.logicalName)
-        environmentVariables.envVars = envVars.map { (key, value) ->
-            if (environmentVariables.envVars[key] != null) {
-                key to environmentVariables.envVars[key]!!
-            } else {
-                key to value
-            }
-        }.toMap()
+    private fun setEnvVars(function: Function) = try {
+        environmentVariables.envVars = getFunctionEnvironmentVariables(File(templateFile.text).toPath(), function.logicalName)
+    } catch (e: Exception) {
+        // We don't want to throw exceptions out to the UI when we fail to parse the template, so log and continue
+        LOG.warn(e) { "Failed to set environment variables field" }
     }
 
     private fun updateFunctionModel(functions: List<Function>) {
@@ -146,4 +134,8 @@ class TemplateSettings(val project: Project) {
     }
 
     private fun pathMappingsApplicable(): Boolean = runtime.selected()?.runtimeGroup?.supportsPathMappings ?: false
+
+    private companion object {
+        val LOG = getLogger<TemplateSettings>()
+    }
 }

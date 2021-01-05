@@ -11,9 +11,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.DocumentAdapter
-import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.UserActivityProviderComponent
-import com.intellij.util.ui.ListTableModel
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import java.util.LinkedHashMap
@@ -29,7 +27,7 @@ import javax.swing.event.DocumentEvent
  * needs but with same UX so users are used to it. Namely we do not support inheriting system env vars, but rest
  * of UX is the same
  */
-class EnvironmentVariablesTextField(private val immutableKeys: Boolean) : TextFieldWithBrowseButton(), UserActivityProviderComponent {
+class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityProviderComponent {
     private var data = EnvironmentVariablesData.create(emptyMap(), false)
     private val listeners = CopyOnWriteArrayList<ChangeListener>()
 
@@ -42,7 +40,7 @@ class EnvironmentVariablesTextField(private val immutableKeys: Boolean) : TextFi
 
     init {
         addActionListener {
-            EnvironmentVariablesDialog(immutableKeys, this).show()
+            EnvironmentVariablesDialog(this).show()
         }
 
         textField.document.addDocumentListener(
@@ -59,7 +57,9 @@ class EnvironmentVariablesTextField(private val immutableKeys: Boolean) : TextFi
     }
 
     private fun convertToVariables(envVars: Map<String, String>, readOnly: Boolean): List<EnvironmentVariable> = envVars.map { (key, value) ->
-        EnvironmentVariable(key, value, readOnly)
+        object : EnvironmentVariable(key, value, readOnly) {
+            override fun getNameIsWriteable(): Boolean = !readOnly
+        }
     }
 
     override fun getDefaultIcon(): Icon = AllIcons.General.InlineVariables
@@ -97,17 +97,10 @@ class EnvironmentVariablesTextField(private val immutableKeys: Boolean) : TextFi
         }
     }
 
-    private inner class EnvironmentVariablesDialog(template: Boolean, parent: Component) : DialogWrapper(parent, true) {
-        private val envVarTable = object : EnvVariablesTable() {
-            override fun createListModel(): ListTableModel<*> =
-                ListTableModel<Any>(NameColumnInfo(), object : ValueColumnInfo() {
-                    // Always make the value editable, but not necessarily the key
-                    override fun isCellEditable(environmentVariable: EnvironmentVariable): Boolean = true
-                }
-                )
-        }.apply {
-            setValues(convertToVariables(data.envs, template))
-            setPasteActionEnabled(!immutableKeys)
+    private inner class EnvironmentVariablesDialog(parent: Component) : DialogWrapper(parent, true) {
+        private val envVarTable = EnvVariablesTable().apply {
+            setValues(convertToVariables(data.envs, false))
+            setPasteActionEnabled(true)
         }
 
         init {
@@ -115,12 +108,7 @@ class EnvironmentVariablesTextField(private val immutableKeys: Boolean) : TextFi
             init()
         }
 
-        override fun createCenterPanel(): JComponent = envVarTable.component.apply {
-            if (immutableKeys) {
-                ToolbarDecorator.findAddButton(this)?.let { it.isVisible = false }
-                ToolbarDecorator.findRemoveButton(this)?.let { it.isVisible = false }
-            }
-        }
+        override fun createCenterPanel(): JComponent = envVarTable.component
 
         override fun doOKAction() {
             envVarTable.stopEditing()

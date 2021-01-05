@@ -42,9 +42,18 @@ object SamTemplateUtils {
             ?: throw IllegalArgumentException("No resource with the logical ID $logicalId")
         val globals = at("/Globals/Function/Environment/Variables")
         val variables = function.at("/Properties/Environment/Variables")
-        val globalVars = MAPPER.convertValue<Map<String, String>>(globals)
-        val vars = MAPPER.convertValue<Map<String, String>>(variables)
-        globalVars.plus(vars)
+        val globalVars = try {
+            MAPPER.convertValue<Map<String, String>>(globals)
+        } catch (e: Exception) {
+            null
+        } ?: emptyMap()
+        val vars = try {
+            MAPPER.convertValue<Map<String, String>>(variables)
+        } catch (e: Exception) {
+            null
+        } ?: emptyMap()
+        // function vars overwrite global ones if they overlap, so this works as expected
+        globalVars + vars
     }
 
     fun getUploadedCodeUri(template: Path, logicalId: String): UploadedCode = readTemplate(template) {
