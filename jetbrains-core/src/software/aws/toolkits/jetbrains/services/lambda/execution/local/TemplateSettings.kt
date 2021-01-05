@@ -70,11 +70,7 @@ class TemplateSettings(val project: Project) {
                 environmentVariables.isEnabled = false
                 return@addActionListener
             }
-            if (selected is SamFunction) {
-                imageSettingsPanel.isVisible = selected.packageType() == PackageType.IMAGE
-            } else {
-                imageSettingsPanel.isVisible = false
-            }
+            imageSettingsPanel.isVisible = selected is SamFunction && selected.packageType() == PackageType.IMAGE
             environmentVariables.isEnabled = true
             setEnvVars(selected)
         }
