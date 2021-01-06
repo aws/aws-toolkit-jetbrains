@@ -66,13 +66,13 @@ class TemplateSettings(val project: Project) {
         )
         function.addActionListener {
             val selected = function.selected()
+            imageSettingsPanel.isVisible = selected is SamFunction && selected.packageType() == PackageType.IMAGE
             if (selected == null) {
                 environmentVariables.isEnabled = false
-                return@addActionListener
+            } else {
+                environmentVariables.isEnabled = true
+                setEnvVars(selected)
             }
-            imageSettingsPanel.isVisible = selected is SamFunction && selected.packageType() == PackageType.IMAGE
-            environmentVariables.isEnabled = true
-            setEnvVars(selected)
         }
         runtime.addActionListener {
             val pathMappingsApplicable = pathMappingsApplicable()
