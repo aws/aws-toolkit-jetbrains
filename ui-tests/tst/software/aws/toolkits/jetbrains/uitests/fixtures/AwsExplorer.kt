@@ -49,12 +49,6 @@ open class AwsExplorer(
         explorerTree().waitUntilLoaded()
     }
 
-    private fun refresh() {
-        step("Pressing Refresh...") {
-            findAndClick("//div[@accessiblename='Refresh AWS Connection']")
-        }
-    }
-
     fun doubleClickExplorer(vararg nodeElements: String) {
         explorerTree().doubleClickPath(*nodeElements)
     }
