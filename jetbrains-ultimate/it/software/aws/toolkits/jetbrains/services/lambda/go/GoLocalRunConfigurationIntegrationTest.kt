@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.lambda.go
 
 import com.intellij.execution.executors.DefaultDebugExecutor
+import com.intellij.openapi.module.ModuleType
+import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeTrue
@@ -20,7 +22,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHan
 import software.aws.toolkits.jetbrains.utils.WebStormTestUtils
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
-import software.aws.toolkits.jetbrains.utils.rules.GoCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.HeavyGoCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addGoModFile
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 
@@ -36,7 +38,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
 
     @Rule
     @JvmField
-    val projectRule = GoCodeInsightTestFixtureRule()
+    val projectRule = HeavyGoCodeInsightTestFixtureRule()
 
     @Rule
     @JvmField
@@ -68,6 +70,8 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
         setSamExecutableFromEnvironment()
 
         val fixture = projectRule.fixture
+
+        PsiTestUtil.addModule(projectRule.project, ModuleType.EMPTY, "main", fixture.tempDirFixture.findOrCreateDir("."))
 
         val psiFile = fixture.addFileToProject("hello-world/main.go", fileContents)
 

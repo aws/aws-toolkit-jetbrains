@@ -3,51 +3,56 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
+import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ProjectFileIndex
-import com.intellij.psi.PsiElement
-import com.intellij.testFramework.runInEdtAndGet
+import com.intellij.testFramework.PsiTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
-import software.aws.toolkits.jetbrains.utils.rules.GoCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.HeavyGoCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addGoLambdaHandler
 import software.aws.toolkits.jetbrains.utils.rules.addGoModFile
-import java.nio.file.Path
 import java.nio.file.Paths
 
 class GoLambdaBuilderTest {
     @Rule
     @JvmField
-    val projectRule = GoCodeInsightTestFixtureRule()
+    val projectRule = HeavyGoCodeInsightTestFixtureRule()
 
     private val sut = GoLambdaBuilder()
 
+    @Before
+    fun setUp() {
+        // This sets the root as /main. We want a source root so we don't look outside of our project for a go.mod file
+        PsiTestUtil.addModule(projectRule.project, ModuleType.EMPTY, "main", projectRule.fixture.tempDirFixture.findOrCreateDir("main"))
+    }
+
     @Test
     fun handlerBaseDirIsCorrect() {
-        val handler = projectRule.fixture.addGoLambdaHandler(subPath = "helloworld")
-        projectRule.fixture.addGoModFile("helloworld")
+        val handler = projectRule.fixture.addGoLambdaHandler(subPath = "main/helloworld")
+        projectRule.fixture.addGoModFile("main/helloworld")
 
         val baseDir = sut.handlerBaseDirectory(projectRule.module, handler)
-        val root = getContentRoot(handler)
-        assertThat(baseDir.toAbsolutePath()).isEqualTo(root.resolve("helloworld"))
+        val root = Paths.get(projectRule.fixture.tempDirPath)
+        assertThat(baseDir.toAbsolutePath()).isEqualTo(root.resolve("main/helloworld"))
     }
 
     @Test
     fun handlerBaseDirIsCorrectInSubDir() {
-        val handler = projectRule.fixture.addGoLambdaHandler(subPath = "helloworld/foobar")
-        projectRule.fixture.addGoModFile("helloworld")
+        val handler = projectRule.fixture.addGoLambdaHandler(subPath = "main/helloworld/foobar")
+        projectRule.fixture.addGoModFile("main/helloworld")
 
         val baseDir = sut.handlerBaseDirectory(projectRule.module, handler)
-        val root = getContentRoot(handler)
-        assertThat(baseDir).isEqualTo(root.resolve("helloworld"))
+        val root = Paths.get(projectRule.fixture.tempDirPath)
+        assertThat(baseDir).isEqualTo(root.resolve("main/helloworld"))
     }
 
     @Test
     fun missingGoModThrowsForHandlerBaseDir() {
-        val handlerFile = projectRule.fixture.addGoLambdaHandler(subPath = "helloworld/foobar")
+        val handlerFile = projectRule.fixture.addGoLambdaHandler(subPath = "main/helloworld/foobar")
 
         assertThatThrownBy {
             sut.handlerBaseDirectory(projectRule.module, handlerFile)
@@ -59,11 +64,5 @@ class GoLambdaBuilderTest {
         val baseDir = sut.getBuildDirectory(projectRule.module)
         val root = ModuleRootManager.getInstance(projectRule.module).contentRoots.first().path
         assertThat(baseDir).isEqualTo(Paths.get(root, SamCommon.SAM_BUILD_DIR, "build"))
-    }
-
-    private fun getContentRoot(handler: PsiElement): Path = runInEdtAndGet {
-        Paths.get(
-            ProjectFileIndex.getInstance(projectRule.project).getContentRootForFile(handler.containingFile.virtualFile)?.path ?: ""
-        )
     }
 }
