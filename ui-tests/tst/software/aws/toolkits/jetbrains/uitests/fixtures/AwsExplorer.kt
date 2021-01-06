@@ -20,7 +20,7 @@ fun IdeaFrame.awsExplorer(
 
     step("AWS explorer") {
         val explorer = try {
-            find<AwsExplorer>(locator, timeout)
+            find<AwsExplorer>(locator)
         } catch (e: Exception) {
             step("Open tool window") {
                 // Click the tool window stripe
