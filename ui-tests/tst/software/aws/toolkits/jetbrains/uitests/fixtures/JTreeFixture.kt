@@ -8,6 +8,7 @@ import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.waitFor
+import org.assertj.swing.timing.Pause
 import java.time.Duration
 
 class JTreeFixture(
@@ -58,9 +59,11 @@ class JTreeFixture(
 
 fun JTreeFixture.waitUntilLoaded() {
     step("waiting for loading text to go away...") {
+        Pause.pause(100)
         waitFor(duration = Duration.ofMinutes(1)) {
             // Do not use hasText(String) https://github.com/JetBrains/intellij-ui-test-robot/issues/10
             !hasText { txt -> txt.text == "loading..." }
         }
+        Pause.pause(100)
     }
 }
