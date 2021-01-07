@@ -76,7 +76,7 @@ class S3TreeTable(
     private val openFileListener = object : DoubleClickListener() {
         override fun onDoubleClick(e: MouseEvent): Boolean {
             val row = rowAtPoint(e.point).takeIf { it >= 0 } ?: return false
-            return handleOpeningFile(row)
+            return handleOpeningFile(row, isDoubleClick = true)
         }
     }
 
@@ -97,20 +97,27 @@ class S3TreeTable(
             deleteSelectedObjects(project, this@S3TreeTable)
         }
         if (e.keyCode == KeyEvent.VK_ENTER && selectedRowCount == 1) {
-            handleOpeningFile(selectedRow)
+            handleOpeningFile(selectedRow, isDoubleClick = false)
             handleLoadingMore(selectedRow)
         }
     }
 
-    private fun handleOpeningFile(row: Int): Boolean {
+    private fun handleOpeningFile(row: Int, isDoubleClick: Boolean): Boolean {
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3TreeObjectNode ?: return false
+
+        // Don't process double click if it has children (i.e. versions) since it will trigger expansion as well
+        if (isDoubleClick && objectNode.childCount > 0) {
+            return false
+        }
+
         val maxFileSize = getUserContentLoadLimit()
         if (objectNode.size > maxFileSize) {
             notifyError(content = message("s3.open.file_too_big", StringUtil.formatFileSize(maxFileSize.toLong())))
             S3Telemetry.downloadObject(project, false)
             return true
         }
-        val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}"))
+        val versionPostfix = if (objectNode is S3TreeObjectVersionNode) "_${objectNode.versionId}" else ""
+        val fileWrapper = VirtualFileWrapper(File("${FileUtil.getTempDirectory()}${File.separator}${objectNode.key.replace('/', '_')}$versionPostfix"))
         // set the file to not be read only so that the S3Client can write to the file
         ApplicationManager.getApplication().runWriteAction {
             fileWrapper.virtualFile?.isWritable = true
@@ -118,7 +125,10 @@ class S3TreeTable(
 
         launch {
             try {
-                bucket.download(project, objectNode.key, fileWrapper.file.outputStream())
+                when (objectNode) {
+                    is S3TreeObjectVersionNode -> bucket.download(project, objectNode.key, objectNode.versionId, fileWrapper.file.outputStream())
+                    else -> bucket.download(project, objectNode.key, null, fileWrapper.file.outputStream())
+                }
                 withContext(edt) {
                     // If the file type is not associated, prompt user to associate. Returns null on cancel
                     fileWrapper.virtualFile?.let {
@@ -147,7 +157,7 @@ class S3TreeTable(
         val parent = continuationNode.parent ?: return false
 
         launch {
-            parent.loadMore(continuationNode.token)
+            parent.loadMore(continuationNode.continuationMarker)
             refresh()
         }
 
