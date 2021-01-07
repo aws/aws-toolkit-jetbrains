@@ -28,6 +28,7 @@ class JTreeFixture(
                 const jTreeFixture = JTreeFixture(robot, component);
                 jTreeFixture.replaceSeparator('$separator')
                 try {
+                    // Throws LocationUnavailableException if not found
                     jTreeFixture.node('$fullPath') 
                     true
                 } catch(e) {

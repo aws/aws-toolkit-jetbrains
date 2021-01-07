@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.uitests.tests
 
 import com.intellij.remoterobot.fixtures.ComponentFixture
+import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
@@ -23,7 +24,6 @@ import software.aws.toolkits.core.s3.deleteBucketAndContents
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
-import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.actionButton
 import software.aws.toolkits.jetbrains.uitests.fixtures.actionMenuItem
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
@@ -137,14 +137,12 @@ class S3BrowserTest {
                 Thread.sleep(1000)
                 s3Tree {
                     findText(folder).doubleClick()
-                    waitUntilLoaded(folder)
                     findText(jsonFile2)
                 }
             }
 
             step("Rename a file") {
                 s3Tree {
-                    waitUntilLoaded()
                     findText(jsonFile).click()
                 }
                 actionButton(rename).click()
@@ -153,7 +151,6 @@ class S3BrowserTest {
                 // Wait for the item to be renamed
                 Thread.sleep(1000)
                 s3Tree {
-                    waitUntilLoaded()
                     findText(newJsonName)
                 }
             }
@@ -162,7 +159,6 @@ class S3BrowserTest {
                 s3Tree {
                     // Reopen the folder
                     findText(folder).doubleClick()
-                    waitUntilLoaded()
                     findText(jsonFile2).click()
                 }
                 actionButton(delete).click()
@@ -173,14 +169,12 @@ class S3BrowserTest {
                 s3Tree {
                     // Attempt to reopen the folder
                     findText(folder).doubleClick()
-                    waitUntilLoaded(folder)
                     assertThat(findAllText(jsonFile2)).isEmpty()
                 }
             }
 
             step("Open known file-types") {
                 s3Tree {
-                    waitUntilLoaded()
                     findText(newJsonName).doubleClick()
                 }
 
@@ -228,7 +222,8 @@ class S3BrowserTest {
         s3Client.waiter().waitUntilBucketExists { it.bucket(bucket) }
     }
 
-    private fun IdeaFrame.s3Tree(func: (JTreeFixture.() -> Unit)) {
-        find<JTreeFixture>(byXpath("//div[@class='S3TreeTable']"), Duration.ofSeconds(5)).apply(func)
+    // TODO: Can't map the TreeTable into JTreeFixture, need to make a bridge
+    private fun IdeaFrame.s3Tree(func: (ContainerFixture.() -> Unit)) {
+        find<ContainerFixture>(byXpath("//div[@class='S3TreeTable']"), Duration.ofSeconds(5)).apply(func)
     }
 }
