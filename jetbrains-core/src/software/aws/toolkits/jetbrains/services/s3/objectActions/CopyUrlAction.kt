@@ -16,7 +16,7 @@ import java.awt.datatransfer.StringSelection
 
 class CopyUrlAction(private val project: Project, treeTable: S3TreeTable) : SingleS3ObjectAction(treeTable, message("s3.copy.url")) {
     override fun performAction(node: S3TreeNode) = try {
-        val versionId =  (node as? S3TreeObjectVersionNode)?.versionId?.takeIf { it != NOT_VERSIONED_VERSION_ID }
+        val versionId = (node as? S3TreeObjectVersionNode)?.versionId?.takeIf { it != NOT_VERSIONED_VERSION_ID }
         val url = treeTable.bucket.generateUrl(node.key, versionId).toString()
         CopyPasteManager.getInstance().setContents(StringSelection(url))
 

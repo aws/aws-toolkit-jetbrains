@@ -128,8 +128,6 @@ open class S3TreeObjectNode(val bucket: S3VirtualBucket, parent: S3LazyLoadParen
 class S3TreeObjectVersionNode(bucket: S3VirtualBucket, parent: S3TreeObjectNode, key: String, size: Long, lastModified: Instant, val versionId: String) :
     S3TreeObjectNode(bucket, parent, key, size, lastModified) {
 
-
-
     override fun getName(): String {
         // For not versioned buckets api can return versionId as literal 'null' so we avoid propagating null string to UI.
         val versionId = if (versionId != NOT_VERSIONED_VERSION_ID) versionId else (parent as S3TreeObjectNode).name
