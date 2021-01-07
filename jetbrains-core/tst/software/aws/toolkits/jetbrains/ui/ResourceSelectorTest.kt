@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
+import software.aws.toolkits.jetbrains.utils.waitToLoad
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 
@@ -52,6 +53,7 @@ class ResourceSelectorTest {
         val comboBox = ResourceSelector.builder().resource(mockResource).awsConnection(projectRule.project).build()
 
         comboBox.reload()
+        comboBox.waitToLoad()
 
         // There is a potential timing issue with reload since it's asyncrhonous but does not return a future
         // so, if we hit it, sleep to fix the issue
@@ -93,6 +95,7 @@ class ResourceSelectorTest {
         }
 
         comboBox.reload()
+        comboBox.waitToLoad()
 
         retryableAssert {
             runInEdtAndWait {
@@ -116,6 +119,9 @@ class ResourceSelectorTest {
         }
 
         future.complete(listOf("foo", "bar", "baz"))
+
+        comboBox.waitToLoad()
+
         retryableAssert {
             runInEdtAndWait {
                 assertThat(comboBox.isEnabled).isTrue()
@@ -141,6 +147,8 @@ class ResourceSelectorTest {
 
         future.complete(listOf("foo", "bar", "baz"))
 
+        comboBox.waitToLoad()
+
         retryableAssert {
             runInEdtAndWait {
                 assertThat(comboBox.selected()).isEqualTo("bar")
@@ -159,6 +167,7 @@ class ResourceSelectorTest {
         }
 
         comboBox.reload()
+        comboBox.waitToLoad()
 
         retryableAssert {
             runInEdtAndWait {
@@ -177,6 +186,7 @@ class ResourceSelectorTest {
         }
 
         comboBox.reload()
+        comboBox.waitToLoad()
 
         retryableAssert {
             runInEdtAndWait {
@@ -244,6 +254,8 @@ class ResourceSelectorTest {
         resultList.forEach {
             it.second.complete(it.third)
         }
+
+        comboBox.waitToLoad()
 
         retryableAssert {
             runInEdtAndWait {
