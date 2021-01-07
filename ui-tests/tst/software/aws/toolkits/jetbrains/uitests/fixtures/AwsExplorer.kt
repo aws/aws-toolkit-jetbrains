@@ -46,7 +46,6 @@ open class AwsExplorer(
 
     fun expandExplorerNode(vararg path: String) {
         explorerTree().expandPath(*path)
-        explorerTree().waitUntilLoaded()
     }
 
     fun doubleClickExplorer(vararg nodeElements: String) {

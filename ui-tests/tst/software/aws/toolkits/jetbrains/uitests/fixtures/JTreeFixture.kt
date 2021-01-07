@@ -11,59 +11,93 @@ import com.intellij.remoterobot.utils.waitFor
 import org.assertj.swing.timing.Pause
 import java.time.Duration
 
+/**
+ * JTreeFixture designed to work with models that use AsyncTreeModel
+ */
 class JTreeFixture(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : ComponentFixture(remoteRobot, remoteComponent) {
     var separator: String = "/"
 
-    fun hasPath(vararg paths: String) = try {
-        runJsPathMethod("node", *paths)
-        true
-    } catch (e: Exception) {
-        false
+    fun hasPath(vararg path: String): Boolean {
+        val fullPath = path.joinToString(separator)
+        return step("hasPath $fullPath") {
+           callJs(
+                """
+                const jTreeFixture = JTreeFixture(robot, component);
+                jTreeFixture.replaceSeparator('$separator')
+                try {
+                    jTreeFixture.node('$fullPath') 
+                    true
+                } catch(e) {
+                    false
+                }
+                """.trimIndent()
+            )
+        }
     }
 
-    fun clickPath(vararg paths: String) = runJsPathMethod("clickPath", *paths)
-    fun expandPath(vararg paths: String) = runJsPathMethod("expandPath", *paths)
-    fun rightClickPath(vararg paths: String) = runJsPathMethod("rightClickPath", *paths)
-    fun doubleClickPath(vararg paths: String) = runJsPathMethod("doubleClickPath", *paths)
+    fun expandPath(vararg path: String) = expandAndWait(*path)
 
-    fun requireSelection(vararg paths: String) {
-        val path = paths.joinToString(separator)
-        step("requireSelection $path") {
+    fun clickPath(vararg path: String) {
+        expandAndWait(*path.dropLast(1).toTypedArray())
+        runJsPathMethod("clickPath", *path)
+    }
+
+    fun rightClickPath(vararg path: String) {
+        expandAndWait(*path.dropLast(1).toTypedArray())
+        runJsPathMethod("rightClickPath", *path)
+    }
+
+    fun doubleClickPath(vararg path: String) {
+        expandAndWait(*path.dropLast(1).toTypedArray())
+        runJsPathMethod("doubleClickPath", *path)
+    }
+
+    private fun expandAndWait(vararg path: String) {
+        // Expand each path segment and wait for it to load before loading the next segment
+        for(i in 1..path.size) {
+            val subPath = path.copyOfRange(0, i)
+            runJsPathMethod("expandPath", *subPath)
+            waitUntilLoaded(*subPath)
+        }
+    }
+
+    fun waitUntilLoaded(vararg path: String) {
+        step("waiting for loading text to go away...") {
+            Pause.pause(100)
+            waitFor(duration = Duration.ofMinutes(1)) {
+                !this.hasPath(*path, "loading...")
+            }
+            Pause.pause(100)
+        }
+    }
+
+    fun requireSelection(vararg path: String) {
+        val fullPath = path.joinToString(separator)
+        step("requireSelection $fullPath") {
             runJs(
                 """
                 const jTreeFixture = JTreeFixture(robot, component);
                 jTreeFixture.replaceSeparator('$separator')
                 // Have to disambiguate int[] vs string[]
-                jTreeFixture['requireSelection(java.lang.String[])'](['$path']) 
+                jTreeFixture['requireSelection(java.lang.String[])'](['$fullPath']) 
                 """.trimIndent()
             )
         }
     }
 
-    private fun runJsPathMethod(name: String, vararg paths: String) {
-        val path = paths.joinToString(separator)
-        step("$name $path") {
+    private fun runJsPathMethod(name: String, vararg path: String) {
+        val fullPath = path.joinToString(separator)
+        step("$name $fullPath") {
             runJs(
                 """
                 const jTreeFixture = JTreeFixture(robot, component);
                 jTreeFixture.replaceSeparator('$separator')
-                jTreeFixture.$name('$path') 
+                jTreeFixture.$name('$fullPath') 
                 """.trimIndent()
             )
         }
-    }
-}
-
-fun JTreeFixture.waitUntilLoaded() {
-    step("waiting for loading text to go away...") {
-        Pause.pause(100)
-        waitFor(duration = Duration.ofMinutes(1)) {
-            // Do not use hasText(String) https://github.com/JetBrains/intellij-ui-test-robot/issues/10
-            !hasText { txt -> txt.text == "loading..." }
-        }
-        Pause.pause(100)
     }
 }
