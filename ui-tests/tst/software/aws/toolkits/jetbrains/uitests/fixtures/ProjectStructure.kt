@@ -23,7 +23,7 @@ fun IdeaFrame.projectStructureDialog(
             keyboard { hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_SHIFT, KeyEvent.VK_S) }
         }
 
-        val dialog = RemoteRobot.find<ProjectStructureDialog>(byXpath("//div[@accessiblename='Project Structure']"), timeout)
+        val dialog = remoteRobot.find<ProjectStructureDialog>(byXpath("//div[@accessiblename='Project Structure']"), timeout)
 
         dialog.apply(function)
 
