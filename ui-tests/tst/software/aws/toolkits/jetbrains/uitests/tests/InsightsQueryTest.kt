@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundExce
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.IdeaFrame
-import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
@@ -127,13 +126,11 @@ class InsightsQueryTest {
                     findAndClick("//div[@text='$executeButtonText']")
                 }
 
-                val logResults = find<JTreeFixture>(byXpath("//div[@class='TableView']"), Duration.ofSeconds(5))
-                logResults.waitUntilLoaded()
-
+                val logResults = logResults()
                 assertThat(logResults.findAllText()).anySatisfy {
                     assertThat(it.text).contains("group1")
                 }
-                assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
+                assertThat(logResults.findAllText()).anySatisfy {
                     assertThat(it.text).contains("group2")
                 }
             }
@@ -172,13 +169,11 @@ class InsightsQueryTest {
                     find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and @visible_text!='$currentQueryId']")).click()
                 }
 
-                val logResults = find<JTreeFixture>(byXpath("//div[@class='TableView']"), Duration.ofSeconds(5))
-                logResults.waitUntilLoaded()
-
+                val logResults = logResults()
                 assertThat(logResults.findAllText()).anySatisfy {
                     assertThat(it.text).contains("group1")
                 }
-                assertThat(find<JTreeFixture>(byXpath("//div[@class='TableView']")).findAllText()).anySatisfy {
+                assertThat(logResults().findAllText()).anySatisfy {
                     assertThat(it.text).contains("group2")
                 }
 
@@ -190,6 +185,8 @@ class InsightsQueryTest {
             }
         }
     }
+
+    private fun IdeaFrame.logResults() = find<ContainerFixture>(byXpath("//div[@class='TableView']"), Duration.ofSeconds(5))
 
     @AfterAll
     fun cleanup() {
