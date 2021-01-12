@@ -4,12 +4,10 @@
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
 import com.intellij.execution.runners.ExecutionEnvironment
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.extensions.ExtensionPointName
-import com.intellij.testFramework.ThreadTracker
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.net.NetUtils
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -69,7 +67,6 @@ interface SamDebugSupport {
                 }
             }
         }
-        ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Debugger Worker launch timer")
 
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
