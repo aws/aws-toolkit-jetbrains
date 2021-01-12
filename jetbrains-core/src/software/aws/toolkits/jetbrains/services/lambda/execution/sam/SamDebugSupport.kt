@@ -60,6 +60,14 @@ interface SamDebugSupport {
         val promise = AsyncPromise<XDebugProcessStarter?>()
         val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
 
+        val timerTask = Timer("Debugger Worker launch timer", true).schedule(debuggerAttachTimeoutMs) {
+            if (!promise.isDone) {
+                runInEdt {
+                    promise.setError(message("lambda.debug.process.start.timeout"))
+                }
+            }
+        }
+
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
                 val debug = createDebugProcess(environment, state, debugHost, debugPorts)
@@ -72,14 +80,8 @@ interface SamDebugSupport {
                 runInEdt {
                     promise.setError(t)
                 }
-            }
-        }
-
-        Timer("Debugger Worker launch timer", true).schedule(debuggerAttachTimeoutMs) {
-            if (!promise.isDone) {
-                runInEdt {
-                    promise.setError(message("lambda.debug.process.start.timeout"))
-                }
+            } finally {
+                timerTask.cancel()
             }
         }
 
