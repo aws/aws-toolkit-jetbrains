@@ -86,7 +86,7 @@ interface SamDebugSupport {
         return promise
     }
 
-    fun createDebugProcess(
+    suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,

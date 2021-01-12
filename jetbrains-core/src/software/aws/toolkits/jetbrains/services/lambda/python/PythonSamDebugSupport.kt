@@ -41,7 +41,7 @@ class PythonSamDebugSupport : SamDebugSupport {
         )
     }
 
-    override fun createDebugProcess(
+    override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
