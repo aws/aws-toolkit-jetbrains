@@ -92,7 +92,7 @@ class TemplateSettings(val project: Project) {
         environmentVariables = EnvironmentVariablesTextField()
         imageDebuggerModel = SortedComboBoxModel(compareBy(Comparator.naturalOrder()) { it: ImageDebugSupport -> it.displayName() })
         imageDebugger = ComboBox(imageDebuggerModel)
-        imageDebugger.renderer = SimpleListCellRenderer.create { label, value, _ -> label.text = value.displayName() }
+        imageDebugger.renderer = SimpleListCellRenderer.create { label, value, _ -> label.text = value?.displayName() }
     }
 
     fun setTemplateFile(file: String?) {

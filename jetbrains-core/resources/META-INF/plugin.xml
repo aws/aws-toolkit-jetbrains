@@ -95,9 +95,7 @@ with what features/services are supported.
             <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport"/>
         </extensionPoint>
 
-        <extensionPoint name="lambda.sam.imageDebuggerSupport" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
-            <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport"/>
-        </extensionPoint>
+        <extensionPoint name="lambda.sam.imageDebuggerSupport" interface="software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport" dynamic="true"/>
 
         <extensionPoint name="lambda.handlerResolver" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
             <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver"/>

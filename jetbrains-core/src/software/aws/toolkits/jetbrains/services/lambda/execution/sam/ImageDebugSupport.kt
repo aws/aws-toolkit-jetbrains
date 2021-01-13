@@ -9,7 +9,6 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.util.io.FileUtil
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
 import java.util.UUID
 
 interface ImageDebugSupport : SamDebugSupport<ImageTemplateRunSettings> {
@@ -36,9 +35,10 @@ interface ImageDebugSupport : SamDebugSupport<ImageTemplateRunSettings> {
         return envVarsFile.absolutePath
     }
 
-    companion object : RuntimeGroupExtensionPointObject<ImageDebugSupport>(ExtensionPointName("aws.toolkit.lambda.sam.imageDebuggerSupport")) {
+    companion object {
         private val mapper = jacksonObjectMapper()
+        val EP_NAME = ExtensionPointName<ImageDebugSupport>("aws.toolkit.lambda.sam.imageDebuggerSupport")
 
-        fun debuggers(): Map<String, ImageDebugSupport> = extensionList.associateBy { it.id }
+        fun debuggers(): Map<String, ImageDebugSupport> = EP_NAME.extensionList.associateBy { it.id }
     }
 }

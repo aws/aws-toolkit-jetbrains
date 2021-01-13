@@ -76,14 +76,15 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                         Runtime.fromValue(it)?.validOrNull
                     }
             }
-        } else {
+        }  else {
             profile.runtime()
         }
 
-        val runtimeGroup = runtimeValue?.runtimeGroup ?: return false
+        val runtimeGroup = runtimeValue?.runtimeGroup
 
-        return RuntimeDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
-            RuntimeDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false
+        return (runtimeGroup != null && RuntimeDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
+            RuntimeDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false) ||
+            (profile.isImage && profile.imageDebugger() != null)
     }
 
     override fun execute(environment: ExecutionEnvironment, state: RunProfileState): Promise<RunContentDescriptor?> {

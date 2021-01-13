@@ -14,7 +14,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugS
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
 
-abstract class BasePythonImageDebugSupport : ImageDebugSupport() {
+abstract class BasePythonImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
     override fun runtimeGroup() = RuntimeGroup.getById(BuiltInRuntimeGroups.Python)
 
