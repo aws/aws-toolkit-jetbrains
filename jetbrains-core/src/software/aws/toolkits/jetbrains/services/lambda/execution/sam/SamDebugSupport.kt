@@ -70,10 +70,10 @@ interface SamDebugSupport {
 
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
-                val debug = createDebugProcess(environment, state, debugHost, debugPorts)
+                val debugProcess = createDebugProcess(environment, state, debugHost, debugPorts)
 
                 runInEdt {
-                    promise.setResult(debug)
+                    promise.setResult(debugProcess)
                 }
             } catch (t: Throwable) {
                 LOG.warn(t) { "Failed to start debugger" }
