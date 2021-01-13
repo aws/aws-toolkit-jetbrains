@@ -284,14 +284,14 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         serializableOptions.functionOptions.runtime = runtime?.toString()
     }
 
-    fun imageDebugger(): ImageDebugSupport? = serializableOptions.functionOptions.imageDebugger?.let {
+    fun imageDebugger(): ImageDebugSupport? = serializableOptions.functionOptions.runtime?.let {
         ImageDebugSupport.debuggers().getValue(it)
     }
 
-    fun rawImageDebugger(): String? = serializableOptions.functionOptions.imageDebugger
+    fun rawImageDebugger(): String? = serializableOptions.functionOptions.runtime
 
     fun imageDebugger(imageDebugger: ImageDebugSupport?) {
-        serializableOptions.functionOptions.imageDebugger = imageDebugger?.id
+        serializableOptions.functionOptions.runtime = imageDebugger?.id
     }
 
     fun timeout() = serializableOptions.functionOptions.timeout
