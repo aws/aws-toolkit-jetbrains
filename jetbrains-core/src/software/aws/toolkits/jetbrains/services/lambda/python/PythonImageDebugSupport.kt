@@ -1,0 +1,79 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.lambda.python
+
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.xdebugger.XDebugProcessStarter
+import com.jetbrains.python.PythonHelper
+import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
+import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
+
+abstract class BasePythonImageDebugSupport : ImageDebugSupport() {
+    override fun supportsPathMappings(): Boolean = true
+    override fun runtimeGroup() = RuntimeGroup.getById(BuiltInRuntimeGroups.Python)
+
+    // Image debug settings are out of the SAM cli https://github.com/aws/aws-sam-cli/blob/develop/samcli/local/docker/lambda_debug_settings.py
+    protected abstract val pythonPath: String
+    protected abstract val bootstrapPath: String
+
+    override suspend fun createDebugProcess(
+        environment: ExecutionEnvironment,
+        state: SamRunningState,
+        debugHost: String,
+        debugPorts: List<Int>
+    ): XDebugProcessStarter? = PythonDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts)
+
+    override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
+        super.patchCommandLine(cmdLine, debugPorts)
+
+        val debugArgs = "$pythonPath -u $DEBUGGER_VOLUME_PATH/pydevd.py --multiprocess --port ${debugPorts.first()} --file $bootstrapPath"
+
+        cmdLine.addParameters(
+            listOf(
+                "--debugger-path",
+                // Mount pydevd from PyCharm into docker
+                PythonHelper.DEBUGGER.pythonPathEntry,
+                "--debug-args",
+                debugArgs
+            )
+        )
+    }
+}
+
+class Python27ImageDebugSupport : BasePythonImageDebugSupport() {
+    override val id: String = Runtime.PYTHON2_7.toString()
+    override val pythonPath: String = "/usr/bin/python2.7"
+    override val bootstrapPath: String = "/var/runtime/awslambda/bootstrap.py"
+
+    override fun displayName() = Runtime.PYTHON2_7.toString().capitalize()
+}
+
+class Python36ImageDebugSupport : BasePythonImageDebugSupport() {
+    override val id: String = Runtime.PYTHON3_6.toString()
+    override val pythonPath: String = "/var/lang/bin/python3.6"
+    override val bootstrapPath: String = "/var/runtime/awslambda/bootstrap.py"
+
+    override fun displayName() = Runtime.PYTHON3_6.toString().capitalize()
+}
+
+class Python37ImageDebugSupport : BasePythonImageDebugSupport() {
+    override val id: String = Runtime.PYTHON3_7.toString()
+    override val pythonPath: String = "/var/lang/bin/python3.7"
+    override val bootstrapPath: String = "/var/runtime/bootstrap"
+
+    override fun displayName() = Runtime.PYTHON3_7.toString().capitalize()
+}
+
+class Python38ImageDebugSupport : BasePythonImageDebugSupport() {
+    override val id: String = Runtime.PYTHON3_8.toString()
+    override val pythonPath: String = "/var/lang/bin/python3.8"
+    override val bootstrapPath: String = "/var/lang/bin/python3.6"
+
+    override fun displayName() = Runtime.PYTHON3_8.toString().capitalize()
+}

@@ -82,8 +82,8 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
         val runtimeGroup = runtimeValue?.runtimeGroup ?: return false
 
-        return SamDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
-            SamDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false
+        return RuntimeDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
+            RuntimeDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false
     }
 
     override fun execute(environment: ExecutionEnvironment, state: RunProfileState): Promise<RunContentDescriptor?> {
@@ -168,7 +168,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                 awsRegion = lambdaSettings.connection.region.id
             ),
             debug = isDebug,
-            runtime = TelemetryRuntime.from(lambdaSettings.runtime.toString()),
+            runtime = TelemetryRuntime.Unknown, // TODO TelemetryRuntime.from(lambdaSettings.runtime.toString()),
             lambdaPackageType = if (lambdaSettings is ImageTemplateRunSettings) LambdaPackageType.Image else LambdaPackageType.Zip,
             result = result
         )
