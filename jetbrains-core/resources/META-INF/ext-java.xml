@@ -9,7 +9,7 @@
     <extensions defaultExtensionNs="aws.toolkit.lambda">
         <runtimeGroup implementation="software.aws.toolkits.jetbrains.services.lambda.java.JavaRuntimeGroup"/>
         <builder id="JAVA" implementationClass="software.aws.toolkits.jetbrains.services.lambda.java.JavaLambdaBuilder"/>
-        <sam.debugSupport id="JAVA" implementationClass="software.aws.toolkits.jetbrains.services.lambda.java.JavaRuntimeDebugSupport"/>
+        <sam.runtimeDebugSupport id="JAVA" implementationClass="software.aws.toolkits.jetbrains.services.lambda.java.JavaRuntimeDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.java.Java8ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.java.Java8Al2ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.java.Java11ImageDebugSupport"/>

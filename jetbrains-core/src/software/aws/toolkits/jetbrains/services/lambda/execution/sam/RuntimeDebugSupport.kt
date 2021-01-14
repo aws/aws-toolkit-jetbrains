@@ -10,5 +10,5 @@ import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPoin
 interface RuntimeDebugSupport : SamDebugSupport<ZipSettings> {
     fun isSupported(runtime: Runtime): Boolean = true // Default behavior is all runtimes in the runtime group are supported
 
-    companion object : RuntimeGroupExtensionPointObject<RuntimeDebugSupport>(ExtensionPointName("aws.toolkit.lambda.sam.debugSupport"))
+    companion object : RuntimeGroupExtensionPointObject<RuntimeDebugSupport>(ExtensionPointName("aws.toolkit.lambda.sam.runtimeDebugSupport"))
 }

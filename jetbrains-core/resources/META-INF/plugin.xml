@@ -91,7 +91,7 @@ with what features/services are supported.
             <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder"/>
         </extensionPoint>
 
-        <extensionPoint name="lambda.sam.debugSupport" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
+        <extensionPoint name="lambda.sam.runtimeDebugSupport" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
             <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport"/>
         </extensionPoint>
 
