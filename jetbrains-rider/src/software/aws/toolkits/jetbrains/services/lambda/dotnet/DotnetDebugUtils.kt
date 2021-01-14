@@ -56,22 +56,22 @@ import java.util.Timer
 import kotlin.concurrent.schedule
 
 object DotnetDebugUtils {
-    val LOG = getLogger<DotnetDebugUtils>()
-    const val DEBUGGER_MODE = "server"
+    private val LOG = getLogger<DotnetDebugUtils>()
+    private const val DEBUGGER_MODE = "server"
 
-    const val REMOTE_DEBUGGER_DIR = "/tmp/lambci_debug_files"
-    const val REMOTE_NETCORE_CLI_PATH = "/var/lang/bin/dotnet"
+    private const val REMOTE_DEBUGGER_DIR = "/tmp/lambci_debug_files"
+    private const val REMOTE_NETCORE_CLI_PATH = "/var/lang/bin/dotnet"
     const val NUMBER_OF_DEBUG_PORTS = 2
 
     const val FIND_PID_SCRIPT =
         """
-                for i in `ls /proc/*/exe` ; do
-                    symlink=`readlink  ${'$'}i 2>/dev/null`;
-                    if [[ "${'$'}symlink" == *"/dotnet" ]]; then
-                        echo  ${'$'}i | sed -n 's/.*\/proc\/\(.*\)\/exe.*/\1/p'
-                    fi;
-                done;
-            """
+            for i in `ls /proc/*/exe` ; do
+                symlink=`readlink  ${'$'}i 2>/dev/null`;
+                if [[ "${'$'}symlink" == *"/dotnet" ]]; then
+                    echo  ${'$'}i | sed -n 's/.*\/proc\/\(.*\)\/exe.*/\1/p'
+                fi;
+            done;
+        """
 
     fun createDebugProcessAsync(
         environment: ExecutionEnvironment,
@@ -261,8 +261,8 @@ object DotnetDebugUtils {
             "-i",
             dockerContainer,
             REMOTE_NETCORE_CLI_PATH,
-            "${REMOTE_DEBUGGER_DIR}/${DotNetDebuggerUtils.debuggerAssemblyFile.name}",
-            "--mode=${DEBUGGER_MODE}",
+            "$REMOTE_DEBUGGER_DIR/${DotNetDebuggerUtils.debuggerAssemblyFile.name}",
+            "--mode=$DEBUGGER_MODE",
             "--frontend-port=$frontendPort",
             "--backend-port=$backendPort"
         )

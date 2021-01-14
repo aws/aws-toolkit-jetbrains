@@ -5,12 +5,8 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
-import com.intellij.util.net.NetUtils
 import com.intellij.xdebugger.XDebugProcessStarter
 import org.jetbrains.concurrency.Promise
-import software.amazon.awssdk.services.lambda.model.PackageType
-import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotnetDebugUtils.NUMBER_OF_DEBUG_PORTS
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
@@ -29,11 +25,11 @@ import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
  * 4. Send the command to the worker to attach to the correct PID.
  */
 class DotNetRuntimeDebugSupport : RuntimeDebugSupport {
-    override fun getDebugPorts(): List<Int> = NetUtils.findAvailableSocketPorts(NUMBER_OF_DEBUG_PORTS).toList()
+    override fun numberOfDebugPorts(): Int = NUMBER_OF_DEBUG_PORTS
 
     override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
         cmdLine.addParameters(
-            listOf("--debugger-path",DotNetDebuggerUtils.debuggerBinDir.path)
+            listOf("--debugger-path", DotNetDebuggerUtils.debuggerBinDir.path)
         )
     }
 

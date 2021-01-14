@@ -3,19 +3,32 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import org.jetbrains.concurrency.Promise
-import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
 
 abstract class DotnetImageDebugSupport : ImageDebugSupport {
+    override fun numberOfDebugPorts(): Int = DotnetDebugUtils.NUMBER_OF_DEBUG_PORTS
     override fun supportsPathMappings(): Boolean = false
     override fun runtimeGroup(): RuntimeGroup = RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet)
+
+    override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
+        super.patchCommandLine(cmdLine, debugPorts)
+        cmdLine.addParameters(
+            listOf("--debugger-path", DotNetDebuggerUtils.debuggerBinDir.path)
+        )
+    }
+
+    override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = mapOf(
+        "_AWS_LAMBDA_DOTNET_DEBUGGING" to "1"
+    )
 
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
@@ -32,10 +45,6 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
         debugHost: String,
         debugPorts: List<Int>
     ): Promise<XDebugProcessStarter?> = DotnetDebugUtils.createDebugProcessAsync(environment, state, debugHost, debugPorts)
-
-    override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = mapOf(
-            "_AWS_LAMBDA_DOTNET_DEBUGGING" to "1"
-        )
 }
 
 class Dotnet21ImageDebug : DotnetImageDebugSupport() {

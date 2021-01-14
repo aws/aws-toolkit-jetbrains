@@ -58,7 +58,6 @@ object NodeJsDebugUtils {
         }
     }
 
-
     /**
      * Convert [PathMapping] to NodeJs debugger path mapping format.
      *

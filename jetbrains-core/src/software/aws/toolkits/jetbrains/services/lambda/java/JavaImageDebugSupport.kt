@@ -49,4 +49,3 @@ open class Java11ImageDebugSupport : JavaImageDebugSupport() {
 
     override fun displayName() = Runtime.JAVA11.toString().capitalize()
 }
-

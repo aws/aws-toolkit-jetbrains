@@ -19,12 +19,16 @@ interface ImageDebugSupport : SamDebugSupport<ImageTemplateRunSettings> {
     fun runtimeGroup(): RuntimeGroup
 
     override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
-        cmdLine.addParameters( buildList {
-            val containerEnvVars = containerEnvVars(debugPorts)
-            if (containerEnvVars.isNotEmpty()) {
-                createContainerEnvVarsFile(containerEnvVars)
+        cmdLine.addParameters(
+            buildList {
+                val containerEnvVars = containerEnvVars(debugPorts)
+                if (containerEnvVars.isNotEmpty()) {
+                    val path = createContainerEnvVarsFile(containerEnvVars)
+                    add("--container-env-vars")
+                    add(path)
+                }
             }
-        })
+        )
     }
 
     fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = emptyMap()
