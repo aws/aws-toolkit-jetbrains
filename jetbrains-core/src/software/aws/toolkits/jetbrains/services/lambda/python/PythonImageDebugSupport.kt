@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.jetbrains.python.PythonHelper
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
@@ -29,20 +29,16 @@ abstract class BasePythonImageDebugSupport : ImageDebugSupport {
         debugPorts: List<Int>
     ): XDebugProcessStarter? = PythonDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts)
 
-    override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
-        super.patchCommandLine(cmdLine, debugPorts)
+    override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
+        addAll(super.samArguments(debugPorts))
 
         val debugArgs = "$pythonPath -u $DEBUGGER_VOLUME_PATH/pydevd.py --multiprocess --port ${debugPorts.first()} --file $bootstrapPath"
 
-        cmdLine.addParameters(
-            listOf(
-                "--debugger-path",
-                // Mount pydevd from PyCharm into docker
-                PythonHelper.DEBUGGER.pythonPathEntry,
-                "--debug-args",
-                debugArgs
-            )
-        )
+        add("--debugger-path")
+        // Mount pydevd from PyCharm into docker
+        add(PythonHelper.DEBUGGER.pythonPathEntry)
+        add("--debug-args")
+        add(debugArgs)
     }
 }
 

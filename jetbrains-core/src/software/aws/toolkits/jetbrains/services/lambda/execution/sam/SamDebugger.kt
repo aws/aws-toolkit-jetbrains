@@ -25,7 +25,7 @@ class SamDebugger(settings: LocalLambdaRunSettings) : SamRunner(settings) {
     private val debugPorts = NetUtils.findAvailableSocketPorts(debugExtension.numberOfDebugPorts()).toList()
 
     override fun patchCommandLine(commandLine: GeneralCommandLine) {
-        resolveDebuggerSupport(settings).patchCommandLine(commandLine, debugPorts)
+        commandLine.addParameters(debugExtension.samArguments(debugPorts))
         debugPorts.forEach {
             commandLine.withParameters("--debug-port").withParameters(it.toString())
         }

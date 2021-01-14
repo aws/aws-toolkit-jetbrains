@@ -27,7 +27,7 @@ import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
 class DotNetRuntimeDebugSupport : RuntimeDebugSupport {
     override fun numberOfDebugPorts(): Int = NUMBER_OF_DEBUG_PORTS
 
-    override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
+    override fun samArguments(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
         cmdLine.addParameters(
             listOf("--debugger-path", DotNetDebuggerUtils.debuggerBinDir.path)
         )

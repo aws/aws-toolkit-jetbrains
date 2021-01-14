@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
@@ -28,7 +27,7 @@ interface SamDebugSupport<T> {
      * for debugging, and anything else that is needed on a per-runtime basis
      * @param debugPorts The list of debugger ports. Some runtimes (dotnet) require more than one
      */
-    fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {}
+    fun samArguments(debugPorts: List<Int>): List<String> = emptyList()
 
     fun createDebugProcessAsync(
         environment: ExecutionEnvironment,

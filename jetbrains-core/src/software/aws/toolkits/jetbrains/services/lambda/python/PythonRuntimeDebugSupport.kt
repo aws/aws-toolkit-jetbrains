@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.jetbrains.python.PythonHelper
@@ -12,17 +11,13 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningS
 import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
 
 class PythonRuntimeDebugSupport : RuntimeDebugSupport {
-    override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
-        cmdLine.addParameters(
-            listOf(
-                "--debugger-path",
-                // Mount pydevd from PyCharm into docker
-                PythonHelper.DEBUGGER.pythonPathEntry,
-                "--debug-args",
-                "-u $DEBUGGER_VOLUME_PATH/pydevd.py --multiprocess --port ${debugPorts.first()} --file"
-            )
-        )
-    }
+    override fun samArguments(debugPorts: List<Int>): List<String> = listOf(
+        "--debugger-path",
+        // Mount pydevd from PyCharm into docker
+        PythonHelper.DEBUGGER.pythonPathEntry,
+        "--debug-args",
+        "-u $DEBUGGER_VOLUME_PATH/pydevd.py --multiprocess --port ${debugPorts.first()} --file"
+    )
 
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,

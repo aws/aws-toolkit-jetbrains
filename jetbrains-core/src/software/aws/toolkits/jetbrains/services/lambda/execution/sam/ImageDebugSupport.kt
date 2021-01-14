@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.util.io.FileUtil
 import software.aws.toolkits.jetbrains.core.utils.buildList
@@ -18,17 +17,13 @@ interface ImageDebugSupport : SamDebugSupport<ImageTemplateRunSettings> {
     fun supportsPathMappings(): Boolean
     fun runtimeGroup(): RuntimeGroup
 
-    override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
-        cmdLine.addParameters(
-            buildList {
-                val containerEnvVars = containerEnvVars(debugPorts)
-                if (containerEnvVars.isNotEmpty()) {
-                    val path = createContainerEnvVarsFile(containerEnvVars)
-                    add("--container-env-vars")
-                    add(path)
-                }
-            }
-        )
+    override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
+        val containerEnvVars = containerEnvVars(debugPorts)
+        if (containerEnvVars.isNotEmpty()) {
+            val path = createContainerEnvVarsFile(containerEnvVars)
+            add("--container-env-vars")
+            add(path)
+        }
     }
 
     fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = emptyMap()

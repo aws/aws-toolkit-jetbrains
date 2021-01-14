@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import org.jetbrains.concurrency.Promise
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
@@ -19,11 +19,10 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = false
     override fun runtimeGroup(): RuntimeGroup = RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet)
 
-    override fun patchCommandLine(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
-        super.patchCommandLine(cmdLine, debugPorts)
-        cmdLine.addParameters(
-            listOf("--debugger-path", DotNetDebuggerUtils.debuggerBinDir.path)
-        )
+    override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
+        addAll(super.samArguments(debugPorts))
+        add("--debugger-path")
+        add(DotNetDebuggerUtils.debuggerBinDir.path)
     }
 
     override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = mapOf(
