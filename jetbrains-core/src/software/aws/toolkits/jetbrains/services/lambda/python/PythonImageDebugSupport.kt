@@ -68,7 +68,7 @@ class Python37ImageDebugSupport : BasePythonImageDebugSupport() {
 class Python38ImageDebugSupport : BasePythonImageDebugSupport() {
     override val id: String = Runtime.PYTHON3_8.toString()
     override val pythonPath: String = "/var/lang/bin/python3.8"
-    override val bootstrapPath: String = "/var/lang/bin/python3.6"
+    override val bootstrapPath: String = "/var/runtime/bootstrap.py"
 
     override fun displayName() = Runtime.PYTHON3_8.toString().capitalize()
 }
