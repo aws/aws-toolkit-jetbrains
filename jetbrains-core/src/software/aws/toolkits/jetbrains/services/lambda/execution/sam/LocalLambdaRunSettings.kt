@@ -21,6 +21,10 @@ interface ZipSettings {
     val handler: String
 }
 
+interface ImageSettings {
+    val imageDebugger: ImageDebugSupport
+}
+
 sealed class LocalLambdaRunSettings(
     val connection: ConnectionSettings,
     val samOptions: SamOptions,
@@ -61,7 +65,7 @@ class HandlerRunSettings(
 
 class ImageTemplateRunSettings(
     override val templateFile: VirtualFile,
-    val imageDebugger: ImageDebugSupport,
+    override val imageDebugger: ImageDebugSupport,
     override val logicalId: String,
     val dockerFile: VirtualFile,
     val pathMappings: List<PathMapping>,
@@ -70,7 +74,7 @@ class ImageTemplateRunSettings(
     samOptions: SamOptions,
     debugHost: String,
     input: String
-) : TemplateSettings, LocalLambdaRunSettings(connection, samOptions, environmentVariables, debugHost, input) {
+) : ImageSettings, TemplateSettings, LocalLambdaRunSettings(connection, samOptions, environmentVariables, debugHost, input) {
     override val runtimeGroup = RuntimeGroup.find { imageDebugger.languageId in it.languageIds }
         ?: throw IllegalStateException("Attempting to run SAM for unsupported language ${imageDebugger.languageId}")
 }

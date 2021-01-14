@@ -76,17 +76,19 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                         Runtime.fromValue(it)?.validOrNull
                     }
             }
-        } else {
+        } else if (!profile.isImage) {
             profile.runtime()
+        } else {
+            null
         }
-
         val runtimeGroup = runtimeValue?.runtimeGroup
 
-        return (
-            runtimeGroup != null && RuntimeDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
-                RuntimeDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false
-            ) ||
-            (profile.isImage && profile.imageDebugger() != null)
+        val canRunRuntime = runtimeGroup != null &&
+            RuntimeDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
+            RuntimeDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false
+        val canRunImage = profile.isImage && profile.imageDebugger() != null
+
+        return canRunRuntime || canRunImage
     }
 
     override fun execute(environment: ExecutionEnvironment, state: RunProfileState): Promise<RunContentDescriptor?> {
@@ -171,7 +173,19 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                 awsRegion = lambdaSettings.connection.region.id
             ),
             debug = isDebug,
-            runtime = TelemetryRuntime.Unknown, // TODO TelemetryRuntime.from(lambdaSettings.runtime.toString()),
+            runtime = TelemetryRuntime.from(
+                when (lambdaSettings) {
+                    is ZipSettings -> {
+                        lambdaSettings.runtime.toString()
+                    }
+                    is ImageSettings -> {
+                        lambdaSettings.imageDebugger.id
+                    }
+                    else -> {
+                        ""
+                    }
+                }
+            ),
             lambdaPackageType = if (lambdaSettings is ImageTemplateRunSettings) LambdaPackageType.Image else LambdaPackageType.Zip,
             result = result
         )
