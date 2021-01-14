@@ -288,7 +288,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         ImageDebugSupport.debuggers().getValue(it)
     }
 
-    fun rawImageDebugger(): String? = serializableOptions.functionOptions.runtime
+    private fun rawImageDebugger(): String? = serializableOptions.functionOptions.runtime
 
     fun imageDebugger(imageDebugger: ImageDebugSupport?) {
         serializableOptions.functionOptions.runtime = imageDebugger?.id
