@@ -6,17 +6,16 @@ package software.aws.toolkits.jetbrains.services.lambda.python
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.jetbrains.python.PythonHelper
+import com.jetbrains.python.PythonLanguage
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.core.utils.buildList
-import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
 
 abstract class BasePythonImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
-    override fun runtimeGroup() = RuntimeGroup.getById(BuiltInRuntimeGroups.Python)
+    override val languageId = PythonLanguage.INSTANCE.id
 
     // Image debug settings are out of the SAM cli https://github.com/aws/aws-sam-cli/blob/develop/samcli/local/docker/lambda_debug_settings.py
     protected abstract val pythonPath: String

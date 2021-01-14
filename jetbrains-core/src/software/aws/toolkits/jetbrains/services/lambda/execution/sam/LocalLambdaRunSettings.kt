@@ -71,5 +71,6 @@ class ImageTemplateRunSettings(
     debugHost: String,
     input: String
 ) : TemplateSettings, LocalLambdaRunSettings(connection, samOptions, environmentVariables, debugHost, input) {
-    override val runtimeGroup = imageDebugger.runtimeGroup()
+    override val runtimeGroup = RuntimeGroup.find { imageDebugger.languageId in it.languageIds }
+        ?: throw IllegalStateException("Attempting to run SAM for unsupported language ${imageDebugger.languageId}")
 }

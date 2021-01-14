@@ -4,16 +4,15 @@
 package software.aws.toolkits.jetbrains.services.lambda.nodejs
 
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.xdebugger.XDebugProcessStarter
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 
 abstract class NodeJsImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
-    override fun runtimeGroup(): RuntimeGroup = RuntimeGroup.getById(BuiltInRuntimeGroups.NodeJs)
+    override val languageId = JavascriptLanguage.INSTANCE.id
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
         state: SamRunningState,

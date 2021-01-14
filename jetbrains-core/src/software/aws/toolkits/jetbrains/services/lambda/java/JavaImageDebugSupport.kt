@@ -4,17 +4,15 @@
 package software.aws.toolkits.jetbrains.services.lambda.java
 
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.lang.java.JavaLanguage
 import com.intellij.xdebugger.XDebugProcessStarter
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 
 abstract class JavaImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
-    override fun runtimeGroup() = RuntimeGroup.getById(BuiltInRuntimeGroups.Java)
-
+    override val languageId = JavaLanguage.INSTANCE.id
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
         state: SamRunningState,
