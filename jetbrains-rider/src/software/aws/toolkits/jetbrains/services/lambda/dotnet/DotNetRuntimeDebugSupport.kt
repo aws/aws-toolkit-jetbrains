@@ -27,11 +27,7 @@ import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
 class DotNetRuntimeDebugSupport : RuntimeDebugSupport {
     override fun numberOfDebugPorts(): Int = NUMBER_OF_DEBUG_PORTS
 
-    override fun samArguments(cmdLine: GeneralCommandLine, debugPorts: List<Int>) {
-        cmdLine.addParameters(
-            listOf("--debugger-path", DotNetDebuggerUtils.debuggerBinDir.path)
-        )
-    }
+    override fun samArguments(debugPorts: List<Int>): List<String> = listOf("--debugger-path", DotNetDebuggerUtils.debuggerBinDir.path)
 
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,

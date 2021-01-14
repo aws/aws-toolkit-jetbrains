@@ -108,7 +108,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     private fun checkImageDebugger() {
-        imageDebugger() ?: throw RuntimeConfigurationError("No image debugger with ID ${rawImageDebugger()}")
+        imageDebugger() ?: throw RuntimeConfigurationError(message("lambda.image.missing_debugger", rawImageDebugger() ?: ""))
     }
 
     private fun checkSamVersion(runtime: Runtime) {
