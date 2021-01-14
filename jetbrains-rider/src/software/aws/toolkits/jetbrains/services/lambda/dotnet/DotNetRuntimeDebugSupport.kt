@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import org.jetbrains.concurrency.Promise

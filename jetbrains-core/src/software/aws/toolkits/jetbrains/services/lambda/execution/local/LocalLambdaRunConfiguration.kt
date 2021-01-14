@@ -108,7 +108,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     private fun checkImageDebugger() {
-        imageDebugger() ?: throw RuntimeConfigurationError(message("lambda.image.missing_debugger", rawImageDebugger() ?: ""))
+        imageDebugger() ?: throw RuntimeConfigurationError(message("lambda.image.missing_debugger", rawImageDebugger().toString()))
     }
 
     private fun checkSamVersion(runtime: Runtime) {
@@ -285,7 +285,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
     }
 
     fun imageDebugger(): ImageDebugSupport? = serializableOptions.functionOptions.runtime?.let {
-        ImageDebugSupport.debuggers().getValue(it)
+        ImageDebugSupport.debuggers().get(it)
     }
 
     private fun rawImageDebugger(): String? = serializableOptions.functionOptions.runtime
