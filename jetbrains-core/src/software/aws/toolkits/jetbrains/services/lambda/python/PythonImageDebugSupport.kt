@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugS
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
 
-abstract class BasePythonImageDebugSupport : ImageDebugSupport {
+abstract class PythonImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
     override val languageId = PythonLanguage.INSTANCE.id
 
@@ -41,7 +41,7 @@ abstract class BasePythonImageDebugSupport : ImageDebugSupport {
     }
 }
 
-class Python27ImageDebugSupport : BasePythonImageDebugSupport() {
+class Python27ImageDebugSupport : PythonImageDebugSupport() {
     override val id: String = Runtime.PYTHON2_7.toString()
     override val pythonPath: String = "/usr/bin/python2.7"
     override val bootstrapPath: String = "/var/runtime/awslambda/bootstrap.py"
@@ -49,7 +49,7 @@ class Python27ImageDebugSupport : BasePythonImageDebugSupport() {
     override fun displayName() = Runtime.PYTHON2_7.toString().capitalize()
 }
 
-class Python36ImageDebugSupport : BasePythonImageDebugSupport() {
+class Python36ImageDebugSupport : PythonImageDebugSupport() {
     override val id: String = Runtime.PYTHON3_6.toString()
     override val pythonPath: String = "/var/lang/bin/python3.6"
     override val bootstrapPath: String = "/var/runtime/awslambda/bootstrap.py"
@@ -57,7 +57,7 @@ class Python36ImageDebugSupport : BasePythonImageDebugSupport() {
     override fun displayName() = Runtime.PYTHON3_6.toString().capitalize()
 }
 
-class Python37ImageDebugSupport : BasePythonImageDebugSupport() {
+class Python37ImageDebugSupport : PythonImageDebugSupport() {
     override val id: String = Runtime.PYTHON3_7.toString()
     override val pythonPath: String = "/var/lang/bin/python3.7"
     override val bootstrapPath: String = "/var/runtime/bootstrap"
@@ -65,7 +65,7 @@ class Python37ImageDebugSupport : BasePythonImageDebugSupport() {
     override fun displayName() = Runtime.PYTHON3_7.toString().capitalize()
 }
 
-class Python38ImageDebugSupport : BasePythonImageDebugSupport() {
+class Python38ImageDebugSupport : PythonImageDebugSupport() {
     override val id: String = Runtime.PYTHON3_8.toString()
     override val pythonPath: String = "/var/lang/bin/python3.8"
     override val bootstrapPath: String = "/var/runtime/bootstrap.py"

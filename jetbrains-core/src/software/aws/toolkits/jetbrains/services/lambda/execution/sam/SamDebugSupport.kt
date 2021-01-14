@@ -19,7 +19,7 @@ import software.aws.toolkits.resources.message
 import java.util.Timer
 import kotlin.concurrent.schedule
 
-interface SamDebugSupport<T> {
+interface SamDebugSupport {
     fun numberOfDebugPorts(): Int = 1
 
     /**
@@ -74,6 +74,6 @@ interface SamDebugSupport<T> {
     ): XDebugProcessStarter?
 
     private companion object {
-        val LOG = getLogger<SamDebugSupport<*>>()
+        val LOG = getLogger<SamDebugSupport>()
     }
 }

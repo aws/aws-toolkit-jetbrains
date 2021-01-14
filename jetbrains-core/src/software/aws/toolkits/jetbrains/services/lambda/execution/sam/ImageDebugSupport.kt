@@ -9,7 +9,7 @@ import com.intellij.openapi.util.io.FileUtil
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import java.util.UUID
 
-interface ImageDebugSupport : SamDebugSupport<ImageTemplateRunSettings> {
+interface ImageDebugSupport : SamDebugSupport {
     val id: String
 
     /**
