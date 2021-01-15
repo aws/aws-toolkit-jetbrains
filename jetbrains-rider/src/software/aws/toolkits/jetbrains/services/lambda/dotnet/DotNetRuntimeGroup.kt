@@ -29,6 +29,5 @@ class DotNetRuntimeGroup : SdkBasedRuntimeGroup() {
 
     override fun runtimeForSdk(sdk: Sdk): Runtime? = null
 
-    // TODO fix this to work for dotnet5
     override fun determineRuntime(project: Project): Runtime? = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime().toSdkRuntime().validOrNull
 }

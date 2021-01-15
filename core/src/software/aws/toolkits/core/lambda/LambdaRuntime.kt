@@ -5,23 +5,23 @@ package software.aws.toolkits.core.lambda
 
 import software.amazon.awssdk.services.lambda.model.Runtime
 
-enum class LambdaRuntime(val value: String) {
-    NODEJS10_X("nodejs10.x"),
-    NODEJS12_X("nodejs12.x"),
-    JAVA8("java8"),
-    JAVA8_AL2("java8.al2"),
-    JAVA11("java11"),
-    PYTHON2_7("python2.7"),
-    PYTHON3_6("python3.6"),
-    PYTHON3_7("python3.7"),
-    PYTHON3_8("python3.8"),
-    DOTNETCORE2_1("dotnetcore2.1"),
-    DOTNETCORE3_1("dotnetcore3.1"),
-    DOTNET5_0("dotnet5.0");
+enum class LambdaRuntime(val runtime: Runtime?, val runtimeOverride: String? = null) {
+    NODEJS10_X(Runtime.NODEJS10_X),
+    NODEJS12_X(Runtime.NODEJS12_X),
+    JAVA8(Runtime.JAVA8),
+    JAVA8_AL2(Runtime.JAVA8_AL2),
+    JAVA11(Runtime.JAVA11),
+    PYTHON2_7(Runtime.PYTHON2_7),
+    PYTHON3_6(Runtime.PYTHON3_6),
+    PYTHON3_7(Runtime.PYTHON3_7),
+    PYTHON3_8(Runtime.PYTHON3_8),
+    DOTNETCORE2_1(Runtime.DOTNETCORE2_1),
+    DOTNETCORE3_1(Runtime.DOTNETCORE3_1),
+    DOTNET5_0(null, "dotnet5.0");
 
-    override fun toString() = value
+    override fun toString() = runtime?.toString() ?: runtimeOverride ?: throw IllegalStateException("LambdaRuntime has no runtime or override string")
 
-    fun toSdkRuntime() = Runtime.fromValue(value).validOrNull
+    fun toSdkRuntime() = runtime.validOrNull
 
     companion object {
         fun fromValue(value: String?): LambdaRuntime? = if (value == null) {

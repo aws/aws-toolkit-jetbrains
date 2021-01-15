@@ -373,7 +373,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
 
     private fun handlerDisplayName(): String? {
         val handler = serializableOptions.functionOptions.handler ?: return null
-        return Runtime.fromValue(runtime()?.value).validOrNull
+        return runtime()?.toSdkRuntime().validOrNull
                 ?.runtimeGroup
                 ?.let { LambdaHandlerResolver.getInstanceOrNull(it) }
                 ?.handlerDisplayName(handler) ?: handler

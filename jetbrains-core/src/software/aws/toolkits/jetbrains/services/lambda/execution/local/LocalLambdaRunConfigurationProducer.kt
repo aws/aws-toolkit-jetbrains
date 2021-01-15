@@ -61,7 +61,6 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
         val runtime = RuntimeGroup.determineRuntime(context.module) ?: RuntimeGroup.determineRuntime(context.project)
 
         setAccountOptions(configuration)
-        // TODO
         configuration.useHandler(LambdaRuntime.fromValue(runtime.toString()), handler)
 
         return true

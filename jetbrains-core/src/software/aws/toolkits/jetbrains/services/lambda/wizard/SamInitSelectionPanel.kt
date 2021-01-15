@@ -105,8 +105,6 @@ class SamInitSelectionPanel(
                 }
             }
             .filter(runtimeFilter)
-            .filter { supportedRuntimeGroups.contains(find { runtimeGroup -> runtimeGroup.runtimes.contains(it.toSdkRuntime()) }) ||
-                (it.value == "dotnet5.0" && find { group -> group.id == BuiltInRuntimeGroups.Dotnet } != null)}
             .distinct()
             .sorted()
             .toMutableList()

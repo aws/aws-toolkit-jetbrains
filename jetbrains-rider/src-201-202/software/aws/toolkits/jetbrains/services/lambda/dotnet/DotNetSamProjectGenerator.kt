@@ -58,6 +58,7 @@ class DotNetSamProjectGenerator(
     private val generator = SamProjectGenerator()
     private val samPanel = SamInitSelectionPanel(generator.wizardFragments) {
         // Only show templates for DotNet in Rider
+        // TODO fix this to work properly, the issue is that RuntimeGroup contains the sdk built in Runtime
         it.value.startsWith("dotnet")
     }
 
