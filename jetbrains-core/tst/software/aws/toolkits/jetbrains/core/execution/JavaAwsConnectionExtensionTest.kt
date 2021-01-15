@@ -17,7 +17,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 
 class JavaAwsConnectionExtensionTest {
@@ -29,6 +29,10 @@ class JavaAwsConnectionExtensionTest {
     @Rule
     @JvmField
     val settingsRule = AwsSettingsRule()
+
+    @JvmField
+    @Rule
+    val regionProvider = MockRegionProviderRule()
 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
@@ -87,7 +91,7 @@ class JavaAwsConnectionExtensionTest {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
         val data = AwsCredentialInjectionOptions {
-            region = MockRegionProvider.getInstance().defaultRegion().id
+            region = regionProvider.defaultRegion().id
             credential = "MockCredentials"
         }
         configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, data)
