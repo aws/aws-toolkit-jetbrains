@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.core.lambda
 
+import software.amazon.awssdk.services.lambda.model.Runtime
+
 enum class LambdaRuntime(val value: String) {
     NODEJS10_X("nodejs10.x"),
     NODEJS12_X("nodejs12.x"),
@@ -18,6 +20,8 @@ enum class LambdaRuntime(val value: String) {
     DOTNET5_0("dotnet5.0");
 
     override fun toString() = value
+
+    fun toSdkRuntime() = Runtime.fromValue(value).validOrNull
 
     companion object {
         fun fromValue(value: String?): LambdaRuntime? = if (value == null) {

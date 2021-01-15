@@ -37,7 +37,7 @@ interface SamProjectWizard {
 
 data class SamNewProjectSettings(
     val template: SamProjectTemplate,
-    val runtime: Runtime,
+    val runtime: LambdaRuntime,
     val packagingType: PackageType
 )
 
@@ -56,7 +56,7 @@ abstract class SamProjectTemplate {
     // All SAM templates should support schema selection, but for launch include only EventBridge for most optimal customer experience
     open fun supportsDynamicSchemas(): Boolean = false
 
-    abstract fun templateParameters(projectName: String, runtime: Runtime, packagingType: PackageType): TemplateParameters
+    abstract fun templateParameters(projectName: String, runtime: LambdaRuntime, packagingType: PackageType): TemplateParameters
 
     open fun postCreationAction(
         settings: SamNewProjectSettings,
@@ -110,7 +110,7 @@ abstract class SamAppTemplateBased : SamProjectTemplate() {
     abstract val dependencyManager: String
     abstract val appTemplateName: String
 
-    override fun templateParameters(projectName: String, runtime: Runtime, packagingType: PackageType): TemplateParameters = when (packagingType) {
+    override fun templateParameters(projectName: String, runtime: LambdaRuntime, packagingType: PackageType): TemplateParameters = when (packagingType) {
         PackageType.IMAGE -> AppBasedImageTemplate(
             name = projectName,
             baseImage = "amazon/$runtime-base",

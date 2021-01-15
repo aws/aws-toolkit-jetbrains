@@ -82,7 +82,7 @@ class SamDynamoDBCookieCutter : SamProjectTemplate() {
         addSourceRoots(rootModel.project, rootModel, contentRoot)
     }
 
-    override fun templateParameters(projectName: String, runtime: Runtime, packagingType: PackageType): TemplateParameters = LocationBasedTemplate(
+    override fun templateParameters(projectName: String, runtime: LambdaRuntime, packagingType: PackageType): TemplateParameters = LocationBasedTemplate(
         "gh:aws-samples/cookiecutter-aws-sam-dynamodb-python"
     )
 }

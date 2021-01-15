@@ -18,6 +18,7 @@ import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.BadExecutable
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType.Companion.getExecutable
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup.Companion.find
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
@@ -97,9 +98,15 @@ class SamInitSelectionPanel(
         // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
         val supportedRuntimeGroups = RuntimeGroup.registeredRuntimeGroups()
         return SamProjectTemplate.supportedTemplates().asSequence()
-            .flatMap { it.supportedZipRuntimes().asSequence() }
+            .flatMap {
+                when (packageType()) {
+                    PackageType.ZIP -> it.supportedZipRuntimes().asSequence()
+                    else -> it.supportedImageRuntimes().asSequence()
+                }
+            }
             .filter(runtimeFilter)
-            .filter { supportedRuntimeGroups.contains(find { runtimeGroup -> runtimeGroup.runtimes.contains(Runtime.fromValue(it.value)) }) }
+            .filter { supportedRuntimeGroups.contains(find { runtimeGroup -> runtimeGroup.runtimes.contains(it.toSdkRuntime()) }) ||
+                (it.value == "dotnet5.0" && find { group -> group.id == BuiltInRuntimeGroups.Dotnet } != null)}
             .distinct()
             .sorted()
             .toMutableList()
@@ -115,6 +122,10 @@ class SamInitSelectionPanel(
     }
 
     private fun runtimeUpdate() {
+        // Refresh the runtimes list since zip and image differ
+        runtimes.removeAll()
+        runtimes.add(supportedRuntimes())
+
         val selectedTemplate = templateComboBox.selectedItem as? SamProjectTemplate
         templateComboBox.removeAllItems()
         val selectedRuntime = runtimeComboBox.selectedItem as? LambdaRuntime ?: return
@@ -182,7 +193,7 @@ class SamInitSelectionPanel(
     }
 
     fun getNewProjectSettings(): SamNewProjectSettings {
-        val lambdaRuntime = runtimeComboBox.selectedItem as? Runtime
+        val lambdaRuntime = runtimeComboBox.selectedItem as? LambdaRuntime
             ?: throw RuntimeException("No Runtime is supported in this Platform.")
         val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
             ?: throw RuntimeException("No SAM template is supported for this runtime: $lambdaRuntime")

@@ -7,6 +7,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
 import com.intellij.util.PathMappingSettings
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.execution.registerConfigValidationListeners
 import software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerValidator
 import software.aws.toolkits.jetbrains.utils.ui.selected
@@ -62,7 +63,7 @@ class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambd
                 configuration.pathMappings = view.templateSettings.pathMappingsTable.mappingSettings.pathMappings
             }
         } else {
-            configuration.useHandler(view.rawSettings.runtime.selected(), view.rawSettings.handlerPanel.handler.text)
+            configuration.useHandler(LambdaRuntime.fromValue(view.rawSettings.runtime.selected().toString()), view.rawSettings.handlerPanel.handler.text)
             configuration.timeout(view.rawSettings.timeoutSlider.value)
             configuration.memorySize(view.rawSettings.memorySlider.value)
             configuration.environmentVariables(view.rawSettings.environmentVariables.envVars)
