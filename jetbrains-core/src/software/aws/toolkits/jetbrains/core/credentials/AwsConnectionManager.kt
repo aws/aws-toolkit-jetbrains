@@ -45,6 +45,11 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
     var connectionState: ConnectionState = ConnectionState.InitializingToolkit
         internal set(value) {
             field = value
+
+            if (project.isDisposed != project.messageBus.isDisposed) {
+                throw IllegalStateException("WTF ${project.isDisposed} ${project.messageBus.isDisposed}")
+            }
+
             if (!project.isDisposed) {
                 project.messageBus.syncPublisher(CONNECTION_SETTINGS_STATE_CHANGED).settingsStateChanged(value)
             }
