@@ -5,8 +5,11 @@ package software.aws.toolkits.jetbrains.services.s3.editor
 
 import com.intellij.icons.AllIcons
 import com.intellij.testFramework.ProjectRule
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -17,6 +20,9 @@ import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ObjectVersion
 import software.aws.toolkits.core.utils.delegateMock
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class S3TreeObjectNodeTest {
     @Rule
@@ -277,6 +283,50 @@ class S3TreeObjectNodeTest {
 
         assertThat(sut.children).hasSize(3)
         assertThat(requestCaptor.allValues).hasSize(2)
+    }
+
+    @Test
+    fun `load more only executes a single request`() {
+        val latch = CountDownLatch(1)
+        val executed = CountDownLatch(3)
+
+        val s3Client = delegateMock<S3Client> {
+            on { listObjectVersions(any<ListObjectVersionsRequest>()) }.thenReturn(
+                ListObjectVersionsResponse.builder()
+                    .versions(createS3ObjectVersion("my/folder/picture.png", "1"))
+                    .nextKeyMarker("KeyToken")
+                    .nextVersionIdMarker("VersionToken")
+                    .isTruncated(true)
+                    .build()
+            ).thenAnswer {
+                latch.await()
+
+                ListObjectVersionsResponse.builder()
+                    .versions(createS3ObjectVersion("my/folder/picture.png", "2"), createS3ObjectVersion("my/folder/picture.png", "3"))
+                    .build()
+            }
+        }
+
+        val bucket = S3VirtualBucket(s3Bucket, s3Client)
+        val parent = S3TreeDirectoryNode(bucket, null, "my/folder/")
+        val sut = S3TreeObjectNode(parent, "my/folder/picture.png", objectSize, lastModifiedTime)
+        sut.showHistory = true
+
+        val continuationNode = sut.children.last() as S3TreeContinuationNode<*>
+
+        repeat(3) {
+            thread(start = true) {
+                continuationNode.loadMore()
+                executed.countDown()
+            }
+        }
+
+        latch.countDown()
+
+        assertThat(executed.await(5, TimeUnit.SECONDS)).isTrue()
+
+        assertThat(sut.children).hasSize(3)
+        verify(s3Client, times(2)).listObjectVersions(any<ListObjectVersionsRequest>())
     }
 
     private fun createS3ObjectVersion(name: String, versionId: String) =
