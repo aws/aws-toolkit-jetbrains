@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
@@ -16,17 +17,18 @@ import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
+import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.CompletableFuture
 
 class ResourceSelectorTest {
-    @Rule
-    @JvmField
-    val projectRule = ProjectRule()
+    private val projectRule = ProjectRule()
+    private val accountSettings = ProjectAccountSettingsManagerRule(projectRule)
+    private val resourceCache = MockResourceCacheRule()
 
     @JvmField
     @Rule
-    val resourceCache = MockResourceCacheRule()
+    val ruleChain = RuleChain(projectRule, accountSettings, resourceCache)
 
     private val mockResource = mock<Resource.Cached<List<String>>> {
         on { id }.thenReturn("mockResource")

@@ -168,8 +168,8 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
                 selectedCredentialsProvider = credentialsProvider
                 connectionState = ConnectionState.ValidConnection(credentialsProvider, region)
             } catch (e: Exception) {
-                connectionState = ConnectionState.InvalidConnection(e)
                 LOGGER.warn(e) { message("credentials.profile.validation_error", credentialsIdentifier.displayName) }
+                connectionState = ConnectionState.InvalidConnection(e)
             } finally {
                 incModificationCount()
                 AwsTelemetry.validateCredentials(
