@@ -58,7 +58,7 @@ class DotNetSamProjectGenerator(
     private val generator = SamProjectGenerator()
     private val samPanel = SamInitSelectionPanel(generator.wizardFragments) {
         // Only show templates for DotNet in Rider
-        RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).runtimes.contains(it)
+        it.value.startsWith("dotnet")
     }
 
     private val projectStructurePanel: JTabbedPane

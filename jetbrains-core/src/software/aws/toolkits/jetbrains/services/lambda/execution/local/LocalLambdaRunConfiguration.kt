@@ -23,6 +23,7 @@ import com.intellij.util.PathMappingSettings.PathMapping
 import com.intellij.util.text.SemVer
 import org.jetbrains.concurrency.isPending
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager

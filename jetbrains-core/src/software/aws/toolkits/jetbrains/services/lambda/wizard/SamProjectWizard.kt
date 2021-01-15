@@ -12,6 +12,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
@@ -47,9 +48,9 @@ abstract class SamProjectTemplate {
 
     override fun toString() = displayName()
 
-    abstract fun supportedRuntimes(): Set<Runtime>
+    abstract fun supportedZipRuntimes(): Set<LambdaRuntime>
 
-    open fun supportedPackagingTypes(): Set<PackageType> = setOf(PackageType.ZIP)
+    abstract fun supportedImageRuntimes(): Set<LambdaRuntime>
 
     // Gradual opt-in for Schema support on a template by-template basis.
     // All SAM templates should support schema selection, but for launch include only EventBridge for most optimal customer experience
