@@ -134,9 +134,11 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
         val isInitial = connectionState is ConnectionState.InitializingToolkit
         connectionState = ConnectionState.ValidatingConnection
 
+        // Grab the current state stamp
+        val modificationStamp = this.modificationCount
+
         fieldUpdateBlock()
 
-        val modificationStamp = this.modificationCount
         val validateCredentialsResult = validateCredentials(selectedCredentialIdentifier, selectedRegion, isInitial)
         validationJob.getAndSet(validateCredentialsResult)?.cancel()
 
