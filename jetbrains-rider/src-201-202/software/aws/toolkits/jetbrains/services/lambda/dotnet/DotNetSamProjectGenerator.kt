@@ -26,8 +26,6 @@ import com.jetbrains.rider.ui.themes.RiderTheme
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
-import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamInitSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator

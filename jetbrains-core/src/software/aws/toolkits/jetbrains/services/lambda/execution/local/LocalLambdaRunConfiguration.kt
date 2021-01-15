@@ -256,7 +256,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         functionOptions.runtime = runtime
     }
 
-    fun useHandler(runtime: LambdaRuntime?, handler: String?) {
+    fun useHandler(runtime: Runtime?, handler: String?) {
         val functionOptions = serializableOptions.functionOptions
         functionOptions.useTemplate = false
 
@@ -373,10 +373,12 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
 
     private fun handlerDisplayName(): String? {
         val handler = serializableOptions.functionOptions.handler ?: return null
-        return runtime()?.toSdkRuntime().validOrNull
-                ?.runtimeGroup
-                ?.let { LambdaHandlerResolver.getInstanceOrNull(it) }
-                ?.handlerDisplayName(handler) ?: handler
+        return runtime()
+            ?.toSdkRuntime()
+            .validOrNull
+            ?.runtimeGroup
+            ?.let { LambdaHandlerResolver.getInstanceOrNull(it) }
+            ?.handlerDisplayName(handler) ?: handler
     }
 
     private fun resolveLambdaFromHandler(handler: String?, runtime: String?): Pair<String, Runtime> {

@@ -5,7 +5,7 @@ package software.aws.toolkits.core.lambda
 
 import software.amazon.awssdk.services.lambda.model.Runtime
 
-enum class LambdaRuntime(val runtime: Runtime?, val runtimeOverride: String? = null) {
+enum class LambdaRuntime(val runtime: Runtime?, private val runtimeOverride: String? = null) {
     NODEJS10_X(Runtime.NODEJS10_X),
     NODEJS12_X(Runtime.NODEJS12_X),
     JAVA8(Runtime.JAVA8),

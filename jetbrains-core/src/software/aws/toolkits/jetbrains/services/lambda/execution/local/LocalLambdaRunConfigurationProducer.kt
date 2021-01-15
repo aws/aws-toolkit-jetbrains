@@ -13,7 +13,7 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import org.jetbrains.yaml.psi.YAMLKeyValue
 import org.jetbrains.yaml.psi.YAMLPsiElement
-import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
@@ -61,7 +61,7 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
         val runtime = RuntimeGroup.determineRuntime(context.module) ?: RuntimeGroup.determineRuntime(context.project)
 
         setAccountOptions(configuration)
-        configuration.useHandler(LambdaRuntime.fromValue(runtime.toString()), handler)
+        configuration.useHandler(Runtime.fromValue(runtime.toString()), handler)
 
         return true
     }
