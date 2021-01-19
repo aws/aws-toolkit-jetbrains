@@ -54,3 +54,9 @@ class Dotnet31ImageDebug : DotnetImageDebugSupport() {
     override val id: String = Runtime.DOTNETCORE3_1.toString()
     override fun displayName() = Runtime.DOTNETCORE3_1.toString().capitalize()
 }
+
+class Dotnet50ImageDebug : DotnetImageDebugSupport() {
+    // TODO pull the const from LambdaRuntime when the wizard PR merges
+    override val id: String = "dotnet5.0"
+    override fun displayName() = "dotnet5.0".capitalize()
+}
