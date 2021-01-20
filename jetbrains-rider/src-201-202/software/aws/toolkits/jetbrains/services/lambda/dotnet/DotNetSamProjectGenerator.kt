@@ -56,8 +56,11 @@ class DotNetSamProjectGenerator(
     private val generator = SamProjectGenerator()
     private val samPanel = SamInitSelectionPanel(generator.wizardFragments) {
         // Only show templates for DotNet in Rider
-        // TODO fix this to work properly, the issue is that RuntimeGroup contains the sdk built in Runtime
-        it.value.startsWith("dotnet")
+        // Restore this -> RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).runtimes.contains(it)
+        // TODO fix this to work properly (and the 203 version), the issue is that RuntimeGroup contains the sdk
+        // built in Runtime so, dotnet5 will not show up if we do not do some additional check. Inverting the
+        // runtime group so it pulls from LambdaRuntime will fix this but needs additional testing/changes
+        it.toString().startsWith("dotnet")
     }
 
     private val projectStructurePanel: JTabbedPane
