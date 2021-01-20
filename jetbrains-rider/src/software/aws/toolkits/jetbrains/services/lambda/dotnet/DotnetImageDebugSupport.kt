@@ -7,7 +7,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.jetbrains.rider.ideaInterop.fileTypes.csharp.CSharpLanguage
 import org.jetbrains.concurrency.Promise
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
@@ -46,17 +46,16 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
 }
 
 class Dotnet21ImageDebug : DotnetImageDebugSupport() {
-    override val id: String = Runtime.DOTNETCORE2_1.toString()
-    override fun displayName() = Runtime.DOTNETCORE2_1.toString().capitalize()
+    override val id: String = LambdaRuntime.DOTNETCORE2_1.toString()
+    override fun displayName() = LambdaRuntime.DOTNETCORE2_1.toString().capitalize()
 }
 
 class Dotnet31ImageDebug : DotnetImageDebugSupport() {
-    override val id: String = Runtime.DOTNETCORE3_1.toString()
-    override fun displayName() = Runtime.DOTNETCORE3_1.toString().capitalize()
+    override val id: String = LambdaRuntime.DOTNETCORE3_1.toString()
+    override fun displayName() = LambdaRuntime.DOTNETCORE3_1.toString().capitalize()
 }
 
 class Dotnet50ImageDebug : DotnetImageDebugSupport() {
-    // TODO pull the const from LambdaRuntime when the wizard PR merges
-    override val id: String = "dotnet5.0"
-    override fun displayName() = "dotnet5.0".capitalize()
+    override val id: String = LambdaRuntime.DOTNET5_0.toString()
+    override fun displayName() = LambdaRuntime.DOTNET5_0.toString().capitalize()
 }
