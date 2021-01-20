@@ -23,6 +23,7 @@ import com.jetbrains.rider.projectView.actions.projectTemplating.backend.ReSharp
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateDialogContext
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
 import com.jetbrains.rider.ui.themes.RiderTheme
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
@@ -244,7 +245,9 @@ class DotNetSamProjectGenerator(
 
     private fun initSamPanel() {
         val availableRuntime = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
-        samPanel.setRuntime(availableRuntime)
+        val runtime = LambdaRuntime.fromValue(availableRuntime)
+            ?: throw IllegalStateException("DotNetRuntimeUtils.getCurrentDotNetCoreRuntime() returned invalid runtime ${availableRuntime}")
+        samPanel.setRuntime(runtime)
     }
 
     private fun htmlText(baseDir: String, relativePath: String) =

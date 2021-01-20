@@ -29,5 +29,5 @@ class DotNetRuntimeGroup : SdkBasedRuntimeGroup() {
 
     override fun runtimeForSdk(sdk: Sdk): Runtime? = null
 
-    override fun determineRuntime(project: Project): Runtime? = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime().toSdkRuntime().validOrNull
+    override fun determineRuntime(project: Project): Runtime? = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime().validOrNull
 }

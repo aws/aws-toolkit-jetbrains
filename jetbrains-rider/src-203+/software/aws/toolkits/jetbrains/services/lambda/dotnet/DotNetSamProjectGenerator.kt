@@ -244,7 +244,9 @@ class DotNetSamProjectGenerator(
 
     private fun initSamPanel() {
         val availableRuntime = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
-        samPanel.setRuntime(availableRuntime)
+        val runtime = LambdaRuntime.fromValue(availableRuntime)
+            ?: throw IllegalStateException("DotNetRuntimeUtils.getCurrentDotNetCoreRuntime() returned invalid runtime ${availableRuntime}")
+        samPanel.setRuntime(runtime)
     }
 
     private fun htmlText(baseDir: String, relativePath: String) =

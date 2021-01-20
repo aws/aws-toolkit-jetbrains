@@ -29,5 +29,7 @@ enum class LambdaRuntime(private val runtime: Runtime?, private val runtimeOverr
         } else {
             values().find { it.toString() == value }
         }
+
+        fun fromValue(value: Runtime): LambdaRuntime? = values().find { it.runtime == value }
     }
 }
