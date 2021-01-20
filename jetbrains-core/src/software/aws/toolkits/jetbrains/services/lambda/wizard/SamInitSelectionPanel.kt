@@ -13,12 +13,12 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.layout.panel
 import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.model.PackageType
-import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.BadExecutable
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType.Companion.getExecutable
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
+import software.aws.toolkits.jetbrains.services.lambda.minSamInitVersion
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
@@ -147,7 +147,7 @@ class SamInitSelectionPanel(
      * Updates UI fragments in the wizard after a combobox update
      */
     private fun wizardUpdate() {
-        val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
+        val selectedRuntime = runtimeComboBox.selectedItem as? LambdaRuntime
         val selectedTemplate = templateComboBox.selectedItem as? SamProjectTemplate
         wizardFragments.forEach { (wizardFragment, jComponent) ->
             wizardFragment.updateUi(projectLocation, selectedRuntime?.runtimeGroup, selectedTemplate)
@@ -168,15 +168,12 @@ class SamInitSelectionPanel(
             return ValidationInfo(message("lambda.image.sam_version_too_low", samVersion, SamCommon.minImageVersion))
         }
 
-        val selectedRuntime = runtimeComboBox.selectedItem as? Runtime
+        val selectedRuntime = runtimeComboBox.selectedItem as? LambdaRuntime
             ?: return templateComboBox.validationInfo(message("sam.init.error.no.runtime.selected"))
 
-        try {
-            val runtimeGroup = selectedRuntime.runtimeGroup
-                ?: throw IllegalStateException("Selected runtime $selectedRuntime does not belong to a RuntimeGroup")
-            runtimeGroup.validateSamVersion(selectedRuntime, samVersion)
-        } catch (e: Exception) {
-            return ValidationInfo(e.message!!, runtimeComboBox)
+        val minSamVersion = selectedRuntime.minSamInitVersion()
+        if (samVersion < minSamVersion) {
+            return ValidationInfo(message("sam.executable.minimum_too_low_runtime", selectedRuntime, minSamVersion), runtimeComboBox)
         }
 
         val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
