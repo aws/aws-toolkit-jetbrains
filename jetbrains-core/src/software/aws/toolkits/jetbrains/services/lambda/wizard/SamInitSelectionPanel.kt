@@ -124,7 +124,7 @@ class SamInitSelectionPanel(
 
         val selectedTemplate = templateComboBox.selectedItem as? SamProjectTemplate
         templateComboBox.removeAllItems()
-        val selectedRuntime = runtimeComboBox.selectedItem as? LambdaRuntime ?: return
+        val selectedRuntime = runtimes.selected ?: return
 
         val packagingType = packageType()
         SamProjectTemplate.supportedTemplates().asSequence()
@@ -147,7 +147,7 @@ class SamInitSelectionPanel(
      * Updates UI fragments in the wizard after a combobox update
      */
     private fun wizardUpdate() {
-        val selectedRuntime = runtimeComboBox.selectedItem as? LambdaRuntime
+        val selectedRuntime = runtimes.selected
         val selectedTemplate = templateComboBox.selectedItem as? SamProjectTemplate
         wizardFragments.forEach { (wizardFragment, jComponent) ->
             wizardFragment.updateUi(projectLocation, selectedRuntime?.runtimeGroup, selectedTemplate)
@@ -168,8 +168,7 @@ class SamInitSelectionPanel(
             return ValidationInfo(message("lambda.image.sam_version_too_low", samVersion, SamCommon.minImageVersion))
         }
 
-        val selectedRuntime = runtimeComboBox.selectedItem as? LambdaRuntime
-            ?: return templateComboBox.validationInfo(message("sam.init.error.no.runtime.selected"))
+        val selectedRuntime = runtimes.selected ?: return templateComboBox.validationInfo(message("sam.init.error.no.runtime.selected"))
 
         val minSamVersion = selectedRuntime.minSamInitVersion()
         if (samVersion < minSamVersion) {
@@ -186,7 +185,7 @@ class SamInitSelectionPanel(
     }
 
     fun getNewProjectSettings(): SamNewProjectSettings {
-        val lambdaRuntime = runtimeComboBox.selectedItem as? LambdaRuntime
+        val lambdaRuntime = runtimes.selected
             ?: throw RuntimeException("No Runtime is supported in this Platform.")
         val samProjectTemplate = templateComboBox.selectedItem as? SamProjectTemplate
             ?: throw RuntimeException("No SAM template is supported for this runtime: $lambdaRuntime")
