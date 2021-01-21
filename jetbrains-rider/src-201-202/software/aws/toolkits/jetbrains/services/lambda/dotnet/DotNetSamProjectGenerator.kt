@@ -24,12 +24,8 @@ import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTem
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
 import com.jetbrains.rider.ui.themes.RiderTheme
 import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamInitSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
@@ -57,10 +53,13 @@ class DotNetSamProjectGenerator(
 
     // TODO: Decouple SamProjectGenerator from the framework wizards so we can re-use its panels
     private val generator = SamProjectGenerator()
-    private val samPanel = SamInitSelectionPanel(generator.wizardFragments) {
+    private val samPanel = SamInitSelectionPanel(
+        generator.wizardFragments,
+        // needed to rerun the validation when the wizard is changed
+        wizardUpdateCallback = { validateData() },
         // Only show templates for DotNet in Rider
-        RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).supportedRuntimes.contains(it)
-    }
+        runtimeFilter = { RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).supportedRuntimes.contains(it) }
+    )
 
     private val projectStructurePanel: JTabbedPane
 
@@ -100,11 +99,14 @@ class DotNetSamProjectGenerator(
 
     override fun validateData() {
         super.validateData()
-        ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
-            if (it is ExecutableInstance.BadExecutable) {
-                validationError.set(it.validationError)
-            }
+        if (validationError.value != null) {
+            return
         }
+        samPanel.validate()?.let {
+            validationError.set(it.message)
+            return
+        }
+        validationError.set(null)
     }
 
     override fun updateInfo() {
