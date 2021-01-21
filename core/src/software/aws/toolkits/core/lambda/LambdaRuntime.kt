@@ -22,7 +22,7 @@ enum class LambdaRuntime(
     PYTHON3_8(Runtime.PYTHON3_8),
     DOTNETCORE2_1(Runtime.DOTNETCORE2_1),
     DOTNETCORE3_1(Runtime.DOTNETCORE3_1),
-    DOTNET5_0(null, minSamInit = "1.16.0", minSamDebugging = "1.13.0", runtimeOverride = "dotnet5.0");
+    DOTNET5_0(null, minSamInit = "1.16.0", runtimeOverride = "dotnet5.0");
 
     override fun toString() = runtime?.toString() ?: runtimeOverride ?: throw IllegalStateException("LambdaRuntime has no runtime or override string")
 
