@@ -8,7 +8,7 @@ import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 
 fun LambdaRuntime.minSamDebuggingVersion(): SemVer =
-    minSamDebugging?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("TODO enter message about why this is bad") } ?: SamExecutable.minVersion
+    minSamDebugging?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamDebuggingVersion! It should be a semver string!") } ?: SamExecutable.minVersion
 
 fun LambdaRuntime.minSamInitVersion(): SemVer =
-    minSamInit?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("TODO enter message about why this is bad") } ?: SamExecutable.minVersion
+    minSamInit?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamInitVersion! It should be a semver string!") } ?: SamExecutable.minVersion
