@@ -31,7 +31,8 @@ class RawSettings(private val project: Project) {
         private set
     lateinit var environmentVariables: EnvironmentVariablesTextField
         private set
-    private lateinit var runtimeModel: SortedComboBoxModel<Runtime>
+    lateinit var runtimeModel: SortedComboBoxModel<Runtime>
+        private set
 
     var lastSelectedRuntime: Runtime? = null
 
