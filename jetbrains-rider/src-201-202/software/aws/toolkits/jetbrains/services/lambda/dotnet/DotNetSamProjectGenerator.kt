@@ -56,9 +56,9 @@ class DotNetSamProjectGenerator(
     private val samPanel = SamInitSelectionPanel(
         generator.wizardFragments,
         // Only show templates for DotNet in Rider
-        runtimeFilter = { RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).supportedRuntimes.contains(it) }
+        runtimeFilter = { RuntimeGroup.getById(BuiltInRuntimeGroups.Dotnet).supportedRuntimes.contains(it) },
         // needed to rerun the validation when the wizard is changed
-        wizardUpdateCallback = { validateData() },
+        wizardUpdateCallback = { validateData() }
     )
 
     private val projectStructurePanel: JTabbedPane
