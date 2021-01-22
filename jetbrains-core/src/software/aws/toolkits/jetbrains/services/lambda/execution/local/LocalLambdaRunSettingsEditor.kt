@@ -34,7 +34,7 @@ class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambd
             view.templateSettings.selectFunction(configuration.logicalId())
             view.rawSettings.environmentVariables.envVars = configuration.environmentVariables()
             if (view.templateSettings.isImage) {
-                view.templateSettings.imageDebugger.selectedItem = configuration.imageDebugger()
+                view.templateSettings.imageDebuggerModel.selectedItem = configuration.imageDebugger()
                 view.templateSettings.pathMappingsTable.setMappingSettings(PathMappingSettings(configuration.pathMappings))
             }
         } else {
