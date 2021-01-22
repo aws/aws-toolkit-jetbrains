@@ -8,7 +8,6 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.jetbrains.rider.ideaInterop.fileTypes.csharp.CSharpLanguage
 import com.jetbrains.rider.ideaInterop.fileTypes.vb.VbLanguage
 import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.core.lambda.validOrNull
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
@@ -29,6 +28,5 @@ class DotNetRuntimeGroup : SdkBasedRuntimeGroup() {
 
     override fun runtimeForSdk(sdk: Sdk): LambdaRuntime? = null
 
-    override fun determineRuntime(project: Project): LambdaRuntime? =
-        DotNetRuntimeUtils.getCurrentDotNetCoreRuntime().validOrNull?.let { LambdaRuntime.fromValue(it) }
+    override fun determineRuntime(project: Project): LambdaRuntime = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
 }
