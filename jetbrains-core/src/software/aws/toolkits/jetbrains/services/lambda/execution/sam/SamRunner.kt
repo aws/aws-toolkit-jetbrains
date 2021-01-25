@@ -10,12 +10,13 @@ import com.intellij.execution.runners.RunContentBuilder
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
-import com.intellij.openapi.application.runInEdt
 import com.intellij.util.concurrency.AppExecutorUtil
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
 open class SamRunner(protected val settings: LocalLambdaRunSettings) {
@@ -28,12 +29,12 @@ open class SamRunner(protected val settings: LocalLambdaRunSettings) {
             try {
                 // `execute` needs to be run in the background because it can resolve credentials
                 val executionResult = state.execute(environment.executor, environment.runner)
-                runInEdt {
+                withContext(getCoroutineUiContext(disposable = environment)) {
                     val runContent = RunContentBuilder(executionResult, environment).showRunContent(environment.contentToReuse)
                     promise.setResult(runContent)
                 }
             } catch (e: Throwable) {
-                runInEdt {
+                withContext(getCoroutineUiContext(disposable = environment)) {
                     promise.setError(e)
                 }
             }
