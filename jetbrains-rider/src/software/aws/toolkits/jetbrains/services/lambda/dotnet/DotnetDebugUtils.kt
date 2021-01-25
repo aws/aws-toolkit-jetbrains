@@ -187,7 +187,9 @@ object DotnetDebugUtils {
             } catch (t: Throwable) {
                 LOG.warn(t) { "Failed to start debugger" }
                 debuggerLifetimeDefinition.terminate(true)
-                promise.setError(t)
+                runInEdt {
+                    promise.setError(t)
+                }
             }
         }
 

@@ -8,16 +8,37 @@ import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.RunContentBuilder
 import com.intellij.execution.ui.RunContentDescriptor
+import com.intellij.openapi.application.ExpirableExecutor
+import com.intellij.openapi.application.impl.coroutineDispatchingContext
+import com.intellij.openapi.application.runInEdt
+import com.intellij.util.concurrency.AppExecutorUtil
+import kotlinx.coroutines.launch
+import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
-import org.jetbrains.concurrency.resolvedPromise
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 
 open class SamRunner(protected val settings: LocalLambdaRunSettings) {
     open fun patchCommandLine(commandLine: GeneralCommandLine) {}
 
     open fun run(environment: ExecutionEnvironment, state: SamRunningState): Promise<RunContentDescriptor> {
-        val executionResult = state.execute(environment.executor, environment.runner)
-        return resolvedPromise(RunContentBuilder(executionResult, environment).showRunContent(environment.contentToReuse))
+        val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
+        val promise = AsyncPromise<RunContentDescriptor>()
+        ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
+            try {
+                // `execute` needs to be run in the background because it can resolve credentials
+                val executionResult = state.execute(environment.executor, environment.runner)
+                runInEdt {
+                    val runContent = RunContentBuilder(executionResult, environment).showRunContent(environment.contentToReuse)
+                    promise.setResult(runContent)
+                }
+            } catch (e: Throwable) {
+                runInEdt {
+                    promise.setError(e)
+                }
+            }
+        }
+        return promise
     }
 
     /*
