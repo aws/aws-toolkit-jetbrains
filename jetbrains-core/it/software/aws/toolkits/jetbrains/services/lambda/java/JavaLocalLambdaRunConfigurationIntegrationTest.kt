@@ -14,7 +14,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
@@ -72,8 +71,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         )
 
         val compatibility = when (runtime) {
-            Runtime.JAVA8, Runtime.JAVA8_AL2 -> "1.8"
-            Runtime.JAVA11 -> "11"
+            LambdaRuntime.JAVA8, LambdaRuntime.JAVA8_AL2 -> "1.8"
+            LambdaRuntime.JAVA11 -> "11"
             else -> throw NotImplementedError()
         }
 
