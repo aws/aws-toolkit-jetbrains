@@ -206,11 +206,13 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
             return if (state is ConnectionState.ValidConnection) {
                 state.credentials
             } else {
-                throw CredentialProviderNotFoundException(message("credentials.profile.not_configured")).also {
+                if (selectedCredentialIdentifier == null) {
                     LOGGER.warn(IllegalStateException()) {
                         "Using activeCredentialProvider when credentials is null, calling code needs to be migrated to handle null"
                     }
                 }
+
+                throw CredentialProviderNotFoundException(message("credentials.profile.not_configured"))
             }
         }
 
