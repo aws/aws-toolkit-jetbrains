@@ -14,7 +14,6 @@ import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.s3.NOT_VERSIONED_VERSION_ID
 import software.aws.toolkits.resources.message
 import java.time.Instant
-import kotlin.random.Random
 
 sealed class S3TreeNode(val bucket: S3VirtualBucket, val parent: S3LazyLoadParentNode<*>?, val key: String) : SimpleNode() {
     override fun getChildren(): Array<S3TreeNode> = arrayOf()
