@@ -14,11 +14,21 @@ import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import javax.swing.JComponent
 
 class SchemaResourceSelector {
-    private var currentAwsConnection: ConnectionSettings? = null
+    var awsConnection: ConnectionSettings? = null
+        set(value) {
+            val previous = field
+            field = value
+            // if we are loading for the first time (creation), do not load the schemas selector yet
+            if (previous != null) {
+                schemasSelector.reload()
+            }
+        }
 
     private val schemasSelector = initializeSchemasSelector()
 
     val component: JComponent = schemasSelector
+
+    fun reload() = schemasSelector.reload()
 
     private fun initializeSchemasSelector(): ResourceSelector<SchemaSelectionItem> = ResourceSelector.builder()
         .resource(SchemasResources.LIST_REGISTRIES_AND_SCHEMAS)
@@ -26,13 +36,8 @@ class SchemaResourceSelector {
         .customRenderer(SchemaSelectionListCellRenderer())
         .disableAutomaticLoading()
         .disableAutomaticSorting()
-        .awsConnection { currentAwsConnection }
+        .awsConnection { awsConnection }
         .build()
-
-    fun reloadSchemas(awsConnection: ConnectionSettings?) {
-        currentAwsConnection = awsConnection
-        schemasSelector.reload()
-    }
 
     fun registryName(): String? = when (val selected = schemasSelector.selected()) {
         is SchemaSelectionItem.SchemaItem -> selected.registryName
@@ -56,7 +61,7 @@ class SchemaResourceSelector {
 
         val schemaDownloader = SchemaDownloader()
         val describeSchemaResponse =
-            schemaDownloader.getSchemaContent(registryName, schemaName, connectionSettings = currentAwsConnection!!).toCompletableFuture().get()
+            schemaDownloader.getSchemaContent(registryName, schemaName, connectionSettings = awsConnection!!).toCompletableFuture().get()
         val latestSchemaVersion = describeSchemaResponse.schemaVersion()
 
         val schemaNode = schemaDownloader.getSchemaContentAsJson(describeSchemaResponse)
