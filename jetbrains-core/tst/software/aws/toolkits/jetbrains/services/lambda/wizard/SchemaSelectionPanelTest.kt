@@ -85,7 +85,7 @@ class SchemaSelectionPanelTest {
 
         schemaSelectionPanel = SchemaResourceSelector()
         runInEdtAndWait {
-            schemaSelectionPanel.setAwsConnection(connectionManager.settingsManager.connectionSettings())
+            schemaSelectionPanel.awsConnection = connectionManager.settingsManager.connectionSettings()
         }
     }
 
