@@ -73,6 +73,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     // 15 is a magic number (it's the return statement since they are all the same), but the only
     // example of it used that I could find it is used that way:
     // https://github.com/JetBrains/fsharp-support/blob/93ab17493a34a0bc0fd4c70b11adde02f81455c4/rider-fsharp/src/test/kotlin/debugger/AsyncDebuggerTest.kt#L6
+    // Unlike our other projects we do not have a document to work with, so there might not be a nice way to do it.
     fun setBreakpoint(line: Int = 15) {
         toggleBreakpoint(myProject!!, "Function.cs", line)
     }
