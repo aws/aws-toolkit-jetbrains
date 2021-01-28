@@ -13,9 +13,9 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkits.jetbrains.rider.utils.executeRunConfigurationRider
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
-import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 
 class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", LambdaRuntime.DOTNETCORE2_1)
@@ -54,7 +54,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             handler = handler
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationRider(runConfiguration)
         assertThat(executeLambda.exitCode).isEqualTo(0)
     }
 
@@ -70,7 +70,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             environmentVariables = envVars
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationRider(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -87,7 +87,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             handler = handler
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationRider(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -103,7 +103,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             handler = handler
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationRider(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -145,7 +145,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
             isImage = true
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationRider(runConfiguration)
         assertThat(executeLambda.exitCode).isEqualTo(0)
     }
 }
