@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.ui.layout.panel
@@ -17,23 +18,22 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamSchemaDownloadPost
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.ui.connection.AwsConnectionSettingsSelector
 import software.aws.toolkits.resources.message
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JComponent
 
 /*
  * A panel encapsulating  AWS credential selection during SAM new project creation wizard
   */
 class SchemaSelectionPanel : WizardFragment {
-    /*
-     * We only want to initialize the selector once it is applicable, so we have to keep track of it
-     */
-    private val selectorInitialized = AtomicBoolean(false)
     private val schemaSelector by lazy { SchemaResourceSelector() }
     private val awsConnectionSelector by lazy {
         AwsConnectionSettingsSelector(
             null
         ) {
+            val prev = schemaSelector.awsConnection
             schemaSelector.awsConnection = it
+            if (prev != null) {
+                schemaSelector.reload()
+            }
         }
     }
     private val component by lazy {
@@ -64,12 +64,11 @@ class SchemaSelectionPanel : WizardFragment {
         return null
     }
 
-    override fun isApplicable(template: SamProjectTemplate?): Boolean {
-        val supported = template?.supportsDynamicSchemas() == true
-        if (supported && !selectorInitialized.getAndSet(true)) {
-            schemaSelector.reload()
-        }
-        return supported
+    override fun isApplicable(template: SamProjectTemplate?): Boolean = template?.supportsDynamicSchemas() == true
+
+    override fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtimeGroup: RuntimeGroup?, template: SamProjectTemplate?) {
+        super.updateUi(projectLocation, runtimeGroup, template)
+        schemaSelector.reload()
     }
 
     override fun postProjectGeneration(model: ModifiableRootModel, template: SamProjectTemplate, runtime: LambdaRuntime, progressIndicator: ProgressIndicator) {

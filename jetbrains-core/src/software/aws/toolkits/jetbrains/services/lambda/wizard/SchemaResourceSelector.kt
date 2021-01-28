@@ -12,17 +12,10 @@ import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import javax.swing.JComponent
+import kotlin.properties.Delegates.observable
 
 class SchemaResourceSelector {
     var awsConnection: ConnectionSettings? = null
-        set(value) {
-            val previous = field
-            field = value
-            // if we are loading for the first time (creation), do not load the schemas selector yet
-            if (previous != null) {
-                schemasSelector.reload()
-            }
-        }
 
     private val schemasSelector = initializeSchemasSelector()
 
