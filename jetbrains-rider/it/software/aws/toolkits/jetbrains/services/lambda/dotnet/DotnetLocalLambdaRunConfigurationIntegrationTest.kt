@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 import base.AwsReuseSolutionTestBase
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.execution.executors.DefaultDebugExecutor
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
@@ -16,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.rider.utils.executeRunConfigurationRider
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
+import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 
 class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", LambdaRuntime.DOTNETCORE2_1)
@@ -56,6 +58,24 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
         val executeLambda = executeRunConfigurationRider(runConfiguration)
         assertThat(executeLambda.exitCode).isEqualTo(0)
+    }
+
+    @Test
+    fun samIsExecutedDebugger() {
+        setBreakpoint()
+
+        val runConfiguration = createHandlerBasedRunConfiguration(
+            project = project,
+            runtime = runtime.toSdkRuntime(),
+            credentialsProviderId = mockId,
+            handler = handler
+        )
+
+        val debuggerIsHit = checkBreakPointHit(project)
+
+        val executeLambda = executeRunConfigurationRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        assertThat(executeLambda.exitCode).isEqualTo(0)
+        assertThat(debuggerIsHit.get()).isTrue()
     }
 
     @Test

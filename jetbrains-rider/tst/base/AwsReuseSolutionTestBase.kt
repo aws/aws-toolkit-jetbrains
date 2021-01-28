@@ -10,6 +10,7 @@ import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
 import com.jetbrains.rider.test.base.PrepareTestEnvironment
 import com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
 import com.jetbrains.rider.test.scriptingApi.setUpDotNetCoreCliPath
+import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
@@ -67,6 +68,13 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
         } finally {
             myProject = null
         }
+    }
+
+    // 15 is a magic number (it's the return statement since they are all the same), but the only
+    // example of it used that I could find it is used that way:
+    // https://github.com/JetBrains/fsharp-support/blob/93ab17493a34a0bc0fd4c70b11adde02f81455c4/rider-fsharp/src/test/kotlin/debugger/AsyncDebuggerTest.kt#L6
+    fun setBreakpoint(line: Int = 15) {
+        toggleBreakpoint(myProject!!, "Function.cs", line)
     }
 
     private fun openSolution(solutionDirName: String) {
