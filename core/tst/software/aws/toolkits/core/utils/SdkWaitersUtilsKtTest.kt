@@ -3,7 +3,8 @@
 
 package software.aws.toolkits.core.utils
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
 import software.amazon.awssdk.core.internal.waiters.DefaultWaiterResponse
 import java.net.MalformedURLException
@@ -11,13 +12,13 @@ import java.net.MalformedURLException
 class SdkWaitersUtilsKtTest {
     @Test
     fun `waiter response throws exception on error`() {
-        Assertions.assertThatThrownBy {
+        assertThatThrownBy {
             DefaultWaiterResponse.builder<String>().exception(MalformedURLException()).attemptsExecuted(1).build().unwrapResponse()
         }.isInstanceOf(MalformedURLException::class.java)
     }
 
     @Test
     fun `waiter response can return the response`() {
-        Assertions.assertThat(DefaultWaiterResponse.builder<String>().response("Foo").attemptsExecuted(1).build().unwrapResponse()).isEqualTo("Foo")
+        assertThat(DefaultWaiterResponse.builder<String>().response("Foo").attemptsExecuted(1).build().unwrapResponse()).isEqualTo("Foo")
     }
 }
