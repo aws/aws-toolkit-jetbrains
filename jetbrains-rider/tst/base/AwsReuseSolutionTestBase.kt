@@ -6,11 +6,13 @@ package base
 import com.intellij.ide.GeneralSettings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
+import com.jetbrains.rider.projectView.solutionDirectory
 import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
 import com.jetbrains.rider.test.base.PrepareTestEnvironment
+import com.jetbrains.rider.test.debugger.XDebuggerTestHelper
+import com.jetbrains.rider.test.scriptingApi.getVirtualFileFromPath
 import com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
 import com.jetbrains.rider.test.scriptingApi.setUpDotNetCoreCliPath
-import com.jetbrains.rider.test.scriptingApi.toggleBreakpoint
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
@@ -30,6 +32,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
         }
 
     protected open val waitForCaches: Boolean get() = false
+    protected open val waitForSolutionBuilder: Boolean get() = false
     protected open val persistCaches: Boolean get() = false
     protected open val restoreNuGetPackages: Boolean get() = false
 
@@ -75,7 +78,8 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     // https://github.com/JetBrains/fsharp-support/blob/93ab17493a34a0bc0fd4c70b11adde02f81455c4/rider-fsharp/src/test/kotlin/debugger/AsyncDebuggerTest.kt#L6
     // Unlike our other projects we do not have a document to work with, so there might not be a nice way to do it.
     fun setBreakpoint(line: Int = 15) {
-        toggleBreakpoint(myProject!!, "src/HelloWorld/Function.cs", line)
+        // Same as com.jetbrains.rider.test.scriptingApi.toggleBreakpoint, but with the correct base directory
+        XDebuggerTestHelper.toggleBreakpoint(project, getVirtualFileFromPath("src/HelloWorld/Function.cs", project.solutionDirectory), line - 1)
     }
 
     private fun openSolution(solutionDirName: String) {
@@ -86,6 +90,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
         params.preprocessTempDirectory = { preprocessTempDirectory(it) }
         params.persistCaches = persistCaches
         params.waitForCaches = waitForCaches
+        params.waitForSolutionBuilder = waitForSolutionBuilder
         params.restoreNuGetPackages = restoreNuGetPackages
 
         useCachedTemplates = false
