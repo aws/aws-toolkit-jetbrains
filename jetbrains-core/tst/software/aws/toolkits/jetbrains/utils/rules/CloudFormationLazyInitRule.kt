@@ -53,6 +53,7 @@ class CloudFormationLazyInitRule(
 
         // wait for changeset creation to complete
         try {
+            // Use custom waiter due to https://github.com/aws/aws-sdk-java-v2/issues/2262
             cloudformationClient.waitForChangeSetCreateComplete(stackName, changeSetArn)
         } catch (e: Exception) {
             if (e.message?.contains("The submitted information didn't contain changes") == true) {
