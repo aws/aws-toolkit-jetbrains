@@ -7,6 +7,7 @@ import base.AwsReuseSolutionTestBase
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
+import com.jetbrains.rider.projectView.solutionDirectory
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
@@ -155,7 +156,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
 
     @Test
     fun samIsExecutedImage() {
-        val template = "$tempTestDirectory/$solutionName/template.yaml"
+        val template = "${project.solutionDirectory}/template.yaml"
 
         val runConfiguration = createTemplateRunConfiguration(
             project = project,
@@ -175,7 +176,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
     fun samIsExecutedDebuggerImage() {
         setBreakpoint()
 
-        val template = "$tempTestDirectory/$solutionName/template.yaml"
+        val template = "${project.solutionDirectory}/template.yaml"
 
         val runConfiguration = createTemplateRunConfiguration(
             project = project,

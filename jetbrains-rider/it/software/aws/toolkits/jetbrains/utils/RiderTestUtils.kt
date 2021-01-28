@@ -11,6 +11,7 @@ import java.time.Duration
 
 fun executeRunConfigurationAndWaitRider(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
     val executeLambda = executeRunConfiguration(runConfiguration, executorId)
+    // waitAndPump lets us run on EDT in the test itself without deadlocking since Rider runs tests on EDT
     // 4 is arbitrary, but Image-based functions can take > 3 min on first build/run, so 4 is a safe number
     waitAndPump(Duration.ofMinutes(4), { executeLambda.isDone })
     if (!executeLambda.isDone) {
