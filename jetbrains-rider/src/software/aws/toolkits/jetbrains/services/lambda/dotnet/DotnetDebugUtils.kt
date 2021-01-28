@@ -17,6 +17,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.rd.defineNestedLifetime
+import com.intellij.openapi.util.Disposer
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.text.nullize
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -109,9 +110,7 @@ object DotnetDebugUtils {
         }
 
         val executionResult = state.execute(environment.executor, environment.runner)
-        val console = TextConsoleBuilderFactory.getInstance().createBuilder(environment.project).console
         val samProcessHandle = executionResult.processHandler
-        console.attachToProcess(samProcessHandle)
 
         // If we have not started the process's notification system, start it now.
         // This is needed to pipe the SAM output to the Console view of the debugger panel
@@ -170,7 +169,7 @@ object DotnetDebugUtils {
 
                             promise.setResult(
                                 DotNetDebuggerUtils.createAndStartSession(
-                                    executionConsole = console,
+                                    executionConsole = executionResult.executionConsole,//console,
                                     env = environment,
                                     sessionLifetime = debuggerLifetime,
                                     processHandler = samProcessHandle,

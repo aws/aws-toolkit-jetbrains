@@ -75,7 +75,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
         val executeLambda = executeRunConfigurationRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
         assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(debuggerIsHit.get()).isTrue()
+        assertThat(debuggerIsHit.get()).isTrue
     }
 
     @Test
@@ -167,5 +167,28 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
 
         val executeLambda = executeRunConfigurationRider(runConfiguration)
         assertThat(executeLambda.exitCode).isEqualTo(0)
+    }
+
+    @Test
+    fun samIsExecutedDebuggerImage() {
+        setBreakpoint()
+
+        val template = "$tempTestDirectory/$solutionName/template.yaml"
+
+        val runConfiguration = createTemplateRunConfiguration(
+            project = project,
+            runtime = runtime,
+            templateFile = template,
+            logicalId = "HelloWorldFunction",
+            input = "\"Hello World\"",
+            credentialsProviderId = mockId,
+            isImage = true
+        )
+
+        val debuggerIsHit = checkBreakPointHit(project)
+
+        val executeLambda = executeRunConfigurationRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        assertThat(executeLambda.exitCode).isEqualTo(0)
+        assertThat(debuggerIsHit.get()).isTrue
     }
 }
