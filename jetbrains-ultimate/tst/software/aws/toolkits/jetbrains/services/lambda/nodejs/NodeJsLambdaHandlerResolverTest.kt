@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.nodejs
 
 import com.intellij.lang.javascript.psi.JSDefinitionExpression
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptVariable
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.runInEdtAndWait
@@ -16,6 +17,7 @@ import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.utils.rules.NodeJsCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addLambdaHandler
 import software.aws.toolkits.jetbrains.utils.rules.addPackageJsonFile
+import software.aws.toolkits.jetbrains.utils.rules.addTypeScriptLambdaHandler
 
 class NodeJsLambdaHandlerResolverTest {
     @Rule
@@ -157,9 +159,30 @@ class NodeJsLambdaHandlerResolverTest {
     }
 
     @Test
-    fun findPsiElement_exportsAsync2Parameters() {
+    fun findPsiElement_exportsAsync1Parameter() {
+        val fileContent =
+            """
+            exports.lambdaHandler = async (event) => {
+                return "Hello World";
+            }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("app.js", fileContent)
         projectRule.fixture.addPackageJsonFile()
-        projectRule.fixture.addLambdaHandler()
+        assertFindPsiElements("app.lambdaHandler", true)
+    }
+
+    @Test
+    fun findPsiElement_exportsAsync2Parameters() {
+        val fileContent =
+            """
+            exports.lambdaHandler = async (event, context) => {
+                return "Hello World";
+            }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("app.js", fileContent)
+        projectRule.fixture.addPackageJsonFile()
         assertFindPsiElements("app.lambdaHandler", true)
     }
 
@@ -174,20 +197,6 @@ class NodeJsLambdaHandlerResolverTest {
         projectRule.fixture.addFileToProject("app.js", fileContent)
         projectRule.fixture.addPackageJsonFile()
         assertFindPsiElements("app.lambdaHandler", false)
-    }
-
-    @Test
-    fun findPsiElement_exportsAsync1Parameter() {
-        val fileContent =
-            """
-            exports.lambdaHandler = async (event) => {
-                return "Hello World";
-            }
-            """.trimIndent()
-
-        projectRule.fixture.addFileToProject("app.js", fileContent)
-        projectRule.fixture.addPackageJsonFile()
-        assertFindPsiElements("app.lambdaHandler", true)
     }
 
     @Test
@@ -260,6 +269,238 @@ class NodeJsLambdaHandlerResolverTest {
         assertFindPsiElements("app.lambdaHandler", false)
     }
 
+    @Test
+    fun typescript_determineHandler() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler()
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun typescript_determineHandler_noExportsReturnsNull() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                const lambdaHandler = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>): APIGatewayProxyResult => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun typescript_determineHandler_oneParameter() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export const lambdaHandler = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun typescript_determineHandler_TooManyParametersReturnsNull() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export const lambdaHandler = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>, foo: string): APIGatewayProxyResult => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun typescript_determineHandler_oneParameterForAsync() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun typescript_determineHandler_ThreeParametersForAsyncReturnsNull() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun typescript_determineHandler_inSubFolder() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            subPath = "foo/bar",
+            fileContent = """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "foo/bar/app.lambdaHandler")
+    }
+
+    @Test
+    fun typescript_determineHandler_packageJsonFolderAsSourceRoot() {
+        projectRule.fixture.addPackageJsonFile("foo")
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            subPath = "foo/bar",
+            fileContent = """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "bar/app.lambdaHandler")
+    }
+
+    @Test
+    fun typescript_determineHandler_notAFunction() {
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            subPath = "foo/bar",
+            fileContent = """
+                export const lambdaHandler = "foo"
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun typescript_findPsiElement_exportsAsync1Parameter() {
+        val fileContent =
+            """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("app.ts", fileContent)
+        projectRule.fixture.addPackageJsonFile()
+        assertFindPsiElements("app.lambdaHandler", true)
+    }
+
+    @Test
+    fun typescript_findPsiElement_exportsAsync2Parameters() {
+        val fileContent =
+            """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("app.ts", fileContent)
+        projectRule.fixture.addPackageJsonFile()
+        assertFindPsiElements("app.lambdaHandler", true)
+    }
+
+    @Test
+    fun typescript_findPsiElement_exportsAsync3Parameters() {
+        val fileContent =
+            """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("app.ts", fileContent)
+        projectRule.fixture.addPackageJsonFile()
+        assertFindPsiElements("app.lambdaHandler", false)
+    }
+
+    @Test
+    fun typescript_findPsiElement_noExports() {
+        val fileContent =
+            """
+                const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("app.js", fileContent)
+        projectRule.fixture.addPackageJsonFile()
+        assertFindPsiElements("app.lambdaHandler", false)
+    }
+
+    @Test
+    fun typescript_findPsiElement_notAnAssignment() {
+        val fileContent =
+            """
+                async function lambdaHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("app.ts", fileContent)
+        projectRule.fixture.addPackageJsonFile()
+        assertFindPsiElements("app.lambdaHandler", false)
+    }
+
+    @Test
+    fun typescript_findPsiElement_inSubFolderWithNoPackageJson() {
+        val fileContent =
+            """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("foo/app.ts", fileContent)
+        assertFindPsiElements("foo/app.lambdaHandler", false)
+    }
+
+    @Test
+    fun typescript_findPsiElement_inSubFolderWithPackageJson() {
+        val fileContent =
+            """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("foo/bar/app.ts", fileContent)
+        projectRule.fixture.addPackageJsonFile("foo")
+        assertFindPsiElements("bar/app.lambdaHandler", true)
+        assertFindPsiElements("foo/bar/app.lambdaHandler", false)
+    }
+
+    @Test
+    fun typescript_findPsiElement_inSubFolderButHandlerIsNotFullPath() {
+        val fileContent =
+            """
+                export const lambdaHandler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+
+        projectRule.fixture.addFileToProject("foo/app.ts", fileContent)
+        projectRule.fixture.addPackageJsonFile()
+        assertFindPsiElements("app.lambdaHandler", false)
+    }
+
     private fun assertDetermineHandler(handlerElement: PsiElement, expectedHandlerFullName: String?) {
         val resolver = LambdaHandlerResolver.getInstance(RuntimeGroup.getById(BuiltInRuntimeGroups.NodeJs))
 
@@ -279,7 +520,7 @@ class NodeJsLambdaHandlerResolverTest {
             val lambdas = resolver.findPsiElements(project, handler, GlobalSearchScope.allScope(project))
             if (shouldBeFound) {
                 assertThat(lambdas).hasSize(1)
-                assertThat(lambdas[0]).isInstanceOf(JSDefinitionExpression::class.java)
+                assertThat(lambdas[0]).isInstanceOfAny(JSDefinitionExpression::class.java, TypeScriptVariable::class.java)
             } else {
                 assertThat(lambdas).isEmpty()
             }

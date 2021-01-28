@@ -8,6 +8,8 @@ import com.intellij.lang.javascript.psi.JSAssignmentExpression
 import com.intellij.lang.javascript.psi.JSDefinitionExpression
 import com.intellij.lang.javascript.psi.JSFunction
 import com.intellij.lang.javascript.psi.JSReferenceExpression
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptVariable
+import com.intellij.lang.javascript.psi.ecma6.impl.TypeScriptVariableImpl
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList
 import com.intellij.lang.javascript.psi.resolve.JSClassResolver
 import com.intellij.openapi.project.Project
@@ -46,7 +48,7 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
 
         val relativePath = VfsUtilCore.findRelativePath(sourceRoot, virtualFile, '/') ?: return false
         return this is NavigatablePsiElement &&
-            this.parent?.isValidLambdaHandler() == true &&
+            (this.parent?.isValidLambdaHandler() == true || this.isValidTypeScriptLambdaHandler()) &&
             FileUtilRt.getNameWithoutExtension(relativePath) == fileName
     }
 
@@ -78,6 +80,11 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
             return false
         }
 
+        if (this.parent is TypeScriptVariable) {
+            // in TS, 'export' is a modifier rather than the target of an assignment expression
+            return this.parent.isValidTypeScriptLambdaHandler()
+        }
+
         val exportsDefinition = this.parent?.parent ?: return false
 
         if (!exportsDefinition.isExportsDefinition()) {
@@ -91,6 +98,15 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
         }
         return true
     }
+
+    /**
+     * Whether the element is top level PSI element for a valid Lambda handler. It must be in the format as:
+     * export const lambdaHandler = functionExpression
+     */
+    private fun PsiElement.isValidTypeScriptLambdaHandler(): Boolean =
+        this is TypeScriptVariable &&
+            (this as? TypeScriptVariableImpl)?.isExported == true &&
+            this.lastChild.isLambdaFunctionExpression()
 
     /**
      * Whether the element is top level PSI element for a valid Lambda handler. It must be in the format as:
