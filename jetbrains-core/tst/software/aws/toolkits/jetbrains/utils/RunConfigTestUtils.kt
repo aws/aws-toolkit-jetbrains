@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotNull
 
-fun createRunConfiguration(runConfiguration: RunConfiguration, executorId: String): CompletableFuture<Output> {
+fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: String): CompletableFuture<Output> {
     val executor = ExecutorRegistry.getInstance().getExecutorById(executorId)
     assertNotNull(executor)
     val executionFuture = CompletableFuture<Output>()
@@ -75,8 +75,8 @@ fun createRunConfiguration(runConfiguration: RunConfiguration, executorId: Strin
     return executionFuture
 }
 
-fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
-    val executionFuture = createRunConfiguration(runConfiguration, executorId)
+fun executeRunConfigurationAndWait(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
+    val executionFuture = executeRunConfiguration(runConfiguration, executorId)
     // 4 is arbitrary, but Image-based functions can take > 3 min on first build/run, so 4 is a safe number
     return executionFuture.get(4, TimeUnit.MINUTES)
 }
@@ -177,9 +177,9 @@ fun samImageRunDebugTest(
     val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
     val executeLambda = if (addBreakpoint != null) {
-        executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
     } else {
-        executeRunConfiguration(runConfiguration)
+        executeRunConfigurationAndWait(runConfiguration)
     }
 
     assertThat(executeLambda.exitCode).isEqualTo(0)

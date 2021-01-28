@@ -14,7 +14,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
-import software.aws.toolkits.jetbrains.rider.utils.executeRunConfigurationRider
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
@@ -56,7 +56,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             handler = handler
         )
 
-        val executeLambda = executeRunConfigurationRider(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
         assertThat(executeLambda.exitCode).isEqualTo(0)
     }
 
@@ -73,7 +73,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
         val debuggerIsHit = checkBreakPointHit(project)
 
-        val executeLambda = executeRunConfigurationRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(debuggerIsHit.get()).isTrue
     }
@@ -90,7 +90,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             environmentVariables = envVars
         )
 
-        val executeLambda = executeRunConfigurationRider(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -107,7 +107,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             handler = handler
         )
 
-        val executeLambda = executeRunConfigurationRider(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -123,7 +123,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             handler = handler
         )
 
-        val executeLambda = executeRunConfigurationRider(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -165,7 +165,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
             isImage = true
         )
 
-        val executeLambda = executeRunConfigurationRider(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
         assertThat(executeLambda.exitCode).isEqualTo(0)
     }
 
@@ -187,7 +187,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
 
         val debuggerIsHit = checkBreakPointHit(project)
 
-        val executeLambda = executeRunConfigurationRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(debuggerIsHit.get()).isTrue
     }
