@@ -18,10 +18,11 @@ fun RemoteRobot.idea(function: IdeaFrame.() -> Unit) {
     val frame = find<IdeaFrame>(timeout = Duration.ofSeconds(10))
     // FIX_WHEN_MIN_IS_203 remove closing tips
     // Wait for tips to appear. Otherwise, they might show up after the test starts, especially in
-    // S3 tests
+    // S3 tests. This does not actually slow down all tests as we wait for smart mode which takes longer
+    // in most other tests
     frame.apply {
         dumbAware {
-            Thread.sleep(3000)
+            Thread.sleep(5000)
             tryCloseTips()
         }
     }
