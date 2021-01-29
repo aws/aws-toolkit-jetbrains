@@ -35,15 +35,6 @@ class CloudFormationServiceNodeTest {
     }
 
     @Test
-    fun deletedStacksAreNotShown() {
-        stacksWithNames(listOf("Stack" to StackStatus.DELETE_COMPLETE))
-
-        val node = CloudFormationServiceNode(projectRule.project, CF_EXPLORER_NODE)
-
-        assertThat(node.children).hasOnlyElementsOfType(AwsExplorerEmptyNode::class.java)
-    }
-
-    @Test
     fun noStacksShowsEmptyNode() {
         stacksWithNames(emptyList())
 
