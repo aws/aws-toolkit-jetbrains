@@ -12,7 +12,6 @@ import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import javax.swing.JComponent
-import kotlin.properties.Delegates.observable
 
 class SchemaResourceSelector {
     var awsConnection: ConnectionSettings? = null
