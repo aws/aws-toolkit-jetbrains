@@ -66,7 +66,7 @@ abstract class S3LazyLoadParentNode<T>(bucket: S3VirtualBucket, parent: S3LazyLo
 
             val more = loadObjects(continuationMarker)
             // Only say it has loaded before if it loaded successfully
-            if (more.none { it is S3TreeErrorNode }) {
+            if (more.none { it is S3TreeErrorNode || it is S3TreeErrorContinuationNode<*> }) {
                 loadedPages.add(continuationMarker)
             }
             cachedList = children.dropLastWhile { it is S3TreeContinuationNode<*> || it is S3TreeErrorNode } + more
@@ -108,9 +108,10 @@ class S3TreeDirectoryNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?,
         } catch (e: Exception) {
             LOG.error(e) { "Loading objects failed!" }
             return buildList {
-                add(S3TreeErrorNode(bucket, this@S3TreeDirectoryNode))
                 if (continuationMarker != null) {
-                    add(S3TreeContinuationNode(bucket, this@S3TreeDirectoryNode, this@S3TreeDirectoryNode.key, continuationMarker))
+                    add(S3TreeErrorContinuationNode(bucket, this@S3TreeDirectoryNode, this@S3TreeDirectoryNode.key, continuationMarker))
+                } else {
+                    add(S3TreeErrorNode(bucket, this@S3TreeDirectoryNode))
                 }
             }
         }
@@ -182,16 +183,17 @@ class S3TreeObjectNode(parent: S3TreeDirectoryNode, key: String, override val si
         } catch (e: Exception) {
             LOG.error(e) { "Loading objects failed!" }
             return buildList {
-                add(S3TreeErrorNode(bucket, this@S3TreeObjectNode))
                 if (continuationMarker != null) {
                     add(
-                        S3TreeContinuationNode(
+                        S3TreeErrorContinuationNode(
                             bucket,
                             this@S3TreeObjectNode,
                             this@S3TreeObjectNode.key,
                             continuationMarker
                         )
                     )
+                } else {
+                    add(S3TreeErrorNode(bucket, this@S3TreeObjectNode))
                 }
             }
         }
@@ -232,7 +234,7 @@ class S3TreeObjectVersionNode(parent: S3TreeObjectNode, override val versionId: 
     override fun toString(): String = "S3TreeObjectVersionNode(key='$key', versionId='$versionId')"
 }
 
-class S3TreeContinuationNode<T>(
+open class S3TreeContinuationNode<T>(
     bucket: S3VirtualBucket,
     private val parentNode: S3LazyLoadParentNode<T>,
     key: String,
@@ -249,6 +251,19 @@ class S3TreeContinuationNode<T>(
     }
 
     override fun getEqualityObjects(): Array<Any?> = arrayOf(bucket, key, continuationMarker)
+}
+
+class S3TreeErrorContinuationNode<T>(
+    bucket: S3VirtualBucket,
+    parentNode: S3LazyLoadParentNode<T>,
+    key: String,
+    continuationMarker: T
+) : S3TreeContinuationNode<T>(bucket, parentNode, key, continuationMarker) {
+    init {
+        icon = AllIcons.Nodes.ErrorIntroduction
+    }
+
+    override fun displayName(): String = message("s3.load_more_failed")
 }
 
 class S3TreeErrorNode(

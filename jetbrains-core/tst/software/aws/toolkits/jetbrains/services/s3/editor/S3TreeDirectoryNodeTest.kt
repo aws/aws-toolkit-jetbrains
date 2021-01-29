@@ -194,8 +194,7 @@ class S3TreeDirectoryNodeTest {
 
         assertThat(sut.children).containsExactly(
             S3TreeObjectNode(sut, "my/folder/file.txt", objectSize, lastModifiedTime),
-            S3TreeErrorNode(bucket, sut),
-            S3TreeContinuationNode(bucket, sut, sut.key, "Token")
+            S3TreeErrorContinuationNode(bucket, sut, sut.key, "Token")
         )
 
         (sut.children.last() as S3TreeContinuationNode<*>).loadMore()

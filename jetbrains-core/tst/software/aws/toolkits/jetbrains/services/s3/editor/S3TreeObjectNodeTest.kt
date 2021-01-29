@@ -225,8 +225,7 @@ class S3TreeObjectNodeTest {
 
         assertThat(sut.children).containsExactly(
             S3TreeObjectVersionNode(sut, "1", objectSize, lastModifiedTime),
-            S3TreeErrorNode(bucket, sut),
-            S3TreeContinuationNode(bucket, sut, sut.key, VersionContinuationToken("KeyToken", "VersionToken"))
+            S3TreeErrorContinuationNode(bucket, sut, sut.key, VersionContinuationToken("KeyToken", "VersionToken"))
         )
 
         (sut.children.last() as S3TreeContinuationNode<*>).loadMore()
