@@ -133,12 +133,14 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
-            // env vars are passed
+            .describedAs("Environment variables are passed")
             .containsEntry("Foo", "Bar")
             .containsEntry("Bat", "Baz")
-            // region is set
+        assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Region is set")
             .containsEntry("AWS_REGION", getDefaultRegion().id)
-            // credentials are passed
+        assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Credentials are passed")
             .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
             .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
             // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1

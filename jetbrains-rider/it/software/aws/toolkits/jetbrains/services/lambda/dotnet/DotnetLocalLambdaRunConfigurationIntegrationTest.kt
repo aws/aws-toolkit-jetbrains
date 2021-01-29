@@ -84,14 +84,18 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
-            // env vars passed
+            .describedAs("Environment variables are passed")
             .containsEntry("Foo", "Bar")
             .containsEntry("Bat", "Baz")
-            // region passed
+        assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Region is set")
             .containsEntry("AWS_REGION", getDefaultRegion().id)
-            // credentials passed
+        assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Credentials are passed")
             .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
             .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
+            // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1
+            .containsEntry("AWS_SESSION_TOKEN", "")
     }
 
     private fun jsonToMap(data: String) = jacksonObjectMapper().readValue<Map<String, Any>>(data)
