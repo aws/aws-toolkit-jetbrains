@@ -48,7 +48,7 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
 
         val relativePath = VfsUtilCore.findRelativePath(sourceRoot, virtualFile, '/') ?: return false
         return this is NavigatablePsiElement &&
-            (this.parent?.isValidLambdaHandler() == true || this.isValidTypeScriptLambdaHandler()) &&
+            (this.parent?.isValidJsLambdaHandler() == true || this.isValidTypeScriptLambdaHandler()) &&
             FileUtilRt.getNameWithoutExtension(relativePath) == fileName
     }
 
@@ -112,7 +112,7 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
      * Whether the element is top level PSI element for a valid Lambda handler. It must be in the format as:
      * exports.lambdaHandler = functionExpression
      */
-    private fun PsiElement.isValidLambdaHandler(): Boolean =
+    private fun PsiElement.isValidJsLambdaHandler(): Boolean =
         this is JSAssignmentExpression &&
             this.lOperand?.isExportsDefinition() == true &&
             this.rOperand?.isLambdaFunctionExpression() == true
