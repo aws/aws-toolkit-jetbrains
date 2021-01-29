@@ -51,19 +51,6 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     override fun getSolutionDirectoryName(): String = solutionName
 
     @Test
-    fun samIsExecuted() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime.toSdkRuntime(),
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-    }
-
-    @Test
     fun samIsExecutedDebugger() {
         setBreakpoint()
 
@@ -82,7 +69,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     }
 
     @Test
-    fun envVarsArePassed() {
+    fun samIsExecuted() {
         val envVars = mutableMapOf("Foo" to "Bar", "Bat" to "Baz")
 
         val runConfiguration = createHandlerBasedRunConfiguration(
@@ -97,39 +84,12 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            // env vars passed
             .containsEntry("Foo", "Bar")
             .containsEntry("Bat", "Baz")
-    }
-
-    @Test
-    fun regionIsPassed() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime.toSdkRuntime(),
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(jsonToMap(executeLambda.stdout))
+            // region passed
             .containsEntry("AWS_REGION", getDefaultRegion().id)
-    }
-
-    @Test
-    fun credentialsArePassed() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime.toSdkRuntime(),
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(jsonToMap(executeLambda.stdout))
+            // credentials passed
             .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
             .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
     }
