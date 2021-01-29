@@ -155,3 +155,17 @@ fun CodeInsightTestFixture.addPackageJsonFile(
         }
         """.trimIndent()
 ): PsiFile = this.addFileToProject("$subPath/package.json", content)
+
+fun CodeInsightTestFixture.addTypeScriptPackageJsonFile(
+    subPath: String = ".",
+    @Language("JSON") content: String =
+        """
+        {
+            "name": "hello-world",
+            "version": "1.0.0",
+            "devDependencies": {
+              "typescript": "*"
+            }
+        }
+        """.trimIndent()
+): PsiFile = this.addPackageJsonFile(subPath, content)
