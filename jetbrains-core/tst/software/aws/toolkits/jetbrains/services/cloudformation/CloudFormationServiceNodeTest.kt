@@ -55,7 +55,7 @@ class CloudFormationServiceNodeTest {
     private fun stacksWithNames(names: List<Pair<String, StackStatus>>) {
         resourceCache.addEntry(
             projectRule.project,
-            CloudFormationResources.LIST_STACKS,
+            CloudFormationResources.ACTIVE_STACKS,
             CompletableFuture.completedFuture(
                 names.map {
                     StackSummary.builder()
