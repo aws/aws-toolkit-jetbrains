@@ -16,12 +16,12 @@ import java.time.Duration
 
 fun RemoteRobot.idea(function: IdeaFrame.() -> Unit) {
     val frame = find<IdeaFrame>(timeout = Duration.ofSeconds(10))
-    // FIX_WHEN_MIN_IS_203 remove the next two lines
+    // FIX_WHEN_MIN_IS_203 remove closing tips
     // Wait for tips to appear. Otherwise, they might show up after the test starts, especially in
     // S3 tests
     frame.apply {
         dumbAware {
-            Thread.sleep(2000)
+            Thread.sleep(3000)
             tryCloseTips()
         }
     }
