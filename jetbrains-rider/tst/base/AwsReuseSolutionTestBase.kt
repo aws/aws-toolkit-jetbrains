@@ -32,7 +32,6 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
         }
 
     protected open val waitForCaches: Boolean get() = false
-    protected open val waitForSolutionBuilder: Boolean get() = false
     protected open val persistCaches: Boolean get() = false
     protected open val restoreNuGetPackages: Boolean get() = false
 
@@ -90,7 +89,6 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
         params.preprocessTempDirectory = { preprocessTempDirectory(it) }
         params.persistCaches = persistCaches
         params.waitForCaches = waitForCaches
-        params.waitForSolutionBuilder = waitForSolutionBuilder
         params.restoreNuGetPackages = restoreNuGetPackages
 
         useCachedTemplates = false
