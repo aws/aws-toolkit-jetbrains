@@ -55,6 +55,8 @@ phases:
       - chmod +x gradlew
       - ./gradlew buildPlugin --console plain --info
 
+      # disable keyboard repeat
+      - xfconf-query -c keyboard -p /Default/KeyRepeat -t bool -s false
       - Xvfb ${DISPLAY} -screen 0 ${SCREEN_WIDTH}x${SCREEN_HEIGHT}x${SCREEN_DEPTH} &
       - while [ ! -e /tmp/.X11-unix/X99 ]; do sleep 0.1; done
       - XFCE_PANEL_MIGRATE_DEFAULT=1 xfce4-session --display=${DISPLAY} &
