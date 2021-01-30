@@ -103,6 +103,8 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
     /**
      * Whether the element is top level PSI element for a valid Lambda handler. It must be in the format as:
      * export const lambdaHandler = functionExpression
+     * or
+     * export function lambdaHandler(...) { ... }
      */
     private fun PsiElement.isValidTypeScriptLambdaHandler(): Boolean {
         if ((this as? JSQualifiedNamedElement)?.isExported != true) {
