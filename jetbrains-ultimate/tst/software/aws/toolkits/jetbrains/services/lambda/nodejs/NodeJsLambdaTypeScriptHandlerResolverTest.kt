@@ -124,10 +124,123 @@ class NodeJsLambdaTypeScriptHandlerResolverTest {
 
     @Test
     fun determineHandler_notAFunction() {
+        projectRule.fixture.addPackageJsonFile()
         val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
             subPath = "foo/bar",
             fileContent = """
                 export const lambdaHandler = "foo"
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun determineHandler_noExports() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                function lambdaHandler(event: APIGatewayProxyEvent, context: Context): APIGatewayProxyResult {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun determineHandler_asyncNoExports() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                async function lambdaHandler(event: APIGatewayProxyEvent, context: Context): APIGatewayProxyResult {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun determineHandler_exportsFunctionSingleParam() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export function lambdaHandler(event: APIGatewayProxyEvent): APIGatewayProxyResult {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun determineHandler_exportsFunctionTwoParam() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export function lambdaHandler(event: APIGatewayProxyEvent, context: Context): APIGatewayProxyResult {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun determineHandler_exportsFunctionThreeParam() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export function lambdaHandler(event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>) {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun determineHandler_exportsAsyncFunctionSingleParam() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export async function lambdaHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun determineHandler_exportsAsyncFunctionTwoParam() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export async function lambdaHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
+    fun determineHandler_exportsAsyncFunctionThreeParam() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export async function lambdaHandler(event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>): Promise<APIGatewayProxyResult> {
+                    return { statusCode: 200 }
+                }
             """.trimIndent()
         )
 

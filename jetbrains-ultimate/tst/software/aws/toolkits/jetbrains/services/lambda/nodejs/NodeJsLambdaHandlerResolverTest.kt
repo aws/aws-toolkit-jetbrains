@@ -138,6 +138,7 @@ class NodeJsLambdaHandlerResolverTest {
 
     @Test
     fun determineHandler_notAFunction() {
+        projectRule.fixture.addPackageJsonFile()
         val handlerElement = projectRule.fixture.addLambdaHandler(
             subPath = "foo/bar",
             fileContent = """

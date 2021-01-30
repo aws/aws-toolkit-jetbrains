@@ -8,9 +8,10 @@ import com.intellij.lang.javascript.psi.JSAssignmentExpression
 import com.intellij.lang.javascript.psi.JSDefinitionExpression
 import com.intellij.lang.javascript.psi.JSFunction
 import com.intellij.lang.javascript.psi.JSReferenceExpression
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptFunction
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptVariable
-import com.intellij.lang.javascript.psi.ecma6.impl.TypeScriptVariableImpl
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList
+import com.intellij.lang.javascript.psi.ecmal4.JSQualifiedNamedElement
 import com.intellij.lang.javascript.psi.resolve.JSClassResolver
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtilRt
@@ -80,8 +81,8 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
             return false
         }
 
-        if (this.parent is TypeScriptVariable) {
-            // in TS, 'export' is a modifier rather than the target of an assignment expression
+        if (this.parent is TypeScriptVariable || this.parent is TypeScriptFunction) {
+            // in TS, exports are modifiers rather than the target of an assignment expression
             return this.parent.isValidTypeScriptLambdaHandler()
         }
 
@@ -103,10 +104,17 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
      * Whether the element is top level PSI element for a valid Lambda handler. It must be in the format as:
      * export const lambdaHandler = functionExpression
      */
-    private fun PsiElement.isValidTypeScriptLambdaHandler(): Boolean =
-        this is TypeScriptVariable &&
-            (this as? TypeScriptVariableImpl)?.isExported == true &&
-            this.lastChild.isLambdaFunctionExpression()
+    private fun PsiElement.isValidTypeScriptLambdaHandler(): Boolean {
+        if ((this as? JSQualifiedNamedElement)?.isExported != true) {
+            return false
+        }
+
+        return when (this) {
+            is TypeScriptVariable -> this.lastChild.isLambdaFunctionExpression()
+            is TypeScriptFunction -> this.isLambdaFunctionExpression()
+            else -> false
+        }
+    }
 
     /**
      * Whether the element is top level PSI element for a valid Lambda handler. It must be in the format as:
