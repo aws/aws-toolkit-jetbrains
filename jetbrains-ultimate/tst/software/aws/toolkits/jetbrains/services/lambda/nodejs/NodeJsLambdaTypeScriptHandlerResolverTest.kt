@@ -23,11 +23,39 @@ class NodeJsLambdaTypeScriptHandlerResolverTest {
     }
 
     @Test
+    fun determineHandler_function() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                export function lambdaHandler(event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>) {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, "app.lambdaHandler")
+    }
+
+    @Test
     fun determineHandler_noExportsReturnsNull() {
         projectRule.fixture.addPackageJsonFile()
         val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
             fileContent = """
-                const lambdaHandler = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>): APIGatewayProxyResult => {
+                const lambdaHandler = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>) {
+                    return { statusCode: 200 }
+                }
+            """.trimIndent()
+        )
+
+        assertDetermineHandler(handlerElement, null)
+    }
+
+    @Test
+    fun determineHandler_function_noExportsReturnsNull() {
+        projectRule.fixture.addPackageJsonFile()
+        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
+            fileContent = """
+                function lambdaHandler(event: APIGatewayProxyEvent, context: Context) {
                     return { statusCode: 200 }
                 }
             """.trimIndent()
@@ -41,7 +69,7 @@ class NodeJsLambdaTypeScriptHandlerResolverTest {
         projectRule.fixture.addPackageJsonFile()
         val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
             fileContent = """
-                export const lambdaHandler = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
+                export const lambdaHandler = (event: APIGatewayProxyEvent) => {
                     return { statusCode: 200 }
                 }
             """.trimIndent()
@@ -55,7 +83,7 @@ class NodeJsLambdaTypeScriptHandlerResolverTest {
         projectRule.fixture.addPackageJsonFile()
         val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
             fileContent = """
-                export const lambdaHandler = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>, foo: string): APIGatewayProxyResult => {
+                export const lambdaHandler = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>, foo: string) {
                     return { statusCode: 200 }
                 }
             """.trimIndent()
@@ -136,39 +164,11 @@ class NodeJsLambdaTypeScriptHandlerResolverTest {
     }
 
     @Test
-    fun determineHandler_noExports() {
-        projectRule.fixture.addPackageJsonFile()
-        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
-            fileContent = """
-                function lambdaHandler(event: APIGatewayProxyEvent, context: Context): APIGatewayProxyResult {
-                    return { statusCode: 200 }
-                }
-            """.trimIndent()
-        )
-
-        assertDetermineHandler(handlerElement, null)
-    }
-
-    @Test
-    fun determineHandler_asyncNoExports() {
-        projectRule.fixture.addPackageJsonFile()
-        val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
-            fileContent = """
-                async function lambdaHandler(event: APIGatewayProxyEvent, context: Context): APIGatewayProxyResult {
-                    return { statusCode: 200 }
-                }
-            """.trimIndent()
-        )
-
-        assertDetermineHandler(handlerElement, null)
-    }
-
-    @Test
     fun determineHandler_exportsFunctionSingleParam() {
         projectRule.fixture.addPackageJsonFile()
         val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
             fileContent = """
-                export function lambdaHandler(event: APIGatewayProxyEvent): APIGatewayProxyResult {
+                export function lambdaHandler(event: APIGatewayProxyEvent) {
                     return { statusCode: 200 }
                 }
             """.trimIndent()
@@ -182,7 +182,7 @@ class NodeJsLambdaTypeScriptHandlerResolverTest {
         projectRule.fixture.addPackageJsonFile()
         val handlerElement = projectRule.fixture.addTypeScriptLambdaHandler(
             fileContent = """
-                export function lambdaHandler(event: APIGatewayProxyEvent, context: Context): APIGatewayProxyResult {
+                export function lambdaHandler(event: APIGatewayProxyEvent, context: Context) {
                     return { statusCode: 200 }
                 }
             """.trimIndent()
