@@ -15,7 +15,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.DoubleClickListener
-import com.intellij.ui.LoadingNode
 import com.intellij.ui.TreeTableSpeedSearch
 import com.intellij.ui.treeStructure.treetable.TreeTable
 import com.intellij.util.containers.Convertor
@@ -221,7 +220,7 @@ class S3TreeTable(
         }
     }
 
-    fun getNodeForRow(row: Int): S3TreeNode? {
+    private fun getNodeForRow(row: Int): S3TreeNode? {
         val path = tree.getPathForRow(convertRowIndexToModel(row))
         return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
@@ -238,7 +237,6 @@ class S3TreeTable(
     override fun getData(dataId: String): Any? = when {
         S3EditorDataKeys.SELECTED_NODES.`is`(dataId) -> this.getSelectedNodes()
             .filterNot { it is S3TreeContinuationNode<*> }
-            .filterNot { it is LoadingNode }
         S3EditorDataKeys.BUCKET.`is`(dataId) -> this.bucket
         else -> null
     }
