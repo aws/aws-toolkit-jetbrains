@@ -54,6 +54,52 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     }
 
     @Test
+    fun `download action is disabled on empty selection`() {
+        assertThat(sut.updateAction(emptyList()).isEnabled).isFalse
+    }
+
+    @Test
+    fun `download action is disabled on directory selection`() {
+        val nodes = listOf(
+            S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        )
+
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
+    }
+
+    @Test
+    fun `download action is enabled on object selection`() {
+        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val nodes = listOf(
+            S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
+        )
+
+        assertThat(sut.updateAction(nodes).isEnabled).isTrue
+    }
+
+    @Test
+    fun `download action is enabled on object version selection`() {
+        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val obj = S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
+        val nodes = listOf(
+            S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
+        )
+
+        assertThat(sut.updateAction(nodes).isEnabled).isTrue
+    }
+
+    @Test
+    fun `download action is disabled on mix of object and directory selection`() {
+        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val nodes = listOf(
+            dir,
+            S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
+        )
+
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
+    }
+
+    @Test
     fun downloadSingleFileToFile() {
         val destinationFile = tempFolder.newFile().toPath()
 

@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3Object
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction.ConflictResolution.OVERWRITE
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction.ConflictResolution.OVERWRITE_ALL
@@ -65,7 +66,7 @@ class DownloadObjectAction :
         }
     }
 
-    override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.all { it is S3TreeObjectNode }
+    override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isNotEmpty() && nodes.all { it is S3TreeObjectNode || it is S3TreeObjectVersionNode }
 
     override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val files = nodes.filterIsInstance<S3Object>()
