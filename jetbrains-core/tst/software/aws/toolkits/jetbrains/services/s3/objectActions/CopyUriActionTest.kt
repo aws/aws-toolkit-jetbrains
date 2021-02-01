@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.openapi.ide.CopyPasteManager
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
@@ -17,7 +17,7 @@ class CopyUriActionTest : ObjectActionTestBase() {
 
     @Test
     fun `copy uri disabled with no nodes`() {
-        Assertions.assertThat(sut.updateAction(emptyList()).isEnabled).isFalse
+        assertThat(sut.updateAction(emptyList()).isEnabled).isFalse
     }
 
     @Test
@@ -26,7 +26,7 @@ class CopyUriActionTest : ObjectActionTestBase() {
             S3TreeDirectoryNode(virtualBucket, null, "path1/"),
             S3TreeDirectoryNode(virtualBucket, null, "path2/")
         )
-        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isFalse
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
 
     @Test
@@ -34,7 +34,7 @@ class CopyUriActionTest : ObjectActionTestBase() {
         val nodes = listOf(
             S3TreeDirectoryNode(virtualBucket, null, "path1/"),
         )
-        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isTrue
+        assertThat(sut.updateAction(nodes).isEnabled).isTrue
     }
 
     @Test
@@ -45,7 +45,7 @@ class CopyUriActionTest : ObjectActionTestBase() {
             S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
         )
 
-        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isFalse
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
 
     @Test
@@ -56,7 +56,7 @@ class CopyUriActionTest : ObjectActionTestBase() {
         sut.executeAction(nodes)
 
         val data = CopyPasteManager.getInstance().getContents<String>(DataFlavor.stringFlavor)
-        Assertions.assertThat(data).isEqualTo("s3://${bucketName}/path1/")
+        assertThat(data).isEqualTo("s3://$bucketName/path1/")
     }
 
     @Test
@@ -68,6 +68,6 @@ class CopyUriActionTest : ObjectActionTestBase() {
         sut.executeAction(nodes)
 
         val data = CopyPasteManager.getInstance().getContents<String>(DataFlavor.stringFlavor)
-        Assertions.assertThat(data).isEqualTo("s3://${bucketName}/path1/obj1")
+        assertThat(data).isEqualTo("s3://$bucketName/path1/obj1")
     }
 }
