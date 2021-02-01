@@ -105,53 +105,6 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
     }
 
     @Test
-    fun envVarsArePassed() {
-        projectRule.fixture.addLambdaFile(envVarsFileContents)
-        projectRule.fixture.addGoModFile("hello-world")
-
-        val envVars = mutableMapOf("Foo" to "Bar", "Bat" to "Baz")
-
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = projectRule.project,
-            runtime = runtime.toSdkRuntime(),
-            handler = "handler",
-            credentialsProviderId = mockId,
-            environmentVariables = envVars
-        )
-        assertThat(runConfiguration).isNotNull
-
-        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(jsonToMap(executeLambda.stdout))
-            .containsEntry("Foo", "Bar")
-            .containsEntry("Bat", "Baz")
-    }
-
-    @Test
-    fun credentialsArePassed() {
-        projectRule.fixture.addLambdaFile(envVarsFileContents)
-        projectRule.fixture.addGoModFile("hello-world")
-
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = projectRule.project,
-            runtime = runtime.toSdkRuntime(),
-            handler = "handler",
-            credentialsProviderId = mockId
-        )
-        assertThat(runConfiguration).isNotNull
-
-        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(jsonToMap(executeLambda.stdout))
-            .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
-            .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
-            // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1
-            .containsEntry("AWS_SESSION_TOKEN", "")
-    }
-
-    @Test
     fun sessionCredentialsArePassed() {
         projectRule.fixture.addLambdaFile(envVarsFileContents)
         projectRule.fixture.addGoModFile("hello-world")
@@ -181,15 +134,18 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
 
     @Test
     fun samIsExecuted() {
-        projectRule.fixture.addLambdaFile(fileContents)
+        projectRule.fixture.addLambdaFile(envVarsFileContents)
         projectRule.fixture.addGoModFile("hello-world")
+
+        val envVars = mutableMapOf("Foo" to "Bar", "Bat" to "Baz")
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
             handler = "handler",
             input = "\"${input}\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            environmentVariables = envVars
         )
 
         assertThat(runConfiguration).isNotNull
@@ -201,6 +157,16 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
         assertThat(jsonToMap(executeLambda.stdout))
             .describedAs("Region is passed")
             .containsEntry("AWS_REGION", getDefaultRegion().id)
+        assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Envvars are passed")
+            .containsEntry("Foo", "Bar")
+            .containsEntry("Bat", "Baz")
+        assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Credentials are passed")
+            .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
+            .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
+            // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1
+            .containsEntry("AWS_SESSION_TOKEN", "")
     }
 
     @Test
