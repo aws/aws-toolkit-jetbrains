@@ -23,8 +23,8 @@ class CopyPathActionTest : ObjectActionTestBase() {
     @Test
     fun `copy path disabled with on multiple nodes`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(virtualBucket, null, "path1/"),
-            S3TreeDirectoryNode(virtualBucket, null, "path2/")
+            S3TreeDirectoryNode(s3Bucket(), null, "path1/"),
+            S3TreeDirectoryNode(s3Bucket(), null, "path2/")
         )
         assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
@@ -32,14 +32,14 @@ class CopyPathActionTest : ObjectActionTestBase() {
     @Test
     fun `copy path enabled with on single node`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(virtualBucket, null, "path1/"),
+            S3TreeDirectoryNode(s3Bucket(), null, "path1/"),
         )
         assertThat(sut.updateAction(nodes).isEnabled).isTrue
     }
 
     @Test
     fun `copy path disabled with on version nodes`() {
-        val dir = S3TreeDirectoryNode(virtualBucket, null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
         val obj = S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         val nodes = listOf(
             S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
@@ -49,9 +49,9 @@ class CopyPathActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `copy path for dir value is correct`() {
+    fun `copy path for directory is correct`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(virtualBucket, null, "path1/"),
+            S3TreeDirectoryNode(s3Bucket(), null, "path1/"),
         )
         sut.executeAction(nodes)
 
@@ -60,8 +60,8 @@ class CopyPathActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `copy path for obj value is correct`() {
-        val dir = S3TreeDirectoryNode(virtualBucket, null, "path1/")
+    fun `copy path for object is correct`() {
+        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
         val nodes = listOf(
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         )

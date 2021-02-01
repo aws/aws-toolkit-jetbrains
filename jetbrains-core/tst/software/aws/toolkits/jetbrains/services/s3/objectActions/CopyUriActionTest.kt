@@ -23,8 +23,8 @@ class CopyUriActionTest : ObjectActionTestBase() {
     @Test
     fun `copy uri disabled with on multiple nodes`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(virtualBucket, null, "path1/"),
-            S3TreeDirectoryNode(virtualBucket, null, "path2/")
+            S3TreeDirectoryNode(s3Bucket(), null, "path1/"),
+            S3TreeDirectoryNode(s3Bucket(), null, "path2/")
         )
         assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
@@ -32,14 +32,14 @@ class CopyUriActionTest : ObjectActionTestBase() {
     @Test
     fun `copy uri enabled with on single node`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(virtualBucket, null, "path1/"),
+            S3TreeDirectoryNode(s3Bucket(), null, "path1/"),
         )
         assertThat(sut.updateAction(nodes).isEnabled).isTrue
     }
 
     @Test
     fun `copy uri disabled with on version nodes`() {
-        val dir = S3TreeDirectoryNode(virtualBucket, null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
         val obj = S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         val nodes = listOf(
             S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
@@ -49,9 +49,9 @@ class CopyUriActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `copy uri for dir value is correct`() {
+    fun `copy uri for directory is correct`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(virtualBucket, null, "path1/"),
+            S3TreeDirectoryNode(s3Bucket(), null, "path1/"),
         )
         sut.executeAction(nodes)
 
@@ -60,8 +60,8 @@ class CopyUriActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `copy uri for obj value is correct`() {
-        val dir = S3TreeDirectoryNode(virtualBucket, null, "path1/")
+    fun `copy uri for object is correct`() {
+        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
         val nodes = listOf(
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         )

@@ -22,8 +22,9 @@ open class ObjectActionTestBase {
     @JvmField
     val projectRule = ProjectRule()
 
-    protected val bucketName = aString()
-    protected val virtualBucket = S3VirtualBucket(
+    protected val bucketName = "s3-${aString()}"
+
+    protected open fun s3Bucket(): S3VirtualBucket = S3VirtualBucket(
         Bucket.builder().name(bucketName).build(),
         delegateMock()
     )
@@ -43,7 +44,7 @@ open class ObjectActionTestBase {
         val projectContext = SimpleDataContext.getProjectContext(projectRule.project)
         val dc = SimpleDataContext.getSimpleContext(
             mapOf(
-                S3EditorDataKeys.BUCKET.name to virtualBucket,
+                S3EditorDataKeys.BUCKET.name to s3Bucket(),
                 S3EditorDataKeys.SELECTED_NODES.name to nodes
             ),
             projectContext

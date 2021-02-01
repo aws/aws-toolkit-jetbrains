@@ -109,7 +109,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
 
                 override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
                     CopyPathAction(),
-                    CopyUrlAction(project, table),
+                    CopyUrlAction(),
                     CopyUriAction()
                 )
             })
