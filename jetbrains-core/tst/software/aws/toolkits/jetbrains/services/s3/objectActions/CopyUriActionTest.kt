@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.openapi.ide.CopyPasteManager
-import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
@@ -12,55 +12,55 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNod
 import java.awt.datatransfer.DataFlavor
 import java.time.Instant
 
-class CopyPathActionTest : ObjectActionTestBase() {
-    private val sut = CopyPathAction()
+class CopyUriActionTest : ObjectActionTestBase() {
+    private val sut = CopyUriAction()
 
     @Test
-    fun `copy path disabled with no nodes`() {
-        assertThat(sut.updateAction(emptyList()).isEnabled).isFalse
+    fun `copy uri disabled with no nodes`() {
+        Assertions.assertThat(sut.updateAction(emptyList()).isEnabled).isFalse
     }
 
     @Test
-    fun `copy path disabled with on multiple nodes`() {
+    fun `copy uri disabled with on multiple nodes`() {
         val nodes = listOf(
             S3TreeDirectoryNode(virtualBucket, null, "path1/"),
             S3TreeDirectoryNode(virtualBucket, null, "path2/")
         )
-        assertThat(sut.updateAction(nodes).isEnabled).isFalse
+        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
 
     @Test
-    fun `copy path enabled with on single node`() {
+    fun `copy uri enabled with on single node`() {
         val nodes = listOf(
             S3TreeDirectoryNode(virtualBucket, null, "path1/"),
         )
-        assertThat(sut.updateAction(nodes).isEnabled).isTrue
+        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isTrue
     }
 
     @Test
-    fun `copy path disabled with on version nodes`() {
+    fun `copy uri disabled with on version nodes`() {
         val dir = S3TreeDirectoryNode(virtualBucket, null, "path1/")
         val obj = S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         val nodes = listOf(
             S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
         )
 
-        assertThat(sut.updateAction(nodes).isEnabled).isFalse
+        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
 
     @Test
-    fun `copy path for dir value is correct`() {
+    fun `copy uri for dir value is correct`() {
         val nodes = listOf(
             S3TreeDirectoryNode(virtualBucket, null, "path1/"),
         )
         sut.executeAction(nodes)
 
         val data = CopyPasteManager.getInstance().getContents<String>(DataFlavor.stringFlavor)
-        assertThat(data).isEqualTo("path1/")
+        Assertions.assertThat(data).isEqualTo("s3://${bucketName}/path1/")
     }
 
     @Test
-    fun `copy path for obj value is correct`() {
+    fun `copy uri for obj value is correct`() {
         val dir = S3TreeDirectoryNode(virtualBucket, null, "path1/")
         val nodes = listOf(
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
@@ -68,6 +68,6 @@ class CopyPathActionTest : ObjectActionTestBase() {
         sut.executeAction(nodes)
 
         val data = CopyPasteManager.getInstance().getContents<String>(DataFlavor.stringFlavor)
-        assertThat(data).isEqualTo("path1/obj1")
+        Assertions.assertThat(data).isEqualTo("s3://${bucketName}/path1/obj1")
     }
 }
