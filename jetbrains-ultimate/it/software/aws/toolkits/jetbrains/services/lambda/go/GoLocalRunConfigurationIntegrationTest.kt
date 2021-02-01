@@ -19,25 +19,25 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
-import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.HeavyGoCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addGoModFile
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 
 @RunWith(Parameterized::class)
-class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
+class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun parameters(): Collection<Array<Runtime>> = listOf(
-            arrayOf(Runtime.GO1_X)
+        fun parameters(): Collection<Array<LambdaRuntime>> = listOf(
+            arrayOf(LambdaRuntime.GO1_X)
         )
     }
 
@@ -113,39 +113,19 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             handler = "handler",
             credentialsProviderId = mockId,
             environmentVariables = envVars
         )
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
             .containsEntry("Foo", "Bar")
             .containsEntry("Bat", "Baz")
-    }
-
-    @Test
-    fun regionIsPassed() {
-        projectRule.fixture.addLambdaFile(envVarsFileContents)
-        projectRule.fixture.addGoModFile("hello-world")
-
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = projectRule.project,
-            runtime = runtime,
-            handler = "handler",
-            credentialsProviderId = mockId
-        )
-        assertThat(runConfiguration).isNotNull
-
-        val executeLambda = executeRunConfiguration(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(jsonToMap(executeLambda.stdout))
-            .containsEntry("AWS_REGION", getDefaultRegion().id)
     }
 
     @Test
@@ -155,13 +135,13 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             handler = "handler",
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -183,14 +163,14 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             handler = "handler",
             credentialsProviderId = mockSessionId
         )
 
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -206,7 +186,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             handler = "handler",
             input = "\"${input}\"",
             credentialsProviderId = mockId
@@ -214,10 +194,13 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
 
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains(input.toUpperCase())
+        assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Region is passed")
+            .containsEntry("AWS_REGION", getDefaultRegion().id)
     }
 
     @Test
@@ -230,7 +213,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             handler = "handler",
             input = "\"${input}\"",
             credentialsProviderId = mockId
@@ -241,7 +224,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: Runtime) {
         projectRule.addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
-        val executeLambda = executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains(input.toUpperCase())
