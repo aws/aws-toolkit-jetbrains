@@ -5,15 +5,16 @@ package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.util.treeView.TreeState
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import software.aws.toolkits.resources.message
 
 class RefreshSubTreeAction(
-    treeTable: S3TreeTable
-) : SingleS3ObjectAction(treeTable, message("general.refresh"), AllIcons.Actions.Refresh), DumbAware {
-    override fun performAction(node: S3TreeNode) {
+    private val treeTable: S3TreeTable
+) : SingleS3ObjectAction(message("general.refresh"), AllIcons.Actions.Refresh), DumbAware {
+    override fun performAction(dataContext: DataContext, node: S3TreeNode) {
         val state = TreeState.createOn(treeTable.tree)
         treeTable.invalidateLevel(node)
         treeTable.refresh()

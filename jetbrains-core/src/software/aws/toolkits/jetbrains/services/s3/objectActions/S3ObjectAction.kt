@@ -4,40 +4,25 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.DumbAwareAction
+import software.aws.toolkits.jetbrains.core.utils.getRequiredData
+import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
-import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import javax.swing.Icon
 
-// TODO: The treeTable should be removed, and migrated to DataKey to decouple this from the treeTable
-abstract class S3ObjectAction(protected val treeTable: S3TreeTable, title: String, icon: Icon? = null) : DumbAwareAction(title, null, icon) {
-    protected abstract fun performAction(nodes: List<S3TreeNode>)
+abstract class S3ObjectAction(title: String, icon: Icon? = null) : DumbAwareAction(title, null, icon) {
+    final override fun actionPerformed(e: AnActionEvent) = performAction(e.dataContext, selected(e.dataContext).filter { it !is S3TreeContinuationNode<*> })
 
-    protected open fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isNotEmpty()
+    protected abstract fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>)
 
-    override fun update(e: AnActionEvent) {
-        val selected = selected()
+    final override fun update(e: AnActionEvent) {
+        val selected = selected(e.dataContext)
         e.presentation.isEnabled = selected.none { it is S3TreeContinuationNode<*> } && enabled(selected)
     }
 
-    override fun actionPerformed(e: AnActionEvent) = performAction(selected().filter { it !is S3TreeContinuationNode<*> })
+    protected open fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isNotEmpty()
 
-    private fun selected(): List<S3TreeNode> = treeTable.getSelectedNodes().takeIf { it.isNotEmpty() } ?: listOf(treeTable.rootNode)
-}
-
-abstract class SingleS3ObjectAction(treeTable: S3TreeTable, title: String, icon: Icon? = null) : S3ObjectAction(treeTable, title, icon) {
-
-    final override fun performAction(nodes: List<S3TreeNode>) {
-        if (nodes.size != 1) {
-            throw IllegalStateException("SingleActionNode should only have a single node, got $nodes")
-        }
-        performAction(nodes.first())
-    }
-
-    final override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.size == 1 && enabled(nodes.first())
-
-    protected abstract fun performAction(node: S3TreeNode)
-
-    protected open fun enabled(node: S3TreeNode): Boolean = true
+    private fun selected(dataContext: DataContext): List<S3TreeNode> = dataContext.getRequiredData(S3EditorDataKeys.SELECTED_NODES)
 }

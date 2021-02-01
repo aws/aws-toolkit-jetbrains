@@ -3,6 +3,7 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.project.Project
@@ -13,9 +14,9 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 
-class UploadObjectAction(private val project: Project, treeTable: S3TreeTable) :
-    SingleS3ObjectAction(treeTable, message("s3.upload.object.action"), AllIcons.Actions.Upload) {
-    override fun performAction(node: S3TreeNode) {
+class UploadObjectAction(private val project: Project, private val treeTable: S3TreeTable) :
+    SingleS3ObjectAction(message("s3.upload.object.action"), AllIcons.Actions.Upload) {
+    override fun performAction(dataContext: DataContext, node: S3TreeNode) {
         val descriptor =
             FileChooserDescriptorFactory.createAllButJarContentsDescriptor().withDescription(message("s3.upload.object.action", treeTable.bucket.name))
         val chooserDialog = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)

@@ -3,6 +3,7 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
@@ -35,7 +36,7 @@ class DownloadObjectAction(
     private val project: Project,
     treeTable: S3TreeTable
 ) :
-    S3ObjectAction(treeTable, message("s3.download.object.action"), AllIcons.Actions.Download),
+    S3ObjectAction(message("s3.download.object.action"), AllIcons.Actions.Download),
     CoroutineScope by ApplicationThreadPoolScope("DownloadObjectAction") {
 
     private data class DownloadInfo(val s3Object: String, val versionId: String?, val diskLocation: Path) {
@@ -67,7 +68,7 @@ class DownloadObjectAction(
 
     override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.all { it is S3TreeObjectNode }
 
-    override fun performAction(nodes: List<S3TreeNode>) {
+    override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val files = nodes.filterIsInstance<S3Object>()
         when (files.size) {
             1 -> downloadSingle(project, files.first())

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.launch
@@ -16,15 +17,15 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 
-class DeleteObjectAction(private val project: Project, treeTable: S3TreeTable) :
-    S3ObjectAction(treeTable, message("s3.delete.object.action"), AllIcons.Actions.Cancel) {
+class DeleteObjectAction(private val project: Project, private val treeTable: S3TreeTable) :
+    S3ObjectAction(message("s3.delete.object.action"), AllIcons.Actions.Cancel) {
 
-    override fun performAction(nodes: List<S3TreeNode>) {
+    override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         deleteNodes(project, treeTable, nodes.filterIsInstance<S3TreeObjectNode>())
     }
 
     // TODO enable for versioned objects.
-    override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.all { it::class == S3TreeObjectNode::class }
+    override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isNotEmpty() && nodes.all { it::class == S3TreeObjectNode::class }
 }
 
 fun deleteSelectedObjects(project: Project, treeTable: S3TreeTable) {
