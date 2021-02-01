@@ -3,6 +3,7 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -11,16 +12,18 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.util.io.exists
 import com.intellij.util.io.isDirectory
-import com.intellij.util.io.outputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.outputStream
+import software.aws.toolkits.jetbrains.core.utils.getRequiredData
+import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3Object
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
-import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
+import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction.ConflictResolution.OVERWRITE
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction.ConflictResolution.OVERWRITE_ALL
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction.ConflictResolution.SKIP
@@ -32,15 +35,13 @@ import software.aws.toolkits.telemetry.S3Telemetry
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class DownloadObjectAction(
-    private val project: Project,
-    treeTable: S3TreeTable
-) :
+class DownloadObjectAction :
     S3ObjectAction(message("s3.download.object.action"), AllIcons.Actions.Download),
     CoroutineScope by ApplicationThreadPoolScope("DownloadObjectAction") {
 
-    private data class DownloadInfo(val s3Object: String, val versionId: String?, val diskLocation: Path) {
-        constructor(s3Object: S3Object, diskLocation: Path) : this(
+    private data class DownloadInfo(val sourceBucket: S3VirtualBucket, val s3Object: String, val versionId: String?, val diskLocation: Path) {
+        constructor(sourceBucket: S3VirtualBucket, s3Object: S3Object, diskLocation: Path) : this(
+            sourceBucket,
             s3Object.key,
             s3Object.versionId,
             diskLocation
@@ -64,20 +65,20 @@ class DownloadObjectAction(
         }
     }
 
-    private val bucket = treeTable.bucket
-
     override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.all { it is S3TreeObjectNode }
 
     override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val files = nodes.filterIsInstance<S3Object>()
+        val project = dataContext.getRequiredData(CommonDataKeys.PROJECT)
+        val sourceBucket = dataContext.getRequiredData(S3EditorDataKeys.BUCKET)
         when (files.size) {
-            1 -> downloadSingle(project, files.first())
-            else -> downloadMultiple(project, files)
+            1 -> downloadSingle(project, sourceBucket, files.first())
+            else -> downloadMultiple(project, sourceBucket, files)
         }
     }
 
-    private fun downloadSingle(project: Project, file: S3Object) {
-        val selectedLocation = getDownloadLocation(foldersOnly = false) ?: return
+    private fun downloadSingle(project: Project, sourceBucket: S3VirtualBucket, file: S3Object) {
+        val selectedLocation = getDownloadLocation(project = project, foldersOnly = false) ?: return
 
         val destinationFile = if (selectedLocation.isDirectory()) {
             selectedLocation.resolve(file.fileName())
@@ -85,10 +86,10 @@ class DownloadObjectAction(
             selectedLocation
         }
 
-        val downloads = listOf(DownloadInfo(file, destinationFile))
+        val downloads = listOf(DownloadInfo(sourceBucket, file, destinationFile))
 
         val finalDownloads = if (selectedLocation.isDirectory()) {
-            checkForConflicts(destinationFile, downloads)
+            checkForConflicts(project, destinationFile, downloads)
         } else {
             // If user has requested a single file as their destination, presume they want to overwrite it
             downloads
@@ -97,16 +98,16 @@ class DownloadObjectAction(
         downloadAll(project, finalDownloads)
     }
 
-    private fun downloadMultiple(project: Project, files: List<S3Object>) {
-        val selectedLocation = getDownloadLocation(foldersOnly = true) ?: return
+    private fun downloadMultiple(project: Project, sourceBucket: S3VirtualBucket, files: List<S3Object>) {
+        val selectedLocation = getDownloadLocation(project, foldersOnly = true) ?: return
 
-        val downloads = files.map { DownloadInfo(it, selectedLocation.resolve(it.fileName())) }
-        val finalDownloads = checkForConflicts(selectedLocation, downloads)
+        val downloads = files.map { DownloadInfo(sourceBucket, it, selectedLocation.resolve(it.fileName())) }
+        val finalDownloads = checkForConflicts(project, selectedLocation, downloads)
 
         downloadAll(project, finalDownloads)
     }
 
-    private fun getDownloadLocation(foldersOnly: Boolean): Path? {
+    private fun getDownloadLocation(project: Project, foldersOnly: Boolean): Path? {
         val baseDir = VfsUtil.getUserHomeDir()
 
         val descriptor = if (foldersOnly) {
@@ -129,7 +130,7 @@ class DownloadObjectAction(
         }
     }
 
-    private fun checkForConflicts(targetDirectory: Path, downloads: List<DownloadInfo>): List<DownloadInfo> {
+    private fun checkForConflicts(project: Project, targetDirectory: Path, downloads: List<DownloadInfo>): List<DownloadInfo> {
         val finalDownloads = mutableListOf<DownloadInfo>()
         var skipAll = false
 
@@ -143,7 +144,7 @@ class DownloadObjectAction(
                 continue
             }
 
-            val resolution = promptForConflictResolution(targetDirectory, download, downloads)
+            val resolution = promptForConflictResolution(project, targetDirectory, download, downloads)
             if (resolution == SKIP) {
                 LOG.info { "User requested skipping $download" }
             } else if (resolution == OVERWRITE) {
@@ -161,6 +162,7 @@ class DownloadObjectAction(
     }
 
     private fun promptForConflictResolution(
+        project: Project,
         targetDirectory: Path,
         download: DownloadInfo,
         files: List<DownloadInfo>
@@ -196,15 +198,15 @@ class DownloadObjectAction(
     private fun downloadAll(project: Project, files: List<DownloadInfo>) {
         launch {
             try {
-                files.forEach { (key, versionId, output) ->
+                files.forEach {
                     try {
                         // TODO: Create 1 progress indicator for all files and pass it in
-                        output.outputStream().use {
-                            bucket.download(project, key, versionId, it)
+                        it.diskLocation.outputStream().use { os ->
+                            it.sourceBucket.download(project, it.s3Object, it.versionId, os)
                         }
                     } catch (e: Exception) {
-                        e.notifyError(message("s3.download.object.failed", key))
-                        output.deleteIfExists()
+                        e.notifyError(project = project, title = message("s3.download.object.failed", it.s3Object))
+                        it.diskLocation.deleteIfExists()
                         throw e
                     }
                 }

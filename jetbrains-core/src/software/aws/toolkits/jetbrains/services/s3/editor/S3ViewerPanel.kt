@@ -88,7 +88,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
 
     // addCopy is here vs doing it in the `also`'s because it makes it easier to get actions in the right order
     private fun createCommonActionGroup(table: S3TreeTable, addCopy: Boolean): DefaultActionGroup = DefaultActionGroup().also {
-        it.add(DownloadObjectAction(project, table))
+        it.add(DownloadObjectAction())
         it.add(ViewObjectVersionAction(table))
         it.add(UploadObjectAction(project, table))
         it.add(Separator())

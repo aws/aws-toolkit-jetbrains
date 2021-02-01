@@ -9,7 +9,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.testFramework.ProjectRule
+import org.junit.Before
 import org.junit.Rule
+import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
@@ -23,10 +25,16 @@ open class ObjectActionTestBase {
     val projectRule = ProjectRule()
 
     protected val bucketName = "s3-${aString()}"
+    protected lateinit var s3Client: S3Client
+
+    @Before
+    fun setUp() {
+        s3Client = delegateMock()
+    }
 
     protected open fun s3Bucket(): S3VirtualBucket = S3VirtualBucket(
         Bucket.builder().name(bucketName).build(),
-        delegateMock()
+        s3Client
     )
 
     protected fun AnAction.executeAction(nodes: List<S3TreeNode>) {
