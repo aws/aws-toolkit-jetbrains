@@ -23,12 +23,18 @@ fun IdeaFrame.projectStructureDialog(
             keyboard { hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_SHIFT, KeyEvent.VK_S) }
         }
 
-        val dialog = remoteRobot.find<ProjectStructureDialog>(byXpath("//div[@accessiblename='Project Structure']"), timeout)
+        // TODO fix this. The thread.sleep and findAll are due to a lot of test failures because it opens more than one project
+        // structure dialog for some reason because it spams the s key without letting go of the other keys. Turning off key
+        // repeat did not seem to fix it
+        Thread.sleep(3000)
+        val dialog = remoteRobot.findAll<ProjectStructureDialog>(byXpath("//div[@accessiblename='Project Structure']"))
 
-        dialog.apply(function)
+        dialog.first().apply(function)
 
-        if (dialog.isShowing) {
-            dialog.close()
+        dialog.forEach {
+            if (it.isShowing) {
+                it.close()
+            }
         }
     }
 }
