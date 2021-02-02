@@ -92,7 +92,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         it.add(ViewObjectVersionAction())
         it.add(UploadObjectAction(project, table))
         it.add(Separator())
-        it.add(NewFolderAction(project, table))
+        it.add(NewFolderAction())
         it.add(
             RenameObjectAction(project, table).apply {
                 registerCustomShortcutSet(CommonShortcuts.getRename(), table)
