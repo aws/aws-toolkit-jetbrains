@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.rds
 
-import software.amazon.awssdk.services.rds.model.DBInstance
+import software.amazon.awssdk.services.rds.model.DBCluster
 
 data class RdsDatasourceConfiguration(
     val regionId: String,
     val credentialId: String,
-    val dbInstance: DBInstance,
+    val dbCluster: DBCluster,
     val username: String
 )

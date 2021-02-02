@@ -62,18 +62,22 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
                 selected.nodeProject,
                 result,
                 DatabaseCredentials.IAM,
-                selected.dbInstance.engine()
+                selected.dbCluster.engine()
             )
         }.queue()
     }
 
+    override fun update(selected: RdsNode, e: AnActionEvent) {
+        e.presentation.isEnabled = selected.iamAuthEnabled()
+    }
+
     internal fun checkPrerequisites(node: RdsNode): Boolean {
         // Assert IAM auth enabled
-        if (!node.dbInstance.iamDatabaseAuthenticationEnabled()) {
+        if (!node.dbCluster.iamDatabaseAuthenticationEnabled()) {
             notifyError(
                 project = node.nodeProject,
                 title = message("aws.notification.title"),
-                content = message("rds.validation.no_iam_auth", node.dbInstance.dbInstanceIdentifier()),
+                content = message("rds.validation.no_iam_auth", node.dbCluster.dbClusterIdentifier()),
                 action = OpenBrowserAction(message("rds.validation.setup_guide"), null, HelpIds.RDS_SETUP_IAM_AUTH.url)
             )
             return false
@@ -87,13 +91,13 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
             node.nodeProject.getResourceNow(StsResources.USER).substringAfter(':')
         } catch (e: Exception) {
             LOG.warn(e) { "Getting username from STS failed, falling back to master username" }
-            node.dbInstance.masterUsername()
+            node.dbCluster.masterUsername()
         }
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 regionId = node.nodeProject.activeRegion().id,
                 credentialId = node.nodeProject.activeCredentialProvider().id,
-                dbInstance = node.dbInstance,
+                dbCluster = node.dbCluster,
                 username = username
             )
         )
@@ -105,9 +109,9 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
 }
 
 fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
-    val engine = config.dbInstance.rdsEngine()
-    val port = config.dbInstance.endpoint().port()
-    val host = config.dbInstance.endpoint().address()
+    val engine = config.dbCluster.rdsEngine()
+    val port = config.dbCluster.port()
+    val host = config.dbCluster.endpoint()
     val endpoint = "$host:$port"
 
     builder

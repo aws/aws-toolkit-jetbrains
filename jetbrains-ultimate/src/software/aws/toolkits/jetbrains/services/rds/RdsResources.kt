@@ -3,13 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.rds
 
-import software.amazon.awssdk.services.rds.model.DBInstance
+import software.amazon.awssdk.services.rds.model.DBCluster
 
 // These are the member engine in DBInstance, but it is a string
 const val mysqlEngineType = "mysql"
 const val postgresEngineType = "postgres"
 
-fun DBInstance.rdsEngine(): RdsEngine = RdsEngine.fromEngine(engine())
+fun DBCluster.rdsEngine(): RdsEngine = RdsEngine.fromEngine(engine())
 
 const val jdbcMysql = "mysql"
 const val jdbcMysqlAurora = "mysql:aurora"
