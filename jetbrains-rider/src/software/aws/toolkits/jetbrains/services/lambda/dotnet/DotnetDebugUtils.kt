@@ -108,7 +108,10 @@ object DotnetDebugUtils {
         }
 
         val executionResult = state.execute(environment.executor, environment.runner)
+        // We have to make our own, otherwise it gets disposed improperly (ugh) TODO can we fix this?
+        val console = TextConsoleBuilderFactory.getInstance().createBuilder(environment.project).console
         val samProcessHandle = executionResult.processHandler
+        console.attachToProcess(samProcessHandle)
 
         // If we have not started the process's notification system, start it now.
         // This is needed to pipe the SAM output to the Console view of the debugger panel
@@ -167,7 +170,7 @@ object DotnetDebugUtils {
 
                             promise.setResult(
                                 DotNetDebuggerUtils.createAndStartSession(
-                                    executionConsole = executionResult.executionConsole,
+                                    executionConsole = console,
                                     env = environment,
                                     sessionLifetime = debuggerLifetime,
                                     processHandler = samProcessHandle,
