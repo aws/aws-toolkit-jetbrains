@@ -11,6 +11,7 @@ phases:
       java: openjdk11
 
     commands:
+      - echo "Running with profile $ALTERNATIVE_IDE_PROFILE_NAME"
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             choco install -y --no-progress codecov
