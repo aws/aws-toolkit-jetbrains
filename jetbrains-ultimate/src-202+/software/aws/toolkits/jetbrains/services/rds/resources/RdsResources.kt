@@ -8,7 +8,6 @@ import software.amazon.awssdk.services.rds.model.DBCluster
 import software.amazon.awssdk.services.rds.model.Filter
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
-import software.aws.toolkits.jetbrains.services.rds.AuroraMySql
 import software.aws.toolkits.jetbrains.services.rds.RdsEngine
 
 // FIX_WHEN_MIN_IS_202 make this one the default in RdsResources.kt
