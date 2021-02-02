@@ -237,6 +237,7 @@ class S3TreeTable(
     override fun getData(dataId: String): Any? = when {
         S3EditorDataKeys.SELECTED_NODES.`is`(dataId) -> this.getSelectedNodes().filterNot { it is S3TreeContinuationNode<*> }
         S3EditorDataKeys.BUCKET.`is`(dataId) -> this.bucket
+        S3EditorDataKeys.BUCKET_VIEWER.`is`(dataId) -> this
         else -> null
     }
 

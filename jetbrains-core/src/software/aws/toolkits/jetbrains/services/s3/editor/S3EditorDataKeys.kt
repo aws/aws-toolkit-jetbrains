@@ -15,4 +15,9 @@ object S3EditorDataKeys {
      * Returns the Bucket for the viewer
      */
     val BUCKET = DataKey.create<S3VirtualBucket>("aws.s3.bucketViewer.bucket")
+
+    /**
+     * Returns the S3 bucket viewer table
+     */
+    val BUCKET_VIEWER = DataKey.create<S3TreeTable>("aws.s3.bucketViewer")
 }
