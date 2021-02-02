@@ -153,7 +153,6 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
         val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(executeLambda.stdout).contains(input.toUpperCase())
         assertThat(jsonToMap(executeLambda.stdout))
             .describedAs("Region is passed")
             .containsEntry("AWS_REGION", getDefaultRegion().id)
