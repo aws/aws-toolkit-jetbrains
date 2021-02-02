@@ -17,6 +17,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.rd.defineNestedLifetime
+import com.intellij.openapi.util.Disposer
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.text.nullize
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -208,7 +209,7 @@ object DotnetDebugUtils {
         debuggerLifetime.onTermination {
             checkDebuggerTask.cancel()
             // TODO Since we make our own, we have to dispose the one it made.
-            executionResult.executionConsole.dispose()
+            Disposer.dispose(executionResult.executionConsole)
         }
 
         return promise
