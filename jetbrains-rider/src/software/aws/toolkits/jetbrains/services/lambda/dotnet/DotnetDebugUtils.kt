@@ -207,6 +207,8 @@ object DotnetDebugUtils {
 
         debuggerLifetime.onTermination {
             checkDebuggerTask.cancel()
+            // TODO Since we make our own, we have to dispose the one it made.
+            executionResult.executionConsole.dispose()
         }
 
         return promise
