@@ -63,8 +63,10 @@ object IdeVersions {
                 "com.intellij.database",
                 "Pythonid:203.5981.165"
             ),
+            ijSdkOverride = "2020.3",
+            riderSdkOverride = "2020.3-SNAPSHOT",
             rdGenVersion = "0.203.161",
-            nugetVersion = "2020.3.0"
+            nugetVersion = "2020.3.0-eap04"
         )
     ).associateBy { it.name }
 
