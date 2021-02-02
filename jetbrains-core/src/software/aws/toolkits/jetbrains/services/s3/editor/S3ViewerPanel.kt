@@ -114,7 +114,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
                 )
             })
         }
-        it.add(DeleteObjectAction(project, table))
+        it.add(DeleteObjectAction())
         it.add(Separator())
     }
 }

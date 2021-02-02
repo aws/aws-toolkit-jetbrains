@@ -34,7 +34,9 @@ open class ObjectActionTestBase {
     @Before
     fun setUp() {
         s3Client = delegateMock()
-        treeTable = mock()
+        treeTable = mock {
+            on { bucket }.thenReturn(s3Bucket())
+        }
     }
 
     protected open fun s3Bucket(): S3VirtualBucket = S3VirtualBucket(
