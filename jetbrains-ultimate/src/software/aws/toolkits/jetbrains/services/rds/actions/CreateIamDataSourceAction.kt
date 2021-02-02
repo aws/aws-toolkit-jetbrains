@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.rds.RdsNode
 import software.aws.toolkits.jetbrains.services.rds.auth.IamAuth
 import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_HOST_PROPERTY
 import software.aws.toolkits.jetbrains.services.rds.auth.RDS_SIGNING_PORT_PROPERTY
-import software.aws.toolkits.jetbrains.services.rds.rdsEngine
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -62,22 +61,18 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
                 selected.nodeProject,
                 result,
                 DatabaseCredentials.IAM,
-                selected.dbCluster.engine()
+                selected.database.engine
             )
         }.queue()
     }
 
-    override fun update(selected: RdsNode, e: AnActionEvent) {
-        e.presentation.isEnabled = selected.iamAuthEnabled()
-    }
-
     internal fun checkPrerequisites(node: RdsNode): Boolean {
         // Assert IAM auth enabled
-        if (!node.dbCluster.iamDatabaseAuthenticationEnabled()) {
+        if (!node.database.iamDatabaseAuthenticationEnabled) {
             notifyError(
                 project = node.nodeProject,
                 title = message("aws.notification.title"),
-                content = message("rds.validation.no_iam_auth", node.dbCluster.dbClusterIdentifier()),
+                content = message("rds.validation.no_iam_auth", node.database.identifier),
                 action = OpenBrowserAction(message("rds.validation.setup_guide"), null, HelpIds.RDS_SETUP_IAM_AUTH.url)
             )
             return false
@@ -91,13 +86,13 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
             node.nodeProject.getResourceNow(StsResources.USER).substringAfter(':')
         } catch (e: Exception) {
             LOG.warn(e) { "Getting username from STS failed, falling back to master username" }
-            node.dbCluster.masterUsername()
+            node.database.masterUsername
         }
         registry.createRdsDatasource(
             RdsDatasourceConfiguration(
                 regionId = node.nodeProject.activeRegion().id,
                 credentialId = node.nodeProject.activeCredentialProvider().id,
-                dbCluster = node.dbCluster,
+                database = node.database,
                 username = username
             )
         )
@@ -109,9 +104,9 @@ class CreateIamDataSourceAction : SingleExplorerNodeAction<RdsNode>(message("rds
 }
 
 fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
-    val engine = config.dbCluster.rdsEngine()
-    val port = config.dbCluster.port()
-    val host = config.dbCluster.endpoint()
+    val engine = config.database.rdsEngine()
+    val port = config.database.endpoint.port
+    val host = config.database.endpoint.host
     val endpoint = "$host:$port"
 
     builder
