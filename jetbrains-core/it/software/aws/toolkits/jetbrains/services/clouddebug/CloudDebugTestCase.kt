@@ -87,7 +87,7 @@ abstract class CloudDebugTestCase(private val taskDefName: String) {
     }
 
     @After
-    fun tearDown() {
+    open fun tearDown() {
         try {
             deinstrumentService()
         } finally {
