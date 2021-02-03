@@ -69,7 +69,7 @@ abstract class CloudDebugTestCase(private val taskDefName: String) {
         runUnderRealCredentials(getProject()) {
             println("Instrumenting service")
             instrumentService()
-            val instrumentedServiceName = "cloud-debug-${EcsUtils.serviceArnToName(service.serviceArn())}"
+            val instrumentedServiceName = instrumentedServiceName()
             println("Waiting for $instrumentedServiceName to stabilize")
             ecsRule.ecsClient.waiter().waitUntilServicesStable {
                 it.cluster(service.clusterArn())
@@ -86,11 +86,35 @@ abstract class CloudDebugTestCase(private val taskDefName: String) {
     }
 
     @After
-    open fun tearDown() {
+    fun tearDown() {
+        try {
+            deinstrumentService()
+        } finally {
+            // If deinstrumenting fails, or initialization doesn't work properly, we still want to try to delete the services, so kick that off
+            try {
+                ecsClient.deleteService { it.cluster(service.clusterArn()).service(service.serviceArn()).force(true) }
+            } catch (e: Exception) {
+            }
+            try {
+                ecsClient.deleteService { it.cluster(service.clusterArn()).service(instrumentedServiceName()).force(true) }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    private fun deinstrumentService() {
         // TODO: this doesn't wait for the revert command to complete but fulfills our need to cleanup
         if (::instrumentedService.isInitialized) {
             runUnderRealCredentials(getProject()) {
-                deinstrumentService()
+                val latch = CountDownLatch(1)
+                DeinstrumentResourceFromExplorerAction.performAction(
+                    getProject(),
+                    service.clusterArn(),
+                    EcsUtils.originalServiceName(instrumentedService.serviceName()),
+                    null,
+                    awaitCli(latch)
+                )
+                latch.await(5, TimeUnit.MINUTES)
                 println("Waiting for ${instrumentedService.serviceArn()} to be deinstrumented")
                 ecsClient.waiter().waitUntilServicesInactive {
                     it.cluster(instrumentedService.clusterArn())
@@ -159,17 +183,7 @@ abstract class CloudDebugTestCase(private val taskDefName: String) {
         latch.await(5, TimeUnit.MINUTES)
     }
 
-    private fun deinstrumentService() {
-        val latch = CountDownLatch(1)
-        DeinstrumentResourceFromExplorerAction.performAction(
-            getProject(),
-            service.clusterArn(),
-            EcsUtils.originalServiceName(instrumentedService.serviceName()),
-            null,
-            awaitCli(latch)
-        )
-        latch.await(5, TimeUnit.MINUTES)
-    }
+    private fun instrumentedServiceName() = "cloud-debug-${EcsUtils.serviceArnToName(service.serviceArn())}"
 
     abstract fun getProject(): Project
 
