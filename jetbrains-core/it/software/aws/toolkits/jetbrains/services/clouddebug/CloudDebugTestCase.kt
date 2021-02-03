@@ -32,8 +32,6 @@ import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.rules.CloudFormationLazyInitRule
 import java.nio.file.Paths
 import java.time.Duration
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 abstract class CloudDebugTestCase(private val taskDefName: String) {
     protected lateinit var service: Service
