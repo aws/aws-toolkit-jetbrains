@@ -260,7 +260,7 @@ class S3TreeErrorContinuationNode<T>(
     continuationMarker: T
 ) : S3TreeContinuationNode<T>(bucket, parentNode, key, continuationMarker) {
     init {
-        icon = AllIcons.Nodes.ErrorIntroduction
+        icon = AllIcons.General.Error
     }
 
     override fun displayName(): String = message("s3.load_more_failed")
@@ -271,7 +271,7 @@ class S3TreeErrorNode(
     parentNode: S3LazyLoadParentNode<*>
 ) : S3TreeNode(bucket, parentNode, "${parentNode.key}error") {
     init {
-        icon = AllIcons.Nodes.ErrorIntroduction
+        icon = AllIcons.General.Error
     }
 
     override fun displayName(): String = message("s3.error_loading")
