@@ -92,14 +92,8 @@ abstract class CloudDebugTestCase(private val taskDefName: String) {
             deinstrumentService()
         } finally {
             // If deinstrumenting fails, or initialization doesn't work properly, we still want to try to delete the services, so kick that off
-            try {
-                ecsClient.deleteService { it.cluster(service.clusterArn()).service(service.serviceArn()).force(true) }
-            } catch (e: Exception) {
-            }
-            try {
-                ecsClient.deleteService { it.cluster(service.clusterArn()).service(instrumentedServiceName()).force(true) }
-            } catch (e: Exception) {
-            }
+            runCatching { ecsClient.deleteService { it.cluster(service.clusterArn()).service(service.serviceArn()).force(true) } }
+            runCatching { ecsClient.deleteService { it.cluster(service.clusterArn()).service(instrumentedServiceName()).force(true) } }
         }
     }
 
