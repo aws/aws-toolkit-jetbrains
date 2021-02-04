@@ -4,13 +4,17 @@
 package software.aws.toolkits.jetbrains.services.lambda.python
 
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.jetbrains.python.PythonHelper
+import com.jetbrains.python.console.PyDebugConsoleBuilder
 import com.jetbrains.python.debugger.PyDebugProcess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.jetbrains.python.debugger.PyDebugRunner
+import com.jetbrains.python.sdk.PythonSdkType
 import software.aws.toolkits.jetbrains.services.PathMapper
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
@@ -41,6 +45,10 @@ object PythonDebugUtils {
                     )
                 )
 
+                // TODO: We shhould allow using the module SDK, but we can't easily get the module
+                val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }
+                state.consoleBuilder = PyDebugConsoleBuilder(environment.project, sdk)
+
                 return PyDebugProcess(
                     session,
                     executionResult.executionConsole,
@@ -49,8 +57,9 @@ object PythonDebugUtils {
                     debugPorts.first()
                 ).also {
                     it.positionConverter = PathMapper.PositionConverter(PathMapper(mappings))
+
+                    PyDebugRunner.createConsoleCommunicationAndSetupActions(environment.project, executionResult, it, session)
                 }
             }
         }
     }
-}
