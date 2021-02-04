@@ -7,8 +7,10 @@ import base.AwsReuseSolutionTestBase
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
+import com.intellij.openapi.application.ApplicationInfo
 import com.jetbrains.rider.projectView.solutionDirectory
 import org.assertj.core.api.Assertions.assertThat
+import org.testng.SkipException
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -25,7 +27,10 @@ class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunC
 class Dotnet21LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda2X", LambdaRuntime.DOTNETCORE2_1)
 
-class Dotnet31LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda3X", LambdaRuntime.DOTNETCORE3_1)
+class Dotnet31LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda3X", LambdaRuntime.DOTNETCORE3_1) {
+    override val disableOn203 = false // At least run one test suite, running more than one will trigger failures
+}
+
 class Dotnet31LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda3X", LambdaRuntime.DOTNETCORE3_1)
 
@@ -41,6 +46,8 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val handler = "EchoLambda::EchoLambda.Function::FunctionHandler"
 
+    protected open val disableOn203 = true
+
     @BeforeMethod
     fun setUp() {
         setSamExecutableFromEnvironment()
@@ -51,20 +58,11 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     override fun getSolutionDirectoryName(): String = solutionName
 
     @Test
-    fun samIsExecuted() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime.toSdkRuntime(),
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-    }
-
-    @Test
     fun samIsExecutedDebugger() {
+        if (disableOn203 && ApplicationInfo.getInstance().build.baselineVersion >= 203) {
+            throw SkipException("Test skipped due to double release of editor on 203")
+        }
+
         setBreakpoint()
 
         val runConfiguration = createHandlerBasedRunConfiguration(
@@ -82,7 +80,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     }
 
     @Test
-    fun envVarsArePassed() {
+    fun samIsExecuted() {
         val envVars = mutableMapOf("Foo" to "Bar", "Bat" to "Baz")
 
         val runConfiguration = createHandlerBasedRunConfiguration(
@@ -97,41 +95,18 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Environment variables are passed")
             .containsEntry("Foo", "Bar")
             .containsEntry("Bat", "Baz")
-    }
-
-    @Test
-    fun regionIsPassed() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime.toSdkRuntime(),
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Region is set")
             .containsEntry("AWS_REGION", getDefaultRegion().id)
-    }
-
-    @Test
-    fun credentialsArePassed() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime.toSdkRuntime(),
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Credentials are passed")
             .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
             .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
+            // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1
+            .containsEntry("AWS_SESSION_TOKEN", "")
     }
 
     private fun jsonToMap(data: String) = jacksonObjectMapper().readValue<Map<String, Any>>(data)
@@ -174,6 +149,10 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
 
     @Test
     fun samIsExecutedDebuggerImage() {
+        if (ApplicationInfo.getInstance().build.baselineVersion >= 203) {
+            throw SkipException("Test skipped due to double release of editor on 203")
+        }
+
         setBreakpoint()
 
         val template = "${project.solutionDirectory}/template.yaml"
