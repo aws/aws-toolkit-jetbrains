@@ -21,7 +21,7 @@ class IamAuthWidget : AwsAuthWidget() {
     private val rdsSigningHostField = JBTextField()
     private val rdsSigningPortField = JBTextField()
 
-    override val rowCount = 4
+    override val rowCount = 5
     override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url)
 
     override fun createPanel(): JPanel {
