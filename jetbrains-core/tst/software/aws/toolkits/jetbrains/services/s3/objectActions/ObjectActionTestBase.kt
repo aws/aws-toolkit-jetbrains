@@ -56,7 +56,7 @@ open class ObjectActionTestBase {
             mapOf(
                 S3EditorDataKeys.BUCKET.name to s3Bucket,
                 S3EditorDataKeys.SELECTED_NODES.name to nodes,
-                S3EditorDataKeys.BUCKET_VIEWER.name to treeTable
+                S3EditorDataKeys.BUCKET_TABLE.name to treeTable
             ),
             projectContext
         )

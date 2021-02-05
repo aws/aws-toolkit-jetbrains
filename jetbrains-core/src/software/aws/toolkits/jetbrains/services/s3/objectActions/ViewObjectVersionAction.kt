@@ -16,7 +16,7 @@ class ViewObjectVersionAction : SingleS3ObjectAction(message("s3.version.history
             node.showHistory = true
 
             // TODO: Can we expand the node too
-            dataContext.getRequiredData(S3EditorDataKeys.BUCKET_VIEWER).refresh()
+            dataContext.getRequiredData(S3EditorDataKeys.BUCKET_TABLE).refresh()
         }
     }
 

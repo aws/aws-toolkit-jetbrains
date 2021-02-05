@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.openapi.ui.TestDialog
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
@@ -23,7 +23,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
 
     @Test
     fun `new folder action is enabled on empty selection`() {
-        Assertions.assertThat(sut.updateAction(emptyList()).isEnabled).isTrue
+        assertThat(sut.updateAction(emptyList()).isEnabled).isTrue
     }
 
     @Test
@@ -32,7 +32,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
             S3TreeDirectoryNode(s3Bucket, null, "path1/")
         )
 
-        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isTrue
+        assertThat(sut.updateAction(nodes).isEnabled).isTrue
     }
 
     @Test
@@ -42,7 +42,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         )
 
-        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isTrue
+        assertThat(sut.updateAction(nodes).isEnabled).isTrue
     }
 
     @Test
@@ -53,7 +53,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
             S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
         )
 
-        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isFalse
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
 
     @Test
@@ -64,21 +64,18 @@ class NewFolderActionTest : ObjectActionTestBase() {
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         )
 
-        Assertions.assertThat(sut.updateAction(nodes).isEnabled).isFalse
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
 
     @Test
     fun `new folder on an object uses its parent directory as key prefix`() {
-
     }
 
     @Test
     fun `new folder on directory uses its key as prefix`() {
-
     }
 
     @Test
     fun `new folder with no select uses no prefix`() {
-
     }
 }

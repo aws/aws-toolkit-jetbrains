@@ -19,5 +19,5 @@ object S3EditorDataKeys {
     /**
      * Returns the S3 bucket viewer table
      */
-    val BUCKET_VIEWER = DataKey.create<S3TreeTable>("aws.s3.bucketViewer")
+    val BUCKET_TABLE = DataKey.create<S3TreeTable>("aws.s3.bucketViewer")
 }

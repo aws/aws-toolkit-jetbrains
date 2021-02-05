@@ -21,7 +21,7 @@ import software.aws.toolkits.resources.message
 class NewFolderAction : S3ObjectAction(message("s3.new.folder"), AllIcons.Actions.NewFolder), CoroutineScope by ApplicationThreadPoolScope("NewFolderAction") {
     override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val project = dataContext.getRequiredData(CommonDataKeys.PROJECT)
-        val treeTable = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_VIEWER)
+        val treeTable = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_TABLE)
         val node = nodes.firstOrNull() ?: treeTable.rootNode
 
         Messages.showInputDialog(project, message("s3.new.folder.name"), message("s3.new.folder"), null)?.let { key ->

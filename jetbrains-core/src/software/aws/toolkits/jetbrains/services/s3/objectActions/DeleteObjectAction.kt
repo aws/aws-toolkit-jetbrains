@@ -23,7 +23,7 @@ import software.aws.toolkits.telemetry.S3Telemetry
 class DeleteObjectAction : S3ObjectAction(message("s3.delete.object.action"), AllIcons.Actions.Cancel) {
     override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val project = dataContext.getRequiredData(CommonDataKeys.PROJECT)
-        val treeTable = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_VIEWER)
+        val treeTable = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_TABLE)
         deleteNodes(project, treeTable, nodes.filterIsInstance<S3TreeObjectNode>())
     }
 
