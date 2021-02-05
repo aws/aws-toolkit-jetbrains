@@ -29,7 +29,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
     @Test
     fun `new folder action is enabled on directory selection`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+            S3TreeDirectoryNode(s3Bucket, null, "path1/")
         )
 
         Assertions.assertThat(sut.updateAction(nodes).isEnabled).isTrue
@@ -37,7 +37,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
 
     @Test
     fun `new folder action is enabled on object selection`() {
-        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val nodes = listOf(
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         )
@@ -47,7 +47,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
 
     @Test
     fun `new folder action is disabled on object version selection`() {
-        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val obj = S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         val nodes = listOf(
             S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
@@ -58,7 +58,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
 
     @Test
     fun `new folder action is disabled on multiple selection`() {
-        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val nodes = listOf(
             dir,
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())

@@ -12,9 +12,7 @@ import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.mock
 import org.junit.Before
 import org.junit.Rule
-import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
-import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
@@ -28,21 +26,18 @@ open class ObjectActionTestBase {
 
     // Prefix this with "s3-" so that it will always be DNS compatible
     protected val bucketName = "s3-${aString()}"
-    protected lateinit var s3Client: S3Client
     protected lateinit var treeTable: S3TreeTable
+    protected lateinit var s3Bucket: S3VirtualBucket
 
     @Before
     fun setUp() {
-        s3Client = delegateMock()
+        s3Bucket = mock(verboseLogging = true) {
+            on { s3Bucket }.thenReturn(Bucket.builder().name(bucketName).build())
+        }
         treeTable = mock {
-            on { bucket }.thenReturn(s3Bucket())
+            on { bucket }.thenReturn(s3Bucket)
         }
     }
-
-    protected open fun s3Bucket(): S3VirtualBucket = S3VirtualBucket(
-        Bucket.builder().name(bucketName).build(),
-        s3Client
-    )
 
     protected fun AnAction.executeAction(nodes: List<S3TreeNode>) {
         val event = createEventFor(this, nodes)
@@ -59,7 +54,7 @@ open class ObjectActionTestBase {
         val projectContext = SimpleDataContext.getProjectContext(projectRule.project)
         val dc = SimpleDataContext.getSimpleContext(
             mapOf(
-                S3EditorDataKeys.BUCKET.name to s3Bucket(),
+                S3EditorDataKeys.BUCKET.name to s3Bucket,
                 S3EditorDataKeys.SELECTED_NODES.name to nodes,
                 S3EditorDataKeys.BUCKET_VIEWER.name to treeTable
             ),

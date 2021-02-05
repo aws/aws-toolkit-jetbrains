@@ -21,7 +21,7 @@ class ViewObjectVersionActionTest : ObjectActionTestBase() {
     @Test
     fun `show history is disabled on directory selection`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+            S3TreeDirectoryNode(s3Bucket, null, "path1/")
         )
 
         assertThat(sut.updateAction(nodes).isEnabled).isFalse
@@ -29,7 +29,7 @@ class ViewObjectVersionActionTest : ObjectActionTestBase() {
 
     @Test
     fun `show history is enabled on object selection`() {
-        val dirNode = S3TreeDirectoryNode(s3Bucket(), null, "")
+        val dirNode = S3TreeDirectoryNode(s3Bucket, null, "")
         val nodes = listOf(
             S3TreeObjectNode(dirNode, "testKey", 1, Instant.now())
         )
@@ -40,7 +40,7 @@ class ViewObjectVersionActionTest : ObjectActionTestBase() {
     @Test
     fun `show history is disabled on object version selection`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+            S3TreeDirectoryNode(s3Bucket, null, "path1/")
         )
 
         assertThat(sut.updateAction(nodes).isEnabled).isFalse
@@ -48,7 +48,7 @@ class ViewObjectVersionActionTest : ObjectActionTestBase() {
 
     @Test
     fun `show history is disabled on multiple selection`() {
-        val dirNode = S3TreeDirectoryNode(s3Bucket(), null, "")
+        val dirNode = S3TreeDirectoryNode(s3Bucket, null, "")
         val nodes = listOf(
             S3TreeObjectNode(dirNode, "testKey2", 1, Instant.now()),
             S3TreeObjectNode(dirNode, "testKey", 1, Instant.now())
@@ -59,7 +59,7 @@ class ViewObjectVersionActionTest : ObjectActionTestBase() {
 
     @Test
     fun `show object history on object node`() {
-        val dirNode = S3TreeDirectoryNode(s3Bucket(), null, "")
+        val dirNode = S3TreeDirectoryNode(s3Bucket, null, "")
         val objectNode = S3TreeObjectNode(dirNode, "testKey", 1, Instant.now())
 
         assertThat(objectNode.showHistory).isFalse

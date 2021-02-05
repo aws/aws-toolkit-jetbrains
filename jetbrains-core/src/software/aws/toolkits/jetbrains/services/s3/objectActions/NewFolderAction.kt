@@ -27,7 +27,7 @@ class NewFolderAction : S3ObjectAction(message("s3.new.folder"), AllIcons.Action
         Messages.showInputDialog(project, message("s3.new.folder.name"), message("s3.new.folder"), null)?.let { key ->
             launch {
                 try {
-                    treeTable.bucket.newFolder(node.directoryPath() + key)
+                    node.bucket.newFolder(node.directoryPath() + key)
                     treeTable.invalidateLevel(node)
                     treeTable.refresh()
                 } catch (e: Exception) {

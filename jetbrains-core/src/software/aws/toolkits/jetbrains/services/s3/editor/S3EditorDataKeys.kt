@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.DataKey
 
 object S3EditorDataKeys {
     /**
-     * Returns all the selected nodes. Note: Continuation and loading nodes are filtered out
+     * Returns all the selected nodes. Note: Error, Continuation, and loading nodes are filtered out
      */
     val SELECTED_NODES = DataKey.create<List<S3TreeNode>>("aws.s3.bucketViewer.selectedNodes")
 

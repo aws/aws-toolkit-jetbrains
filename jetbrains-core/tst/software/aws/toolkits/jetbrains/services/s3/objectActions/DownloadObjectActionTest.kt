@@ -5,21 +5,17 @@ package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.testFramework.DisposableRule
-import com.intellij.util.io.createFile
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.stub
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.amazon.awssdk.core.sync.ResponseTransformer
-import software.amazon.awssdk.http.AbortableInputStream
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.aws.toolkits.core.utils.test.retryableAssert
+import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
@@ -28,7 +24,7 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNod
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction.ConflictResolution
 import software.aws.toolkits.jetbrains.ui.TestDialogService
 import software.aws.toolkits.jetbrains.utils.createMockFileChooser
-import java.io.ByteArrayInputStream
+import java.io.OutputStream
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -61,7 +57,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     @Test
     fun `download action is disabled on directory selection`() {
         val nodes = listOf(
-            S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+            S3TreeDirectoryNode(s3Bucket, null, "path1/")
         )
 
         assertThat(sut.updateAction(nodes).isEnabled).isFalse
@@ -69,7 +65,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
 
     @Test
     fun `download action is enabled on object selection`() {
-        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val nodes = listOf(
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         )
@@ -79,7 +75,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
 
     @Test
     fun `download action is enabled on object version selection`() {
-        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val obj = S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         val nodes = listOf(
             S3TreeObjectVersionNode(obj, "version", 1, Instant.now())
@@ -90,7 +86,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
 
     @Test
     fun `download action is disabled on mix of object and directory selection`() {
-        val dir = S3TreeDirectoryNode(s3Bucket(), null, "path1/")
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val nodes = listOf(
             dir,
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
@@ -140,7 +136,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     @Test
     fun downloadSingleFileToFolderWithConflictSkip() {
         val destinationFolder = tempFolder.newFolder().toPath()
-        destinationFolder.resolve("testFile-1").createFile()
+        destinationFolder.resolve("testFile-1").touch()
 
         createMockFileChooser(testDisposable.disposable, destinationFolder)
 
@@ -213,8 +209,8 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     @Test
     fun downloadMultipleFilesConflictSkipSome() {
         val destinationFolder = tempFolder.newFolder().toPath()
-        destinationFolder.resolve("testFile-2").createFile()
-        destinationFolder.resolve("testFile-4").createFile()
+        destinationFolder.resolve("testFile-2").touch()
+        destinationFolder.resolve("testFile-4").touch()
 
         createMockFileChooser(testDisposable.disposable, destinationFolder)
 
@@ -248,9 +244,9 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     @Test
     fun downloadMultipleFilesConflictSkipThenOverwriteRest() {
         val destinationFolder = tempFolder.newFolder().toPath()
-        destinationFolder.resolve("testFile-2").createFile()
-        destinationFolder.resolve("testFile-4").createFile()
-        destinationFolder.resolve("testFile-5").createFile()
+        destinationFolder.resolve("testFile-2").touch()
+        destinationFolder.resolve("testFile-4").touch()
+        destinationFolder.resolve("testFile-5").touch()
 
         createMockFileChooser(testDisposable.disposable, destinationFolder)
 
@@ -284,8 +280,8 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     @Test
     fun downloadMultipleFilesConflictSkipAll() {
         val destinationFolder = tempFolder.newFolder().toPath()
-        destinationFolder.resolve("testFile-2").createFile()
-        destinationFolder.resolve("testFile-4").createFile()
+        destinationFolder.resolve("testFile-2").touch()
+        destinationFolder.resolve("testFile-4").touch()
 
         createMockFileChooser(testDisposable.disposable, destinationFolder)
 
@@ -343,7 +339,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     @Test
     fun cancelOnPromptIsSkip() {
         val destinationFolder = tempFolder.newFolder().toPath()
-        destinationFolder.resolve("testFile-1").createFile()
+        destinationFolder.resolve("testFile-1").touch()
 
         createMockFileChooser(testDisposable.disposable, destinationFolder)
 
@@ -437,38 +433,27 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     private fun setUpS3Mock(testData: List<TestData>, numberOfDownloads: Int = testData.size): CountDownLatch {
         val countDownLatch = CountDownLatch(numberOfDownloads)
 
-        s3Client.stub {
-            on {
-                getObject(any<GetObjectRequest>(), any<ResponseTransformer<GetObjectResponse, GetObjectResponse>>())
-            } doAnswer { invoke ->
-                val request = invoke.arguments[0] as GetObjectRequest
+        s3Bucket.stub {
+            onBlocking {
+                download(any(), any(), anyOrNull(), any())
+            }.thenAnswer { invoke ->
+                val key = invoke.getArgument<String>(1)
 
-                if (testData.first { it.key == request.key() }.downloadError) {
+                if (testData.first { it.key == key }.downloadError) {
                     countDownLatch.countDown()
-                    throw S3Exception.builder().message("Test Error for ${request.key()}").build()
+                    throw S3Exception.builder().message("Test Error for $key").build()
                 }
 
-                @Suppress("UNCHECKED_CAST")
-                val transformer = invoke.arguments[1] as ResponseTransformer<GetObjectResponse, GetObjectResponse>
+                val versionId = invoke.getArgument<String?>(2)
 
-                val contentPostfix = if (request.versionId() != null) "-old-version" else ""
-                val content = "${request.key()}-content$contentPostfix".toByteArray()
+                val contentPostfix = if (versionId != null) "-old-version" else ""
+                val content = "$key-content$contentPostfix".toByteArray()
 
-                val delegate = object : ByteArrayInputStream(content) {
-                    override fun close() {
-                        super.close()
-                        countDownLatch.countDown()
-                    }
+                invoke.getArgument<OutputStream>(3).use {
+                    it.write(content)
                 }
 
-                transformer.transform(
-                    GetObjectResponse.builder()
-                        .eTag("1111")
-                        .lastModified(Instant.parse("1995-10-23T10:12:35Z"))
-                        .contentLength(content.size.toLong())
-                        .build(),
-                    AbortableInputStream.create(delegate)
-                )
+                countDownLatch.countDown()
             }
         }
 
@@ -478,7 +463,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
     private data class TestData(val key: String, val isVersion: Boolean = false, val downloadError: Boolean = false)
 
     private fun List<TestData>.convertToNodes(): List<S3TreeNode> {
-        val parent = S3TreeDirectoryNode(s3Bucket(), null, "")
+        val parent = S3TreeDirectoryNode(s3Bucket, null, "")
 
         return this.map {
             if (it.isVersion) {
