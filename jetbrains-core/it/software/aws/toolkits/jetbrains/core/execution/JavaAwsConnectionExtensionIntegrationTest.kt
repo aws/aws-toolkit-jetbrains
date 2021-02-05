@@ -32,8 +32,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager.Companion.DUMMY_PROVIDER_IDENTIFIER
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.utils.execute
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
@@ -57,6 +57,14 @@ class JavaAwsConnectionExtensionIntegrationTest {
     @JvmField
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
 
+    @Rule
+    @JvmField
+    val regionProviderRule = MockRegionProviderRule()
+
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
+
     @Test
     fun connectionDetailsAreInjected() {
         val fixture = projectRule.fixture
@@ -76,21 +84,22 @@ class JavaAwsConnectionExtensionIntegrationTest {
             """
         )
 
-        val mockRegion = MockRegionProvider.getInstance().defaultRegion().id
+        val mockRegion = regionProviderRule.createAwsRegion()
+        val mockCredential = credentialManagerRule.createCredentialProvider()
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java)
         val runConfiguration = configuration.configuration as ApplicationConfiguration
         runConfiguration.putCopyableUserData(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
             AwsCredentialInjectionOptions {
-                region = mockRegion
-                credential = DUMMY_PROVIDER_IDENTIFIER.id
+                region = mockRegion.id
+                credential = mockCredential.id
             }
         )
         runConfiguration.setMainClass(psiClass)
         compileModule(module)
 
-        assertThat(runConfiguration.execute().stdout).isEqualToIgnoringWhitespace(mockRegion)
+        assertThat(runConfiguration.execute().stdout).isEqualToIgnoringWhitespace(mockRegion.id)
     }
 
     private fun compileModule(module: Module) {
