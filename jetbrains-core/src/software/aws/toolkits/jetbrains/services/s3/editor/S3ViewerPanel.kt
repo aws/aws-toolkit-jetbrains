@@ -83,7 +83,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
     private fun createCommonActionGroup(table: S3TreeTable, addCopy: Boolean): DefaultActionGroup = DefaultActionGroup().also {
         it.add(DownloadObjectAction())
         it.add(ViewObjectVersionAction())
-        it.add(UploadObjectAction(project, table))
+        it.add(UploadObjectAction())
         it.add(Separator())
         it.add(NewFolderAction())
         it.add(

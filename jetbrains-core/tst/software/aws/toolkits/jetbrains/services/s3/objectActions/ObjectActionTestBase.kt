@@ -13,7 +13,6 @@ import com.intellij.ui.treeStructure.treetable.TreeTableTree
 import com.nhaarman.mockitokotlin2.mock
 import org.junit.Before
 import org.junit.Rule
-import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
@@ -27,17 +26,16 @@ open class ObjectActionTestBase {
     @JvmField
     val projectRule = ProjectRule()
 
-    // Prefix this with "s3-" so that it will always be DNS compatible
-    protected val bucketName = "s3-${aString()}"
+    protected val bucketName = aString()
     protected lateinit var treeTable: S3TreeTable
     protected lateinit var s3Bucket: S3VirtualBucket
 
     @Before
     fun setUp() {
-        s3Bucket = mock(verboseLogging = true) {
-            on { s3Bucket }.thenReturn(Bucket.builder().name(bucketName).build())
+        s3Bucket = mock {
+            on { name }.thenReturn(bucketName)
         }
-        val mockModel = mock< TreeTableTree> {
+        val mockModel = mock<TreeTableTree> {
             on { model }.thenReturn(S3TreeTableModel(mock(), emptyArray(), mock()))
         }
         treeTable = mock {

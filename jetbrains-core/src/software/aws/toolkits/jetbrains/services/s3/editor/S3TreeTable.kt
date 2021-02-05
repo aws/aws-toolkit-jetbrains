@@ -12,7 +12,6 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.io.FileUtilRt.getUserContentLoadLimit
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.TreeTableSpeedSearch
@@ -24,13 +23,12 @@ import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.s3.objectActions.deleteSelectedObjects
+import software.aws.toolkits.jetbrains.services.s3.objectActions.uploadObjects
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.UnsupportedFlavorException
@@ -70,7 +68,7 @@ class S3TreeTable(
                 lfs.findFileByIoFile(it)
             }
 
-            uploadAndRefresh(virtualFiles, node)
+            uploadObjects(project, this@S3TreeTable, virtualFiles, node)
         }
     }
 
@@ -178,39 +176,6 @@ class S3TreeTable(
         loadMoreListener.installOn(this)
         openFileListener.installOn(this)
         super.addKeyListener(keyListener)
-    }
-
-    fun uploadAndRefresh(selectedFiles: List<VirtualFile>, node: S3TreeNode) {
-        if (selectedFiles.isEmpty()) {
-            LOG.warn { "Zero files passed into s3 uploadAndRefresh, not attempting upload or refresh" }
-            return
-        }
-        launch {
-            try {
-                selectedFiles.forEach {
-                    if (it.isDirectory) {
-                        notifyError(
-                            title = message("s3.upload.object.failed", it.name),
-                            content = message("s3.upload.directory.impossible", it.name),
-                            project = project
-                        )
-                        return@forEach
-                    }
-
-                    try {
-                        bucket.upload(project, it.inputStream, it.length, node.directoryPath() + it.name)
-                        invalidateLevel(node)
-                        refresh()
-                    } catch (e: Exception) {
-                        e.notifyError(message("s3.upload.object.failed", it.path), project)
-                        throw e
-                    }
-                }
-                S3Telemetry.uploadObjects(project, Result.Succeeded, selectedFiles.size.toDouble())
-            } catch (e: Exception) {
-                S3Telemetry.uploadObjects(project, Result.Failed, selectedFiles.size.toDouble())
-            }
-        }
     }
 
     fun refresh() {

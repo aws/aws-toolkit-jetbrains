@@ -15,7 +15,7 @@ import java.awt.datatransfer.StringSelection
 
 class CopyUriAction : SingleS3ObjectAction(message("s3.copy.uri")) {
     override fun performAction(dataContext: DataContext, node: S3TreeNode) {
-        CopyPasteManager.getInstance().setContents(StringSelection("s3://${node.bucket.s3Bucket.name()}/${node.key}"))
+        CopyPasteManager.getInstance().setContents(StringSelection("s3://${node.bucket.name}/${node.key}"))
         S3Telemetry.copyUri(dataContext.getRequiredData(CommonDataKeys.PROJECT), success = true)
     }
 

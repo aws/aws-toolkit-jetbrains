@@ -13,6 +13,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNode
@@ -84,16 +85,18 @@ class RenameObjectActionTest : ObjectActionTestBase() {
 
         sut.executeAction(nodes)
 
-        argumentCaptor<String>().apply {
-            verifyBlocking(s3Bucket) { renameObject(capture(), capture()) }
+        retryableAssert {
+            argumentCaptor<String>().apply {
+                verifyBlocking(s3Bucket) { renameObject(capture(), capture()) }
 
-            assertThat(allValues).hasSize(2)
-            assertThat(firstValue).isEqualTo("path1/obj1")
-            assertThat(secondValue).isEqualTo("path1/$input")
+                assertThat(allValues).hasSize(2)
+                assertThat(firstValue).isEqualTo("path1/obj1")
+                assertThat(secondValue).isEqualTo("path1/$input")
+            }
+
+            verify(treeTable).invalidateLevel(obj)
+            verify(treeTable).refresh()
         }
-
-        verify(treeTable).invalidateLevel(obj)
-        verify(treeTable).refresh()
     }
 
     @Test

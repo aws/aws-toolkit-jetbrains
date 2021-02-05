@@ -122,17 +122,19 @@ class DeleteObjectActionTest : ObjectActionTestBase() {
 
         sut.executeAction(nodes)
 
-        argumentCaptor<List<String>>().apply {
-            verifyBlocking(s3Bucket) { deleteObjects(capture()) }
-
-            assertThat(allValues).hasSize(1)
-            assertThat(firstValue).containsAll(nodes.map { it.key })
-        }
-
-        // Happens async on a different thread
         retryableAssert {
-            verify(treeTable, times(3)).invalidateLevel(any<S3TreeObjectNode>())
-            verify(treeTable).refresh()
+            argumentCaptor<List<String>>().apply {
+                verifyBlocking(s3Bucket) { deleteObjects(capture()) }
+
+                assertThat(allValues).hasSize(1)
+                assertThat(firstValue).containsAll(nodes.map { it.key })
+            }
+
+            // Happens async on a different thread
+            retryableAssert {
+                verify(treeTable, times(3)).invalidateLevel(any<S3TreeObjectNode>())
+                verify(treeTable).refresh()
+            }
         }
     }
 }
