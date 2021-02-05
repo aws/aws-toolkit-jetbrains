@@ -20,4 +20,3 @@ fun spinUntil(duration: Duration, condition: () -> Boolean) {
         }
     }
 }
-

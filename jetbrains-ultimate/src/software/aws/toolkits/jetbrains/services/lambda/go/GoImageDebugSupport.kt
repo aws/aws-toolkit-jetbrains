@@ -24,14 +24,12 @@ class GoImageDebugSupport : ImageDebugSupport {
         add(debugger)
     }
 
-    override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> {
-        return mapOf(
-            "_AWS_LAMBDA_GO_DEBUGGING" to "1",
-            "_AWS_LAMBDA_GO_DELVE_API_VERSION" to "2",
-            "_AWS_LAMBDA_GO_DELVE_LISTEN_PORT" to debugPorts.first().toString(),
-            "_AWS_LAMBDA_GO_DELVE_PATH" to "/tmp/lambci_debug_files/dlv",
-        )
-    }
+    override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = mapOf(
+        "_AWS_LAMBDA_GO_DEBUGGING" to "1",
+        "_AWS_LAMBDA_GO_DELVE_API_VERSION" to "2",
+        "_AWS_LAMBDA_GO_DELVE_LISTEN_PORT" to debugPorts.first().toString(),
+        "_AWS_LAMBDA_GO_DELVE_PATH" to "/tmp/lambci_debug_files/dlv",
+    )
 
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,

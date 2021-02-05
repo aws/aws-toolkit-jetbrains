@@ -11,7 +11,6 @@ import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,6 +28,7 @@ import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.HeavyGoCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addGoModFile
+import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 
 @RunWith(Parameterized::class)
@@ -170,9 +170,6 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
 
     @Test
     fun samIsExecutedWithDebugger() {
-        // TODO enable when go debugging is fixed on sam cli public release
-        // see: https://github.com/aws/aws-sam-cli/issues/2462
-        assumeTrue(false)
         projectRule.fixture.addLambdaFile(fileContents)
         projectRule.fixture.addGoModFile("hello-world")
 
@@ -196,6 +193,29 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
 
         assertThat(debuggerIsHit.get()).isTrue()
     }
+
+    @Test
+    fun samIsExecutedImage(): Unit = samImageRunDebugTest(
+        projectRule = projectRule,
+        relativePath = "samProjects/image/$runtime",
+        sourceFileName = "main.go",
+        runtime = runtime,
+        mockCredentialsId = mockId,
+        input = input,
+        expectedOutput = input.toUpperCase()
+    )
+
+    @Test
+    fun samIsExecutedWithDebuggerImage(): Unit = samImageRunDebugTest(
+        projectRule = projectRule,
+        relativePath = "samProjects/image/$runtime",
+        sourceFileName = "main.go",
+        runtime = runtime,
+        mockCredentialsId = mockId,
+        input = input,
+        expectedOutput = input.toUpperCase(),
+        addBreakpoint = { projectRule.addBreakpoint() }
+    )
 
     private fun jsonToMap(data: String) = jacksonObjectMapper().readValue<Map<String, String>>(data)
     private fun CodeInsightTestFixture.addLambdaFile(contents: String) {
