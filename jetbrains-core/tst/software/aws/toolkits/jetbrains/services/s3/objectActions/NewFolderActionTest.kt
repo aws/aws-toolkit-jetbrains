@@ -4,9 +4,15 @@
 package software.aws.toolkits.jetbrains.services.s3.objectActions
 
 import com.intellij.openapi.ui.TestDialog
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNode
@@ -69,13 +75,73 @@ class NewFolderActionTest : ObjectActionTestBase() {
 
     @Test
     fun `new folder on an object uses its parent directory as key prefix`() {
+        val input = aString()
+
+        TestDialogService.setTestInputDialog { input }
+
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
+        val nodes = listOf(
+            S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
+        )
+
+        sut.executeAction(nodes)
+
+        argumentCaptor<String>().apply {
+            verifyBlocking(s3Bucket, times(1)) {
+                newFolder(capture())
+            }
+
+            assertThat(allValues).hasSize(1)
+            assertThat(firstValue).isEqualTo("path1/$input")
+        }
+
+        verify(treeTable).invalidateLevel(any<S3TreeObjectNode>())
+        verify(treeTable).refresh()
     }
 
     @Test
     fun `new folder on directory uses its key as prefix`() {
+        val input = aString()
+
+        TestDialogService.setTestInputDialog { input }
+
+        val nodes = listOf(
+            S3TreeDirectoryNode(s3Bucket, null, "path1/")
+        )
+
+        sut.executeAction(nodes)
+
+        argumentCaptor<String>().apply {
+            verifyBlocking(s3Bucket, times(1)) {
+                newFolder(capture())
+            }
+
+            assertThat(allValues).hasSize(1)
+            assertThat(firstValue).isEqualTo("path1/$input")
+        }
+
+        verify(treeTable).invalidateLevel(any<S3TreeDirectoryNode>())
+        verify(treeTable).refresh()
     }
 
     @Test
     fun `new folder with no select uses no prefix`() {
+        val input = aString()
+
+        TestDialogService.setTestInputDialog { input }
+
+        sut.executeAction(emptyList())
+
+        argumentCaptor<String>().apply {
+            verifyBlocking(s3Bucket, times(1)) {
+                newFolder(capture())
+            }
+
+            assertThat(allValues).hasSize(1)
+            assertThat(firstValue).isEqualTo(input)
+        }
+
+        verify(treeTable).invalidateLevel(any<S3TreeDirectoryNode>())
+        verify(treeTable).refresh()
     }
 }

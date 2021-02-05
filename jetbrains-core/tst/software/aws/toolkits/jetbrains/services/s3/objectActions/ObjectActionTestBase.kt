@@ -15,6 +15,7 @@ import org.junit.Rule
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
@@ -36,6 +37,7 @@ open class ObjectActionTestBase {
         }
         treeTable = mock {
             on { bucket }.thenReturn(s3Bucket)
+            on { rootNode }.thenReturn(S3TreeDirectoryNode(s3Bucket, null, ""))
         }
     }
 
