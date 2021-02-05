@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3.editor
 
-import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -47,7 +46,7 @@ class S3TreeTable(
     val rootNode: S3TreeDirectoryNode,
     val bucket: S3VirtualBucket,
     private val project: Project
-) : TreeTable(treeTableModel), CoroutineScope by ApplicationThreadPoolScope("S3TreeTable"), DataProvider {
+) : TreeTable(treeTableModel), CoroutineScope by ApplicationThreadPoolScope("S3TreeTable") {
     private val edt = getCoroutineUiContext()
 
     private val dropTargetListener = object : DropTargetAdapter() {
@@ -197,13 +196,6 @@ class S3TreeTable(
             is S3TreeDirectoryNode -> node.removeAllChildren()
             else -> node.parent?.removeAllChildren()
         }
-    }
-
-    override fun getData(dataId: String): Any? = when {
-        S3EditorDataKeys.SELECTED_NODES.`is`(dataId) -> this.getSelectedNodes().filterNot { it is S3TreeContinuationNode<*> || it is S3TreeErrorNode }
-        S3EditorDataKeys.BUCKET.`is`(dataId) -> this.bucket
-        S3EditorDataKeys.BUCKET_TABLE.`is`(dataId) -> this
-        else -> null
     }
 
     companion object {

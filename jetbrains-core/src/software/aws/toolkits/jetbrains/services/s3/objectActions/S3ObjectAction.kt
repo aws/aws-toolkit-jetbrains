@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.s3.objectActions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.DumbAwareAction
-import software.aws.toolkits.jetbrains.core.utils.getRequiredData
 import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
@@ -22,7 +21,7 @@ abstract class S3ObjectAction(title: String, icon: Icon? = null) : DumbAwareActi
         e.presentation.isEnabled = selected.none { it is S3TreeContinuationNode<*> } && enabled(selected)
     }
 
-    protected open fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isNotEmpty()
+    private fun selected(dataContext: DataContext): List<S3TreeNode> = dataContext.getData(S3EditorDataKeys.SELECTED_NODES) ?: emptyList()
 
-    private fun selected(dataContext: DataContext): List<S3TreeNode> = dataContext.getRequiredData(S3EditorDataKeys.SELECTED_NODES)
+    protected open fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isNotEmpty()
 }

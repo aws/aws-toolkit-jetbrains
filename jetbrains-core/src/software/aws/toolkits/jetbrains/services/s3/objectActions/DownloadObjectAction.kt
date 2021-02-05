@@ -71,7 +71,7 @@ class DownloadObjectAction :
     override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val files = nodes.filterIsInstance<S3Object>()
         val project = dataContext.getRequiredData(CommonDataKeys.PROJECT)
-        val sourceBucket = dataContext.getRequiredData(S3EditorDataKeys.BUCKET)
+        val sourceBucket = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_TABLE).bucket
         when (files.size) {
             1 -> downloadSingle(project, sourceBucket, files.first())
             else -> downloadMultiple(project, sourceBucket, files)

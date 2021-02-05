@@ -12,11 +12,6 @@ object S3EditorDataKeys {
     val SELECTED_NODES = DataKey.create<List<S3TreeNode>>("aws.s3.bucketViewer.selectedNodes")
 
     /**
-     * Returns the Bucket for the viewer
-     */
-    val BUCKET = DataKey.create<S3VirtualBucket>("aws.s3.bucketViewer.bucket")
-
-    /**
      * Returns the S3 bucket viewer table
      */
     val BUCKET_TABLE = DataKey.create<S3TreeTable>("aws.s3.bucketViewer")
