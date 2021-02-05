@@ -123,9 +123,7 @@ class DeleteObjectActionTest : ObjectActionTestBase() {
         sut.executeAction(nodes)
 
         argumentCaptor<List<String>>().apply {
-            verifyBlocking(s3Bucket, times(1)) {
-                deleteObjects(capture())
-            }
+            verifyBlocking(s3Bucket) { deleteObjects(capture()) }
 
             assertThat(allValues).hasSize(1)
             assertThat(firstValue).containsAll(nodes.map { it.key })

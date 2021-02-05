@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.s3.editor
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -26,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.s3.objectActions.CopyUrlAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DeleteObjectAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.NewFolderAction
-import software.aws.toolkits.jetbrains.services.s3.objectActions.RefreshSubTreeAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RefreshTreeAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction
 import software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction
@@ -71,18 +69,13 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         treeTable.setDefaultRenderer(Any::class.java, tableRenderer)
         PopupHandler.installPopupHandler(
             treeTable,
-            createCommonActionGroup(treeTable, addCopy = true).also {
-                it.addAction(RefreshSubTreeAction(treeTable))
-            },
-            ActionPlaces.EDITOR_POPUP,
-            ActionManager.getInstance()
+            createCommonActionGroup(treeTable, addCopy = true),
+            ActionPlaces.UNKNOWN,
         )
     }
 
     private fun addToolbar(): ToolbarDecorator {
-        val group = createCommonActionGroup(treeTable, addCopy = false).also {
-            it.addAction(RefreshTreeAction(treeTable, rootNode))
-        }
+        val group = createCommonActionGroup(treeTable, addCopy = false)
         return ToolbarDecorator.createDecorator(treeTable).setActionGroup(group)
     }
 
@@ -94,7 +87,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         it.add(Separator())
         it.add(NewFolderAction())
         it.add(
-            RenameObjectAction(project, table).apply {
+            RenameObjectAction().apply {
                 registerCustomShortcutSet(CommonShortcuts.getRename(), table)
             }
         )
@@ -116,5 +109,6 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         }
         it.add(DeleteObjectAction())
         it.add(Separator())
+        it.add(RefreshTreeAction())
     }
 }

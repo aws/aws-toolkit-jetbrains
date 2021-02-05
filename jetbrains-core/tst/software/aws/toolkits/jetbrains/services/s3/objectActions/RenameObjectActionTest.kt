@@ -19,8 +19,8 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNod
 import software.aws.toolkits.jetbrains.ui.TestDialogService
 import java.time.Instant
 
-class NewFolderActionTest : ObjectActionTestBase() {
-    private val sut = NewFolderAction()
+class RenameObjectActionTest : ObjectActionTestBase() {
+    private val sut = RenameObjectAction()
 
     @After
     fun tearDown() {
@@ -28,21 +28,21 @@ class NewFolderActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `new folder action is enabled on empty selection`() {
-        assertThat(sut.updateAction(emptyList()).isEnabled).isTrue
+    fun `rename object action is disabled on empty selection`() {
+        assertThat(sut.updateAction(emptyList()).isEnabled).isFalse
     }
 
     @Test
-    fun `new folder action is enabled on directory selection`() {
+    fun `rename object action is disabled on directory selection`() {
         val nodes = listOf(
             S3TreeDirectoryNode(s3Bucket, null, "path1/")
         )
 
-        assertThat(sut.updateAction(nodes).isEnabled).isTrue
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
     }
 
     @Test
-    fun `new folder action is enabled on object selection`() {
+    fun `rename object action is enabled on object selection`() {
         val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val nodes = listOf(
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
@@ -52,7 +52,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `new folder action is disabled on object version selection`() {
+    fun `rename object action is disabled on object version selection`() {
         val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val obj = S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
         val nodes = listOf(
@@ -63,7 +63,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `new folder action is disabled on multiple selection`() {
+    fun `rename object action is disabled on multiple selection`() {
         val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val nodes = listOf(
             dir,
@@ -74,9 +74,8 @@ class NewFolderActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `new folder on an object uses its parent directory as key prefix`() {
+    fun `rename object action works`() {
         val input = aString()
-
         TestDialogService.setTestInputDialog { input }
 
         val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
@@ -86,10 +85,11 @@ class NewFolderActionTest : ObjectActionTestBase() {
         sut.executeAction(nodes)
 
         argumentCaptor<String>().apply {
-            verifyBlocking(s3Bucket) { newFolder(capture()) }
+            verifyBlocking(s3Bucket) { renameObject(capture(), capture()) }
 
-            assertThat(allValues).hasSize(1)
-            assertThat(firstValue).isEqualTo("path1/$input")
+            assertThat(allValues).hasSize(2)
+            assertThat(firstValue).isEqualTo("path1/obj1")
+            assertThat(secondValue).isEqualTo("path1/$input")
         }
 
         verify(treeTable).invalidateLevel(obj)
@@ -97,48 +97,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `new folder on directory uses its key as prefix`() {
-        val input = aString()
-
-        TestDialogService.setTestInputDialog { input }
-
-        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
-        val nodes = listOf(dir)
-
-        sut.executeAction(nodes)
-
-        argumentCaptor<String>().apply {
-            verifyBlocking(s3Bucket) { newFolder(capture()) }
-
-            assertThat(allValues).hasSize(1)
-            assertThat(firstValue).isEqualTo("path1/$input")
-        }
-
-        verify(treeTable).invalidateLevel(dir)
-        verify(treeTable).refresh()
-    }
-
-    @Test
-    fun `new folder with no select uses no prefix`() {
-        val input = aString()
-
-        TestDialogService.setTestInputDialog { input }
-
-        sut.executeAction(emptyList())
-
-        argumentCaptor<String>().apply {
-            verifyBlocking(s3Bucket) { newFolder(capture()) }
-
-            assertThat(allValues).hasSize(1)
-            assertThat(firstValue).isEqualTo(input)
-        }
-
-        verify(treeTable).invalidateLevel(treeTable.rootNode)
-        verify(treeTable).refresh()
-    }
-
-    @Test
-    fun `new folder action can be cancelled`() {
+    fun `rename object action can be cancelled`() {
         TestDialogService.setTestInputDialog { null }
 
         val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
@@ -148,7 +107,7 @@ class NewFolderActionTest : ObjectActionTestBase() {
 
         sut.executeAction(nodes)
 
-        verifyBlocking(s3Bucket, never()) { newFolder(any()) }
+        verifyBlocking(s3Bucket, never()) { renameObject(any(), any()) }
         verify(treeTable, never()).invalidateLevel(any())
         verify(treeTable, never()).refresh()
     }

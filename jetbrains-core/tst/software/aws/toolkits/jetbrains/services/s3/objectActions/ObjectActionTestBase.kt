@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.testFramework.ProjectRule
+import com.intellij.ui.treeStructure.treetable.TreeTableTree
 import com.nhaarman.mockitokotlin2.mock
 import org.junit.Before
 import org.junit.Rule
@@ -18,6 +19,7 @@ import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTable
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeTableModel
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
 
 open class ObjectActionTestBase {
@@ -35,9 +37,13 @@ open class ObjectActionTestBase {
         s3Bucket = mock(verboseLogging = true) {
             on { s3Bucket }.thenReturn(Bucket.builder().name(bucketName).build())
         }
+        val mockModel = mock< TreeTableTree> {
+            on { model }.thenReturn(S3TreeTableModel(mock(), emptyArray(), mock()))
+        }
         treeTable = mock {
             on { bucket }.thenReturn(s3Bucket)
             on { rootNode }.thenReturn(S3TreeDirectoryNode(s3Bucket, null, ""))
+            on { tree }.thenReturn(mockModel)
         }
     }
 
