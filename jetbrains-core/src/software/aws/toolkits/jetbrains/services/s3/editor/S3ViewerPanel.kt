@@ -16,7 +16,10 @@ import com.intellij.openapi.actionSystem.CommonShortcuts
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
+import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.PopupHandler
+import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.SideBorder
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.SimpleTreeStructure
@@ -46,6 +49,8 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         component = JPanel(BorderLayout())
 
         treeTable = createTreeTable(disposable, virtualBucket)
+        treeTable.border = IdeBorderFactory.createBorder(SideBorder.BOTTOM)
+
         val toolbar = createToolbar(treeTable)
         PopupHandler.installPopupHandler(
             treeTable,
@@ -62,7 +67,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
             }
         }
 
-        component.add(treeTable, BorderLayout.NORTH)
+        component.add(ScrollPaneFactory.createScrollPane(treeTable), BorderLayout.CENTER)
         component.add(toolbar.component, BorderLayout.SOUTH)
     }
 
@@ -109,8 +114,9 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
     // addCopy is here vs doing it in the `also`'s because it makes it easier to get actions in the right order
     private fun createCommonActionGroup(table: S3TreeTable, addCopy: Boolean): DefaultActionGroup = DefaultActionGroup().also {
         it.add(DownloadObjectAction())
-        it.add(ViewObjectVersionAction())
         it.add(UploadObjectAction())
+        it.add(Separator())
+        it.add(ViewObjectVersionAction())
         it.add(Separator())
         it.add(NewFolderAction())
         it.add(
