@@ -49,9 +49,9 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         component = JPanel(BorderLayout())
 
         treeTable = createTreeTable(disposable, virtualBucket)
-        treeTable.border = IdeBorderFactory.createBorder(SideBorder.BOTTOM)
+        val toolbarComponent = createToolbar(treeTable).component
+        toolbarComponent.border = IdeBorderFactory.createBorder(SideBorder.TOP)
 
-        val toolbar = createToolbar(treeTable)
         PopupHandler.installPopupHandler(
             treeTable,
             createCommonActionGroup(treeTable, addCopy = true),
@@ -68,7 +68,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
         }
 
         component.add(ScrollPaneFactory.createScrollPane(treeTable), BorderLayout.CENTER)
-        component.add(toolbar.component, BorderLayout.SOUTH)
+        component.add(toolbarComponent, BorderLayout.SOUTH)
     }
 
     private fun createTreeTable(disposable: Disposable, virtualBucket: S3VirtualBucket): S3TreeTable {
