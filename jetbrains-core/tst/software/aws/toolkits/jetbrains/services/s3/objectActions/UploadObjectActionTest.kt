@@ -44,8 +44,8 @@ class UploadObjectActionTest : ObjectActionTestBase() {
     private val sut = UploadObjectAction()
 
     @Test
-    fun `upload object action is disabled on empty selection`() {
-        assertThat(sut.updateAction(emptyList()).isEnabled).isFalse
+    fun `upload object action is enabled on empty selection`() {
+        assertThat(sut.updateAction(emptyList()).isEnabled).isTrue
     }
 
     @Test
@@ -227,6 +227,26 @@ class UploadObjectActionTest : ObjectActionTestBase() {
             verifyBlocking(s3Bucket, never()) { upload(any(), any(), any(), any()) }
             verify(treeTable, never()).invalidateLevel(dir)
             verify(treeTable, never()).refresh()
+        }
+    }
+
+    @Test
+    fun `upload object action with no selection uploads to root`() {
+        val newFile = tempFolder.newFile()
+        createFileChooserMock(listOf(newFile))
+
+        sut.executeAction(emptyList())
+
+        retryableAssert {
+            argumentCaptor<String>().apply {
+                verifyBlocking(s3Bucket) { upload(any(), any(), any(), capture()) }
+
+                assertThat(allValues).hasSize(1)
+                assertThat(firstValue).isEqualTo(newFile.name)
+            }
+
+            verify(treeTable).invalidateLevel(treeTable.rootNode)
+            verify(treeTable).refresh()
         }
     }
 

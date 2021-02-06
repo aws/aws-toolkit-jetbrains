@@ -21,10 +21,11 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 
-class UploadObjectAction : SingleS3ObjectAction(message("s3.upload.object.action"), AllIcons.Actions.Upload) {
-    override fun performAction(dataContext: DataContext, node: S3TreeNode) {
+class UploadObjectAction : S3ObjectAction(message("s3.upload.object.action"), AllIcons.Actions.Upload) {
+    override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val project = dataContext.getRequiredData(CommonDataKeys.PROJECT)
         val treeTable = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_TABLE)
+        val node = nodes.firstOrNull() ?: treeTable.rootNode
 
         val descriptor =
             FileChooserDescriptorFactory.createAllButJarContentsDescriptor().withDescription(message("s3.upload.object.action", treeTable.bucket.name))
@@ -40,7 +41,8 @@ class UploadObjectAction : SingleS3ObjectAction(message("s3.upload.object.action
         uploadObjects(project, treeTable, filesChosen, node)
     }
 
-    override fun enabled(node: S3TreeNode): Boolean = node is S3TreeDirectoryNode
+    override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isEmpty() ||
+        (nodes.size == 1 && nodes.first().let { it is S3TreeDirectoryNode })
 }
 
 fun uploadObjects(project: Project, treeTable: S3TreeTable, files: List<VirtualFile>, parentNode: S3TreeNode) {

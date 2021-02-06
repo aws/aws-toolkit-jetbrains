@@ -60,7 +60,6 @@ open class ObjectActionTestBase {
         val projectContext = SimpleDataContext.getProjectContext(projectRule.project)
         val dc = SimpleDataContext.getSimpleContext(
             mapOf(
-                S3EditorDataKeys.BUCKET.name to s3Bucket,
                 S3EditorDataKeys.SELECTED_NODES.name to nodes,
                 S3EditorDataKeys.BUCKET_TABLE.name to treeTable
             ),
