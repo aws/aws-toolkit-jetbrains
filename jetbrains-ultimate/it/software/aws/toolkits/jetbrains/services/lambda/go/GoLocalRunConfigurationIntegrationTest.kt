@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.lambda.go
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
-import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.module.WebModuleTypeBase
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.PsiTestUtil
