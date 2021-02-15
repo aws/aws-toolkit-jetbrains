@@ -67,7 +67,7 @@ class TemplateSettings(val project: Project) {
         )
         templateFile.textField.document.addDocumentListener(object : DocumentAdapter() {
             override fun textChanged(e: DocumentEvent) {
-                setTemplateFile(templateFile.text)
+                updateFunctionModel(templateFile.text)
             }
         })
         function.addActionListener {
@@ -101,6 +101,11 @@ class TemplateSettings(val project: Project) {
     }
 
     fun setTemplateFile(path: String?) {
+        templateFile.text = path ?: ""
+        updateFunctionModel(path)
+    }
+
+    private fun updateFunctionModel(path: String?) {
         if (path.isNullOrBlank()) {
             templateFile.text = ""
             updateFunctionModel(emptyList())
@@ -113,6 +118,7 @@ class TemplateSettings(val project: Project) {
             val functions = SamTemplateUtils.findFunctionsFromTemplate(project, file)
             updateFunctionModel(functions)
         }
+
     }
 
     fun selectFunction(logicalFunctionName: String?) {
