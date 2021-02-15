@@ -113,9 +113,9 @@ class SamRunConfigTest {
                         val fixture = findRunDialog().find<ContainerFixture>(byXpath("//div[@class='HandlerPanel']"))
                         assertThat(fixture.findAllText().joinToString("") { it.text }).isEqualTo("helloworld.App::handleRequest")
                     }
-                    step("Assert the run configuration has an error (since the project was not imported)") {
-                        assertThat(findRunDialog().findAllText()).anySatisfy { assertThat(it.text).contains("Error") }
-                    }
+                    // We might want to assert no errors here in the future. However, since we do not import the project, we don't
+                    // index it, so we can't find the handler. We are not testing that here (that is tested in other tests), so
+                    // it would probably not be worth testing in the UI test as well.
                 }
             }
         }
