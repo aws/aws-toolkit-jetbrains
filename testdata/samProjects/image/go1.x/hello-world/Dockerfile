@@ -1,5 +1,7 @@
 FROM golang:1.14 as build-image
 
+ENV GOPROXY direct
+
 WORKDIR /go/src
 COPY go.mod main.go ./
 

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.openapi.module.ModuleType
+import com.intellij.openapi.module.WebModuleTypeBase
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
@@ -99,9 +101,11 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
 
         val fixture = projectRule.fixture
 
-        PsiTestUtil.addModule(projectRule.project, ModuleType.EMPTY, "main", fixture.tempDirFixture.findOrCreateDir("."))
+        PsiTestUtil.addModule(projectRule.project, WebModuleTypeBase.getInstance(), "main", fixture.tempDirFixture.findOrCreateDir("."))
 
         credentialManager.addCredentials(mockId, mockCreds)
+
+        Registry.get("aws.sam.goDebuggerDelay").setValue(10000)
     }
 
     @Test
