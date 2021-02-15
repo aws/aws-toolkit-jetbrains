@@ -7,7 +7,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.openapi.module.WebModuleTypeBase
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
@@ -25,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRul
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
+import software.aws.toolkits.jetbrains.utils.UltimateTestUtils
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.HeavyGoCodeInsightTestFixtureRule
@@ -97,14 +97,13 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
+        UltimateTestUtils.ensureBuiltInServerStarted()
 
         val fixture = projectRule.fixture
 
         PsiTestUtil.addModule(projectRule.project, WebModuleTypeBase.getInstance(), "main", fixture.tempDirFixture.findOrCreateDir("."))
 
         credentialManager.addCredentials(mockId, mockCreds)
-
-        Registry.get("aws.sam.goDebuggerDelay").setValue(10000)
     }
 
     @Test
