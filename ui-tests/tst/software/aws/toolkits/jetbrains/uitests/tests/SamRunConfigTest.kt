@@ -31,9 +31,7 @@ import java.time.Duration
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SamRunConfigTest {
     private val dataPath = Paths.get(System.getProperty("testDataPath")).resolve("samProjects/zip/java11")
-    private val input = """
-        {"data": "${dataPath.hashCode()}"}
-    """.trimIndent()
+    private val input = "{}"
 
     @TempDir
     lateinit var tempDir: Path
@@ -56,28 +54,25 @@ class SamRunConfigTest {
             idea {
                 waitForBackgroundTasks()
                 findAndClick("//div[@accessiblename='Add Configuration...']")
-                val dialog = step("Add a run configuration") {
-                    val dialog = find<DialogFixture>(DialogFixture.byTitleContains("Run"), Duration.ofSeconds(5))
-                    dialog.findAndClick("//div[@accessiblename='Add New Configuration']")
-                    find<JTreeFixture>(byXpath("//div[@accessiblename='WizardTree' and @class='MyTree']")).clickPath("AWS Lambda", "Local")
-                    dialog
+                step("Create and populate template based run configuration") {
+                    addRunConfig()
+                    step("Populate run configuration") {
+                        step("Set up function from template") {
+                            findAndClick("//div[@text='From template']")
+                            findAndClick("//div[@class='Wrapper']//div[@class='TextFieldWithBrowseButton']")
+                            keyboard { enterText(tempDir.resolve("template.yaml").toAbsolutePath().toString()) }
+                        }
+                        step("Assert validation works by checking the error") {
+                            assertThat(findRunDialog().findAllText()).anySatisfy { assertThat(it.text).contains("Must specify an input") }
+                        }
+                        step("Enter text") {
+                            findAndClick("//div[@class='MyEditorTextField']")
+                            keyboard { enterText(input) }
+                        }
+                        pressOk()
+                    }
                 }
-                step("Populate run configuration") {
-                    step("Set up function from template") {
-                        findAndClick("//div[@text='From template']")
-                        findAndClick("//div[@class='Wrapper']//div[@class='TextFieldWithBrowseButton']")
-                        keyboard { enterText(tempDir.resolve("template.yaml").toAbsolutePath().toString()) }
-                    }
-                    step("Assert validation works by checking the error") {
-                        assertThat(dialog.findAllText()).anySatisfy { assertThat(it.text).contains("Must specify an input") }
-                    }
-                    step("Enter text") {
-                        findAndClick("//div[@class='MyEditorTextField']")
-                        keyboard { enterText(input) }
-                    }
-                    pressOk()
-                }
-                step("Validate run configuration was saved and loads properly") {
+                step("Validate template run configuration was saved and loads properly") {
                     step("Reopen the run configuration") {
                         findAndClick("//div[@accessiblename='[Local] SomeFunction']")
                         find<JListFixture>(byXpath("//div[@class='MyList']")).selectItem("Edit Configurations...")
@@ -86,12 +81,41 @@ class SamRunConfigTest {
                         assertThat(functionModel().selectedText()).isEqualTo("SomeFunction")
                     }
                     step("Assert the run configuration has no errors") {
-                        assertThat(dialog.findAllText()).noneSatisfy { assertThat(it.text).contains("Error") }
+                        assertThat(findRunDialog().findAllText()).noneSatisfy { assertThat(it.text).contains("Error") }
                     }
-                    // TODO the field is a JTextComponent so findAllText does not work and we don't have a JTextComponent fixture
-                    // step("Assert the input is the same") {
-                    //    assertThat(dialog.findAllText()).anySatisfy { assertThat(it.text).isEqualTo(input) }
-                    // }
+                    step("Assert the input is the same") {
+                        // As this is a JTextField we don't have a fixture for it. But, we can extract the data by
+                        // joining all the text it has into a string
+                        val fixture = findRunDialog().find<ContainerFixture>(byXpath("//div[@class='MyEditorTextField']"))
+                        assertThat(fixture.findAllText().joinToString("") { it.text }).isEqualTo(input)
+                    }
+                    pressOk()
+                }
+                step("Setup handler based run configuration") {
+                    step("Reopen the run configuration menu") {
+                        findAndClick("//div[@accessiblename='[Local] SomeFunction']")
+                        find<JListFixture>(byXpath("//div[@class='MyList']")).selectItem("Edit Configurations...")
+                    }
+                    addRunConfig()
+                    find<ComboBoxFixture>(byXpath("//div[@text='Runtime:']/following-sibling::div[@class='ComboBox']")).selectItem("java11")
+                    findAndClick("//div[@class='HandlerPanel']")
+                    keyboard { enterText("helloworld.App::handleRequest") }
+                    findAndClick("//div[@class='MyEditorTextField']")
+                    keyboard { enterText(input) }
+                    pressOk()
+                }
+                step("Validate handler run configuration was saved and loads properly") {
+                    step("Reopen the run configuration") {
+                        findAndClick("//div[@accessiblename='[Local] App.handleRequest']")
+                        find<JListFixture>(byXpath("//div[@class='MyList']")).selectItem("Edit Configurations...")
+                    }
+                    step("Assert the same handler is selected") {
+                        val fixture = findRunDialog().find<ContainerFixture>(byXpath("//div[@class='HandlerPanel']"))
+                        assertThat(fixture.findAllText().joinToString("") { it.text }).isEqualTo("helloworld.App::handleRequest")
+                    }
+                    step("Assert the run configuration has an error (since the project was not imported)") {
+                        assertThat(findRunDialog().findAllText()).anySatisfy { assertThat(it.text).contains("Error") }
+                    }
                 }
             }
         }
@@ -99,4 +123,13 @@ class SamRunConfigTest {
 
     private fun ContainerFixture.functionModel(): ComboBoxFixture =
         find(byXpath("//div[@class='TextFieldWithBrowseButton']/following-sibling::div[@class='ComboBox']"))
+
+    private fun ContainerFixture.findRunDialog() = find<DialogFixture>(DialogFixture.byTitleContains("Run"), Duration.ofSeconds(5))
+
+    private fun ContainerFixture.addRunConfig() {
+        step("Add a local run configuration") {
+            findRunDialog().findAndClick("//div[@accessiblename='Add New Configuration']")
+            find<JTreeFixture>(byXpath("//div[@accessiblename='WizardTree' and @class='MyTree']")).clickPath("AWS Lambda", "Local")
+        }
+    }
 }
