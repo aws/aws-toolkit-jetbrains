@@ -88,7 +88,7 @@ class SamRunConfigTest {
                     step("Assert the run configuration has no errors") {
                         assertThat(dialog.findAllText()).noneSatisfy { assertThat(it.text).contains("Error") }
                     }
-                    // TODO the field is a JTextComponent so findAllText does not work and we don't have a JComponent
+                    // TODO the field is a JTextComponent so findAllText does not work and we don't have a JTextComponent fixture
                     // step("Assert the input is the same") {
                     //    assertThat(dialog.findAllText()).anySatisfy { assertThat(it.text).isEqualTo(input) }
                     // }
