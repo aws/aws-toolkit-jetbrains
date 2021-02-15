@@ -118,7 +118,6 @@ class TemplateSettings(val project: Project) {
             val functions = SamTemplateUtils.findFunctionsFromTemplate(project, file)
             updateFunctionModel(functions)
         }
-
     }
 
     fun selectFunction(logicalFunctionName: String?) {
