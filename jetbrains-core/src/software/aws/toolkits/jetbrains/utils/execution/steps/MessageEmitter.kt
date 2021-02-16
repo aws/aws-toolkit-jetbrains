@@ -7,6 +7,7 @@ import com.intellij.build.BuildProgressListener
 import com.intellij.build.events.impl.FailureResultImpl
 import com.intellij.build.events.impl.FinishEventImpl
 import com.intellij.build.events.impl.OutputBuildEventImpl
+import com.intellij.build.events.impl.SkippedResultImpl
 import com.intellij.build.events.impl.StartEventImpl
 import com.intellij.build.events.impl.SuccessResultImpl
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -79,7 +80,7 @@ class DefaultMessageEmitter private constructor(
                 parentId,
                 System.currentTimeMillis(),
                 stepName,
-                FailureResultImpl()
+                if(e is ProcessCanceledException) SkippedResultImpl() else FailureResultImpl()
             )
         )
     }

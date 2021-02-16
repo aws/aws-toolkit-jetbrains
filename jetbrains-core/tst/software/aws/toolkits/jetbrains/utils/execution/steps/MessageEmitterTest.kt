@@ -141,7 +141,7 @@ class MessageEmitterTest {
             assertThat(firstValue).satisfies {
                 assertThat(it.parentId).isEqualTo(parentId)
             }.isInstanceOfSatisfying(OutputBuildEvent::class.java) {
-                assertThat(it.message).contains("ParentStep has been cancelled")
+                assertThat(it.message).contains("ParentStep has been canceled")
                 assertThat(it.isStdOut).isFalse()
             }
         }

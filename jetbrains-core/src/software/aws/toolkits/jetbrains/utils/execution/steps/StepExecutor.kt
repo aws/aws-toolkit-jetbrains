@@ -9,6 +9,7 @@ import com.intellij.build.BuildViewManager
 import com.intellij.build.DefaultBuildDescriptor
 import com.intellij.build.events.impl.FailureResultImpl
 import com.intellij.build.events.impl.FinishBuildEventImpl
+import com.intellij.build.events.impl.SkippedResultImpl
 import com.intellij.build.events.impl.StartBuildEventImpl
 import com.intellij.build.events.impl.SuccessResultImpl
 import com.intellij.build.process.BuildProcessHandler
@@ -70,10 +71,9 @@ class StepExecutor(
             executionStarted(descriptor, progressListener, processHandler)
             workflow.run(context, messageEmitter)
 
-            // If the dummy process was cancelled (or any step got cancelled), we need to pass on a ProcessCanceledException
-            if (context.isCancelled()) {
-                throw ProcessCanceledException()
-            }
+            // If the dummy process was cancelled (or any step got cancelled), we need to rethrow the cancel
+            context.throwIfCancelled()
+
             onSuccess?.invoke(context)
             executionFinishedSuccessfully(processHandler, progressListener)
         } catch (e: Throwable) {
@@ -117,7 +117,7 @@ class StepExecutor(
                 null,
                 System.currentTimeMillis(),
                 message,
-                FailureResultImpl()
+                if (e is ProcessCanceledException) SkippedResultImpl() else FailureResultImpl()
             )
         )
 
