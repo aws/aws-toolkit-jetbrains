@@ -11,6 +11,7 @@ import com.intellij.build.events.FinishEvent
 import com.intellij.build.events.OutputBuildEvent
 import com.intellij.build.events.StartBuildEvent
 import com.intellij.build.events.SuccessResult
+import com.intellij.build.events.impl.SkippedResultImpl
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
@@ -141,7 +142,7 @@ class StepExecutorTest {
 
             assertThat(firstValue).isInstanceOf(StartBuildEvent::class.java)
             assertThat(secondValue).isInstanceOfSatisfying(FinishBuildEvent::class.java) {
-                assertThat(it.result).isInstanceOf(FailureResult::class.java)
+                assertThat(it.result).isInstanceOf(SkippedResultImpl::class.java)
                 assertThat(it.message).contains("canceled")
             }
         }
