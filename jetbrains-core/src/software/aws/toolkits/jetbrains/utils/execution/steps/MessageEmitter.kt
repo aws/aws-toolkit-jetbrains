@@ -80,7 +80,7 @@ class DefaultMessageEmitter private constructor(
                 parentId,
                 System.currentTimeMillis(),
                 stepName,
-                if(e is ProcessCanceledException) SkippedResultImpl() else FailureResultImpl()
+                if (e is ProcessCanceledException) SkippedResultImpl() else FailureResultImpl()
             )
         )
     }
