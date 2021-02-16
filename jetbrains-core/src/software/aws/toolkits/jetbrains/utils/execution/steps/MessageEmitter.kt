@@ -68,9 +68,9 @@ class DefaultMessageEmitter private constructor(
 
     override fun finishExceptionally(e: Throwable) {
         if (e is ProcessCanceledException) {
-            emitMessage(message("generate.step.canceled", stepName), true)
+            emitMessage(message("general.step.canceled", stepName), true)
         } else {
-            emitMessage(message("generate.step.failed", stepName, ExceptionUtil.getNonEmptyMessage(e, ExceptionUtil.getThrowableText(e))), true)
+            emitMessage(message("general.step.failed", stepName, ExceptionUtil.getNonEmptyMessage(e, ExceptionUtil.getThrowableText(e))), true)
         }
         if (hidden) return
         buildListener.onEvent(
