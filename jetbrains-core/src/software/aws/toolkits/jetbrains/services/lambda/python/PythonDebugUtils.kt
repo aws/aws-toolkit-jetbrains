@@ -28,6 +28,10 @@ object PythonDebugUtils {
         debugHost: String,
         debugPorts: List<Int>
     ): XDebugProcessStarter {
+        // TODO: We should allow using the module SDK, but we can't easily get the module
+        val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }
+        state.consoleBuilder = PyDebugConsoleBuilder(environment.project, sdk)
+
         val executionResult = withContext(Dispatchers.IO) {
             // needs to run off EDT since it resolves credentials
             state.execute(environment.executor, environment.runner)
@@ -44,10 +48,6 @@ object PythonDebugUtils {
                         )
                     )
                 )
-
-                // TODO: We should allow using the module SDK, but we can't easily get the module
-                val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }
-                state.consoleBuilder = PyDebugConsoleBuilder(environment.project, sdk)
 
                 return PyDebugProcess(
                     session,
