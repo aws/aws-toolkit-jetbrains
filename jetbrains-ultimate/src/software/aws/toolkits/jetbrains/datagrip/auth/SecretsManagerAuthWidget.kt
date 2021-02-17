@@ -26,6 +26,8 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userFieldEnabled = false) {
 
     override val rowCount = 5
     override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url) ?: RedshiftUtils.extractRegionFromUrl(url)
+    // Since we don't know what kind of DB we are attaching to, make no assumptions about what regions are supported
+    override val serviceId: String? = null
 
     override fun createPanel(): JPanel {
         val panel = super.createPanel()
