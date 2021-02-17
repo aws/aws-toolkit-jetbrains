@@ -100,7 +100,11 @@ class SamRunningState(
         return eventFile.absolutePath
     }
 
-    override fun createConsole(executor: Executor): ConsoleView? = runBlocking(getCoroutineUiContext(disposable = environment)) {
-        super.createConsole(executor)
-    }
+    override fun createConsole(executor: Executor): ConsoleView? =
+        /*
+         * Certain consoles must be created on EDT (like the python interactive console) so make sure we are on the UI thread for that segment.
+         */
+        runBlocking(getCoroutineUiContext(disposable = environment)) {
+            super.createConsole(executor)
+        }
 }
