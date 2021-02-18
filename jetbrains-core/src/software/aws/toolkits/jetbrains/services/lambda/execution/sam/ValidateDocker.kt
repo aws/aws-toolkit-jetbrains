@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.resources.message
 
-class CheckDockerStep : CliBasedStep() {
+class ValidateDocker : CliBasedStep() {
     override val stepName: String = "Validate Docker"
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = GeneralCommandLine("docker", "ps")

@@ -227,7 +227,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
     private fun buildWorkflow(environment: ExecutionEnvironment, buildRequest: BuildRequest, samOptions: SamOptions): StepExecutor {
         val buildStep = BuildLambda(buildRequest.template, buildRequest.logicalId, buildRequest.buildDir, buildRequest.buildEnvVars, samOptions)
 
-        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(CheckDockerStep(), buildStep), environment.executionId.toString())
+        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(ValidateDocker(), buildStep), environment.executionId.toString())
     }
 
     private fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)
