@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLamb
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.services.lambda.sam.ZipBased
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuildLambda
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
@@ -43,7 +44,6 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
-import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import software.aws.toolkits.telemetry.Runtime as TelemetryRuntime
@@ -68,9 +68,10 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
         val runtimeValue = if (profile.isUsingTemplate() && !profile.isImage) {
             LOG.tryOrNull("Failed to get runtime of ${profile.logicalId()}", Level.WARN) {
-                SamTemplateUtils.findZipFunctionsFromTemplate(profile.project, File(profile.templateFile()))
+                SamTemplateUtils
+                    .findZipFunctionsFromTemplate(Path.of(profile.templateFile()))
                     .find { it.logicalName == profile.logicalId() }
-                    ?.runtime()
+                    .let { (it as? ZipBased)?.runtime }
                     ?.let {
                         Runtime.fromValue(it)?.validOrNull
                     }

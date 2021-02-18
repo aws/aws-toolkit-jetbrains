@@ -29,12 +29,11 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
-import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationBase
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
-import software.aws.toolkits.jetbrains.services.lambda.execution.resolveLambdaFromTemplate
+import software.aws.toolkits.jetbrains.services.lambda.execution.resolveZipLambdaFromTemplate
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.HandlerRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageTemplateRunSettings
@@ -390,8 +389,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
 
     private fun resolveLambdaInfo(project: Project, functionOptions: FunctionOptions): Pair<String, Runtime> =
         if (functionOptions.useTemplate) {
-            resolveLambdaFromTemplate(
-                project = project,
+            resolveZipLambdaFromTemplate(
                 templatePath = functionOptions.templateFile,
                 functionName = functionOptions.logicalId
             )

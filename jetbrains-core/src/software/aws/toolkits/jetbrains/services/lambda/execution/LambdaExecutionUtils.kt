@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.lambda.execution
 
 import com.intellij.execution.configurations.RuntimeConfigurationError
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.messages.MessageBus
@@ -15,6 +14,7 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.services.lambda.sam.ZipBased
 import software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerEvaluationListener
 import software.aws.toolkits.jetbrains.services.lambda.validation.SamCliVersionEvaluationListener
 import software.aws.toolkits.resources.message
@@ -40,11 +40,11 @@ fun registerConfigValidationListeners(messageBus: MessageBus, parentDisposable: 
     )
 }
 
-fun resolveLambdaFromTemplate(project: Project, templatePath: String?, functionName: String?): Pair<String, Runtime> {
+fun resolveZipLambdaFromTemplate(templatePath: String?, functionName: String?): Pair<String, Runtime> {
     val (templateFile, logicalName) = validateSamTemplateDetails(templatePath, functionName)
 
-    val function = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
-        .find { it.logicalName == functionName }
+    val function = SamTemplateUtils.findFunctionsFromTemplate( templateFile)
+        .find { it.logicalName == functionName } as? ZipBased
         ?: throw RuntimeConfigurationError(
             message(
                 "lambda.run_configuration.sam.no_such_function",
@@ -53,11 +53,11 @@ fun resolveLambdaFromTemplate(project: Project, templatePath: String?, functionN
             )
         )
 
-    val handler = tryOrNull { function.handler() }
+    val handler = tryOrNull { function.handler }
         ?: throw RuntimeConfigurationError(message("lambda.run_configuration.no_handler_specified"))
 
     val runtimeString = try {
-        function.runtime()
+        function.runtime
     } catch (e: Exception) {
         throw RuntimeConfigurationError(message("cloudformation.missing_property", "Runtime", logicalName))
     }
