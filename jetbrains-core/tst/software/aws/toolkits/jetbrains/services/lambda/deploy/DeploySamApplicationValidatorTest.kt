@@ -186,10 +186,6 @@ class DeploySamApplicationValidatorTest {
             throw NotImplementedError()
         }
 
-        override fun setScalarProperty(key: String, value: String) {
-            throw NotImplementedError()
-        }
-
         var description: String? = null
         var constraintDescription: String? = null
 

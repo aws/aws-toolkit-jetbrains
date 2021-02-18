@@ -146,7 +146,7 @@ object SamTemplateUtils {
         emptyList()
     }
 
-    fun findImageFunctionsFromTemplate(project: Project, file: VirtualFile): List<Function> =
+    fun findSamImageFunctionsFromTemplate(project: Project, file: VirtualFile): List<Function> =
         findFunctionsFromTemplate(project, file).filter { it.packageType() == PackageType.IMAGE }
 
     @JvmStatic

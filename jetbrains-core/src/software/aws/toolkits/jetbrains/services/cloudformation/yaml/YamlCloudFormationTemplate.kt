@@ -73,10 +73,6 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
                 ?: throw IllegalStateException(message("cloudformation.missing_property", key, logicalName))
 
         override fun getOptionalScalarProperty(key: String): String? = delegate.getKeyValueByKey(key)?.valueText
-
-        override fun setScalarProperty(key: String, value: String) {
-            throw NotImplementedError()
-        }
     }
 
     private class YamlResource(
@@ -97,11 +93,6 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
 
         override fun getOptionalScalarProperty(key: String): String? = properties().getKeyValueByKey(key)?.valueText
 
-        override fun setScalarProperty(key: String, value: String) {
-            val newKeyValue = YAMLElementGenerator.getInstance(project).createYamlKeyValue(key, value)
-            properties().putKeyValue(newKeyValue)
-        }
-
         override fun getScalarMetadata(key: String): String = getOptionalScalarMetadata(key)
             ?: throw IllegalStateException(message("cloudformation.missing_property", key, logicalName))
 
@@ -120,10 +111,6 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
             ?: throw IllegalStateException(message("cloudformation.missing_property", key, logicalName))
 
         override fun getOptionalScalarProperty(key: String): String? = delegate.getKeyValueByKey(key)?.valueText
-
-        override fun setScalarProperty(key: String, value: String) {
-            throw NotImplementedError()
-        }
     }
 
     companion object {

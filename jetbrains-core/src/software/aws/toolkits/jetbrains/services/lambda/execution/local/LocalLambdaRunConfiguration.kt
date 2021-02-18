@@ -159,7 +159,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
                 if (serializableOptions.functionOptions.isImage) {
                     val (templateFile, logicalName) = validateSamTemplateDetails(templateFile(), logicalId())
                     val function = SamTemplateUtils
-                        .findImageFunctionsFromTemplate(project, templateFile)
+                        .findSamImageFunctionsFromTemplate(project, templateFile)
                         .first { it.logicalName == logicalId() } as? SamFunction
                         ?: throw IllegalStateException("Image functions must be SAM functions")
 

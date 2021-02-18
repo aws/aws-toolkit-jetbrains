@@ -50,7 +50,6 @@ interface NamedMap {
 
     fun getScalarProperty(key: String): String
     fun getOptionalScalarProperty(key: String): String?
-    fun setScalarProperty(key: String, value: String)
 }
 
 interface Resource : NamedMap {
@@ -89,10 +88,6 @@ class MutableParameter(private val copyFrom: Parameter) : Parameter {
     }
 
     override fun getOptionalScalarProperty(key: String): String? {
-        throw NotImplementedError()
-    }
-
-    override fun setScalarProperty(key: String, value: String) {
         throw NotImplementedError()
     }
 
