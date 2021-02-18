@@ -158,7 +158,8 @@ class S3TreeTable(
     }
 
     init {
-        if (!ApplicationManager.getApplication().isHeadlessEnvironment) {
+        // Do not set up Drag and Drop when in test mode since AWT is not enabled
+        if (!ApplicationManager.getApplication().isUnitTestMode) {
             // Associate the drop target listener with this instance which will allow uploading by drag and drop
             DropTarget(this, dropTargetListener)
         }
