@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
-import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.GeneralCommandLine
 import software.aws.toolkits.jetbrains.utils.execution.steps.CliBasedStep
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
@@ -16,6 +15,6 @@ class ValidateDocker : CliBasedStep() {
     override fun constructCommandLine(context: Context): GeneralCommandLine = GeneralCommandLine("docker", "ps")
 
     override fun handleErrorResult(exitCode: Int, output: String, messageEmitter: MessageEmitter): Nothing? {
-        throw ExecutionException(message("lambda.debug.docker.not_connected"))
+        throw Exception(message("lambda.debug.docker.not_connected"))
     }
 }
