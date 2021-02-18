@@ -3,22 +3,41 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
-import software.amazon.awssdk.services.lambda.model.PackageType
+interface ZipBased {
+    val runtime: String?
+    val handler: String?
+}
+
+interface ImageBased {
+    val dockerFile: String?
+    val codeLocation: String?
+}
 
 sealed class Function(
-    val codeLocation: String,
-    val packageType: PackageType,
+    val logicalName: String,
     val timeout: Int?,
     val memorySize: Int?
 )
 
-class LambdaFunction(
-    fun runtime(): String = getScalarProperty("Runtime"), fun handler(): String = getScalarProperty("Handler")) : Function()
-
-class ServerlessFunction(
-    codeLocation: String,
-    packageType: PackageType,
+class ZipLambdaFunction(
+    logicalName: String,
     timeout: Int?,
     memorySize: Int?,
-    val dockerFile: String?
-) : Function(codeLocation, packageType, timeout, memorySize)
+    override val runtime: String?,
+    override val handler: String?
+) : Function(logicalName, timeout, memorySize), ZipBased
+
+class ZipServerlessFunction(
+    logicalName: String,
+    timeout: Int?, memorySize: Int?,
+    override val runtime: String?,
+    override val handler: String?
+) : Function(logicalName, timeout, memorySize), ZipBased
+
+class ImageServerlessFunction(
+    logicalName: String,
+    timeout: Int?,
+    memorySize: Int?,
+    override val dockerFile: String?,
+    override val codeLocation: String
+) : Function(logicalName, timeout, memorySize), ImageBased

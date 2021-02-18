@@ -15,11 +15,12 @@ import org.jetbrains.yaml.psi.YAMLKeyValue
 import org.jetbrains.yaml.psi.YAMLPsiElement
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
+import software.aws.toolkits.jetbrains.services.cloudformation.Function
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils.functionFromElement
 
 class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLambdaRunConfiguration>() {
     // Filter all Lambda run CONFIGURATIONS down to only ones that are Lambda SAM for this run producer
@@ -121,5 +122,7 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
 
             return credentialProviderId to region
         }
+
+        fun functionFromElement(element: PsiElement): Function? = CloudFormationTemplate.convertPsiToResource(element) as? Function
     }
 }

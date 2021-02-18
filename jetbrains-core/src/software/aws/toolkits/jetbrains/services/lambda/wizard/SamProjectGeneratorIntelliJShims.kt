@@ -146,7 +146,7 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
 
         val factory = LocalLambdaRunConfigurationProducer.getFactory()
         val runManager = RunManager.getInstance(project)
-        SamTemplateUtils.findFunctionsFromTemplate(project, template).forEach {
+        SamTemplateUtils.findFunctionsFromTemplate(template).forEach {
             val runConfigurationAndSettings = runManager.createConfiguration(it.logicalName, factory)
 
             val runConfiguration = runConfigurationAndSettings.configuration as LocalLambdaRunConfiguration

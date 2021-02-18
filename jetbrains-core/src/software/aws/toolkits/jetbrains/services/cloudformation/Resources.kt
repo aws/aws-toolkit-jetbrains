@@ -7,7 +7,7 @@ import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkits.resources.message
 
 interface Function : Resource {
-    fun codeLocation(): String
+   // fun codeLocation(): String
     fun packageType(): PackageType {
         val key = "PackageType"
         val type = getOptionalScalarProperty(key) ?: return PackageType.ZIP
@@ -23,7 +23,7 @@ interface Function : Resource {
 const val LAMBDA_FUNCTION_TYPE = "AWS::Lambda::Function"
 
 class LambdaFunction(private val delegate: Resource) : Resource by delegate, Function {
-    override fun codeLocation(): String = getScalarProperty("Code")
+    //override fun codeLocation(): String = getScalarProperty("Code")
 
     override fun toString(): String = logicalName
 }
@@ -39,11 +39,12 @@ class SamFunction(private val delegate: Resource) : Resource by delegate, Functi
     override fun getOptionalScalarProperty(key: String): String? =
         delegate.getOptionalScalarProperty(key) ?: globals["Function"]?.getOptionalScalarProperty(key)
 
+    /*
     override fun codeLocation(): String = when (packageType()) {
         PackageType.ZIP -> getScalarProperty("CodeUri")
         PackageType.IMAGE -> getScalarMetadata("DockerContext")
         else -> throw IllegalStateException("Bad packageType somehow returned to code location: ${packageType()}")
-    }
+    }*/
 
     fun dockerFile(): String? = getOptionalScalarMetadata("Dockerfile")
 

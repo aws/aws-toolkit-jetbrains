@@ -13,18 +13,17 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.text.nullize
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.ecr.EcrClient
-import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
-import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.mergeRemoteParameters
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
+import software.aws.toolkits.jetbrains.services.lambda.sam.ImageBased
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.settings.DeploySettings
@@ -46,8 +45,7 @@ class DeployServerlessApplicationDialog(
     /*
      * We save before opening this dialog so this should be the most updated view
      */
-    private val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
-    private val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
+    private val hasImageFunctions: Boolean = SamTemplateUtils.findFunctionsFromTemplate(templateFile).any { it is ImageBased }
 
     private val view = DeployServerlessApplicationPanel(project)
     private val validator = DeploySamApplicationValidator(view, hasImageFunctions)

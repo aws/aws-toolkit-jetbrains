@@ -15,8 +15,8 @@ import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.cloudformation.Function
-import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
+import software.aws.toolkits.jetbrains.services.lambda.sam.Function
+import software.aws.toolkits.jetbrains.services.lambda.sam.ImageServerlessFunction
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils.getFunctionEnvironmentVariables
@@ -50,7 +50,7 @@ class TemplateSettings(val project: Project) {
         private set
 
     val isImage
-        get() = function.selected()?.packageType() == PackageType.IMAGE
+        get() = function.selected() is  ImageServerlessFunction
 
     init {
         // by default, do not show the image settings or path mappings table
@@ -72,7 +72,7 @@ class TemplateSettings(val project: Project) {
         })
         function.addActionListener {
             val selected = function.selected()
-            imageSettingsPanel.isVisible = selected is SamFunction && selected.packageType() == PackageType.IMAGE
+            imageSettingsPanel.isVisible = selected is ImageServerlessFunction
             if (selected == null) {
                 environmentVariables.isEnabled = false
             } else {
@@ -115,7 +115,7 @@ class TemplateSettings(val project: Project) {
         if (!file.exists() || !file.isFile) {
             updateFunctionModel(emptyList())
         } else {
-            val functions = SamTemplateUtils.findFunctionsFromTemplate(project, file)
+            val functions = SamTemplateUtils.findFunctionsFromTemplate(file.toPath())
             updateFunctionModel(functions)
         }
     }

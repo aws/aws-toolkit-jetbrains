@@ -159,15 +159,15 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
                 if (serializableOptions.functionOptions.isImage) {
                     val (templateFile, logicalName) = validateSamTemplateDetails(templateFile(), logicalId())
                     val function = SamTemplateUtils
-                        .findSamImageFunctionsFromTemplate(project, templateFile)
-                        .first { it.logicalName == logicalId() } as? SamFunction
+                        .findSamImageFunctionsFromTemplate(templateFile)
+                        .firstOrNull { it.logicalName == logicalId() }
                         ?: throw IllegalStateException("Image functions must be SAM functions")
 
                     val debugger = imageDebugger() ?: throw IllegalStateException("No image debugger with ID ${rawImageDebugger()}")
 
                     // TODO FIX_WHEN_MIN_IS_202 use templateFile.toNioPath()
-                    val dockerFile = function.dockerFile() ?: "Dockerfile"
-                    val dockerFilePath = Paths.get(templateFile.path).parent.resolve(function.codeLocation()).resolve(dockerFile)
+                    val dockerFile = function.dockerFile ?: "Dockerfile"
+                    val dockerFilePath = Paths.get(templateFile.path).parent.resolve(function.codeLocation).resolve(dockerFile)
                     ImageTemplateRunSettings(
                         templateFile,
                         debugger,

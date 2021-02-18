@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.convertValue
-import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiElement
 import com.intellij.testFramework.LightVirtualFile
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -18,8 +15,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
-import software.aws.toolkits.jetbrains.services.cloudformation.Function
+import software.aws.toolkits.jetbrains.services.cloudformation.LAMBDA_FUNCTION_TYPE
 import software.aws.toolkits.jetbrains.services.cloudformation.SERVERLESS_FUNCTION_TYPE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UploadedCode
@@ -128,39 +124,52 @@ object SamTemplateUtils {
         function(MAPPER.readTree(it))
     }
 
-    @JvmStatic
-    fun findFunctionsFromTemplate(project: Project, file: File): List<Function> {
-        val virtualFile = file.readFileIntoMemory() ?: return emptyList()
-        return findFunctionsFromTemplate(project, virtualFile)
-    }
+    fun findFunctionsFromTemplate(template: VirtualFile): List<Function> =
+        findFunctionsFromTemplate(Path.of(template.path))
 
-    @JvmStatic
-    fun findFunctionsFromTemplate(project: Project, file: VirtualFile): List<Function> = try {
-        ReadAction.compute<List<Function>, Throwable> {
-            CloudFormationTemplate.parse(project, file).resources()
-                .filterIsInstance<Function>()
-                .toList()
-        }
+    fun findFunctionsFromTemplate(template: Path): List<Function> = try {
+        readTemplate(template) {
+            get("/Resources")?.mapNotNull { node ->
+                val logicalId = node.asText() ?: return@mapNotNull null
+                val type = node.get("Type")?.textValue()
+                if (type != SERVERLESS_FUNCTION_TYPE && type != LAMBDA_FUNCTION_TYPE) {
+                    return@mapNotNull null
+                }
+                val timeout = node.get("Properties/Timeout").asInt()
+                val memorySize = node.get("Properties/MemorySize").asInt()
+                val packageType = node
+                    .get("Properties/PackageType")
+                    .textValue()?.let { PackageType.values().firstOrNull { it.toString() == type } } ?: PackageType.ZIP
+                if (packageType == PackageType.ZIP) {
+                    val runtime = node.get("Properties/Runtime")?.textValue()
+                    val handler = node.get("Properties/Handler")?.textValue()
+                    if (type == LAMBDA_FUNCTION_TYPE) {
+                        return@mapNotNull ZipLambdaFunction(logicalId, timeout, memorySize, runtime, handler)
+                    } else if (type == SERVERLESS_FUNCTION_TYPE) {
+                        return@mapNotNull ZipServerlessFunction(logicalId, timeout, memorySize, runtime, handler)
+                    }
+                } else if (packageType == PackageType.IMAGE) {
+                    val dockerfile = node.get("Metadata/Dockerfile")?.textValue()
+                    val codeLocation = node.get("Metadata/DockerContext")?.textValue() ?: return@mapNotNull null
+                    if (type == SERVERLESS_FUNCTION_TYPE) {
+                        return@mapNotNull ImageServerlessFunction(logicalId, timeout, memorySize, dockerfile, codeLocation)
+                    }
+                }
+                return@mapNotNull null
+            }
+        } ?: emptyList()
     } catch (e: Exception) {
-        LOG.warn(e) { "Failed to parse template: $file" }
+        LOG.warn(e) { "Failed to parse template: $template" }
         emptyList()
     }
 
-    fun findSamImageFunctionsFromTemplate(project: Project, file: VirtualFile): List<Function> =
-        findFunctionsFromTemplate(project, file).filter { it.packageType() == PackageType.IMAGE }
+    fun findSamImageFunctionsFromTemplate(file: VirtualFile): List<ImageServerlessFunction> =
+        findFunctionsFromTemplate(file).filterIsInstance<ImageServerlessFunction>()
 
-    @JvmStatic
-    fun findZipFunctionsFromTemplate(project: Project, file: File): List<Function> {
-        val virtualFile = file.readFileIntoMemory() ?: return emptyList()
-        return findZipFunctionsFromTemplate(project, virtualFile)
-    }
+    fun findZipFunctionsFromTemplate(file: VirtualFile): List<Function> = findZipFunctionsFromTemplate(Path.of(file.path))
 
-    @JvmStatic
-    fun findZipFunctionsFromTemplate(project: Project, file: VirtualFile): List<Function> =
-        findFunctionsFromTemplate(project, file).filter { it.packageType() == PackageType.ZIP }
+    fun findZipFunctionsFromTemplate(file: Path): List<Function> = findFunctionsFromTemplate(file).filterIsInstance<ZipBased>().filterIsInstance<Function>()
 
-    @JvmStatic
-    fun functionFromElement(element: PsiElement): Function? = CloudFormationTemplate.convertPsiToResource(element) as? Function
 
     fun writeDummySamTemplate(
         tempFile: Path,
