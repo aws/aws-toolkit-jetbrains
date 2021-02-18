@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix uncaught error when local Lambda fails due to docker is not running"
-}
