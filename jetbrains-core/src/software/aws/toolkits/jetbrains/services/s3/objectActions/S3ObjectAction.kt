@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.jetbrains.services.s3.editor.S3EditorDataKeys
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeErrorNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode
 import javax.swing.Icon
 
@@ -18,7 +19,7 @@ abstract class S3ObjectAction(title: String, icon: Icon? = null) : DumbAwareActi
 
     final override fun update(e: AnActionEvent) {
         val selected = selected(e.dataContext)
-        e.presentation.isEnabled = selected.none { it is S3TreeContinuationNode<*> } && enabled(selected)
+        e.presentation.isEnabled = selected.none { it is S3TreeContinuationNode<*> || it is S3TreeErrorNode } && enabled(selected)
     }
 
     private fun selected(dataContext: DataContext): List<S3TreeNode> = dataContext.getData(S3EditorDataKeys.SELECTED_NODES) ?: emptyList()

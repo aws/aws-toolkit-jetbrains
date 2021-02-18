@@ -158,8 +158,10 @@ class S3TreeTable(
     }
 
     init {
-        // Associate the drop target listener with this instance which will allow uploading by drag and drop
-        DropTarget(this, dropTargetListener)
+        if (!ApplicationManager.getApplication().isHeadlessEnvironment) {
+            // Associate the drop target listener with this instance which will allow uploading by drag and drop
+            DropTarget(this, dropTargetListener)
+        }
         TreeTableSpeedSearch(
             this,
             Convertor { obj ->

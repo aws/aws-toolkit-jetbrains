@@ -60,9 +60,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
 
         DataManager.registerDataProvider(component) {
             when {
-                S3EditorDataKeys.SELECTED_NODES.`is`(it) ->
-                    treeTable.getSelectedNodes()
-                        .filterNot { node -> node is S3TreeContinuationNode<*> || node is S3TreeErrorNode }
+                S3EditorDataKeys.SELECTED_NODES.`is`(it) -> treeTable.getSelectedNodes()
                 S3EditorDataKeys.BUCKET_TABLE.`is`(it) -> treeTable
                 else -> null
             }

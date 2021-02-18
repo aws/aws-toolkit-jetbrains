@@ -26,7 +26,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.aws.toolkits.core.utils.test.retryableAssert
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeContinuationNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeDirectoryNode
+import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeErrorNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectNode
 import software.aws.toolkits.jetbrains.services.s3.editor.S3TreeObjectVersionNode
 import java.io.File
@@ -84,6 +86,26 @@ class UploadObjectActionTest : ObjectActionTestBase() {
         val nodes = listOf(
             dir,
             S3TreeObjectNode(dir, "path1/obj1", 1, Instant.now())
+        )
+
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
+    }
+
+    @Test
+    fun `upload action is disabled on error node`() {
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
+        val nodes = listOf(
+            S3TreeErrorNode(s3Bucket, dir)
+        )
+
+        assertThat(sut.updateAction(nodes).isEnabled).isFalse
+    }
+
+    @Test
+    fun `uplaod action is disabled on continuation node`() {
+        val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
+        val nodes = listOf(
+            S3TreeContinuationNode(s3Bucket, dir, "path1/", "marker")
         )
 
         assertThat(sut.updateAction(nodes).isEnabled).isFalse
