@@ -102,7 +102,7 @@ class UploadObjectActionTest : ObjectActionTestBase() {
     }
 
     @Test
-    fun `uplaod action is disabled on continuation node`() {
+    fun `upload action is disabled on continuation node`() {
         val dir = S3TreeDirectoryNode(s3Bucket, null, "path1/")
         val nodes = listOf(
             S3TreeContinuationNode(s3Bucket, dir, "path1/", "marker")
