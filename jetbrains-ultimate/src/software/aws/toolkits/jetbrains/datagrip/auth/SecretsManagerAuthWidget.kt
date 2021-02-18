@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.aws.toolkits.jetbrains.services.rds.RdsResources
 import software.aws.toolkits.jetbrains.services.redshift.RedshiftUtils
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
@@ -26,8 +27,7 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userFieldEnabled = false) {
 
     override val rowCount = 5
     override fun getRegionFromUrl(url: String?): String? = RdsResources.extractRegionFromUrl(url) ?: RedshiftUtils.extractRegionFromUrl(url)
-    // Since we don't know what kind of DB we are attaching to, make no assumptions about what regions are supported
-    override val serviceId: String? = null
+    override val serviceId: String = SecretsManagerClient.SERVICE_NAME
 
     override fun createPanel(): JPanel {
         val panel = super.createPanel()

@@ -31,7 +31,7 @@ abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : Dat
     protected val portParameter = "port"
 
     abstract fun getRegionFromUrl(url: String?): String?
-    abstract val serviceId: String?
+    abstract val serviceId: String
 
     open val rowCount: Int = 3
     open val columnCount: Int = 6
