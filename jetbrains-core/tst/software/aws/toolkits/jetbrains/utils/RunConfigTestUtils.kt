@@ -26,7 +26,7 @@ import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.XDebuggerManagerListener
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeTrue
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
@@ -40,43 +40,45 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertNotNull
 
-fun executeRunConfiguration(
-    runConfiguration: RunConfiguration,
-    executorId: String = DefaultRunExecutor.EXECUTOR_ID
-): Output {
+fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: String): CompletableFuture<Output> {
     val executor = ExecutorRegistry.getInstance().getExecutorById(executorId)
     assertNotNull(executor)
     val executionFuture = CompletableFuture<Output>()
     runInEdt {
-        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
-        try {
-            executionEnvironment.runner.execute(executionEnvironment) {
-                it.processHandler?.addProcessListener(
-                    object : OutputListener() {
-                        override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                            // Ansi codes throw off the default logic, so remap it to check the base type
-                            val processOutputType = outputType as? ProcessOutputType
-                            val baseType = processOutputType?.baseOutputType ?: outputType
+        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build {
+            it.processHandler?.addProcessListener(
+                object : OutputListener() {
+                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                        // Ansi codes throw off the default logic, so remap it to check the base type
+                        val processOutputType = outputType as? ProcessOutputType
+                        val baseType = processOutputType?.baseOutputType ?: outputType
 
-                            super.onTextAvailable(event, baseType)
+                        super.onTextAvailable(event, baseType)
 
-                            println("[${if (baseType == ProcessOutputTypes.STDOUT) "stdout" else "stderr"}]: ${event.text}")
-                        }
-
-                        override fun processTerminated(event: ProcessEvent) {
-                            super.processTerminated(event)
-                            executionFuture.complete(this.output)
-                        }
+                        println("[${if (baseType == ProcessOutputTypes.STDOUT) "stdout" else "stderr"}]: ${event.text}")
                     }
-                )
-            }
+
+                    override fun processTerminated(event: ProcessEvent) {
+                        super.processTerminated(event)
+                        executionFuture.complete(this.output)
+                    }
+                }
+            )
+        }
+
+        try {
+            executionEnvironment.runner.execute(executionEnvironment)
         } catch (e: Exception) {
             executionFuture.completeExceptionally(e)
         }
     }
+    return executionFuture
+}
 
-    // 5 is arbitrary, but Image-based functions can take > 3 min on first build/run, so 5 is a safer number
-    return executionFuture.get(5, TimeUnit.MINUTES)
+fun executeRunConfigurationAndWait(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
+    val executionFuture = executeRunConfiguration(runConfiguration, executorId)
+    // 4 is arbitrary, but Image-based functions can take > 3 min on first build/run, so 4 is a safe number
+    return executionFuture.get(4, TimeUnit.MINUTES)
 }
 
 fun checkBreakPointHit(project: Project, callback: () -> Unit = {}): Ref<Boolean> {
@@ -149,7 +151,7 @@ fun samImageRunDebugTest(
     projectRule: CodeInsightTestFixtureRule,
     relativePath: String,
     sourceFileName: String,
-    runtime: Runtime,
+    runtime: LambdaRuntime,
     mockCredentialsId: String,
     input: String,
     expectedOutput: String = input.toUpperCase(),
@@ -175,9 +177,9 @@ fun samImageRunDebugTest(
     val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
     val executeLambda = if (addBreakpoint != null) {
-        executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
     } else {
-        executeRunConfiguration(runConfiguration)
+        executeRunConfigurationAndWait(runConfiguration)
     }
 
     assertThat(executeLambda.exitCode).isEqualTo(0)

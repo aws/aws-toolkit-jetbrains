@@ -6,27 +6,36 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 import base.AwsReuseSolutionTestBase
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.execution.executors.DefaultDebugExecutor
+import com.intellij.ide.util.PropertiesComponent
+import com.jetbrains.rider.projectView.solutionDirectory
 import org.assertj.core.api.Assertions.assertThat
+import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
-import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
+import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 
-class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", Runtime.DOTNETCORE2_1)
+class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", LambdaRuntime.DOTNETCORE2_1)
 class Dotnet21LocalLambdaImageRunConfigurationIntegrationTest :
-    DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda2X", Runtime.DOTNETCORE2_1)
-// TODO: Fix test not running on CodeBuild
-// class Dotnet31LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda3X", Runtime.DOTNETCORE3_1)
-// class Dotnet31LocalLambdaImageRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("ImageLambda3X", Runtime.DOTNETCORE3_1)
-// class Dotnet50LocalLambdaImageRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("ImageLambda3X", Runtime.DOTNETCORE5_0)
+    DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda2X", LambdaRuntime.DOTNETCORE2_1)
 
-abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: Runtime) :
+class Dotnet31LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda3X", LambdaRuntime.DOTNETCORE3_1)
+
+class Dotnet31LocalLambdaImageRunConfigurationIntegrationTest :
+    DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda3X", LambdaRuntime.DOTNETCORE3_1)
+
+class Dotnet50LocalLambdaImageRunConfigurationIntegrationTest :
+    DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda5X", LambdaRuntime.DOTNET5_0)
+
+abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: LambdaRuntime) :
     AwsReuseSolutionTestBase() {
 
     override val waitForCaches = false
@@ -35,85 +44,78 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val handler = "EchoLambda::EchoLambda.Function::FunctionHandler"
 
+    private var initialImmediateWindow: Boolean = false
+
     @BeforeMethod
     fun setUp() {
+        // Disable the immediate window due to double release of editor in 203, this issue should be fixed in later Rider versions FIX_WHEN_MIN_IS_211
+        initialImmediateWindow = PropertiesComponent.getInstance().getBoolean("debugger.immediate.window.in.watches")
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", false, true)
+
         setSamExecutableFromEnvironment()
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
     }
 
+    @AfterMethod
+    fun tearDown() {
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
+    }
+
     override fun getSolutionDirectoryName(): String = solutionName
 
     @Test
-    fun samIsExecuted() {
+    fun samIsExecutedDebugger() {
+        setBreakpoint()
+
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             credentialsProviderId = mockId,
             handler = handler
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val debuggerIsHit = checkBreakPointHit(project)
+
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
         assertThat(executeLambda.exitCode).isEqualTo(0)
+        assertThat(debuggerIsHit.get()).isTrue
     }
 
     @Test
-    fun envVarsArePassed() {
+    fun samIsExecuted() {
         val envVars = mutableMapOf("Foo" to "Bar", "Bat" to "Baz")
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             credentialsProviderId = mockId,
             handler = handler,
             environmentVariables = envVars
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Environment variables are passed")
             .containsEntry("Foo", "Bar")
             .containsEntry("Bat", "Baz")
-    }
-
-    @Test
-    fun regionIsPassed() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime,
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfiguration(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Region is set")
             .containsEntry("AWS_REGION", getDefaultRegion().id)
-    }
-
-    @Test
-    fun credentialsArePassed() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = project,
-            runtime = runtime,
-            credentialsProviderId = mockId,
-            handler = handler
-        )
-
-        val executeLambda = executeRunConfiguration(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Credentials are passed")
             .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
             .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
+            // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1
+            .containsEntry("AWS_SESSION_TOKEN", "")
     }
 
     private fun jsonToMap(data: String) = jacksonObjectMapper().readValue<Map<String, Any>>(data)
 }
 
-abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: Runtime) :
+abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: LambdaRuntime) :
     AwsReuseSolutionTestBase() {
 
     override val waitForCaches = false
@@ -121,18 +123,29 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
+    private var initialImmediateWindow: Boolean = false
+
     @BeforeMethod
     fun setUp() {
+        // Disable the immediate window due to double release of editor in 203, this issue should be fixed in later Rider versions FIX_WHEN_MIN_IS_211
+        initialImmediateWindow = PropertiesComponent.getInstance().getBoolean("debugger.immediate.window.in.watches")
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", false, true)
+
         setSamExecutableFromEnvironment()
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+    }
+
+    @AfterMethod
+    fun tearDown() {
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
     }
 
     override fun getSolutionDirectoryName(): String = solutionName
 
     @Test
     fun samIsExecutedImage() {
-        val template = "$tempTestDirectory/$solutionName/template.yaml"
+        val template = "${project.solutionDirectory}/template.yaml"
 
         val runConfiguration = createTemplateRunConfiguration(
             project = project,
@@ -144,7 +157,30 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
             isImage = true
         )
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration)
         assertThat(executeLambda.exitCode).isEqualTo(0)
+    }
+
+    @Test
+    fun samIsExecutedDebuggerImage() {
+        setBreakpoint()
+
+        val template = "${project.solutionDirectory}/template.yaml"
+
+        val runConfiguration = createTemplateRunConfiguration(
+            project = project,
+            runtime = runtime,
+            templateFile = template,
+            logicalId = "HelloWorldFunction",
+            input = "\"Hello World\"",
+            credentialsProviderId = mockId,
+            isImage = true
+        )
+
+        val debuggerIsHit = checkBreakPointHit(project)
+
+        val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        assertThat(executeLambda.exitCode).isEqualTo(0)
+        assertThat(debuggerIsHit.get()).isTrue
     }
 }

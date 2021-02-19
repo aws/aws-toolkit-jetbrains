@@ -11,7 +11,6 @@ import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.AsyncProgramRunner
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.RunContentDescriptor
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
@@ -122,23 +121,18 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
         val buildWorkflow = buildWorkflow(environment, buildLambdaRequest, lambdaSettings.samOptions)
         buildWorkflow.onSuccess = { context ->
-            samState.runner.checkDockerInstalled()
-
             val builtLambda = context.getRequiredAttribute(BuildLambda.BUILT_LAMBDA)
             samState.builtLambda = builtLambda
             samState.pathMappings = createPathMappings(lambdaBuilder, lambdaSettings, buildLambdaRequest)
 
-            // TODO: This is too much to be on edt i.e. we get creds in here... https://github.com/aws/aws-toolkit-jetbrains/issues/2025
-            runInEdt {
-                samState.runner.run(environment, samState)
-                    .onSuccess {
-                        buildingPromise.setResult(it)
-                        reportMetric(lambdaSettings, Result.Succeeded, environment.isDebug())
-                    }.onError {
-                        buildingPromise.setError(it)
-                        reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
-                    }
-            }
+            samState.runner.run(environment, samState)
+                .onSuccess {
+                    buildingPromise.setResult(it)
+                    reportMetric(lambdaSettings, Result.Succeeded, environment.isDebug())
+                }.onError {
+                    buildingPromise.setError(it)
+                    reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
+                }
         }
         buildWorkflow.onError = {
             LOG.warn(it) { "Failed to create Lambda package" }
@@ -233,7 +227,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
     private fun buildWorkflow(environment: ExecutionEnvironment, buildRequest: BuildRequest, samOptions: SamOptions): StepExecutor {
         val buildStep = BuildLambda(buildRequest.template, buildRequest.logicalId, buildRequest.buildDir, buildRequest.buildEnvVars, samOptions)
 
-        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(buildStep), environment.executionId.toString())
+        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(ValidateDocker(), buildStep), environment.executionId.toString())
     }
 
     private fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)

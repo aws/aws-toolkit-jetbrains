@@ -1,3 +1,27 @@
+# _1.24_ (2021-02-17)
+- **(Feature)** RDS serverless databases are now visible in the RDS node in the explorer
+- **(Bug Fix)** Fix transient 'Aborted!' message on successful SAM CLI local Lambda execution
+- **(Bug Fix)** Fix being unable to open the file browser in the Schemas download panel
+- **(Bug Fix)** Fix being unable to type/copy paste into the SAM local run config's template path textbox
+- **(Bug Fix)** Fix Secrets Manager-based databse auth throwing NullPointer when editing settings in 2020.3.2 (Fixes [#2403](https://github.com/aws/aws-toolkit-jetbrains/issues/2403))
+- **(Bug Fix)** Fix making an un-needed service call on IDE startup ([#2426](https://github.com/aws/aws-toolkit-jetbrains/issues/2426))
+
+# _1.23_ (2021-02-04)
+- **(Feature)** Add "Copy S3 URI" to S3 objects ([#2208](https://github.com/aws/aws-toolkit-jetbrains/issues/2208))
+- **(Feature)** Add Dotnet5 Lambda support (Image only)
+- **(Feature)** Add option to view past object versions in S3 file editor
+- **(Feature)** Nodejs14.x Lambda support
+- **(Feature)** Update Lambda max memory to 10240
+- **(Bug Fix)** Re-add environment variable settings to SAM template based run configurations ([#2282](https://github.com/aws/aws-toolkit-jetbrains/issues/2282))
+- **(Bug Fix)** Fix error thrown on profile refresh if removing a profile that uses source_profile ([#2309](https://github.com/aws/aws-toolkit-jetbrains/issues/2309))
+- **(Bug Fix)** Fix NodeJS and Python breakpoints failing to hit sometimes
+- **(Bug Fix)** Speed up loading CloudFormation resources
+- **(Bug Fix)** Fix not invalidating credentials when a `source_profile` is updated
+- **(Bug Fix)** Fix cell based copying in CloudWatch Logs ([#2333](https://github.com/aws/aws-toolkit-jetbrains/issues/2333))
+- **(Bug Fix)** Fix certain S3 buckets being unable to be shown in the explorer ([#2342](https://github.com/aws/aws-toolkit-jetbrains/issues/2342))
+- **(Bug Fix)** Fix exception thrown in the new project wizard when run immediately after the toolkit is installed
+- **(Bug Fix)** Fixing issue with SSO refresh locking UI thread ([#2224](https://github.com/aws/aws-toolkit-jetbrains/issues/2224))
+
 # _1.22_ (2020-12-01)
 - **(Feature)** Container Image Support in Lambda
 - **(Bug Fix)** Fix update Lambda code for compiled languages ([#2231](https://github.com/aws/aws-toolkit-jetbrains/issues/2231))

@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
@@ -23,7 +24,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTem
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.WebStormTestUtils
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
-import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.HeavyNodeJsCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.utils.rules.addPackageJsonFile
@@ -37,7 +38,8 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         @Parameterized.Parameters(name = "{0}")
         fun parameters(): Collection<Array<Runtime>> = listOf(
             arrayOf(Runtime.NODEJS10_X),
-            arrayOf(Runtime.NODEJS12_X)
+            arrayOf(Runtime.NODEJS12_X),
+            arrayOf(Runtime.NODEJS14_X)
         )
     }
 
@@ -95,7 +97,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
 
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello World")
@@ -120,7 +122,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
 
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello World")
@@ -155,7 +157,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
 
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello World")
@@ -178,7 +180,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule.addBreakpoint()
 
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
-        val executeLambda = executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello World")
@@ -209,7 +211,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule.addBreakpoint()
 
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
-        val executeLambda = executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello World")
@@ -222,7 +224,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule = projectRule,
         relativePath = "samProjects/image/$runtime",
         sourceFileName = "app.js",
-        runtime = runtime,
+        runtime = LambdaRuntime.fromValue(runtime)!!,
         mockCredentialsId = mockId,
         input = input,
         expectedOutput = input.toUpperCase()
@@ -233,7 +235,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule = projectRule,
         relativePath = "samProjects/image/$runtime",
         sourceFileName = "app.js",
-        runtime = runtime,
+        runtime = LambdaRuntime.fromValue(runtime)!!,
         mockCredentialsId = mockId,
         input = input,
         expectedOutput = input.toUpperCase(),
