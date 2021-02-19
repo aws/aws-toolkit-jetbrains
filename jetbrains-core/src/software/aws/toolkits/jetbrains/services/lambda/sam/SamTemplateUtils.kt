@@ -6,7 +6,11 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.convertValue
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.impl.PsiModificationTrackerImpl
+import com.intellij.psi.util.CachedValueProvider
+import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.testFramework.LightVirtualFile
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -125,24 +129,40 @@ object SamTemplateUtils {
         function(MAPPER.readTree(it))
     }
 
-    fun findFunctionsFromTemplate(template: VirtualFile): List<Function> =
-        findFunctionsFromTemplate(Path.of(template.path))
+    fun findFunctionsFromTemplate( template: VirtualFile): CachedValueProvider<List<Function>> = CachedValueProvider {
+        val a  = findFunctionsFromTemplate(Path.of(template.path))
 
-    fun findFunctionsFromTemplate(template: Path)/*: List<Function> */ = try {
+        CachedValueProvider.Result.create(a, template)
+    }
+
+    fun other() {
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(template.toFile())
+        findFunctionsFromTemplate
+    }
+
+    private fun findFunctionsFromTemplate(template: Path): List<Function> = try {
+
         readTemplate(template) {
-            buildList<Function> {
+            // Refer to here for what properties are allowed in globals:
+            // https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy-globals.html
+            val globals = get("Globals")?.get("Function")
+            buildList {
                 get("Resources")?.fields()?.forEach { (logicalId, node) ->
                     val type = node.get("Type")?.asText()
                     if (type != SERVERLESS_FUNCTION_TYPE && type != LAMBDA_FUNCTION_TYPE) {
                         return@forEach
                     }
-                    val timeout = node.get("Properties/Timeout")?.asInt()
-                    val memorySize = node.get("Properties/MemorySize")?.asInt()
+                    val timeout = node.get("Properties")?.get("Timeout")?.asInt() ?: globals?.get("Timeout")?.asInt()
+                    val memorySize = node.get("Properties")?.get("MemorySize")?.asInt() ?: globals?.get("Timeout")?.asInt()
                     val packageType = node
-                        .get("Properties/PackageType")?.asText()?.let { p -> PackageType.values().firstOrNull { it.toString() == p } } ?: PackageType.ZIP
+                        .get("Properties")
+                        ?.get("PackageType")
+                        ?.asText()
+                        ?.let { p -> PackageType.values().firstOrNull { it.toString() == p } }
+                        ?: PackageType.ZIP
                     if (packageType == PackageType.ZIP) {
-                        val runtime = node.get("Properties")?.get("Runtime")?.asText()
-                        val handler = node.get("Properties")?.get("Handler")?.asText()
+                        val runtime = node.get("Properties")?.get("Runtime")?.asText() ?: globals?.get("Runtime")?.asText()
+                        val handler = node.get("Properties")?.get("Handler")?.asText() ?: globals?.get("Handler")?.asText()
                         if (type == LAMBDA_FUNCTION_TYPE) {
                             add(ZipLambdaFunction(logicalId, timeout, memorySize, runtime, handler))
                         } else if (type == SERVERLESS_FUNCTION_TYPE) {

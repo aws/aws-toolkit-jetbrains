@@ -17,12 +17,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.services.cloudformation.Function
-import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer.Companion.functionFromElement
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils.findFunctionsFromTemplate
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UploadedEcrCode
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UploadedS3Code
+import java.nio.file.Path
 
 class SamTemplateUtilsTest {
 
@@ -338,7 +337,7 @@ class SamTemplateUtilsTest {
         val file = yamlFile().virtualFile
 
         runInEdtAndWait {
-            val functions = findFunctionsFromTemplate(projectRule.project, file)
+            val functions = findFunctionsFromTemplate(Path.of(file.path))
             assertThat(functions).hasSize(2)
             assertFunction(functions[0], "MySamFunction", "hello.zip", "helloworld.App::handleRequest", "java8")
             assertFunction(functions[1], "MyLambdaFunction", "foo.zip", "foobar.App::handleRequest", "java8")
@@ -349,7 +348,7 @@ class SamTemplateUtilsTest {
     fun `can pull function from a sam template with global`() {
         val file = yamlFileWithGlobal().virtualFile
         runInEdtAndWait {
-            val functions = findFunctionsFromTemplate(projectRule.project, file)
+            val functions = findFunctionsFromTemplate(Path.of(file.path))
             assertThat(functions).hasSize(2)
             assertFunction(functions[0], "MySamFunction", "hello.zip", "helloworld.App::handleRequest", "java8")
             assertFunction(functions[1], "MyLambdaFunction", "foo.zip", "foobar.App::handleRequest", "java8")

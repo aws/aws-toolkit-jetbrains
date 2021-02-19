@@ -176,7 +176,7 @@ Parameters:
 
             Disposer.register(
                 projectRule.fixture.testRootDisposable,
-                Disposable {
+                {
                     runWriteAction {
                         FileTypeManagerEx.getInstance().removeAssociation(fakeFileType, matchYml)
                         FileTypeManagerEx.getInstance().removeAssociation(fakeFileType, matchYaml)
@@ -199,7 +199,6 @@ Parameters:
         runInEdtAndWait {
             val samFunction = template.getResourceByName("FooFunction") as SamFunction
             assertThat(samFunction.runtime()).isEqualTo("java8")
-            assertThat(samFunction.codeLocation()).isEqualTo("target/out.jar")
         }
     }
 
@@ -210,7 +209,6 @@ Parameters:
         runInEdtAndWait {
             val samFunction = template.getResourceByName("MyFunction") as SamFunction
             assertThat(samFunction.runtime()).isEqualTo("java12")
-            assertThat(samFunction.codeLocation()).isEqualTo("target/out.jar")
         }
     }
 
