@@ -12,7 +12,6 @@ import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.SortedComboBoxModel
 import com.intellij.util.PathMappingSettings
 import org.jetbrains.yaml.YAMLFileType
-import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.sam.Function
