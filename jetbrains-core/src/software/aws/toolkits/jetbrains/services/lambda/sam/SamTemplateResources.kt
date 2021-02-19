@@ -17,7 +17,9 @@ sealed class Function(
     val logicalName: String,
     val timeout: Int?,
     val memorySize: Int?
-)
+) {
+    override fun toString() = logicalName
+}
 
 class ZipLambdaFunction(
     logicalName: String,

@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.services.cloudformation.Function
+import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer.Companion.functionFromElement
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils.findFunctionsFromTemplate
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UploadedEcrCode
@@ -522,6 +523,29 @@ class SamTemplateUtilsTest {
                 "VAR3" to "ghi"
             )
         )
+    }
+
+
+    @Test
+    fun serverlessImageFunction() {
+        val template = yamlTemplate(template = makeImageTemplate("DockerFile2"))
+
+        runInEdtAndWait {
+            val samFunction = template.getResourceByName("MyFunction") as SamFunction
+            assertThat(samFunction.codeLocation()).isEqualTo("./hello-world")
+            assertThat(samFunction.dockerFile()).isEqualTo("DockerFile2")
+        }
+    }
+
+    @Test
+    fun serverlessImageFunctionDefaultDockerfile() {
+        val template = yamlTemplate(template = makeImageTemplate(null))
+
+        runInEdtAndWait {
+            val samFunction = template.getResourceByName("MyFunction") as SamFunction
+            assertThat(samFunction.codeLocation()).isEqualTo("./hello-world")
+            assertThat(samFunction.dockerFile()).isNull()
+        }
     }
 
     private fun yamlFile(): YAMLFile = runInEdtAndGet {

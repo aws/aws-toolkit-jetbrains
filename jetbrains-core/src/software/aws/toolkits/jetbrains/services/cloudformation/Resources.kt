@@ -39,15 +39,6 @@ class SamFunction(private val delegate: Resource) : Resource by delegate, Functi
     override fun getOptionalScalarProperty(key: String): String? =
         delegate.getOptionalScalarProperty(key) ?: globals["Function"]?.getOptionalScalarProperty(key)
 
-    /*
-    override fun codeLocation(): String = when (packageType()) {
-        PackageType.ZIP -> getScalarProperty("CodeUri")
-        PackageType.IMAGE -> getScalarMetadata("DockerContext")
-        else -> throw IllegalStateException("Bad packageType somehow returned to code location: ${packageType()}")
-    }*/
-
-    fun dockerFile(): String? = getOptionalScalarMetadata("Dockerfile")
-
     override fun toString(): String = logicalName
 }
 

@@ -132,26 +132,25 @@ object SamTemplateUtils {
         readTemplate(template) {
             buildList<Function> {
                 get("Resources")?.fields()?.forEach { (logicalId, node) ->
-                    val type = node.get("Type")?.textValue()
+                    val type = node.get("Type")?.asText()
                     if (type != SERVERLESS_FUNCTION_TYPE && type != LAMBDA_FUNCTION_TYPE) {
                         return@forEach
                     }
-                    val timeout = node.get("Properties/Timeout").asInt()
-                    val memorySize = node.get("Properties/MemorySize").asInt()
+                    val timeout = node.get("Properties/Timeout")?.asInt()
+                    val memorySize = node.get("Properties/MemorySize")?.asInt()
                     val packageType = node
-                        .get("Properties/PackageType")
-                        .textValue()?.let { PackageType.values().firstOrNull { it.toString() == type } } ?: PackageType.ZIP
+                        .get("Properties/PackageType")?.asText()?.let { p -> PackageType.values().firstOrNull { it.toString() == p } } ?: PackageType.ZIP
                     if (packageType == PackageType.ZIP) {
-                        val runtime = node.get("Properties/Runtime")?.textValue()
-                        val handler = node.get("Properties/Handler")?.textValue()
+                        val runtime = node.get("Properties")?.get("Runtime")?.asText()
+                        val handler = node.get("Properties")?.get("Handler")?.asText()
                         if (type == LAMBDA_FUNCTION_TYPE) {
                             add(ZipLambdaFunction(logicalId, timeout, memorySize, runtime, handler))
                         } else if (type == SERVERLESS_FUNCTION_TYPE) {
                             add(ZipServerlessFunction(logicalId, timeout, memorySize, runtime, handler))
                         }
                     } else if (packageType == PackageType.IMAGE) {
-                        val dockerfile = node.get("Metadata/Dockerfile")?.textValue()
-                        val codeLocation = node.get("Metadata/DockerContext")?.textValue() ?: return@forEach
+                        val codeLocation = node.get("Metadata")?.get("DockerContext")?.asText() ?: return@forEach
+                        val dockerfile = node.get("Metadata")?.get("Dockerfile")?.asText()
                         if (type == SERVERLESS_FUNCTION_TYPE) {
                             add(ImageServerlessFunction(logicalId, timeout, memorySize, dockerfile, codeLocation))
                         }
