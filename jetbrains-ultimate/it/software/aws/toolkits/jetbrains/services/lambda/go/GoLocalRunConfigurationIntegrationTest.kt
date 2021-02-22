@@ -7,11 +7,13 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.goide.vgo.VgoTestUtil
 import com.intellij.execution.executors.DefaultDebugExecutor
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.module.WebModuleTypeBase
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -179,6 +181,8 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
 
     @Test
     fun samIsExecutedWithDebugger() {
+        // only run this test on > 2020.1
+        assumeFalse(ApplicationInfo.getInstance().let { info -> (info.majorVersion == "2020" && info.minorVersionMainPart == "1") })
         projectRule.fixture.addLambdaFile(fileContents)
 
         val runConfiguration = createHandlerBasedRunConfiguration(
@@ -215,17 +219,21 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
     )
 
     @Test
-    fun samIsExecutedWithDebuggerImage(): Unit = samImageRunDebugTest(
-        projectRule = projectRule,
-        relativePath = "samProjects/image/$runtime",
-        sourceFileName = "main.go",
-        runtime = runtime,
-        mockCredentialsId = mockId,
-        input = input,
-        // TODO skip this for now because it doesn't work on SAM cli 1.18.1
-        expectedOutput = null,
-        addBreakpoint = { projectRule.addBreakpoint() }
-    )
+    fun samIsExecutedWithDebuggerImage() {
+        // only run this test on > 2020.1
+        assumeFalse(ApplicationInfo.getInstance().let { info -> (info.majorVersion == "2020" && info.minorVersionMainPart == "1") })
+        samImageRunDebugTest(
+            projectRule = projectRule,
+            relativePath = "samProjects/image/$runtime",
+            sourceFileName = "main.go",
+            runtime = runtime,
+            mockCredentialsId = mockId,
+            input = input,
+            // TODO skip this for now because it doesn't work on SAM cli 1.18.1
+            expectedOutput = null,
+            addBreakpoint = { projectRule.addBreakpoint() }
+        )
+    }
 
     private fun jsonToMap(data: String) = jacksonObjectMapper().readValue<Map<String, String>>(data)
     private fun CodeInsightTestFixture.addLambdaFile(contents: String) {
