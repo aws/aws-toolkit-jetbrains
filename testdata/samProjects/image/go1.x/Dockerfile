@@ -13,3 +13,5 @@ COPY --from=build-image /go/bin/ /var/task/
 
 # Command can be overwritten by providing a different command in the template directly.
 CMD ["hello-world"]
+
+# NOTE this is flat because of VGO mapping

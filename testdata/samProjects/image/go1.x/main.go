@@ -1,3 +1,4 @@
+// NOTE this is flat because of VGO mapping
 package main
 
 import (
