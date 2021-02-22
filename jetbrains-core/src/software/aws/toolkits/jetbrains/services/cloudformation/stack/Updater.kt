@@ -42,7 +42,7 @@ class Updater(
 ) : Disposable {
 
     @Volatile
-    private var stackStatus: StatusType = StatusType.UNKNOWN
+    private var stackStatus: StatusType? = null
 
     @Volatile
     private var predicate: (StackResource) -> Boolean = { true }
@@ -96,11 +96,11 @@ class Updater(
         val newStackStatusType = newStackStatus.type
         val newStackStatusNotInProgress = newStackStatusType !in setOf(StatusType.UNKNOWN, StatusType.PROGRESS)
 
-        // Stack changed to some "final" status just now (not when it was created when StackType is unknown
-        // notify the user
-        val stackSwitchedToFinalStatus = stackStatus != StatusType.UNKNOWN
-            && stackStatus != newStackStatusType
-            && newStackStatusNotInProgress
+        // Stack changed to some "final" status just now, notify the user. Don't show a notification if the state
+        // happened at creation time, which is distinguished by stackStatus being null
+        val stackSwitchedToFinalStatus = stackStatus != null &&
+            stackStatus != newStackStatusType &&
+            newStackStatusNotInProgress
 
         // Stack status is final and has not been changed
         val stackStatusFinalNotChanged = newStackStatusNotInProgress && newStackStatusType == stackStatus
