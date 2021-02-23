@@ -11,6 +11,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.workspaceModel.ide.WorkspaceModel
 import com.jetbrains.rd.framework.impl.RpcTimeouts
 import com.jetbrains.rider.model.MethodExistingRequest
+import com.jetbrains.rider.model.RdProjectDescriptor
 import com.jetbrains.rider.model.backendPsiHelperModel
 import com.jetbrains.rider.model.publishableProjectsModel
 import com.jetbrains.rider.projectView.solution
@@ -66,7 +67,7 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
         val publishableProjects = project.solution.publishableProjectsModel.publishableProjects.values.toList()
         val projectToProcess = publishableProjects.find { it.projectName == assemblyName } ?: return -1
 
-        projectModelViewHost.getProjectModelEntities(Path.of(projectToProcess.projectFilePath), project).filter { it.isProject() }.it.
+        val projectId = projectModelViewHost.getProjectModelIds(Path.of(projectToProcess.projectFilePath), project).firstOrNull() ?: 0
 
         val model = project.solution.backendPsiHelperModel
         val fileIdResponse = model.findPublicMethod.sync(
@@ -74,7 +75,7 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
                 className = type,
                 methodName = methodName,
                 targetFramework = "",
-                projectId = projectModelViewHost.getProjectModeId(projectToProcess.projectFilePath)
+                projectId = projectId
             ),
             timeouts = RpcTimeouts.default
         )
@@ -83,14 +84,16 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
     }
 
     private fun doesMethodExist(project: Project, assemblyName: String, type: String, methodName: String): Boolean {
-        val projectModelViewHost = ProjectModelViewHost.getInstance(project)
+        val projectModelViewHost = WorkspaceModel.getInstance(project)
         val projects = project.solution.publishableProjectsModel.publishableProjects.values.toList()
         val projectToProcess = projects.find { it.projectName == assemblyName } ?: return false
+
+        val projectId = projectModelViewHost.getProjectModelIds(Path.of(projectToProcess.projectFilePath), project).firstOrNull() ?: 0
 
         val handlerExistRequest = HandlerExistRequest(
             className = type,
             methodName = methodName,
-            projectId = projectModelViewHost.getProjectModeId(projectToProcess.projectFilePath)
+            projectId = projectId
         )
 
         return project.solution.lambdaPsiModel.isHandlerExists.sync(handlerExistRequest, RpcTimeouts.default)

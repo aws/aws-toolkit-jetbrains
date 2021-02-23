@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet.element
@@ -10,9 +10,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.FakePsiElement
-import com.jetbrains.rider.projectView.ProjectModelViewHost
-import com.jetbrains.rider.projectView.nodes.containingProject
-import com.jetbrains.rider.todo.getPsiFile
+import com.intellij.workspaceModel.ide.WorkspaceModel
 import com.jetbrains.rider.util.idea.getComponent
 import javax.swing.Icon
 
@@ -30,11 +28,11 @@ class RiderLambdaHandlerFakePsiElement(
 ) : FakePsiElement() {
     override fun getParent() = null
 
-    override fun getContainingFile(): PsiFile? =
+    override fun getContainingFile(): PsiFile? = null /*
         project.getComponent<ProjectModelViewHost>().getItemById(fileId)
             ?.getVirtualFile()
             ?.getPsiFile(FileDocumentManager.getInstance(), PsiDocumentManager.getInstance(project))
-
+*/
     override fun isValid() = true
     override fun getProject() = project
     override fun isWritable() = true
@@ -43,8 +41,8 @@ class RiderLambdaHandlerFakePsiElement(
     override fun toString() = name
     override fun getManager() = PsiManager.getInstance(project)
 
-    fun getContainingProjectFile(): VirtualFile? =
+    fun getContainingProjectFile(): VirtualFile? = null/*
         project.getComponent<ProjectModelViewHost>().getItemById(fileId)
             ?.containingProject()
-            ?.getVirtualFile()
+            ?.getVirtualFile()*/
 }
