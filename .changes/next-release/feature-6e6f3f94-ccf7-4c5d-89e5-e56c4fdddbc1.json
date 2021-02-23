@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "User enters/types \"delete me\" instead of the resource name to confirm deletion of resource."
+}
