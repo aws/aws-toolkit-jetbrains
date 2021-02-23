@@ -11,14 +11,10 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.workspaceModel.ide.WorkspaceModel
 import com.jetbrains.rd.framework.impl.RpcTimeouts
 import com.jetbrains.rider.model.MethodExistingRequest
-import com.jetbrains.rider.model.RdProjectDescriptor
 import com.jetbrains.rider.model.backendPsiHelperModel
 import com.jetbrains.rider.model.publishableProjectsModel
 import com.jetbrains.rider.projectView.solution
-import com.jetbrains.rider.projectView.workspace.getProjectModelEntities
-import com.jetbrains.rider.projectView.workspace.getProjectModelId
 import com.jetbrains.rider.projectView.workspace.getProjectModelIds
-import com.jetbrains.rider.projectView.workspace.isProject
 import software.aws.toolkits.jetbrains.protocol.HandlerExistRequest
 import software.aws.toolkits.jetbrains.protocol.lambdaPsiModel
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver

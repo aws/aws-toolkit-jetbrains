@@ -11,7 +11,11 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.FakePsiElement
 import com.intellij.workspaceModel.ide.WorkspaceModel
-import com.jetbrains.rider.util.idea.getComponent
+import com.intellij.workspaceModel.ide.impl.virtualFile
+import com.jetbrains.rider.projectView.workspace.containingProjectEntity
+import com.jetbrains.rider.projectView.workspace.getProjectModelEntity
+import com.jetbrains.rider.projectView.workspace.getVirtualFileAsContentRoot
+import com.jetbrains.rider.util.idea.getPsiFile
 import javax.swing.Icon
 
 /**
@@ -28,11 +32,12 @@ class RiderLambdaHandlerFakePsiElement(
 ) : FakePsiElement() {
     override fun getParent() = null
 
-    override fun getContainingFile(): PsiFile? = null /*
-        project.getComponent<ProjectModelViewHost>().getItemById(fileId)
-            ?.getVirtualFile()
-            ?.getPsiFile(FileDocumentManager.getInstance(), PsiDocumentManager.getInstance(project))
-*/
+    override fun getContainingFile(): PsiFile? = WorkspaceModel
+        .getInstance(project)
+        .getProjectModelEntity(fileId)
+        ?.getVirtualFileAsContentRoot()
+        ?.getPsiFile(FileDocumentManager.getInstance(), PsiDocumentManager.getInstance(project))
+
     override fun isValid() = true
     override fun getProject() = project
     override fun isWritable() = true
@@ -41,8 +46,10 @@ class RiderLambdaHandlerFakePsiElement(
     override fun toString() = name
     override fun getManager() = PsiManager.getInstance(project)
 
-    fun getContainingProjectFile(): VirtualFile? = null/*
-        project.getComponent<ProjectModelViewHost>().getItemById(fileId)
-            ?.containingProject()
-            ?.getVirtualFile()*/
+    fun getContainingProjectFile(): VirtualFile? = WorkspaceModel
+        .getInstance(project)
+        .getProjectModelEntity(fileId)
+        ?.containingProjectEntity()
+        ?.url
+        ?.virtualFile
 }
