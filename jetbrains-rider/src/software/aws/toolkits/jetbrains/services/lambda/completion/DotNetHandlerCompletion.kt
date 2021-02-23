@@ -21,7 +21,7 @@ class DotNetHandlerCompletion : HandlerCompletion {
         return completionItems.map { completionItem ->
             LookupElementBuilder.create(completionItem.handler).let { element ->
                 if (completionItem.iconId != null)
-                    element.withIcon(completionItemToIcon(completionItem.iconId))
+                    element.withIcon(completionItemToIcon(project, completionItem.iconId))
                 else
                     element
             }.withInsertHandler { context, item -> context.document.setText(item.lookupString) }
