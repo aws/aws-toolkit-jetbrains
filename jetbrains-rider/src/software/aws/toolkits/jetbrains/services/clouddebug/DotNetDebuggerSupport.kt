@@ -333,7 +333,7 @@ class DotNetDebuggerSupport : DebuggerSupport() {
 
     private fun createNetCoreStartInfo(exePath: String): DotNetCoreExeStartInfo =
         DotNetCoreExeStartInfo(
-            dotNetCoreInfo = DotNetCoreInfo(null, null),
+            dotNetCoreInfo = makeDotnetCoreInfo(),
             exePath = exePath,
             workingDirectory = "",
             arguments = "",
