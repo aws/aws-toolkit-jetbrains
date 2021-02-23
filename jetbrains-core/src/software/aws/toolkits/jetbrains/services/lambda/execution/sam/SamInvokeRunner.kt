@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
+import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.RunProfile
 import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.configurations.RunnerSettings
@@ -121,8 +122,6 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
         val buildWorkflow = buildWorkflow(environment, buildLambdaRequest, lambdaSettings.samOptions)
         buildWorkflow.onSuccess = { context ->
-            samState.runner.checkDockerInstalled()
-
             val builtLambda = context.getRequiredAttribute(BuildLambda.BUILT_LAMBDA)
             samState.builtLambda = builtLambda
             samState.pathMappings = createPathMappings(lambdaBuilder, lambdaSettings, buildLambdaRequest)
@@ -137,8 +136,15 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                 }
         }
         buildWorkflow.onError = {
+            // Remap to ExecutionException so our run configuration fails properly
+            // instead of showing up as an IDE Fatal error
+            val exception = if (it is ExecutionException) {
+                it
+            } else {
+                ExecutionException(it)
+            }
             LOG.warn(it) { "Failed to create Lambda package" }
-            buildingPromise.setError(it)
+            buildingPromise.setError(exception)
             reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
         }
 
@@ -229,7 +235,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
     private fun buildWorkflow(environment: ExecutionEnvironment, buildRequest: BuildRequest, samOptions: SamOptions): StepExecutor {
         val buildStep = BuildLambda(buildRequest.template, buildRequest.logicalId, buildRequest.buildDir, buildRequest.buildEnvVars, samOptions)
 
-        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(buildStep), environment.executionId.toString())
+        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(ValidateDocker(), buildStep), environment.executionId.toString())
     }
 
     private fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)
