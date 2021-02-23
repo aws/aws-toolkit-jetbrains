@@ -34,7 +34,7 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>>(text: Str
                 Messages.getWarningIcon(),
                 null,
                 object : InputValidator {
-                    override fun checkInput(inputString: String?): Boolean = inputString == resourceName
+                    override fun checkInput(inputString: String?): Boolean = inputString == message("delete_resource.confirmation_text")
 
                     override fun canClose(inputString: String?): Boolean = checkInput(inputString)
                 }

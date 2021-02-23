@@ -192,7 +192,7 @@ class S3BrowserTest {
                     openExplorerActionMenu(S3, bucket)
                 }
                 findAndClick("//div[@text='$deleteBucketText']")
-                fillSingleTextField(bucket)
+                fillSingleTextField("delete me")
                 pressOk()
                 waitForS3BucketDeletion()
             }

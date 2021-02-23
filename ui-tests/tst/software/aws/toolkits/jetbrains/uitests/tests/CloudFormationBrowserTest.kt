@@ -91,7 +91,7 @@ class CloudFormationBrowserTest {
                     openExplorerActionMenu(cloudFormation, stack)
                 }
                 findAndClick("//div[@text='$deleteStackText']")
-                fillSingleTextField(stack)
+                fillSingleTextField("delete me")
                 pressOk()
             }
 

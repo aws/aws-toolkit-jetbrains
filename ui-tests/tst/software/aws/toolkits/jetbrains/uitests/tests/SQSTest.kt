@@ -220,7 +220,7 @@ class SQSTest {
                         openExplorerActionMenu(sqsNodeLabel, queueName)
                     }
                     actionMenuItem(deleteQueueText).click()
-                    fillSingleTextField(queueName)
+                    fillSingleTextField("delete me")
                     pressOk()
                     client.waitForDeletion(queueName)
                 }
@@ -229,7 +229,7 @@ class SQSTest {
                         openExplorerActionMenu(sqsNodeLabel, fifoQueueName)
                     }
                     actionMenuItem(deleteQueueText).click()
-                    fillSingleTextField(fifoQueueName)
+                    fillSingleTextField("delete me")
                     pressOk()
                     client.waitForDeletion(fifoQueueName)
                 }
