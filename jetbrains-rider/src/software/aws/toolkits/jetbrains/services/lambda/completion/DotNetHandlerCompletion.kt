@@ -10,7 +10,6 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.openapi.project.Project
 import com.jetbrains.rd.framework.impl.RpcTimeouts
 import com.jetbrains.rider.projectView.solution
-import completionItemToIcon
 import software.aws.toolkits.jetbrains.protocol.HandlerCompletionItem
 import software.aws.toolkits.jetbrains.protocol.lambdaPsiModel
 
