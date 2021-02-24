@@ -11,6 +11,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
+import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.findByXpath
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
@@ -33,13 +34,13 @@ class OpenAwsLocalTerminalTest {
         }
         idea {
             waitForBackgroundTasks()
-            showAwsExplorer()
-        }
 
-        idea {
-            step("click terminal button") {
-                findAndClick("//div[@accessiblename='${message("aws.terminal.action")}' and @class='ActionButton']")
+            awsExplorer {
+                step("click terminal button") {
+                    findAndClick("//div[@accessiblename='${message("aws.terminal.action")}' and @class='ActionButton']")
+                }
             }
+
             step("assert terminal shown") {
                 val connection = step("find current connection") {
                     findText(Predicate { it.text.startsWith("AWS: ") }).text.substringAfter("AWS: ")

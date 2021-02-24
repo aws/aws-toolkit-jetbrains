@@ -12,9 +12,9 @@ import com.jetbrains.python.run.PythonRunConfiguration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
-import software.aws.toolkits.jetbrains.utils.execute
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import kotlin.test.assertNotNull
 
@@ -23,6 +23,14 @@ class PythonAwsConnectionExtensionIntegrationTest {
     @Rule
     @JvmField
     val projectRule = PythonCodeInsightTestFixtureRule()
+
+    @Rule
+    @JvmField
+    val regionProviderRule = MockRegionProviderRule()
+
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
 
     private val pythonExecutable = System.getenv("PYTHON_PATH")
 
@@ -43,13 +51,14 @@ class PythonAwsConnectionExtensionIntegrationTest {
 
         runConfiguration.scriptName = file.virtualFile.path
         runConfiguration.sdkHome = pythonExecutable
-        val mockRegion = MockRegionProvider.getInstance().defaultRegion().id
+        val mockRegion = regionProviderRule.createAwsRegion()
+        val mockCredential = credentialManagerRule.createCredentialProvider()
 
         runConfiguration.putCopyableUserData<AwsCredentialInjectionOptions>(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
             AwsCredentialInjectionOptions {
-                region = mockRegion
-                credential = MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER.id
+                region = mockRegion.id
+                credential = mockCredential.id
             }
         )
 
@@ -58,6 +67,6 @@ class PythonAwsConnectionExtensionIntegrationTest {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
         assertNotNull(executor)
 
-        assertThat(runConfiguration.execute().stdout).isEqualToIgnoringWhitespace(mockRegion)
+        assertThat(executeRunConfigurationAndWait(runConfiguration).stdout).isEqualToIgnoringWhitespace(mockRegion.id)
     }
 }

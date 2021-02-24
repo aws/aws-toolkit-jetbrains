@@ -23,6 +23,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
@@ -121,7 +122,7 @@ class LocalLambdaRunConfigurationTest {
                 isImage = true,
                 credentialsProviderId = mockId,
                 templateFile = template,
-                runtime = Runtime.JAVA11,
+                runtime = LambdaRuntime.JAVA11,
                 logicalId = "SomeFunction"
             )
 
@@ -146,7 +147,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("lambda.run_configuration.no_runtime_specified"))
+                .hasMessage(message("lambda.image.missing_debugger", "null"))
         }
     }
 
@@ -160,14 +161,14 @@ class LocalLambdaRunConfigurationTest {
                 credentialsProviderId = mockId,
                 templateFile = createImageTemplate(),
                 logicalId = "SomeFunction",
-                runtime = Runtime.fromValue("NotValid")
+                runtime = null
             )
 
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
                 // "null" comes from runtime UNKNOWN_TO_SDK_VERSION we use since we know it will never be supported
-                .hasMessage(message("lambda.run_configuration.unsupported_runtime", "null"))
+                .hasMessage(message("lambda.image.missing_debugger", "null"))
         }
     }
 
@@ -637,7 +638,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration.templateFile()).isNull()
             assertThat(runConfiguration.logicalId()).isNull()
             assertThat(runConfiguration.handler()).isEqualTo("helloworld.App::handleRequest")
-            assertThat(runConfiguration.runtime()).isEqualTo(Runtime.PYTHON3_6)
+            assertThat(runConfiguration.runtime()).isEqualTo(LambdaRuntime.PYTHON3_6)
             assertThat(runConfiguration.environmentVariables()).containsAllEntriesOf(mapOf("Foo" to "Bar"))
             assertThat(runConfiguration.regionId()).isEqualTo("us-west-2")
             assertThat(runConfiguration.credentialProviderId()).isEqualTo("profile:default")

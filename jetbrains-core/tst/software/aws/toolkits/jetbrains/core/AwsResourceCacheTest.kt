@@ -25,13 +25,13 @@ import org.junit.Test
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
 import software.aws.toolkits.jetbrains.utils.value
@@ -137,8 +137,6 @@ class AwsResourceCacheTest {
 
     @Test
     fun cacheEntriesAreSeparatedByRegionAndCredentials() {
-        val region1 = aRegionId()
-
         whenever(mockResource.fetch(any(), any())).thenAnswer {
             val region = it.getArgument<AwsRegion>(0)
             val cred = it.getArgument<ToolkitCredentialsProvider>(1)
@@ -333,6 +331,30 @@ class AwsResourceCacheTest {
     }
 
     @Test
+    fun multipleCallsWhileFetchPendingCallTheUnderlyingResourceOnce() {
+        val latch = CountDownLatch(1)
+        whenever(mockResource.fetch(any(), any())).thenAnswer {
+            // don't allow the task to finish until all futures have been created
+            latch.await()
+            return@thenAnswer "hello"
+        }
+
+        val futures = buildList<CompletableFuture<String>> {
+            repeat(20) {
+                // simulate multiple calls to the same resource
+                add(sut.getResource(mockResource, connectionSettings).toCompletableFuture())
+            }
+        }.toTypedArray()
+        latch.countDown()
+
+        // all futures should complete
+        CompletableFuture.allOf(*futures).value
+
+        // and we should have reused the same task for all of the requests
+        verifyResourceCalled(times = 1)
+    }
+
+    @Test
     fun cachingShouldBeBasedOnResourceId() {
         val first = StringResource("first")
         val anotherFirst = StringResource("first")
@@ -390,7 +412,7 @@ class AwsResourceCacheTest {
     @Test
     fun cacheExposesBlockingApiWhereExecutionExceptionIsUnwrapped() {
         whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("boom"))
-        assertThatThrownBy { sut.getResourceNow(mockResource, connectionSettings, timeout = Duration.ofMillis(5)) }
+        assertThatThrownBy { sut.getResourceNow(mockResource, connectionSettings, timeout = Duration.ofSeconds(1)) }
             .isInstanceOf(RuntimeException::class.java)
             .withFailMessage("boom")
     }

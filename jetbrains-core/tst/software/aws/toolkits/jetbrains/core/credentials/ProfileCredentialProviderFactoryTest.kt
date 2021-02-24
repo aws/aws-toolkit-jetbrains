@@ -24,6 +24,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatCode
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Condition
 import org.junit.After
@@ -531,6 +532,117 @@ class ProfileCredentialProviderFactoryTest {
     }
 
     @Test
+    fun testRefreshDeleteWithASourceProfile() {
+        profileFile.writeToFile(
+            """
+            [profile foo]
+            aws_access_key_id=FooAccessKey
+            aws_secret_access_key=FooSecretKey
+            aws_session_token=FooSessionToken
+            
+            [profile bar]
+            source_profile=foo
+            role_arn=SomeArn
+            """.trimIndent()
+        )
+
+        val providerFactory = createProviderFactory()
+        val validProfile = findCredentialIdentifier("bar")
+        assertThatCode {
+            providerFactory.createProvider(validProfile)
+        }.doesNotThrowAnyException()
+
+        profileFile.writeToFile(
+            """
+            [profile foo]
+            aws_access_key_id=FooAccessKey
+            aws_secret_access_key=FooSecretKey
+            aws_session_token=FooSessionToken
+            """.trimIndent()
+        )
+
+        mockProfileWatcher.triggerListeners()
+
+        assertThatCode {
+            providerFactory.createProvider(validProfile)
+        }.isInstanceOf(IllegalStateException::class.java)
+
+        argumentCaptor<CredentialsChangeEvent>().apply {
+            verify(profileLoadCallback, times(2)).invoke(capture())
+
+            assertThat(firstValue.added).hasSize(2).has(profileName("foo")).has(profileName("bar"))
+            assertThat(firstValue.modified).isEmpty()
+            assertThat(firstValue.removed).isEmpty()
+
+            assertThat(secondValue.added).isEmpty()
+            assertThat(secondValue.modified).isEmpty()
+            assertThat(secondValue.removed).hasSize(1).has(profileName("bar"))
+        }
+    }
+
+    @Test
+    fun testRefreshDeleteWithMiddleOfProfileChain() {
+        profileFile.writeToFile(
+            """
+            [profile foo]
+            aws_access_key_id=FooAccessKey
+            aws_secret_access_key=FooSecretKey
+            aws_session_token=FooSessionToken
+            
+            [profile bar]
+            source_profile=foo
+            role_arn=SomeArn
+            
+            [profile baz]
+            source_profile=bar
+            role_arn=SomeArn
+            """.trimIndent()
+        )
+
+        val providerFactory = createProviderFactory()
+        val middleProfile = findCredentialIdentifier("baz")
+        val lastProfile = findCredentialIdentifier("bar")
+        assertThatCode {
+            providerFactory.createProvider(middleProfile)
+        }.doesNotThrowAnyException()
+
+        profileFile.writeToFile(
+            """
+            [profile foo]
+            aws_access_key_id=FooAccessKey
+            aws_secret_access_key=FooSecretKey
+            aws_session_token=FooSessionToken
+            
+            [profile baz]
+            source_profile=bar
+            role_arn=SomeArn
+            """.trimIndent()
+        )
+
+        mockProfileWatcher.triggerListeners()
+
+        assertThatCode {
+            providerFactory.createProvider(middleProfile)
+        }.isInstanceOf(IllegalStateException::class.java)
+
+        assertThatCode {
+            providerFactory.createProvider(lastProfile)
+        }.isInstanceOf(IllegalStateException::class.java)
+
+        argumentCaptor<CredentialsChangeEvent>().apply {
+            verify(profileLoadCallback, times(2)).invoke(capture())
+
+            assertThat(firstValue.added).hasSize(3).has(profileName("foo")).has(profileName("bar")).has(profileName("baz"))
+            assertThat(firstValue.modified).isEmpty()
+            assertThat(firstValue.removed).isEmpty()
+
+            assertThat(secondValue.added).isEmpty()
+            assertThat(secondValue.modified).isEmpty()
+            assertThat(secondValue.removed).hasSize(2).has(profileName("bar")).has(profileName("baz"))
+        }
+    }
+
+    @Test
     fun testRefreshAddsProfiles() {
         profileFile.writeToFile("")
 
@@ -704,6 +816,354 @@ class ProfileCredentialProviderFactoryTest {
         assertThat(runBlocking { (findCredentialIdentifier("valid") as InteractiveCredential).userActionRequired() }).isFalse()
         assertThat(runBlocking { (findCredentialIdentifier("expired") as InteractiveCredential).userActionRequired() }).isTrue()
         assertThat(runBlocking { (findCredentialIdentifier("chain") as InteractiveCredential).userActionRequired() }).isFalse()
+    }
+
+    @Test
+    fun testModifyingASourceProfile() {
+        profileFile.writeToFile(
+            """
+            [profile role]
+            role_arn=arn1
+            source_profile=source_profile
+
+            [profile source_profile]
+            aws_access_key_id=BarAccessKey
+            aws_secret_access_key=BarSecretKey
+            """.trimIndent()
+        )
+
+        mockSdkHttpClient.stub {
+            on { prepareRequest(any()) }
+                .thenReturn(
+                    createAssumeRoleResponse(
+                        "AccessKey",
+                        "SecretKey",
+                        "SessionToken",
+                        ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                    )
+                )
+        }
+
+        val providerFactory = createProviderFactory()
+        val roleProfile = findCredentialIdentifier("role")
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        profileFile.writeToFile(
+            """
+            [profile role]
+            role_arn=arn1
+            source_profile=source_profile
+
+            [profile source_profile]
+            aws_access_key_id=BarAccessKey2
+            aws_secret_access_key=BarSecretKey2
+            """.trimIndent()
+        )
+
+        mockProfileWatcher.triggerListeners()
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        argumentCaptor<CredentialsChangeEvent>().apply {
+            verify(profileLoadCallback, times(2)).invoke(capture())
+
+            assertThat(firstValue.added).hasSize(2).has(profileName("role")).has(profileName("source_profile"))
+            assertThat(firstValue.modified).isEmpty()
+            assertThat(firstValue.removed).isEmpty()
+
+            assertThat(secondValue.added).isEmpty()
+            assertThat(secondValue.modified).hasSize(2).has(profileName("role")).has(profileName("source_profile"))
+            assertThat(secondValue.removed).isEmpty()
+        }
+
+        verify(mockSdkHttpClient, times(2)).prepareRequest(any())
+    }
+
+    @Test
+    fun testModifyingSourceProfileOrder() {
+        profileFile.writeToFile(
+            """
+            [profile role]
+            role_arn=arn1
+            source_profile=source_profile
+
+            [profile source_profile]
+            aws_access_key_id=BarAccessKey
+            aws_secret_access_key=BarSecretKey
+            """.trimIndent()
+        )
+
+        mockSdkHttpClient.stub {
+            on { prepareRequest(any()) }
+                .thenReturn(
+                    createAssumeRoleResponse(
+                        "AccessKey",
+                        "SecretKey",
+                        "SessionToken",
+                        ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                    )
+                )
+        }
+
+        val providerFactory = createProviderFactory()
+        val roleProfile = findCredentialIdentifier("role")
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        profileFile.writeToFile(
+            """
+            [profile source_profile]
+            aws_access_key_id=BarAccessKey2
+            aws_secret_access_key=BarSecretKey2
+
+            [profile role]
+            role_arn=arn1
+            source_profile=source_profile
+            """.trimIndent()
+        )
+
+        mockProfileWatcher.triggerListeners()
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        argumentCaptor<CredentialsChangeEvent>().apply {
+            verify(profileLoadCallback, times(2)).invoke(capture())
+
+            assertThat(firstValue.added).hasSize(2).has(profileName("role")).has(profileName("source_profile"))
+            assertThat(firstValue.modified).isEmpty()
+            assertThat(firstValue.removed).isEmpty()
+
+            assertThat(secondValue.added).isEmpty()
+            assertThat(secondValue.modified).hasSize(2).has(profileName("role")).has(profileName("source_profile"))
+            assertThat(secondValue.removed).isEmpty()
+        }
+
+        verify(mockSdkHttpClient, times(2)).prepareRequest(any())
+    }
+
+    @Test
+    fun testModifyingAnIntermediateSourceProfile() {
+        profileFile.writeToFile(
+            """
+            [profile leaf_role]
+            role_arn=arn2
+            source_profile=intermediate_role
+
+            [profile intermediate_role]
+            role_arn=arn1
+            source_profile=root_role
+
+            [profile root_role]
+            aws_access_key_id=BarAccessKey
+            aws_secret_access_key=BarSecretKey
+            """.trimIndent()
+        )
+
+        mockSdkHttpClient.stub {
+            on { prepareRequest(any()) }
+                .thenReturn(
+                    createAssumeRoleResponse(
+                        "AccessKey",
+                        "SecretKey",
+                        "SessionToken",
+                        ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                    )
+                )
+        }
+
+        val providerFactory = createProviderFactory()
+        val roleProfile = findCredentialIdentifier("leaf_role")
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        profileFile.writeToFile(
+            """
+            [profile leaf_role]
+            role_arn=arn2
+            source_profile=intermediate_role
+
+            [profile intermediate_role]
+            role_arn=a_different_arn
+            source_profile=root_role
+
+            [profile root_role]
+            aws_access_key_id=BarAccessKey
+            aws_secret_access_key=BarSecretKey
+            """.trimIndent()
+        )
+
+        mockProfileWatcher.triggerListeners()
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        argumentCaptor<CredentialsChangeEvent>().apply {
+            verify(profileLoadCallback, times(2)).invoke(capture())
+
+            assertThat(firstValue.added).hasSize(3).has(profileName("leaf_role")).has(profileName("intermediate_role")).has(profileName("root_role"))
+            assertThat(firstValue.modified).isEmpty()
+            assertThat(firstValue.removed).isEmpty()
+
+            assertThat(secondValue.added).isEmpty()
+            assertThat(secondValue.modified).hasSize(2).has(profileName("leaf_role")).has(profileName("intermediate_role"))
+            assertThat(secondValue.removed).isEmpty()
+        }
+
+        // 1: assume middle_role using source_profile
+        // 2: assume leaf_role using middle_role
+        // trigger revalidation
+        // 3: assume middle_role using source_profile
+        // 4: assume leaf_role using middle_role
+        verify(mockSdkHttpClient, times(4)).prepareRequest(any())
+    }
+
+    @Test
+    fun testModifyingRootSourceProfile() {
+        profileFile.writeToFile(
+            """
+            [profile leaf_role]
+            role_arn=arn2
+            source_profile=intermediate_role
+
+            [profile intermediate_role]
+            role_arn=arn1
+            source_profile=root_role
+
+            [profile root_role]
+            aws_access_key_id=BarAccessKey
+            aws_secret_access_key=BarSecretKey
+            """.trimIndent()
+        )
+
+        mockSdkHttpClient.stub {
+            on { prepareRequest(any()) }
+                .thenReturn(
+                    createAssumeRoleResponse(
+                        "AccessKey",
+                        "SecretKey",
+                        "SessionToken",
+                        ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                    )
+                )
+        }
+
+        val providerFactory = createProviderFactory()
+        val roleProfile = findCredentialIdentifier("leaf_role")
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        profileFile.writeToFile(
+            """
+            [profile leaf_role]
+            role_arn=arn2
+            source_profile=intermediate_role
+
+            [profile intermediate_role]
+            role_arn=arn1
+            source_profile=root_role
+
+            [profile root_role]
+            aws_access_key_id=BarAccessKey2
+            aws_secret_access_key=BarSecretKey2
+            """.trimIndent()
+        )
+
+        mockProfileWatcher.triggerListeners()
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        argumentCaptor<CredentialsChangeEvent>().apply {
+            verify(profileLoadCallback, times(2)).invoke(capture())
+
+            assertThat(firstValue.added).hasSize(3).has(profileName("leaf_role")).has(profileName("intermediate_role")).has(profileName("root_role"))
+            assertThat(firstValue.modified).isEmpty()
+            assertThat(firstValue.removed).isEmpty()
+
+            assertThat(secondValue.added).isEmpty()
+            assertThat(secondValue.modified).hasSize(3).has(profileName("leaf_role")).has(profileName("intermediate_role")).has(profileName("root_role"))
+            assertThat(secondValue.removed).isEmpty()
+        }
+
+        // 1: assume middle_role using source_profile
+        // 2: assume leaf_role using middle_role
+        // trigger revalidation
+        // 3: assume middle_role using source_profile
+        // 4: assume leaf_role using middle_role
+        verify(mockSdkHttpClient, times(4)).prepareRequest(any())
+    }
+
+    @Test
+    fun testModifyingMultipleRolesWithSourceProfile() {
+        profileFile.writeToFile(
+            """
+            [profile role1]
+            role_arn=arn2
+            source_profile=source_profile
+
+            [profile role2]
+            role_arn=arn1
+            source_profile=source_profile
+
+            [profile source_profile]
+            aws_access_key_id=BarAccessKey
+            aws_secret_access_key=BarSecretKey
+            """.trimIndent()
+        )
+
+        mockSdkHttpClient.stub {
+            on { prepareRequest(any()) }
+                .thenReturn(
+                    createAssumeRoleResponse(
+                        "AccessKey",
+                        "SecretKey",
+                        "SessionToken",
+                        ZonedDateTime.now().plus(1, ChronoUnit.HOURS)
+                    )
+                )
+        }
+
+        val providerFactory = createProviderFactory()
+        val roleProfile = findCredentialIdentifier("role1")
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        profileFile.writeToFile(
+            """
+            [profile role1]
+            role_arn=arn2
+            source_profile=role2
+
+            [profile role2]
+            role_arn=a_different_arn
+            source_profile=source_profile
+
+            [profile source_profile]
+            aws_access_key_id=BarAccessKey
+            aws_secret_access_key=BarSecretKey
+            """.trimIndent()
+        )
+
+        mockProfileWatcher.triggerListeners()
+
+        providerFactory.createProvider(roleProfile).resolveCredentials()
+
+        argumentCaptor<CredentialsChangeEvent>().apply {
+            verify(profileLoadCallback, times(2)).invoke(capture())
+
+            assertThat(firstValue.added).hasSize(3).has(profileName("role1")).has(profileName("role2")).has(profileName("source_profile"))
+            assertThat(firstValue.modified).isEmpty()
+            assertThat(firstValue.removed).isEmpty()
+
+            assertThat(secondValue.added).isEmpty()
+            assertThat(secondValue.modified).hasSize(2).has(profileName("role1")).has(profileName("role2"))
+            assertThat(secondValue.removed).isEmpty()
+        }
+
+        // 1: assume role1 using source_profile
+        // trigger revalidation
+        // 2: assume role2 using source_profile
+        // 3: assume role1 using role2
+        verify(mockSdkHttpClient, times(3)).prepareRequest(any())
     }
 
     private fun File.writeToFile(content: String) {

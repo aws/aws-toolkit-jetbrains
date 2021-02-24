@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.aws.toolkits.jetbrains.services.s3.download
@@ -20,7 +21,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
 
-class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtualFile(s3Bucket.name()) {
+class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client) : LightVirtualFile(s3Bucket.name()) {
     override fun isWritable(): Boolean = false
     override fun getPath(): String = s3Bucket.name()
     override fun isValid(): Boolean = true
@@ -49,6 +50,12 @@ class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtual
         }
     }
 
+    suspend fun listObjectVersions(key: String, keyMarker: String?, versionIdMarker: String?): ListObjectVersionsResponse? = withContext(Dispatchers.IO) {
+        client.listObjectVersions {
+            it.bucket(s3Bucket.name()).prefix(key).delimiter("/").maxKeys(MAX_ITEMS_TO_LOAD).keyMarker(keyMarker).versionIdMarker(versionIdMarker)
+        }
+    }
+
     suspend fun deleteObjects(keys: List<String>) {
         withContext(Dispatchers.IO) {
             val keysToDelete = keys.map { ObjectIdentifier.builder().key(it).build() }
@@ -69,15 +76,16 @@ class S3VirtualBucket(val s3Bucket: Bucket, val client: S3Client) : LightVirtual
         }
     }
 
-    suspend fun download(project: Project, key: String, output: OutputStream) {
+    suspend fun download(project: Project, key: String, versionId: String? = null, output: OutputStream) {
         withContext(Dispatchers.IO) {
-            client.download(project, s3Bucket.name(), key, output).await()
+            client.download(project, s3Bucket.name(), key, versionId, output).await()
         }
     }
 
-    fun generateUrl(key: String): URL = client.utilities().getUrl {
+    fun generateUrl(key: String, versionId: String?): URL = client.utilities().getUrl {
         it.bucket(s3Bucket.name())
         it.key(key)
+        it.versionId(versionId)
     }
 
     private companion object {

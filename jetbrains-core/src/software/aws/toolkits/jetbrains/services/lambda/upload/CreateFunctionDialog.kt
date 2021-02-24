@@ -12,6 +12,8 @@ import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.validOrNull
+import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
@@ -24,13 +26,13 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda.Companion.FUNCTION_ARN
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createLambdaWorkflowForImage
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createLambdaWorkflowForZip
-import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.nio.file.Paths
@@ -49,26 +51,32 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
             memorySlider.value = DEFAULT_MEMORY_SIZE
 
             // show a filtered list of runtimes to only ones we can build (since we have to build)
-            runtimeModel.setAll(LambdaBuilder.supportedRuntimeGroups().flatMap { it.runtimes })
+            runtimeModel.setAll(LambdaBuilder.supportedRuntimeGroups().flatMap { it.supportedSdkRuntimes })
 
             handlerName?.let { handler ->
                 handlerPanel.handler.text = handler
             }
             initialRuntime?.validOrNull?.let {
-                runtime.selectedItem = it
+                runtimeModel.selectedItem = it
                 handlerPanel.setRuntime(it)
             }
         }
     }
 
-    override fun createCenterPanel(): JComponent? = view.content
+    override fun createCenterPanel(): JComponent = view.content
 
-    override fun getPreferredFocusedComponent(): JComponent? = view.name
+    override fun getPreferredFocusedComponent(): JComponent = view.name
 
     override fun doValidate(): ValidationInfo? = view.validatePanel()
 
     override fun doCancelAction() {
-        LambdaTelemetry.editFunction(project, result = Result.Cancelled)
+        LambdaTelemetry.deploy(
+            project,
+            result = Result.Cancelled,
+            regionId = project.activeRegion().id,
+            lambdaPackageType = LambdaPackageType.from(view.configSettings.packageType().toString()),
+            initialDeploy = true
+        )
         super.doCancelAction()
     }
 
@@ -76,7 +84,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
         upsertLambdaCode()
     }
 
-    override fun getHelpId(): String? = HelpIds.CREATE_FUNCTION_DIALOG.id
+    override fun getHelpId(): String = HelpIds.CREATE_FUNCTION_DIALOG.id
 
     private fun upsertLambdaCode() {
         if (!okAction.isEnabled) {
@@ -85,6 +93,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
 
         val functionName = view.name.text
         val workflow = createWorkflow()
+        val packageType = LambdaPackageType.from(view.configSettings.packageType().toString())
 
         workflow.onSuccess = {
             saveSettings(it.getRequiredAttribute(FUNCTION_ARN))
@@ -94,13 +103,26 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
                 title = message("lambda.service_name"),
                 content = message("lambda.function.created.notification", functionName)
             )
-            LambdaTelemetry.editFunction(project, update = false, result = Result.Succeeded)
+            LambdaTelemetry.deploy(
+                project,
+                result = Result.Succeeded,
+                regionId = project.activeRegion().id,
+                lambdaPackageType = packageType,
+                initialDeploy = true
+            )
+
             project.refreshAwsTree(LambdaResources.LIST_FUNCTIONS)
         }
 
         workflow.onError = {
             it.notifyError(project = project, title = message("lambda.service_name"))
-            LambdaTelemetry.editFunction(project, update = false, result = Result.Failed)
+            LambdaTelemetry.deploy(
+                project,
+                result = Result.Failed,
+                regionId = project.activeRegion().id,
+                lambdaPackageType = packageType,
+                initialDeploy = true
+            )
         }
 
         workflow.startExecution()
@@ -141,7 +163,7 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
                     functionDetails = functionDetails,
                     codeDetails = codeDetails,
                     buildDir = lambdaBuilder.getBuildDirectory(module),
-                    buildEnvVars = lambdaBuilder.additionalEnvironmentVariables(module, samOptions),
+                    buildEnvVars = lambdaBuilder.additionalBuildEnvironmentVariables(module, samOptions),
                     codeStorageLocation = view.codeStorage.codeLocation(),
                     samOptions = samOptions
                 )

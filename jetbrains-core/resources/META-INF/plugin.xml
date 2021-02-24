@@ -1,7 +1,7 @@
 <!-- Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+<idea-plugin require-restart="true" xmlns:xi="http://www.w3.org/2001/XInclude">
     <id>aws.toolkit</id>
     <name>AWS Toolkit</name>
     <version>1.0</version>
@@ -52,7 +52,7 @@ with what features/services are supported.
 </ul>
     ]]></description>
 
-    <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://aws.amazon.com/">AWS</vendor>
+    <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://github.com/aws/aws-toolkit-jetbrains">AWS</vendor>
     <!-- 201.6668.113 is 2020.1 EAP 1 -->
     <idea-version since-build="201.6668.113" until-build="202.*"/>
 
@@ -83,7 +83,7 @@ with what features/services are supported.
                   topic="software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier"/>
     </projectListeners>
     <extensionPoints>
-        <extensionPoint name="credentialProviderFactory" interface="software.aws.toolkits.core.credentials.CredentialProviderFactory"/>
+        <extensionPoint name="credentialProviderFactory" interface="software.aws.toolkits.core.credentials.CredentialProviderFactory" dynamic="true"/>
 
         <extensionPoint name="lambda.runtimeGroup" interface="software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup" dynamic="true"/>
 
@@ -91,9 +91,11 @@ with what features/services are supported.
             <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder"/>
         </extensionPoint>
 
-        <extensionPoint name="lambda.sam.debugSupport" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
-            <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport"/>
+        <extensionPoint name="lambda.sam.runtimeDebugSupport" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
+            <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport"/>
         </extensionPoint>
+
+        <extensionPoint name="lambda.sam.imageDebuggerSupport" interface="software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport" dynamic="true"/>
 
         <extensionPoint name="lambda.handlerResolver" beanClass="software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint" dynamic="true">
             <with attribute="implementationClass" implements="software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver"/>
@@ -109,7 +111,7 @@ with what features/services are supported.
 
         <extensionPoint name="executable" interface="software.aws.toolkits.jetbrains.core.executables.ExecutableType" dynamic="true"/>
 
-        <extensionPoint name="clouddebug.debuggerSupport" interface="software.aws.toolkits.jetbrains.services.clouddebug.DebuggerSupport"/>
+        <extensionPoint name="clouddebug.debuggerSupport" interface="software.aws.toolkits.jetbrains.services.clouddebug.DebuggerSupport" dynamic="true"/>
         <extensionPoint name="notice" interface="software.aws.toolkits.jetbrains.core.notification.NoticeType" dynamic="true"/>
 
         <extensionPoint name="explorer.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode" dynamic="true"/>
@@ -209,7 +211,9 @@ with what features/services are supported.
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.s3.S3ViewerEditorProvider"/>
         <!-- See this post why order="first" is required https://intellij-support.jetbrains.com/hc/en-us/community/posts/360003460619-fileIconProvider-is-not-showing-Icon-for-custom-LightVirtualFile -->
         <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.s3.editor.S3FileIconProvider"/>
+
         <registryKey key="aws.credentialProcess.timeout" description="AWS Credential Process timeout (ms)" restartRequired="false" defaultValue="30000"/>
+        <registryKey key="aws.debuggerAttach.timeout" description="Time allowed for debuggers to attach before timing out (ms)" restartRequired="false" defaultValue="60000"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">

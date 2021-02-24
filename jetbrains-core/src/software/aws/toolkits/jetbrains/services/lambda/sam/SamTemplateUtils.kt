@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.sam
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.convertValue
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -36,9 +37,20 @@ object SamTemplateUtils {
     private val MAPPER = ObjectMapper(YAMLFactory())
     private const val S3_URI_PREFIX = "s3://"
 
-    fun getUploadedCodeUri(template: Path, logicalId: String): UploadedCode = readTemplate(template) {
+    fun getFunctionEnvironmentVariables(template: Path, logicalId: String): Map<String, String> = readTemplate(template) {
         val function = requiredAt("/Resources").get(logicalId)
             ?: throw IllegalArgumentException("No resource with the logical ID $logicalId")
+        val globals = at("/Globals/Function/Environment/Variables")
+        val variables = function.at("/Properties/Environment/Variables")
+        // convertValue can return null (despite being annotated otherwise)
+        val globalVars = runCatching { MAPPER.convertValue<Map<String, String>>(globals) ?: emptyMap() }.getOrDefault(emptyMap())
+        val vars = runCatching { MAPPER.convertValue<Map<String, String>>(variables) ?: emptyMap() }.getOrDefault(emptyMap())
+        // function vars overwrite global ones if they overlap, so this works as expected
+        globalVars + vars
+    }
+
+    fun getUploadedCodeUri(template: Path, logicalId: String): UploadedCode = readTemplate(template) {
+        val function = findFunction(logicalId)
         if (function.isImageBased()) {
             UploadedEcrCode(function.requiredAt("/Properties/ImageUri").textValue())
         } else {
@@ -83,6 +95,33 @@ object SamTemplateUtils {
         version = codeUri.get("Version").textValue()
     )
 
+    /**
+     * Returns the location of the Lambda source code as per SAM build requirements
+     */
+    fun getCodeLocation(template: Path, logicalId: String): String = readTemplate(template) {
+        val function = findFunction(logicalId)
+        if (function.isServerlessFunction()) {
+            if (function.isImageBased()) {
+                function.getPathOrThrow(logicalId, "/Metadata/DockerContext").textValue()
+            } else {
+                function.getPathOrThrow(logicalId, "/Properties/CodeUri").textValue()
+            }
+        } else {
+            function.getPathOrThrow(logicalId, "/Properties/Code").textValue()
+        }
+    }
+
+    private fun JsonNode.getPathOrThrow(logicalId: String, path: String): JsonNode {
+        val node = at(path)
+        if (node.isMissingNode) {
+            throw RuntimeException(message("cloudformation.key_not_found", path, logicalId))
+        }
+        return node
+    }
+
+    private fun JsonNode.findFunction(logicalId: String): JsonNode = this.requiredAt("/Resources").get(logicalId)
+        ?: throw IllegalArgumentException("No resource with the logical ID $logicalId")
+
     private fun JsonNode.isImageBased(): Boolean = this.packageType() == PackageType.IMAGE
 
     private fun JsonNode.packageType(): PackageType {
@@ -90,6 +129,8 @@ object SamTemplateUtils {
         return PackageType.knownValues().firstOrNull { it.toString() == type }
             ?: throw IllegalStateException(message("cloudformation.invalid_property", "PackageType", type))
     }
+
+    private fun JsonNode.isServerlessFunction(): Boolean = this.get("Type")?.textValue() == SERVERLESS_FUNCTION_TYPE
 
     private fun <T> readTemplate(template: Path, function: JsonNode.() -> T): T = template.inputStream().use {
         function(MAPPER.readTree(it))

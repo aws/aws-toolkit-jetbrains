@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.wizard
 
 import com.fasterxml.jackson.databind.JsonNode
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.services.schemas.SchemaDownloader
 import software.aws.toolkits.jetbrains.services.schemas.SchemaSummary
@@ -14,11 +15,15 @@ import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import javax.swing.JComponent
 
 class SchemaResourceSelector {
-    private var currentAwsConnection: ConnectionSettings? = null
+    var awsConnection: ConnectionSettings? = null
 
-    private val schemasSelector = initializeSchemasSelector()
+    internal val schemasSelector = initializeSchemasSelector()
+        @TestOnly
+        get() = field
 
     val component: JComponent = schemasSelector
+
+    fun reload() = schemasSelector.reload()
 
     private fun initializeSchemasSelector(): ResourceSelector<SchemaSelectionItem> = ResourceSelector.builder()
         .resource(SchemasResources.LIST_REGISTRIES_AND_SCHEMAS)
@@ -26,13 +31,8 @@ class SchemaResourceSelector {
         .customRenderer(SchemaSelectionListCellRenderer())
         .disableAutomaticLoading()
         .disableAutomaticSorting()
-        .awsConnection { currentAwsConnection }
+        .awsConnection { awsConnection }
         .build()
-
-    fun reloadSchemas(awsConnection: ConnectionSettings?) {
-        currentAwsConnection = awsConnection
-        schemasSelector.reload()
-    }
 
     fun registryName(): String? = when (val selected = schemasSelector.selected()) {
         is SchemaSelectionItem.SchemaItem -> selected.registryName
@@ -56,7 +56,7 @@ class SchemaResourceSelector {
 
         val schemaDownloader = SchemaDownloader()
         val describeSchemaResponse =
-            schemaDownloader.getSchemaContent(registryName, schemaName, connectionSettings = currentAwsConnection!!).toCompletableFuture().get()
+            schemaDownloader.getSchemaContent(registryName, schemaName, connectionSettings = awsConnection!!).toCompletableFuture().get()
         val latestSchemaVersion = describeSchemaResponse.schemaVersion()
 
         val schemaNode = schemaDownloader.getSchemaContentAsJson(describeSchemaResponse)

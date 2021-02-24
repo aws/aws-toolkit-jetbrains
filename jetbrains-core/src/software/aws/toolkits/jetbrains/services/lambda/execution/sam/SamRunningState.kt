@@ -3,39 +3,41 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
+import com.intellij.execution.Executor
 import com.intellij.execution.configurations.CommandLineState
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.execution.ui.ConsoleView
 import com.intellij.openapi.util.io.FileUtil
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
-import software.aws.toolkits.jetbrains.services.lambda.BuiltLambda
+import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuiltLambda
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 
 class SamRunningState(
     environment: ExecutionEnvironment,
     val settings: LocalLambdaRunSettings
 ) : CommandLineState(environment) {
+    lateinit var pathMappings: List<PathMapping>
     lateinit var builtLambda: BuiltLambda
 
     val runner = if (environment.executor.id == DefaultDebugExecutor.EXECUTOR_ID) {
-        SamDebugger(settings.runtimeGroup)
+        SamDebugger(settings)
     } else {
-        SamRunner()
+        SamRunner(settings)
     }
 
     override fun startProcess(): ProcessHandler {
-        val totalEnvVars = when (settings) {
-            is HandlerRunSettings -> settings.environmentVariables.toMutableMap()
-            else -> mutableMapOf()
-        }
-
-        totalEnvVars += settings.connection.credentials.resolveCredentials().toEnvironmentVariables()
-        totalEnvVars += settings.connection.region.toEnvironmentVariables()
+        val totalEnvVars = settings.environmentVariables +
+            settings.connection.credentials.resolveCredentials().toEnvironmentVariables() +
+            settings.connection.region.toEnvironmentVariables()
 
         val samExecutable = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let {
             when (it) {
@@ -47,7 +49,7 @@ class SamRunningState(
             .withParameters("local")
             .withParameters("invoke")
             .apply {
-                if (settings is TemplateBasedSettings) {
+                if (settings is TemplateSettings) {
                     withParameters(settings.logicalId)
                 }
             }
@@ -76,11 +78,20 @@ class SamRunningState(
             }
         }
 
-        runner.patchCommandLine(commandLine, settings)
+        runner.patchCommandLine(commandLine)
 
         // Unix: Sends SIGINT on destroy so Docker container is shut down
         // Windows: Run with mediator to allow for Cntrl+C to be used
-        return KillableColoredProcessHandler(commandLine, true)
+        return object : KillableColoredProcessHandler(commandLine, true) {
+            override fun doDestroyProcess() {
+                // send signal only if user explicitly requests termination
+                if (this.getUserData(ProcessHandler.TERMINATION_REQUESTED) == true) {
+                    super.doDestroyProcess()
+                } else {
+                    detachProcess()
+                }
+            }
+        }
     }
 
     private fun createEventFile(): String {
@@ -88,4 +99,12 @@ class SamRunningState(
         eventFile.writeText(settings.input)
         return eventFile.absolutePath
     }
+
+    override fun createConsole(executor: Executor): ConsoleView? =
+        /*
+         * Certain consoles must be created on EDT (like the python interactive console) so make sure we are on the UI thread for that segment.
+         */
+        runBlocking(getCoroutineUiContext(disposable = environment)) {
+            super.createConsole(executor)
+        }
 }

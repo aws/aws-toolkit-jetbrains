@@ -10,6 +10,7 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -71,6 +72,8 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
         // https://github.com/JetBrains/intellij-community/commit/0a6c9e16e95983ae0786d7667290c07b420ce705
         // TODO: Remove this FIX_WHEN_MIN_IS_203
         ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "ForkJoinPool.commonPool-worker-")
+        // This timer is cancelled but it still continues running when the test is over since it cancels lazily. This is fine, so suppress the leak
+        ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Debugger Worker launch timer")
     }
 
     override fun finished(description: Description?) {
@@ -169,7 +172,7 @@ fun CodeInsightTestFixture.addFileToModule(
     val file = try {
         val contentRoot = ModuleRootManager.getInstance(module).contentRoots[0]
         runWriteAction {
-            contentRoot.writeChild(relativePath, fileText)
+            contentRoot.writeChild(FileUtil.toSystemIndependentName(relativePath), fileText)
         }
     } finally {
         PsiManager.getInstance(project).dropPsiCaches()

@@ -32,12 +32,13 @@ class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambd
         if (useTemplate) {
             view.templateSettings.setTemplateFile(configuration.templateFile())
             view.templateSettings.selectFunction(configuration.logicalId())
+            view.rawSettings.environmentVariables.envVars = configuration.environmentVariables()
             if (view.templateSettings.isImage) {
-                view.templateSettings.runtime.selectedItem = configuration.runtime()
+                view.templateSettings.imageDebuggerModel.selectedItem = configuration.imageDebugger()
                 view.templateSettings.pathMappingsTable.setMappingSettings(PathMappingSettings(configuration.pathMappings))
             }
         } else {
-            view.rawSettings.runtime.model.selectedItem = configuration.runtime()
+            view.rawSettings.runtimeModel.selectedItem = configuration.runtime()?.toSdkRuntime()
             view.rawSettings.handlerPanel.handler.text = configuration.handler() ?: ""
             view.rawSettings.timeoutSlider.value = configuration.timeout()
             view.rawSettings.memorySlider.value = configuration.memorySize()
@@ -55,8 +56,9 @@ class LocalLambdaRunSettingsEditor(project: Project) : SettingsEditor<LocalLambd
         if (view.useTemplate) {
             configuration.useTemplate(view.templateSettings.templateFile.text, view.templateSettings.function.selected()?.logicalName)
             configuration.isImage = view.templateSettings.isImage
+            configuration.environmentVariables(view.templateSettings.environmentVariables.envVars)
             if (view.templateSettings.isImage) {
-                configuration.runtime(view.templateSettings.runtime.selected())
+                configuration.imageDebugger(view.templateSettings.imageDebugger.selected())
                 configuration.pathMappings = view.templateSettings.pathMappingsTable.mappingSettings.pathMappings
             }
         } else {
