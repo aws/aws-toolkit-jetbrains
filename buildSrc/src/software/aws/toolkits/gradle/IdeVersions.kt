@@ -79,6 +79,8 @@ object IdeVersions {
             ),
             ultimatePlugins = listOf(
                 "JavaScript",
+                // Transitive dependency needed for javascript
+                "com.intellij.css",
                 "JavaScriptDebugger",
                 "com.intellij.database",
                 "Pythonid:211.6085.26"
