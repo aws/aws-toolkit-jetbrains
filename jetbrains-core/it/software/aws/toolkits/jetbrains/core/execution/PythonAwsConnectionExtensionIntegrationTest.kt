@@ -14,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.utils.execute
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import kotlin.test.assertNotNull
 
@@ -67,6 +67,6 @@ class PythonAwsConnectionExtensionIntegrationTest {
         val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
         assertNotNull(executor)
 
-        assertThat(runConfiguration.execute().stdout).isEqualToIgnoringWhitespace(mockRegion.id)
+        assertThat(executeRunConfigurationAndWait(runConfiguration).stdout).isEqualToIgnoringWhitespace(mockRegion.id)
     }
 }
