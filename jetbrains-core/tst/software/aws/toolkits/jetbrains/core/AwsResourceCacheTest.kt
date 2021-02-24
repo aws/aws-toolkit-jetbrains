@@ -25,7 +25,6 @@ import org.junit.Test
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
@@ -138,8 +137,6 @@ class AwsResourceCacheTest {
 
     @Test
     fun cacheEntriesAreSeparatedByRegionAndCredentials() {
-        val region1 = aRegionId()
-
         whenever(mockResource.fetch(any(), any())).thenAnswer {
             val region = it.getArgument<AwsRegion>(0)
             val cred = it.getArgument<ToolkitCredentialsProvider>(1)
@@ -415,7 +412,7 @@ class AwsResourceCacheTest {
     @Test
     fun cacheExposesBlockingApiWhereExecutionExceptionIsUnwrapped() {
         whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("boom"))
-        assertThatThrownBy { sut.getResourceNow(mockResource, connectionSettings, timeout = Duration.ofMillis(5)) }
+        assertThatThrownBy { sut.getResourceNow(mockResource, connectionSettings, timeout = Duration.ofSeconds(1)) }
             .isInstanceOf(RuntimeException::class.java)
             .withFailMessage("boom")
     }

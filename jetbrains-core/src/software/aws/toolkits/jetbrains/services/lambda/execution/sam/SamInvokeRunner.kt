@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
+import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.RunProfile
 import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.configurations.RunnerSettings
@@ -11,7 +12,6 @@ import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.AsyncProgramRunner
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.RunContentDescriptor
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
@@ -22,6 +22,7 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import org.slf4j.event.Level
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.validOrNull
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
@@ -35,7 +36,6 @@ import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuildLambda
-import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
@@ -76,14 +76,19 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                         Runtime.fromValue(it)?.validOrNull
                     }
             }
+        } else if (!profile.isImage) {
+            profile.runtime()?.toSdkRuntime()
         } else {
-            profile.runtime()
+            null
         }
+        val runtimeGroup = runtimeValue?.runtimeGroup
 
-        val runtimeGroup = runtimeValue?.runtimeGroup ?: return false
+        val canRunRuntime = runtimeGroup != null &&
+            RuntimeDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
+            RuntimeDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false
+        val canRunImage = profile.isImage && profile.imageDebugger() != null
 
-        return SamDebugSupport.supportedRuntimeGroups().contains(runtimeGroup) &&
-            SamDebugSupport.getInstanceOrNull(runtimeGroup)?.isSupported(runtimeValue) ?: false
+        return canRunRuntime || canRunImage
     }
 
     override fun execute(environment: ExecutionEnvironment, state: RunProfileState): Promise<RunContentDescriptor?> {
@@ -117,27 +122,29 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
         val buildWorkflow = buildWorkflow(environment, buildLambdaRequest, lambdaSettings.samOptions)
         buildWorkflow.onSuccess = { context ->
-            samState.runner.checkDockerInstalled()
-
             val builtLambda = context.getRequiredAttribute(BuildLambda.BUILT_LAMBDA)
             samState.builtLambda = builtLambda
             samState.pathMappings = createPathMappings(lambdaBuilder, lambdaSettings, buildLambdaRequest)
 
-            // TODO: This is too much to be on edt i.e. we get creds in here... https://github.com/aws/aws-toolkit-jetbrains/issues/2025
-            runInEdt {
-                samState.runner.run(environment, samState)
-                    .onSuccess {
-                        buildingPromise.setResult(it)
-                        reportMetric(lambdaSettings, Result.Succeeded, environment.isDebug())
-                    }.onError {
-                        buildingPromise.setError(it)
-                        reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
-                    }
-            }
+            samState.runner.run(environment, samState)
+                .onSuccess {
+                    buildingPromise.setResult(it)
+                    reportMetric(lambdaSettings, Result.Succeeded, environment.isDebug())
+                }.onError {
+                    buildingPromise.setError(it)
+                    reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
+                }
         }
         buildWorkflow.onError = {
+            // Remap to ExecutionException so our run configuration fails properly
+            // instead of showing up as an IDE Fatal error
+            val exception = if (it is ExecutionException) {
+                it
+            } else {
+                ExecutionException(it)
+            }
             LOG.warn(it) { "Failed to create Lambda package" }
-            buildingPromise.setError(it)
+            buildingPromise.setError(exception)
             reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
         }
 
@@ -168,7 +175,19 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
                 awsRegion = lambdaSettings.connection.region.id
             ),
             debug = isDebug,
-            runtime = TelemetryRuntime.from(lambdaSettings.runtime.toString()),
+            runtime = TelemetryRuntime.from(
+                when (lambdaSettings) {
+                    is ZipSettings -> {
+                        lambdaSettings.runtime.toString()
+                    }
+                    is ImageSettings -> {
+                        lambdaSettings.imageDebugger.id
+                    }
+                    else -> {
+                        ""
+                    }
+                }
+            ),
             lambdaPackageType = if (lambdaSettings is ImageTemplateRunSettings) LambdaPackageType.Image else LambdaPackageType.Zip,
             result = result
         )
@@ -216,7 +235,7 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
     private fun buildWorkflow(environment: ExecutionEnvironment, buildRequest: BuildRequest, samOptions: SamOptions): StepExecutor {
         val buildStep = BuildLambda(buildRequest.template, buildRequest.logicalId, buildRequest.buildDir, buildRequest.buildEnvVars, samOptions)
 
-        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(buildStep), environment.executionId.toString())
+        return StepExecutor(environment.project, message("sam.build.running"), StepWorkflow(ValidateDocker(), buildStep), environment.executionId.toString())
     }
 
     private fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)

@@ -54,7 +54,7 @@ class S3BrowserTest {
     private val createBucketText = "Create S3 Bucket"
     private val deleteBucketText = "Delete S3 Bucket"
     private val upload = "Upload..."
-    private val newFolder = "New folder..."
+    private val newFolder = "New Folder..."
     private val rename = "Rename..."
     private val delete = "Delete..."
 
@@ -161,9 +161,6 @@ class S3BrowserTest {
 
             step("Delete a file") {
                 s3Tree {
-                    // Reopen the folder
-                    findText(folder).doubleClick()
-                    waitUntilLoaded()
                     findText(jsonFile2).click()
                 }
                 actionButton(delete).click()

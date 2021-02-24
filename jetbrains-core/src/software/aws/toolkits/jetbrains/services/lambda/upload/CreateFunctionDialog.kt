@@ -12,6 +12,7 @@ import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.validOrNull
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.core.help.HelpIds
@@ -25,7 +26,6 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.CreateLambda.Companion.FUNCTION_ARN
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createLambdaWorkflowForImage
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createLambdaWorkflowForZip
-import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -51,13 +51,13 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
             memorySlider.value = DEFAULT_MEMORY_SIZE
 
             // show a filtered list of runtimes to only ones we can build (since we have to build)
-            runtimeModel.setAll(LambdaBuilder.supportedRuntimeGroups().flatMap { it.runtimes })
+            runtimeModel.setAll(LambdaBuilder.supportedRuntimeGroups().flatMap { it.supportedSdkRuntimes })
 
             handlerName?.let { handler ->
                 handlerPanel.handler.text = handler
             }
             initialRuntime?.validOrNull?.let {
-                runtime.selectedItem = it
+                runtimeModel.selectedItem = it
                 handlerPanel.setRuntime(it)
             }
         }

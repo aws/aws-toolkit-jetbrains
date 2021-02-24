@@ -18,8 +18,8 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.KeyedExtensionCollector
 import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.IdBasedExtensionPoint
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.resources.message
 
 /**
@@ -32,8 +32,6 @@ object BuiltInRuntimeGroups {
     const val NodeJs = "NODEJS"
 }
 
-data class RuntimeInfo(val runtime: Runtime, val minimumVersion: SemVer = SamExecutable.minVersion)
-
 /**
  * Grouping of Lambda [Runtime] by parent language.
  *
@@ -44,21 +42,22 @@ abstract class RuntimeGroup {
     abstract val languageIds: Set<String>
     abstract val supportsPathMappings: Boolean
 
-    val runtimes: List<Runtime> by lazy {
-        supportedRuntimes.map { it.runtime }
+    val supportedSdkRuntimes: List<Runtime> by lazy {
+        supportedRuntimes.mapNotNull { it.toSdkRuntime() }
     }
 
-    protected abstract val supportedRuntimes: List<RuntimeInfo>
+    abstract val supportedRuntimes: List<LambdaRuntime>
 
-    open fun determineRuntime(project: Project): Runtime? = null
-    open fun determineRuntime(module: Module): Runtime? = null
+    open fun determineRuntime(project: Project): LambdaRuntime? = null
+    open fun determineRuntime(module: Module): LambdaRuntime? = null
     open fun getModuleType(): ModuleType<*>? = null
     open fun getIdeSdkType(): SdkType? = null
 
     open fun supportsSamBuild(): Boolean = true
 
-    fun validateSamVersion(runtime: Runtime, samVersion: SemVer) {
-        val minVersion = supportedRuntimes.first { it.runtime == runtime }.minimumVersion
+    // This only works with Zip and is only called on that path since image is based on what debugger EPs we have
+    fun validateSamVersionForZipDebugging(runtime: Runtime, samVersion: SemVer) {
+        val minVersion = supportedRuntimes.first { it.toSdkRuntime() == runtime }.minSamDebuggingVersion()
         if (samVersion < minVersion) {
             throw RuntimeException(message("sam.executable.minimum_too_low_runtime", runtime, minVersion))
         }
@@ -72,11 +71,11 @@ abstract class RuntimeGroup {
 
         fun getById(id: String?): RuntimeGroup = id?.let { find { it.id == id } } ?: throw IllegalStateException("No RuntimeGroup with id '$id' is registered")
 
-        fun determineRuntime(project: Project?): Runtime? = project?.let { _ ->
+        fun determineRuntime(project: Project?): LambdaRuntime? = project?.let { _ ->
             registeredRuntimeGroups().asSequence().mapNotNull { it.determineRuntime(project) }.firstOrNull()
         }
 
-        fun determineRuntime(module: Module?): Runtime? = module?.let { _ ->
+        fun determineRuntime(module: Module?): LambdaRuntime? = module?.let { _ ->
             registeredRuntimeGroups().asSequence().mapNotNull { it.determineRuntime(module) }.firstOrNull()
         }
 
@@ -89,16 +88,15 @@ abstract class RuntimeGroup {
 }
 
 abstract class SdkBasedRuntimeGroup : RuntimeGroup() {
-    protected abstract fun runtimeForSdk(sdk: Sdk): Runtime?
+    protected abstract fun runtimeForSdk(sdk: Sdk): LambdaRuntime?
 
-    override fun determineRuntime(project: Project): Runtime? = ProjectRootManager.getInstance(project).projectSdk?.let { runtimeForSdk(it) }
+    override fun determineRuntime(project: Project): LambdaRuntime? = ProjectRootManager.getInstance(project).projectSdk?.let { runtimeForSdk(it) }
 
-    override fun determineRuntime(module: Module): Runtime? = ModuleRootManager.getInstance(module).sdk?.let { runtimeForSdk(it) }
+    override fun determineRuntime(module: Module): LambdaRuntime? = ModuleRootManager.getInstance(module).sdk?.let { runtimeForSdk(it) }
 }
 
-val Runtime?.validOrNull: Runtime? get() = this?.takeUnless { it == Runtime.UNKNOWN_TO_SDK_VERSION }
-
-val Runtime.runtimeGroup: RuntimeGroup? get() = RuntimeGroup.find { this in it.runtimes }
+val Runtime.runtimeGroup: RuntimeGroup? get() = RuntimeGroup.find { this in it.supportedSdkRuntimes }
+val LambdaRuntime.runtimeGroup: RuntimeGroup? get() = RuntimeGroup.find { this in it.supportedRuntimes }
 
 /**
  * For a given [com.intellij.lang.Language] determine the corresponding Lambda [RuntimeGroup]
@@ -108,7 +106,7 @@ val Language.runtimeGroup: RuntimeGroup? get() = RuntimeGroup.find { this.id in 
 /**
  * Given [AnActionEvent] attempt to determine the [Runtime]
  */
-fun AnActionEvent.runtime(): Runtime? {
+fun AnActionEvent.runtime(): LambdaRuntime? {
     val runtimeGroup = getData(LangDataKeys.LANGUAGE)?.runtimeGroup ?: return null
     return getData(LangDataKeys.MODULE)?.let { runtimeGroup.determineRuntime(it) } ?: getData(LangDataKeys.PROJECT)?.let { runtimeGroup.determineRuntime(it) }
 }

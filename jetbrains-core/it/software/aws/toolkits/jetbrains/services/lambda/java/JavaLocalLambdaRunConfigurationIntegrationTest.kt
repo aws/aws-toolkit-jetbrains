@@ -14,14 +14,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.utils.addBreakpoint
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
-import software.aws.toolkits.jetbrains.utils.execute
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
@@ -32,14 +32,14 @@ import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpJdk
 
 @RunWith(Parameterized::class)
-class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtime) {
+class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data(): Collection<Array<Runtime>> = listOf(
-            arrayOf(Runtime.JAVA8),
-            arrayOf(Runtime.JAVA8_AL2),
-            arrayOf(Runtime.JAVA11)
+        fun data() = listOf(
+            arrayOf(LambdaRuntime.JAVA8),
+            arrayOf(LambdaRuntime.JAVA8_AL2),
+            arrayOf(LambdaRuntime.JAVA11)
         )
     }
 
@@ -71,8 +71,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtim
         )
 
         val compatibility = when (runtime) {
-            Runtime.JAVA8, Runtime.JAVA8_AL2 -> "1.8"
-            Runtime.JAVA11 -> "11"
+            LambdaRuntime.JAVA8, LambdaRuntime.JAVA8_AL2 -> "1.8"
+            LambdaRuntime.JAVA11 -> "11"
             else -> throw NotImplementedError()
         }
 
@@ -97,13 +97,13 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtim
     fun samIsExecuted() {
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = runConfiguration.execute()
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("HELLO WORLD")
@@ -136,7 +136,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtim
 
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = runConfiguration.execute()
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("HELLO WORLD")
@@ -169,7 +169,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtim
 
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = runConfiguration.execute()
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("HELLO WORLD")
@@ -181,7 +181,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtim
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = runtime,
+            runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
             credentialsProviderId = mockId
         )
@@ -189,7 +189,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtim
 
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
-        val executeLambda = runConfiguration.execute(DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("HELLO WORLD")

@@ -18,6 +18,7 @@ import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
@@ -25,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHan
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
-import software.aws.toolkits.jetbrains.utils.executeRunConfiguration
+import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addBreakpoint
 import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
@@ -89,24 +90,6 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
     }
 
     @Test
-    fun samIsExecuted() {
-        projectRule.fixture.addFileToProject("requirements.txt", "")
-
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = projectRule.project,
-            runtime = runtime,
-            handler = "src/hello_world.app.lambda_handler",
-            input = "\"Hello World\"",
-            credentialsProviderId = mockId
-        )
-        assertThat(runConfiguration).isNotNull
-
-        val executeLambda = executeRunConfiguration(runConfiguration)
-        assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(executeLambda.stdout).contains("Hello world")
-    }
-
-    @Test
     fun samIsExecutedWithContainer() {
         projectRule.fixture.addFileToProject("requirements.txt", "")
 
@@ -124,14 +107,14 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         )
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello world")
     }
 
     @Test
-    fun envVarsArePassed() {
+    fun samIsExecuted() {
         projectRule.fixture.addFileToProject("requirements.txt", "")
 
         val envVars = mutableMapOf("Foo" to "Bar", "Bat" to "Baz")
@@ -146,51 +129,18 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         )
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Environment variables are passed")
             .containsEntry("Foo", "Bar")
             .containsEntry("Bat", "Baz")
-    }
-
-    @Test
-    fun regionIsPassed() {
-        projectRule.fixture.addFileToProject("requirements.txt", "")
-
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = projectRule.project,
-            runtime = runtime,
-            handler = "src/hello_world.app.env_print",
-            input = "\"Hello World\"",
-            credentialsProviderId = mockId
-        )
-        assertThat(runConfiguration).isNotNull
-
-        val executeLambda = executeRunConfiguration(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Region is set")
             .containsEntry("AWS_REGION", getDefaultRegion().id)
-    }
-
-    @Test
-    fun credentialsArePassed() {
-        projectRule.fixture.addFileToProject("requirements.txt", "")
-
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = projectRule.project,
-            runtime = runtime,
-            handler = "src/hello_world.app.env_print",
-            input = "\"Hello World\"",
-            credentialsProviderId = mockId
-        )
-        assertThat(runConfiguration).isNotNull
-
-        val executeLambda = executeRunConfiguration(runConfiguration)
-
-        assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
+            .describedAs("Credentials are passed")
             .containsEntry("AWS_ACCESS_KEY_ID", mockCreds.accessKeyId())
             .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
             // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1
@@ -215,7 +165,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         )
         assertThat(runConfiguration).isNotNull
 
-        val executeLambda = executeRunConfiguration(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(jsonToMap(executeLambda.stdout))
@@ -240,7 +190,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule.addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
-        val executeLambda = executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello world")
@@ -267,7 +217,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule.addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
-        val executeLambda = executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello world")
@@ -308,7 +258,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule.addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
-        val executeLambda = executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello world")
@@ -321,7 +271,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule = projectRule,
         relativePath = "samProjects/image/$runtime",
         sourceFileName = "app.py",
-        runtime = runtime,
+        runtime = LambdaRuntime.fromValue(runtime)!!,
         mockCredentialsId = mockId,
         input = input,
         expectedOutput = input.toUpperCase()
@@ -332,7 +282,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule = projectRule,
         relativePath = "samProjects/image/$runtime",
         sourceFileName = "app.py",
-        runtime = runtime,
+        runtime = LambdaRuntime.fromValue(runtime)!!,
         mockCredentialsId = mockId,
         input = input,
         expectedOutput = input.toUpperCase(),
@@ -370,7 +320,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule.addBreakpoint()
         val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
-        val executeLambda = executeRunConfiguration(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
         assertThat(executeLambda.stdout).contains("Hello world")
