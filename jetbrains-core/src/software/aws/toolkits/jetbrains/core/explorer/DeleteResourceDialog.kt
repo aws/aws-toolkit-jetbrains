@@ -10,8 +10,6 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.panel
-import kotlinx.coroutines.CoroutineScope
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
@@ -19,13 +17,13 @@ class DeleteResourceDialog(
     project: Project,
     private val resourceType: String,
     private val resourceName: String
-) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("DeleteResourceDialog") {
-    private val deleteResourceConfirmation = JBTextField()
-    private val warningIconForDeletingResource = JBLabel(Messages.getWarningIcon())
+) : DialogWrapper(project) {
+    private val deleteResourceConfirmation = JBTextField().apply { emptyText.text = message("delete_resource.confirmation_text") }
+    private val warningIcon = JBLabel(Messages.getWarningIcon())
     private val component by lazy {
         panel {
             row {
-                warningIconForDeletingResource(grow)
+                warningIcon(grow)
                 right { label(message("delete_resource.message", resourceType, resourceName)) }
             }
             row {
@@ -37,10 +35,9 @@ class DeleteResourceDialog(
     init {
         super.init()
         title = message("delete_resource.title", resourceType, resourceName)
-        deleteResourceConfirmation.emptyText.text = message("delete_resource.confirmation_text")
     }
 
-    override fun createCenterPanel(): JComponent? = component
+    override fun createCenterPanel(): JComponent = component
 
     override fun doValidate(): ValidationInfo? = validateDeleteConfirmation(deleteResourceConfirmation)
 
