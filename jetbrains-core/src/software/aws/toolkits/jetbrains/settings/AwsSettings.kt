@@ -77,7 +77,7 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
         }
 
     override var profilesNotification: ProfilesNotification
-        get() = state.profilesNotification?.let { ProfilesNotification.valueOf(it) } ?: ProfilesNotification.OnFailure
+        get() = state.profilesNotification?.let { ProfilesNotification.valueOf(it) } ?: ProfilesNotification.Always
         set(value) {
             state.profilesNotification = value.name
         }

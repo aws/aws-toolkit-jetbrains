@@ -155,14 +155,16 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             ": $it"
         } ?: ""
 
-        notifyError(
-            title = message("credentials.profile.refresh_ok_title"),
-            content = "$loadingFailureMessage$detail",
-            notificationActions = listOf(
-                createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
-                createNotificationExpiringAction(NeverShowAgain())
+        if (AwsSettings.getInstance().profilesNotification != ProfilesNotification.Never) {
+            notifyError(
+                title = message("credentials.profile.refresh_ok_title"),
+                content = "$loadingFailureMessage$detail",
+                notificationActions = listOf(
+                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
+                    createNotificationExpiringAction(NeverShowAgain())
+                )
             )
-        )
+        }
     }
 
     private fun notifyUserOfResult(newProfiles: Profiles, initialLoad: Boolean) {
@@ -173,7 +175,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         // All provides were valid
         if (newProfiles.invalidProfiles.isEmpty()) {
             // Don't report we load creds on start to avoid spam
-            if (!initialLoad) {
+            if (!initialLoad && AwsSettings.getInstance().profilesNotification == ProfilesNotification.Always) {
                 notifyInfo(
                     title = message("credentials.profile.refresh_ok_title"),
                     content = refreshBaseMessage,
@@ -193,15 +195,17 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             val errorDialogTitle = message("credentials.profile.failed_load")
             val numErrorMessage = message("credentials.profile.refresh_errors", newProfiles.invalidProfiles.size)
 
-            notifyInfo(
-                title = refreshTitle,
-                content = "$refreshBaseMessage $numErrorMessage",
-                notificationActions = listOf(
-                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
-                    createNotificationExpiringAction(NeverShowAgain()),
-                    createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message)
+            if (AwsSettings.getInstance().profilesNotification != ProfilesNotification.Never) {
+                notifyInfo(
+                    title = refreshTitle,
+                    content = "$refreshBaseMessage $numErrorMessage",
+                    notificationActions = listOf(
+                        createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
+                        createNotificationExpiringAction(NeverShowAgain()),
+                        createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message)
+                    )
                 )
-            )
+            }
         }
     }
 

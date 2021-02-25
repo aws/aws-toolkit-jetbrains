@@ -216,7 +216,7 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
         val awsSettings = AwsSettings.getInstance()
         awsSettings.isTelemetryEnabled = enableTelemetry.isSelected
         awsSettings.useDefaultCredentialRegion = defaultRegionHandling.selectedItem as? UseAwsCredentialRegion ?: UseAwsCredentialRegion.Never
-        awsSettings.profilesNotification = profilesNotification.selectedItem as? ProfilesNotification ?: ProfilesNotification.OnFailure
+        awsSettings.profilesNotification = profilesNotification.selectedItem as? ProfilesNotification ?: ProfilesNotification.Always
     }
 
     private fun saveLambdaSettings() {
