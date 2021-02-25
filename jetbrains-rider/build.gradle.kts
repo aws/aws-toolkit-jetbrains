@@ -160,7 +160,7 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
 
     val nugetConfigPath = File(projectDir, "NuGet.Config")
     // FIX_WHEN_MIN_IS_211 remove the projectDir one above
-    val nugetConfigPath211 = Path.of(projectDir.absolutePath, "testData", "NuGet.Config").toFile()
+    val nugetConfigPath211 = Path.of(projectDir.absolutePath, "testData", "NuGet.config").toFile()
 
     inputs.property("rdVersion", ideProfile.rider.sdkVersion)
     outputs.files(nugetConfigPath, nugetConfigPath211)
