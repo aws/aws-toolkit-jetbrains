@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Prior to this change, while deleting a resource, the name of the resource had to be entered to delete the resource. This change requires the user to enter/type \"delete me\" instead of the resource name to delete the resource."
-}
