@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.completion
 
 import com.intellij.openapi.project.Project
 import com.jetbrains.rd.ide.model.IconModel
-import com.jetbrains.rd.ui.icons.RdIconHost
+import com.jetbrains.rd.ui.icons.toIdeaIcon
 import javax.swing.Icon
 
-fun completionItemToIcon(project: Project, iconId: IconModel): Icon = RdIconHost.getInstance(project).toIdeaIcon(iconId)
+fun completionItemToIcon(project: Project, iconId: IconModel): Icon = iconId.toIdeaIcon(project)
