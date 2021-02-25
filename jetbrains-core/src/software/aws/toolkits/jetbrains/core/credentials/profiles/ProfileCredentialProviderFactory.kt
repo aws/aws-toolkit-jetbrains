@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.DumbAwareAction
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
@@ -41,6 +43,8 @@ import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCr
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcessProvider
 import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.promptForMfaToken
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.ProfilesNotification
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -71,6 +75,12 @@ private class ProfileCredentialsIdentifierSso(
     credentialType: CredentialType?
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
     SsoRequiredInteractiveCredentials
+
+private class NeverShowAgain : DumbAwareAction(message("settings.never_show_again")) {
+    override fun actionPerformed(e: AnActionEvent) {
+        AwsSettings.getInstance().profilesNotification = ProfilesNotification.Never
+    }
+}
 
 class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCache) : CredentialProviderFactory {
     private val profileHolder = ProfileHolder()
@@ -148,7 +158,10 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         notifyError(
             title = message("credentials.profile.refresh_ok_title"),
             content = "$loadingFailureMessage$detail",
-            action = createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+            notificationActions = listOf(
+                createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
+                createNotificationExpiringAction(NeverShowAgain())
+            )
         )
     }
 
@@ -163,7 +176,10 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             if (!initialLoad) {
                 notifyInfo(
                     title = message("credentials.profile.refresh_ok_title"),
-                    content = refreshBaseMessage
+                    content = refreshBaseMessage,
+                    notificationActions = listOf(
+                        createNotificationExpiringAction(NeverShowAgain())
+                    )
                 )
 
                 return
@@ -181,8 +197,9 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
                 title = refreshTitle,
                 content = "$refreshBaseMessage $numErrorMessage",
                 notificationActions = listOf(
-                    createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message),
-                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
+                    createNotificationExpiringAction(NeverShowAgain()),
+                    createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message)
                 )
             )
         }
