@@ -47,5 +47,4 @@ class DeleteResourceDialog(
     }
 
     override fun createCenterPanel(): JComponent = component
-
 }
