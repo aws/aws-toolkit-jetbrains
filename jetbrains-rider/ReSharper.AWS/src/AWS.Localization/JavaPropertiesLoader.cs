@@ -33,7 +33,7 @@ namespace AWS.Localization
                 if (myLocalizedStrings.IsNullOrEmpty())
                 {
                     using (var stream = Assembly.GetExecutingAssembly()
-                        .GetManifestResourceStream("AWS.Localization.Resources.localized_messages.properties"))
+                        .GetManifestResourceStream("AWS.Localization.Resources.MessagesBundle.properties"))
                     {
                         Load(stream);
                     }
