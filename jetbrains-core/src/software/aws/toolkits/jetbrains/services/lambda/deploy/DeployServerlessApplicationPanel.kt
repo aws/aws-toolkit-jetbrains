@@ -17,8 +17,6 @@ import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources.listBucketNamesByActiveRegion
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message
-import java.util.HashMap
-import java.util.function.Consumer
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JLabel
@@ -84,13 +82,8 @@ class DeployServerlessApplicationPanel(private val project: Project) {
                     parameter.defaultValue(),
                     false
                 ) {
-                    override fun getNameIsWriteable(): Boolean {
-                        return false
-                    }
-
-                    override fun getDescription(): String? {
-                        return parameter.description()
-                    }
+                    override fun getNameIsWriteable(): Boolean = false
+                    override fun getDescription(): String? = parameter.description()
                 }
             }.toList()
         )
@@ -99,11 +92,8 @@ class DeployServerlessApplicationPanel(private val project: Project) {
 
     val templateParameters: Map<String, String>
         get() {
-            val parameters: MutableMap<String, String> = HashMap()
             environmentVariablesTable.stopEditing()
-            environmentVariablesTable.environmentVariables
-                .forEach(Consumer { envVar: EnvironmentVariable -> parameters[envVar.name] = envVar.value })
-            return parameters
+            return environmentVariablesTable.environmentVariables.map { envVar -> envVar.name to envVar.value }.toMap()
         }
 
     fun showImageOptions(hasImages: Boolean) {
@@ -112,12 +102,10 @@ class DeployServerlessApplicationPanel(private val project: Project) {
         createEcrRepoButton.isVisible = hasImages
     }
 
-    companion object {
-        private fun hideActionButton(actionButton: AnActionButton?) {
-            if (actionButton != null) {
-                actionButton.isEnabled = false
-                actionButton.isVisible = false
-            }
+    private fun hideActionButton(actionButton: AnActionButton?) {
+        if (actionButton != null) {
+            actionButton.isEnabled = false
+            actionButton.isVisible = false
         }
     }
 }
