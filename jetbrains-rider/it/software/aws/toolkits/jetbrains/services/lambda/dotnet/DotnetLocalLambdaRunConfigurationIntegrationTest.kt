@@ -7,8 +7,10 @@ import base.AwsReuseSolutionTestBase
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
+import com.intellij.ide.util.PropertiesComponent
 import com.jetbrains.rider.projectView.solutionDirectory
 import org.assertj.core.api.Assertions.assertThat
+import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -26,6 +28,7 @@ class Dotnet21LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda2X", LambdaRuntime.DOTNETCORE2_1)
 
 class Dotnet31LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda3X", LambdaRuntime.DOTNETCORE3_1)
+
 class Dotnet31LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda3X", LambdaRuntime.DOTNETCORE3_1)
 
@@ -41,11 +44,22 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val handler = "EchoLambda::EchoLambda.Function::FunctionHandler"
 
+    private var initialImmediateWindow: Boolean = false
+
     @BeforeMethod
     fun setUp() {
+        // Disable the immediate window due to double release of editor in 203, this issue should be fixed in later Rider versions FIX_WHEN_MIN_IS_211
+        initialImmediateWindow = PropertiesComponent.getInstance().getBoolean("debugger.immediate.window.in.watches")
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", false, true)
+
         setSamExecutableFromEnvironment()
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+    }
+
+    @AfterMethod
+    fun tearDown() {
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
     }
 
     override fun getSolutionDirectoryName(): String = solutionName
@@ -109,11 +123,22 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
+    private var initialImmediateWindow: Boolean = false
+
     @BeforeMethod
     fun setUp() {
+        // Disable the immediate window due to double release of editor in 203, this issue should be fixed in later Rider versions FIX_WHEN_MIN_IS_211
+        initialImmediateWindow = PropertiesComponent.getInstance().getBoolean("debugger.immediate.window.in.watches")
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", false, true)
+
         setSamExecutableFromEnvironment()
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+    }
+
+    @AfterMethod
+    fun tearDown() {
+        PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
     }
 
     override fun getSolutionDirectoryName(): String = solutionName

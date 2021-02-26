@@ -24,7 +24,6 @@ buildscript {
     repositories {
         maven("https://plugins.gradle.org/m2/")
         mavenCentral()
-        jcenter()
     }
     val kotlinVersion: String by project
     val ideaPluginVersion: String by project
@@ -67,7 +66,6 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        jcenter()
     }
 
     apply(plugin = "com.adarshr.test-logger")
@@ -265,7 +263,7 @@ subprojects {
     }
 
     val testJar = tasks.register<Jar>("testJar") {
-        baseName = "${project.name}-test"
+        archiveBaseName.set("${project.name}-test")
         from(sourceSets.test.get().output)
         from(sourceSets.getByName("integrationTest").output)
     }
