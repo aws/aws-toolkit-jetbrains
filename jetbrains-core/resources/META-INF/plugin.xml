@@ -396,7 +396,7 @@ with what features/services are supported.
         </group>
 
         <group id="aws.toolkit.s3viewer.miscActions">
-            <action class="software.aws.toolkits.jetbrains.services.s3.objectActions.RefreshTreeAction"/>
+            <action class="software.aws.toolkits.jetbrains.services.s3.objectActions.RefreshTreeAction" use-shortcut-of="Refresh"/>
         </group>
 
         <group id="aws.toolkit.s3viewer.toolbar">
