@@ -48,10 +48,4 @@ class DeleteResourceDialog(
 
     override fun createCenterPanel(): JComponent = component
 
-    override fun doOKAction() {
-        if (!okAction.isEnabled) {
-            return
-        }
-        close(OK_EXIT_CODE)
-    }
 }
