@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.explorer
 
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
@@ -11,6 +13,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.panel
 import software.aws.toolkits.resources.message
+import java.awt.event.ActionListener
 import javax.swing.JComponent
 
 class DeleteResourceDialog(
