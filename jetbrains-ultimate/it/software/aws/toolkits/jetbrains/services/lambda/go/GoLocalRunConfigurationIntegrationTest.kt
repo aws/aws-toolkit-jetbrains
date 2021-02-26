@@ -181,7 +181,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
 
     @Test
     fun samIsExecutedWithDebugger() {
-        // only run this test on > 2020.1
+        // only run this test on > 2020.1. FIX_WHEN_MIN_IS_202
         assumeFalse(ApplicationInfo.getInstance().let { info -> (info.majorVersion == "2020" && info.minorVersionMainPart == "1") })
         projectRule.fixture.addLambdaFile(fileContents)
 
