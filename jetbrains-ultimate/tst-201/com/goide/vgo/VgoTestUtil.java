@@ -61,7 +61,6 @@ public class VgoTestUtil {
                                               @Nullable VgoDependencyImpl replace) {
     String dirName = dir != null ? dir : String.format("%s@%s", importPath, version);
     String dirPath = FileUtil.join(GOPATH, "pkg", GoConstants.VGO_DIR_NAME, dirName);
-    // return new VgoDependencyImpl(importPath, version, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace, null);
     return new VgoDependencyImpl(importPath, version, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace);
   }
 
@@ -108,8 +107,6 @@ public class VgoTestUtil {
 
   public static void setupVgoIntegration(@NotNull CodeInsightTestFixture fixture, @NotNull List<VgoModule> modules) {
     VgoExcludeRootsPolicy.setPointersDisposable(fixture.getTestRootDisposable());
-    // GoVendorExcludePolicy.setPointersDisposable(fixture.getTestRootDisposable());
-    // TestModeFlags.set(VgoIntegrationManager.VGO_DISABLE_STATUS_TRACKING, true, fixture.getTestRootDisposable());
     VgoProjectSettings.getInstance(fixture.getProject()).setIntegrationEnabled(true);
     setVgoModules(fixture, modules);
     Disposer.register(fixture.getTestRootDisposable(), () -> {
