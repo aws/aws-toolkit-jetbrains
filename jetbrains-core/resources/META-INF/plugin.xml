@@ -185,9 +185,7 @@ with what features/services are supported.
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
                     icon="AwsIcons.Logos.AWS"/>
 
-        <projectConfigurable id="aws" groupId="tools" bundle="software.aws.toolkits.resources.MessagesBundle"
-                             key="aws.settings.title"
-                             instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
+        <projectConfigurable id="aws" groupId="tools" key="aws.settings.title" instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>

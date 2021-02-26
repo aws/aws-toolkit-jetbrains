@@ -12,7 +12,7 @@
 
     <ItemGroup>
       <EmbeddedResource Include="..\..\..\..\resources\resources\software\aws\toolkits\resources\MessagesBundle.properties">
-        <Link>Resources/localized_messages.properties</Link>
+        <Link>Resources/MessagesBundle.properties</Link>
       </EmbeddedResource>
     </ItemGroup>
 
