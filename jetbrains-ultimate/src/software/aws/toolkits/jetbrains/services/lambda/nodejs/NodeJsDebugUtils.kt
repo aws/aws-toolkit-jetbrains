@@ -11,7 +11,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.javascript.debugger.LocalFileSystemFileFinder
 import com.intellij.javascript.debugger.RemoteDebuggingFileFinder
 import com.intellij.openapi.util.io.FileUtil
-import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -42,7 +42,7 @@ object NodeJsDebugUtils {
         return object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {
                 // mark the build folder as dirty so the debugger can find sourcemaps
-                VfsUtil.markDirty(true, true, VfsUtil.findFileByIoFile(state.builtLambda.templateLocation.parent.toFile(), true))
+                LocalFileSystem.getInstance().refreshIoFiles(listOf(state.builtLambda.templateLocation.parent.toFile()), true, true, null)
 
                 val mappings = createBiMapMappings(state.pathMappings)
                 val fileFinder = RemoteDebuggingFileFinder(mappings, LocalFileSystemFileFinder())
