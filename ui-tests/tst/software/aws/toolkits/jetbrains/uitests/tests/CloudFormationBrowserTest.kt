@@ -108,6 +108,7 @@ class CloudFormationBrowserTest {
     @AfterAll
     fun cleanup() {
         // Make sure that we delete the stack even if it fails in the UIs
+        log.info("Running final cleanup")
         try {
             cloudFormationClient.deleteStack { it.stackName(stack) }
             waitForStackDeletion()
@@ -124,7 +125,9 @@ class CloudFormationBrowserTest {
 
     private fun waitForStackDeletion() {
         log.info("Waiting for the deletion of stack $stack")
-        cloudFormationClient.waiter().waitUntilStackDeleteComplete { it.stackName(stack) }
+        if (cloudFormationClient.describeStacks { it.stackName(stack) }.hasStacks()) {
+            cloudFormationClient.waiter().waitUntilStackDeleteComplete { it.stackName(stack) }
+        }
         log.info("Finished deleting stack $stack")
     }
 }
