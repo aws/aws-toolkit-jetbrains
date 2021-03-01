@@ -29,7 +29,7 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
 }
 
 fun ContainerFixture.fillDeletionAndConfirm() = step("Fill in delete me and delete") {
-    find<JTextFieldFixture>(byXpath("//div[@accessiblename='DeleteConfirmation']"), Duration.ofSeconds(5)).text = "delete me"
+    find<JTextFieldFixture>(byXpath("//div[@accessiblename='Delete confirmation box']"), Duration.ofSeconds(5)).text = "delete me"
     pressOk()
 }
 
