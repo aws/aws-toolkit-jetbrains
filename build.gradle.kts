@@ -187,7 +187,7 @@ subprojects {
             failOnPassedAfterRetry.set(false)
             // If there are 5 failures, don't even attempt a retry
             maxFailures.set(5)
-            maxRetries.set(1)
+            maxRetries.set(2)
         }
     }
 
