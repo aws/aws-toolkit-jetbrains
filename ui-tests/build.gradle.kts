@@ -56,4 +56,11 @@ tasks.register<Test>("uiTestCore") {
     useJUnitPlatform {
         includeTags("core")
     }
+
+    // uiTestCore needs its own version of this since it's not part of normal test tasks
+    retry {
+        failOnPassedAfterRetry.set(false)
+        maxFailures.set(5)
+        maxRetries.set(2)
+    }
 }
