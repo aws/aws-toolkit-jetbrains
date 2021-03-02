@@ -26,21 +26,32 @@ import javax.swing.JTextField
 
 class DeployServerlessApplicationPanel(private val project: Project) {
     lateinit var newStackName: JTextField
+        private set
     lateinit var createS3BucketButton: JButton
-    private lateinit var environmentVariablesTable: EnvVariablesTable
+        private set
     lateinit var content: JPanel
+        private set
     lateinit var s3Bucket: ResourceSelector<String>
+        private set
     lateinit var stacks: ResourceSelector<Stack>
-    lateinit var stackParameters: Wrapper
+        private set
     lateinit var updateStack: JRadioButton
+        private set
     lateinit var createStack: JRadioButton
+        private set
     lateinit var requireReview: JCheckBox
-    lateinit var parametersPanel: JPanel
+        private set
     lateinit var useContainer: JCheckBox
-    lateinit var capabilitiesPanel: JPanel
+        private set
     lateinit var ecrRepo: ResourceSelector<Repository>
+        private set
     lateinit var createEcrRepoButton: JButton
+        private set
+    private lateinit var environmentVariablesTable: EnvVariablesTable
     private lateinit var ecrLabel: JLabel
+    private lateinit var stackParameters: Wrapper
+    private lateinit var parametersPanel: JPanel
+    private lateinit var capabilitiesPanel: JPanel
     val capabilities: CapabilitiesEnumCheckBoxes = CapabilitiesEnumCheckBoxes()
 
     private fun createUIComponents() {
