@@ -4,6 +4,7 @@
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.lineMarkerProvider language="JAVA" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
+        <runConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExtension"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit.lambda">

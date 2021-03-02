@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Adding the ability to inject credentials/region into existing IntelliJ IDEA and PyCharm Run Configurations (e.g Application, JUnit, Python, PyTest)."
+}
