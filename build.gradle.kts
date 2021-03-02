@@ -52,6 +52,7 @@ val publishChannel: String by project
 plugins {
     java
     id("de.undercouch.download") apply false
+    id("org.gradle.test-retry") version "1.2.0"
 }
 
 group = "software.aws.toolkits"
@@ -71,6 +72,7 @@ allprojects {
     apply(plugin = "com.adarshr.test-logger")
     apply(plugin = "java")
     apply(plugin = "jacoco")
+    apply(plugin = "org.gradle.test-retry")
 
     java.sourceCompatibility = JavaVersion.VERSION_1_8
     java.targetCompatibility = JavaVersion.VERSION_1_8
@@ -180,6 +182,12 @@ subprojects {
             junitXml.isEnabled = true
             html.isEnabled = true
         }
+
+        retry {
+            failOnPassedAfterRetry.set(false)
+            maxFailures.set(5)
+            maxRetries.set(2)
+        }
     }
 
     plugins.withType<IdeaPlugin> {
@@ -218,6 +226,12 @@ subprojects {
         systemProperty("testDataPath", project.rootDir.toPath().resolve("testdata").toString())
 
         mustRunAfter(tasks.test)
+
+        retry {
+            failOnPassedAfterRetry.set(false)
+            maxFailures.set(5)
+            maxRetries.set(2)
+        }
     }
 
     project.plugins.withId("org.jetbrains.intellij") {
@@ -331,7 +345,7 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
 }
 
 val validateLocalizedMessages = tasks.register<ValidateMessages>("validateLocalizedMessages") {
-    paths.set(listOf("${project.rootDir}/resources/resources/software/aws/toolkits/resources/localized_messages.properties"))
+    paths.set(listOf("${project.rootDir}/resources/resources/software/aws/toolkits/resources/MessagesBundle.properties"))
 }
 
 val coverageReport = tasks.register<JacocoReport>("coverageReport") {
