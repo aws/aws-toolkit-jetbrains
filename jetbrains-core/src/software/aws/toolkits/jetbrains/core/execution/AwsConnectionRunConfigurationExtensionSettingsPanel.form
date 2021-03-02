@@ -19,7 +19,7 @@
         </constraints>
         <properties>
           <selected value="false"/>
-          <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="run_configuration_extension.currently_selected"/>
+          <text resource-bundle="software/aws/toolkits/resources/MessagesBundle" key="run_configuration_extension.currently_selected"/>
         </properties>
       </component>
       <component id="66b4d" class="javax.swing.JRadioButton" binding="manuallyConfiguredConnection">
@@ -27,7 +27,7 @@
           <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="run_configuration_extension.manual"/>
+          <text resource-bundle="software/aws/toolkits/resources/MessagesBundle" key="run_configuration_extension.manual"/>
         </properties>
       </component>
       <component id="87241" class="javax.swing.JLabel">
@@ -36,7 +36,7 @@
         </constraints>
         <properties>
           <enabled value="true"/>
-          <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="aws_connection.credentials.label"/>
+          <text resource-bundle="software/aws/toolkits/resources/MessagesBundle" key="aws_connection.credentials.label"/>
         </properties>
       </component>
       <component id="51370" class="software.aws.toolkits.jetbrains.ui.CredentialProviderSelector" binding="credentialProvider">
@@ -53,7 +53,7 @@
         </constraints>
         <properties>
           <enabled value="true"/>
-          <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="aws_connection.region.label"/>
+          <text resource-bundle="software/aws/toolkits/resources/MessagesBundle" key="aws_connection.region.label"/>
         </properties>
       </component>
       <component id="8f7c6" class="software.aws.toolkits.jetbrains.ui.RegionSelector" binding="region">
@@ -70,7 +70,7 @@
         </constraints>
         <properties>
           <selected value="true"/>
-          <text resource-bundle="software/aws/toolkits/resources/localized_messages" key="run_configuration_extension.none"/>
+          <text resource-bundle="software/aws/toolkits/resources/MessagesBundle" key="run_configuration_extension.none"/>
         </properties>
       </component>
     </children>
