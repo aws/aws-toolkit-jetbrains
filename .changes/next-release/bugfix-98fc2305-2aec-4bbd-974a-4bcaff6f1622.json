@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Remote Lambda Run Config UI now displays correct functions in accordance with the AWS connection settings configured in the UI."
+}
