@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Remote Lambda Run Config UI now displays correct functions in accordance with the AWS connection settings configured in the UI."
+  "description" : "Fixed the Remote Lambda Run Configuration failing to load the list of functions if not in active region"
 }
