@@ -46,21 +46,4 @@ open class SamRunner(protected val settings: LocalLambdaRunSettings) {
 
         return promise
     }
-
-    /*
-     * Assert that Docker is installed. If it is not, throw an exception.
-     */
-    fun checkDockerInstalled() {
-        try {
-            val processHandler = OSProcessHandler(GeneralCommandLine("docker", "ps"))
-            processHandler.startNotify()
-            processHandler.waitFor()
-            val exitValue = processHandler.exitCode
-            if (exitValue != 0) {
-                throw ExecutionException(message("lambda.debug.docker.not_connected"))
-            }
-        } catch (t: Throwable) {
-            throw ExecutionException(message("lambda.debug.docker.not_connected"), t)
-        }
-    }
 }

@@ -5,9 +5,11 @@ package software.aws.toolkits.jetbrains.utils.execution.steps
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessAdapter
+import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutputTypes
@@ -31,7 +33,18 @@ abstract class CliBasedStep : Step() {
 
             LOG.debug { "Built command line: ${commandLine.commandLineString}" }
 
-            val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
+            // Unix: Sends SIGINT on destroy so Docker container is shut down
+            // Windows: Run with mediator to allow for Cntrl+C to be used
+            val processHandler = object : KillableColoredProcessHandler(commandLine, true) {
+                override fun doDestroyProcess() {
+                    // send signal only if user explicitly requests termination
+                    if (this.getUserData(ProcessHandler.TERMINATION_REQUESTED) == true) {
+                        super.doDestroyProcess()
+                    } else {
+                        detachProcess()
+                    }
+                }
+            }
             val processCapture = CapturingProcessAdapter()
             processHandler.addProcessListener(processCapture)
             processHandler.addProcessListener(createProcessEmitter(messageEmitter))
