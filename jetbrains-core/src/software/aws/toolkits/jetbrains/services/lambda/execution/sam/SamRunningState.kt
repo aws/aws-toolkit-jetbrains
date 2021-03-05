@@ -30,9 +30,13 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.AttachDebugger
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuildLambda
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.GetPorts
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
+import software.aws.toolkits.jetbrains.utils.execution.steps.ParallelStep
+import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
 import software.aws.toolkits.resources.message
@@ -233,9 +237,19 @@ class SamRunningState(
             buildList {
                 add(ValidateDocker())
                 add(buildStep)
-                add(startSam)
                 if (environment.isDebug()) {
-                    add(AttachDebugger(environment, state))
+                    add(GetPorts(settings))
+                    add(object : ParallelStep() {
+                        override fun buildChildSteps(context: Context): List<Step> = listOf(
+                            startSam,
+                            AttachDebugger(environment, state)
+                        )
+
+                        override val stepName: String = ""
+                        override val hidden: Boolean = false
+                    })
+                } else {
+                    add(startSam)
                 }
             })
         return StepExecutor(environment.project, message("sam.build.running"), workflow, environment.executionId.toString(), emitter).startExecution()

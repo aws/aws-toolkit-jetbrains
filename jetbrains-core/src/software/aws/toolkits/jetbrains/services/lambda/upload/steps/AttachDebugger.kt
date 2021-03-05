@@ -21,6 +21,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebu
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugger
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ZipSettings
+import software.aws.toolkits.jetbrains.services.lambda.upload.steps.GetPorts.Companion.DEBUG_PORTS
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
@@ -33,7 +34,7 @@ class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunnin
     private val edtContext = getCoroutineUiContext()
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val promise = AsyncPromise<RunContentDescriptor>()
-        val debugPorts = context.getRequiredAttribute(SamRunnerStep.DEBUG_PORTS)
+        val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
 
         var isDebuggerAttachDone = false
 
