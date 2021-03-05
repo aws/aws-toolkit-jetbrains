@@ -29,16 +29,7 @@ class JetBrainsMinimumVersionChange : NoticeType {
         return false
     }
 
-    override fun isNotificationRequired(): Boolean {
-        val appInfo = ApplicationInfo.getInstance()
-        val majorVersion = appInfo.majorVersion.toIntOrNull()
-        val minorVersion = appInfo.minorVersion.toIntOrNull()
-
-        if (majorVersion == null || minorVersion == null) {
-            return true
-        }
-        return majorVersion < 2020 || (majorVersion == 2020 && minorVersion < 2)
-    }
+    override fun isNotificationRequired(): Boolean = ApplicationInfo.getInstance().build.baselineVersion < 202
 
     override fun getNoticeContents(): NoticeContents = noticeContents
     override fun getNoticeType(): NotificationType = NotificationType.WARNING
