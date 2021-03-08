@@ -100,45 +100,8 @@ class SamRunningState(
                 )
         }
 
-        val buildWorkflow = buildWorkflow(environment, settings, samState, buildLambdaRequest, lambdaSettings.samOptions, buildView)
-        /*
-        buildWorkflow.onSuccess = { context ->
-            val builtLambda = context.getRequiredAttribute(BuildLambda.BUILT_LAMBDA)
-            samState.builtLambda = builtLambda
-            samState.pathMappings = createPathMappings(lambdaBuilder, lambdaSettings, buildLambdaRequest)
-
-            samState.runner.run(environment, samState)
-                .onSuccess {
-                    startProcess().addProcessListener(object: ProcessListener{
-                        override fun startNotified(event: ProcessEvent) {
-                            TODO("Not yet implemented")
-                        }
-
-                        override fun processTerminated(event: ProcessEvent) {
-                            TODO("Not yet implemented")
-                        }
-
-                        override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                            messageEmitter.emitMessage(event.text, true)
-                        }
-
-                    })
-                    reportMetric(lambdaSettings, Result.Succeeded, environment.isDebug())
-                }.onError {
-                    reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
-                }
-        }
-        buildWorkflow.onError = {
-            // Remap to ExecutionException so our run configuration fails properly
-            // instead of showing up as an IDE Fatal error
-            val exception = if (it is ExecutionException) {
-                it
-            } else {
-                ExecutionException(it)
-            }
-            LOG.warn(it) { "Failed to create Lambda package" }
-            reportMetric(lambdaSettings, Result.Failed, environment.isDebug())
-        }*/
+        samState.pathMappings = createPathMappings(lambdaBuilder, lambdaSettings, buildLambdaRequest)
+        val buildWorkflow = buildWorkflow(environment, settings, samState, buildLambdaRequest, buildView)
 
         return DefaultExecutionResult(buildView, buildWorkflow)
     }
@@ -227,11 +190,11 @@ class SamRunningState(
         settings: LocalLambdaRunSettings,
         state: SamRunningState,
         buildRequest: BuildRequest,
-        samOptions: SamOptions,
         emitter: BuildView
     ): ProcessHandler {
         val buildStep = BuildLambda(buildRequest.template, buildRequest.logicalId, buildRequest.buildDir, buildRequest.buildEnvVars, samOptions)
         val startSam = SamRunnerStep(environment, settings, environment.isDebug())
+        val samOptions = settings.samOptions
 
         val workflow = StepWorkflow(
             buildList {
@@ -252,7 +215,14 @@ class SamRunningState(
                     add(startSam)
                 }
             })
-        return StepExecutor(environment.project, message("sam.build.running"), workflow, environment.executionId.toString(), emitter).startExecution()
+        val executor = StepExecutor(environment.project, message("sam.build.running"), workflow, environment.executionId.toString(), emitter)
+        executor.onSuccess = {
+            reportMetric(settings, Result.Succeeded, environment.isDebug())
+        }
+        executor.onError = {
+            reportMetric(settings, Result.Failed, environment.isDebug())
+        }
+        return executor.startExecution()
     }
 
     private fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)
