@@ -14,7 +14,8 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 
 class GetPorts(val settings: LocalLambdaRunSettings) : Step() {
-    override val stepName: String = "TODO get ports"
+    override val stepName: String = ""
+    override val hidden: Boolean = true
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val debugExtension = resolveDebuggerSupport(settings)

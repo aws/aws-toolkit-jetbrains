@@ -192,9 +192,8 @@ class SamRunningState(
         buildRequest: BuildRequest,
         emitter: BuildView
     ): ProcessHandler {
-        val buildStep = BuildLambda(buildRequest.template, buildRequest.logicalId, buildRequest.buildDir, buildRequest.buildEnvVars, samOptions)
+        val buildStep = BuildLambda(buildRequest.template, buildRequest.logicalId, buildRequest.buildDir, buildRequest.buildEnvVars, settings.samOptions)
         val startSam = SamRunnerStep(environment, settings, environment.isDebug())
-        val samOptions = settings.samOptions
 
         val workflow = StepWorkflow(
             buildList {
@@ -209,7 +208,7 @@ class SamRunningState(
                         )
 
                         override val stepName: String = ""
-                        override val hidden: Boolean = false
+                        override val hidden: Boolean = true
                     })
                 } else {
                     add(startSam)

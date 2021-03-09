@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.upload.steps
 
+import com.intellij.execution.RunManager
+import com.intellij.execution.remote.RemoteConfiguration
+import com.intellij.execution.remote.RemoteConfigurationType
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.application.ApplicationManager
@@ -15,6 +18,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.concurrency.AsyncPromise
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.clouddebug.DebuggerSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageTemplateRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.LocalLambdaRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
@@ -30,9 +34,29 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunningState) : Step() {
-    override val stepName: String = "TODO attach debugger"
+    override val stepName = ""
+    override val hidden = true
+
     private val edtContext = getCoroutineUiContext()
+
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
+        //Thread.sleep(10000)
+        val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
+        val runSettings =
+            RunManager.getInstance(environment.project).createConfiguration(environment.runProfile.name + "debug", RemoteConfigurationType::class.java)
+        runSettings.isActivateToolWindowBeforeRun = false
+        // hack in case the user modified their Java Remote configuration template
+        runSettings.configuration.beforeRunTasks = emptyList()
+
+        (runSettings.configuration as RemoteConfiguration).apply {
+            HOST = DebuggerSupport.LOCALHOST_NAME
+            PORT =  debugPorts.first().toString()
+            USE_SOCKET_TRANSPORT = true
+            SERVER_MODE = false
+        }
+
+         DebuggerSupport.executeConfiguration(environment, runSettings).get()
+        /*
         val promise = AsyncPromise<RunContentDescriptor>()
         val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
 
@@ -79,7 +103,7 @@ class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunnin
             }
             .onProcessed {
                 isDebuggerAttachDone = true
-            }
+            }*/
     }
 
     // TODO dedupe
