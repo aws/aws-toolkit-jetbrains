@@ -3,9 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
-import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.RunContentBuilder
 import com.intellij.execution.ui.RunContentDescriptor
@@ -19,7 +17,6 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
-import software.aws.toolkits.resources.message
 
 open class SamRunner(protected val settings: LocalLambdaRunSettings) {
     open fun patchCommandLine(commandLine: GeneralCommandLine) {}

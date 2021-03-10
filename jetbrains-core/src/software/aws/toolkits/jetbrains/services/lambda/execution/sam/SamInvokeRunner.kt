@@ -12,40 +12,17 @@ import com.intellij.execution.runners.AsyncProgramRunner
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.RunContentBuilder
 import com.intellij.execution.ui.RunContentDescriptor
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleUtil
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import org.slf4j.event.Level
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.lambda.validOrNull
-import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.services.PathMapping
-import software.aws.toolkits.jetbrains.services.lambda.Lambda
-import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuildLambda
-import software.aws.toolkits.jetbrains.services.sts.StsResources
-import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
-import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
-import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
-import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.LambdaPackageType
-import software.aws.toolkits.telemetry.LambdaTelemetry
-import software.aws.toolkits.telemetry.Result
 import java.io.File
-import java.nio.file.Path
-import java.nio.file.Paths
-import software.aws.toolkits.telemetry.Runtime as TelemetryRuntime
 
 class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
     override fun getRunnerId(): String = "SamInvokeRunner"

@@ -213,7 +213,8 @@ class SamRunningState(
                 } else {
                     add(startSam)
                 }
-            })
+            }
+        )
         val executor = StepExecutor(environment.project, message("sam.build.running"), workflow, environment.executionId.toString(), emitter)
         executor.onSuccess = {
             reportMetric(settings, Result.Succeeded, environment.isDebug())
