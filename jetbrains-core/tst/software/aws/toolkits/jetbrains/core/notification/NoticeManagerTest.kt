@@ -6,10 +6,10 @@ package software.aws.toolkits.jetbrains.core.notification
 import com.intellij.testFramework.ProjectRule
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import com.nhaarman.mockitokotlin2.spy
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
