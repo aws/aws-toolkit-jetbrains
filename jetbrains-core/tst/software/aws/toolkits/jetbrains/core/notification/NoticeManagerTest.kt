@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.spy
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -47,13 +48,15 @@ class NoticeManagerTest {
     }
 
     @Test
-    fun nonSerializedNoticeDoesRequiresNotification() {
-        val notice = createSampleNotice(true, true)
+    fun nonSerializedNoticeCallsIsNotificationSuppressed() {
+        val notice = spy(createSampleNotice(requiresNotification = true, isNotificationSuppressed = false))
 
         val notices = sut.getRequiredNotices(listOf(notice), projectRule.project)
 
         assertThat(notices).hasSize(1)
         assertThat(notices).contains(notice)
+
+        verify(notice).isNotificationSuppressed(null)
     }
 
     @Test
