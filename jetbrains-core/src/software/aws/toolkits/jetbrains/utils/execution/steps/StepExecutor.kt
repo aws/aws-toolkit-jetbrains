@@ -77,6 +77,7 @@ class StepExecutor(
             onSuccess?.invoke(context)
             executionFinishedSuccessfully(processHandler, progressListener)
         } catch (e: Throwable) {
+            context.cancel()
             LOG.tryOrNull("Failed to invoke error callback") {
                 onError?.invoke(e)
             }

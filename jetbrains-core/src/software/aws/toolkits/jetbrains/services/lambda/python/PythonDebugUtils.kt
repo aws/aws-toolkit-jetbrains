@@ -10,11 +10,10 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.jetbrains.python.PythonHelper
 import com.jetbrains.python.console.PyDebugConsoleBuilder
+import com.jetbrains.python.console.PythonDebugLanguageConsoleView
 import com.jetbrains.python.debugger.PyDebugProcess
 import com.jetbrains.python.debugger.PyDebugRunner
 import com.jetbrains.python.sdk.PythonSdkType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import software.aws.toolkits.jetbrains.services.PathMapper
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
@@ -33,11 +32,6 @@ object PythonDebugUtils {
         // TODO fix
         //state.consoleBuilder = PyDebugConsoleBuilder(environment.project, sdk)
 
-        val executionResult = withContext(Dispatchers.IO) {
-            // needs to run off EDT since it resolves credentials
-            state.execute(environment.executor, environment.runner)
-        }
-
         return object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {
 
@@ -50,16 +44,19 @@ object PythonDebugUtils {
                     )
                 )
 
+                val console = PyDebugConsoleBuilder(environment.project, sdk).console as PythonDebugLanguageConsoleView
                 return PyDebugProcess(
                     session,
-                    executionResult.executionConsole,
-                    executionResult.processHandler,
+                    console,
+                    null,
                     debugHost,
                     debugPorts.first()
                 ).also {
                     it.positionConverter = PathMapper.PositionConverter(PathMapper(mappings))
 
-                    PyDebugRunner.createConsoleCommunicationAndSetupActions(environment.project, executionResult, it, session)
+//                    PyDebugRunner.createConsoleCommunicationAndSetupActions(environment.project, session., it, session)
+                    // TODO: Action is disabled.... doesnt seem to work
+                    PyDebugRunner.initDebugConsoleView(environment.project, it, console, it.processHandler, session)
                 }
             }
         }

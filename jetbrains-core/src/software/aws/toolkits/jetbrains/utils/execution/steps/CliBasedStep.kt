@@ -10,7 +10,6 @@ import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandler
-import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -101,6 +100,7 @@ abstract class CliBasedStep : Step() {
         while (!processHandler.waitFor(WAIT_INTERVAL_MILLIS)) {
             if (!ignoreCancellation && context.isCancelled()) {
                 if (!processHandler.isProcessTerminating && !processHandler.isProcessTerminated) {
+                    processHandler.putUserData(ProcessHandler.TERMINATION_REQUESTED, true)
                     processHandler.destroyProcess()
                 }
             }
