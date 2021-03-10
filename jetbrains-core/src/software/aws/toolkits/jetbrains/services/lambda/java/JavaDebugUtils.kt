@@ -32,8 +32,7 @@ object JavaDebugUtils {
         debugPorts: List<Int>
     ): XDebugProcessStarter? {
         val connection = RemoteConnection(true, debugHost, debugPorts.first().toString(), false)
-        val debugEnvironment =  RemotePortDebugEnvironment(environment, connection)
-//        val debugEnvironment = DefaultDebugEnvironment(environment, state, connection, true)
+        val debugEnvironment = RemotePortDebugEnvironment(environment, connection)
         val debuggerManager = DebuggerManagerEx.getInstanceEx(environment.project)
 
         val debuggerSession = withContext(edtContext) {
@@ -56,6 +55,10 @@ object JavaDebugUtils {
         }
     }
 
+    /*
+     * We are required to make our own so we do not end up in a loop. DefaultDebugEnvironment will execute the run config again
+     * which make a tragic recursive loop starting the run config an infinite number of times
+     */
     class RemotePortDebugEnvironment(private val environment: ExecutionEnvironment, private val connection: RemoteConnection) : DebugEnvironment {
         override fun createExecutionResult(): ExecutionResult {
             val consoleView = ConsoleViewImpl(environment.project, false)
@@ -64,14 +67,12 @@ object JavaDebugUtils {
             return DefaultExecutionResult(consoleView, process)
         }
 
-        override fun getSearchScope(): GlobalSearchScope  = GlobalSearchScopes.executionScope(environment.project, environment.runProfile)
-
+        override fun getSearchScope(): GlobalSearchScope = GlobalSearchScopes.executionScope(environment.project, environment.runProfile)
         override fun isRemote(): Boolean = true
-
         override fun getRemoteConnection(): RemoteConnection = connection
+        override fun getPollTimeout(): Long = DebugEnvironment.LOCAL_START_TIMEOUT.toLong()
 
-        override fun getPollTimeout(): Long  = DebugEnvironment.LOCAL_START_TIMEOUT.toLong()
-
-        override fun getSessionName(): String = environment.runProfile.name
+        // TODO
+        override fun getSessionName(): String = "${environment.runProfile.name}-debug"
     }
 }

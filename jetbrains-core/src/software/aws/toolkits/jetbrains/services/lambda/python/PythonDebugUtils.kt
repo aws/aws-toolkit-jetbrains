@@ -14,11 +14,15 @@ import com.jetbrains.python.console.PythonDebugLanguageConsoleView
 import com.jetbrains.python.debugger.PyDebugProcess
 import com.jetbrains.python.debugger.PyDebugRunner
 import com.jetbrains.python.sdk.PythonSdkType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.PathMapper
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
-object PythonDebugUtils {
+object PythonDebugUtils : CoroutineScope by ApplicationThreadPoolScope("PythonDebugUtils") {
     const val DEBUGGER_VOLUME_PATH = "/tmp/lambci_debug_files"
 
     suspend fun createDebugProcess(
@@ -29,12 +33,9 @@ object PythonDebugUtils {
     ): XDebugProcessStarter {
         // TODO: We should allow using the module SDK, but we can't easily get the module
         val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }
-        // TODO fix
-        //state.consoleBuilder = PyDebugConsoleBuilder(environment.project, sdk)
 
         return object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {
-
                 val mappings = state.pathMappings.plus(
                     listOf(
                         PathMapping(
@@ -53,10 +54,19 @@ object PythonDebugUtils {
                     debugPorts.first()
                 ).also {
                     it.positionConverter = PathMapper.PositionConverter(PathMapper(mappings))
-
-//                    PyDebugRunner.createConsoleCommunicationAndSetupActions(environment.project, session., it, session)
-                    // TODO: Action is disabled.... doesnt seem to work
-                    PyDebugRunner.initDebugConsoleView(environment.project, it, console, it.processHandler, session)
+                    launch {
+                        for (i in 1 until 5) {
+                            // processHandler can be null very early after creation so we need to do this async
+                            // FIX_WHEN_MIN_IS_203 re-evalate if this is still a potential issue
+                            if (it.processHandler != null) {
+                                break
+                            }
+                            delay(100)
+                        }
+                        // needs to be called to replace the null process handler in PyDebugProcess
+                        console.attachToProcess(it.processHandler)
+                        PyDebugRunner.initDebugConsoleView(environment.project, it, console, it.processHandler, session)
+                    }
                 }
             }
         }
