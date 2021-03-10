@@ -3,12 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
+import com.intellij.debugger.DebugEnvironment
 import com.intellij.debugger.DebuggerManagerEx
-import com.intellij.debugger.DefaultDebugEnvironment
 import com.intellij.debugger.engine.JavaDebugProcess
+import com.intellij.debugger.engine.RemoteDebugProcessHandler
 import com.intellij.execution.DefaultExecutionResult
+import com.intellij.execution.ExecutionResult
 import com.intellij.execution.configurations.RemoteConnection
+import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
@@ -27,7 +32,8 @@ object JavaDebugUtils {
         debugPorts: List<Int>
     ): XDebugProcessStarter? {
         val connection = RemoteConnection(true, debugHost, debugPorts.first().toString(), false)
-        val debugEnvironment = DefaultDebugEnvironment(environment, state, connection, true)
+        val debugEnvironment =  RemotePortDebugEnvironment(environment, connection)
+//        val debugEnvironment = DefaultDebugEnvironment(environment, state, connection, true)
         val debuggerManager = DebuggerManagerEx.getInstanceEx(environment.project)
 
         val debuggerSession = withContext(edtContext) {
@@ -48,5 +54,24 @@ object JavaDebugUtils {
                 return JavaDebugProcess.create(session, debuggerSession)
             }
         }
+    }
+
+    class RemotePortDebugEnvironment(private val environment: ExecutionEnvironment, private val connection: RemoteConnection) : DebugEnvironment {
+        override fun createExecutionResult(): ExecutionResult {
+            val consoleView = ConsoleViewImpl(environment.project, false)
+            val process = RemoteDebugProcessHandler(environment.project)
+            consoleView.attachToProcess(process)
+            return DefaultExecutionResult(consoleView, process)
+        }
+
+        override fun getSearchScope(): GlobalSearchScope  = GlobalSearchScopes.executionScope(environment.project, environment.runProfile)
+
+        override fun isRemote(): Boolean = true
+
+        override fun getRemoteConnection(): RemoteConnection = connection
+
+        override fun getPollTimeout(): Long  = DebugEnvironment.LOCAL_START_TIMEOUT.toLong()
+
+        override fun getSessionName(): String = environment.runProfile.name
     }
 }
