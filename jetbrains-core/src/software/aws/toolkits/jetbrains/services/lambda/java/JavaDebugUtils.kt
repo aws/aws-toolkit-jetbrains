@@ -71,8 +71,6 @@ object JavaDebugUtils {
         override fun isRemote(): Boolean = true
         override fun getRemoteConnection(): RemoteConnection = connection
         override fun getPollTimeout(): Long = DebugEnvironment.LOCAL_START_TIMEOUT.toLong()
-
-        // TODO
-        override fun getSessionName(): String = "${environment.runProfile.name}-debug"
+        override fun getSessionName(): String = environment.runProfile.name
     }
 }
