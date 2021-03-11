@@ -97,7 +97,6 @@ class S3TreeTable(
 
     private fun handleOpeningFile(row: Int, isDoubleClick: Boolean): Boolean {
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3Object ?: return false
-
         // Don't process double click if it has children (i.e. versions) since it will trigger expansion as well
         if (isDoubleClick && objectNode is S3LazyLoadParentNode<*> && objectNode.childCount > 0) {
             return false
@@ -118,20 +117,22 @@ class S3TreeTable(
         launch {
             try {
                 bucket.download(project, objectNode.key, objectNode.versionId, fileWrapper.file.outputStream())
-                withContext(edt) {
-                    // If the file type is not associated, prompt user to associate. Returns null on cancel
-                    fileWrapper.virtualFile?.let {
-                        ApplicationManager.getApplication().runWriteAction {
-                            it.isWritable = false
-                        }
-                        FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@withContext
-                        // set virtual file to read only
-                        FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
-                            notifyError(project = project, content = message("s3.open.viewer.failed.unsupported"))
+                if (S3VirtualBucket.bucketExists) {
+                    withContext(edt) {
+                        // If the file type is not associated, prompt user to associate. Returns null on cancel
+                        fileWrapper.virtualFile?.let {
+                            ApplicationManager.getApplication().runWriteAction {
+                                it.isWritable = false
+                            }
+                            FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@withContext
+                            // set virtual file to read only
+                            FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
+                                notifyError(project = project, content = message("s3.open.viewer.failed.unsupported"))
+                            }
                         }
                     }
+                    S3Telemetry.downloadObject(project, true)
                 }
-                S3Telemetry.downloadObject(project, true)
             } catch (e: Exception) {
                 S3Telemetry.downloadObject(project, false)
                 LOG.error(e) { "Attempting to open file threw" }

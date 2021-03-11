@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.s3.editor
 
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
@@ -15,8 +17,12 @@ import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
+import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.s3.download
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.services.s3.upload
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
@@ -78,7 +84,22 @@ class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client) : Ligh
 
     suspend fun download(project: Project, key: String, versionId: String? = null, output: OutputStream) {
         withContext(Dispatchers.IO) {
-            client.download(project, s3Bucket.name(), key, versionId, output).await()
+            if (s3Bucket in client.listBuckets().buckets()) {
+                client.download(project, s3Bucket.name(), key, versionId, output).await()
+                bucketExists = true
+            } else {
+                notifyError(project = project, content = message("s3.open.viewer.bucket_does_not_exist"))
+                val fileEditorManager = FileEditorManager.getInstance(project)
+                fileEditorManager.openFiles.forEach {
+                    if (it is S3VirtualBucket && it.name == s3Bucket.name()) {
+                        runInEdtAndWait {
+                            fileEditorManager.closeFile(it)
+                        }
+                    }
+                }
+                project.refreshAwsTree(S3Resources.LIST_BUCKETS)
+                bucketExists = false
+            }
         }
     }
 
@@ -88,7 +109,8 @@ class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client) : Ligh
         it.versionId(versionId)
     }
 
-    private companion object {
+    companion object {
         const val MAX_ITEMS_TO_LOAD = 300
+        var bucketExists = true
     }
 }
