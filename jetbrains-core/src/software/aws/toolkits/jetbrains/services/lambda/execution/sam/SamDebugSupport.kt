@@ -7,6 +7,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.xdebugger.XDebugProcessStarter
 import kotlinx.coroutines.launch
@@ -38,7 +39,7 @@ interface SamDebugSupport {
         val promise = AsyncPromise<XDebugProcessStarter?>()
         val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
 
-        val timerTask = Timer("Debugger Worker launch timer", true).schedule(SamDebugger.debuggerConnectTimeoutMs()) {
+        val timerTask = Timer("Debugger Worker launch timer", true).schedule(debuggerConnectTimeoutMs()) {
             if (!promise.isDone) {
                 runInEdt {
                     promise.setError(message("lambda.debug.process.start.timeout"))
@@ -73,7 +74,8 @@ interface SamDebugSupport {
         debugPorts: List<Int>
     ): XDebugProcessStarter?
 
-    private companion object {
-        val LOG = getLogger<SamDebugSupport>()
+    companion object {
+        private val LOG = getLogger<SamDebugSupport>()
+        fun debuggerConnectTimeoutMs() = Registry.intValue("aws.debuggerAttach.timeout", 60000).toLong()
     }
 }

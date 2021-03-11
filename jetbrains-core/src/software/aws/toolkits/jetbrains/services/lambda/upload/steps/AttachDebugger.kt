@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.lambda.upload.steps
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebuggerManager
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageTemplateRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.LocalLambdaRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
@@ -42,9 +41,5 @@ class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunnin
         is ImageTemplateRunSettings -> settings.imageDebugger
         is ZipSettings -> RuntimeDebugSupport.getInstance(settings.runtimeGroup)
         else -> throw IllegalStateException("Can't find debugger support for $settings")
-    }
-
-    companion object {
-        private val LOG = getLogger<AttachDebugger>()
     }
 }

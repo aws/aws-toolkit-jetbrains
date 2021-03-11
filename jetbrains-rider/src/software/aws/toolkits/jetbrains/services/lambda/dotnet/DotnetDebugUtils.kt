@@ -42,7 +42,7 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugger.Companion.debuggerConnectTimeoutMs
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
@@ -168,7 +168,7 @@ object DotnetDebugUtils {
             }
         }
 
-        val checkDebuggerTask = Timer("Debugger Worker launch timer", true).schedule(debuggerConnectTimeoutMs()) {
+        val checkDebuggerTask = Timer("Debugger Worker launch timer", true).schedule(SamDebugSupport.debuggerConnectTimeoutMs()) {
             if (debuggerLifetimeDefinition.isAlive && !protocol.wire.connected.value) {
                 runBlocking(edtContext) {
                     debuggerLifetimeDefinition.terminate()
@@ -185,7 +185,7 @@ object DotnetDebugUtils {
     }
 
     private suspend fun findDockerContainer(frontendPort: Int): String = runProcessUntil(
-        duration = Duration.ofMillis(debuggerConnectTimeoutMs()),
+        duration = Duration.ofMillis(SamDebugSupport.debuggerConnectTimeoutMs()),
         cmd = GeneralCommandLine(
             "docker",
             "ps",
@@ -198,7 +198,7 @@ object DotnetDebugUtils {
     }
 
     private suspend fun findDotnetPid(dockerContainer: String): Int = runProcessUntil(
-        duration = Duration.ofMillis(debuggerConnectTimeoutMs()),
+        duration = Duration.ofMillis(SamDebugSupport.debuggerConnectTimeoutMs()),
         cmd = GeneralCommandLine(
             "docker",
             "exec",
