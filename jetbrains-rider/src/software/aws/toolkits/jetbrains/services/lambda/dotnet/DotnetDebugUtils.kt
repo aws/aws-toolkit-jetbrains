@@ -6,8 +6,6 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.filters.TextConsoleBuilderFactory
 import com.intellij.execution.process.OSProcessHandler
-import com.intellij.execution.process.ProcessAdapter
-import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.runners.ExecutionEnvironment
@@ -15,14 +13,10 @@ import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.rd.defineNestedLifetime
-import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.text.nullize
-import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
-import com.intellij.xdebugger.XDebugSession
 import com.jetbrains.rd.framework.IdKind
 import com.jetbrains.rd.framework.Identities
 import com.jetbrains.rd.framework.Protocol
@@ -33,17 +27,13 @@ import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.put
 import com.jetbrains.rd.util.reactive.adviseUntil
 import com.jetbrains.rdclient.protocol.RdDispatcher
-import com.jetbrains.rider.debugger.DotNetDebugProcess
-import com.jetbrains.rider.debugger.DotNetDebugRunner
 import com.jetbrains.rider.debugger.RiderDebuggerWorkerModelManager
-import com.jetbrains.rider.debugger.actions.utils.OptionsUtil
 import com.jetbrains.rider.model.debuggerWorker.DotNetCoreAttachStartInfo
 import com.jetbrains.rider.model.debuggerWorker.DotNetDebuggerSessionModel
 import com.jetbrains.rider.model.debuggerWorkerConnectionHelperModel
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.run.IDebuggerOutputListener
 import com.jetbrains.rider.run.bindToSettings
-import com.jetbrains.rider.run.createConsole
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -115,36 +105,11 @@ object DotnetDebugUtils {
             RiderDebuggerWorkerModelManager.createDebuggerModel(debuggerLifetime, protocol)
         }
 
-        /*
-        val executionResult = state.execute(environment.executor, environment.runner)
-        val samProcessHandle = executionResult.processHandler
-
-        // If we have not started the process's notification system, start it now.
-        // This is needed to pipe the SAM output to the Console view of the debugger panel
-        if (!samProcessHandle.isStartNotified) {
-            samProcessHandle.startNotify()
-        }
-        */
-
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
                 val dockerContainer = findDockerContainer(frontendPort)
                 val pid = findDotnetPid(dockerContainer)
                 val riderDebuggerProcessHandler = startDebugWorker(dockerContainer, backendPort, frontendPort)
-
-                /*
-                // Link worker process to SAM process lifetime
-                samProcessHandle.addProcessListener(
-                    object : ProcessAdapter() {
-                        override fun processTerminated(event: ProcessEvent) {
-                            runInEdt {
-                                debuggerLifetimeDefinition.terminate()
-                                riderDebuggerProcessHandler.destroyProcess()
-                            }
-                        }
-                    },
-                    environment
-                )*/
 
                 withContext(edtContext) {
                     protocol.wire.connected.adviseUntil(debuggerLifetime) connected@{ isConnected ->
@@ -176,36 +141,16 @@ object DotnetDebugUtils {
 
                             workerModel.activeSession.set(sessionModel)
 
-                            /*
                             promise.setResult(
                                 DotNetDebuggerUtils.createAndStartSession(
-                                    executionConsole = executionResult.executionConsole,
+                                    executionConsole = TextConsoleBuilderFactory.getInstance().createBuilder(environment.project).console,
                                     env = environment,
                                     sessionLifetime = debuggerLifetime,
-                                    processHandler = samProcessHandle,
+                                    processHandler = riderDebuggerProcessHandler,
                                     protocol = protocol,
                                     sessionModel = sessionModel,
                                     outputEventsListener = object : IDebuggerOutputListener {}
                                 )
-                            )*/
-
-                            promise.setResult(
-                                object : XDebugProcessStarter() {
-                                    override fun start(session: XDebugSession): XDebugProcess = DotNetDebugProcess(
-                                        debuggerLifetime,
-                                        session,
-                                        riderDebuggerProcessHandler,
-                                        TextConsoleBuilderFactory.getInstance().createBuilder(environment.project,
-                                            GlobalSearchScopes.executionScope(environment.project, environment.runProfile)).console,
-                                        protocol,
-                                        sessionModel,
-                                        environment.getUserData(DotNetDebugRunner.FIRE_INITIALIZED_MANUALLY) ?: false,
-                                        object : IDebuggerOutputListener {},
-                                        OptionsUtil.toDebugKind(sessionModel.sessionProperties.debugKind.valueOrNull),
-                                        environment.project,
-                                        environment.executionId
-                                    )
-                                }
                             )
 
                             return@initialized true

@@ -48,7 +48,10 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
                 object : OutputListener() {
                     override fun processTerminated(event: ProcessEvent) {
                         super.processTerminated(event)
-                        executionFuture.complete((it.processHandler as StepExecutor.StepExecutorProcessHandler).getFinalOutput())
+                        // if using the default step executor as the process handle, need to pull text from it or it will be empty
+                        // otherwise, pull the output from the process itself
+                        val output = (it.processHandler as? StepExecutor.StepExecutorProcessHandler)?.getFinalOutput() ?: this.output
+                        executionFuture.complete(output)
                     }
                 }
             )
