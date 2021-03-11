@@ -22,10 +22,13 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.io.LocalFileFinder
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.services.lambda.java.JavaDebugUtils
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import java.net.InetSocketAddress
 
 object NodeJsDebugUtils {
     private const val NODE_MODULES = "node_modules"
+    private val edtContext = getCoroutineUiContext()
 
     suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
@@ -33,11 +36,6 @@ object NodeJsDebugUtils {
         debugHost: String,
         debugPorts: List<Int>
     ): XDebugProcessStarter {
-        val executionResult = withContext(Dispatchers.IO) {
-            // needs to run off EDT since it resolves credentials
-            state.execute(environment.executor, environment.runner)
-        }
-
         return object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {
                 val mappings = createBiMapMappings(state.pathMappings)
@@ -45,9 +43,9 @@ object NodeJsDebugUtils {
 
                 val connection = WipLocalVmConnection()
 
-                val process = NodeChromeDebugProcess(session, fileFinder, connection, executionResult)
+                val process = NodeChromeDebugProcess(session, fileFinder, connection, null) //, executionResult)
 
-                val processHandler = executionResult.processHandler
+                val processHandler = process.processHandler //executionResult.processHandler
                 val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
 
                 if (processHandler == null || processHandler.isStartNotified) {

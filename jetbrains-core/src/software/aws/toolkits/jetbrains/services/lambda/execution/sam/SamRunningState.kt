@@ -20,6 +20,7 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.utils.buildList
@@ -39,6 +40,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.ParallelStep
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
@@ -73,7 +75,9 @@ class SamRunningState(
             }
         )
 
-        FileDocumentManager.getInstance().saveAllDocuments()
+        runBlocking(getCoroutineUiContext()) {
+            FileDocumentManager.getInstance().saveAllDocuments()
+        }
 
         val samState = environment.state as SamRunningState
         val lambdaSettings = samState.settings
