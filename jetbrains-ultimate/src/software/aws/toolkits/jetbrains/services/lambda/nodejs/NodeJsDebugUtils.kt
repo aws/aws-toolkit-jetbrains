@@ -17,21 +17,16 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.jetbrains.debugger.wip.WipLocalVmConnection
 import com.jetbrains.nodeJs.NodeChromeDebugProcess
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.jetbrains.io.LocalFileFinder
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
-import software.aws.toolkits.jetbrains.services.lambda.java.JavaDebugUtils
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import java.net.InetSocketAddress
 
 object NodeJsDebugUtils {
     private const val NODE_MODULES = "node_modules"
-    private val edtContext = getCoroutineUiContext()
 
     suspend fun createDebugProcess(
-        environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
@@ -48,7 +43,7 @@ object NodeJsDebugUtils {
                 val processHandler = process.processHandler //executionResult.processHandler
                 val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
 
-                if (processHandler == null || processHandler.isStartNotified) {
+                if (processHandler.isStartNotified) {
                     connection.open(socketAddress)
                 } else {
                     processHandler.addProcessListener(
