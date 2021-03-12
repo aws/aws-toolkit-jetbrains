@@ -223,9 +223,7 @@ class DeploySamApplicationValidator(
     templateParameters: Collection<Parameter>
 ) {
     private val parameterDeclarations: Map<String, Parameter> by lazy {
-        templateParameters.map {
-            it.logicalName to it
-        }.toMap()
+        templateParameters.associateBy { it.logicalName }
     }
 
     fun validateSettings(): ValidationInfo? {
