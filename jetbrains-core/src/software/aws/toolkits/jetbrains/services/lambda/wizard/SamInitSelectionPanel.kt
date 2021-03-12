@@ -93,20 +93,18 @@ class SamInitSelectionPanel(
         runtimeUpdate()
     }
 
-    private fun supportedRuntimes(): MutableList<LambdaRuntime> {
-        // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
-        return SamProjectTemplate.supportedTemplates().asSequence()
-            .flatMap {
-                when (packageType()) {
-                    PackageType.ZIP -> it.supportedZipRuntimes().asSequence()
-                    else -> it.supportedImageRuntimes().asSequence()
-                }
+    // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
+    private fun supportedRuntimes(): MutableList<LambdaRuntime> = SamProjectTemplate.supportedTemplates().asSequence()
+        .flatMap {
+            when (packageType()) {
+                PackageType.ZIP -> it.supportedZipRuntimes().asSequence()
+                else -> it.supportedImageRuntimes().asSequence()
             }
-            .filter(runtimeFilter)
-            .distinct()
-            .sorted()
-            .toMutableList()
-    }
+        }
+        .filter(runtimeFilter)
+        .distinct()
+        .sorted()
+        .toMutableList()
 
     private fun packageType() = when {
         packageZip.isSelected -> PackageType.ZIP
