@@ -35,8 +35,8 @@ interface SamDebugSupport {
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
-    ): Promise<XDebugProcessStarter?> {
-        val promise = AsyncPromise<XDebugProcessStarter?>()
+    ): Promise<XDebugProcessStarter> {
+        val promise = AsyncPromise<XDebugProcessStarter>()
         val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
 
         val timerTask = Timer("Debugger Worker launch timer", true).schedule(debuggerConnectTimeoutMs()) {
@@ -72,7 +72,7 @@ interface SamDebugSupport {
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
-    ): XDebugProcessStarter?
+    ): XDebugProcessStarter
 
     companion object {
         private val LOG = getLogger<SamDebugSupport>()

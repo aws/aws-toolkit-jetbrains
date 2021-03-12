@@ -59,7 +59,7 @@ class SamRunningState(
         val project = environment.project
         val descriptor = DefaultBuildDescriptor(
             runConfigId(),
-            message("cloud_debug.execution.title"),
+            message("lambda.run_configuration.sam"),
             "/unused/location",
             System.currentTimeMillis()
         )

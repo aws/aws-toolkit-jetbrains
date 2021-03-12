@@ -30,14 +30,14 @@ object JavaDebugUtils {
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
-    ): XDebugProcessStarter? {
+    ): XDebugProcessStarter {
         val connection = RemoteConnection(true, debugHost, debugPorts.first().toString(), false)
         val debugEnvironment = RemotePortDebugEnvironment(environment, connection)
         val debuggerManager = DebuggerManagerEx.getInstanceEx(environment.project)
 
         val debuggerSession = withContext(edtContext) {
             debuggerManager.attachVirtualMachine(debugEnvironment)
-        } ?: return null
+        } ?: throw IllegalStateException("Attaching to the JVM failed")
 
         return object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {

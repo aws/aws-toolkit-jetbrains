@@ -76,10 +76,10 @@ object DotnetDebugUtils {
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
-    ): Promise<XDebugProcessStarter?> {
+    ): Promise<XDebugProcessStarter> {
         val frontendPort = debugPorts[0]
         val backendPort = debugPorts[1]
-        val promise = AsyncPromise<XDebugProcessStarter?>()
+        val promise = AsyncPromise<XDebugProcessStarter>()
         val edtContext = getCoroutineUiContext(ModalityState.any(), environment)
         val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
 

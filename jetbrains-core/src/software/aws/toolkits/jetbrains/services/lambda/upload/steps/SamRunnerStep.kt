@@ -7,11 +7,9 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.util.io.FileUtil
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageTemplateRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.LocalLambdaRunSettings
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.TemplateSettings
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ZipSettings
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
 import software.aws.toolkits.jetbrains.services.lambda.upload.steps.GetPorts.Companion.DEBUG_PORTS
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.resources.message
@@ -40,7 +38,7 @@ class SamRunnerStep(val environment: ExecutionEnvironment, val settings: LocalLa
             .withEnvironment("PYTHONUNBUFFERED", "1") // Force SAM to not buffer stdout/stderr so it gets shown in IDE
 
         if (debug) {
-            val debugExtension = resolveDebuggerSupport(settings)
+            val debugExtension = settings.resolveDebuggerSupport()
             val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
             commandLine.addParameters(debugExtension.samArguments(debugPorts))
             debugPorts.forEach {
@@ -67,12 +65,6 @@ class SamRunnerStep(val environment: ExecutionEnvironment, val settings: LocalLa
         }
 
         return commandLine
-    }
-
-    private fun resolveDebuggerSupport(settings: LocalLambdaRunSettings) = when (settings) {
-        is ImageTemplateRunSettings -> settings.imageDebugger
-        is ZipSettings -> RuntimeDebugSupport.getInstance(settings.runtimeGroup)
-        else -> throw IllegalStateException("Can't find debugger support for $settings")
     }
 
     private fun createEventFile(): String {

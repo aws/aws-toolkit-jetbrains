@@ -5,10 +5,8 @@ package software.aws.toolkits.jetbrains.services.lambda.upload.steps
 
 import com.intellij.util.net.NetUtils
 import software.aws.toolkits.core.utils.AttributeBagKey
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageTemplateRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.LocalLambdaRunSettings
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ZipSettings
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
@@ -18,15 +16,9 @@ class GetPorts(val settings: LocalLambdaRunSettings) : Step() {
     override val hidden: Boolean = true
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
-        val debugExtension = resolveDebuggerSupport(settings)
+        val debugExtension = settings.resolveDebuggerSupport()
         val debugPorts = NetUtils.findAvailableSocketPorts(debugExtension.numberOfDebugPorts()).toList()
         context.putAttribute(DEBUG_PORTS, debugPorts)
-    }
-
-    private fun resolveDebuggerSupport(settings: LocalLambdaRunSettings) = when (settings) {
-        is ImageTemplateRunSettings -> settings.imageDebugger
-        is ZipSettings -> RuntimeDebugSupport.getInstance(settings.runtimeGroup)
-        else -> throw IllegalStateException("Can't find debugger support for $settings")
     }
 
     companion object {
