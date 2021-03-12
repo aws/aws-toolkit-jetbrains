@@ -89,7 +89,7 @@ class SamInitSelectionPanel(
         )
 
         // this will also fire wizardUpdate since templateComboBox will change
-        // othwise we make 2 of them
+        // otherwise we make 2 of them
         runtimeUpdate()
     }
 
