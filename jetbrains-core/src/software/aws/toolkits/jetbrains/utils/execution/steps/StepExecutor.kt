@@ -21,7 +21,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.TestOnly
-import software.aws.toolkits.core.utils.AttributeBagKey
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.resources.message
@@ -60,8 +59,6 @@ class StepExecutor(
         }
 
         processHandler.startNotify()
-
-        context.putAttribute(PROCESS_HANDLER, processHandler)
 
         return processHandler
     }
@@ -172,6 +169,5 @@ class StepExecutor(
 
     private companion object {
         val LOG = getLogger<StepExecutor>()
-        val PROCESS_HANDLER = AttributeBagKey.create<ProcessHandler>("STEP_EXECUTOR_PROCESS_HANDLER")
     }
 }

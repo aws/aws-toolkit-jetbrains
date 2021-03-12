@@ -16,8 +16,6 @@ import com.jetbrains.python.debugger.PyDebugProcess
 import com.jetbrains.python.debugger.PyDebugRunner
 import com.jetbrains.python.sdk.PythonSdkType
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.PathMapper
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
