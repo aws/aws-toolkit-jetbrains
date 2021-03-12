@@ -89,13 +89,13 @@ class SamInitSelectionPanel(
             }
         )
 
+        // this will also fire wizardUpdate since templateComboBox will change
+        // othwise we make 2 of them
         runtimeUpdate()
-        wizardUpdate()
     }
 
     private fun supportedRuntimes(): MutableList<LambdaRuntime> {
         // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
-        val supportedRuntimeGroups = RuntimeGroup.registeredRuntimeGroups()
         return SamProjectTemplate.supportedTemplates().asSequence()
             .flatMap {
                 when (packageType()) {
