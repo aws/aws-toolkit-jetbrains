@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.python
 
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.xdebugger.DefaultDebugProcessHandler
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
@@ -46,27 +47,17 @@ object PythonDebugUtils : CoroutineScope by ApplicationThreadPoolScope("PythonDe
                 )
 
                 val console = PyDebugConsoleBuilder(environment.project, sdk).console as PythonDebugLanguageConsoleView
+                val handler = DefaultDebugProcessHandler()
                 return PyDebugProcess(
                     session,
                     console,
-                    null,
+                    handler,
                     debugHost,
                     debugPorts.first()
                 ).also {
                     it.positionConverter = PathMapper.PositionConverter(PathMapper(mappings))
-                    launch {
-                        for (i in 1 until 5) {
-                            // processHandler can be null very early after creation so we need to do this async
-                            // FIX_WHEN_MIN_IS_203 re-evalate if this is still a potential issue
-                            if (it.processHandler != null) {
-                                break
-                            }
-                            delay(100)
-                        }
-                        // needs to be called to replace the null process handler in PyDebugProcess
-                        console.attachToProcess(it.processHandler)
-                        PyDebugRunner.initDebugConsoleView(environment.project, it, console, it.processHandler, session)
-                    }
+                    console.attachToProcess(handler)
+                    PyDebugRunner.initDebugConsoleView(environment.project, it, console, it.processHandler, session)
                 }
             }
         }
