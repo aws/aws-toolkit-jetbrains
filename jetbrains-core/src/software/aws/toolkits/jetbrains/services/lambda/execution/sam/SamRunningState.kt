@@ -29,10 +29,10 @@ import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.AttachDebugger
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.BuildLambda
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.GetPorts
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.SamRunnerStep
+import software.aws.toolkits.jetbrains.services.lambda.steps.AttachDebugger
+import software.aws.toolkits.jetbrains.services.lambda.steps.BuildLambda
+import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts
+import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context

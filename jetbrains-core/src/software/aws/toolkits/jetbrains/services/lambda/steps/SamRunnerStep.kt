@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.lambda.upload.steps
+package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.runners.ExecutionEnvironment
@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.LocalLambdaRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.TemplateSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.GetPorts.Companion.DEBUG_PORTS
+import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts.Companion.DEBUG_PORTS
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.resources.message
 
