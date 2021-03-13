@@ -31,8 +31,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse
 import software.amazon.awssdk.services.s3.model.DeletedObject
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
-import software.amazon.awssdk.services.s3.model.ListBucketsRequest
-import software.amazon.awssdk.services.s3.model.ListBucketsResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
@@ -158,7 +156,6 @@ class S3VirtualBucketTest {
     fun downloadObject() {
         val s3Client = mockClientManager.create<S3Client>()
         val downloadCaptor = argumentCaptor<GetObjectRequest>()
-        val listBucketCaptor = argumentCaptor<ListBucketsRequest>()
         val testBucket = Bucket.builder().name("TestBucket").build()
 
         s3Client.stub {
@@ -177,9 +174,6 @@ class S3VirtualBucketTest {
                     AbortableInputStream.create(data.inputStream())
                 )
             }
-            on {
-                listBuckets(listBucketCaptor.capture())
-            } doReturn ListBucketsResponse.builder().buckets(mutableListOf<Bucket>(testBucket)).build()
         }
 
         val testFile = FileUtil.createTempFile("myfile", ".txt")
