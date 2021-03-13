@@ -19,6 +19,7 @@ import com.intellij.util.containers.Convertor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -27,6 +28,7 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.S3Telemetry
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.UnsupportedFlavorException
@@ -117,22 +119,23 @@ class S3TreeTable(
         launch {
             try {
                 bucket.download(project, objectNode.key, objectNode.versionId, fileWrapper.file.outputStream())
-                if (S3VirtualBucket.bucketExists) {
-                    withContext(edt) {
-                        // If the file type is not associated, prompt user to associate. Returns null on cancel
-                        fileWrapper.virtualFile?.let {
-                            ApplicationManager.getApplication().runWriteAction {
-                                it.isWritable = false
-                            }
-                            FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@withContext
-                            // set virtual file to read only
-                            FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
-                                notifyError(project = project, content = message("s3.open.viewer.failed.unsupported"))
-                            }
+                withContext(edt) {
+                    // If the file type is not associated, prompt user to associate. Returns null on cancel
+                    fileWrapper.virtualFile?.let {
+                        ApplicationManager.getApplication().runWriteAction {
+                            it.isWritable = false
+                        }
+                        FileTypeChooser.getKnownFileTypeOrAssociate(it, project) ?: return@withContext
+                        // set virtual file to read only
+                        FileEditorManager.getInstance(project).openFile(it, true, true).ifEmpty {
+                            notifyError(project = project, content = message("s3.open.viewer.failed.unsupported"))
                         }
                     }
-                    S3Telemetry.downloadObject(project, true)
                 }
+                S3Telemetry.downloadObject(project, true)
+            } catch (e: NoSuchBucketException) {
+                bucket.deletedBucketErrorHandling()
+                S3Telemetry.downloadObject(project, Result.Failed)
             } catch (e: Exception) {
                 S3Telemetry.downloadObject(project, false)
                 LOG.error(e) { "Attempting to open file threw" }

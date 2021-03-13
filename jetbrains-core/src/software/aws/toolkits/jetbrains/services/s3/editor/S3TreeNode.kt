@@ -8,6 +8,7 @@ import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.ui.treeStructure.SimpleNode
 import kotlinx.coroutines.runBlocking
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.utils.buildList
@@ -105,6 +106,9 @@ class S3TreeDirectoryNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?,
                 ?: emptyList()
 
             return (folders + s3Objects).sortedBy { it.key } + continuation
+        } catch (e: NoSuchBucketException) {
+            bucket.deletedBucketErrorHandling()
+            return emptyList()
         } catch (e: Exception) {
             LOG.error(e) { "Loading objects failed!" }
             return buildList {
@@ -180,6 +184,9 @@ class S3TreeObjectNode(parent: S3TreeDirectoryNode, key: String, override val si
                     )
                 }
             }
+        } catch (e: NoSuchBucketException) {
+            bucket.deletedBucketErrorHandling()
+            return emptyList()
         } catch (e: Exception) {
             LOG.error(e) { "Loading objects failed!" }
             return buildList {

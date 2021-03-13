@@ -27,7 +27,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
 
-class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client) : LightVirtualFile(s3Bucket.name()) {
+class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client, val project: Project) : LightVirtualFile(s3Bucket.name()) {
     override fun isWritable(): Boolean = false
     override fun getPath(): String = s3Bucket.name()
     override fun isValid(): Boolean = true
@@ -84,22 +84,7 @@ class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client) : Ligh
 
     suspend fun download(project: Project, key: String, versionId: String? = null, output: OutputStream) {
         withContext(Dispatchers.IO) {
-            if (s3Bucket in client.listBuckets().buckets()) {
-                client.download(project, s3Bucket.name(), key, versionId, output).await()
-                bucketExists = true
-            } else {
-                notifyError(project = project, content = message("s3.open.viewer.bucket_does_not_exist"))
-                val fileEditorManager = FileEditorManager.getInstance(project)
-                fileEditorManager.openFiles.forEach {
-                    if (it is S3VirtualBucket && it.name == s3Bucket.name()) {
-                        runInEdtAndWait {
-                            fileEditorManager.closeFile(it)
-                        }
-                    }
-                }
-                project.refreshAwsTree(S3Resources.LIST_BUCKETS)
-                bucketExists = false
-            }
+            client.download(project, s3Bucket.name(), key, versionId, output).await()
         }
     }
 
@@ -109,8 +94,20 @@ class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client) : Ligh
         it.versionId(versionId)
     }
 
+    fun deletedBucketErrorHandling() {
+        notifyError(project = project, content = message("s3.open.viewer.bucket_does_not_exist"))
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        fileEditorManager.openFiles.forEach {
+            if (it is S3VirtualBucket && it.name == s3Bucket.name()) {
+                runInEdtAndWait {
+                    fileEditorManager.closeFile(it)
+                }
+            }
+        }
+        project.refreshAwsTree(S3Resources.LIST_BUCKETS)
+    }
+
     companion object {
         const val MAX_ITEMS_TO_LOAD = 300
-        var bucketExists = true
     }
 }

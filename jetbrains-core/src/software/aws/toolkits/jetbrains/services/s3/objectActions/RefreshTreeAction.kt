@@ -17,7 +17,6 @@ class RefreshTreeAction : S3ObjectAction(message("general.refresh"), AllIcons.Ac
     override fun performAction(dataContext: DataContext, nodes: List<S3TreeNode>) {
         val treeTable = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_TABLE)
         val node = nodes.firstOrNull() ?: treeTable.rootNode
-
         val state = TreeState.createOn(treeTable.tree)
         treeTable.invalidateLevel(node)
         treeTable.refresh()

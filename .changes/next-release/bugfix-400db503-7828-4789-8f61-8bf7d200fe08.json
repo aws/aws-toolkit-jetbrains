@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix prevents uncaught error on being thrown when downloading objects from deleted buckets (#1601)"
+  "description" : "Fix being able to interact with objects from deleted buckets (#1601)"
 }
