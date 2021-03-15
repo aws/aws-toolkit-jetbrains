@@ -31,22 +31,23 @@ class AttachDebugger(
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
 
-        state.settings.resolveDebuggerSupport().createDebugProcessAsync(environment, state, state.settings.debugHost, debugPorts)
-            .onSuccess {
-                val session = runBlocking(edtContext) {
-                    val debugManager = XDebuggerManager.getInstance(environment.project)
-                    // Requires EDT on some paths, so always requires to be run on EDT
-                    debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, it)
-                }
-                launch {
-                    context
-                        .getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER)
-                        .addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
-                    while (!context.isCompleted()) {
-                        delay(100)
-                    }
-                    session.stop()
-                }
+        // TODO migrate createDebugProcessAsync logic to here
+        val it = state
+            .settings
+            .resolveDebuggerSupport()
+            .createDebugProcessAsync(environment, state, state.settings.debugHost, debugPorts)
+            .blockingGet(SamDebugSupport.debuggerConnectTimeoutMs().toInt())!!
+        val session = runBlocking(edtContext) {
+            val debugManager = XDebuggerManager.getInstance(environment.project)
+            // Requires EDT on some paths, so always requires to be run on EDT
+            debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, it)
+        }
+        context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER).addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
+        launch {
+            while (!context.isCompleted()) {
+                delay(100)
             }
+            session.stop()
+        }
     }
 }
