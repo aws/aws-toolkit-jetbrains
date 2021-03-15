@@ -12,6 +12,7 @@ import com.intellij.build.events.impl.StartEventImpl
 import com.intellij.build.events.impl.SuccessResultImpl
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.util.ExceptionUtil
+import com.intellij.util.containers.ContainerUtil
 import software.aws.toolkits.resources.message
 
 interface MessageEmitter {
@@ -19,11 +20,12 @@ interface MessageEmitter {
     fun startStep()
     fun finishSuccessfully()
     fun finishExceptionally(e: Throwable)
+    fun addListener(listener: BuildProgressListener)
     fun emitMessage(message: String, isError: Boolean)
 }
 
 class DefaultMessageEmitter private constructor(
-    private val buildListeners: List<BuildProgressListener>,
+    private val buildListeners: MutableList<BuildProgressListener>,
     private val rootObject: Any,
     private val parentId: String,
     private val stepName: String,
@@ -52,6 +54,10 @@ class DefaultMessageEmitter private constructor(
                 )
             )
         }
+    }
+
+    override fun addListener(listener: BuildProgressListener) {
+        buildListeners.add(listener)
     }
 
     override fun finishSuccessfully() {
@@ -108,10 +114,23 @@ class DefaultMessageEmitter private constructor(
 
     companion object {
         // TODO: Decouple step name from the build ID
-        fun createRoot(buildListeners: List<BuildProgressListener>, rootStepName: String): MessageEmitter =
-            DefaultMessageEmitter(buildListeners, rootStepName, rootStepName, rootStepName, hidden = false, parent = null)
+        fun createRoot(buildListeners: List<BuildProgressListener>, rootStepName: String): MessageEmitter = DefaultMessageEmitter(
+            ContainerUtil.createLockFreeCopyOnWriteList<BuildProgressListener>().also { it.addAll(buildListeners) },
+            rootStepName,
+            rootStepName,
+            rootStepName,
+            hidden = false,
+            parent = null
+        )
 
         fun createRoot(buildListener: BuildProgressListener, rootStepName: String): MessageEmitter =
-            DefaultMessageEmitter(listOf(buildListener), rootStepName, rootStepName, rootStepName, hidden = false, parent = null)
+            DefaultMessageEmitter(
+                ContainerUtil.createLockFreeCopyOnWriteList<BuildProgressListener>().also { it.add(buildListener) },
+                rootStepName,
+                rootStepName,
+                rootStepName,
+                hidden = false,
+                parent = null
+            )
     }
 }

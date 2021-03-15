@@ -9,6 +9,7 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 abstract class NodeJsImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
@@ -17,8 +18,9 @@ abstract class NodeJsImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
-    ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess(state, debugHost, debugPorts)
+        debugPorts: List<Int>,
+        context: Context
+    ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess(state, debugHost, debugPorts, context)
 
     override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = mapOf(
         "NODE_OPTIONS" to "--inspect-brk=0.0.0.0:${debugPorts.first()} --max-http-header-size 81920"

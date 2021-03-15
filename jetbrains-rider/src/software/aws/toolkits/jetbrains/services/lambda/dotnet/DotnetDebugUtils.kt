@@ -44,8 +44,10 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import java.net.InetAddress
@@ -75,7 +77,8 @@ object DotnetDebugUtils {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
+        context: Context
     ): Promise<XDebugProcessStarter> {
         val frontendPort = debugPorts[0]
         val backendPort = debugPorts[1]
@@ -107,6 +110,8 @@ object DotnetDebugUtils {
 
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
+                val samProcessHandler = context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER)
+
                 val dockerContainer = findDockerContainer(frontendPort)
                 val pid = findDotnetPid(dockerContainer)
                 val riderDebuggerProcessHandler = startDebugWorker(dockerContainer, backendPort, frontendPort)
@@ -141,9 +146,13 @@ object DotnetDebugUtils {
 
                             workerModel.activeSession.set(sessionModel)
 
+                            val console = TextConsoleBuilderFactory.getInstance().createBuilder(environment.project).console
+
+                            samProcessHandler.addProcessListener(SamDebugSupport.buildProcessAdapter { console })
+
                             promise.setResult(
                                 DotNetDebuggerUtils.createAndStartSession(
-                                    executionConsole = TextConsoleBuilderFactory.getInstance().createBuilder(environment.project).console,
+                                    executionConsole = console,
                                     env = environment,
                                     sessionLifetime = debuggerLifetime,
                                     processHandler = riderDebuggerProcessHandler,

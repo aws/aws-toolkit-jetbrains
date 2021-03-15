@@ -9,6 +9,7 @@ import com.jetbrains.python.PythonHelper
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 class PythonRuntimeDebugSupport : RuntimeDebugSupport {
     override fun samArguments(debugPorts: List<Int>): List<String> = listOf(
@@ -23,6 +24,7 @@ class PythonRuntimeDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
-    ): XDebugProcessStarter = PythonDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts)
+        debugPorts: List<Int>,
+        context: Context
+    ): XDebugProcessStarter = PythonDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts, context)
 }

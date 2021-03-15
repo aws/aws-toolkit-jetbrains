@@ -4,8 +4,10 @@
 package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.util.io.FileUtil
+import software.aws.toolkits.core.utils.AttributeBagKey
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.LocalLambdaRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.TemplateSettings
@@ -16,6 +18,10 @@ import software.aws.toolkits.resources.message
 
 class SamRunnerStep(val environment: ExecutionEnvironment, val settings: LocalLambdaRunSettings, val debug: Boolean) : SamCliStep() {
     override val stepName: String = message("lambda.debug.step.start_sam")
+    override fun onProcessStart(context: Context, processHandler: ProcessHandler) {
+        context.putAttribute(SAM_PROCESS_HANDLER, processHandler)
+    }
+
     override fun constructCommandLine(context: Context): GeneralCommandLine {
         val builtLambda = context.getRequiredAttribute(BuildLambda.BUILT_LAMBDA)
         val totalEnvVars = settings.environmentVariables +
@@ -71,5 +77,9 @@ class SamRunnerStep(val environment: ExecutionEnvironment, val settings: LocalLa
         val eventFile = FileUtil.createTempFile("${environment.runProfile.name}-event", ".json", true)
         eventFile.writeText(settings.input)
         return eventFile.absolutePath
+    }
+
+    companion object {
+        val SAM_PROCESS_HANDLER = AttributeBagKey.create<ProcessHandler>("samProcessHandler")
     }
 }

@@ -23,7 +23,7 @@ class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunnin
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
 
-        state.settings.resolveDebuggerSupport().createDebugProcessAsync(environment, state, state.settings.debugHost, debugPorts)
+        state.settings.resolveDebuggerSupport().createDebugProcessAsync(environment, state, state.settings.debugHost, debugPorts, context)
             .onSuccess {
                 runBlocking(edtContext) {
                     val debugManager = XDebuggerManager.getInstance(environment.project)

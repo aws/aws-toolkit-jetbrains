@@ -19,7 +19,10 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebugSessionImpl
 import kotlinx.coroutines.withContext
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 
 object JavaDebugUtils {
@@ -29,8 +32,11 @@ object JavaDebugUtils {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
+        context: Context
     ): XDebugProcessStarter {
+        val samProcessHandler = context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER)
+
         val connection = RemoteConnection(true, debugHost, debugPorts.first().toString(), false)
         val debugEnvironment = RemotePortDebugEnvironment(environment, connection)
         val debuggerManager = DebuggerManagerEx.getInstanceEx(environment.project)
@@ -49,6 +55,8 @@ object JavaDebugUtils {
                         session.addRestartActions(*executionResult.restartActions)
                     }
                 }
+
+                samProcessHandler.addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
 
                 return JavaDebugProcess.create(session, debuggerSession)
             }

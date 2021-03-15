@@ -23,6 +23,18 @@ import java.time.Instant
 abstract class CliBasedStep : Step() {
     protected abstract fun constructCommandLine(context: Context): GeneralCommandLine
     protected open fun recordTelemetry(context: Context, startTime: Instant, result: Result) {}
+    protected open fun onProcessStart(context: Context, processHandler: ProcessHandler) {}
+    protected open fun createProcessEmitter(messageEmitter: MessageEmitter): ProcessListener = CliOutputEmitter(messageEmitter)
+
+    protected open fun handleSuccessResult(output: String, messageEmitter: MessageEmitter, context: Context) {}
+
+    /**
+     * Processes the command's stdout and throws an exception after the CLI exits with failure.
+     * @return null if the failure should be ignored. You're probably doing something wrong if you want this.
+     */
+    protected open fun handleErrorResult(exitCode: Int, output: String, messageEmitter: MessageEmitter): Nothing? {
+        throw IllegalStateException(message("general.execution.cli_error", exitCode))
+    }
 
     final override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val startTime = Instant.now()
@@ -35,6 +47,11 @@ abstract class CliBasedStep : Step() {
             // Unix: Sends SIGINT on destroy so Docker container is shut down
             // Windows: Run with mediator to allow for Cntrl+C to be used
             val processHandler = object : KillableColoredProcessHandler(commandLine, true) {
+                override fun startNotify() {
+                    super.startNotify()
+                    onProcessStart(context, this)
+                }
+
                 override fun doDestroyProcess() {
                     // send signal only if user explicitly requests termination
                     if (this.getUserData(ProcessHandler.TERMINATION_REQUESTED) == true) {
@@ -72,8 +89,6 @@ abstract class CliBasedStep : Step() {
         }
     }
 
-    protected open fun createProcessEmitter(messageEmitter: MessageEmitter): ProcessListener = CliOutputEmitter(messageEmitter)
-
     protected class CliOutputEmitter(private val messageEmitter: MessageEmitter, private val printStdOut: Boolean = true) : ProcessAdapter() {
         override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
             LOG.debug {
@@ -105,16 +120,6 @@ abstract class CliBasedStep : Step() {
                 }
             }
         }
-    }
-
-    protected open fun handleSuccessResult(output: String, messageEmitter: MessageEmitter, context: Context) {}
-
-    /**
-     * Processes the command's stdout and throws an exception after the CLI exits with failure.
-     * @return null if the failure should be ignored. You're probably doing something wrong if you want this.
-     */
-    protected open fun handleErrorResult(exitCode: Int, output: String, messageEmitter: MessageEmitter): Nothing? {
-        throw IllegalStateException(message("general.execution.cli_error", exitCode))
     }
 
     private companion object {

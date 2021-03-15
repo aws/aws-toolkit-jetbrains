@@ -5,6 +5,9 @@ package software.aws.toolkits.jetbrains.utils.execution.steps
 
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import software.aws.toolkits.core.utils.AttributeBag
 import software.aws.toolkits.core.utils.AttributeBagKey
 import java.util.UUID
@@ -31,6 +34,25 @@ class Context(val project: Project) {
     }
 
     fun <T : Any> getAttribute(key: AttributeBagKey<T>): T? = attributeMap.get(key)
+
+    /**
+     * Try to get attribute or timeout
+     * @param key The key to try to get
+     * @param timeout The timeout in milliseconds
+     */
+    fun <T : Any> getAttributeOrWait(key: AttributeBagKey<T>, timeout: Long = 10000): T = runBlocking {
+        return@runBlocking withTimeout(timeout) {
+            while (true) {
+                val item = attributeMap.get(key)
+                if (item != null) {
+                    return@withTimeout item
+                }
+                delay(100)
+            }
+            // Without this, Kotlin cannot accurately deduce the type because it doesn't think the above can run forever
+            throw IllegalStateException("Unreachable block called in getAttributeOrWait")
+        }
+    }
 
     fun <T : Any> getRequiredAttribute(key: AttributeBagKey<T>): T = attributeMap.getOrThrow(key)
 
