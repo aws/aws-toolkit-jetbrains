@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.unwrap
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.RequireSsl
@@ -113,6 +114,22 @@ class IamAuthTest {
         assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(hasCredentials = false)) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage(message("settings.credentials.none_selected"))
+    }
+
+    @Test
+    fun `Valid mysql aurora connection`() {
+        val authInformation = iamAuth.getAuthInformation(buildConnection(dbmsType = Dbms.MYSQL_AURORA))
+        assertThat(authInformation.port.toString()).isEqualTo(instancePort)
+        assertThat(authInformation.user).isEqualTo(username)
+        assertThat(authInformation.connectionSettings.region.id).isEqualTo(getDefaultRegion().id)
+        assertThat(authInformation.address).isEqualTo(dbHost)
+    }
+
+    @Test
+    fun `No ssl config aurora mysql throws`() {
+        assertThatThrownBy { iamAuth.getAuthInformation(buildConnection(dbmsType = Dbms.MYSQL_AURORA, hasSslConfig = false)) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage(message("rds.validation.aurora_mysql_ssl_required"))
     }
 
     @Test
