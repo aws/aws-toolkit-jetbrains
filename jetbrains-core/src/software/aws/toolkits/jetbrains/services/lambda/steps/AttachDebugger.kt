@@ -5,17 +5,24 @@ package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebuggerManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
 import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts.Companion.DEBUG_PORTS
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 
-class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunningState) : Step() {
+class AttachDebugger(
+    val environment: ExecutionEnvironment,
+    val state: SamRunningState
+) : Step(), CoroutineScope by ApplicationThreadPoolScope("AttachSamDebugger") {
     override val stepName = ""
     override val hidden = true
 
@@ -31,7 +38,15 @@ class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunnin
                     // Requires EDT on some paths, so always requires to be run on EDT
                     debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, it)
                 }
-                context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER).addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
+                launch {
+                    context
+                        .getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER)
+                        .addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
+                    while (!context.isCompleted()) {
+                        delay(100)
+                    }
+                    session.stop()
+                }
             }
     }
 }

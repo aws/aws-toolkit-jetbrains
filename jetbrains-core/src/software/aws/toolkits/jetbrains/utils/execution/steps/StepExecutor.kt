@@ -78,6 +78,7 @@ class StepExecutor(
             context.throwIfCancelled()
 
             onSuccess?.invoke(context)
+            context.complete()
             executionFinishedSuccessfully(processHandler, progressListener)
         } catch (e: Throwable) {
             context.cancel()
