@@ -12,7 +12,6 @@ import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
-import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 abstract class PythonImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
@@ -26,9 +25,8 @@ abstract class PythonImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): XDebugProcessStarter = PythonDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts, context)
+        debugPorts: List<Int>
+    ): XDebugProcessStarter = PythonDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts)
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
         addAll(super.samArguments(debugPorts))

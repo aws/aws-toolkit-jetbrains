@@ -12,7 +12,6 @@ import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
-import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 abstract class DotnetImageDebugSupport : ImageDebugSupport {
     override fun numberOfDebugPorts(): Int = DotnetDebugUtils.NUMBER_OF_DEBUG_PORTS
@@ -33,8 +32,7 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): XDebugProcessStarter {
         throw UnsupportedOperationException("Use 'createDebugProcessAsync' instead")
     }
@@ -43,9 +41,8 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): Promise<XDebugProcessStarter> = DotnetDebugUtils.createDebugProcessAsync(environment, state, debugHost, debugPorts, context)
+        debugPorts: List<Int>
+    ): Promise<XDebugProcessStarter> = DotnetDebugUtils.createDebugProcessAsync(environment, state, debugHost, debugPorts)
 }
 
 class Dotnet21ImageDebug : DotnetImageDebugSupport() {

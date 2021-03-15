@@ -10,7 +10,6 @@ import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotnetDebugUtils.N
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
-import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 /**
  * Rider uses it's own DebuggerWorker process that run under .NET with extra parameters to configure:
@@ -33,8 +32,7 @@ class DotNetRuntimeDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): XDebugProcessStarter {
         throw UnsupportedOperationException("Use 'createDebugProcessAsync' instead")
     }
@@ -43,7 +41,6 @@ class DotNetRuntimeDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): Promise<XDebugProcessStarter> = DotnetDebugUtils.createDebugProcessAsync(environment, state, debugHost, debugPorts, context)
+        debugPorts: List<Int>
+    ): Promise<XDebugProcessStarter> = DotnetDebugUtils.createDebugProcessAsync(environment, state, debugHost, debugPorts)
 }

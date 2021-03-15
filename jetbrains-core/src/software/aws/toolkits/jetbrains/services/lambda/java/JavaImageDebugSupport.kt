@@ -9,7 +9,6 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
-import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 abstract class JavaImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
@@ -18,9 +17,8 @@ abstract class JavaImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): XDebugProcessStarter = JavaDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts, context)
+        debugPorts: List<Int>
+    ): XDebugProcessStarter = JavaDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts)
 }
 
 open class Java8ImageDebugSupport : JavaImageDebugSupport() {

@@ -18,10 +18,7 @@ import com.jetbrains.debugger.wip.WipLocalVmConnection
 import com.jetbrains.nodeJs.NodeChromeDebugProcess
 import org.jetbrains.io.LocalFileFinder
 import software.aws.toolkits.jetbrains.services.PathMapping
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
-import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
-import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import java.net.InetSocketAddress
 
 object NodeJsDebugUtils {
@@ -30,39 +27,32 @@ object NodeJsDebugUtils {
     suspend fun createDebugProcess(
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): XDebugProcessStarter {
-        val samProcessHandler = context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER)
+        debugPorts: List<Int>
+    ): XDebugProcessStarter = object : XDebugProcessStarter() {
+        override fun start(session: XDebugSession): XDebugProcess {
+            val mappings = createBiMapMappings(state.pathMappings)
+            val fileFinder = RemoteDebuggingFileFinder(mappings, LocalFileSystemFileFinder())
 
-        return object : XDebugProcessStarter() {
-            override fun start(session: XDebugSession): XDebugProcess {
-                val mappings = createBiMapMappings(state.pathMappings)
-                val fileFinder = RemoteDebuggingFileFinder(mappings, LocalFileSystemFileFinder())
+            val connection = WipLocalVmConnection()
 
-                val connection = WipLocalVmConnection()
+            val process = NodeChromeDebugProcess(session, fileFinder, connection, null)
 
-                val process = NodeChromeDebugProcess(session, fileFinder, connection, null)
+            val processHandler = process.processHandler
+            val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
 
-                val processHandler = process.processHandler
-                val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
-
-                if (processHandler.isStartNotified) {
-                    connection.open(socketAddress)
-                } else {
-                    processHandler.addProcessListener(
-                        object : ProcessAdapter() {
-                            override fun startNotified(event: ProcessEvent) {
-                                connection.open(socketAddress)
-                            }
+            if (processHandler.isStartNotified) {
+                connection.open(socketAddress)
+            } else {
+                processHandler.addProcessListener(
+                    object : ProcessAdapter() {
+                        override fun startNotified(event: ProcessEvent) {
+                            connection.open(socketAddress)
                         }
-                    )
-                }
-
-                samProcessHandler.addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
-
-                return process
+                    }
+                )
             }
+
+            return process
         }
     }
 

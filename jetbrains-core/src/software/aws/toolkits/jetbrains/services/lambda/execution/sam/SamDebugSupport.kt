@@ -22,7 +22,6 @@ import org.jetbrains.concurrency.Promise
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.resources.message
 import java.util.Timer
 import kotlin.concurrent.schedule
@@ -41,8 +40,7 @@ interface SamDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): Promise<XDebugProcessStarter> {
         val promise = AsyncPromise<XDebugProcessStarter>()
         val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
@@ -57,7 +55,7 @@ interface SamDebugSupport {
 
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
-                val debugProcess = createDebugProcess(environment, state, debugHost, debugPorts, context)
+                val debugProcess = createDebugProcess(environment, state, debugHost, debugPorts)
 
                 runInEdt {
                     promise.setResult(debugProcess)
@@ -79,8 +77,7 @@ interface SamDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): XDebugProcessStarter
 
     companion object {

@@ -18,11 +18,8 @@ import com.jetbrains.python.sdk.PythonSdkType
 import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.jetbrains.services.PathMapper
 import software.aws.toolkits.jetbrains.services.PathMapping
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
-import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 object PythonDebugUtils : CoroutineScope by ApplicationThreadPoolScope("PythonDebugUtils") {
     const val DEBUGGER_VOLUME_PATH = "/tmp/lambci_debug_files"
@@ -31,11 +28,8 @@ object PythonDebugUtils : CoroutineScope by ApplicationThreadPoolScope("PythonDe
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): XDebugProcessStarter {
-        val processHandler = context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER)
-
         // TODO: We should allow using the module SDK, but we can't easily get the module
         val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }
 
@@ -51,7 +45,6 @@ object PythonDebugUtils : CoroutineScope by ApplicationThreadPoolScope("PythonDe
                 )
 
                 val console = PyDebugConsoleBuilder(environment.project, sdk).console as PythonDebugLanguageConsoleView
-                processHandler.addProcessListener(SamDebugSupport.buildProcessAdapter { console })
 
                 val handler = DefaultDebugProcessHandler()
                 return PyDebugProcess(

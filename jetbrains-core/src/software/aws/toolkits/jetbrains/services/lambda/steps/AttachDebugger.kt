@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.steps
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebuggerManager
 import kotlinx.coroutines.runBlocking
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
 import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts.Companion.DEBUG_PORTS
@@ -23,13 +24,14 @@ class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunnin
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
 
-        state.settings.resolveDebuggerSupport().createDebugProcessAsync(environment, state, state.settings.debugHost, debugPorts, context)
+        state.settings.resolveDebuggerSupport().createDebugProcessAsync(environment, state, state.settings.debugHost, debugPorts)
             .onSuccess {
-                runBlocking(edtContext) {
+                val session = runBlocking(edtContext) {
                     val debugManager = XDebuggerManager.getInstance(environment.project)
                     // Requires EDT on some paths, so always requires to be run on EDT
                     debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, it)
                 }
+                context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER).addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
             }
     }
 }
