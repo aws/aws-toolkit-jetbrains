@@ -121,7 +121,7 @@ class IamAuthTest {
         val authInformation = iamAuth.getAuthInformation(buildConnection(dbmsType = Dbms.MYSQL_AURORA))
         assertThat(authInformation.port.toString()).isEqualTo(instancePort)
         assertThat(authInformation.user).isEqualTo(username)
-        assertThat(authInformation.connectionSettings.region.id).isEqualTo(getDefaultRegion().id)
+        assertThat(authInformation.connectionSettings.region.id).isEqualTo(defaultRegion)
         assertThat(authInformation.address).isEqualTo(dbHost)
     }
 
