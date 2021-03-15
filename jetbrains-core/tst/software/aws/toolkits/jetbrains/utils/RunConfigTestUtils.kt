@@ -7,12 +7,14 @@ import com.intellij.execution.ExecutorRegistry
 import com.intellij.execution.Output
 import com.intellij.execution.OutputListener
 import com.intellij.execution.configurations.RunConfiguration
+import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessOutputType
 import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
+import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -73,6 +75,20 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
         }
     }
     return executionFuture
+}
+
+fun getState(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): RunProfileState? {
+    val executor = ExecutorRegistry.getInstance().getExecutorById(executorId)
+    assertNotNull(executor)
+
+    val environment = ExecutionEnvironmentBuilder.create(
+        ExecutorRegistry.getInstance().getExecutorById(executorId)!!,
+        runConfiguration
+    )
+        .runner(ProgramRunner.getRunner(executorId, runConfiguration)!!)
+        .build()
+
+    return runConfiguration.getState(executor, environment)
 }
 
 fun executeRunConfigurationAndWait(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
