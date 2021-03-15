@@ -22,7 +22,6 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.unwrap
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.RequireSsl
