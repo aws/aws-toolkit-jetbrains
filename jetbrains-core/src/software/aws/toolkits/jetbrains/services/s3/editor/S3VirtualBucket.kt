@@ -7,7 +7,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
-import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
@@ -21,13 +21,17 @@ import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.s3.download
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.services.s3.upload
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
 
-class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client, val project: Project) : LightVirtualFile(s3Bucket.name()) {
+class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client, val project: Project) :
+    LightVirtualFile(s3Bucket.name()),
+    CoroutineScope by ApplicationThreadPoolScope("S3VirtualBucket") {
     override fun isWritable(): Boolean = false
     override fun getPath(): String = s3Bucket.name()
     override fun isValid(): Boolean = true
@@ -94,12 +98,12 @@ class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client, val pr
         it.versionId(versionId)
     }
 
-    fun deletedBucketErrorHandling() {
-        notifyError(project = project, content = message("s3.open.viewer.bucket_does_not_exist"))
+    suspend fun closeWindowAndDisplayErrorOnNoSuchBucketException() {
+        notifyError(project = project, content = message("s3.open.viewer.bucket_does_not_exist", s3Bucket.name()))
         val fileEditorManager = FileEditorManager.getInstance(project)
         fileEditorManager.openFiles.forEach {
             if (it is S3VirtualBucket && it.name == s3Bucket.name()) {
-                runInEdtAndWait {
+                withContext(getCoroutineUiContext()) {
                     fileEditorManager.closeFile(it)
                 }
             }

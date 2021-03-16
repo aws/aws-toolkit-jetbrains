@@ -134,7 +134,7 @@ class S3TreeTable(
                 }
                 S3Telemetry.downloadObject(project, true)
             } catch (e: NoSuchBucketException) {
-                bucket.deletedBucketErrorHandling()
+                bucket.closeWindowAndDisplayErrorOnNoSuchBucketException()
                 S3Telemetry.downloadObject(project, Result.Failed)
             } catch (e: Exception) {
                 S3Telemetry.downloadObject(project, false)

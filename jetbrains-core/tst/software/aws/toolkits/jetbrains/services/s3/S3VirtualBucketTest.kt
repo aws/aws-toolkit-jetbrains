@@ -2,9 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3
 
+import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileTypes.FileTypes
+import com.intellij.openapi.fileTypes.ex.FileTypeManagerEx
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.runInEdtAndWait
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doAnswer
@@ -12,6 +17,7 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.stub
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -33,6 +39,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
@@ -245,6 +252,34 @@ class S3VirtualBucketTest {
             assertThatThrownBy {
                 sut.generateUrl("", null)
             }
+        }
+    }
+
+    @Test
+    fun closeWindowOnNoSuchBucketException() {
+        val s3Mock = mockClientManager.create<S3Client>()
+        val testBucket = Bucket.builder().name("TestBucket").build()
+        val s3VirtualBucket = S3VirtualBucket(testBucket, s3Mock, projectRule.project)
+        runInEdtAndWait {
+            runWriteAction {
+                FileTypeManagerEx.getInstanceEx().associatePattern(
+                    FileTypes.PLAIN_TEXT,
+                    testBucket.name()
+                )
+            }
+            assertThat(openEditor(projectRule.project, testBucket)).isNotNull
+        }
+        val fileEditorManager = FileEditorManager.getInstance(projectRule.project)
+        assertThat(fileEditorManager.openFiles).contains(s3VirtualBucket)
+
+        try {
+            whenever(s3Mock.putObject(any<PutObjectRequest>(), any<RequestBody>())).thenThrow(NoSuchBucketException::class.java)
+            runBlocking {
+                s3VirtualBucket.newFolder("TestObject")
+            }
+        } catch (e: NoSuchBucketException) {
+            runBlocking { s3VirtualBucket.closeWindowAndDisplayErrorOnNoSuchBucketException() }
+            assertThat(fileEditorManager.openFiles).doesNotContain(s3VirtualBucket)
         }
     }
 }

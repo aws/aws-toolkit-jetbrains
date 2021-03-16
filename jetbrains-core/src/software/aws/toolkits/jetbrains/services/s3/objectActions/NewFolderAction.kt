@@ -32,7 +32,7 @@ class NewFolderAction : S3ObjectAction(message("s3.new.folder"), AllIcons.Action
                     treeTable.invalidateLevel(node)
                     treeTable.refresh()
                 } catch (e: NoSuchBucketException) {
-                    node.bucket.deletedBucketErrorHandling()
+                    node.bucket.closeWindowAndDisplayErrorOnNoSuchBucketException()
                 } catch (e: Exception) {
                     e.notifyError(project = project)
                 }
