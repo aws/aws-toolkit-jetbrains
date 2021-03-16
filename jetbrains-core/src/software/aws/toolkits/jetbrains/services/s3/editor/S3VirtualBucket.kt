@@ -112,7 +112,7 @@ class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client, val pr
         project.refreshAwsTree(S3Resources.LIST_BUCKETS)
     }
 
-    companion object {
+    private companion object {
         const val MAX_ITEMS_TO_LOAD = 300
     }
 }
