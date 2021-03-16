@@ -207,7 +207,7 @@ class DownloadObjectAction :
                             it.sourceBucket.download(project, it.s3Object, it.versionId, os)
                         }
                     } catch (e: NoSuchBucketException) {
-                        it.sourceBucket.closeWindowAndDisplayErrorOnNoSuchBucketException()
+                        it.sourceBucket.handleDeletedBucket()
                     } catch (e: Exception) {
                         e.notifyError(project = project, title = message("s3.download.object.failed", it.s3Object))
                         it.diskLocation.deleteIfExists()

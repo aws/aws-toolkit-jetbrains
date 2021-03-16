@@ -10,6 +10,7 @@ import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
@@ -98,12 +99,12 @@ class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client, val pr
         it.versionId(versionId)
     }
 
-    suspend fun closeWindowAndDisplayErrorOnNoSuchBucketException() {
+    fun handleDeletedBucket() {
         notifyError(project = project, content = message("s3.open.viewer.bucket_does_not_exist", s3Bucket.name()))
         val fileEditorManager = FileEditorManager.getInstance(project)
         fileEditorManager.openFiles.forEach {
             if (it is S3VirtualBucket && it.name == s3Bucket.name()) {
-                withContext(getCoroutineUiContext()) {
+                runBlocking(getCoroutineUiContext()) {
                     fileEditorManager.closeFile(it)
                 }
             }

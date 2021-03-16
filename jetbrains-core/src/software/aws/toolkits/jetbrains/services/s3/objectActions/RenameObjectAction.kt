@@ -45,7 +45,7 @@ class RenameObjectAction :
                     treeTable.refresh()
                     S3Telemetry.renameObject(project, Result.Succeeded)
                 } catch (e: NoSuchBucketException) {
-                    treeTable.bucket.closeWindowAndDisplayErrorOnNoSuchBucketException()
+                    treeTable.bucket.handleDeletedBucket()
                     S3Telemetry.renameObject(project, Result.Failed)
                 } catch (e: Exception) {
                     e.notifyError(project = project, title = message("s3.rename.object.failed"))

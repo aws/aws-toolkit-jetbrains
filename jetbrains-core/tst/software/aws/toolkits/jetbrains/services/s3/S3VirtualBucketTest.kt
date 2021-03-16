@@ -278,7 +278,7 @@ class S3VirtualBucketTest {
                 s3VirtualBucket.newFolder("TestObject")
             }
         } catch (e: NoSuchBucketException) {
-            runBlocking { s3VirtualBucket.closeWindowAndDisplayErrorOnNoSuchBucketException() }
+            runBlocking { s3VirtualBucket.handleDeletedBucket() }
             assertThat(fileEditorManager.openFiles).doesNotContain(s3VirtualBucket)
         }
     }

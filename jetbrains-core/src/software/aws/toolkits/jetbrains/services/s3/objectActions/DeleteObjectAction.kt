@@ -51,7 +51,7 @@ class DeleteObjectAction : S3ObjectAction(message("s3.delete.object.action"), Al
                     treeTable.refresh()
                     S3Telemetry.deleteObject(project, Result.Succeeded)
                 } catch (e: NoSuchBucketException) {
-                    treeTable.bucket.closeWindowAndDisplayErrorOnNoSuchBucketException()
+                    treeTable.bucket.handleDeletedBucket()
                     S3Telemetry.deleteObject(project, Result.Failed)
                 } catch (e: Exception) {
                     e.notifyError(project = project, title = message("s3.delete.object.failed"))
