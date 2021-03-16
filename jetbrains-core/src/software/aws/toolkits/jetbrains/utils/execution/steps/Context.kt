@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.utils.execution.steps
 
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -47,17 +48,16 @@ class Context(val project: Project) {
      * @param key The key to try to get
      * @param timeout The timeout in milliseconds
      */
-    fun <T : Any> getAttributeOrWait(key: AttributeBagKey<T>, timeout: Long = 10000): T = runBlocking {
+    fun <T : Any> blockingGet(key: AttributeBagKey<T>, timeout: Long = 10000): T = runBlocking {
         return@runBlocking withTimeout(timeout) {
-            while (true) {
+            while (!isCancelled()) {
                 val item = attributeMap.get(key)
                 if (item != null) {
                     return@withTimeout item
                 }
                 delay(100)
             }
-            // Without this, Kotlin cannot accurately deduce the type because it doesn't think the above can run forever
-            throw IllegalStateException("Unreachable block called in getAttributeOrWait")
+            throw CancellationException("getAttributeOrWait cancelled")
         }
     }
 

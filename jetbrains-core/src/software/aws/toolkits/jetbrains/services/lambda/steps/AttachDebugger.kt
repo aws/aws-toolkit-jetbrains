@@ -32,7 +32,7 @@ class AttachDebugger(
         val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
 
         // TODO migrate createDebugProcessAsync logic to here
-        val it = state
+        val debugProcessStarter = state
             .settings
             .resolveDebuggerSupport()
             .createDebugProcessAsync(environment, state, state.settings.debugHost, debugPorts)
@@ -40,9 +40,9 @@ class AttachDebugger(
         val session = runBlocking(edtContext) {
             val debugManager = XDebuggerManager.getInstance(environment.project)
             // Requires EDT on some paths, so always requires to be run on EDT
-            debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, it)
+            debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, debugProcessStarter)
         }
-        context.getAttributeOrWait(SamRunnerStep.SAM_PROCESS_HANDLER).addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
+        context.blockingGet(SamRunnerStep.SAM_PROCESS_HANDLER).addProcessListener(SamDebugSupport.buildProcessAdapter { session.consoleView })
         launch {
             while (!context.isCompleted()) {
                 delay(100)

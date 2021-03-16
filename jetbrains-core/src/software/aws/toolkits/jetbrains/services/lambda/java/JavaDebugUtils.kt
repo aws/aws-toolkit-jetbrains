@@ -55,7 +55,7 @@ object JavaDebugUtils {
         }
     }
 
-    /*
+    /**
      * We are required to make our own so we do not end up in a loop. DefaultDebugEnvironment will execute the run config again
      * which make a tragic recursive loop starting the run config an infinite number of times
      */
