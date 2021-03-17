@@ -61,6 +61,7 @@ repositories {
 
 allprojects {
     repositories {
+        mavenLocal()
         System.getenv("CODEARTIFACT_URL")?.let {
             println("Using CodeArtifact proxy: $it")
             maven {
@@ -73,7 +74,6 @@ allprojects {
         }
         gradlePluginPortal()
         mavenCentral()
-        mavenLocal()
     }
 
     apply(plugin = "com.adarshr.test-logger")

@@ -3,6 +3,7 @@
 
 dependencyResolutionManagement {
     repositories {
+        mavenLocal()
         System.getenv("CODEARTIFACT_URL")?.let {
             println("Using CodeArtifact proxy: $it")
             maven {
@@ -15,6 +16,5 @@ dependencyResolutionManagement {
         }
         gradlePluginPortal()
         mavenCentral()
-        mavenLocal()
     }
 }
