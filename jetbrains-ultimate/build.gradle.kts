@@ -23,6 +23,7 @@ intellij {
     version = ideProfile.ultimate.sdkVersion
     setPlugins(*ideProfile.ultimate.plugins)
 
+    // IU is closed source, so nothing to download.
     downloadSources = false
 }
 

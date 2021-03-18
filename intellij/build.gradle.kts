@@ -31,6 +31,10 @@ tasks.getByName<PublishTask>("publishPlugin") {
     channels(publishChannel.split(",").map { it.trim() })
 }
 
+tasks.named("check") {
+    dependsOn(tasks.named("verifyPlugin"))
+}
+
 dependencies {
     implementation(project(":jetbrains-ultimate"))
     project.findProject(":jetbrains-rider")?.let {
