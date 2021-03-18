@@ -50,11 +50,7 @@ group = "software.aws.toolkits"
 // please check changelog generation logic if this format is changed
 version = "$toolkitVersion-${ideProfile.shortName}"
 
-repositories {
-    maven("https://www.jetbrains.com/intellij-repository/snapshots/")
-}
-
-subprojects {
+allprojects {
     repositories {
         mavenLocal()
         System.getenv("CODEARTIFACT_URL")?.let {
@@ -70,7 +66,9 @@ subprojects {
         gradlePluginPortal()
         mavenCentral()
     }
+}
 
+subprojects {
     apply(plugin = "com.adarshr.test-logger")
     apply(plugin = "java")
     apply(plugin = "jacoco")
