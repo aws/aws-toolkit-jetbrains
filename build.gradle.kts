@@ -3,13 +3,9 @@
 
 import com.adarshr.gradle.testlogger.TestLoggerExtension
 import com.adarshr.gradle.testlogger.TestLoggerPlugin
-import org.jetbrains.intellij.tasks.BuildSearchableOptionsTask
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
-import org.jetbrains.intellij.tasks.PrepareSandboxTask
-import org.jetbrains.intellij.tasks.PublishTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
 import org.jetbrains.intellij.tasks.RunIdeTask
-import org.jetbrains.intellij.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
@@ -17,7 +13,6 @@ import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.getOrCreate
 import software.aws.toolkits.gradle.intellij
-import software.aws.toolkits.gradle.removeTask
 import java.time.Instant
 
 buildscript {
@@ -59,7 +54,7 @@ repositories {
     maven("https://www.jetbrains.com/intellij-repository/snapshots/")
 }
 
-allprojects {
+subprojects {
     repositories {
         mavenLocal()
         System.getenv("CODEARTIFACT_URL")?.let {
@@ -258,7 +253,7 @@ subprojects {
             systemProperty("jb.consents.confirmation.enabled", "false")
             // This does some magic in EndUserAgreement.java to make it not show the privacy policy
             systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-            // This only works on 2020.3+ FIX_WHEN_MIN_IS_203 remove this explination
+            // This only works on 2020.3+ FIX_WHEN_MIN_IS_203 remove this explanation
             systemProperty("ide.show.tips.on.startup.default.value", false)
 
             systemProperty("aws.telemetry.skip_prompt", "true")
@@ -297,41 +292,15 @@ subprojects {
     artifacts {
         add("testArtifacts", testJar)
     }
-
-    // Remove the tasks added in by gradle-intellij-plugin so that we don"t publish/verify multiple times
-    project.afterEvaluate {
-        removeTask<PublishTask>()
-        removeTask<VerifyPluginTask>()
-        removeTask<BuildSearchableOptionsTask>()
-    }
 }
 
-val ktlint: Configuration by configurations.creating
-
-apply(plugin = "org.jetbrains.intellij")
 apply(plugin = "toolkit-change-log")
-
-intellij {
-    version = ideProfile.community.sdkVersion
-    pluginName = "aws-jetbrains-toolkit"
-    updateSinceUntilBuild = false
-}
-
-tasks.getByName<PrepareSandboxTask>("prepareSandbox") {
-    tasks.findByPath(":jetbrains-rider:prepareSandbox")?.let {
-        from(it)
-    }
-}
-
-tasks.getByName<PublishTask>("publishPlugin") {
-    token(publishToken)
-    channels(publishChannel.split(",").map { it.trim() })
-}
 
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
     changeLogFile.set(project.file("CHANGELOG.md"))
 }
 
+val ktlint: Configuration by configurations.creating
 val ktlintTask = tasks.register<JavaExec>("ktlint") {
     description = "Check Kotlin code style."
     classpath = ktlint
@@ -374,33 +343,16 @@ subprojects.forEach {
     coverageReport.get().mustRunAfter(it.tasks.withType(Test::class.java))
 }
 
-val check = tasks.getByName("check")
-check.dependsOn(ktlintTask)
-check.dependsOn(tasks.getByName("verifyPlugin"))
-check.dependsOn(coverageReport)
-
-// Workaround for runIde being defined in multiple projects, if we request the root project runIde, "alias" it to
-// community edition
-if (gradle.startParameter.taskNames.contains("runIde")) {
-    // Only disable this if running from root project
-    if (gradle.startParameter.projectDir == project.rootProject.rootDir || System.getProperty("idea.gui.tests.gradle.runner") != null) {
-        println("Top level runIde selected, excluding sub-projects")
-        gradle.taskGraph.whenReady {
-            allTasks.forEach { it ->
-                if (it.name == "runIde" && it.project != project(":jetbrains-core")) {
-                    it.enabled = false
-                }
-            }
-        }
-    }
+tasks.named("check") {
+    dependsOn(ktlintTask)
+    dependsOn(coverageReport)
 }
 
 dependencies {
-    implementation(project(":jetbrains-ultimate"))
-    project.findProject(":jetbrains-rider")?.let {
-        implementation(it)
-    }
-
     ktlint("com.pinterest:ktlint:$ktlintVersion")
     ktlint(project(":ktlint-rules"))
+}
+
+tasks.register("runIde") {
+    throw GradleException("Use project specific runIde command, i.e. :jetbrains-core:runIde, :intellij:runIde")
 }
