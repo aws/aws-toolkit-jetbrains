@@ -35,7 +35,6 @@ val junitVersion: String by project
 val remoteRobotPort: String by project
 val ktlintVersion: String by project
 val remoteRobotVersion: String by project
-val ideaPluginVersion: String by project
 
 plugins {
     java
