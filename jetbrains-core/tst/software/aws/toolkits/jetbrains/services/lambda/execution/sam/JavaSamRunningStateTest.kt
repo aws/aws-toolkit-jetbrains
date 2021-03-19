@@ -21,6 +21,9 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTem
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.addSamTemplate
 import software.aws.toolkits.jetbrains.utils.getState
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.addClass
+import software.aws.toolkits.jetbrains.utils.rules.addModule
+import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 
 class JavaSamRunningStateTest {
     @Rule
@@ -76,6 +79,21 @@ class JavaSamRunningStateTest {
 
     @Test
     fun addsJavaHomeEnvVarForJavaHandler() {
+        val module = this.projectRule.fixture.addModule("main")
+        this.projectRule.fixture.addClass(
+            module,
+            """
+            package com.example;
+
+            public class LambdaHandler {
+                public String handleRequest(String request) {
+                    return request.toUpperCase();
+                }
+            }
+            """
+        )
+        this.projectRule.setUpGradleProject()
+
         val runConfig = createHandlerBasedRunConfiguration(
             project = projectRule.project,
             runtime = LambdaRuntime.JAVA8.toSdkRuntime(),
