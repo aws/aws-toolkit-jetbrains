@@ -47,6 +47,7 @@ fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile? {
     }
 }
 
+// TODO see https://youtrack.jetbrains.com/issue/GO-10775 for "Debugger disconnected unexpectedly" when the lambda finishes
 suspend fun createGoDebugProcess(
     debugHost: String,
     debugPorts: List<Int>
