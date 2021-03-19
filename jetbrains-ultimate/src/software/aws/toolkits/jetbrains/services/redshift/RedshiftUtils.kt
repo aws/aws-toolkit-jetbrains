@@ -41,10 +41,10 @@ fun DataSourceRegistry.createDatasource(project: Project, cluster: Cluster) {
         .withJdbcAdditionalProperty(CLUSTER_ID_PROPERTY, cluster.clusterIdentifier())
         .withUser(cluster.masterUsername())
         .withUrl("jdbc:redshift://${cluster.endpoint().address()}:${cluster.endpoint().port()}/${cluster.dbName()}")
-        .withAuthProviderId(IamAuth.providerId)
         .commit()
-    // TODO FIX_WHEN_MIN_IS_212? set ssl config in builder
+    // TODO FIX_WHEN_MIN_IS_203 set auth provider ID in builder. It's in 202 but doesn't work
     newDataSources.firstOrNull()?.let {
+        it.authProviderId = IamAuth.providerId
         // Force SSL on
         it.sslCfg = RequireSsl
     } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
