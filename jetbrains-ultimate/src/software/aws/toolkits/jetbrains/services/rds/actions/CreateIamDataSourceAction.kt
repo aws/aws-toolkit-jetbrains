@@ -116,7 +116,7 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
         .withJdbcAdditionalProperty(RDS_SIGNING_PORT_PROPERTY, port.toString())
         .withUrl(engine.connectionStringUrl(endpoint))
         .withUser(engine.iamUsername(config.username))
-        .withAuthProviderId( IamAuth.providerId)
+        .withAuthProviderId(IamAuth.providerId)
         .commit()
     // TODO FIX_WHEN_MIN_IS_212? set ssl config in builder
     newDataSources.firstOrNull()?.let {
