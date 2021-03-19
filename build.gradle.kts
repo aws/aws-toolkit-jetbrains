@@ -36,9 +36,6 @@ val remoteRobotPort: String by project
 val ktlintVersion: String by project
 val remoteRobotVersion: String by project
 val ideaPluginVersion: String by project
-// publishing
-val publishToken: String by project
-val publishChannel: String by project
 
 plugins {
     java
