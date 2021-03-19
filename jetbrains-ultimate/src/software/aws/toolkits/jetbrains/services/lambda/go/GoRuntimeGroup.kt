@@ -23,7 +23,8 @@ class GoRuntimeGroup : SdkBasedRuntimeGroup() {
     )
 
     // Since we only have one option, we don't need to actually determine it. This is only called
-    // when we already suspect it's a go project, so we only have one real option.
+    // when we already suspect it's a go project, so we only have one real option. In the future
+    // we can look at using something like GoModuleSettings.
     override fun determineRuntime(module: Module): LambdaRuntime = determineRuntime(module.project)
     override fun determineRuntime(project: Project): LambdaRuntime = LambdaRuntime.GO1_X
 
