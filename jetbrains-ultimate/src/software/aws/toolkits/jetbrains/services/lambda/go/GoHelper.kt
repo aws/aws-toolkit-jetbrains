@@ -9,7 +9,6 @@ import com.goide.dlv.DlvRemoteVmConnection
 import com.goide.execution.GoRunUtil
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
-import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.registry.Registry
@@ -19,7 +18,6 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import java.net.InetSocketAddress
 import java.nio.file.Files
@@ -54,12 +52,12 @@ suspend fun createGoDebugProcess(
     debugPorts: List<Int>
 ): XDebugProcessStarter = object : XDebugProcessStarter() {
     override fun start(session: XDebugSession): XDebugProcess {
-        val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.DETACH), null, true)
+        val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.KILL), null, true)
 
         val processHandler = process.processHandler
         val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
 
-        if (processHandler == null || processHandler.isStartNotified) {
+        if (processHandler.isStartNotified) {
             // this branch should never actually be hit because it gets here too fast
             process.connect(socketAddress)
         } else {
