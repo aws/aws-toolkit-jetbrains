@@ -42,6 +42,7 @@ val publishChannel: String by project
 
 plugins {
     java
+    jacoco
     id("de.undercouch.download") apply false
     id("org.gradle.test-retry") version "1.2.0"
 }
