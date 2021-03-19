@@ -20,9 +20,7 @@ data class BuildLambdaRequest(
     val samOptions: SamOptions
 )
 
-class BuildLambda(
-    private val request: BuildLambdaRequest
-) : SamCliStep() {
+class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
     override val stepName: String = message("lambda.create.step.build")
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samBuildCommand(
