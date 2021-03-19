@@ -16,12 +16,13 @@ import org.junit.Test
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
+import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.addSamTemplate
 import software.aws.toolkits.jetbrains.utils.getState
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 
-class JavaSamInvokeRunnerTest {
+class JavaSamRunningStateTest {
     @Rule
     @JvmField
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
@@ -69,7 +70,24 @@ class JavaSamInvokeRunnerTest {
             getRunConfigState(runConfig).settings
         }
 
-        val request = SamInvokeRunner.buildBuildLambdaRequest(projectRule.project, settings)
+        val request = SamRunningState.buildBuildLambdaRequest(projectRule.project, settings)
+        assertThat(request.buildEnvVars).extractingByKey("JAVA_HOME").isEqualTo(IdeaTestUtil.getMockJdk18Path().absolutePath)
+    }
+
+    @Test
+    fun addsJavaHomeEnvVarForJavaHandler() {
+        val runConfig = createHandlerBasedRunConfiguration(
+            project = projectRule.project,
+            runtime = LambdaRuntime.JAVA8.toSdkRuntime(),
+            input = "\"Hello World\"",
+            credentialsProviderId = mockCredsId
+        )
+
+        val settings = runInEdtAndGet {
+            getRunConfigState(runConfig).settings
+        }
+
+        val request = SamRunningState.buildBuildLambdaRequest(projectRule.project, settings)
         assertThat(request.buildEnvVars).extractingByKey("JAVA_HOME").isEqualTo(IdeaTestUtil.getMockJdk18Path().absolutePath)
     }
 
