@@ -14,6 +14,8 @@ import software.amazon.awssdk.services.cloudformation.model.Output
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.SwingUtilities
@@ -83,9 +85,9 @@ class Updater(
         try {
             fetchData(pageToSwitchTo)
         } catch (e: SdkException) {
-            app.invokeLater {
-                listener.onError(e.localizedMessage)
-            }
+
+                notifyError(message("cloudformation.stack_does_not_exist",stackName))
+            
         }
     }
 
@@ -95,10 +97,8 @@ class Updater(
         val newStackStatus = stackDetails.status
         val newStackStatusType = newStackStatus.type
         val newStackStatusNotInProgress = newStackStatusType !in setOf(StatusType.UNKNOWN, StatusType.PROGRESS)
-
         // Stack changed to some "final" status just now, notify user
         val stackSwitchedToFinalStatus = previousStackStatusType != newStackStatusType && newStackStatusNotInProgress
-
         // Stack status is final and has not been changed
         val stackStatusFinalNotChanged = newStackStatusNotInProgress && newStackStatusType == previousStackStatusType
 
@@ -128,10 +128,8 @@ class Updater(
                 listener.onStackStatusChanged(newStackStatus)
             }
 
-            updating.set(!newStackStatusNotInProgress)
-
             // Reschedule next run
-            if (!alarm.isDisposed && updating.get() && alarm.isEmpty) {
+            if (!alarm.isDisposed && alarm.isEmpty) {
                 alarm.addRequest({ fetchDataSafely() }, updateInterval.toMillis())
             }
         }
