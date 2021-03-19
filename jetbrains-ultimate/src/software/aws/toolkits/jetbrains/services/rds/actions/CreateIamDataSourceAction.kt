@@ -116,14 +116,10 @@ fun DataSourceRegistry.createRdsDatasource(config: RdsDatasourceConfiguration) {
         .withJdbcAdditionalProperty(RDS_SIGNING_PORT_PROPERTY, port.toString())
         .withUrl(engine.connectionStringUrl(endpoint))
         .withUser(engine.iamUsername(config.username))
+        .withAuthProviderId( IamAuth.providerId)
         .commit()
-    // TODO FIX_WHEN_MIN_IS_202 set auth provider ID in builder. There is no way to set it in the builder,
-    // so we have to set it after the fact. However, that means we need to pull it out after it is built.
-    // The builder doesn't return a reference to it, so we have to pull it out of the committed data sources.
-    // newDataSources contains the list of ones added just now, so add it to that
-    // SSL config has the same problem
+    // TODO FIX_WHEN_MIN_IS_212? set ssl config in builder
     newDataSources.firstOrNull()?.let {
-        it.authProviderId = IamAuth.providerId
         it.sslCfg = engine.sslConfig()
     } ?: throw IllegalStateException("Newly inserted data source is not in the data source registry!")
 }
