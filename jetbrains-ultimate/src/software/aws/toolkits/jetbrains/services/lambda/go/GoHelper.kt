@@ -50,8 +50,6 @@ fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile? {
 }
 
 suspend fun createGoDebugProcess(
-    environment: ExecutionEnvironment,
-    state: SamRunningState,
     debugHost: String,
     debugPorts: List<Int>
 ): XDebugProcessStarter = object : XDebugProcessStarter() {

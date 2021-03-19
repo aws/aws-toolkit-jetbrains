@@ -36,5 +36,5 @@ class GoImageDebugSupport : ImageDebugSupport {
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
-    ): XDebugProcessStarter = createGoDebugProcess(environment, state, debugHost, debugPorts)
+    ): XDebugProcessStarter = createGoDebugProcess(debugHost, debugPorts)
 }

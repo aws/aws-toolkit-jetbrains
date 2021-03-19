@@ -15,7 +15,7 @@ class GoSamDebugSupport : RuntimeDebugSupport {
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
-    ): XDebugProcessStarter = createGoDebugProcess(environment, state, debugHost, debugPorts)
+    ): XDebugProcessStarter = createGoDebugProcess(debugHost, debugPorts)
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
         val debugger = copyDlv()
