@@ -13,24 +13,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2020.1",
-            communityPlugins = listOf(
-                "java",
-                "com.intellij.gradle",
-                "org.jetbrains.idea.maven",
-                "PythonCore:201.6668.31",
-                "Docker:201.6668.30"
-            ),
-            ultimatePlugins = listOf(
-                "JavaScript",
-                "JavaScriptDebugger",
-                "com.intellij.database",
-                "Pythonid:201.6668.31"
-            ),
-            rdGenVersion = "0.203.161",
-            nugetVersion = "2020.1.0"
-        ),
-        Profile(
             name = "2020.2",
             communityPlugins = listOf(
                 "java",
@@ -67,6 +49,28 @@ object IdeVersions {
             ijSdkOverride = "2020.3",
             rdGenVersion = "0.203.161",
             nugetVersion = "2020.3.0"
+        ),
+        Profile(
+            name = "2021.1",
+            communityPlugins = listOf(
+                "java",
+                "com.intellij.gradle",
+                "org.jetbrains.idea.maven",
+                "PythonCore:211.6305.22",
+                "Docker:211.6305.15"
+            ),
+            ultimatePlugins = listOf(
+                "JavaScript",
+                // Transitive dependency needed for javascript
+                "com.intellij.css",
+                "JavaScriptDebugger",
+                "com.intellij.database",
+                "Pythonid:211.6305.22"
+            ),
+            riderSdkOverride = "2021.1-SNAPSHOT",
+            ijSdkOverride = "211.6305-EAP-CANDIDATE-SNAPSHOT",
+            rdGenVersion = "0.211.234",
+            nugetVersion = "2021.1.0-eap06"
         )
     ).associateBy { it.name }
 

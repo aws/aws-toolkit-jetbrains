@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.actionButton
 import software.aws.toolkits.jetbrains.uitests.fixtures.actionMenuItem
 import software.aws.toolkits.jetbrains.uitests.fixtures.awsExplorer
 import software.aws.toolkits.jetbrains.uitests.fixtures.fileBrowser
+import software.aws.toolkits.jetbrains.uitests.fixtures.fillDeletionAndConfirm
 import software.aws.toolkits.jetbrains.uitests.fixtures.fillSingleTextField
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
@@ -54,7 +55,7 @@ class S3BrowserTest {
     private val createBucketText = "Create S3 Bucket"
     private val deleteBucketText = "Delete S3 Bucket"
     private val upload = "Upload..."
-    private val newFolder = "New folder..."
+    private val newFolder = "New Folder..."
     private val rename = "Rename..."
     private val delete = "Delete..."
 
@@ -192,8 +193,7 @@ class S3BrowserTest {
                     openExplorerActionMenu(S3, bucket)
                 }
                 findAndClick("//div[@text='$deleteBucketText']")
-                fillSingleTextField(bucket)
-                pressOk()
+                fillDeletionAndConfirm()
                 waitForS3BucketDeletion()
             }
         }
@@ -201,6 +201,7 @@ class S3BrowserTest {
 
     @AfterAll
     fun cleanup() {
+        log.info("Running final cleanup")
         try {
             s3Client.deleteBucketAndContents(bucket)
             waitForS3BucketDeletion()

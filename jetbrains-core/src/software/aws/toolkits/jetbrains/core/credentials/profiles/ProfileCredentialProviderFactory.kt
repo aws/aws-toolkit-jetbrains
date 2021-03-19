@@ -4,12 +4,13 @@
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.DumbAwareAction
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileProperty
 import software.amazon.awssdk.regions.Region
@@ -34,6 +35,7 @@ import software.aws.toolkits.core.credentials.sso.SsoCache
 import software.aws.toolkits.core.credentials.sso.SsoCredentialProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import software.aws.toolkits.jetbrains.core.credentials.CorrectThreadCredentialsProvider
 import software.aws.toolkits.jetbrains.core.credentials.MfaRequiredInteractiveCredentials
 import software.aws.toolkits.jetbrains.core.credentials.SsoPrompt
@@ -41,6 +43,8 @@ import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCr
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcessProvider
 import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.promptForMfaToken
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.ProfilesNotification
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -71,6 +75,12 @@ private class ProfileCredentialsIdentifierSso(
     credentialType: CredentialType?
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
     SsoRequiredInteractiveCredentials
+
+private class NeverShowAgain : DumbAwareAction(message("settings.never_show_again")) {
+    override fun actionPerformed(e: AnActionEvent) {
+        AwsSettings.getInstance().profilesNotification = ProfilesNotification.Never
+    }
+}
 
 class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCache) : CredentialProviderFactory {
     private val profileHolder = ProfileHolder()
@@ -145,11 +155,16 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             ": $it"
         } ?: ""
 
-        notifyError(
-            title = message("credentials.profile.refresh_ok_title"),
-            content = "$loadingFailureMessage$detail",
-            action = createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
-        )
+        if (AwsSettings.getInstance().profilesNotification != ProfilesNotification.Never) {
+            notifyError(
+                title = message("credentials.profile.refresh_ok_title"),
+                content = "$loadingFailureMessage$detail",
+                notificationActions = listOf(
+                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
+                    createNotificationExpiringAction(NeverShowAgain())
+                )
+            )
+        }
     }
 
     private fun notifyUserOfResult(newProfiles: Profiles, initialLoad: Boolean) {
@@ -160,10 +175,13 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         // All provides were valid
         if (newProfiles.invalidProfiles.isEmpty()) {
             // Don't report we load creds on start to avoid spam
-            if (!initialLoad) {
+            if (!initialLoad && AwsSettings.getInstance().profilesNotification == ProfilesNotification.Always) {
                 notifyInfo(
                     title = message("credentials.profile.refresh_ok_title"),
-                    content = refreshBaseMessage
+                    content = refreshBaseMessage,
+                    notificationActions = listOf(
+                        createNotificationExpiringAction(NeverShowAgain())
+                    )
                 )
 
                 return
@@ -177,34 +195,33 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             val errorDialogTitle = message("credentials.profile.failed_load")
             val numErrorMessage = message("credentials.profile.refresh_errors", newProfiles.invalidProfiles.size)
 
-            notifyInfo(
-                title = refreshTitle,
-                content = "$refreshBaseMessage $numErrorMessage",
-                notificationActions = listOf(
-                    createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message),
-                    createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials"))
+            if (AwsSettings.getInstance().profilesNotification != ProfilesNotification.Never) {
+                notifyInfo(
+                    title = refreshTitle,
+                    content = "$refreshBaseMessage $numErrorMessage",
+                    notificationActions = listOf(
+                        createNotificationExpiringAction(ActionManager.getInstance().getAction("aws.settings.upsertCredentials")),
+                        createNotificationExpiringAction(NeverShowAgain()),
+                        createShowMoreInfoDialogAction(message("credentials.invalid.more_info"), errorDialogTitle, numErrorMessage, message)
+                    )
                 )
-            )
+            }
         }
     }
 
-    override fun createAwsCredentialProvider(
-        providerId: CredentialIdentifier,
-        region: AwsRegion,
-        sdkHttpClientSupplier: () -> SdkHttpClient
-    ): AwsCredentialsProvider {
+    override fun createAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): AwsCredentialsProvider {
         val profileProviderId = providerId as? ProfileCredentialsIdentifier
             ?: throw IllegalStateException("ProfileCredentialProviderFactory can only handle ProfileCredentialsIdentifier, but got ${providerId::class}")
 
         val profile = profileHolder.getProfile(profileProviderId.profileName)
             ?: throw IllegalStateException("Profile ${profileProviderId.profileName} looks to have been removed")
 
-        return createAwsCredentialProvider(profile, region, sdkHttpClientSupplier)
+        return createAwsCredentialProvider(profile, region)
     }
 
-    private fun createAwsCredentialProvider(profile: Profile, region: AwsRegion, sdkHttpClientSupplier: () -> SdkHttpClient) = when {
-        profile.propertyExists(SSO_URL) -> createSsoProvider(profile, sdkHttpClientSupplier)
-        profile.propertyExists(ProfileProperty.ROLE_ARN) -> createAssumeRoleProvider(profile, region, sdkHttpClientSupplier)
+    private fun createAwsCredentialProvider(profile: Profile, region: AwsRegion) = when {
+        profile.propertyExists(SSO_URL) -> createSsoProvider(profile)
+        profile.propertyExists(ProfileProperty.ROLE_ARN) -> createAssumeRoleProvider(profile, region)
         profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> createStaticSessionProvider(profile)
         profile.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> createBasicProvider(profile)
         profile.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> createCredentialProcessProvider(profile)
@@ -213,9 +230,9 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         }
     }
 
-    private fun createSsoProvider(profile: Profile, sdkHttpClientSupplier: () -> SdkHttpClient): AwsCredentialsProvider {
+    private fun createSsoProvider(profile: Profile): AwsCredentialsProvider {
         val ssoRegion = profile.requiredProperty(SSO_REGION)
-        val sdkHttpClient = sdkHttpClientSupplier()
+        val sdkHttpClient = AwsSdkClient.getInstance().sharedSdkClient()
         val ssoClient = ToolkitClientManager.createNewClient(
             SsoClient::class,
             sdkHttpClient,
@@ -248,20 +265,15 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         )
     }
 
-    private fun createAssumeRoleProvider(profile: Profile, region: AwsRegion, sdkHttpClientSupplier: () -> SdkHttpClient): AwsCredentialsProvider {
+    private fun createAssumeRoleProvider(profile: Profile, region: AwsRegion): AwsCredentialsProvider {
         val sourceProfileName = profile.requiredProperty(ProfileProperty.SOURCE_PROFILE)
         val sourceProfile = profileHolder.getProfile(sourceProfileName)
             ?: throw IllegalStateException("Profile $sourceProfileName looks to have been removed")
+        val parentCredentialProvider = createAwsCredentialProvider(sourceProfile, region)
 
-        val sdkHttpClient = sdkHttpClientSupplier()
-
-        val parentCredentialProvider = createAwsCredentialProvider(sourceProfile, region, sdkHttpClientSupplier)
-
-        // Override the default SPI for getting the active credentials since we are making an internal
-        // to this provider client
         val stsClient = ToolkitClientManager.createNewClient(
             StsClient::class,
-            sdkHttpClient,
+            AwsSdkClient.getInstance().sharedSdkClient(),
             Region.of(region.id),
             parentCredentialProvider,
             AwsClientManager.userAgent

@@ -30,8 +30,9 @@ abstract class ToolkitClientManager {
 
     private val cachedClients = ConcurrentHashMap<AwsClientKey, SdkClient>()
 
-    protected abstract val sdkHttpClient: SdkHttpClient
     protected abstract val userAgent: String
+
+    protected abstract fun sdkHttpClient(): SdkHttpClient
 
     inline fun <reified T : SdkClient> getClient(
         credProvider: ToolkitCredentialsProvider,
@@ -62,21 +63,18 @@ abstract class ToolkitClientManager {
     protected abstract fun getRegionProvider(): ToolkitRegionProvider
 
     /**
-     * Calls [AutoCloseable.close] if client implements [AutoCloseable] and clears the cache
+     * Calls [AutoCloseable.close] on all managed clients and clears the cache
      */
     protected fun shutdown() {
-        cachedClients.values.mapNotNull { it as? AutoCloseable }.forEach { it.close() }
+        cachedClients.values.map { it }.forEach { it.close() }
+        cachedClients.clear()
     }
 
     protected fun invalidateSdks(providerId: String) {
-        cachedClients.keys.removeIf { it.credentialProviderId == providerId }
+        val invalidClients = cachedClients.entries.filter { it.key.credentialProviderId == providerId }
+        cachedClients.entries.removeAll(invalidClients)
+        invalidClients.forEach { it.value.close() }
     }
-
-    /**
-     * Used by [software.aws.toolkits.jetbrains.core.MockClientManager]
-     */
-    @TestOnly
-    protected fun clear() = cachedClients.clear()
 
     @TestOnly
     fun cachedClients() = cachedClients
@@ -89,7 +87,7 @@ abstract class ToolkitClientManager {
         sdkClass: KClass<T>,
         region: AwsRegion,
         credProvider: ToolkitCredentialsProvider
-    ): T = createNewClient(sdkClass, sdkHttpClient, Region.of(region.id), credProvider, userAgent)
+    ): T = createNewClient(sdkClass, sdkHttpClient(), Region.of(region.id), credProvider, userAgent)
 
     companion object {
         private val GLOBAL_SERVICE_DENY_LIST = setOf(
@@ -102,7 +100,7 @@ abstract class ToolkitClientManager {
             httpClient: SdkHttpClient,
             region: Region,
             credProvider: AwsCredentialsProvider,
-            userAgent: String,
+            userAgent: String? = null,
             endpointOverride: String? = null
         ): T {
             val builderMethod = sdkClass.java.methods.find {
@@ -116,8 +114,8 @@ abstract class ToolkitClientManager {
                 .httpClient(httpClient)
                 .credentialsProvider(credProvider)
                 .region(region)
-                .overrideConfiguration {
-                    it.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, userAgent)
+                .overrideConfiguration { configuration ->
+                    userAgent?.let { configuration.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, it) }
                 }
                 .also { _ ->
                     endpointOverride?.let {

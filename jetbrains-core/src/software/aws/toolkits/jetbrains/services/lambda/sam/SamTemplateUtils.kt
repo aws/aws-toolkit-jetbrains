@@ -22,9 +22,9 @@ import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTem
 import software.aws.toolkits.jetbrains.services.cloudformation.Function
 import software.aws.toolkits.jetbrains.services.cloudformation.SERVERLESS_FUNCTION_TYPE
 import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UploadedCode
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UploadedEcrCode
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.UploadedS3Code
+import software.aws.toolkits.jetbrains.services.lambda.steps.UploadedCode
+import software.aws.toolkits.jetbrains.services.lambda.steps.UploadedEcrCode
+import software.aws.toolkits.jetbrains.services.lambda.steps.UploadedS3Code
 import software.aws.toolkits.jetbrains.utils.YamlWriter
 import software.aws.toolkits.jetbrains.utils.yaml
 import software.aws.toolkits.resources.message
@@ -102,13 +102,21 @@ object SamTemplateUtils {
         val function = findFunction(logicalId)
         if (function.isServerlessFunction()) {
             if (function.isImageBased()) {
-                function.requiredAt("/Metadata/DockerContext").textValue()
+                function.getPathOrThrow(logicalId, "/Metadata/DockerContext").textValue()
             } else {
-                function.requiredAt("/Properties/CodeUri").textValue()
+                function.getPathOrThrow(logicalId, "/Properties/CodeUri").textValue()
             }
         } else {
-            function.requiredAt("/Properties/Code").textValue()
+            function.getPathOrThrow(logicalId, "/Properties/Code").textValue()
         }
+    }
+
+    private fun JsonNode.getPathOrThrow(logicalId: String, path: String): JsonNode {
+        val node = at(path)
+        if (node.isMissingNode) {
+            throw RuntimeException(message("cloudformation.key_not_found", path, logicalId))
+        }
+        return node
     }
 
     private fun JsonNode.findFunction(logicalId: String): JsonNode = this.requiredAt("/Resources").get(logicalId)

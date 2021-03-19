@@ -15,7 +15,6 @@ import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import kotlin.streams.toList
 
@@ -85,7 +84,6 @@ class DefaultTelemetryPublisher(
         }
 
     private companion object {
-
         private const val METADATA_AWS_ACCOUNT = "awsAccount"
         private const val METADATA_AWS_REGION = "awsRegion"
 
@@ -93,18 +91,17 @@ class DefaultTelemetryPublisher(
             val sdkClient = AwsSdkClient.getInstance()
             return ToolkitClientManager.createNewClient(
                 ToolkitTelemetryClient::class,
-                sdkClient.sdkHttpClient,
+                sdkClient.sharedSdkClient(),
                 Region.US_EAST_1,
                 AWSCognitoCredentialsProvider(
                     "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
                     CognitoIdentityClient.builder()
                         .credentialsProvider(AnonymousCredentialsProvider.create())
                         .region(Region.US_EAST_1)
-                        .httpClient(sdkClient.sdkHttpClient)
+                        .httpClient(sdkClient.sharedSdkClient())
                         .build()
                 ),
-                AwsClientManager.userAgent,
-                "https://client-telemetry.us-east-1.amazonaws.com"
+                endpointOverride = "https://client-telemetry.us-east-1.amazonaws.com"
             )
         }
     }

@@ -12,6 +12,7 @@ import com.intellij.testFramework.replaceService
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.ToolkitClientManager
+import software.aws.toolkits.core.clients.SdkClientProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.ToolkitRegionProvider
@@ -36,7 +37,7 @@ class MockClientManager : AwsClientManager() {
 
     override fun dispose() {
         super.dispose()
-        reset()
+        mockClients.clear()
     }
 
     // Note: You must pass KClass of the interface, since we do not do instanceof checks, but == on the classes
@@ -49,11 +50,6 @@ class MockClientManager : AwsClientManager() {
     @Deprecated("Do not use, use MockClientManagerRule")
     fun <T : SdkClient> register(clazz: KClass<out SdkClient>, sdkClient: T, region: AwsRegion, credProvider: ToolkitCredentialsProvider) {
         mockClients[Key(clazz, region, credProvider.id)] = sdkClient
-    }
-
-    fun reset() {
-        super.clear()
-        mockClients.clear()
     }
 
     companion object {
@@ -76,7 +72,7 @@ class MockClientManager : AwsClientManager() {
 
             val httpClient = AwsSdkClient()
             Disposer.register(disposable, httpClient)
-            ApplicationManager.getApplication().replaceService(AwsSdkClient::class.java, httpClient, disposable)
+            ApplicationManager.getApplication().replaceService(SdkClientProvider::class.java, httpClient, disposable)
         }
     }
 }
@@ -92,16 +88,12 @@ class MockClientManagerRule : ExternalResource() {
     }
 
     override fun after() {
-        mockClientManager.reset()
+        mockClientManager.dispose()
     }
 
     @PublishedApi
     @Deprecated("Do not use, visible for inline")
     internal fun manager() = mockClientManager
-
-    fun reset() {
-        mockClientManager.reset()
-    }
 
     inline fun <reified T : SdkClient> create(): T = delegateMock<T>().also {
         @Suppress("DEPRECATION")

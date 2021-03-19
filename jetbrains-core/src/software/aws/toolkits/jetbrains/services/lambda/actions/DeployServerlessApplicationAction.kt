@@ -10,20 +10,25 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
+import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
@@ -31,10 +36,11 @@ import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindow
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.steps.DeployLambda
+import software.aws.toolkits.jetbrains.services.lambda.steps.createDeployWorkflow
 import software.aws.toolkits.jetbrains.services.lambda.upload.UploadFunctionContinueDialog
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.DeployLambda
-import software.aws.toolkits.jetbrains.services.lambda.upload.steps.createDeployWorkflow
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.Operation
@@ -67,21 +73,30 @@ class DeployServerlessApplicationAction : AnAction(
         }
 
         ExecutableManager.getInstance().getExecutable<SamExecutable>().thenAccept { samExecutable ->
-            when (samExecutable) {
-                is ExecutableInstance.InvalidExecutable, is ExecutableInstance.UnresolvedExecutable -> {
-                    notifySamCliNotValidError(
-                        project = project,
-                        content = (samExecutable as ExecutableInstance.BadExecutable).validationError
-                    )
-                    return@thenAccept
-                }
+            if (samExecutable is ExecutableInstance.InvalidExecutable || samExecutable is ExecutableInstance.UnresolvedExecutable) {
+                notifySamCliNotValidError(
+                    project = project,
+                    content = (samExecutable as ExecutableInstance.BadExecutable).validationError
+                )
+                return@thenAccept
             }
 
-            val templateFile = getSamTemplateFile(e)
-            if (templateFile == null) {
-                Exception(message("serverless.application.deploy.toast.template_file_failure"))
-                    .notifyError(message("aws.notification.title"), project)
-                return@thenAccept
+            val templateFile = if (e.place == ExplorerToolWindow.explorerToolWindowPlace) {
+                runBlocking(edtContext) {
+                    FileChooser.chooseFile(
+                        FileChooserDescriptorFactory.createSingleFileDescriptor(YAMLFileType.YML),
+                        project,
+                        project.guessProjectDir()
+                    )
+                } ?: return@thenAccept
+            } else {
+                val file = getSamTemplateFile(e)
+                if (file == null) {
+                    Exception(message("serverless.application.deploy.toast.template_file_failure"))
+                        .notifyError(message("aws.notification.title"), project)
+                    return@thenAccept
+                }
+                file
             }
 
             validateTemplateFile(project, templateFile)?.let {
@@ -96,7 +111,11 @@ class DeployServerlessApplicationAction : AnAction(
                 val stackDialog = DeployServerlessApplicationDialog(project, templateFile)
                 stackDialog.show()
                 if (!stackDialog.isOK) {
-                    SamTelemetry.deploy(project, Result.Cancelled)
+                    SamTelemetry.deploy(
+                        project = project,
+                        version = SamCommon.getVersionString(),
+                        result = Result.Cancelled
+                    )
                     return@runInEdt
                 }
 
@@ -142,7 +161,7 @@ class DeployServerlessApplicationAction : AnAction(
                     if (!response) {
                         // TODO this telemetry needs to be improved. The user can finish the deployment later so we do not know if
                         // it is actually cancelled or not
-                        SamTelemetry.deploy(project = project, result = Result.Cancelled)
+                        SamTelemetry.deploy(project = project, version = SamCommon.getVersionString(), result = Result.Cancelled)
                         return@runBlocking
                     }
                 }
@@ -164,12 +183,20 @@ class DeployServerlessApplicationAction : AnAction(
                             message("cloudformation.execute_change_set.success", stackName),
                             project
                         )
-                        SamTelemetry.deploy(project, Result.Succeeded)
+                        SamTelemetry.deploy(
+                            project = project,
+                            version = SamCommon.getVersionString(),
+                            result = Result.Succeeded
+                        )
                         // Since we could update anything, do a full refresh of the resource cache and explorer
                         project.refreshAwsTree()
                     } catch (e: Exception) {
                         e.notifyError(message("cloudformation.execute_change_set.failed", stackName), project)
-                        SamTelemetry.deploy(project, Result.Failed)
+                        SamTelemetry.deploy(
+                            project = project,
+                            version = SamCommon.getVersionString(),
+                            result = Result.Failed
+                        )
                     }
                 }
 
@@ -183,7 +210,11 @@ class DeployServerlessApplicationAction : AnAction(
 
         workflow.onError = {
             it.notifyError(project = project, title = message("lambda.service_name"))
-            SamTelemetry.deploy(project = project, result = Result.Failed)
+            SamTelemetry.deploy(
+                project = project,
+                version = SamCommon.getVersionString(),
+                result = Result.Failed
+            )
         }
 
         workflow.startExecution()
@@ -196,7 +227,11 @@ class DeployServerlessApplicationAction : AnAction(
         e.presentation.isVisible = if (LambdaHandlerResolver.supportedRuntimeGroups().isEmpty()) {
             false
         } else {
-            getSamTemplateFile(e) != null
+            if (e.place == ExplorerToolWindow.explorerToolWindowPlace) {
+                true
+            } else {
+                getSamTemplateFile(e) != null
+            }
         }
     }
 

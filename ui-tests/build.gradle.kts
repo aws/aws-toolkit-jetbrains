@@ -1,6 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import software.aws.toolkits.gradle.ciOnly
 import java.net.URI
 
 val remoteRobotPort: String by project
@@ -55,5 +56,14 @@ tasks.register<Test>("uiTestCore") {
     systemProperty("GRADLE_PROJECT", "jetbrains-core")
     useJUnitPlatform {
         includeTags("core")
+    }
+
+    // uiTestCore needs its own version of this since it's not part of normal test tasks
+    ciOnly {
+        retry {
+            failOnPassedAfterRetry.set(false)
+            maxFailures.set(5)
+            maxRetries.set(2)
+        }
     }
 }

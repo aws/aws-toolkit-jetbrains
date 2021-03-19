@@ -13,18 +13,14 @@ import org.jetbrains.intellij.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
+import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.getOrCreate
 import software.aws.toolkits.gradle.intellij
 import software.aws.toolkits.gradle.removeTask
-import software.aws.toolkits.gradle.resources.ValidateMessages
 import java.time.Instant
 
 buildscript {
-    repositories {
-        maven("https://plugins.gradle.org/m2/")
-        mavenCentral()
-    }
     val kotlinVersion: String by project
     val ideaPluginVersion: String by project
     dependencies {
@@ -52,6 +48,7 @@ val publishChannel: String by project
 plugins {
     java
     id("de.undercouch.download") apply false
+    id("org.gradle.test-retry") version "1.2.0"
 }
 
 group = "software.aws.toolkits"
@@ -65,12 +62,24 @@ repositories {
 allprojects {
     repositories {
         mavenLocal()
+        System.getenv("CODEARTIFACT_URL")?.let {
+            println("Using CodeArtifact proxy: $it")
+            maven {
+                url = uri(it)
+                credentials {
+                    username = "aws"
+                    password = System.getenv("CODEARTIFACT_AUTH_TOKEN")
+                }
+            }
+        }
+        gradlePluginPortal()
         mavenCentral()
     }
 
     apply(plugin = "com.adarshr.test-logger")
     apply(plugin = "java")
     apply(plugin = "jacoco")
+    apply(plugin = "org.gradle.test-retry")
 
     java.sourceCompatibility = JavaVersion.VERSION_1_8
     java.targetCompatibility = JavaVersion.VERSION_1_8
@@ -180,6 +189,14 @@ subprojects {
             junitXml.isEnabled = true
             html.isEnabled = true
         }
+
+        ciOnly {
+            retry {
+                failOnPassedAfterRetry.set(false)
+                maxFailures.set(5)
+                maxRetries.set(2)
+            }
+        }
     }
 
     plugins.withType<IdeaPlugin> {
@@ -218,6 +235,14 @@ subprojects {
         systemProperty("testDataPath", project.rootDir.toPath().resolve("testdata").toString())
 
         mustRunAfter(tasks.test)
+
+        ciOnly {
+            retry {
+                failOnPassedAfterRetry.set(false)
+                maxFailures.set(5)
+                maxRetries.set(2)
+            }
+        }
     }
 
     project.plugins.withId("org.jetbrains.intellij") {
@@ -237,7 +262,8 @@ subprojects {
             systemProperty("ide.show.tips.on.startup.default.value", false)
 
             systemProperty("aws.telemetry.skip_prompt", "true")
-            if (System.getenv("CI") != null) {
+            systemProperty("aws.suppress_deprecation_prompt", true)
+            ciOnly {
                 systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
             }
 
@@ -289,7 +315,6 @@ intellij {
     version = ideProfile.community.sdkVersion
     pluginName = "aws-jetbrains-toolkit"
     updateSinceUntilBuild = false
-    downloadSources = System.getenv("CI") == null
 }
 
 tasks.getByName<PrepareSandboxTask>("prepareSandbox") {
@@ -330,10 +355,6 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
     outputs.dirs("${project.buildDir}/reports/ktlint/")
 }
 
-val validateLocalizedMessages = tasks.register<ValidateMessages>("validateLocalizedMessages") {
-    paths.set(listOf("${project.rootDir}/resources/resources/software/aws/toolkits/resources/localized_messages.properties"))
-}
-
 val coverageReport = tasks.register<JacocoReport>("coverageReport") {
     executionData.setFrom(fileTree(project.rootDir.absolutePath) { include("**/build/jacoco/*.exec") })
 
@@ -355,7 +376,6 @@ subprojects.forEach {
 
 val check = tasks.getByName("check")
 check.dependsOn(ktlintTask)
-check.dependsOn(validateLocalizedMessages)
 check.dependsOn(tasks.getByName("verifyPlugin"))
 check.dependsOn(coverageReport)
 

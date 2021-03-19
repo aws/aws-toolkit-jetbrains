@@ -44,7 +44,7 @@ class Updater(
 ) : Disposable {
 
     @Volatile
-    private var previousStackStatusType: StatusType = StatusType.UNKNOWN
+    private var stackStatus: StatusType? = null
 
     @Volatile
     private var predicate: (StackResource) -> Boolean = { true }
@@ -97,12 +97,20 @@ class Updater(
         val newStackStatus = stackDetails.status
         val newStackStatusType = newStackStatus.type
         val newStackStatusNotInProgress = newStackStatusType !in setOf(StatusType.UNKNOWN, StatusType.PROGRESS)
-        // Stack changed to some "final" status just now, notify user
-        val stackSwitchedToFinalStatus = previousStackStatusType != newStackStatusType && newStackStatusNotInProgress
-        // Stack status is final and has not been changed
-        val stackStatusFinalNotChanged = newStackStatusNotInProgress && newStackStatusType == previousStackStatusType
 
-        previousStackStatusType = newStackStatusType
+        // Stack changed to some "final" status just now, notify user
+        //val stackSwitchedToFinalStatus = previousStackStatusType != newStackStatusType && newStackStatusNotInProgress
+
+        // Stack changed to some "final" status just now, notify the user. Don't show a notification if the state
+        // happened at creation time, which is distinguished by stackStatus being null
+        val stackSwitchedToFinalStatus = stackStatus != null &&
+            stackStatus != newStackStatusType &&
+            newStackStatusNotInProgress
+
+        // Stack status is final and has not been changed
+        val stackStatusFinalNotChanged = newStackStatusNotInProgress && newStackStatusType == stackStatus
+
+        stackStatus = newStackStatusType
 
         // Only fetch events if stack is not in final state or page switched
         val eventsAndButtonStates = if (stackStatusFinalNotChanged && pageToSwitchTo == null) {

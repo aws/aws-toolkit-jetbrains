@@ -11,7 +11,6 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.io.FileUtilRt.getUserContentLoadLimit
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.TreeTableSpeedSearch
@@ -20,11 +19,11 @@ import com.intellij.util.containers.Convertor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.s3.objectActions.deleteSelectedObjects
+import software.aws.toolkits.jetbrains.services.s3.objectActions.uploadObjects
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -69,7 +68,7 @@ class S3TreeTable(
                 lfs.findFileByIoFile(it)
             }
 
-            uploadAndRefresh(virtualFiles, node)
+            uploadObjects(project, this@S3TreeTable, virtualFiles, node)
         }
     }
 
@@ -92,10 +91,6 @@ class S3TreeTable(
     }
 
     private fun doProcessKeyEvent(e: KeyEvent) {
-        if (!e.isConsumed && (e.keyCode == KeyEvent.VK_DELETE || e.keyCode == KeyEvent.VK_BACK_SPACE)) {
-            e.consume()
-            deleteSelectedObjects(project, this@S3TreeTable)
-        }
         if (e.keyCode == KeyEvent.VK_ENTER && selectedRowCount == 1) {
             handleOpeningFile(selectedRow, isDoubleClick = false)
             handleLoadingMore(selectedRow)
@@ -104,7 +99,6 @@ class S3TreeTable(
 
     private fun handleOpeningFile(row: Int, isDoubleClick: Boolean): Boolean {
         val objectNode = (tree.getPathForRow(row).lastPathComponent as? DefaultMutableTreeNode)?.userObject as? S3Object ?: return false
-
         // Don't process double click if it has children (i.e. versions) since it will trigger expansion as well
         if (isDoubleClick && objectNode is S3LazyLoadParentNode<*> && objectNode.childCount > 0) {
             return false
@@ -139,6 +133,9 @@ class S3TreeTable(
                     }
                 }
                 S3Telemetry.downloadObject(project, true)
+            } catch (e: NoSuchBucketException) {
+                bucket.handleDeletedBucket()
+                S3Telemetry.downloadObject(project, Result.Failed)
             } catch (e: Exception) {
                 S3Telemetry.downloadObject(project, false)
                 LOG.error(e) { "Attempting to open file threw" }
@@ -160,8 +157,11 @@ class S3TreeTable(
     }
 
     init {
-        // Associate the drop target listener with this instance which will allow uploading by drag and drop
-        DropTarget(this, dropTargetListener)
+        // Do not set up Drag and Drop when in test mode since AWT is not enabled
+        if (!ApplicationManager.getApplication().isUnitTestMode) {
+            // Associate the drop target listener with this instance which will allow uploading by drag and drop
+            DropTarget(this, dropTargetListener)
+        }
         TreeTableSpeedSearch(
             this,
             Convertor { obj ->
@@ -179,39 +179,6 @@ class S3TreeTable(
         super.addKeyListener(keyListener)
     }
 
-    fun uploadAndRefresh(selectedFiles: List<VirtualFile>, node: S3TreeNode) {
-        if (selectedFiles.isEmpty()) {
-            LOG.warn { "Zero files passed into s3 uploadAndRefresh, not attempting upload or refresh" }
-            return
-        }
-        launch {
-            try {
-                selectedFiles.forEach {
-                    if (it.isDirectory) {
-                        notifyError(
-                            title = message("s3.upload.object.failed", it.name),
-                            content = message("s3.upload.directory.impossible", it.name),
-                            project = project
-                        )
-                        return@forEach
-                    }
-
-                    try {
-                        bucket.upload(project, it.inputStream, it.length, node.directoryPath() + it.name)
-                        invalidateLevel(node)
-                        refresh()
-                    } catch (e: Exception) {
-                        e.notifyError(message("s3.upload.object.failed", it.path), project)
-                        throw e
-                    }
-                }
-                S3Telemetry.uploadObjects(project, Result.Succeeded, selectedFiles.size.toDouble())
-            } catch (e: Exception) {
-                S3Telemetry.uploadObjects(project, Result.Failed, selectedFiles.size.toDouble())
-            }
-        }
-    }
-
     fun refresh() {
         runInEdt {
             clearSelection()
@@ -219,7 +186,7 @@ class S3TreeTable(
         }
     }
 
-    fun getNodeForRow(row: Int): S3TreeNode? {
+    private fun getNodeForRow(row: Int): S3TreeNode? {
         val path = tree.getPathForRow(convertRowIndexToModel(row))
         return (path.lastPathComponent as DefaultMutableTreeNode).userObject as? S3TreeNode
     }
