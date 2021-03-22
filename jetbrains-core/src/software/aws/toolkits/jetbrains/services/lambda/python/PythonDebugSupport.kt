@@ -4,14 +4,43 @@
 package software.aws.toolkits.jetbrains.services.lambda.python
 
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.xdebugger.DefaultDebugProcessHandler
+import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
+import com.intellij.xdebugger.XDebugSession
 import com.jetbrains.python.PythonHelper
 import com.jetbrains.python.PythonLanguage
+import com.jetbrains.python.console.PyDebugConsoleBuilder
+import com.jetbrains.python.console.PythonDebugLanguageConsoleView
+import com.jetbrains.python.debugger.PyDebugProcess
+import com.jetbrains.python.debugger.PyDebugRunner
+import com.jetbrains.python.sdk.PythonSdkType
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.utils.buildList
+import software.aws.toolkits.jetbrains.services.PathMapper
+import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
-import software.aws.toolkits.jetbrains.services.lambda.python.PythonDebugUtils.DEBUGGER_VOLUME_PATH
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
+
+class PythonRuntimeDebugSupport : RuntimeDebugSupport {
+    override fun samArguments(debugPorts: List<Int>): List<String> = listOf(
+        "--debugger-path",
+        // Mount pydevd from PyCharm into docker
+        PythonHelper.DEBUGGER.pythonPathEntry,
+        "--debug-args",
+        "-u $DEBUGGER_VOLUME_PATH/pydevd.py --multiprocess --port ${debugPorts.first()} --file"
+    )
+
+    override suspend fun createDebugProcess(
+        environment: ExecutionEnvironment,
+        debugHost: String,
+        debugPorts: List<Int>,
+        context: Context
+    ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
+}
 
 abstract class PythonImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
@@ -23,10 +52,10 @@ abstract class PythonImageDebugSupport : ImageDebugSupport {
 
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
-        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
-    ): XDebugProcessStarter = PythonDebugUtils.createDebugProcess(environment, state, debugHost, debugPorts)
+        debugPorts: List<Int>,
+        context: Context
+    ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
         addAll(super.samArguments(debugPorts))
@@ -67,4 +96,43 @@ class Python38ImageDebugSupport : PythonImageDebugSupport() {
     override fun displayName() = LambdaRuntime.PYTHON3_8.toString().capitalize()
     override val pythonPath: String = "/var/lang/bin/python3.8"
     override val bootstrapPath: String = "/var/runtime/bootstrap.py"
+}
+
+private const val DEBUGGER_VOLUME_PATH = "/tmp/lambci_debug_files"
+
+private fun createDebugProcess(
+    environment: ExecutionEnvironment,
+    debugHost: String,
+    debugPorts: List<Int
+): XDebugProcessStarter {
+    // TODO: We should allow using the module SDK, but we can't easily get the module
+    val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }
+
+    return object : XDebugProcessStarter() {
+        override fun start(session: XDebugSession): XDebugProcess {
+            val mappings = (environment.state as SamRunningState).pathMappings.plus(
+                listOf(
+                    PathMapping(
+                        PythonHelper.DEBUGGER.pythonPathEntry,
+                        DEBUGGER_VOLUME_PATH
+                    )
+                )
+            )
+
+            val console = PyDebugConsoleBuilder(environment.project, sdk).console as PythonDebugLanguageConsoleView
+
+            val handler = DefaultDebugProcessHandler()
+            return PyDebugProcess(
+                session,
+                console,
+                handler,
+                debugHost,
+                debugPorts.first()
+            ).also {
+                it.positionConverter = PathMapper.PositionConverter(PathMapper(mappings))
+                console.attachToProcess(handler)
+                PyDebugRunner.initDebugConsoleView(environment.project, it, console, it.processHandler, session)
+            }
+        }
+    }
 }

@@ -24,7 +24,7 @@ import java.net.InetSocketAddress
 object NodeJsDebugUtils {
     private const val NODE_MODULES = "node_modules"
 
-    suspend fun createDebugProcess(
+    fun createDebugProcess(
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
