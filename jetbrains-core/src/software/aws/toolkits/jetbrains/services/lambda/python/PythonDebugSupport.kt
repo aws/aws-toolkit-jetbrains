@@ -103,7 +103,7 @@ private const val DEBUGGER_VOLUME_PATH = "/tmp/lambci_debug_files"
 private fun createDebugProcess(
     environment: ExecutionEnvironment,
     debugHost: String,
-    debugPorts: List<Int
+    debugPorts: List<Int>
 ): XDebugProcessStarter {
     // TODO: We should allow using the module SDK, but we can't easily get the module
     val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }
