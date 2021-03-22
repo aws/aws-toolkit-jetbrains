@@ -211,7 +211,12 @@ class SamRunningState(
                     add(object : ParallelStep() {
                         override fun buildChildSteps(context: Context): List<Step> = listOf(
                             startSam,
-                            AttachDebuggerParent(state.settings.resolveDebuggerSupport().additionalDebugProcessSteps(environment, state) + AttachDebugger(environment, state))
+                            AttachDebuggerParent(
+                                state.settings.resolveDebuggerSupport().additionalDebugProcessSteps(environment, state) + AttachDebugger(
+                                    environment,
+                                    state
+                                )
+                            )
                         )
 
                         override val stepName: String = ""
