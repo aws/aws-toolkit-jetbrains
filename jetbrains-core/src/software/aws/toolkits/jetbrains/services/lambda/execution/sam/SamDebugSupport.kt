@@ -13,7 +13,6 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.xdebugger.XDebugProcessStarter
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.lambda.steps.AttachDebugger
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 

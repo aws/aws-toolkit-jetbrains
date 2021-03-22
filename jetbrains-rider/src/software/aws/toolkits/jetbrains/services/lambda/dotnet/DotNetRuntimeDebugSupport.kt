@@ -5,11 +5,12 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
-import org.jetbrains.concurrency.Promise
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotnetDebugUtils.NUMBER_OF_DEBUG_PORTS
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
+import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 
 /**
  * Rider uses it's own DebuggerWorker process that run under .NET with extra parameters to configure:
@@ -27,20 +28,12 @@ class DotNetRuntimeDebugSupport : RuntimeDebugSupport {
     override fun numberOfDebugPorts(): Int = NUMBER_OF_DEBUG_PORTS
 
     override fun samArguments(debugPorts: List<Int>): List<String> = listOf("--debugger-path", DotNetDebuggerUtils.debuggerBinDir.path)
+    override fun additionalDebugProcessSteps(environment: ExecutionEnvironment, state: SamRunningState): List<Step> = listOf(FindDockerContainer(), FindPid())
 
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
-        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
-    ): XDebugProcessStarter {
-        throw UnsupportedOperationException("Use 'createDebugProcessAsync' instead")
-    }
-
-    override fun createDebugProcessAsync(
-        environment: ExecutionEnvironment,
-        state: SamRunningState,
-        debugHost: String,
-        debugPorts: List<Int>
-    ): Promise<XDebugProcessStarter> = DotnetDebugUtils.createDebugProcessAsync(environment, state, debugHost, debugPorts)
+        debugPorts: List<Int>,
+        context: Context
+    ): XDebugProcessStarter = DotnetDebugUtils.createDebugProcess(environment, debugHost, debugPorts, context)
 }

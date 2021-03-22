@@ -31,9 +31,12 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
-class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunningState) : Step(),
-    CoroutineScope by ApplicationThreadPoolScope("AttachSamDebugger") {
-    override val stepName = "TODO attach debugger"
+class AttachDebugger(
+    val environment: ExecutionEnvironment,
+    val state: SamRunningState
+) : Step(), CoroutineScope by ApplicationThreadPoolScope("AttachSamDebugger") {
+    override val stepName = message("sam.debug.attach")
+    override val hidden = false
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         runBlocking {

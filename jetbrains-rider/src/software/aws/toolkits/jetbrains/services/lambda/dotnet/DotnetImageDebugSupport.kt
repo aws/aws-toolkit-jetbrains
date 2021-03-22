@@ -6,12 +6,13 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.jetbrains.rider.ideaInterop.fileTypes.csharp.CSharpLanguage
-import org.jetbrains.concurrency.Promise
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.DotNetDebuggerUtils
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
+import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 
 abstract class DotnetImageDebugSupport : ImageDebugSupport {
     override fun numberOfDebugPorts(): Int = DotnetDebugUtils.NUMBER_OF_DEBUG_PORTS
@@ -28,21 +29,14 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
         "_AWS_LAMBDA_DOTNET_DEBUGGING" to "1"
     )
 
+    override fun additionalDebugProcessSteps(environment: ExecutionEnvironment, state: SamRunningState): List<Step> = listOf(FindDockerContainer(), FindPid())
+
     override suspend fun createDebugProcess(
         environment: ExecutionEnvironment,
-        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
-    ): XDebugProcessStarter {
-        throw UnsupportedOperationException("Use 'createDebugProcessAsync' instead")
-    }
-
-    override fun createDebugProcessAsync(
-        environment: ExecutionEnvironment,
-        state: SamRunningState,
-        debugHost: String,
-        debugPorts: List<Int>
-    ): Promise<XDebugProcessStarter> = DotnetDebugUtils.createDebugProcessAsync(environment, state, debugHost, debugPorts)
+        debugPorts: List<Int>,
+        context: Context
+    ): XDebugProcessStarter = DotnetDebugUtils.createDebugProcess(environment, debugHost, debugPorts, context)
 }
 
 class Dotnet21ImageDebug : DotnetImageDebugSupport() {
