@@ -103,6 +103,10 @@ class UpdaterTest {
                 eventsTable = eventsTable,
                 outputsTable = outputTable,
                 resourceListener = resourceListener,
+<<<<<<< HEAD
+=======
+                stackName = "MyStack",
+>>>>>>> c1e345668 (cloudformation stack events updated)
                 updateInterval = Duration.ofMillis(1),
                 updateIntervalOnFinalState = Duration.ofMillis(10),
                 listener = updateListener,
@@ -155,6 +159,10 @@ class UpdaterTest {
             eventsTable = eventsTable,
             outputsTable = outputTable,
             resourceListener = resourceListener,
+<<<<<<< HEAD
+=======
+            stackName = "MyStack",
+>>>>>>> c1e345668 (cloudformation stack events updated)
             updateInterval = Duration.ofMillis(1),
             updateIntervalOnFinalState = Duration.ofMillis(10),
             listener = updateListener,
