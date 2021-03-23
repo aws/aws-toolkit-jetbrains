@@ -40,7 +40,7 @@ plugins {
     java
     jacoco
     id("de.undercouch.download") apply false
-    id("org.gradle.test-retry") version "1.2.0"
+    id("org.gradle.test-retry") version "1.2.1"
 }
 
 group = "software.aws.toolkits"
@@ -349,5 +349,7 @@ dependencies {
 }
 
 tasks.register("runIde") {
-    throw GradleException("Use project specific runIde command, i.e. :jetbrains-core:runIde, :intellij:runIde")
+    doFirst {
+        throw GradleException("Use project specific runIde command, i.e. :jetbrains-core:runIde, :intellij:runIde")
+    }
 }
