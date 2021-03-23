@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run IDE - Core [2020.3]" type="GradleRunConfiguration" factoryName="Gradle" folderName="2020.3">
+  <configuration default="false" name="Run IDE - Core [2020.1]" type="GradleRunConfiguration" factoryName="Gradle" folderName="2020.1">
     <log_file alias="idea.log" path="$PROJECT_DIR$/jetbrains-core/build/idea-sandbox/system/log/idea.log" />
     <ExternalSystemSettings>
       <option name="env">
         <map>
-          <entry key="ALTERNATIVE_IDE_PROFILE_NAME" value="2020.3" />
+          <entry key="ALTERNATIVE_IDE_PROFILE_NAME" value="2020.1" />
         </map>
       </option>
       <option name="executionName" />

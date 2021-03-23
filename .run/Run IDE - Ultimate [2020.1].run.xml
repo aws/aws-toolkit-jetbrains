@@ -1,14 +1,14 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run IDE - Core [2020.3]" type="GradleRunConfiguration" factoryName="Gradle" folderName="2020.3">
-    <log_file alias="idea.log" path="$PROJECT_DIR$/jetbrains-core/build/idea-sandbox/system/log/idea.log" />
+  <configuration default="false" name="Run IDE - Ultimate [2020.1]" type="GradleRunConfiguration" factoryName="Gradle" folderName="2020.1">
+    <log_file alias="idea.log" path="$PROJECT_DIR$/jetbrains-ultimate/build/idea-sandbox/system/log/idea.log" />
     <ExternalSystemSettings>
       <option name="env">
         <map>
-          <entry key="ALTERNATIVE_IDE_PROFILE_NAME" value="2020.3" />
+          <entry key="ALTERNATIVE_IDE_PROFILE_NAME" value="2020.1" />
         </map>
       </option>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/jetbrains-core" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/jetbrains-ultimate" />
       <option name="externalSystemIdString" value="GRADLE" />
       <option name="scriptParameters" value="" />
       <option name="taskDescriptions">
