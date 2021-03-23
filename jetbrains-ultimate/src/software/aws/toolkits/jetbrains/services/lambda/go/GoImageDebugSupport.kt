@@ -10,6 +10,7 @@ import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 class GoImageDebugSupport : ImageDebugSupport {
     override val id = LambdaRuntime.GO1_X.toString()
@@ -32,6 +33,7 @@ class GoImageDebugSupport : ImageDebugSupport {
     )
 
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,

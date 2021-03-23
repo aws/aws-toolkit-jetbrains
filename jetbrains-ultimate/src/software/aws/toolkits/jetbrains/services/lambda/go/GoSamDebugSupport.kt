@@ -8,9 +8,11 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 class GoSamDebugSupport : RuntimeDebugSupport {
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
