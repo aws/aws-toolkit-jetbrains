@@ -17,8 +17,10 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
 import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts.Companion.DEBUG_PORTS
@@ -39,18 +41,21 @@ class AttachDebugger(
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
         val session = runBlocking {
             try {
-                val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
-                val debugProcessStarter = state
-                    .settings
-                    .resolveDebuggerSupport()
-                    .createDebugProcess(environment, state.settings.debugHost, debugPorts, context)
-                val session = runBlocking(getCoroutineUiContext()) {
-                    val debugManager = XDebuggerManager.getInstance(environment.project)
-                    // Requires EDT on some paths, so always requires to be run on EDT
-                    debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, debugProcessStarter)
+                withTimeout(SamDebugSupport.debuggerConnectTimeoutMs()) {
+                    val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
+                    val debugProcessStarter = state
+                        .settings
+                        .resolveDebuggerSupport()
+                        .createDebugProcess(environment, state.settings.debugHost, debugPorts, context)
+                    val session = runBlocking(getCoroutineUiContext()) {
+                        val debugManager = XDebuggerManager.getInstance(environment.project)
+                        // Requires EDT on some paths, so always requires to be run on EDT
+                        debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, debugProcessStarter)
+                    }
+                    val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
+                    samProcessHandler.addProcessListener(buildProcessAdapter { session.consoleView })
+                    session
                 }
-                context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER).addProcessListener(buildProcessAdapter { session.consoleView })
-                session
             } catch (e: TimeoutCancellationException) {
                 throw ExecutionException(message("lambda.debug.process.start.timeout"))
             } catch (e: Throwable) {
@@ -58,6 +63,7 @@ class AttachDebugger(
                 throw ExecutionException(e)
             }
         }
+        // Make sure the session is always cleaned up
         launch {
             while (!context.isCompleted()) {
                 delay(100)
