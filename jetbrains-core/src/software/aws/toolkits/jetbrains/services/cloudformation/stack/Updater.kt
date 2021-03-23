@@ -135,7 +135,7 @@ class Updater(
             }
 
             updating.set(!newStackStatusNotInProgress)
-            
+
             // Reschedule next run
             if (stackStatus == StatusType.DELETED) {
                 alarm.cancelAllRequests()
