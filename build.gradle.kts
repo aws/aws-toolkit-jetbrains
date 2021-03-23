@@ -19,8 +19,6 @@ buildscript {
     val kotlinVersion: String by project
     val ideaPluginVersion: String by project
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-        classpath("org.jetbrains.intellij.plugins:gradle-intellij-plugin:$ideaPluginVersion")
         classpath("com.adarshr:gradle-test-logger-plugin:2.1.1")
     }
 }
@@ -39,8 +37,8 @@ val remoteRobotVersion: String by project
 plugins {
     java
     jacoco
+    id("toolkit-changelog")
     id("de.undercouch.download") apply false
-    id("org.gradle.test-retry") version "1.2.1"
 }
 
 group = "software.aws.toolkits"
@@ -65,7 +63,7 @@ allprojects {
     }
 }
 
-subprojects {
+configure(subprojects.filter { it.name != "core" }) {
     apply(plugin = "com.adarshr.test-logger")
     apply(plugin = "java")
     apply(plugin = "jacoco")
@@ -114,7 +112,7 @@ configure(subprojects.filter { it.name != "sdk-codegen" }) {
     }
 }
 
-subprojects {
+configure(subprojects.filter { it.name != "core" }) {
     parent?.let {
         group = it.group
         version = it.version
@@ -289,8 +287,6 @@ subprojects {
     }
 }
 
-apply(plugin = "toolkit-change-log")
-
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
     changeLogFile.set(project.file("CHANGELOG.md"))
 }
@@ -301,6 +297,8 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
     classpath = ktlint
     group = "verification"
     main = "com.pinterest.ktlint.Main"
+
+    enabled = false
 
     val isWindows = System.getProperty("os.name")?.toLowerCase()?.contains("windows") == true
 
