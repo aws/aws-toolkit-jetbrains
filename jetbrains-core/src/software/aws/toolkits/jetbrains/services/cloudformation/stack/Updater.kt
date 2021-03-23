@@ -14,8 +14,6 @@ import software.amazon.awssdk.services.cloudformation.model.Output
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.resources.message
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.SwingUtilities
@@ -38,9 +36,11 @@ class Updater(
     private val resourceListener: ResourceListener,
     private val stackName: String,
     private val updateInterval: Duration,
+    private val updateIntervalOnFinalState: Duration,
     private val listener: UpdateListener,
     private val client: CloudFormationClient,
-    private val setPagesAvailable: (Set<Page>) -> Unit
+    private val setPagesAvailable: (Set<Page>) -> Unit,
+    private val stackId: String
 ) : Disposable {
 
     @Volatile
@@ -50,7 +50,7 @@ class Updater(
     private var predicate: (StackResource) -> Boolean = { true }
     private val updating = AtomicBoolean(false)
     val running get() = updating.get()
-    private val eventsFetcher = EventsFetcher(stackName)
+    private val eventsFetcher = EventsFetcher(stackId)
 
     private val app: Application
         get() = ApplicationManager.getApplication()
@@ -85,9 +85,9 @@ class Updater(
         try {
             fetchData(pageToSwitchTo)
         } catch (e: SdkException) {
-
-                notifyError(message("cloudformation.stack_does_not_exist",stackName))
-            
+            app.invokeLater {
+                listener.onError(e.localizedMessage)
+            }
         }
     }
 
@@ -97,9 +97,6 @@ class Updater(
         val newStackStatus = stackDetails.status
         val newStackStatusType = newStackStatus.type
         val newStackStatusNotInProgress = newStackStatusType !in setOf(StatusType.UNKNOWN, StatusType.PROGRESS)
-
-        // Stack changed to some "final" status just now, notify user
-        //val stackSwitchedToFinalStatus = previousStackStatusType != newStackStatusType && newStackStatusNotInProgress
 
         // Stack changed to some "final" status just now, notify the user. Don't show a notification if the state
         // happened at creation time, which is distinguished by stackStatus being null
@@ -135,10 +132,16 @@ class Updater(
             if (stackSwitchedToFinalStatus) {
                 listener.onStackStatusChanged(newStackStatus)
             }
-
+            updating.set(!newStackStatusNotInProgress)
             // Reschedule next run
-            if (!alarm.isDisposed && alarm.isEmpty) {
-                alarm.addRequest({ fetchDataSafely() }, updateInterval.toMillis())
+            if (stackStatus == StatusType.DELETED) {
+                alarm.cancelAllRequests()
+            } else if (!alarm.isDisposed && alarm.isEmpty) {
+                if (updating.get()) {
+                    alarm.addRequest({ fetchDataSafely() }, updateInterval.toMillis())
+                } else {
+                    alarm.addRequest({ fetchDataSafely() }, updateIntervalOnFinalState.toMillis())
+                }
             }
         }
     }
@@ -157,9 +160,9 @@ class Updater(
 
     private fun fetchStackDetails(): Stack {
         assert(!SwingUtilities.isEventDispatchThread())
-        val resourcesRequest = DescribeStackResourcesRequest.builder().stackName(stackName).build()
+        val resourcesRequest = DescribeStackResourcesRequest.builder().stackName(stackId).build()
         val resources = client.describeStackResources(resourcesRequest).stackResources()
-        val stack = client.describeStacks { it.stackName(stackName) }.stacks().firstOrNull()
+        val stack = client.describeStacks { it.stackName(stackId) }.stacks().firstOrNull()
         val stackStatus = stack?.stackStatus() ?: StackStatus.UNKNOWN_TO_SDK_VERSION
         val outputs = stack?.outputs() ?: emptyList()
         return Stack(stackStatus, resources, outputs)
