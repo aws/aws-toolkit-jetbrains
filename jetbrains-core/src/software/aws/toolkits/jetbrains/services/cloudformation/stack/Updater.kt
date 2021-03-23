@@ -34,7 +34,6 @@ class Updater(
     private val eventsTable: EventsTable,
     private val outputsTable: OutputsListener,
     private val resourceListener: ResourceListener,
-    private val stackName: String,
     private val updateInterval: Duration,
     private val updateIntervalOnFinalState: Duration,
     private val listener: UpdateListener,

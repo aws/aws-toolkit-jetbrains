@@ -160,7 +160,6 @@ private class StackUI(
             eventsTable = eventsTable,
             outputsTable = outputsTable,
             resourceListener = resourcesTable,
-            stackName = stackName,
             updateInterval = UPDATE_STACK_STATUS_INTERVAL,
             updateIntervalOnFinalState = UPDATE_STACK_STATUS_INTERVAL_ON_FINAL_STATE,
             listener = this,
