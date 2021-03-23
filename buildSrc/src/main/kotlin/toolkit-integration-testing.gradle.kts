@@ -18,11 +18,19 @@ sourceSets {
     }
 }
 
+configurations.getByName("integrationTestImplementation") {
+    extendsFrom(configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME))
+    isCanBeResolved = true
+}
+configurations.getByName("integrationTestRuntimeOnly") {
+    extendsFrom(configurations.getByName(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME))
+    isCanBeResolved = true
+}
+
 idea {
     module {
-        testSourceDirs.plusAssign(integrationTests.java.srcDirs)
-//        testResourceDirs += integrationTests.resources.srcDirs
-//        scopes.TEST.plus += [ configurations.named(integrationTests.compileClasspathConfigurationName) ]
+        testSourceDirs = testSourceDirs + integrationTests.java.srcDirs
+        testResourceDirs = testResourceDirs + integrationTests.resources.srcDirs
     }
 }
 
@@ -32,17 +40,9 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     testClassesDirs = integrationTests.output.classesDirs
     classpath = integrationTests.runtimeClasspath
 
-    // TODO: Move this
-    project.plugins.withId("org.jetbrains.intellij") {
-        systemProperty("log.dir", "${(project.extensions["intellij"] as org.jetbrains.intellij.IntelliJPluginExtension).sandboxDirectory}-test/logs")
-    }
-
-    // TODO: Move this
-    systemProperty("testDataPath", project.rootDir.toPath().resolve("testdata").toString())
-
     mustRunAfter(tasks.named("test"))
 }
 
-//tasks.named("build") {
-//    dependsOn(integrationTest)
-//}
+tasks.named("build") {
+    dependsOn(integrationTest)
+}
