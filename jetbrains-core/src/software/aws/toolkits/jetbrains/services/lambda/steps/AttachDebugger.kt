@@ -37,7 +37,7 @@ class AttachDebugger(
     override val hidden = false
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
-        runBlocking {
+        val session = runBlocking {
             try {
                 val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
                 val debugProcessStarter = state
@@ -50,18 +50,19 @@ class AttachDebugger(
                     debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, debugProcessStarter)
                 }
                 context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER).addProcessListener(buildProcessAdapter { session.consoleView })
-                launch {
-                    while (!context.isCompleted()) {
-                        delay(100)
-                    }
-                    session.stop()
-                }
+                session
             } catch (e: TimeoutCancellationException) {
                 throw ExecutionException(message("lambda.debug.process.start.timeout"))
             } catch (e: Throwable) {
                 LOG.warn(e) { "Failed to start debugger" }
                 throw ExecutionException(e)
             }
+        }
+        launch {
+            while (!context.isCompleted()) {
+                delay(100)
+            }
+            session.stop()
         }
     }
 
