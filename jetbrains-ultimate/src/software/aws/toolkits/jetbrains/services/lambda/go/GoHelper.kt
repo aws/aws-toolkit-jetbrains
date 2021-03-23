@@ -11,14 +11,16 @@ import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
-import com.intellij.openapi.util.registry.Registry
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import java.net.InetSocketAddress
 import java.nio.file.Files
 
@@ -47,50 +49,59 @@ fun inferSourceRoot(project: Project, virtualFile: VirtualFile): VirtualFile? {
     }
 }
 
-// TODO see https://youtrack.jetbrains.com/issue/GO-10775 for "Debugger disconnected unexpectedly" when the lambda finishes
-suspend fun createGoDebugProcess(
-    debugHost: String,
-    debugPorts: List<Int>
-): XDebugProcessStarter = object : XDebugProcessStarter() {
-    override fun start(session: XDebugSession): XDebugProcess {
-        val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.KILL), null, true)
+object GoDebugHelper : CoroutineScope by ApplicationThreadPoolScope("GoDebugHelper") {
+    // Reliable start message printed when delve starts
+    private const val startMessage = "launching process with args"
 
-        val processHandler = process.processHandler
-        val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
+    // TODO see https://youtrack.jetbrains.com/issue/GO-10775 for "Debugger disconnected unexpectedly" when the lambda finishes
+    suspend fun createGoDebugProcess(
+        debugHost: String,
+        debugPorts: List<Int>,
+        context: Context
+    ): XDebugProcessStarter = object : XDebugProcessStarter() {
+        override fun start(session: XDebugSession): XDebugProcess {
+            val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.KILL), null, true)
 
-        if (processHandler.isStartNotified) {
-            // this branch should never actually be hit because it gets here too fast
-            process.connect(socketAddress)
-        } else {
+            val processHandler = process.processHandler
+            val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
+
             processHandler.addProcessListener(
                 object : ProcessAdapter() {
                     override fun startNotified(event: ProcessEvent) {
-                        ApplicationThreadPoolScope("GoSamDebugAttacher").launch {
-                            // If we don't wait, then then debugger will try to attach to
-                            // the container before it starts Devle. So, we have to add a sleep.
-                            // Delve takes quite a while to start in the sam cli images hence long sleep
-                            // See https://youtrack.jetbrains.com/issue/GO-10279
-                            // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
-                            delay(Registry.intValue("aws.sam.goDebuggerDelay", 10000).toLong())
-                            process.connect(socketAddress)
+                        launch {
+                            val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
+                            samProcessHandler.addProcessListener(
+                                object : ProcessAdapter() {
+                                    // If we don't wait, then then debugger will try to attach to
+                                    // the container before it starts Devle. So, we have to poll output
+                                    // See https://youtrack.jetbrains.com/issue/GO-10279
+                                    // TODO revisit this to see if higher IDE versions help FIX_WHEN_MIN_IS_211 (?)
+                                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                                        if (event.text.contains(startMessage)) {
+                                            process.connect(socketAddress)
+                                            samProcessHandler.removeProcessListener(this)
+                                        }
+                                    }
+                                }
+                            )
                         }
                     }
                 }
             )
+            return process
         }
-        return process
     }
-}
 
-fun copyDlv(): String {
-    // This can take a target platform, but that pulls directly from GOOS, so we have to walk back up the file tree
-    // either way. Goland comes with mac/window/linux dlv since it supports remote debugging, so it is always safe to
-    // pull the linux one
-    val dlvFolder = GoRunUtil.getBundledDlv(null)?.parentFile?.parentFile?.resolve("linux")
-        ?: throw IllegalStateException("Packaged Devle debugger is not found!")
-    val directory = Files.createTempDirectory("goDebugger")
-    Files.copy(dlvFolder.resolve("dlv").toPath(), directory.resolve("dlv"))
-    // Delve that comes packaged with the IDE does not have the executable flag set
-    directory.resolve("dlv").toFile().setExecutable(true)
-    return directory.toAbsolutePath().toString()
+    fun copyDlv(): String {
+        // This can take a target platform, but that pulls directly from GOOS, so we have to walk back up the file tree
+        // either way. Goland comes with mac/window/linux dlv since it supports remote debugging, so it is always safe to
+        // pull the linux one
+        val dlvFolder = GoRunUtil.getBundledDlv(null)?.parentFile?.parentFile?.resolve("linux")
+            ?: throw IllegalStateException("Packaged Devle debugger is not found!")
+        val directory = Files.createTempDirectory("goDebugger")
+        Files.copy(dlvFolder.resolve("dlv").toPath(), directory.resolve("dlv"))
+        // Delve that comes packaged with the IDE does not have the executable flag set
+        directory.resolve("dlv").toFile().setExecutable(true)
+        return directory.toAbsolutePath().toString()
+    }
 }
