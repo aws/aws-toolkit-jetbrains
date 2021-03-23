@@ -35,11 +35,12 @@ class PythonRuntimeDebugSupport : RuntimeDebugSupport {
     )
 
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
+        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
+        debugPorts: List<Int>
+    ): XDebugProcessStarter = createDebugProcess(environment, state, debugHost, debugPorts)
 }
 
 abstract class PythonImageDebugSupport : ImageDebugSupport {
@@ -51,11 +52,12 @@ abstract class PythonImageDebugSupport : ImageDebugSupport {
     protected abstract val bootstrapPath: String
 
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
+        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
+        debugPorts: List<Int>
+    ): XDebugProcessStarter = createDebugProcess(environment, state, debugHost, debugPorts)
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
         addAll(super.samArguments(debugPorts))
@@ -102,6 +104,7 @@ private const val DEBUGGER_VOLUME_PATH = "/tmp/lambci_debug_files"
 
 private fun createDebugProcess(
     environment: ExecutionEnvironment,
+    state: SamRunningState,
     debugHost: String,
     debugPorts: List<Int>
 ): XDebugProcessStarter {
@@ -110,7 +113,7 @@ private fun createDebugProcess(
 
     return object : XDebugProcessStarter() {
         override fun start(session: XDebugSession): XDebugProcess {
-            val mappings = (environment.state as SamRunningState).pathMappings.plus(
+            val mappings = state.pathMappings.plus(
                 listOf(
                     PathMapping(
                         PythonHelper.DEBUGGER.pythonPathEntry,

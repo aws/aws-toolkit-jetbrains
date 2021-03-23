@@ -22,10 +22,11 @@ interface SamDebugSupport {
     fun additionalDebugProcessSteps(environment: ExecutionEnvironment, state: SamRunningState): List<Step> = listOf()
 
     suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
+        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): XDebugProcessStarter
 
     companion object {

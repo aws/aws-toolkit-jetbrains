@@ -23,15 +23,17 @@ import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 
 class JavaRuntimeDebugSupport : RuntimeDebugSupport {
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
+        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
 }
 
@@ -39,10 +41,11 @@ abstract class JavaImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
     override val languageId = JavaLanguage.INSTANCE.id
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
+        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
+        debugPorts: List<Int>
     ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
 }
 

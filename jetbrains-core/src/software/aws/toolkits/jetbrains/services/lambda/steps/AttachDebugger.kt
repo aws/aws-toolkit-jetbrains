@@ -46,7 +46,7 @@ class AttachDebugger(
                     val debugProcessStarter = state
                         .settings
                         .resolveDebuggerSupport()
-                        .createDebugProcess(environment, state.settings.debugHost, debugPorts, context)
+                        .createDebugProcess(context, environment, state, state.settings.debugHost, debugPorts)
                     val session = runBlocking(getCoroutineUiContext()) {
                         val debugManager = XDebuggerManager.getInstance(environment.project)
                         // Requires EDT on some paths, so always requires to be run on EDT

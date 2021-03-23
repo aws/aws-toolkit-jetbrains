@@ -29,22 +29,24 @@ import java.net.InetSocketAddress
 
 class NodeJsRuntimeDebugSupport : RuntimeDebugSupport {
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
+        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess((environment.state as SamRunningState), debugHost, debugPorts)
+        debugPorts: List<Int>
+    ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess(state, debugHost, debugPorts)
 }
 
 abstract class NodeJsImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
     override val languageId = JavascriptLanguage.INSTANCE.id
     override suspend fun createDebugProcess(
+        context: Context,
         environment: ExecutionEnvironment,
+        state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>,
-        context: Context
-    ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess((environment.state as SamRunningState), debugHost, debugPorts)
+        debugPorts: List<Int>
+    ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess(state, debugHost, debugPorts)
 
     override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = mapOf(
         "NODE_OPTIONS" to "--inspect-brk=0.0.0.0:${debugPorts.first()} --max-http-header-size 81920"
