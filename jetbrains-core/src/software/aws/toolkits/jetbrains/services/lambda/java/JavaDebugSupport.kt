@@ -87,7 +87,7 @@ private suspend fun createDebugProcess(
 
     val debuggerSession = withContext(edtContext) {
         debuggerManager.attachVirtualMachine(debugEnvironment)
-    } ?: throw IllegalStateException("Attaching to the JVM failed")
+    } ?: throw IllegalStateException("Attaching to the JVM failed! $debugHost:${debugPorts.first()}")
 
     return object : XDebugProcessStarter() {
         override fun start(session: XDebugSession): XDebugProcess {
