@@ -137,9 +137,13 @@ tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
 //    coverageReport.get().mustRunAfter(it.tasks.withType(Test::class.java))
 //}
 
+val coverageReport = tasks.register("coverageReport") {
+
+}
+
 tasks.check {
 //    dependsOn(ktlintTask)
-//    dependsOn(coverageReport)
+    dependsOn(coverageReport)
 }
 
 //dependencies {
