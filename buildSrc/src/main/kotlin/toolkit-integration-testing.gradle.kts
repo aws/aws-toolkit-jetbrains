@@ -1,3 +1,6 @@
+import gradle.kotlin.dsl.accessors._17b5bb42cd83a5b395e515786e8b59f8.sourceSets
+import gradle.kotlin.dsl.accessors._17b5bb42cd83a5b395e515786e8b59f8.test
+
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -27,6 +30,11 @@ configurations.getByName("integrationTestRuntimeOnly") {
     isCanBeResolved = true
 }
 
+// Add the integration test source set to test jar
+tasks.named<Jar>("testJar") {
+    from(sourceSets.getByName("integrationTest").output)
+}
+
 idea {
     module {
         testSourceDirs = testSourceDirs + integrationTests.java.srcDirs
@@ -34,7 +42,7 @@ idea {
     }
 }
 
-val integrationTest = tasks.register<Test>("integrationTest") {
+tasks.register<Test>("integrationTest") {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs the integration tests."
     testClassesDirs = integrationTests.output.classesDirs
@@ -43,6 +51,6 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     mustRunAfter(tasks.named("test"))
 }
 
-tasks.named("build") {
-    dependsOn(integrationTest)
+tasks.named("check") {
+    dependsOn(integrationTests.compileJavaTaskName)
 }

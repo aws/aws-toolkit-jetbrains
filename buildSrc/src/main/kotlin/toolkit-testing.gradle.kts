@@ -1,7 +1,9 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import gradle.kotlin.dsl.accessors._19c5183b2e35b82afb9ef9cd50f1ef9e.java
 import software.aws.toolkits.gradle.ciOnly
+import software.aws.toolkits.gradle.findFolders
 
 val mockitoVersion: String by project
 val mockitoKotlinVersion: String by project
@@ -27,7 +29,6 @@ val testArtifacts by configurations.creating
 val testJar = tasks.register<Jar>("testJar") {
     archiveBaseName.set("${project.name}-test")
     from(sourceSets.test.get().output)
-    from(sourceSets.getByName("integrationTest").output)
 }
 
 artifacts {

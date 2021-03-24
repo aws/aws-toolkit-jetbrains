@@ -16,8 +16,6 @@ import software.aws.toolkits.gradle.intellij
 import java.time.Instant
 
 buildscript {
-    val kotlinVersion: String by project
-    val ideaPluginVersion: String by project
     dependencies {
         classpath("com.adarshr:gradle-test-logger-plugin:2.1.1")
     }
@@ -63,7 +61,7 @@ allprojects {
     }
 }
 
-configure(subprojects.filter { it.name != "core" }) {
+configure(subprojects.filter { it.name != "core" && it.name !="jetbrains-core"}) {
     apply(plugin = "com.adarshr.test-logger")
     apply(plugin = "java")
     apply(plugin = "jacoco")
@@ -102,7 +100,7 @@ configure(subprojects.filter { it.name != "core" }) {
 }
 
 // Kotlin plugin seems to be bugging out when there are no kotlin sources
-configure(subprojects.filter { it.name != "sdk-codegen" }) {
+configure(subprojects.filter { it.name != "sdk-codegen" && it.name !="jetbrains-core"}) {
     apply(plugin = "kotlin")
 
     sourceSets {
@@ -112,7 +110,7 @@ configure(subprojects.filter { it.name != "sdk-codegen" }) {
     }
 }
 
-configure(subprojects.filter { it.name != "core" }) {
+configure(subprojects.filter { it.name != "core" && it.name !="jetbrains-core" }) {
     parent?.let {
         group = it.group
         version = it.version
@@ -317,28 +315,28 @@ val ktlintTask = tasks.register<JavaExec>("ktlint") {
     outputs.dirs("${project.buildDir}/reports/ktlint/")
 }
 
-val coverageReport = tasks.register<JacocoReport>("coverageReport") {
-    executionData.setFrom(fileTree(project.rootDir.absolutePath) { include("**/build/jacoco/*.exec") })
-
-    subprojects.forEach {
-        additionalSourceDirs.from(it.sourceSets.main.get().java.srcDirs)
-        sourceDirectories.from(it.sourceSets.main.get().java.srcDirs)
-        classDirectories.from(it.sourceSets.main.get().output.classesDirs)
-    }
-
-    reports {
-        html.isEnabled = true
-        xml.isEnabled = true
-    }
-}
-
-subprojects.forEach {
-    coverageReport.get().mustRunAfter(it.tasks.withType(Test::class.java))
-}
+//val coverageReport = tasks.register<JacocoReport>("coverageReport") {
+//    executionData.setFrom(fileTree(project.rootDir.absolutePath) { include("**/build/jacoco/*.exec") })
+//
+//    subprojects.forEach {
+//        additionalSourceDirs.from(it.sourceSets.main.get().java.srcDirs)
+//        sourceDirectories.from(it.sourceSets.main.get().java.srcDirs)
+//        classDirectories.from(it.sourceSets.main.get().output.classesDirs)
+//    }
+//
+//    reports {
+//        html.isEnabled = true
+//        xml.isEnabled = true
+//    }
+//}
+//
+//subprojects.forEach {
+//    coverageReport.get().mustRunAfter(it.tasks.withType(Test::class.java))
+//}
 
 tasks.named("check") {
     dependsOn(ktlintTask)
-    dependsOn(coverageReport)
+//    dependsOn(coverageReport)
 }
 
 dependencies {
