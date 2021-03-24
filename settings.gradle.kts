@@ -8,7 +8,7 @@ include("sdk-codegen")
 include("core")
 include("jetbrains-core")
 include("jetbrains-ultimate")
-//include("jetbrains-rider")
+include("jetbrains-rider")
 include("intellij")
 include("ui-tests")
 

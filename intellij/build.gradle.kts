@@ -19,9 +19,9 @@ intellij {
 }
 
 tasks.prepareSandbox {
-    project.findProject(":jetbrains-rider")?.let {
-        from(tasks.getByPath(":jetbrains-rider:prepareSandbox"))
-    }
+//    project.findProject(":jetbrains-rider")?.let {
+//        from(tasks.getByPath(":jetbrains-rider:prepareSandbox"))
+//    }
 }
 
 tasks.publishPlugin {

@@ -4,6 +4,7 @@ import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.IdeVersions
+import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension.IdeFlavor
 import java.nio.file.Path
 
 buildscript {
@@ -25,17 +26,17 @@ buildscript {
 val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
-//    id("toolkit-kotlin-conventions")
+    id("toolkit-kotlin-conventions")
     id("toolkit-intellij-subplugin")
     id("toolkit-testing")
     id("toolkit-integration-testing")
 }
 
 // Not published to gradle plugin portal, use old syntax
-//apply(plugin = "com.jetbrains.rdgen")
+apply(plugin = "com.jetbrains.rdgen")
 
 intellijToolkit {
-    ideFlavor.set(software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension.IdeFlavor.RD)
+    ideFlavor.set(IdeFlavor.RD)
 }
 
 sourceSets {
@@ -214,12 +215,7 @@ fun getNugetPackagesPath(): File {
     val sdkPath = intellij.ideaDependency.classes
     println("SDK path: $sdkPath")
 
-    // 2019
-    var riderSdk = File(sdkPath, "lib/ReSharperHostSdk")
-    // 2020.1
-    if (!riderSdk.exists()) {
-        riderSdk = File(sdkPath, "lib/DotNetSdkForRdPlugins")
-    }
+    val riderSdk = File(sdkPath, "lib/DotNetSdkForRdPlugins")
 
     println("NuGet packages: $riderSdk")
     if (!riderSdk.isDirectory) throw IllegalStateException("$riderSdk does not exist or not a directory")
