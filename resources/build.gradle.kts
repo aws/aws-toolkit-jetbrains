@@ -7,6 +7,8 @@ import software.aws.toolkits.gradle.resources.ValidateMessages
 val kotlinVersion: String by project
 
 plugins {
+    id("toolkit-kotlin-conventions")
+    id("toolkit-testing")
     id("de.undercouch.download")
 }
 

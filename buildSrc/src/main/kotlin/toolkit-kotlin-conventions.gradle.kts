@@ -7,7 +7,7 @@ val kotlinVersion: String by project
 val coroutinesVersion: String by project
 
 plugins {
-    java
+    id("java")
     kotlin("jvm")
 }
 

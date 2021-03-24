@@ -1,7 +1,5 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import org.jetbrains.intellij.tasks.PrepareSandboxTask
-import org.jetbrains.intellij.tasks.PublishTask
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.intellij
 
@@ -20,22 +18,27 @@ intellij {
     updateSinceUntilBuild = false
 }
 
-tasks.getByName<PrepareSandboxTask>("prepareSandbox") {
+tasks.prepareSandbox {
     project.findProject(":jetbrains-rider")?.let {
         from(tasks.getByPath(":jetbrains-rider:prepareSandbox"))
     }
 }
 
-tasks.getByName<PublishTask>("publishPlugin") {
+tasks.publishPlugin {
     token(publishToken)
     channels(publishChannel.split(",").map { it.trim() })
 }
 
-tasks.named("check") {
+tasks.check {
     dependsOn(tasks.named("verifyPlugin"))
 }
 
+tasks.test {
+    enabled = false
+}
+
 dependencies {
+    implementation(project(":jetbrains-core"))
     implementation(project(":jetbrains-ultimate"))
     project.findProject(":jetbrains-rider")?.let {
         implementation(it)

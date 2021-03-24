@@ -22,13 +22,32 @@ buildscript {
     }
 }
 
+val ideProfile = IdeVersions.ideProfile(project)
+
 plugins {
-    id("org.jetbrains.intellij")
+//    id("toolkit-kotlin-conventions")
+    id("toolkit-intellij-subplugin")
+    id("toolkit-testing")
+    id("toolkit-integration-testing")
 }
 
-apply(plugin = "com.jetbrains.rdgen")
+// Not published to gradle plugin portal, use old syntax
+//apply(plugin = "com.jetbrains.rdgen")
 
-val ideProfile = IdeVersions.ideProfile(project)
+intellijToolkit {
+    ideFlavor.set(software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension.IdeFlavor.RD)
+}
+
+sourceSets {
+    main {
+        java.srcDirs("$buildDir/generated-src")
+    }
+}
+
+dependencies {
+    implementation(project(":jetbrains-core"))
+    testImplementation(project(path= ":jetbrains-core", configuration = "testArtifacts"))
+}
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
@@ -49,19 +68,6 @@ val modelDir = File(projectDir, "protocol/model")
 val rdgenDir = File("${project.buildDir}/rdgen/")
 
 rdgenDir.mkdirs()
-
-intellij {
-    pluginName = "aws-toolkit-jetbrains"
-
-    version = ideProfile.rider.sdkVersion
-    // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-    val extraPlugins = arrayOf("rider-plugins-appender")
-    setPlugins(*(ideProfile.rider.plugins + extraPlugins))
-
-    // RD is closed source, so nothing to download.
-    downloadSources = false
-    instrumentCode = false
-}
 
 configure<RdGenExtension> {
     verbose = true
@@ -98,20 +104,22 @@ val cleanGenerateModels = tasks.register("cleanGenerateModels") {
     group = protocolGroup
     description = "Clean up generated protocol models"
 
-    logger.info("Deleting generated Kotlin files...")
-    riderGeneratedSources.listFiles().orEmpty().forEach { it.deleteRecursively() }
+    doLast {
+        logger.info("Deleting generated Kotlin files...")
+        riderGeneratedSources.listFiles().orEmpty().forEach { it.deleteRecursively() }
 
-    logger.info("Deleting generated CSharp files...")
-    val csGeneratedRoots = listOf(
-        csDaemonGeneratedOutput,
-        csPsiGeneratedOutput,
-        csAwsSettingsGeneratedOutput,
-        csAwsProjectGeneratedOutput
-    )
+        logger.info("Deleting generated CSharp files...")
+        val csGeneratedRoots = listOf(
+            csDaemonGeneratedOutput,
+            csPsiGeneratedOutput,
+            csAwsSettingsGeneratedOutput,
+            csAwsProjectGeneratedOutput
+        )
 
-    csGeneratedRoots.forEach { protocolDirectory: File ->
-        if (!protocolDirectory.exists()) return@forEach
-        protocolDirectory.listFiles().orEmpty().forEach { file -> file.deleteRecursively() }
+        csGeneratedRoots.forEach { protocolDirectory: File ->
+            if (!protocolDirectory.exists()) return@forEach
+            protocolDirectory.listFiles().orEmpty().forEach { file -> file.deleteRecursively() }
+        }
     }
 }
 
@@ -124,7 +132,7 @@ val cleanNetBuilds = task("cleanNetBuilds", Delete::class) {
     })
 }
 
-project.tasks.clean {
+tasks.clean {
     dependsOn(cleanGenerateModels, cleanNetBuilds)
 }
 
@@ -219,17 +227,6 @@ fun getNugetPackagesPath(): File {
     return riderSdk
 }
 
-dependencies {
-    implementation(project(":jetbrains-core"))
-    testImplementation(project(":jetbrains-core", "testArtifacts"))
-}
-
-sourceSets {
-    main {
-        java.srcDirs("$buildDir/generated-src")
-    }
-}
-
 val resharperParts = listOf(
     "AWS.Daemon",
     "AWS.Localization",
@@ -244,7 +241,7 @@ val resharperParts = listOf(
 // `runIde` depends on `prepareSandbox` task and then executes IJ inside the sandbox dir
 // `prepareSandbox` depends on the standard Java `jar` and then copies everything into the sandbox dir
 
-tasks.withType(PrepareSandboxTask::class.java).configureEach {
+tasks.withType<PrepareSandboxTask>().all {
     dependsOn(buildReSharperPlugin)
 
     val files = resharperParts.map { "$resharperBuildPath/bin/$it/$buildConfiguration/${it}.dll" } +
@@ -259,7 +256,6 @@ tasks.compileKotlin {
 }
 
 tasks.test {
-    systemProperty("log.dir", "${intellij.sandboxDirectory}-test/logs")
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
@@ -268,12 +264,5 @@ tasks.test {
 tasks.integrationTest {
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
-}
-
-tasks.buildSearchableOptions {
-    enabled = false
-}
-
-tasks.jar {
-    archiveBaseName.set("aws-intellij-toolkit-rider")
+    maxHeapSize = "1024m"
 }

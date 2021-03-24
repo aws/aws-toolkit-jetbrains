@@ -1,4 +1,4 @@
-// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.gradle
@@ -28,6 +28,9 @@ object IdeVersions {
                 "Pythonid:202.6397.98",
                 "org.jetbrains.plugins.go:202.6397.20"
             ),
+            riderPlugins = listOf(
+                "rider-plugins-appender"
+            ),
             rdGenVersion = "0.203.161",
             nugetVersion = "2020.2.0"
         ),
@@ -46,6 +49,9 @@ object IdeVersions {
                 "com.intellij.database",
                 "Pythonid:203.5981.165",
                 "org.jetbrains.plugins.go:203.5981.114"
+            ),
+            riderPlugins = listOf(
+                "rider-plugins-appender"
             ),
             riderSdkOverride = "2020.3.2",
             ijSdkOverride = "2020.3",
@@ -70,6 +76,9 @@ object IdeVersions {
                 "com.intellij.database",
                 "Pythonid:211.6305.22",
                 "org.jetbrains.plugins.go:211.6305.21"
+            ),
+            riderPlugins = listOf(
+                "rider-plugins-appender"
             ),
             riderSdkOverride = "2021.1-SNAPSHOT",
             ijSdkOverride = "211.6305-EAP-CANDIDATE-SNAPSHOT",
@@ -104,6 +113,7 @@ class Profile(
     val untilVersion: String = "$sinceVersion.*",
     communityPlugins: List<String>,
     ultimatePlugins: List<String>,
+    riderPlugins: List<String>,
     ijSdkOverride: String? = null,
     riderSdkOverride: String? = null,
     rdGenVersion: String, // https://www.myget.org/feed/rd-snapshots/package/maven/com.jetbrains.rd/rd-gen
@@ -118,7 +128,7 @@ class Profile(
     val ultimate: ProductProfile = ProductProfile(sdkVersion = "IU-${ijSdkOverride ?: name}", plugins = commonPlugins + ultimatePlugins)
     val rider: RiderProfile = RiderProfile(
         sdkVersion = "RD-${riderSdkOverride ?: name}",
-        plugins = arrayOf("org.jetbrains.plugins.yaml"),
+        plugins = commonPlugins + riderPlugins,
         rdGenVersion = rdGenVersion,
         nugetVersion = nugetVersion
     )

@@ -1,12 +1,9 @@
-import gradle.kotlin.dsl.accessors._17b5bb42cd83a5b395e515786e8b59f8.sourceSets
-import gradle.kotlin.dsl.accessors._17b5bb42cd83a5b395e515786e8b59f8.test
-
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 plugins {
-    java
-    idea
+    id("java")
+    id("idea")
     id("toolkit-testing")
 }
 

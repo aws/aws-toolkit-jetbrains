@@ -17,7 +17,8 @@ repositories {
 }
 
 plugins {
-    jacoco
+    id("toolkit-kotlin-conventions")
+    id("toolkit-testing")
 }
 
 dependencies {
@@ -56,14 +57,5 @@ tasks.register<Test>("uiTestCore") {
     systemProperty("GRADLE_PROJECT", "jetbrains-core")
     useJUnitPlatform {
         includeTags("core")
-    }
-
-    // uiTestCore needs its own version of this since it's not part of normal test tasks
-    ciOnly {
-        retry {
-            failOnPassedAfterRetry.set(false)
-            maxFailures.set(5)
-            maxRetries.set(2)
-        }
     }
 }
