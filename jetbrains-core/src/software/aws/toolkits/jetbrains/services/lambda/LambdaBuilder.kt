@@ -12,11 +12,11 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.PathMapping
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.BuildRequest
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.HandlerRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.services.lambda.steps.BuildLambdaRequest
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -32,16 +32,17 @@ abstract class LambdaBuilder {
 
     open fun handlerForDummyTemplate(settings: HandlerRunSettings, handlerElement: PsiElement): String = settings.handler
 
-    open fun buildFromHandler(project: Project, settings: HandlerRunSettings): BuildRequest {
+    open fun buildFromHandler(project: Project, settings: HandlerRunSettings): BuildLambdaRequest {
+        val dummyLogicalId = "Function"
         val samOptions = settings.samOptions
         val runtime = settings.runtime
+        val handler = settings.handler
 
-        val element = Lambda.findPsiElementsForHandler(project, runtime, settings.handler).first()
+        val element = Lambda.findPsiElementsForHandler(project, runtime, handler).first()
         val module = getModule(element.containingFile)
 
         val buildDirectory = getBuildDirectory(module)
         val dummyTemplate = buildDirectory.parent.resolve("temp-template.yaml")
-        val dummyLogicalId = "Function"
 
         SamTemplateUtils.writeDummySamTemplate(
             tempFile = dummyTemplate,
@@ -54,11 +55,12 @@ abstract class LambdaBuilder {
             envVars = settings.environmentVariables
         )
 
-        return BuildRequest(
+        return BuildLambdaRequest(
             dummyTemplate,
             dummyLogicalId,
-            additionalBuildEnvironmentVariables(module, samOptions),
-            buildDirectory
+            buildDirectory,
+            additionalBuildEnvironmentVariables(project, module, samOptions),
+            samOptions
         )
     }
 
@@ -88,7 +90,7 @@ abstract class LambdaBuilder {
     /**
      * Returns a set of additional environment variables that should be passed to SAM build
      */
-    open fun additionalBuildEnvironmentVariables(module: Module, samOptions: SamOptions): Map<String, String> = emptyMap()
+    open fun additionalBuildEnvironmentVariables(project: Project, module: Module?, samOptions: SamOptions): Map<String, String> = emptyMap()
 
     companion object : RuntimeGroupExtensionPointObject<LambdaBuilder>(ExtensionPointName("aws.toolkit.lambda.builder")) {
         /*
