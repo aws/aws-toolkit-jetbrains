@@ -16,8 +16,8 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
-import software.aws.toolkits.jetbrains.services.lambda.execution.sam.BuildRequest
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.HandlerRunSettings
+import software.aws.toolkits.jetbrains.services.lambda.steps.BuildLambdaRequest
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
@@ -39,7 +39,7 @@ class NodeJsLambdaBuilder : LambdaBuilder() {
             return "$TS_BUILD_DIR/$handler"
         }
 
-        override fun buildFromHandler(project: Project, settings: HandlerRunSettings): BuildRequest {
+        override fun buildFromHandler(project: Project, settings: HandlerRunSettings): BuildLambdaRequest {
             val buildRequest = super.buildFromHandler(project, settings)
             val handlerElement = Lambda.findPsiElementsForHandler(project, settings.runtime, settings.handler).first()
             val sourceRoot = getSourceRoot(handlerElement)
@@ -131,7 +131,7 @@ class NodeJsLambdaBuilder : LambdaBuilder() {
     override fun handlerForDummyTemplate(settings: HandlerRunSettings, handlerElement: PsiElement) =
         determineBuilder(handlerElement).handlerForDummyTemplate(settings, handlerElement)
 
-    override fun buildFromHandler(project: Project, settings: HandlerRunSettings): BuildRequest {
+    override fun buildFromHandler(project: Project, settings: HandlerRunSettings): BuildLambdaRequest {
         val handlerElement = Lambda.findPsiElementsForHandler(project, settings.runtime, settings.handler).first()
 
         return determineBuilder(handlerElement).buildFromHandler(project, settings)
