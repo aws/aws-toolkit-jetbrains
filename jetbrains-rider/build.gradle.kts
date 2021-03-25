@@ -240,13 +240,10 @@ artifacts {
     }
 }
 
-val cleanNetBuilds = task("cleanNetBuilds", Delete::class) {
+val cleanNetBuilds = tasks.register<Delete>("cleanNetBuilds") {
     group = protocolGroup
     description = "Clean up obj/ bin/ folders under ReSharper.AWS"
-    delete(project.fileTree("ReSharper.AWS/") {
-        include("**/bin/")
-        include("**/obj/")
-    })
+    delete(resharperBuildPath)
 }
 
 tasks.clean {
@@ -281,8 +278,4 @@ tasks.integrationTest {
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
-}
-
-fun StringBuilder.appendLine(s: String) {
-    this.append(s).append("\n")
 }

@@ -34,6 +34,7 @@ dependencies {
 
     implementation("org.jetbrains.intellij.plugins:gradle-intellij-plugin:$ideaPluginVersion")
 
+    implementation("org.jlleitschuh.gradle:ktlint-gradle:10.0.0")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
 
     implementation("org.gradle:test-retry-gradle-plugin:1.2.1")

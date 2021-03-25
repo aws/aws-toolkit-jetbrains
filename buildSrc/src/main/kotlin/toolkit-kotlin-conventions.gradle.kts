@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 val kotlinVersion: String by project
 val coroutinesVersion: String by project
+val ktlintVersion: String by project
 
 plugins {
     id("java")
     kotlin("jvm")
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 dependencies {
@@ -52,5 +55,15 @@ tasks.withType<KotlinCompile>().all {
     kotlinOptions.apiVersion = "1.3"
 }
 
+ktlint {
+    version.set(ktlintVersion)
 
+    reporters {
+        reporter(ReporterType.HTML)
+    }
 
+    filter {
+        exclude("**/TelemetryDefinitions.kt")
+        exclude("**/*.Generated.kt")
+    }
+}
