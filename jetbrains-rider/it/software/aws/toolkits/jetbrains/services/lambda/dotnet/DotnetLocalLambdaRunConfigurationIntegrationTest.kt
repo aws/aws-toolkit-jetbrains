@@ -17,11 +17,13 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkits.jetbrains.services.lambda.SamDebuggerTimeoutTest
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
+import java.time.Duration
 
 class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", LambdaRuntime.DOTNETCORE2_1)
 class Dotnet21LocalLambdaImageRunConfigurationIntegrationTest :
@@ -110,6 +112,23 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             .containsEntry("AWS_SECRET_ACCESS_KEY", mockCreds.secretAccessKey())
             // An empty AWS_SESSION_TOKEN is inserted by Samcli/the Lambda runtime as of 1.13.1
             .containsEntry("AWS_SESSION_TOKEN", "")
+    }
+
+    @Test
+    fun `does not timeout if SAM has output`() {
+        val runConfiguration = createHandlerBasedRunConfiguration(
+            project = project,
+            runtime = runtime.toSdkRuntime(),
+            credentialsProviderId = mockId,
+            handler = handler
+        )
+
+        SamDebuggerTimeoutTest.`does not timeout if SAM has output`(
+            runConfiguration,
+            // rider regularly takes more than 10s between container start and debugger available
+            timeout = Duration.ofSeconds(45),
+            ::executeRunConfigurationAndWaitRider
+        )
     }
 
     // Extracts the first json structure. Needed since output has all build output and sam cli messages

@@ -64,6 +64,8 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
         ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "ForkJoinPool.commonPool-worker-")
         // This timer is cancelled but it still continues running when the test is over since it cancels lazily. This is fine, so suppress the leak
         ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Debugger Worker launch timer")
+        // FIX_WHEN_MIN_IS_202: https://github.com/JetBrains/intellij-community/commit/69bf8525e0e6471a76bc8df9fc7384c6f571ce65
+        ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "kotlinx.coroutines.DefaultExecutor")
     }
 
     override fun after() {

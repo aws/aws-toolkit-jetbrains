@@ -7,12 +7,14 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.testFramework.PsiTestUtil
+import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -22,6 +24,7 @@ import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkits.jetbrains.services.lambda.SamDebuggerTimeoutTest
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
@@ -45,9 +48,15 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         )
     }
 
+    val projectRule = PythonCodeInsightTestFixtureRule()
+    val tempFolderRule = TemporaryFolder()
+
     @Rule
     @JvmField
-    val projectRule = PythonCodeInsightTestFixtureRule()
+    val ruleChain = RuleChain(
+        projectRule,
+        tempFolderRule
+    )
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
@@ -326,6 +335,22 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         assertThat(executeLambda.stdout).contains("Hello world")
 
         assertThat(debuggerIsHit.get()).isTrue()
+    }
+
+    @Test
+    fun `does not timeout if SAM has output`() {
+        projectRule.fixture.addFileToProject("requirements.txt", "")
+
+        val runConfiguration = createHandlerBasedRunConfiguration(
+            project = projectRule.project,
+            runtime = runtime,
+            handler = "src/hello_world.app.lambda_handler",
+            input = "\"Hello World\"",
+            credentialsProviderId = mockId
+        )
+        assertThat(runConfiguration).isNotNull
+
+        SamDebuggerTimeoutTest.`does not timeout if SAM has output`(runConfiguration)
     }
 
     // Extracts the first json structure. Needed since output has all build output and sam cli messages

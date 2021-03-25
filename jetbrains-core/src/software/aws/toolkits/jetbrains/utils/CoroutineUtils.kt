@@ -8,7 +8,7 @@ import com.intellij.openapi.application.AppUIExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 
-fun getCoroutineUiContext(
+fun getCoroutineUiExecutor(
     modalityState: ModalityState = ModalityState.defaultModalityState(),
     disposable: Disposable? = null
 ) = AppUIExecutor.onUiThread(modalityState).let {
@@ -18,4 +18,9 @@ fun getCoroutineUiContext(
         // This is not actually scheduled for removal in 2019.3
         it.expireWith(disposable)
     }
-}.coroutineDispatchingContext()
+}
+
+fun getCoroutineUiContext(
+    modalityState: ModalityState = ModalityState.defaultModalityState(),
+    disposable: Disposable? = null
+) = getCoroutineUiExecutor(modalityState, disposable).coroutineDispatchingContext()
