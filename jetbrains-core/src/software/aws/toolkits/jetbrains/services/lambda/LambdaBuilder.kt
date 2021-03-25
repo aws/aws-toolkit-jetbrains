@@ -48,7 +48,7 @@ abstract class LambdaBuilder {
             tempFile = dummyTemplate,
             logicalId = dummyLogicalId,
             runtime = runtime,
-            handler = handler,
+            handler = handlerForDummyTemplate(settings, element),
             timeout = settings.timeout,
             memorySize = settings.memorySize,
             codeUri = handlerBaseDirectory(module, element).toAbsolutePath().toString(),
