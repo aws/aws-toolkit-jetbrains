@@ -3,8 +3,6 @@
 
 val awsSdkVersion: String by project
 val jacksonVersion: String by project
-val coroutinesVersion: String by project
-val kotlinVersion: String by project
 val junitVersion: String by project
 
 plugins {

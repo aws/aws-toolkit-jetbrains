@@ -4,7 +4,7 @@
 import de.undercouch.gradle.tasks.download.Download
 import software.aws.toolkits.gradle.resources.ValidateMessages
 
-val kotlinVersion: String by project
+val junitVersion: String by project
 
 plugins {
     id("toolkit-kotlin-conventions")
@@ -19,7 +19,7 @@ sourceSets {
 }
 
 dependencies {
-    testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+    testImplementation("junit:junit:$junitVersion")
 }
 
 val download = tasks.register<Download>("downloadResources") {
@@ -32,7 +32,7 @@ val download = tasks.register<Download>("downloadResources") {
     }
 }
 
-tasks.named("processResources") {
+tasks.processResources {
     dependsOn(download)
 }
 
@@ -40,6 +40,6 @@ val validateLocalizedMessages = tasks.register<ValidateMessages>("validateLocali
     paths.from("resources/software/aws/toolkits/resources/MessagesBundle.properties")
 }
 
-tasks.named("check") {
+tasks.check {
     dependsOn(validateLocalizedMessages)
 }
