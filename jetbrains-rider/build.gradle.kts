@@ -1,5 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+
 import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
@@ -32,9 +33,6 @@ plugins {
     id("toolkit-integration-testing")
 }
 
-// Not published to gradle plugin portal, use old syntax
-apply(plugin = "com.jetbrains.rdgen")
-
 intellijToolkit {
     ideFlavor.set(IdeFlavor.RD)
 }
@@ -47,11 +45,26 @@ sourceSets {
 
 dependencies {
     implementation(project(":jetbrains-core"))
-    testImplementation(project(path= ":jetbrains-core", configuration = "testArtifacts"))
+    testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
 }
+
+/**
+ * RESHARPER
+ */
+
+// Not published to gradle plugin portal, use old syntax
+apply(plugin = "com.jetbrains.rdgen")
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
+
+val resharperParts = listOf(
+    "AWS.Daemon",
+    "AWS.Localization",
+    "AWS.Project",
+    "AWS.Psi",
+    "AWS.Settings"
+)
 
 val buildConfiguration = project.extra.properties["BuildConfiguration"] ?: "Debug" // TODO: Do we ever want to make a release build?
 
@@ -124,19 +137,6 @@ val cleanGenerateModels = tasks.register("cleanGenerateModels") {
     }
 }
 
-val cleanNetBuilds = task("cleanNetBuilds", Delete::class) {
-    group = protocolGroup
-    description = "Clean up obj/ bin/ folders under ReSharper.AWS"
-    delete(project.fileTree("ReSharper.AWS/") {
-        include("**/bin/")
-        include("**/obj/")
-    })
-}
-
-tasks.clean {
-    dependsOn(cleanGenerateModels, cleanNetBuilds)
-}
-
 // Backend
 val backendGroup = "backend"
 
@@ -192,13 +192,6 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     inputs.dir(resharperPluginPath)
     outputs.dir(resharperBuildPath)
 
-    outputs.files({
-        fileTree(file("${resharperPluginPath.absolutePath}/src")).matching {
-            include("**/bin/Debug/**/AWS*.dll")
-            include("**/bin/Debug/**/AWS*.pdb")
-        }
-    })
-
     doLast {
         val arguments = listOf(
             "build",
@@ -223,13 +216,64 @@ fun getNugetPackagesPath(): File {
     return riderSdk
 }
 
-val resharperParts = listOf(
-    "AWS.Daemon",
-    "AWS.Localization",
-    "AWS.Project",
-    "AWS.Psi",
-    "AWS.Settings"
-)
+val resharperDlls = configurations.create("resharperDlls") {
+    isCanBeResolved = false
+}
+
+val resharperDllsDir = tasks.register<Sync>("resharperDllsDir") {
+    from(buildReSharperPlugin) {
+        include("**/bin/**/$buildConfiguration/**/AWS*.dll")
+        include("**/bin/**/$buildConfiguration/**/AWS*.pdb")
+    }
+    into("$buildDir/$name")
+
+    includeEmptyDirs = false
+
+    eachFile {
+        path = name // Clear out the path to flatten it
+    }
+}
+//
+//gradle.taskGraph.afterTask {
+//    var task = this
+//    println(
+//        buildString {
+//            appendLine("-------------")
+//            appendLine("name:$task.name group:$task.group : $task.description")
+//            appendLine("conv:$task.convention.plugins")
+//            appendLine("inputs::")
+//
+//            task.inputs.files.forEach { it ->
+//                appendLine(it.absolutePath)
+//            }
+//
+//            appendLine("outputs::")
+//
+//            task.outputs.files.forEach { it ->
+//                appendLine(it.absolutePath)
+//            }
+//        }
+//    )
+//}
+
+artifacts {
+    add(resharperDlls.name, buildDir.resolve(resharperDllsDir.name)) {
+        builtBy(resharperDllsDir)
+    }
+}
+
+val cleanNetBuilds = task("cleanNetBuilds", Delete::class) {
+    group = protocolGroup
+    description = "Clean up obj/ bin/ folders under ReSharper.AWS"
+    delete(project.fileTree("ReSharper.AWS/") {
+        include("**/bin/")
+        include("**/obj/")
+    })
+}
+
+tasks.clean {
+    dependsOn(cleanGenerateModels, cleanNetBuilds)
+}
 
 // Tasks:
 //
@@ -238,12 +282,10 @@ val resharperParts = listOf(
 // `prepareSandbox` depends on the standard Java `jar` and then copies everything into the sandbox dir
 
 tasks.withType<PrepareSandboxTask>().all {
-    dependsOn(buildReSharperPlugin)
+    dependsOn(resharperDllsDir)
 
-    val files = resharperParts.map { "$resharperBuildPath/bin/$it/$buildConfiguration/${it}.dll" } +
-        resharperParts.map { "$resharperBuildPath/bin/$it/$buildConfiguration/${it}.pdb" }
-    from(files) {
-        into("${intellij.pluginName}/dotnet")
+    from(resharperDllsDir) {
+        into("aws-toolkit-jetbrains/dotnet")
     }
 }
 
@@ -261,4 +303,8 @@ tasks.integrationTest {
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
+}
+
+fun StringBuilder.appendLine(s: String) {
+    this.append(s).append("\n")
 }

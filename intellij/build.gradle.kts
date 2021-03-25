@@ -12,6 +12,10 @@ val ideProfile = IdeVersions.ideProfile(project)
 val publishToken: String by project
 val publishChannel: String by project
 
+val resharperDlls = configurations.create("resharperDlls") {
+    isCanBeConsumed = false
+}
+
 intellij {
     version = ideProfile.community.sdkVersion
     pluginName = "aws-toolkit-jetbrains"
@@ -19,9 +23,9 @@ intellij {
 }
 
 tasks.prepareSandbox {
-//    project.findProject(":jetbrains-rider")?.let {
-//        from(tasks.getByPath(":jetbrains-rider:prepareSandbox"))
-//    }
+    from(resharperDlls) {
+        into("aws-toolkit-jetbrains/dotnet")
+    }
 }
 
 tasks.publishPlugin {
@@ -42,5 +46,16 @@ dependencies {
     implementation(project(":jetbrains-ultimate"))
     project.findProject(":jetbrains-rider")?.let {
         implementation(it)
+        resharperDlls(project(":jetbrains-rider", configuration = "resharperDlls"))
+    }
+}
+
+configurations {
+    // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
+    runtimeClasspath {
+        exclude(group = "org.slf4j")
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
     }
 }

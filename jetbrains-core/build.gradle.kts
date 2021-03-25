@@ -78,13 +78,3 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:$coroutinesVersion")
 }
-
-configurations {
-    // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
-    runtimeClasspath {
-        exclude(group = "org.slf4j")
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
-    }
-}

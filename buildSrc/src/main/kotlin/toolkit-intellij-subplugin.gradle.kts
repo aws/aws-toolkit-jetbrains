@@ -10,7 +10,6 @@ import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension.IdeFlavor
-import java.time.Instant
 
 val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
 
@@ -30,7 +29,6 @@ afterEvaluate {
         IdeFlavor.IC -> ideProfile.community
         IdeFlavor.IU -> ideProfile.ultimate
         IdeFlavor.RD -> ideProfile.rider
-        else -> throw UnsupportedOperationException("$flavor")
     }
 
     intellij {
@@ -44,7 +42,7 @@ afterEvaluate {
     }
 
     tasks.jar {
-        archiveBaseName.set("aws-toolkit-jetbrains-$productProfile")
+        archiveBaseName.set("aws-toolkit-jetbrains-$flavor")
     }
 
     tasks.patchPluginXml {
@@ -126,5 +124,15 @@ plugins.withType<ToolkitKotlinConventionsPlugin> {
 //        configure<JacocoTaskExtension> {
 //            setDestinationFile(File("$buildDir/jacoco/${Instant.now()}-jacocoUiTests.exec"))
 //        }
+    }
+}
+
+configurations {
+    // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
+    runtimeClasspath {
+        exclude(group = "org.slf4j")
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
     }
 }
