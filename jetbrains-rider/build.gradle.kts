@@ -233,28 +233,6 @@ val resharperDllsDir = tasks.register<Sync>("resharperDllsDir") {
         path = name // Clear out the path to flatten it
     }
 }
-//
-//gradle.taskGraph.afterTask {
-//    var task = this
-//    println(
-//        buildString {
-//            appendLine("-------------")
-//            appendLine("name:$task.name group:$task.group : $task.description")
-//            appendLine("conv:$task.convention.plugins")
-//            appendLine("inputs::")
-//
-//            task.inputs.files.forEach { it ->
-//                appendLine(it.absolutePath)
-//            }
-//
-//            appendLine("outputs::")
-//
-//            task.outputs.files.forEach { it ->
-//                appendLine(it.absolutePath)
-//            }
-//        }
-//    )
-//}
 
 artifacts {
     add(resharperDlls.name, buildDir.resolve(resharperDllsDir.name)) {

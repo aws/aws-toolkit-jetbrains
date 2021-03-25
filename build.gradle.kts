@@ -4,22 +4,9 @@
 import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 
-buildscript {
-    dependencies {
-        classpath("com.adarshr:gradle-test-logger-plugin:2.1.1")
-    }
-}
-
 val ideProfile = IdeVersions.ideProfile(project)
 val toolkitVersion: String by project
-val kotlinVersion: String by project
-val mockitoVersion: String by project
-val mockitoKotlinVersion: String by project
-val assertjVersion: String by project
-val junitVersion: String by project
-val remoteRobotPort: String by project
 val ktlintVersion: String by project
-val remoteRobotVersion: String by project
 
 plugins {
     id("base")
@@ -48,45 +35,6 @@ allprojects {
         mavenCentral()
     }
 }
-
-
-//    project.plugins.withId("org.jetbrains.intellij") {
-//        extensions.getByType<JacocoPluginExtension>().applyTo(tasks.getByName<RunIdeForUiTestTask>("runIdeForUiTests"))
-
-//        tasks.withType(RunIdeForUiTestTask::class.java).all {
-//            systemProperty("robot-server.port", remoteRobotPort)
-//            systemProperty("ide.mac.file.chooser.native", "false")
-//            systemProperty("jb.consents.confirmation.enabled", "false")
-//            // This does some magic in EndUserAgreement.java to make it not show the privacy policy
-//            systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-//            // This only works on 2020.3+ FIX_WHEN_MIN_IS_203 remove this explanation
-//            systemProperty("ide.show.tips.on.startup.default.value", false)
-//
-//            systemProperty("aws.telemetry.skip_prompt", "true")
-//            systemProperty("aws.suppress_deprecation_prompt", true)
-//            ciOnly {
-//                systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
-//            }
-//
-//            debugOptions {
-//                enabled.set(true)
-//                suspend.set(false)
-//            }
-//
-//            configure<JacocoTaskExtension> {
-//                setDestinationFile(File("$buildDir/jacoco/${Instant.now()}-jacocoUiTests.exec"))
-//            }
-//        }
-
-//    val testJar = tasks.register<Jar>("testJar") {
-//        archiveBaseName.set("${project.name}-test")
-//        from(sourceSets.test.get().output)
-//        from(sourceSets.getByName("integrationTest").output)
-//    }
-//
-//    artifacts {
-//        add("testArtifacts", testJar)
-//    }
 
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
     changeLogFile.set(project.file("CHANGELOG.md"))
