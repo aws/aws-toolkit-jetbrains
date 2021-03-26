@@ -11,7 +11,7 @@ val ktlintVersion: String by project
 plugins {
     id("base")
     id("toolkit-changelog")
-    id("de.undercouch.download") apply false
+    id("toolkit-jacoco-report")
 }
 
 group = "software.aws.toolkits"
@@ -40,31 +40,8 @@ tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
     changeLogFile.set(project.file("CHANGELOG.md"))
 }
 
-//val coverageReport = tasks.register<JacocoReport>("coverageReport") {
-//    executionData.setFrom(fileTree(project.rootDir.absolutePath) { include("**/build/jacoco/*.exec") })
-//
-//    subprojects.forEach {
-//        additionalSourceDirs.from(it.sourceSets.main.get().java.srcDirs)
-//        sourceDirectories.from(it.sourceSets.main.get().java.srcDirs)
-//        classDirectories.from(it.sourceSets.main.get().output.classesDirs)
-//    }
-//
-//    reports {
-//        html.isEnabled = true
-//        xml.isEnabled = true
-//    }
-//}
-//
-//subprojects.forEach {
-//    coverageReport.get().mustRunAfter(it.tasks.withType(Test::class.java))
-//}
-
-val coverageReport = tasks.register("coverageReport") {
-
-}
-
-tasks.check {
-    dependsOn(coverageReport)
+dependencies {
+    aggregateCoverage(project(":core"))
 }
 
 //dependencies {

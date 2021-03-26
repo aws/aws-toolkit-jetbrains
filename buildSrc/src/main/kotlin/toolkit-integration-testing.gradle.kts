@@ -50,9 +50,9 @@ tasks.register<Test>("integrationTest") {
     testClassesDirs = integrationTests.output.classesDirs
     classpath = integrationTests.runtimeClasspath
 
-    mustRunAfter(tasks.named("test"))
+    mustRunAfter(tasks.test)
 }
 
-tasks.named("check") {
+tasks.check {
     dependsOn(integrationTests.compileJavaTaskName)
 }
