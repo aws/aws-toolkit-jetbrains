@@ -57,7 +57,7 @@ afterEvaluate {
     }
 }
 
-// Add our source sets per IDE flavor (i.e. src-211)
+// Add our source sets per IDE profile version (i.e. src-211)
 sourceSets {
     main {
         java.srcDirs(findFolders(project, "src", ideProfile))

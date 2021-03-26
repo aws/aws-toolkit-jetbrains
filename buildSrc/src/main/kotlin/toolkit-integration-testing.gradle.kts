@@ -58,5 +58,5 @@ tasks.register<Test>("integrationTest") {
 }
 
 tasks.check {
-    dependsOn(integrationTests)
+    dependsOn(integrationTests.compileJavaTaskName, integrationTests.getCompileTaskName("kotlin"))
 }
