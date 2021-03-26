@@ -10,6 +10,7 @@ import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension.IdeFlavor
+import java.time.Instant
 
 val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
 
@@ -98,7 +99,7 @@ plugins.withType<ToolkitKotlinConventionsPlugin> {
     }
 
     tasks.withType<DownloadRobotServerPluginTask>() {
-        this.version = remoteRobotVersion
+        version = remoteRobotVersion
     }
 
     tasks.withType<RunIdeForUiTestTask>().all {
@@ -121,9 +122,11 @@ plugins.withType<ToolkitKotlinConventionsPlugin> {
             suspend.set(false)
         }
 
-//        configure<JacocoTaskExtension> {
-//            setDestinationFile(File("$buildDir/jacoco/${Instant.now()}-jacocoUiTests.exec"))
-//        }
+        configure<JacocoTaskExtension> {
+            includes = listOf("software.aws.toolkits.*")
+
+            setDestinationFile(file("$buildDir/jacoco/${Instant.now()}-jacocoUiTests.exec"))
+        }
     }
 }
 

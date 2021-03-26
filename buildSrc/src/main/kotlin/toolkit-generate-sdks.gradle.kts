@@ -15,6 +15,8 @@ plugins {
 dependencies {
     implementation("software.amazon.awssdk:services:$awsSdkVersion")
     implementation("software.amazon.awssdk:aws-json-protocol:$awsSdkVersion")
+    implementation("software.amazon.awssdk:aws-query-protocol:$awsSdkVersion")
+
     runtimeOnly("software.amazon.awssdk:core:$awsSdkVersion")
 }
 

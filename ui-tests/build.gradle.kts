@@ -1,8 +1,6 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import java.net.URI
-
 val remoteRobotPort: String by project
 val junit5Version: String by project
 val remoteRobotVersion: String by project
@@ -12,7 +10,7 @@ val coroutinesVersion: String by project
 val apacheCommonsVersion: String by project
 
 repositories {
-    maven { url = URI("https://jetbrains.bintray.com/intellij-third-party-dependencies") }
+    maven { url = uri("https://jetbrains.bintray.com/intellij-third-party-dependencies") }
 }
 
 plugins {
@@ -50,8 +48,8 @@ tasks.register<Test>("uiTestCore") {
     systemProperty("robot-server.port", remoteRobotPort)
     systemProperty("junit.jupiter.extensions.autodetection.enabled", true)
 
-    systemProperty("testDataPath", project.rootDir.toPath().resolve("testdata").toString())
-    systemProperty("testReportPath", project.buildDir.toPath().resolve("reports").resolve("tests").resolve("testRecordings").toString())
+    systemProperty("testDataPath", project.rootDir.resolve("testdata").toString())
+    systemProperty("testReportPath", project.buildDir.resolve("reports").resolve("tests").resolve("testRecordings").toString())
 
     systemProperty("GRADLE_PROJECT", "jetbrains-core")
     useJUnitPlatform {
