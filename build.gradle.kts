@@ -39,32 +39,6 @@ allprojects {
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
     changeLogFile.set(project.file("CHANGELOG.md"))
 }
-//
-//val ktlint: Configuration by configurations.creating
-//val ktlintTask = tasks.register<JavaExec>("ktlint") {
-//    description = "Check Kotlin code style."
-//    classpath = ktlint
-//    group = "verification"
-//    main = "com.pinterest.ktlint.Main"
-//
-//    enabled = false
-//
-//    val isWindows = System.getProperty("os.name")?.toLowerCase()?.contains("windows") == true
-//
-//    // Must be relative or else Windows will fail
-//    var toInclude = project.projectDir.toRelativeString(project.rootDir) + "/**/*.kt"
-//    var toExclude = File(project.projectDir, "jetbrains-rider").toRelativeString(project.rootDir) + "/**/*.Generated.kt"
-//
-//    if (isWindows) {
-//        toInclude = toInclude.replace("/", "\\")
-//        toExclude = toExclude.replace("/", "\\")
-//    }
-//
-//    args = listOf("-v", toInclude, "!${toExclude}", "!/**/generated-src/**/*.kt")
-//
-//    inputs.files(fileTree(".") { include("**/*.kt") })
-//    outputs.dirs("${project.buildDir}/reports/ktlint/")
-//}
 
 //val coverageReport = tasks.register<JacocoReport>("coverageReport") {
 //    executionData.setFrom(fileTree(project.rootDir.absolutePath) { include("**/build/jacoco/*.exec") })
@@ -90,7 +64,6 @@ val coverageReport = tasks.register("coverageReport") {
 }
 
 tasks.check {
-//    dependsOn(ktlintTask)
     dependsOn(coverageReport)
 }
 

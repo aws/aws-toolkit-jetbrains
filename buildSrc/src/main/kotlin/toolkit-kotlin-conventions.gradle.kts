@@ -67,3 +67,7 @@ ktlint {
         exclude("**/*.Generated.kt")
     }
 }
+
+tasks.check {
+    dependsOn(tasks.ktlintCheck)
+}
