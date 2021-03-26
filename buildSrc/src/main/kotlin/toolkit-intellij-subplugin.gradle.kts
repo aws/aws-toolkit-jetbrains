@@ -79,6 +79,8 @@ plugins.withType<ToolkitKotlinConventionsPlugin> {
     tasks.withType<Test>().all {
         systemProperty("log.dir", "${intellij.sandboxDirectory}-test/logs")
         systemProperty("testDataPath", file("testdata").absolutePath)
+
+        maxHeapSize = "1024m"
     }
 
     tasks.withType<JavaExec> {
@@ -96,6 +98,8 @@ plugins.withType<ToolkitKotlinConventionsPlugin> {
                 throw GradleException("ALTERNATIVE_IDE path not found $alternativeIde")
             }
         }
+
+        maxHeapSize = "1024m"
     }
 
     tasks.withType<DownloadRobotServerPluginTask>() {
