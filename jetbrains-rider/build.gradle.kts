@@ -101,6 +101,14 @@ val generateModels = tasks.register<RdGenTask>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
 
+    inputs.dir(file("protocol/model"))
+
+    outputs.dir(riderGeneratedSources)
+    outputs.dir(csDaemonGeneratedOutput)
+    outputs.dir(csPsiGeneratedOutput)
+    outputs.dir(csAwsSettingsGeneratedOutput)
+    outputs.dir(csAwsProjectGeneratedOutput)
+
     systemProperty("ktDaemonGeneratedOutput", riderGeneratedSources.resolve("DaemonProtocol").absolutePath)
     systemProperty("csDaemonGeneratedOutput", csDaemonGeneratedOutput.absolutePath)
 
@@ -235,9 +243,7 @@ val resharperDllsDir = tasks.register<Sync>("resharperDllsDir") {
 }
 
 artifacts {
-    add(resharperDlls.name, buildDir.resolve(resharperDllsDir.name)) {
-        builtBy(resharperDllsDir)
-    }
+    add(resharperDlls.name, resharperDllsDir)
 }
 
 val cleanNetBuilds = tasks.register<Delete>("cleanNetBuilds") {
