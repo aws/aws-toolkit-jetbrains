@@ -29,7 +29,7 @@ object IdeVersions {
                 "org.jetbrains.plugins.go:202.6397.20"
             ),
             riderPlugins = listOf(
-                "rider-plugins-appender"
+                "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
             ),
             rdGenVersion = "0.203.161",
             nugetVersion = "2020.2.0"
@@ -51,7 +51,7 @@ object IdeVersions {
                 "org.jetbrains.plugins.go:203.5981.114"
             ),
             riderPlugins = listOf(
-                "rider-plugins-appender"
+                "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
             ),
             riderSdkOverride = "2020.3.2",
             ijSdkOverride = "2020.3",
@@ -78,7 +78,7 @@ object IdeVersions {
                 "org.jetbrains.plugins.go:211.6305.21"
             ),
             riderPlugins = listOf(
-                "rider-plugins-appender"
+                "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
             ),
             riderSdkOverride = "2021.1-SNAPSHOT",
             ijSdkOverride = "211.6305-EAP-CANDIDATE-SNAPSHOT",

@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 plugins {
@@ -33,6 +33,10 @@ val testJar = tasks.named<Jar>("testJar") {
 }
 
 // Silly but allows higher throughput of the build because we can start compiling / testing other modules while the tests run
+// This works because the sourceSet 'integrationTest' extends 'test', so it won't compile until after 'test' is compiled, but the
+// task graph goes 'compileTest*' -> 'test' -> 'compileIntegrationTest*' -> 'testJar'.
+// By flipping the order of the graph slightly, we can unblock downstream consumers of the testJar to start running tasks while this project
+// can be executing the 'test' task.
 tasks.test {
     mustRunAfter(testJar)
 }
@@ -54,5 +58,5 @@ tasks.register<Test>("integrationTest") {
 }
 
 tasks.check {
-    dependsOn(integrationTests.compileJavaTaskName)
+    dependsOn(integrationTests)
 }

@@ -8,7 +8,7 @@ val mockitoKotlinVersion: String by project
 val assertjVersion: String by project
 
 plugins {
-    id("java") // Need for jacoco
+    id("java") // Needed for referencing "implementation" configuration
     id("jacoco")
     id("org.gradle.test-retry")
     id("com.adarshr.test-logger")
@@ -19,7 +19,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:$mockitoVersion")
     testImplementation("org.assertj:assertj-core:$assertjVersion")
 
-    // We don't dictate junit vs testng vs junit5 here since it's not consistent
+    // Don't add a test framework by default since we use junit4, junit5, and testng depending on project
 }
 
 // TODO: Can we model this using https://docs.gradle.org/current/userguide/java_testing.html#sec:java_test_fixtures
@@ -63,7 +63,7 @@ tasks.withType<Test>().all {
 
 // Jacoco configs taken from official Gradle docs: https://docs.gradle.org/current/userguide/structuring_software_products.html
 
-// Do not generate reports for individual projects
+// Do not generate reports for individual projects, see toolkit-jacoco-report plugin
 tasks.jacocoTestReport.configure {
     enabled = false
 }

@@ -6,7 +6,7 @@ import software.aws.toolkits.gradle.sdk.GenerateSdkExtension
 
 val awsSdkVersion: String by project
 
-val sdkSettings = project.extensions.create<GenerateSdkExtension>("sdkGenerator")
+val sdkGenerator = project.extensions.create<GenerateSdkExtension>("sdkGenerator")
 
 plugins {
     java
@@ -23,13 +23,13 @@ dependencies {
 sourceSets {
     main {
         java {
-            setSrcDirs(listOf(sdkSettings.srcDir()))
+            setSrcDirs(listOf(sdkGenerator.srcDir()))
         }
     }
 
     test {
         java {
-            setSrcDirs(listOf(sdkSettings.srcDir()))
+            setSrcDirs(listOf(sdkGenerator.testDir()))
         }
     }
 }
