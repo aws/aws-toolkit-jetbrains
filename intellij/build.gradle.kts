@@ -20,6 +20,8 @@ intellij {
     version = ideProfile.community.sdkVersion
     pluginName = "aws-toolkit-jetbrains"
     updateSinceUntilBuild = false
+
+    instrumentCode =  false
 }
 
 tasks.prepareSandbox {

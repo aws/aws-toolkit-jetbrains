@@ -6,17 +6,21 @@ package software.aws.toolkits.gradle.resources
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.language.base.plugins.LifecycleBasePlugin.VERIFICATION_GROUP
+import java.time.Instant
 
 open class ValidateMessages : DefaultTask() {
     @InputFiles
     val paths: ConfigurableFileCollection = project.objects.fileCollection()
 
-    @OutputFiles
-    val output: ConfigurableFileCollection = project.objects.fileCollection()
+    @OutputFile
+    val output: RegularFileProperty = project.objects.fileProperty().convention {
+        project.buildDir.resolve("validateMessages")
+    }
 
     init {
         group = VERIFICATION_GROUP
@@ -53,6 +57,7 @@ open class ValidateMessages : DefaultTask() {
                 }
             }
 
-        output.setFrom(inputs)
+        // Write the current time to the file so it will be cacheable (gradle can only use files to determine up to date checks)
+        output.asFile.get().writeText(Instant.now().toString())
     }
 }
