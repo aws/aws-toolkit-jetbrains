@@ -78,7 +78,7 @@ sourceSets {
 
 tasks.withType<Test>().all {
     systemProperty("log.dir", "${intellij.sandboxDirectory}-test/logs")
-    systemProperty("testDataPath", file("testdata").absolutePath)
+    systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
 
     maxHeapSize = "2048mbuildSrc/src/main/kotlin/toolkit-intellij-subplugin.gradle.kts"
 }
