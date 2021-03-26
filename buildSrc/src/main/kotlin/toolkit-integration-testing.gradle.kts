@@ -28,8 +28,13 @@ configurations.getByName("integrationTestRuntimeOnly") {
 }
 
 // Add the integration test source set to test jar
-tasks.named<Jar>("testJar") {
-    from(sourceSets.getByName("integrationTest").output)
+val testJar = tasks.named<Jar>("testJar") {
+    from(integrationTests.output)
+}
+
+// Silly but allows higher throughput of the build because we can start compiling / testing other modules while the tests run
+tasks.test {
+    mustRunAfter(testJar)
 }
 
 idea {
