@@ -1,6 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import gradle.kotlin.dsl.accessors._1cb1d6f24e7043a6c00cf5238acab60e.test
 import software.aws.toolkits.gradle.ciOnly
 
 val mockitoVersion: String by project
@@ -27,6 +28,15 @@ val testArtifacts by configurations.creating
 val testJar = tasks.register<Jar>("testJar") {
     archiveBaseName.set("${project.name}-test")
     from(sourceSets.test.get().output)
+}
+
+// Silly but allows higher throughput of the build because we can start compiling / testing other modules while the tests run
+// This works because the sourceSet 'integrationTest' extends 'test', so it won't compile until after 'test' is compiled, but the
+// task graph goes 'compileTest*' -> 'test' -> 'compileIntegrationTest*' -> 'testJar'.
+// By flipping the order of the graph slightly, we can unblock downstream consumers of the testJar to start running tasks while this project
+// can be executing the 'test' task.
+tasks.test {
+    mustRunAfter(testJar)
 }
 
 artifacts {

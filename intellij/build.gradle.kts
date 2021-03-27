@@ -5,6 +5,7 @@ import software.aws.toolkits.gradle.intellij
 
 plugins {
     id("org.jetbrains.intellij")
+    id("toolkit-testing") // Needed so the coverage configurations are present
 }
 
 val ideProfile = IdeVersions.ideProfile(project)

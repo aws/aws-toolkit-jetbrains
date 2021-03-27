@@ -41,7 +41,7 @@ tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
 }
 
 dependencies {
-    aggregateCoverage(project(":core"))
+    aggregateCoverage(project(":intellij"))
 }
 
 //dependencies {

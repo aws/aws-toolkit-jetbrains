@@ -32,15 +32,6 @@ val testJar = tasks.named<Jar>("testJar") {
     from(integrationTests.output)
 }
 
-// Silly but allows higher throughput of the build because we can start compiling / testing other modules while the tests run
-// This works because the sourceSet 'integrationTest' extends 'test', so it won't compile until after 'test' is compiled, but the
-// task graph goes 'compileTest*' -> 'test' -> 'compileIntegrationTest*' -> 'testJar'.
-// By flipping the order of the graph slightly, we can unblock downstream consumers of the testJar to start running tasks while this project
-// can be executing the 'test' task.
-tasks.test {
-    mustRunAfter(testJar)
-}
-
 idea {
     module {
         testSourceDirs = testSourceDirs + integrationTests.java.srcDirs
