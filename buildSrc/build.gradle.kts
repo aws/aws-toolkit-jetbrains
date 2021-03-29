@@ -35,7 +35,10 @@ dependencies {
     implementation("org.jetbrains.intellij.plugins:gradle-intellij-plugin:$ideaPluginVersion")
 
     implementation("org.jlleitschuh.gradle:ktlint-gradle:10.0.0")
+    compileOnly("com.pinterest.ktlint:ktlint-core:$ktlintVersion")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+    testImplementation("com.pinterest.ktlint:ktlint-core:$ktlintVersion")
+    testImplementation("com.pinterest.ktlint:ktlint-test:$ktlintVersion")
 
     implementation("org.gradle:test-retry-gradle-plugin:1.2.1")
     implementation("com.adarshr:gradle-test-logger-plugin:2.1.1")

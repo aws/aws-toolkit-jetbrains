@@ -71,3 +71,7 @@ ktlint {
 tasks.check {
     dependsOn(tasks.ktlintCheck)
 }
+
+dependencies {
+    ktlintRuleset(project)
+}

@@ -44,11 +44,6 @@ dependencies {
     aggregateCoverage(project(":intellij"))
 }
 
-//dependencies {
-//    ktlint("com.pinterest:ktlint:$ktlintVersion")
-//    ktlint(project(":ktlint-rules"))
-//}
-
 tasks.register("runIde") {
     doFirst {
         throw GradleException("Use project specific runIde command, i.e. :jetbrains-core:runIde, :intellij:runIde")
