@@ -15,8 +15,10 @@ import software.amazon.awssdk.services.cloudformation.model.StackEvent
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import java.time.Duration
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.SwingUtilities
+import kotlin.time.measureTime
 
 /**
  * CallBacks for Updater. Called on EDT.
@@ -62,6 +64,8 @@ class Updater(
 
     fun start() {
         updating.set(true)
+        //cancel pending requests after refreshing
+        alarm.cancelAllRequests()
         alarm.addRequest({ fetchDataSafely() }, 0)
     }
 
@@ -133,7 +137,6 @@ class Updater(
             }
 
             updating.set(!newStackStatusNotInProgress)
-
             // Reschedule next run
             if (stackStatus == StatusType.DELETED) {
                 alarm.cancelAllRequests()
