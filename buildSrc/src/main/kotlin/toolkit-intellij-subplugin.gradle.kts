@@ -81,7 +81,7 @@ tasks.withType<Test>().all {
     systemProperty("log.dir", "${intellij.sandboxDirectory}-test/logs")
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
 
-    maxHeapSize = "1024m"
+//    maxHeapSize = "1024m"
 }
 
 tasks.withType<JavaExec> {
@@ -100,7 +100,7 @@ tasks.withType<RunIdeTask> {
         }
     }
 
-    maxHeapSize = "1024m"
+//    maxHeapSize = "1024m"
 }
 
 tasks.withType<DownloadRobotServerPluginTask>() {
