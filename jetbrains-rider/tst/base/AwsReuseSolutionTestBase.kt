@@ -43,6 +43,15 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     override val testCaseNameToTempDir: String
         get() = getSolutionDirectoryName()
 
+    override val traceCategories: List<String>
+        get() = listOf(
+            "JetBrains.Platform.MsBuildHost.Autodetect",
+            "JetBrains.ProjectModel.MSBuild.BuildTools",
+            "JetBrains.ReSharper.Host.Features.Toolset",
+            "JetBrains.ReSharper.Host.Features.Runtime.MonoRuntimeDetector",
+            "JetBrains.Application.platforms.DotNetCoreRuntimesDetector"
+        )
+
     // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_203
     @BeforeClass
     fun allowDotnetRoots() {

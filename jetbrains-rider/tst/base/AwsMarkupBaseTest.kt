@@ -20,6 +20,15 @@ import org.testng.annotations.BeforeClass
 // To avoid such errors we need to explicitly set toolset and MSBuild to be selected on an instance.
 // Please use this class for any Highlighting tests
 open class AwsMarkupBaseTest : BaseTestWithMarkup() {
+    override val traceCategories: List<String>
+        get() = listOf(
+            "JetBrains.Platform.MsBuildHost.Autodetect",
+            "JetBrains.ProjectModel.MSBuild.BuildTools",
+            "JetBrains.ReSharper.Host.Features.Toolset",
+            "JetBrains.ReSharper.Host.Features.Runtime.MonoRuntimeDetector",
+            "JetBrains.Application.platforms.DotNetCoreRuntimesDetector"
+        )
+
     @BeforeClass
     fun setUpBuildToolPath() {
         if (SystemInfo.isWindows) {
