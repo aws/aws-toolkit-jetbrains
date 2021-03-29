@@ -13,7 +13,7 @@ buildscript {
     @Suppress("RemoveRedundantQualifierName")
     val rdversion = software.aws.toolkits.gradle.IdeVersions.ideProfile(project).rider.rdGenVersion
 
-    logger.info("Using rd-gen: $rdversion")
+    println("Using rd-gen: $rdversion")
 
     repositories {
         maven("https://www.myget.org/F/rd-snapshots/maven/")
@@ -86,10 +86,9 @@ rdgenDir.mkdirs()
 configure<RdGenExtension> {
     verbose = true
     hashFolder = rdgenDir.toString()
-    logger.info("Configuring rdgen params")
 
     classpath({
-        logger.info("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
+        println("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
         File(intellij.ideaDependency.classes, "lib/rd").resolve("rider-model.jar").absolutePath
     })
 
@@ -127,10 +126,10 @@ val cleanGenerateModels = tasks.register("cleanGenerateModels") {
     description = "Clean up generated protocol models"
 
     doLast {
-        logger.info("Deleting generated Kotlin files...")
+        println("Deleting generated Kotlin files...")
         riderGeneratedSources.listFiles().orEmpty().forEach { it.deleteRecursively() }
 
-        logger.info("Deleting generated CSharp files...")
+        println("Deleting generated CSharp files...")
         val csGeneratedRoots = listOf(
             csDaemonGeneratedOutput,
             csPsiGeneratedOutput,
