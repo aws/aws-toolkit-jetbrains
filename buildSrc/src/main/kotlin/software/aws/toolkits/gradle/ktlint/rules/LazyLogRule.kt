@@ -21,10 +21,6 @@ class LazyLogRule : Rule("log-not-lazy") {
     ) {
         val element = node.psi ?: return
         when (element) {
-//            if (type == IMPORT_DIRECTIVE) {
-//                imports += (vnode.psi as KtImportDirective).importPath!!.pathStr.removeBackticks().trim()
-//            }
-
             is KtCallExpression -> {
                 element.getCallNameExpression()?.let {
                     if (!logMethods.contains(it.text)) {
