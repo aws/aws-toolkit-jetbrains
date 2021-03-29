@@ -37,9 +37,10 @@ tasks.publishPlugin {
 }
 
 tasks.check {
-    dependsOn(tasks.named("verifyPlugin"))
+    dependsOn(tasks.verifyPlugin)
 }
 
+// We have no source in this project, so skip test task
 tasks.test {
     enabled = false
 }

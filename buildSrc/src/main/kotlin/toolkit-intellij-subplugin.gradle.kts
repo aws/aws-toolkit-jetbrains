@@ -52,6 +52,7 @@ afterEvaluate {
         setUntilBuild(ideProfile.untilVersion)
     }
 
+    // Disable building the settings search cache since it 1. fails the build, 2. gets run on the final packaged plugin
     tasks.buildSearchableOptions {
         enabled = false
     }
