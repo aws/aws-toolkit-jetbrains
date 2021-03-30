@@ -80,8 +80,6 @@ sourceSets {
 tasks.withType<Test>().all {
     systemProperty("log.dir", "${intellij.sandboxDirectory}-test/logs")
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
-
-    maxHeapSize = "1G"
 }
 
 tasks.withType<JavaExec> {
