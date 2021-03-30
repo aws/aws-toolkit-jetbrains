@@ -276,9 +276,11 @@ tasks.compileKotlin {
 tasks.test {
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
+    maxHeapSize = "1024m"
 }
 
 tasks.integrationTest {
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
+    maxHeapSize = "1024m"
 }
