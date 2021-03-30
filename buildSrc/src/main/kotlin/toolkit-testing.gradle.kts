@@ -1,7 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import gradle.kotlin.dsl.accessors._1cb1d6f24e7043a6c00cf5238acab60e.test
 import software.aws.toolkits.gradle.ciOnly
 
 val mockitoVersion: String by project
@@ -12,7 +11,7 @@ plugins {
     id("java") // Needed for referencing "implementation" configuration
     id("jacoco")
     id("org.gradle.test-retry")
-    id("com.adarshr.test-logger")
+//    id("com.adarshr.test-logger")
 }
 
 dependencies {
@@ -56,14 +55,14 @@ tasks.withType<Test>().all {
         junitXml.isEnabled = true
         html.isEnabled = true
     }
-
-    testlogger {
-        showFullStackTraces = true
-        showStandardStreams = true
-        showPassedStandardStreams = false
-        showSkippedStandardStreams = true
-        showFailedStandardStreams = true
-    }
+//
+//    testlogger {
+//        showFullStackTraces = true
+//        showStandardStreams = true
+//        showPassedStandardStreams = false
+//        showSkippedStandardStreams = true
+//        showFailedStandardStreams = true
+//    }
 
     configure<JacocoTaskExtension> {
         // don't instrument sdk, icons, ktlint, etc.
