@@ -3,6 +3,7 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
 
 val kotlinVersion: String by project
 val coroutinesVersion: String by project
@@ -66,6 +67,10 @@ ktlint {
         exclude("**/TelemetryDefinitions.kt")
         exclude("**/*.Generated.kt")
     }
+}
+
+tasks.withType<KtLintCheckTask>() {
+    workerMaxHeapSize.set("64m")
 }
 
 tasks.check {
