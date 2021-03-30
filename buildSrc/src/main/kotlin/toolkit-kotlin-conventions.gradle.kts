@@ -69,10 +69,6 @@ ktlint {
     }
 }
 
-tasks.withType<KtLintCheckTask>() {
-    workerMaxHeapSize.set("64m")
-}
-
 tasks.check {
     dependsOn(tasks.ktlintCheck)
 }
