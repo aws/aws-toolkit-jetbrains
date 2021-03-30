@@ -12,7 +12,7 @@ plugins {
     id("java") // Needed for referencing "implementation" configuration
     id("jacoco")
     id("org.gradle.test-retry")
-//    id("com.adarshr.test-logger")
+    id("com.adarshr.test-logger")
 }
 
 dependencies {
@@ -60,14 +60,14 @@ tasks.withType<Test>().all {
         junitXml.isEnabled = true
         html.isEnabled = true
     }
-//
-//    testlogger {
-//        showFullStackTraces = true
-//        showStandardStreams = true
-//        showPassedStandardStreams = false
-//        showSkippedStandardStreams = true
-//        showFailedStandardStreams = true
-//    }
+
+    testlogger {
+        showFullStackTraces = true
+        showStandardStreams = true
+        showPassedStandardStreams = false
+        showSkippedStandardStreams = true
+        showFailedStandardStreams = true
+    }
 
     configure<JacocoTaskExtension> {
         // don't instrument sdk, icons, ktlint, etc.
