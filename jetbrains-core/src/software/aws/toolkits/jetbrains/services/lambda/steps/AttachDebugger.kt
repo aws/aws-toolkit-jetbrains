@@ -57,8 +57,8 @@ class AttachDebugger(
                         .resolveDebuggerSupport()
                         .createDebugProcess(context, environment, state, state.settings.debugHost, debugPorts)
 
+                    // always wait until we have a sam invoke process handle before trying to attach
                     val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
-                    // always wait until we have a sam invoke process handle
                     val session = withContext(getCoroutineUiContext()) {
                         val debugManager = XDebuggerManager.getInstance(environment.project)
                         // Requires EDT on some paths, so always requires to be run on EDT

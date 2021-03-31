@@ -15,7 +15,6 @@ fun getCoroutineUiExecutor(
     if (disposable == null) {
         it
     } else {
-        // This is not actually scheduled for removal in 2019.3
         it.expireWith(disposable)
     }
 }

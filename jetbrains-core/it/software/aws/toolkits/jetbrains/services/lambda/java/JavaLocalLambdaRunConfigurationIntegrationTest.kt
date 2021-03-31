@@ -19,7 +19,6 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
-import software.aws.toolkits.jetbrains.services.lambda.SamDebuggerTimeoutTest
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.utils.addBreakpoint
@@ -228,17 +227,4 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         expectedOutput = input.toUpperCase(),
         addBreakpoint = { projectRule.addBreakpoint() }
     )
-
-    @Test
-    fun `does not timeout if SAM has output`() {
-        val runConfiguration = createHandlerBasedRunConfiguration(
-            project = projectRule.project,
-            runtime = runtime.toSdkRuntime(),
-            input = "\"Hello World\"",
-            credentialsProviderId = mockId
-        )
-        assertThat(runConfiguration).isNotNull
-
-        SamDebuggerTimeoutTest.`does not timeout if SAM has output`(runConfiguration)
-    }
 }
