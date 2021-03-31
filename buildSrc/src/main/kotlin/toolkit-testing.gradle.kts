@@ -66,7 +66,7 @@ tasks.withType<Test>().all {
     }
 
     configure<JacocoTaskExtension> {
-// don't instrument sdk, icons, ktlint, etc.
+        // don't instrument sdk, icons, ktlint, etc.
         includes = listOf("software.aws.toolkits.*")
     }
 }
