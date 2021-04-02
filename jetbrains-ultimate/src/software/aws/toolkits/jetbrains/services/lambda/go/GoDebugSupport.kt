@@ -21,6 +21,8 @@ class GoSamDebugSupport : RuntimeDebugSupport {
         debugHost: String,
         debugPorts: List<Int>
     ): XDebugProcessStarter = GoDebugHelper.createGoDebugProcess(debugHost, debugPorts, context)
+    // monitors SAM output for a magic string
+    override fun waitForDebugPortOpen(): Boolean = false
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
         val debugger = GoDebugHelper.copyDlv()
@@ -36,6 +38,9 @@ class GoImageDebugSupport : ImageDebugSupport {
     override fun displayName() = LambdaRuntime.GO1_X.toString().capitalize()
 
     override val languageId = GoLanguage.INSTANCE.id
+
+    // monitors SAM output for a magic string
+    override fun waitForDebugPortOpen(): Boolean = false
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
         val debugger = GoDebugHelper.copyDlv()

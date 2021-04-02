@@ -36,6 +36,9 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
+import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Socket
 
 class AttachDebugger(
     val environment: ExecutionEnvironment,
@@ -52,13 +55,29 @@ class AttachDebugger(
             try {
                 val connectJob = async(CoroutineName("SamWaitForDebugProcess")) {
                     val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
-                    val debugProcessStarter = state
+                    val debuggerSupport = state
                         .settings
                         .resolveDebuggerSupport()
-                        .createDebugProcess(context, environment, state, state.settings.debugHost, debugPorts)
+                    val debugProcessStarter = debuggerSupport.createDebugProcess(context, environment, state, state.settings.debugHost, debugPorts)
 
                     // always wait until we have a sam invoke process handle before trying to attach
                     val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
+                    if (debuggerSupport.waitForDebugPortOpen()) {
+                        // spin until port is accepting connections
+                        var isAvailable = false
+                        while (!isAvailable) {
+                            try {
+                                Socket().use {
+                                    it.connect(InetSocketAddress("127.0.0.1", debugPorts.first()))
+                                }
+                                isAvailable = true
+                            } catch (e: IOException) {
+                                LOG.warn("retry")
+                                delay(500)
+                            }
+                        }
+                    }
+
                     val session = withContext(getCoroutineUiContext()) {
                         val debugManager = XDebuggerManager.getInstance(environment.project)
                         // Requires EDT on some paths, so always requires to be run on EDT
