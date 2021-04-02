@@ -26,6 +26,9 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningS
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 
 class PythonRuntimeDebugSupport : RuntimeDebugSupport {
+    // TODO: why?
+    override fun waitForDebugPortOpen(): Boolean = false
+
     override fun samArguments(debugPorts: List<Int>): List<String> = listOf(
         "--debugger-path",
         // Mount pydevd from PyCharm into docker
@@ -44,6 +47,8 @@ class PythonRuntimeDebugSupport : RuntimeDebugSupport {
 }
 
 abstract class PythonImageDebugSupport : ImageDebugSupport {
+    // TODO: why?
+    override fun waitForDebugPortOpen(): Boolean = false
     override fun supportsPathMappings(): Boolean = true
     override val languageId = PythonLanguage.INSTANCE.id
 
