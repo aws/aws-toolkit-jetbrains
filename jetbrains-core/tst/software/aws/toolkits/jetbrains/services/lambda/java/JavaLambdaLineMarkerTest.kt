@@ -11,7 +11,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker
 import software.aws.toolkits.jetbrains.settings.LambdaSettings
@@ -23,10 +22,6 @@ class JavaLambdaLineMarkerTest {
     @Rule
     @JvmField
     val projectRule = JavaCodeInsightTestFixtureRule()
-
-    @JvmField
-    @Rule
-    val resourceCache = MockResourceCacheRule()
 
     @Before
     fun setUp() {
