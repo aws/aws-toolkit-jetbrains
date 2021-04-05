@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.ecr.getDockerServerRuntimeInstan
 import software.aws.toolkits.jetbrains.services.ecr.pushImage
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.toLocalImageList
+import software.aws.toolkits.jetbrains.services.ecs.execution.DockerUtil
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
@@ -39,6 +40,10 @@ class PushTagToRepositoryAction :
     CoroutineScope by ApplicationThreadPoolScope("PushRepositoryAction") {
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance> =
         async(start = CoroutineStart.LAZY) { getDockerServerRuntimeInstance() }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabledAndVisible = DockerUtil.dockerPluginAvailable()
+    }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
@@ -110,14 +115,14 @@ internal class PushToEcrDialog(
                 { localImage },
                 { ::localImage.set(it) },
                 listCellRenderer { value, _, _ ->
-                    value.tag ?: value.imageId.take(15)
+                    text = value.tag ?: value.imageId.take(15)
                 }
             ).withErrorOnApplyIf(message("ecr.repo.not_selected")) { it.selected() == null }
         }
 
         row(message("ecr.push.remoteTag")) {
             textField(::remoteTag)
-                .withErrorOnApplyIf("local image not specified") { it.blankAsNull() == null }
+                .withErrorOnApplyIf(message("ecr.tag.not_provided")) { it.blankAsNull() == null }
         }
     }
 

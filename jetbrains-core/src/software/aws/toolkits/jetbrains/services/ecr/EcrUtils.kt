@@ -60,7 +60,6 @@ suspend fun pushImage(project: Project, dockerServerRuntime: DockerServerRuntime
     val (username, password) = ecrLogin
     val model = DockerRepositoryModel().also {
         val repoUri = pushRequest.remoteRepo.repositoryUri
-        // fix
         it.registry = DockerRegistry().also { registry ->
             registry.address = repoUri
             registry.username = username

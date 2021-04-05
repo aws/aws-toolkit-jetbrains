@@ -247,7 +247,7 @@ with what features/services are supported.
     <actions>
         <group id="aws.toolkit.explorer.ecr" popup="true" compact="false">
             <action id="ecr.repository.create" class="software.aws.toolkits.jetbrains.services.ecr.actions.CreateRepositoryAction"/>
-            <action id="ecr.repository.push" class="software.aws.toolkits.jetbrains.services.ecr.actions.PushTagToRepositoryAction"/>
+            <action id="ecr.repository.pushTag" class="software.aws.toolkits.jetbrains.services.ecr.actions.PushTagToRepositoryAction"/>
         </group>
 
         <group id="aws.toolkit.explorer.ecr.repository" popup="true" compact="false">

@@ -8,7 +8,6 @@ import com.intellij.docker.remote.run.runtime.DockerAgentBuildImageConfig
 import com.intellij.docker.remote.run.runtime.RemoteDockerApplicationRuntime
 import com.intellij.docker.remote.run.runtime.RemoteDockerRuntime
 import com.intellij.testFramework.ProjectRule
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
@@ -16,9 +15,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ecr.EcrClient
-import software.amazon.awssdk.services.ecr.model.ImageDetail
 import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
-import java.util.*
+import java.util.UUID
 
 class EcrPushIntegrationTest {
     private val ecrClient = EcrClient.builder()
@@ -28,7 +26,6 @@ class EcrPushIntegrationTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
-
 
     @Rule
     @JvmField
@@ -56,7 +53,10 @@ class EcrPushIntegrationTest {
         runBlocking {
             val serverInstance = getDockerServerRuntimeInstance()
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
-            val runtime = RemoteDockerApplicationRuntime.createWithPullImage(RemoteDockerRuntime.create(DockerCloudConfiguration.createDefault(), project), DockerAgentBuildImageConfig(System.currentTimeMillis().toString(), dockerfile, false))
+            val runtime = RemoteDockerApplicationRuntime.createWithPullImage(
+                RemoteDockerRuntime.create(DockerCloudConfiguration.createDefault(), project),
+                DockerAgentBuildImageConfig(System.currentTimeMillis().toString(), dockerfile, false)
+            )
             // gross transform because we only have the short SHA right now
             val localImageId = runtime.agent.getImages(null).first { it.imageId.startsWith("sha256:${runtime.agentApplication.imageId}") }.imageId
             val pushRequest = EcrPushRequest(
@@ -68,9 +68,11 @@ class EcrPushIntegrationTest {
             pushImage(projectRule.project, serverInstance, ecrLogin, pushRequest)
         }
 
-        assertThat(ecrClient.describeImages {
-            it.repositoryName(remoteRepo.repositoryName)
-        }.imageDetails()).anySatisfy {
+        assertThat(
+            ecrClient.describeImages {
+                it.repositoryName(remoteRepo.repositoryName)
+            }.imageDetails()
+        ).anySatisfy {
             assertThat(it.imageTags()).contains(remoteTag)
             // would check the digest matches what we've uploaded, but it appears to change upon upload to ECR
         }
