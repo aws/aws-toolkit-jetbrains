@@ -245,12 +245,15 @@ with what features/services are supported.
     </extensions>
 
     <actions>
+        <action id="ecr.repository.pushTag" class="software.aws.toolkits.jetbrains.services.ecr.actions.PushTagToRepositoryAction"/>
+
         <group id="aws.toolkit.explorer.ecr" popup="true" compact="false">
             <action id="ecr.repository.create" class="software.aws.toolkits.jetbrains.services.ecr.actions.CreateRepositoryAction"/>
-            <action id="ecr.repository.pushTag" class="software.aws.toolkits.jetbrains.services.ecr.actions.PushTagToRepositoryAction"/>
+            <reference id="ecr.repository.pushTag"/>
         </group>
 
         <group id="aws.toolkit.explorer.ecr.repository" popup="true" compact="false">
+            <reference id="ecr.repository.pushTag"/>
             <action id="ecr.repository.copyUri" class="software.aws.toolkits.jetbrains.services.ecr.actions.CopyRepositoryUriAction"/>
             <separator/>
             <action id="ecr.repository.delete" class="software.aws.toolkits.jetbrains.services.ecr.actions.DeleteRepositoryAction"/>
