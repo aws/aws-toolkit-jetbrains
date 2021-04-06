@@ -3,25 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import base.allowCustomDotnetRoots
+import base.AwsMarkupBaseTest
 import com.jetbrains.rdclient.daemon.util.attributeId
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
-import com.jetbrains.rider.test.base.BaseTestWithMarkup
-import org.testng.annotations.BeforeClass
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.protocol.awsSettingModel
 
-class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
+class LambdaGutterMarkHighlightingTest : AwsMarkupBaseTest() {
+
     companion object {
         private const val LAMBDA_RUN_MARKER_ATTRIBUTE_ID = "AWS Lambda Run Method Gutter Mark"
-    }
-
-    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_203
-    @BeforeClass
-    fun allowDotnetRoots() {
-        allowCustomDotnetRoots()
     }
 
     override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
