@@ -8,17 +8,15 @@ import com.intellij.openapi.module.ModuleType
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
@@ -43,9 +41,11 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
     @JvmField
     val projectRule = HeavyNodeJsCodeInsightTestFixtureRule()
 
+    @Rule
+    @JvmField
+    val credentialsManager = MockCredentialManagerRule()
+
     private val input = RuleUtils.randomName()
-    private val mockId = "MockCredsId"
-    private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val fileContents =
         // language=JS
         """
@@ -57,6 +57,8 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             return abc()
         };
         """.trimIndent()
+
+    private lateinit var mockCredentialsId: String
 
     @Before
     fun setUp() {
@@ -71,13 +73,8 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             fixture.openFileInEditor(psiFile.virtualFile)
         }
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+        mockCredentialsId = credentialsManager.createCredentialProvider().id
         UltimateTestUtils.ensureBuiltInServerStarted()
-    }
-
-    @After
-    fun tearDown() {
-        MockCredentialsManager.getInstance().reset()
     }
 
     @Test
@@ -89,7 +86,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             runtime = runtime,
             handler = "hello_world/app.lambdaHandler",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockCredentialsId
         )
 
         assertThat(runConfiguration).isNotNull
@@ -113,7 +110,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             runtime = runtime,
             handler = "hello_world/app.lambdaHandler",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId,
+            credentialsProviderId = mockCredentialsId,
             samOptions = samOptions
         )
 
@@ -150,7 +147,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             templateFile = templateFile.containingFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockCredentialsId
         )
 
         assertThat(runConfiguration).isNotNull
@@ -170,7 +167,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             runtime = runtime,
             handler = "hello_world/app.lambdaHandler",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockCredentialsId
         )
 
         assertThat(runConfiguration).isNotNull
@@ -201,7 +198,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             runtime = runtime,
             handler = "hello_world/subfolder/app.lambdaHandler",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockCredentialsId
         )
 
         assertThat(runConfiguration).isNotNull
@@ -223,7 +220,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         relativePath = "samProjects/image/$runtime",
         sourceFileName = "app.js",
         runtime = LambdaRuntime.fromValue(runtime)!!,
-        mockCredentialsId = mockId,
+        mockCredentialsId = mockCredentialsId,
         input = input,
         expectedOutput = input.toUpperCase()
     )
@@ -234,7 +231,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         relativePath = "samProjects/image/$runtime",
         sourceFileName = "app.js",
         runtime = LambdaRuntime.fromValue(runtime)!!,
-        mockCredentialsId = mockId,
+        mockCredentialsId = mockCredentialsId,
         input = input,
         expectedOutput = input.toUpperCase(),
         addBreakpoint = { projectRule.addBreakpoint() }
