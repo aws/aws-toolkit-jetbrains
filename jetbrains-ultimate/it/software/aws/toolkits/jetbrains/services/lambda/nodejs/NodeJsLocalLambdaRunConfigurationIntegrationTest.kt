@@ -48,7 +48,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
     @Rule
     @JvmField
     val credentialsManager = MockCredentialManagerRule()
-    
+
     private val input = RuleUtils.randomName()
     private val fileContents =
         """
