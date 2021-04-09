@@ -32,6 +32,7 @@ class RemoteCoverage private constructor(task: Test) {
 
             val jacocoServer = task.project.gradle.sharedServices.registerIfAbsent("jacocoServer", JacocoServer::class.java) {
                 if (!execFile.exists()) {
+                    task.project.mkdir(execFile.parentFile)
                     execFile.createNewFile()
                 }
 
