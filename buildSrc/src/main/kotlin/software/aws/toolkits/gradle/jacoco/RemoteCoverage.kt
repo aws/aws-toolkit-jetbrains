@@ -22,15 +22,19 @@ import java.util.concurrent.atomic.AtomicBoolean
 class RemoteCoverage private constructor(task: Test) {
     companion object {
         fun enableRemoteCoverage(task: Test) = RemoteCoverage(task)
-    }
 
-    private val server = "localhost"
-    private val port = 6300
+        private const val DEFAULT_JACOCO_PORT = 6300
+    }
 
     init {
         task.extensions.findByType(JacocoTaskExtension::class.java)?.let {
             val execFile = it.destinationFile ?: return@let
+
             val jacocoServer = task.project.gradle.sharedServices.registerIfAbsent("jacocoServer", JacocoServer::class.java) {
+                if (!execFile.exists()) {
+                    execFile.createNewFile()
+                }
+
                 parameters.execFile.set(execFile)
             }
 
@@ -45,7 +49,7 @@ class RemoteCoverage private constructor(task: Test) {
             val execFile: RegularFileProperty
         }
 
-        private val serverSocket = ServerSocket(6300) // Default jacoco port
+        private val serverSocket = ServerSocket(DEFAULT_JACOCO_PORT)
         private val signalShutdown = AtomicBoolean(false)
 
         private val outputStream = parameters.execFile.asFile.get().outputStream()
