@@ -34,7 +34,6 @@ import software.aws.toolkits.jetbrains.services.ecr.pushImage
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.ecr.toLocalImageList
-import software.aws.toolkits.jetbrains.services.ecs.execution.DockerUtil
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -43,14 +42,10 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 
 class PushTagToRepositoryAction :
-    DumbAwareAction(message("ecr.push.action")),
+    DumbAwareAction(),
     CoroutineScope by ApplicationThreadPoolScope("PushRepositoryAction") {
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance> =
         async(start = CoroutineStart.LAZY) { getDockerServerRuntimeInstance() }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = DockerUtil.dockerPluginAvailable()
-    }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)

@@ -23,11 +23,14 @@ import org.jetbrains.concurrency.await
 import software.amazon.awssdk.services.ecr.model.AuthorizationData
 import software.aws.toolkits.jetbrains.services.ecr.actions.LocalImage
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
+import software.amazon.awssdk.services.ecr.model.Repository as SdkRepository
 
 data class EcrLogin(
     val username: String,
     val password: String
-)
+) {
+    override fun toString() = "EcrLogin@${hashCode()}"
+}
 
 data class EcrPushRequest(
     val localImageId: String,
@@ -77,12 +80,13 @@ private const val NO_TAG_TAG = "<none>:<none>"
 internal fun Array<DockerAgentApplication>.toLocalImageList(): List<LocalImage> =
     this.flatMap { image ->
         image.imageRepoTags?.map { localTag ->
-            val tag = if (localTag == NO_TAG_TAG) null else localTag
+            val tag = localTag.takeUnless { it == NO_TAG_TAG }
             LocalImage(image.imageId, tag)
         } ?: listOf(LocalImage(image.imageId, null))
     }.toList()
 
 fun AuthorizationData.getDockerLogin(): EcrLogin {
+    // service returns token as base64-encoded string with the format 'user:password'
     val auth = Base64.decode(this.authorizationToken()).toString(Charsets.UTF_8).split(':', limit = 2)
 
     return EcrLogin(
@@ -91,7 +95,7 @@ fun AuthorizationData.getDockerLogin(): EcrLogin {
     )
 }
 
-fun software.amazon.awssdk.services.ecr.model.Repository.toToolkitEcrRepository(): Repository? {
+fun SdkRepository.toToolkitEcrRepository(): Repository? {
     val name = repositoryName() ?: return null
     val arn = repositoryArn() ?: return null
     val uri = repositoryUri() ?: return null
