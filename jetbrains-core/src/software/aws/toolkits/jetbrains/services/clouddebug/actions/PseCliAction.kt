@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.clouddebug.actions
 
+import com.intellij.build.BuildContentManager
 import com.intellij.build.BuildViewManager
 import com.intellij.build.DefaultBuildDescriptor
 import com.intellij.build.events.impl.FailureResultImpl
@@ -23,7 +24,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import com.intellij.openapi.wm.ToolWindowId
 import com.intellij.openapi.wm.ToolWindowManager
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.debug
@@ -83,7 +83,8 @@ abstract class PseCliAction(val project: Project, val actionName: String, privat
 
                     runInEdt {
                         // Safe access because it is possible to close the window before this completes
-                        toolWindowManager.getToolWindow(ToolWindowId.BUILD)?.show(null)
+                        @Suppress("UsePropertyAccessSyntax")
+                        BuildContentManager.getInstance(project).getOrCreateToolWindow().show(null)
                     }
                     // validate CLI
                     CloudDebugResolver.validateOrUpdateCloudDebug(project, messageEmitter, null)
