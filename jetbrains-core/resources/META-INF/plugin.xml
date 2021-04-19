@@ -231,6 +231,7 @@ with what features/services are supported.
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
+        <executable implementation="software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecCommandExecutable"/>
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
@@ -276,6 +277,10 @@ with what features/services are supported.
             <separator/>
             <action id="ecs.function.instrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.InstrumentResourceFromExplorerAction"/>
             <action id="clouddebug.resource.deinstrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.DeinstrumentResourceFromExplorerAction"/>
+            <separator/>
+            <!--action id="ecs.exec.enable" class="software.aws.toolkits.jetbrains.services.ecs.exec.EnableContainerAccessFromExplorerAction"/-->
+            <!--action id="ecs.exec.run.command" class="software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandInContainer"/-->
+            <!--action id="ecs.exec.disable" class="software.aws.toolkits.jetbrains.services.ecs.exec.DisableContainerAccessFromExplorerAction"/-->
             <separator/>
         </group>
 
