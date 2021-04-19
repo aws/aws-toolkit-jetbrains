@@ -8,8 +8,8 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeA
 import software.aws.toolkits.jetbrains.services.ecs.EcsServiceNode
 import software.aws.toolkits.resources.message
 
-class EnableContainerAccessFromExplorerAction:
-    SingleResourceNodeAction<EcsServiceNode>("Enable Container Access", null) {
+class DisableEcsExecuteCommand:
+    SingleResourceNodeAction<EcsServiceNode>(message("ecs.execute_command_disable"), null){
     override fun actionPerformed(selected: EcsServiceNode, e: AnActionEvent) {
         TODO("Not yet implemented")
     }

@@ -278,9 +278,8 @@ with what features/services are supported.
             <action id="ecs.function.instrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.InstrumentResourceFromExplorerAction"/>
             <action id="clouddebug.resource.deinstrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.DeinstrumentResourceFromExplorerAction"/>
             <separator/>
-            <!--action id="ecs.exec.enable" class="software.aws.toolkits.jetbrains.services.ecs.exec.EnableContainerAccessFromExplorerAction"/-->
-            <!--action id="ecs.exec.run.command" class="software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandInContainer"/-->
-            <!--action id="ecs.exec.disable" class="software.aws.toolkits.jetbrains.services.ecs.exec.DisableContainerAccessFromExplorerAction"/-->
+            <action id="ecs.exec.enable" class="software.aws.toolkits.jetbrains.services.ecs.exec.EnableEcsExecuteCommand"/>
+            <action id="ecs.exec.disable" class="software.aws.toolkits.jetbrains.services.ecs.exec.DisableEcsExecuteCommand"/>
             <separator/>
         </group>
 
