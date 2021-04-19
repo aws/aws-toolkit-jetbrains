@@ -14,10 +14,6 @@ plugins {
     id("toolkit-jacoco-report")
 }
 
-group = "software.aws.toolkits"
-// please check changelog generation logic if this format is changed
-version = "$toolkitVersion-${ideProfile.shortName}"
-
 allprojects {
     repositories {
         mavenLocal()
@@ -40,8 +36,13 @@ tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
     changeLogFile.set(project.file("CHANGELOG.md"))
 }
 
+tasks.createRelease.configure {
+    releaseVersion.set(providers.gradleProperty("toolkitVersion"))
+}
+
 dependencies {
     aggregateCoverage(project(":intellij"))
+    aggregateCoverage(project(":ui-tests"))
 }
 
 tasks.register("runIde") {
