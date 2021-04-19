@@ -19,8 +19,7 @@ class ConfirmNonProductionDialog(serviceName: String) : Disposable {
         private set
 
     init {
-        //warning.text = message("cloud_debug.instrument.production_warning.text")
-        warning.text = "<html><p>Disabling access to run commands in your container will change the state of resources in your AWS account, including but not limited to stopping the task.</html>"
+        warning.text = message("cloud_debug.instrument.production_warning.text")
         warning.icon = Messages.getWarningIcon()
         warning.iconTextGap = 8
         confirmProceed.text = message("cloud_debug.instrument.production_warning.checkbox_label", serviceName)

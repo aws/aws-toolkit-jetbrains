@@ -118,7 +118,7 @@ class CommandToExecuteDialog(
 
     fun constructExecCommand(userCommandToExecute: String) {
 
-      ExecutableManager.getInstance().getExecutable<EcsExecCommandExecutable>().thenAccept{ecsExecExecutable->
+      /*ExecutableManager.getInstance().getExecutable<EcsExecCommandExecutable>().thenAccept{ecsExecExecutable->
           if(ecsExecExecutable !is ExecutableInstance.Executable){
               throw Exception ("Not found stuff")
           }
@@ -131,7 +131,7 @@ class CommandToExecuteDialog(
 
 
 
-/*
+
           val cmdLine = buildBaseCmdLine( project, ecsExecExecutable)
               .withParameters("exec")
               .withParameters("--cluster")
@@ -153,11 +153,11 @@ class CommandToExecuteDialog(
           runInEdt {
               TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name() })
 
-          } */
+          }
            //val op =   CapturingProcessHandler(cmdLine).runProcess().stdout
 
 
-      }
+      }*/
     }
 
     private fun buildBaseCmdLine(project: Project, executable: ExecutableInstance.Executable) = executable.getCommandLine()

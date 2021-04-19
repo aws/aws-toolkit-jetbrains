@@ -3,17 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.ecs
 
-import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import icons.AwsIcons
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
@@ -26,15 +21,10 @@ import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteSh
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
 import software.aws.toolkits.jetbrains.services.ecs.exec.CommandToExecuteDialog
-import software.aws.toolkits.jetbrains.services.ecs.exec.ConfirmContainerDebuggingAccessDialog
-import software.aws.toolkits.jetbrains.services.ecs.exec.DisableContainerAccessFromExplorerAction
-import software.aws.toolkits.jetbrains.services.ecs.exec.EnableContainerAccessFromExplorerAction
-import software.aws.toolkits.jetbrains.services.ecs.exec.SsmPluginInstallationWarning
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
-import java.io.File
 
 class ContainerActions(
     private val project: Project,
@@ -48,8 +38,6 @@ class ContainerActions(
         StartRemoteShellAction(project, container),
         ContainerLogsAction(project, container),
         DebugContainerAction(project, container),
-
-
     )
 }
 
@@ -136,7 +124,7 @@ class DebugContainerAction(
         //SsmPluginInstallationWarning(project).show()
         //runBlocking(Dispatchers.IO) { CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess().stdout }
 
-        CommandToExecuteDialog(project,container).show()
+        //CommandToExecuteDialog(project,container).show()
         //notifyInfo("ECS Container Debug","Container debugging is in progress",project)
 
     }
