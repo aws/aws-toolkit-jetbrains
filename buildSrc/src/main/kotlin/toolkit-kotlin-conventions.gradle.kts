@@ -1,6 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
@@ -12,6 +13,7 @@ plugins {
     id("java")
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 dependencies {
@@ -55,6 +57,10 @@ tasks.withType<KotlinCompile>().all {
     kotlinOptions.apiVersion = "1.3"
 }
 
+tasks.withType<Detekt>().configureEach {
+    jvmTarget = "1.8"
+}
+
 ktlint {
     version.set(ktlintVersion)
 
@@ -65,6 +71,17 @@ ktlint {
     filter {
         exclude("**/TelemetryDefinitions.kt")
         exclude("**/*.Generated.kt")
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = true
+
+    reports {
+        html.enabled = true // observe findings in your browser with structure and code snippets
+        xml.enabled = true // checkstyle like format mainly for integrations like Jenkins
+        sarif.enabled = true // standardized SARIF format (https://sarifweb.azurewebsites.net/) to support integrations with Github Code Scanning
     }
 }
 
