@@ -35,7 +35,8 @@ class ContainerActions(
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
         StartRemoteShellAction(project, container),
-        ContainerLogsAction(project, container)
+        ContainerLogsAction(project, container),
+        ExecuteCommandAction(project,container)
     )
 }
 
@@ -106,5 +107,14 @@ class ContainerLogsAction(
         }
         window.showLogStream(logGroup, logStream)
         return true
+    }
+}
+
+class ExecuteCommandAction(
+    private val project: Project,
+    private val container: ContainerDetails
+) : AnAction("Run Command in Container", null, null) {
+    override fun actionPerformed(e: AnActionEvent) {
+        // TODO
     }
 }
