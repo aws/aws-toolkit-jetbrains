@@ -17,14 +17,13 @@ import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
-
 class EcsExecUtils(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
 
     fun executeCommandFlagStatus(service: Service): Boolean {
         val currentServiceState = checkServiceCompletion(service, project)
         return currentServiceState.enableExecuteCommand()
     }
-    
+
     fun updateExecuteCommandFlag(service: Service, enabled: Boolean) {
         launch {
             val request = UpdateServiceRequest.builder()
