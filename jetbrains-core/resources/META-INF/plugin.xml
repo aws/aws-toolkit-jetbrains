@@ -144,7 +144,7 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CloudDebugSettings"/>
-
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.DeploySettings"/>
@@ -231,7 +231,7 @@ with what features/services are supported.
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
-        <executable implementation="software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecCommandExecutable"/>
+
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>

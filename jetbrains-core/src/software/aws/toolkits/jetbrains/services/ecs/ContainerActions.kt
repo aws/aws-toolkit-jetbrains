@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
-import software.aws.toolkits.jetbrains.services.ecs.exec.CommandToExecuteDialog
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -37,7 +36,7 @@ class ContainerActions(
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
         StartRemoteShellAction(project, container),
         ContainerLogsAction(project, container),
-        DebugContainerAction(project, container),
+        ExecuteCommandAction(project, container)
     )
 }
 
@@ -111,23 +110,11 @@ class ContainerLogsAction(
     }
 }
 
-
-class DebugContainerAction(
+class ExecuteCommandAction(
     private val project: Project,
     private val container: ContainerDetails
 ) : AnAction("Run Command in Container", null, null) {
     override fun actionPerformed(e: AnActionEvent) {
-
-       // Messages.showYesNoDialog(project,"Are you sure you want to continue debugging the container?","Container access",Messages.getWarningIcon())
-
-        //Messages.showWarningDialog(project,"Please install the SSM plugin before proceeding","SSM Plugin required")
-        //SsmPluginInstallationWarning(project).show()
-        //runBlocking(Dispatchers.IO) { CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess().stdout }
-
-        //CommandToExecuteDialog(project,container).show()
-        //notifyInfo("ECS Container Debug","Container debugging is in progress",project)
-
+        // TODO
     }
-
-
 }
