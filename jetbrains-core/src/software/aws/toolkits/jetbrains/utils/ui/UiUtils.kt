@@ -15,6 +15,7 @@ import com.intellij.ui.EditorTextField
 import com.intellij.ui.JBColor
 import com.intellij.ui.JreHiDpiUtil
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.paint.LinePainter2D
 import com.intellij.ui.speedSearch.SpeedSearchSupply
 import com.intellij.util.text.DateFormatUtil
@@ -224,4 +225,9 @@ class ResizingDateColumnRenderer(showSeconds: Boolean) : ResizingColumnRenderer(
 
 class ResizingTextColumnRenderer : ResizingColumnRenderer() {
     override fun getText(value: Any?): String? = (value as? String)?.trim()
+}
+
+fun CellBuilder<JComponent>.visible(visibility: Boolean): CellBuilder<JComponent> {
+    component.isVisible = visibility
+    return this
 }
