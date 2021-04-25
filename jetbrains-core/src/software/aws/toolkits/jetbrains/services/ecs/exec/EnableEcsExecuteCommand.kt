@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
@@ -20,7 +22,10 @@ class EnableEcsExecuteCommand :
     SingleResourceNodeAction<EcsServiceNode>(message("ecs.execute_command_enable"), null),
     CoroutineScope by ApplicationThreadPoolScope("EnableExecuteCommand") {
     private val settings = EcsExecCommandSettings.getInstance()
+
     override fun actionPerformed(selected: EcsServiceNode, e: AnActionEvent) {
+        //private val dialogWrapper = DialogWrapper.DoNotAskOption()
+        //Messages.showYesNoCancelDialog("enable warning","enable warning","yes","no",Messages.getWarningIcon(),do)
         if (!settings.showExecuteCommandWarning || ExecuteCommandWarning(selected.nodeProject, enable = true).showAndGet()) {
             launch {
                 enableExecuteCommand(selected.nodeProject, selected.value)
@@ -33,7 +38,7 @@ class EnableEcsExecuteCommand :
     }
 
     private suspend fun enableExecuteCommand(project: Project, service: Service) {
-        EcsExecUtils(project).updateExecuteCommandFlag(service, true)
+        EcsExecUtils(project).updateExecuteCommandFlag(service, enabled = true)
         val serviceUpdated = EcsExecUtils(project).checkServiceState(service)
         if (serviceUpdated) {
             notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))

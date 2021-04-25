@@ -33,7 +33,7 @@ class DisableEcsExecuteCommand :
     }
 
     private suspend fun disableExecuteCommand(project: Project, service: Service) {
-        EcsExecUtils(project).updateExecuteCommandFlag(service, false)
+        EcsExecUtils(project).updateExecuteCommandFlag(service, enabled = false)
         val serviceUpdated = EcsExecUtils(project).checkServiceState(service)
         if (serviceUpdated) {
             notifyInfo(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_success", service.serviceName()))

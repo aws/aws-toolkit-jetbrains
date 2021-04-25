@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import java.util.concurrent.CompletableFuture
+
 class EcsExecUtilsTest {
     @JvmField
     @Rule
