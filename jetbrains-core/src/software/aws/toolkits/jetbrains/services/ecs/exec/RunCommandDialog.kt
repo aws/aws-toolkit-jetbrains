@@ -6,8 +6,10 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.terminal.JBTerminalSystemSettingsProviderBase
 import com.intellij.terminal.JBTerminalWidget
 import com.intellij.terminal.PtyBasedProcess
+import com.intellij.terminal.TerminalEscapeKeyListener
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.content.Content
 import com.intellij.ui.layout.applyToComponent
@@ -15,10 +17,13 @@ import com.intellij.ui.layout.panel
 import com.pty4j.PtyProcess
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.plugins.terminal.TerminalTabCloseListener
 import org.jetbrains.plugins.terminal.TerminalTabState
+import org.jetbrains.plugins.terminal.TerminalToolWindowFactory
 import org.jetbrains.plugins.terminal.TerminalView
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalProcess
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalRunner
+import software.amazon.awssdk.regions.servicemetadata.CloudtrailServiceMetadata
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
@@ -32,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import java.util.concurrent.TimeUnit
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
+
 
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
     private val resourceCache = AwsResourceCache.getInstance()
@@ -57,8 +63,10 @@ class RunCommandDialog(private val project: Project, private val container: Cont
 
     override fun doOKAction() {
         super.doOKAction()
+        //commandhistory()
         constructExecCommand(command.text)
     }
+
     private fun constructExecCommand(commandToExecute: String) {
 
         ExecutableManager.getInstance().getExecutable<EcsExecCommandExecutable>().thenAccept{ ecsExecExecutable->
@@ -76,16 +84,21 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 .withParameters("--command")
                 .withParameters(commandToExecute)
                 .withParameters("--interactive")
+
+
             val cmdList = cmdLine.getCommandLineList(null).toTypedArray()
             val env = cmdLine.effectiveEnvironment
             val ptyProcess = PtyProcess.exec(cmdList, env, null)
 
             val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
-            val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
+            val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
+            val t = TerminalView.getInstance(project)
             runInEdt {
-                //val termv = TerminalView.getInstance(project).openTerminalIn()
-                TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name() })
+
+                //TerminalView.getInstance(project).createLocalShellWidget(null,"abc").executeCommand("aws ecs execute-command --cluster default2 --task arn:aws:ecs:us-west-2:208255907945:task/default2/4d185a1cc2e04585ab338247080d6681 --command ls --interactive")
+                t.createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name()})
+
             }
         }
     }
