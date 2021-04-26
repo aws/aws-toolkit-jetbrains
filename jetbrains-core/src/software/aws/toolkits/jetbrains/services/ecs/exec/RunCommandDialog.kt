@@ -63,7 +63,6 @@ class RunCommandDialog(private val project: Project, private val container: Cont
 
     override fun doOKAction() {
         super.doOKAction()
-        //commandhistory()
         constructExecCommand(command.text)
     }
 
@@ -80,7 +79,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 .withParameters("--cluster")
                 .withParameters(container.service.clusterArn())
                 .withParameters("--task")
-                .withParameters("arn:aws:ecs:us-west-2:208255907945:task/default2/f0c4d78e5f1c44ac914324dc4ff4d19e")
+                .withParameters("arn:aws:ecs:us-west-2:208255907945:task/default2/510e04a17dfe423492fc9dbd76e10128")
                 .withParameters("--command")
                 .withParameters(commandToExecute)
                 .withParameters("--interactive")
