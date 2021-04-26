@@ -3,16 +3,14 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 val kotlinVersion: String by project
 val coroutinesVersion: String by project
-val ktlintVersion: String by project
+val detektVersion: String by project
 
 plugins {
     id("java")
     kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint")
     id("io.gitlab.arturbosch.detekt")
 }
 
@@ -25,6 +23,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
 }
 
 sourceSets {
@@ -61,22 +61,10 @@ tasks.withType<Detekt>().configureEach {
     jvmTarget = "1.8"
 }
 
-ktlint {
-    version.set(ktlintVersion)
-
-    reporters {
-        reporter(ReporterType.HTML)
-    }
-
-    filter {
-        exclude("**/TelemetryDefinitions.kt")
-        exclude("**/*.Generated.kt")
-    }
-}
-
 detekt {
-    buildUponDefaultConfig = true
-    allRules = true
+    buildUponDefaultConfig = false
+    allRules = false
+    config = files("$rootDir/buildSrc/detekt/detekt.yml")
 
     reports {
         html.enabled = true // observe findings in your browser with structure and code snippets
@@ -86,9 +74,5 @@ detekt {
 }
 
 tasks.check {
-    dependsOn(tasks.ktlintCheck)
-}
-
-dependencies {
-    ktlintRuleset(project)
+    dependsOn(tasks.detekt)
 }

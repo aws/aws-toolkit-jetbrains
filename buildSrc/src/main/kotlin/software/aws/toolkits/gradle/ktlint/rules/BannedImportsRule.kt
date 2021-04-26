@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.gradle.ktlint.rules
-
-import com.pinterest.ktlint.core.Rule
+/*
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import io.gitlab.arturbosch.detekt.api.Rule
 import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 import org.jetbrains.kotlin.psi.KtImportDirective
 
 class BannedImportsRule : Rule("banned-imports") {
-    override fun visit(
+    override fun visitImportDirective(
         node: ASTNode,
         autoCorrect: Boolean,
         emit: (offset: Int, errorMessage: String, canBeAutoCorrected: Boolean) -> Unit
@@ -31,3 +32,4 @@ class BannedImportsRule : Rule("banned-imports") {
         }
     }
 }
+*/
