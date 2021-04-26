@@ -25,17 +25,15 @@ class EnableEcsExecuteCommand :
     private val settings = EcsExecCommandSettings.getInstance()
 
     override fun actionPerformed(selected: EcsServiceNode, e: AnActionEvent) {
-        lateinit var warningIcon: Icon
-        runInEdt {
-            warningIcon = Messages.getWarningIcon()
-        }
-        if (!settings.showExecuteCommandWarning || (Messages.showYesNoCancelDialog(
+        if (!settings.showExecuteCommandWarning ||
+            (
+                Messages.showYesNoCancelDialog(
                 message("ecs.execute_command_enable_warning"),
                 message("ecs.execute_command_enable_warning_title"),
                 "Yes",
                 "No",
                 "Cancel",
-                warningIcon,
+                Messages.getWarningIcon(),
                 ExecuteCommandWarningDoNotShow()) == 0
                 )
         ) {
