@@ -80,7 +80,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 .withParameters("--cluster")
                 .withParameters(container.service.clusterArn())
                 .withParameters("--task")
-                .withParameters(taskList.selectedItem.toString())
+                .withParameters("arn:aws:ecs:us-west-2:208255907945:task/default2/f0c4d78e5f1c44ac914324dc4ff4d19e")
                 .withParameters("--command")
                 .withParameters(commandToExecute)
                 .withParameters("--interactive")
@@ -93,11 +93,11 @@ class RunCommandDialog(private val project: Project, private val container: Cont
             val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
 
             val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
-            val t = TerminalView.getInstance(project)
+
             runInEdt {
 
                 //TerminalView.getInstance(project).createLocalShellWidget(null,"abc").executeCommand("aws ecs execute-command --cluster default2 --task arn:aws:ecs:us-west-2:208255907945:task/default2/4d185a1cc2e04585ab338247080d6681 --command ls --interactive")
-                t.createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name()})
+                TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name()})
 
             }
         }
