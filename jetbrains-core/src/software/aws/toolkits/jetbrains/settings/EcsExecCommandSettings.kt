@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
@@ -25,10 +25,10 @@ class EcsExecCommandSettings : PersistentStateComponent<AwsEcsExecConfiguration>
         }
 
     companion object {
-        @JvmStatic
-        fun getInstance(): EcsExecCommandSettings = ServiceManager.getService(EcsExecCommandSettings::class.java)
+        fun getInstance(): EcsExecCommandSettings = ApplicationManager.getApplication().getService(EcsExecCommandSettings::class.java)
     }
 }
-data class AwsEcsExecConfiguration(
+
+class AwsEcsExecConfiguration {
     var showExecuteCommandWarning: Boolean = true
-)
+}

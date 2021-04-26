@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import javax.swing.Icon
 
 class EnableEcsExecuteCommand :
     SingleResourceNodeAction<EcsServiceNode>(message("ecs.execute_command_enable"), null),
@@ -24,9 +25,20 @@ class EnableEcsExecuteCommand :
     private val settings = EcsExecCommandSettings.getInstance()
 
     override fun actionPerformed(selected: EcsServiceNode, e: AnActionEvent) {
-        //private val dialogWrapper = DialogWrapper.DoNotAskOption()
-        //Messages.showYesNoCancelDialog("enable warning","enable warning","yes","no",Messages.getWarningIcon(),do)
-        if (!settings.showExecuteCommandWarning || ExecuteCommandWarning(selected.nodeProject, enable = true).showAndGet()) {
+        lateinit var warningIcon: Icon
+        runInEdt {
+            warningIcon = Messages.getWarningIcon()
+        }
+        if (!settings.showExecuteCommandWarning || (Messages.showYesNoCancelDialog(
+                message("ecs.execute_command_enable_warning"),
+                message("ecs.execute_command_enable_warning_title"),
+                "Yes",
+                "No",
+                "Cancel",
+                warningIcon,
+                ExecuteCommandWarningDoNotShow()) == 0
+                )
+        ) {
             launch {
                 enableExecuteCommand(selected.nodeProject, selected.value)
             }

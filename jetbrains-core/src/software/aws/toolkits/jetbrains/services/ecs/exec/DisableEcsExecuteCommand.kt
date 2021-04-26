@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
@@ -21,7 +22,7 @@ class DisableEcsExecuteCommand :
     CoroutineScope by ApplicationThreadPoolScope("DisableExecuteCommand") {
     private val settings = EcsExecCommandSettings.getInstance()
     override fun actionPerformed(selected: EcsServiceNode, e: AnActionEvent) {
-        if (!settings.showExecuteCommandWarning || ExecuteCommandWarning(selected.nodeProject, enable = false).showAndGet()) {
+        if (!settings.showExecuteCommandWarning || (Messages.showYesNoCancelDialog(message("ecs.execute_command_disable_warning"), message("ecs.execute_command_disable_warning_title"), "Yes", "No", "Cancel", Messages.getWarningIcon(), ExecuteCommandWarningDoNotShow()) == 0)) {
             launch {
                 disableExecuteCommand(selected.nodeProject, selected.value)
             }
