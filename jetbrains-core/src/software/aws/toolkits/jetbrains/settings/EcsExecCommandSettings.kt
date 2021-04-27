@@ -29,6 +29,6 @@ class EcsExecCommandSettings : PersistentStateComponent<AwsEcsExecConfiguration>
     }
 }
 
-class AwsEcsExecConfiguration {
+data class AwsEcsExecConfiguration(
     var showExecuteCommandWarning: Boolean = true
-}
+)

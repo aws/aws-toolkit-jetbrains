@@ -58,11 +58,11 @@ class EnableEcsExecuteCommandTest {
     }
     private fun createEventFor(action: AnAction, node: List<EcsServiceNode>): AnActionEvent {
         val projectContext = SimpleDataContext.getProjectContext(projectRule.project)
-        val dc = SimpleDataContext.getSimpleContext(
+        val dataContext = SimpleDataContext.getSimpleContext(
             mapOf(ExplorerDataKeys.SELECTED_NODES.name to node),
             projectContext
         )
 
-        return AnActionEvent.createFromAnAction(action, null, ActionPlaces.UNKNOWN, dc)
+        return AnActionEvent.createFromAnAction(action, null, ActionPlaces.UNKNOWN, dataContext)
     }
 }

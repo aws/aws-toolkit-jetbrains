@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.CoroutineScope
@@ -17,7 +16,6 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
-import javax.swing.Icon
 
 class EnableEcsExecuteCommand :
     SingleResourceNodeAction<EcsServiceNode>(message("ecs.execute_command_enable"), null),
@@ -28,13 +26,14 @@ class EnableEcsExecuteCommand :
         if (!settings.showExecuteCommandWarning ||
             (
                 Messages.showYesNoCancelDialog(
-                message("ecs.execute_command_enable_warning"),
-                message("ecs.execute_command_enable_warning_title"),
-                "Yes",
-                "No",
-                "Cancel",
-                Messages.getWarningIcon(),
-                ExecuteCommandWarningDoNotShow()) == 0
+                        message("ecs.execute_command_enable_warning"),
+                        message("ecs.execute_command_enable_warning_title"),
+                        message("ecs.execute_command_warning_dialog_option_yes"),
+                        message("ecs.execute_command_warning_dialog_option_no"),
+                        message("ecs.execute_command_warning_dialog_option_cancel"),
+                        Messages.getWarningIcon(),
+                        ExecuteCommandWarningDoNotShow()
+                    ) == 0
                 )
         ) {
             launch {
