@@ -94,7 +94,6 @@ class RunCommandDialog(private val project: Project, private val container: Cont
             val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
             runInEdt {
-
                 //TerminalView.getInstance(project).createLocalShellWidget(null,"abc").executeCommand("aws ecs execute-command --cluster default2 --task arn:aws:ecs:us-west-2:208255907945:task/default2/4d185a1cc2e04585ab338247080d6681 --command ls --interactive")
                 TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name()})
 
