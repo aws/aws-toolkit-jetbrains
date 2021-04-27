@@ -18,17 +18,16 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextBrowseFolderListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.SimpleListCellRenderer
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
-import com.intellij.ui.layout.CellBuilder
-import com.intellij.ui.layout.ComponentPredicate
+import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.buttonGroup
 import com.intellij.ui.layout.listCellRenderer
 import com.intellij.ui.layout.panel
@@ -45,6 +44,7 @@ import software.amazon.awssdk.services.ecr.EcrClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys
 import software.aws.toolkits.jetbrains.services.ecr.DockerRunConfiguration
 import software.aws.toolkits.jetbrains.services.ecr.DockerfileEcrPushRequest
@@ -61,13 +61,18 @@ import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
+import software.aws.toolkits.jetbrains.utils.ui.installOnParent
 import software.aws.toolkits.jetbrains.utils.ui.selected
+import software.aws.toolkits.jetbrains.utils.ui.visibleIf
 import software.aws.toolkits.resources.message
-import javax.swing.JComponent
+import software.aws.toolkits.telemetry.EcrDeploySource
+import software.aws.toolkits.telemetry.EcrTelemetry
+import software.aws.toolkits.telemetry.Result
+import java.awt.Dimension
 import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
 
-class PushTagToRepositoryAction :
+class PushToRepositoryAction :
     DumbAwareAction(),
     CoroutineScope by ApplicationThreadPoolScope("PushRepositoryAction") {
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance> =
@@ -88,11 +93,13 @@ class PushTagToRepositoryAction :
 
         if (!result) {
             // user cancelled; noop
+            EcrTelemetry.deployImage(project, Result.Cancelled, project.activeRegion().id)
             return
         }
 
         launch {
             val pushRequest = dialog.getPushRequest()
+            var result = Result.Failed
             try {
                 val authData = withContext(Dispatchers.IO) {
                     client.authorizationToken.authorizationData().first()
@@ -100,6 +107,7 @@ class PushTagToRepositoryAction :
 
                 val ecrLogin = authData.getDockerLogin()
                 pushImage(project, ecrLogin, pushRequest)
+                result = Result.Succeeded
             } catch (e: SdkException) {
                 val message = message("ecr.push.credential_fetch_failed")
 
@@ -110,12 +118,23 @@ class PushTagToRepositoryAction :
 
                 LOG.error(e) { message }
                 notifyError(message("ecr.push.title"), message)
+            } finally {
+                val type = when (pushRequest) {
+                    is ImageEcrPushRequest -> EcrDeploySource.Tag
+                    is DockerfileEcrPushRequest -> EcrDeploySource.Dockerfile
+                }
+                EcrTelemetry.deployImage(
+                    project,
+                    result,
+                    regionId = project.activeRegion().id,
+                    ecrDeploySource = type
+                )
             }
         }
     }
 
     companion object {
-        private val LOG = getLogger<PushTagToRepositoryAction>()
+        private val LOG = getLogger<PushToRepositoryAction>()
     }
 }
 
@@ -165,8 +184,8 @@ internal class PushToEcrDialog(
 
         buttonGroup(::type) {
             row {
-                fromLocalImageButton = this@row.radioButton("Local Image", BuildType.LocalImage).component
-                fromDockerfileButton = this@row.radioButton("Dockerfile", BuildType.Dockerfile).component
+                fromLocalImageButton = this@row.radioButton(message("ecr.push.type.local_image.label"), BuildType.LocalImage).component
+                fromDockerfileButton = this@row.radioButton(message("ecr.push.type.dockerfile.label"), BuildType.Dockerfile).component
             }
         }
 
@@ -177,17 +196,17 @@ internal class PushToEcrDialog(
             // TODO: panel is still jumping around
             cell(isFullWidth = true, isVerticalFlow = true) {
                 imageSelectorPanel(grow)
+                    .installOnParent { fromLocalImageButton.isSelected }
                     .visibleIf(fromLocalImageButton.selected)
-                    .installValidatorsOnParent()
                 dockerfilePanel(grow)
+                    .installOnParent { fromDockerfileButton.isSelected }
                     .visibleIf(fromDockerfileButton.selected)
-                    .installValidatorsOnParent()
             }
         }
 
         row(message("ecr.repo.label")) {
             component(remoteRepos)
-                .constraints(grow)
+                .growPolicy(GrowPolicy.MEDIUM_TEXT)
                 .withErrorOnApplyIf(message("ecr.repo.not_selected")) { it.selected() == null }
         }
 
@@ -209,7 +228,7 @@ internal class PushToEcrDialog(
                     text = value.tag ?: value.imageId.take(15)
                 }
             )
-                .constraints(grow)
+                .growPolicy(GrowPolicy.MEDIUM_TEXT)
                 .withErrorOnApplyIf(message("ecr.image.not_selected")) { it.selected() == null }
         }
     }
@@ -228,11 +247,11 @@ internal class PushToEcrDialog(
                         text = value.name
                     }
                 )
-                    .constraints(grow)
+                    .growPolicy(GrowPolicy.MEDIUM_TEXT)
                     .withErrorOnApplyIf(message("ecr.dockerfile.configuration.invalid")) { it.selected() == null }
                     .withErrorOnApplyIf(message("ecr.dockerfile.configuration.invalid_server")) { it.selected()?.serverName == null }
 
-                // TODO: how do we render both the Docker and action items correctly?
+                // TODO: how do we render both the Docker icon and action items correctly?
                 box.component.apply {
                     isEditable = true
                     editor = object : BasicComboBoxEditor.UIResource() {
@@ -335,29 +354,4 @@ internal class PushToEcrDialog(
     private enum class BuildType {
         LocalImage, Dockerfile
     }
-}
-
-// TODO: unify utils with other PR
-private fun <T : JComponent> CellBuilder<T>.visibleIf(predicate: ComponentPredicate): CellBuilder<T> {
-    component.isVisible = predicate()
-    predicate.addListener { component.isVisible = it }
-    return this
-}
-
-private fun CellBuilder<DialogPanel>.installValidatorsOnParent(): CellBuilder<DialogPanel> {
-    withValidationOnApply {
-        if (this@installValidatorsOnParent.component.isVisible) {
-            this@installValidatorsOnParent.component.validateCallbacks.mapNotNull { it() }.firstOrNull()
-        } else {
-            null
-        }
-    }
-
-    onApply {
-        if (component.isVisible) {
-            component.apply()
-        }
-    }
-
-    return this
 }

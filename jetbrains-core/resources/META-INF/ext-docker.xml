@@ -6,7 +6,7 @@
         <group>
             <add-to-group group-id="ecr.repository.push.group"/>
 
-            <action id="ecr.repository.push" class="software.aws.toolkits.jetbrains.services.ecr.actions.PushTagToRepositoryAction"/>
+            <action id="ecr.repository.push" class="software.aws.toolkits.jetbrains.services.ecr.actions.PushToRepositoryAction"/>
         </group>
     </actions>
 </idea-plugin>

@@ -181,7 +181,7 @@ private suspend fun buildAndPushDockerfile(project: Project, ecrLogin: EcrLogin,
         return
     }
 
-    if (wasBuildOnly) {
+    if (!wasBuildOnly) {
         EcrUtils.LOG.debug("Configuration specified additional 'run' parameters in Dockerfile that will be ignored")
         logHandler.print("Skipping 'Run' portion of Dockerfile build configuration\n")
     }

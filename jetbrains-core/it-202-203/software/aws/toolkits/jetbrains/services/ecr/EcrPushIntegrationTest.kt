@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.ecr
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.docker.DockerCloudConfiguration
 import com.intellij.docker.remote.run.runtime.DockerAgentBuildImageConfig
 import com.intellij.docker.remote.run.runtime.RemoteDockerApplicationRuntime
@@ -16,6 +17,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ecr.EcrClient
+import software.amazon.awssdk.services.ecr.model.Image
+import software.amazon.awssdk.services.ecr.model.ImageIdentifier
 import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import java.util.UUID
@@ -75,15 +78,17 @@ class EcrPushIntegrationTest {
             )
 
             pushImage(projectRule.project, ecrLogin, pushRequest)
-        }
 
-        assertThat(
-            ecrClient.describeImages {
-                it.repositoryName(remoteRepo.repositoryName)
-            }.imageDetails()
-        ).anySatisfy {
-            assertThat(it.imageTags()).contains(remoteTag)
-            // would check the digest matches what we've uploaded, but it appears to change upon upload to ECR
+            assertThat(
+                ecrClient.batchGetImage {
+                    it.repositoryName(remoteRepo.repositoryName)
+                    it.imageIds(ImageIdentifier.builder().imageTag(remoteTag).build())
+                }.images()
+            )
+                .hasSize(1)
+                .allSatisfy { image ->
+                    assertDigestFromDockerManifest(image, localImageId)
+                }
         }
     }
 
@@ -109,15 +114,32 @@ class EcrPushIntegrationTest {
         )
         runBlocking {
             pushImage(projectRule.project, ecrLogin, pushRequest)
-        }
 
-        assertThat(
-            ecrClient.describeImages {
-                it.repositoryName(remoteRepo.repositoryName)
-            }.imageDetails()
-        ).anySatisfy {
-            assertThat(it.imageTags()).contains(remoteTag)
-            // would check the digest matches what we've uploaded, but it appears to change upon upload to ECR
+            // find our local image id
+            val serverInstance = getDockerServerRuntimeInstance().runtimeInstance
+            val localImageId = serverInstance.agent.getImages(null).first { it.imageRepoTags.contains("${remoteRepo.repositoryUri}:$remoteTag") }.imageId
+
+            assertThat(
+                ecrClient.batchGetImage {
+                    it.repositoryName(remoteRepo.repositoryName)
+                    it.imageIds(ImageIdentifier.builder().imageTag(remoteTag).build())
+                }.images()
+            )
+                .hasSize(1)
+                .allSatisfy { image ->
+                    assertDigestFromDockerManifest(image, localImageId)
+                }
         }
+    }
+
+    private fun assertDigestFromDockerManifest(image: Image, imageId: String) {
+        // inspect the manifest because the registry digest is not the same as the image id
+        // https://github.com/docker/hub-feedback/issues/1925
+        val node = objectMapper.readTree(image.imageManifest())
+        assertThat(node.get("config").get("digest").asText()).isEqualTo(imageId)
+    }
+
+    companion object {
+        val objectMapper = jacksonObjectMapper()
     }
 }
