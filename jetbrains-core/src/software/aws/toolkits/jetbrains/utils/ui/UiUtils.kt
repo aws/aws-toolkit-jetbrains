@@ -4,8 +4,6 @@
 
 package software.aws.toolkits.jetbrains.utils.ui
 
-import com.intellij.icons.AllIcons
-import com.intellij.ide.HelpTooltip
 import com.intellij.lang.Language
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.command.CommandProcessor
@@ -17,9 +15,7 @@ import com.intellij.ui.ClickListener
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.JBColor
 import com.intellij.ui.JreHiDpiUtil
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
-import com.intellij.ui.layout.Cell
 import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.ui.paint.LinePainter2D

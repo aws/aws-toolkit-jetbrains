@@ -23,7 +23,6 @@ import com.intellij.openapi.ui.TextBrowseFolderListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.SimpleListCellRenderer
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
@@ -68,7 +67,6 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcrDeploySource
 import software.aws.toolkits.telemetry.EcrTelemetry
 import software.aws.toolkits.telemetry.Result
-import java.awt.Dimension
 import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
 
@@ -193,7 +191,7 @@ internal class PushToEcrDialog(
         val dockerfilePanel = dockerfileConfigurationSelectorPanel()
 
         row {
-            // TODO: panel is still jumping around
+            // TODO: fix weird panel gap
             cell(isFullWidth = true, isVerticalFlow = true) {
                 imageSelectorPanel(grow)
                     .installOnParent { fromLocalImageButton.isSelected }
