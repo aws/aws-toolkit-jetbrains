@@ -42,7 +42,7 @@ class ContainerActions(
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
         StartRemoteShellAction(project, container),
         ContainerLogsAction(project, container),
-        ExecuteCommandAction(project,container)
+        ExecuteCommandAction(project, container)
     )
 }
 
@@ -119,14 +119,17 @@ class ContainerLogsAction(
 class ExecuteCommandAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction("Run Command in Container", null, null) {
+) : AnAction(message("ecs.execute_command_run"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
+        var sessionManagerInstalled: Int = 1
         runBlocking(Dispatchers.IO) {
             val process = CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess()
-            if(process.exitCode != 0){
-                SessionManagerPluginWarning(project).show()
-            }
+            sessionManagerInstalled = process.exitCode
         }
-        RunCommandDialog(project, container).show()
+        if (sessionManagerInstalled != 0) {
+            SessionManagerPluginWarning(project).show()
+        } else {
+            RunCommandDialog(project, container).show()
+        }
     }
 }

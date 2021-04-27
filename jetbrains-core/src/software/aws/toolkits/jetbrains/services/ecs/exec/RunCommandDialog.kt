@@ -3,27 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.terminal.JBTerminalSystemSettingsProviderBase
-import com.intellij.terminal.JBTerminalWidget
-import com.intellij.terminal.PtyBasedProcess
-import com.intellij.terminal.TerminalEscapeKeyListener
 import com.intellij.ui.components.JBTextField
-import com.intellij.ui.content.Content
-import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
 import com.pty4j.PtyProcess
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import org.jetbrains.plugins.terminal.TerminalTabCloseListener
-import org.jetbrains.plugins.terminal.TerminalTabState
-import org.jetbrains.plugins.terminal.TerminalToolWindowFactory
-import org.jetbrains.plugins.terminal.TerminalView
-import org.jetbrains.plugins.terminal.cloud.CloudTerminalProcess
-import org.jetbrains.plugins.terminal.cloud.CloudTerminalRunner
-import software.amazon.awssdk.regions.servicemetadata.CloudtrailServiceMetadata
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
@@ -31,33 +15,43 @@ import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
-import software.aws.toolkits.jetbrains.core.getResource
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
-import java.util.concurrent.TimeUnit
+import software.aws.toolkits.jetbrains.utils.ui.selected
+import software.aws.toolkits.resources.message
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
 
-
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
     private val resourceCache = AwsResourceCache.getInstance()
-    private val tasks = resourceCache.getResourceNow(EcsResources.listTasks(container.service.clusterArn(),container.service.serviceArn()),project.activeRegion(),project.activeCredentialProvider())
+    private val tasks = resourceCache.getResourceNow(
+        EcsResources.listTasks(
+            container.service.clusterArn(),
+            container.service.serviceArn()
+        ),
+        project.activeRegion(),
+        project.activeCredentialProvider(),
+        useStale = false,
+        forceFetch = true
+    )
     private val taskList = DefaultComboBoxModel(tasks.toTypedArray())
     private val command = JBTextField()
     private val component by lazy {
-        panel{
-            row("Task"){
-                comboBox(taskList,{tasks.first()},{tasks.first()}).constraints(growX)
+        panel {
+            row("Task") {
+                comboBox(taskList, { tasks.first() }, { tasks.first() })
+                    .constraints(growX)
+                    .withErrorOnApplyIf(message("ecs.execute_command_task_comboBox_empty")) { it.selected() == null }
             }
-            row("Command)"){
-                command(grow)
+            row("Command") {
+                command(grow).withErrorOnApplyIf(message("ecs.execute_command_no_command")) { it.text == "" }
             }
         }
     }
     init {
         super.init()
-        title = "Run Command in Container"
-        setOKButtonText("Execute")
+        title = message("ecs.execute_command_run")
+        setOKButtonText(message("general.execute_button"))
     }
     override fun createCenterPanel(): JComponent? = component
 
@@ -67,10 +61,11 @@ class RunCommandDialog(private val project: Project, private val container: Cont
     }
 
     private fun constructExecCommand(commandToExecute: String) {
-
-        ExecutableManager.getInstance().getExecutable<EcsExecCommandExecutable>().thenAccept{ ecsExecExecutable->
-            if(ecsExecExecutable !is ExecutableInstance.Executable){
-                throw Exception ("Not found stuff")
+        ExecutableManager.getInstance().getExecutable<EcsExecCommandExecutable>().thenAccept { ecsExecExecutable ->
+            when (ecsExecExecutable) {
+                is ExecutableInstance.Executable -> ecsExecExecutable
+                is ExecutableInstance.UnresolvedExecutable -> throw Exception("Couldn't resolve executable")
+                is ExecutableInstance.InvalidExecutable -> throw Exception(ecsExecExecutable.validationError)
             }
 
             val cmdLine = buildBaseCmdLine(project, ecsExecExecutable)
@@ -79,25 +74,14 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 .withParameters("--cluster")
                 .withParameters(container.service.clusterArn())
                 .withParameters("--task")
-                .withParameters("arn:aws:ecs:us-west-2:208255907945:task/default2/510e04a17dfe423492fc9dbd76e10128")
+                .withParameters(taskList.selectedItem.toString())
                 .withParameters("--command")
                 .withParameters(commandToExecute)
                 .withParameters("--interactive")
 
-
             val cmdList = cmdLine.getCommandLineList(null).toTypedArray()
             val env = cmdLine.effectiveEnvironment
             val ptyProcess = PtyProcess.exec(cmdList, env, null)
-
-            val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
-
-            val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
-
-            runInEdt {
-                //TerminalView.getInstance(project).createLocalShellWidget(null,"abc").executeCommand("aws ecs execute-command --cluster default2 --task arn:aws:ecs:us-west-2:208255907945:task/default2/4d185a1cc2e04585ab338247080d6681 --command ls --interactive")
-                TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name()})
-
-            }
         }
     }
     private fun buildBaseCmdLine(project: Project, executable: ExecutableInstance.Executable) = executable.getCommandLine()

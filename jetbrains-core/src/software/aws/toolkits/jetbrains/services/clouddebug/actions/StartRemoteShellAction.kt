@@ -11,7 +11,6 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.intellij.terminal.JBTerminalWidget
 import com.pty4j.PtyProcess
 import icons.TerminalIcons
 import org.jetbrains.plugins.terminal.TerminalTabState
