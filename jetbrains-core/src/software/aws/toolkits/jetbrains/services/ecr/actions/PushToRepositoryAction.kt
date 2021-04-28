@@ -80,8 +80,8 @@ class PushToRepositoryAction :
         val client: EcrClient = project.awsClient()
 
         val selectedRepository = e.getData(ExplorerDataKeys.SELECTED_NODES)
-            ?.mapNotNull { it as? EcrRepositoryNode }
             ?.takeIf { it.size == 1 }
+            ?.mapNotNull { it as? EcrRepositoryNode }
             ?.first()
             ?.repository
 
@@ -147,8 +147,8 @@ internal class PushToEcrDialog(
 ) : DialogWrapper(project, null, false, IdeModalityType.PROJECT),
     CoroutineScope by ApplicationThreadPoolScope("PushRepositoryDialog") {
     private val defaultTag = "latest"
-    private var type: BuildType = BuildType.LocalImage
-    private var remoteTag: String = ""
+    private var type = BuildType.LocalImage
+    private var remoteTag = ""
     private val localImageRepoTags = CollectionComboBoxModel<LocalImage>()
 
     private var localImage: LocalImage? = null
