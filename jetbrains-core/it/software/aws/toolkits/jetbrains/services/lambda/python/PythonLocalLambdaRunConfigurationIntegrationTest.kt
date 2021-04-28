@@ -351,7 +351,6 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         projectRule.addBreakpoint()
         stopOnPause(projectRule.project)
 
-
         val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
