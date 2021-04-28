@@ -11,6 +11,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.ConsoleView
 import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.openapi.util.Key
+import com.intellij.xdebugger.XDebugSessionListener
 import com.intellij.xdebugger.XDebuggerManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
@@ -30,6 +31,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AttachDebugger(
     val environment: ExecutionEnvironment,
@@ -53,7 +55,30 @@ class AttachDebugger(
                         debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, debugProcessStarter)
                     }
                     val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
+                    val samCompleted = AtomicBoolean(false)
                     samProcessHandler.addProcessListener(buildProcessAdapter { session.consoleView })
+                    samProcessHandler.addProcessListener(object : ProcessAdapter() {
+                        override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                            if (event.text.contains(endText)) {
+                                samCompleted.set(true)
+                            }
+                        }
+                    })
+                    // Since there are two process's running (The SAM cli + the remote debugger), stopping
+                    // the sam cli process ends the debugger, but not the other way around. To fix this, we
+                    // could just always context.cancel(), which makes the SAM CLI process end, which works
+                    // perfectly if the user presses stop. However, if the process ends normally, SAM cli will
+                    // output the dreaded "Aborted!" after it prints the output. So, we need to keep track of
+                    // if SAM cli is ending normally, and not exit when that happens. If the string ever changes,
+                    // or there is an issue, the run configuration will always still end, it will just cause the
+                    // "Aborted!" text to be printed
+                    session.addSessionListener(object : XDebugSessionListener {
+                        override fun sessionStopped() {
+                            if (!samCompleted.get()) {
+                                context.cancel()
+                            }
+                        }
+                    })
                     session
                 }
             } catch (e: TimeoutCancellationException) {
@@ -73,6 +98,7 @@ class AttachDebugger(
     }
 
     private companion object {
+        const val endText = "END RequestId: "
         val LOG = getLogger<AttachDebugger>()
         fun buildProcessAdapter(console: (() -> ConsoleView?)) = object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
