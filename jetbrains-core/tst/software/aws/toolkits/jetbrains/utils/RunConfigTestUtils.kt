@@ -89,6 +89,30 @@ fun executeRunConfigurationAndWait(runConfiguration: RunConfiguration, executorI
     return executionFuture.get(4, TimeUnit.MINUTES)
 }
 
+fun stopOnPause(project: Project, callback: () -> Unit = {}) {
+    project.messageBus.connect().subscribe(
+        XDebuggerManager.TOPIC,
+        object : XDebuggerManagerListener {
+            override fun processStarted(debugProcess: XDebugProcess) {
+                println("Debugger attached: $debugProcess")
+
+                debugProcess.session.addSessionListener(
+                    object : XDebugSessionListener {
+                        override fun sessionPaused() {
+                            runInEdt {
+                                val suspendContext = debugProcess.session.suspendContext
+                                println("Stopping: $suspendContext")
+                                callback()
+                                debugProcess.stop()
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    )
+}
+
 fun checkBreakPointHit(project: Project, callback: () -> Unit = {}): Ref<Boolean> {
     val debuggerIsHit = Ref(false)
 
