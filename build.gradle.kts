@@ -11,6 +11,7 @@ plugins {
     id("base")
     id("toolkit-changelog")
     id("toolkit-jacoco-report")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 allprojects {
@@ -42,6 +43,7 @@ tasks.createRelease.configure {
 dependencies {
     aggregateCoverage(project(":intellij"))
     aggregateCoverage(project(":ui-tests"))
+    detektPlugins(project(":detekt"))
 }
 
 tasks.register("runIde") {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 rootProject.name = "aws-toolkit-jetbrains"
 
+include("detekt")
 include("resources")
 include("sdk-codegen")
 include("core")
