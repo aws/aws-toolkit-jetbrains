@@ -177,6 +177,10 @@ internal class PushToEcrDialog(
     }
 
     override fun createCenterPanel() = panel {
+        // valid tag is ascii letters, numbers, underscores, periods, or dashes
+        // https://docs.docker.com/engine/reference/commandline/tag/#extended-description
+        val validTagRegex = "[a-zA-Z0-9_.-]{1,128}".toRegex()
+
         lateinit var fromLocalImageButton: JBRadioButton
         lateinit var fromDockerfileButton: JBRadioButton
 
@@ -213,6 +217,7 @@ internal class PushToEcrDialog(
                 .also {
                     it.component.emptyText.text = defaultTag
                 }
+                .withErrorOnApplyIf(message("ecr.tag.invalid")) { it.text.isNotEmpty() && !it.text.matches(validTagRegex) }
         }
     }
 
