@@ -25,7 +25,7 @@ dependencies {
     implementation("org.jetbrains.intellij.plugins:gradle-intellij-plugin:$ideaPluginVersion")
 
     implementation("io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detektVersion")
-    implementation("io.gitlab.arturbosch.detekt:detekt-api:$detektVersion")
+    compileOnly("io.gitlab.arturbosch.detekt:detekt-api:$detektVersion")
     testImplementation("io.gitlab.arturbosch.detekt:detekt-test:$detektVersion")
 
     implementation("org.jacoco:org.jacoco.core:${JacocoPlugin.DEFAULT_JACOCO_VERSION}")
