@@ -45,7 +45,10 @@ import software.aws.toolkits.jetbrains.services.ecr.actions.LocalImage
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.message
 import software.amazon.awssdk.services.ecr.model.Repository as SdkRepository
+
+typealias DockerRunConfiguration = DeployToServerRunConfiguration<DockerCloudConfiguration, DockerDeploymentConfiguration>
 
 data class EcrLogin(
     val username: String,
@@ -73,127 +76,162 @@ data class DockerConnection(
     val runtimeInstance: DockerServerRuntimeInstance
 )
 
-private fun getTemporaryDockerConnection() = ServerConnectionManager.getInstance().createTemporaryConnection(
-    RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
-)
+object EcrUtils {
+    val LOG = getLogger<EcrUtils>()
 
-suspend fun getDockerServerRuntimeInstance(existingServer: RemoteServer<DockerCloudConfiguration>? = null): DockerConnection {
-    val instancePromise = AsyncPromise<DockerServerRuntimeInstance>()
-    val connection = existingServer?.let {
-        withContext(getCoroutineUiContext(ModalityState.any())) {
-            ServerConnectionManager.getInstance().getOrCreateConnection(existingServer)
-        }
-    } ?: getTemporaryDockerConnection()
-
-    connection.connectIfNeeded(object : ServerConnector.ConnectionCallback<DeploymentConfiguration> {
-        override fun errorOccurred(errorMessage: String) {
-            instancePromise.setError(errorMessage)
-        }
-
-        override fun connected(serverRuntimeInstance: ServerRuntimeInstance<DeploymentConfiguration>) {
-            instancePromise.setResult(serverRuntimeInstance as DockerServerRuntimeInstance)
-        }
-    })
-
-    return DockerConnection(connection, instancePromise.await())
-}
-
-suspend fun getDockerApplicationRuntimeInstance(serverRuntime: DockerServerRuntimeInstance, imageId: String): DockerApplicationRuntime =
-    serverRuntime.findRuntimeLater(imageId, false).await()
-
-suspend fun pushImage(project: Project, ecrLogin: EcrLogin, pushRequest: EcrPushRequest) {
-    when (pushRequest) {
-        is DockerfileEcrPushRequest -> buildAndPushDockerfile(project, ecrLogin, pushRequest)
-        is ImageEcrPushRequest -> {
-            EcrUtils.LOG.debug("Pushing '${pushRequest.localImageId}' to ECR")
-            val (username, password) = ecrLogin
-            val model = DockerRepositoryModel().also {
-                val repoUri = pushRequest.remoteRepo.repositoryUri
-                it.registry = DockerRegistry().also { registry ->
-                    registry.address = repoUri
-                    registry.username = username
-                    registry.password = password
-                }
-                it.repository = repoUri
-                it.tag = pushRequest.remoteTag
-            }
-
-            val dockerApplicationRuntime = getDockerApplicationRuntimeInstance(pushRequest.dockerServerRuntime, pushRequest.localImageId)
-            dockerApplicationRuntime.pushImage(project, model)
-        }
-    }
-}
-
-private suspend fun buildAndPushDockerfile(project: Project, ecrLogin: EcrLogin, pushRequest: DockerfileEcrPushRequest) {
-    val (runConfiguration, remoteRepo, remoteTag) = pushRequest
-    // use connection specified in run configuration
-    val server = RemoteServersManager.getInstance().findByName(runConfiguration.serverName, runConfiguration.serverType)
-    val (serverConnection, dockerRuntime) = getDockerServerRuntimeInstance(server)
-
-    // prep the "deployment" that will build the Dockerfile
-    val execEnviron = ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(), runConfiguration).build()
-    val dockerConfig = (runConfiguration.deploymentConfiguration as DockerDeploymentConfiguration)
-    val wasBuildOnly = dockerConfig.isBuildOnly
-    dockerConfig.isBuildOnly = true
-    // upcasting here to avoid type mismatch/unchecked cast warning on 'deploy' invocation
-    val task: DeploymentTask<DeploymentConfiguration> = DeploymentTaskImpl(
-        runConfiguration.deploymentSource,
-        runConfiguration.deploymentConfiguration,
-        project,
-        null,
-        execEnviron
+    private fun getTemporaryDockerConnection() = ServerConnectionManager.getInstance().createTemporaryConnection(
+        RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
     )
 
-    // check we don't have something running
-    val expectedDeploymentName = dockerRuntime.getDeploymentName(runConfiguration.deploymentSource, runConfiguration.deploymentConfiguration)
-    if (serverConnection.deployments.firstOrNull { it.name == expectedDeploymentName && it.status == DeploymentStatus.DEPLOYING } != null) {
-        notifyError("title", "deployment currently in progress")
-        return
+    suspend fun getDockerServerRuntimeInstance(server: RemoteServer<DockerCloudConfiguration>? = null): DockerConnection {
+        val instancePromise = AsyncPromise<DockerServerRuntimeInstance>()
+        val connection = server?.let {
+            withContext(getCoroutineUiContext(ModalityState.any())) {
+                ServerConnectionManager.getInstance().getOrCreateConnection(server)
+            }
+        } ?: getTemporaryDockerConnection()
+
+        connection.connectIfNeeded(object : ServerConnector.ConnectionCallback<DeploymentConfiguration> {
+            override fun errorOccurred(errorMessage: String) {
+                instancePromise.setError(errorMessage)
+            }
+
+            override fun connected(serverRuntimeInstance: ServerRuntimeInstance<DeploymentConfiguration>) {
+                instancePromise.setResult(serverRuntimeInstance as DockerServerRuntimeInstance)
+            }
+        })
+
+        return DockerConnection(connection, instancePromise.await())
     }
 
-    // unfortunately no callbacks available to grab the Deployment instance
-    val deploymentPromise = AsyncPromise<Deployment>()
-    serverConnection.deploy(task) { deploymentName ->
-        EcrUtils.LOG.debug("Retrieving Deployment associated with '$deploymentName'")
-        RemoteServersView.getInstance(project).showDeployment(serverConnection, deploymentName)
-        runInEdt {
-            deploymentPromise.setResult(serverConnection.deployments.first { it.name == deploymentName })
+    suspend fun getDockerApplicationRuntimeInstance(serverRuntime: DockerServerRuntimeInstance, imageId: String): DockerApplicationRuntime =
+        serverRuntime.findRuntimeLater(imageId, false).await()
+
+    suspend fun pushImage(project: Project, ecrLogin: EcrLogin, pushRequest: EcrPushRequest) {
+        when (pushRequest) {
+            is DockerfileEcrPushRequest -> {
+                LOG.debug("Building Docker image from ${pushRequest.dockerBuildConfiguration}")
+                buildAndPushDockerfile(project, ecrLogin, pushRequest)
+            }
+            is ImageEcrPushRequest -> {
+                LOG.debug("Pushing '${pushRequest.localImageId}' to ECR")
+                val (username, password) = ecrLogin
+                val model = DockerRepositoryModel().also {
+                    val repoUri = pushRequest.remoteRepo.repositoryUri
+                    it.registry = DockerRegistry().also { registry ->
+                        registry.address = repoUri
+                        registry.username = username
+                        registry.password = password
+                    }
+                    it.repository = repoUri
+                    it.tag = pushRequest.remoteTag
+                }
+
+                val dockerApplicationRuntime = getDockerApplicationRuntimeInstance(pushRequest.dockerServerRuntime, pushRequest.localImageId)
+                dockerApplicationRuntime.pushImage(project, model)
+            }
         }
     }
 
-    // seems gross but this is cleaner than manually attempting to expose the build logs to the user
-    val deployment = deploymentPromise.await()
-    // TODO: why doesn't logging to this log handler do anything?
-    val logHandler = deployment.getOrCreateLogManager(project).mainLoggingHandler
+    private suspend fun buildAndPushDockerfile(project: Project, ecrLogin: EcrLogin, pushRequest: DockerfileEcrPushRequest) {
+        val (runConfiguration, remoteRepo, remoteTag) = pushRequest
+        // use connection specified in run configuration
+        val server = RemoteServersManager.getInstance().findByName(runConfiguration.serverName, runConfiguration.serverType)
+        val (serverConnection, dockerRuntime) = getDockerServerRuntimeInstance(server)
 
-    // unfortunately no callbacks available to grab failure
-    while (deployment.status == DeploymentStatus.DEPLOYING) {
-        delay(500)
+        // prep the "deployment" that will build the Dockerfile
+        val execEnviron = ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(), runConfiguration).build()
+        val dockerConfig = (runConfiguration.deploymentConfiguration as DockerDeploymentConfiguration)
+        val wasBuildOnly = dockerConfig.isBuildOnly
+        dockerConfig.isBuildOnly = true
+        // upcasting here to avoid type mismatch/unchecked cast warning on 'deploy' invocation
+        val task: DeploymentTask<DeploymentConfiguration> = DeploymentTaskImpl(
+            runConfiguration.deploymentSource,
+            runConfiguration.deploymentConfiguration,
+            project,
+            null,
+            execEnviron
+        )
+
+        // check we don't have something running
+        val expectedDeploymentName = dockerRuntime.getDeploymentName(runConfiguration.deploymentSource, runConfiguration.deploymentConfiguration)
+        if (serverConnection.deployments.firstOrNull { it.name == expectedDeploymentName && it.status == DeploymentStatus.DEPLOYING } != null) {
+            notifyError(message("ecr.push.title"), message("ecr.push.in_progress"))
+            return
+        }
+
+        // unfortunately no callbacks available to grab the Deployment instance
+        val deploymentPromise = AsyncPromise<Deployment>()
+        serverConnection.deploy(task) { deploymentName ->
+            LOG.debug("Retrieving Deployment associated with '$deploymentName'")
+            RemoteServersView.getInstance(project).showDeployment(serverConnection, deploymentName)
+            runInEdt {
+                deploymentPromise.setResult(serverConnection.deployments.first { it.name == deploymentName })
+            }
+        }
+
+        // seems gross but this is cleaner than manually attempting to expose the build logs to the user
+        val deployment = deploymentPromise.await()
+        // TODO: why doesn't logging to this log handler do anything?
+        val logHandler = deployment.getOrCreateLogManager(project).mainLoggingHandler
+
+        // unfortunately no callbacks available to grab failure
+        while (deployment.status == DeploymentStatus.DEPLOYING) {
+            delay(100)
+        }
+
+        if (deployment.status != DeploymentStatus.DEPLOYED) {
+            notifyError(message("ecr.push.title"), message("ecr.push.failed", deployment.statusText))
+            return
+        }
+
+        val runtime = deployment.runtime as? DockerApplicationRuntime
+        if (runtime == null) {
+            notifyError(message("ecr.push.title"), message("ecr.push.failed", deployment.statusText))
+            return
+        }
+
+        if (!wasBuildOnly) {
+            LOG.debug("Configuration specified additional 'run' parameters in Dockerfile that will be ignored")
+            logHandler.print("Skipping 'Run' portion of Dockerfile build configuration\n")
+        }
+
+        // find the built image and send to ECR
+        val imageIdPrefix = runtime.agentApplication.imageId
+        LOG.debug("Finding built image with prefix '$imageIdPrefix'")
+        val imageId = runtime.agent.getImages(null).first { it.imageId.startsWith("sha256:$imageIdPrefix") }.imageId
+        LOG.debug("Found image with full id '$imageId'")
+        logHandler.print("Deploying $imageId to ECR\n")
+
+        pushImage(project, ecrLogin, ImageEcrPushRequest(dockerRuntime, imageId, remoteRepo, remoteTag))
     }
-    if (deployment.status != DeploymentStatus.DEPLOYED) {
-        notifyError("title", "build failed: ${deployment.statusText}")
-        return
+
+    fun dockerRunConfigurationFromPath(project: Project, configurationName: String, path: String): RunnerAndConfigurationSettings {
+        val remoteServersManager = RemoteServersManager.getInstance()
+        val dockerServerType = DockerCloudType.getInstance()
+        if (remoteServersManager.getServers(dockerServerType).isEmpty()) {
+            // add the default configuration if one doesn't exist
+            remoteServersManager.addServer(remoteServersManager.createServer(dockerServerType))
+        }
+
+        val runManager = RunManager.getInstance(project)
+        val factory = DockerCloudType.getRunConfigurationType().getFactoryForType(DockerFileDeploymentSourceType.getInstance())
+        val settings = runManager.createConfiguration(configurationName, factory)
+        val configurator = DockerCloudType.getInstance().createDeploymentConfigurator(project)
+        (settings.configuration as DockerRunConfiguration).apply {
+            val sourceType = DockerFileDeploymentSourceType.getInstance()
+            deploymentSource = sourceType.singletonSource
+            deploymentConfiguration = configurator.createDefaultConfiguration(deploymentSource)
+            suggestedName()?.let { name = it }
+            deploymentConfiguration.sourceFilePath = path
+            deploymentConfiguration.isBuildOnly = true
+            onNewConfigurationCreated()
+        }
+
+        runManager.addConfiguration(settings)
+
+        return settings
     }
-
-    val runtime = deployment.runtime as? DockerApplicationRuntime
-    if (runtime == null) {
-        notifyError("title", "build failed: ${deployment.statusText}")
-        return
-    }
-
-    if (!wasBuildOnly) {
-        EcrUtils.LOG.debug("Configuration specified additional 'run' parameters in Dockerfile that will be ignored")
-        logHandler.print("Skipping 'Run' portion of Dockerfile build configuration\n")
-    }
-
-    // find the built image and send to ECR
-    val imageIdPrefix = runtime.agentApplication.imageId
-    EcrUtils.LOG.debug("Finding built image with prefix '$imageIdPrefix'")
-    val imageId = runtime.agent.getImages(null).first { it.imageId.startsWith("sha256:$imageIdPrefix") }.imageId
-    EcrUtils.LOG.debug("Found image with full id '$imageId'")
-    logHandler.print("Deploying $imageId to ECR\n")
-
-    pushImage(project, ecrLogin, ImageEcrPushRequest(dockerRuntime, imageId, remoteRepo, remoteTag))
 }
 
 private const val NO_TAG_TAG = "<none>:<none>"
@@ -221,36 +259,4 @@ fun SdkRepository.toToolkitEcrRepository(): Repository? {
     val uri = repositoryUri() ?: return null
 
     return Repository(name, arn, uri)
-}
-
-object EcrUtils {
-    val LOG = getLogger<EcrUtils>()
-}
-
-typealias DockerRunConfiguration = DeployToServerRunConfiguration<DockerCloudConfiguration, DockerDeploymentConfiguration>
-fun dockerRunConfigurationFromPath(project: Project, configurationName: String, path: String): RunnerAndConfigurationSettings {
-    val remoteServersManager = RemoteServersManager.getInstance()
-    val dockerServerType = DockerCloudType.getInstance()
-    if (remoteServersManager.getServers(dockerServerType).isEmpty()) {
-        // add the default configuration if one doesn't exist
-        remoteServersManager.addServer(remoteServersManager.createServer(dockerServerType))
-    }
-
-    val runManager = RunManager.getInstance(project)
-    val factory = DockerCloudType.getRunConfigurationType().getFactoryForType(DockerFileDeploymentSourceType.getInstance())
-    val settings = runManager.createConfiguration(configurationName, factory)
-    val configurator = DockerCloudType.getInstance().createDeploymentConfigurator(project)
-    (settings.configuration as DockerRunConfiguration).apply {
-        val sourceType = DockerFileDeploymentSourceType.getInstance()
-        deploymentSource = sourceType.singletonSource
-        deploymentConfiguration = configurator.createDefaultConfiguration(deploymentSource)
-        suggestedName()?.let { name = it }
-        deploymentConfiguration.sourceFilePath = path
-        deploymentConfiguration.isBuildOnly = true
-        onNewConfigurationCreated()
-    }
-
-    runManager.addConfiguration(settings)
-
-    return settings
 }

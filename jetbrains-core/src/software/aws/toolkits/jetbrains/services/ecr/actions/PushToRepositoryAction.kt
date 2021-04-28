@@ -31,6 +31,7 @@ import com.intellij.ui.layout.buttonGroup
 import com.intellij.ui.layout.listCellRenderer
 import com.intellij.ui.layout.panel
 import com.intellij.ui.layout.selected
+import com.intellij.util.text.nullize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -47,19 +48,17 @@ import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys
 import software.aws.toolkits.jetbrains.services.ecr.DockerRunConfiguration
 import software.aws.toolkits.jetbrains.services.ecr.DockerfileEcrPushRequest
+import software.aws.toolkits.jetbrains.services.ecr.EcrPushRequest
 import software.aws.toolkits.jetbrains.services.ecr.EcrRepositoryNode
+import software.aws.toolkits.jetbrains.services.ecr.EcrUtils
 import software.aws.toolkits.jetbrains.services.ecr.ImageEcrPushRequest
-import software.aws.toolkits.jetbrains.services.ecr.dockerRunConfigurationFromPath
 import software.aws.toolkits.jetbrains.services.ecr.getDockerLogin
-import software.aws.toolkits.jetbrains.services.ecr.getDockerServerRuntimeInstance
-import software.aws.toolkits.jetbrains.services.ecr.pushImage
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.ecr.toLocalImageList
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.ui.blankAsNull
 import software.aws.toolkits.jetbrains.utils.ui.installOnParent
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.jetbrains.utils.ui.visibleIf
@@ -74,7 +73,7 @@ class PushToRepositoryAction :
     DumbAwareAction(),
     CoroutineScope by ApplicationThreadPoolScope("PushRepositoryAction") {
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance> =
-        async(start = CoroutineStart.LAZY) { getDockerServerRuntimeInstance().runtimeInstance }
+        async(start = CoroutineStart.LAZY) { EcrUtils.getDockerServerRuntimeInstance().runtimeInstance }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
@@ -104,7 +103,7 @@ class PushToRepositoryAction :
                 }
 
                 val ecrLogin = authData.getDockerLogin()
-                pushImage(project, ecrLogin, pushRequest)
+                EcrUtils.pushImage(project, ecrLogin, pushRequest)
                 result = Result.Succeeded
             } catch (e: SdkException) {
                 val message = message("ecr.push.credential_fetch_failed")
@@ -147,8 +146,9 @@ internal class PushToEcrDialog(
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance>
 ) : DialogWrapper(project, null, false, IdeModalityType.PROJECT),
     CoroutineScope by ApplicationThreadPoolScope("PushRepositoryDialog") {
+    private val defaultTag = "latest"
     private var type: BuildType = BuildType.LocalImage
-    private var remoteTag: String = "latest"
+    private var remoteTag: String = ""
     private val localImageRepoTags = CollectionComboBoxModel<LocalImage>()
 
     private var localImage: LocalImage? = null
@@ -191,8 +191,7 @@ internal class PushToEcrDialog(
         val dockerfilePanel = dockerfileConfigurationSelectorPanel()
 
         row {
-            // TODO: fix weird panel gap
-            cell(isFullWidth = true, isVerticalFlow = true) {
+            cell(isFullWidth = true) {
                 imageSelectorPanel(grow)
                     .installOnParent { fromLocalImageButton.isSelected }
                     .visibleIf(fromLocalImageButton.selected)
@@ -211,7 +210,9 @@ internal class PushToEcrDialog(
         row(message("ecr.push.remoteTag")) {
             textField(::remoteTag)
                 .constraints(grow)
-                .withErrorOnApplyIf(message("ecr.tag.not_provided")) { it.blankAsNull() == null }
+                .also {
+                    it.component.emptyText.text = defaultTag
+                }
         }
     }
 
@@ -298,7 +299,7 @@ internal class PushToEcrDialog(
                 override fun getInitialFile() = this@PushToEcrDialog.project.guessProjectDir()
 
                 override fun onFileChosen(chosenFile: VirtualFile) {
-                    val settings = dockerRunConfigurationFromPath(this@PushToEcrDialog.project, chosenFile.presentableName, chosenFile.path)
+                    val settings = EcrUtils.dockerRunConfigurationFromPath(this@PushToEcrDialog.project, chosenFile.presentableName, chosenFile.path)
                     // open dialog for user
                     RunDialog.editConfiguration(
                         project, settings,
@@ -332,21 +333,25 @@ internal class PushToEcrDialog(
 
     private fun selectedRepo() = remoteRepos.selected() ?: throw IllegalStateException("repository uri was null")
 
-    suspend fun getPushRequest() = when (type.ordinal) {
-        BuildType.LocalImage.ordinal -> ImageEcrPushRequest(
-            dockerServerRuntime.await(),
-            localImage?.imageId ?: throw IllegalStateException("image id was null"),
-            selectedRepo(),
-            remoteTag
-        )
+    suspend fun getPushRequest(): EcrPushRequest {
+        val tag = remoteTag.nullize() ?: defaultTag
 
-        BuildType.Dockerfile.ordinal -> DockerfileEcrPushRequest(
-            runConfiguration ?: throw IllegalStateException("run configuration was null"),
-            selectedRepo(),
-            remoteTag
-        )
+        return when (type.ordinal) {
+            BuildType.LocalImage.ordinal -> ImageEcrPushRequest(
+                dockerServerRuntime.await(),
+                localImage?.imageId ?: throw IllegalStateException("image id was null"),
+                selectedRepo(),
+                tag
+            )
 
-        else -> throw IllegalStateException()
+            BuildType.Dockerfile.ordinal -> DockerfileEcrPushRequest(
+                runConfiguration ?: throw IllegalStateException("run configuration was null"),
+                selectedRepo(),
+                tag
+            )
+
+            else -> throw IllegalStateException()
+        }
     }
 
     private enum class BuildType {
