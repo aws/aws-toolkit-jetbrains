@@ -3,21 +3,22 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-import com.pinterest.ktlint.core.RuleSet
 import io.gitlab.arturbosch.detekt.api.Config
 import io.gitlab.arturbosch.detekt.api.RuleSet
 import io.gitlab.arturbosch.detekt.api.RuleSetProvider
 
 class CustomRuleSetProvider : RuleSetProvider {
-    override fun get() = RuleSet(
-        "custom-detekt-rules",
+    override val ruleSetId: String = "custom-detekt-rules"
+    override fun instance(config: Config): RuleSet = RuleSet(
+        ruleSetId,
         listOf(
-        CopyrightHeaderRule(),
-        BannedPatternRule(BannedPatternRule.DEFAULT_PATTERNS),
-        ExpressionBodyRule(),
-        LazyLogRule(),
-        DialogModalityRule(),
-        BannedImportsRule()
+            CopyrightHeaderRule()
+            //BannedPatternRule(BannedPatternRule.DEFAULT_PATTERNS),
+            //ExpressionBodyRule(),
+            //LazyLogRule(),
+            //DialogModalityRule(),
+            //BannedImportsRule()
         )
     )
 }
+

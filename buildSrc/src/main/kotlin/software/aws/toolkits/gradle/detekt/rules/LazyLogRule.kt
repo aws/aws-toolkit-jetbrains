@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.gradle.detekt.rules
-
+/*
 import com.pinterest.ktlint.core.Rule
 import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 import org.jetbrains.kotlin.name.Name
@@ -55,3 +55,4 @@ class LazyLogRule : Rule("log-not-lazy") {
         }
     }
 }
+*/

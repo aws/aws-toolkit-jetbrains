@@ -3,20 +3,32 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-import com.pinterest.ktlint.core.Rule
-import org.jetbrains.kotlin.com.intellij.lang.ASTNode
+import io.gitlab.arturbosch.detekt.api.CodeSmell
+import io.gitlab.arturbosch.detekt.api.Debt
+import io.gitlab.arturbosch.detekt.api.Entity
+import io.gitlab.arturbosch.detekt.api.Issue
+import io.gitlab.arturbosch.detekt.api.Rule
+import io.gitlab.arturbosch.detekt.api.Severity
+import org.jetbrains.kotlin.psi.KtFile
 
-class CopyrightHeaderRule() : Rule("copyright-header"), Rule.Modifier.RestrictToRoot {
+class CopyrightHeaderRule : Rule() {
     private val header =
         """^// Copyright \d{4} Amazon.com, Inc. or its affiliates. All Rights Reserved.\n// SPDX-License-Identifier: Apache-2.0\n""".toRegex()
 
-    override fun visit(
-        node: ASTNode,
-        autoCorrect: Boolean,
-        emit: (offset: Int, errorMessage: String, canBeAutoCorrected: Boolean) -> Unit
-    ) {
-        if (!header.containsMatchIn(node.text)) {
-            emit(node.startOffset, "Missing or incorrect file header", false)
+    override val issue = Issue("copyright-header", Severity.Style, "Check if the file has the correct header", Debt.FIVE_MINS)
+
+    override fun visitKtFile(file: KtFile) {
+        super.visitKtFile(file)
+        if (!header.containsMatchIn(file.text)) {
+            report(
+                CodeSmell(
+                    issue, Entity.atPackageOrFirstDecl(file), message = "Missing or incorrect file header"
+
+                )
+            )
         }
+        file.text
+        super.visitKtFile(file)
     }
 }
+

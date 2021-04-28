@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
+/*
 import com.pinterest.ktlint.core.Rule
 import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 import org.jetbrains.kotlin.psi.KtCallExpression
@@ -32,3 +33,4 @@ class DialogModalityRule : Rule("run-in-edt-wo-modality-in-dialog") {
         private val KNOWN_DIALOG_SUPER_TYPES = setOf("DialogWrapper")
     }
 }
+*/

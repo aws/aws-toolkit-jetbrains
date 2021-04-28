@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
+/*
+
 import com.pinterest.ktlint.core.Rule
 import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 import org.jetbrains.kotlin.psi.KtBlockExpression
@@ -22,3 +24,4 @@ class ExpressionBodyRule : Rule("expression-body") {
         }
     }
 }
+*/

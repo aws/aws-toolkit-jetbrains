@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.gradle.ktlint.rules
-
+/*
 import com.pinterest.ktlint.core.LintError
 import com.pinterest.ktlint.test.lint
 import org.assertj.core.api.Assertions.assertThat
@@ -133,3 +133,4 @@ class ExpressionBodyRuleTest {
         )
     }
 }
+*/

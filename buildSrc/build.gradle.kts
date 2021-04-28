@@ -20,6 +20,8 @@ dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:$jgitVersion")
     implementation("org.commonmark:commonmark:$commonsMarkVersion")
 
+    implementation(kotlin("gradle-plugin", kotlinVersion))
+
     implementation("software.amazon.awssdk:codegen:$awsSdkVersion")
 
     implementation("org.jetbrains.intellij.plugins:gradle-intellij-plugin:$ideaPluginVersion")

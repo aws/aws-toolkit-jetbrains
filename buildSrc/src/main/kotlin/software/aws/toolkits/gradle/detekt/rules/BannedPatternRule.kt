@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
+/*
 import com.pinterest.ktlint.core.Rule
 import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 
@@ -40,3 +41,4 @@ class BannedPatternRule(private val patterns: List<BannedPattern>) : Rule("banne
 }
 
 data class BannedPattern(val regex: Regex, val message: String)
+*/
