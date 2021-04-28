@@ -34,16 +34,18 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         useStale = false,
         forceFetch = true
     )
+
     private val taskList = DefaultComboBoxModel(tasks.toTypedArray())
+    var task = if (tasks.isNotEmpty()) tasks.first() else null
     private val command = JBTextField()
     private val component by lazy {
         panel {
-            row("Task") {
-                comboBox(taskList, { tasks.first() }, { tasks.first() })
+            row(message("ecs.execute_command_task")) {
+                comboBox(taskList, { task }, { if (it != null) { task = it } })
                     .constraints(growX)
                     .withErrorOnApplyIf(message("ecs.execute_command_task_comboBox_empty")) { it.selected() == null }
             }
-            row("Command") {
+            row(message("ecs.execute_command_label")) {
                 command(grow).withErrorOnApplyIf(message("ecs.execute_command_no_command")) { it.text == "" }
             }
         }
@@ -74,7 +76,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 .withParameters("--cluster")
                 .withParameters(container.service.clusterArn())
                 .withParameters("--task")
-                .withParameters(taskList.selectedItem.toString())
+                .withParameters(task)
                 .withParameters("--command")
                 .withParameters(commandToExecute)
                 .withParameters("--interactive")
