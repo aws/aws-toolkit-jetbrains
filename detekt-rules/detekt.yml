@@ -56,10 +56,9 @@ formatting:
     active: true
   SpacingAroundUnaryOperator:
     active: true
-  SpacingBetweenDeclarationsWithAnnotations:
-    active: true
   SpacingBetweenDeclarationsWithComments:
     active: true
+    excludes: [ '**/icons/**' ]
 
 naming:
   active: true

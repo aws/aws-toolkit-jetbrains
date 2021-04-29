@@ -2,12 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.gradle.detekt.rules
-
 /*
-import com.pinterest.ktlint.core.Rule
+import io.gitlab.arturbosch.detekt.api.Debt
+import io.gitlab.arturbosch.detekt.api.Issue
+import io.gitlab.arturbosch.detekt.api.Rule
+import io.gitlab.arturbosch.detekt.api.Severity
 import org.jetbrains.kotlin.com.intellij.lang.ASTNode
 
-class BannedPatternRule(private val patterns: List<BannedPattern>) : Rule("banned-pattern"), Rule.Modifier.RestrictToRoot {
+
+class BannedPatternRule(private val patterns: List<BannedPattern>) : Rule() {
+    override val issue = Issue("BannedPattern", Severity.Defect, "Banned calls", Debt.FIVE_MINS)
+
+    override fun visit
     override fun visit(node: ASTNode, autoCorrect: Boolean, emit: (offset: Int, errorMessage: String, canBeAutoCorrected: Boolean) -> Unit) {
         val text = node.text
         if (text.contains("BannedPatternRule")) {
