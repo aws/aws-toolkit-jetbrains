@@ -24,6 +24,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebuggerSupport
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts.Companion.DEBUG_PORTS
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
@@ -59,7 +60,7 @@ class AttachDebugger(
                     samProcessHandler.addProcessListener(buildProcessAdapter { session.consoleView })
                     samProcessHandler.addProcessListener(object : ProcessAdapter() {
                         override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                            if (event.text.contains(endText)) {
+                            if (event.text.contains(SamExecutable.endDebuggingText)) {
                                 samCompleted.set(true)
                             }
                         }
@@ -110,7 +111,6 @@ class AttachDebugger(
     }
 
     private companion object {
-        const val endText = "END RequestId: "
         val LOG = getLogger<AttachDebugger>()
         fun buildProcessAdapter(console: (() -> ConsoleView?)) = object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
