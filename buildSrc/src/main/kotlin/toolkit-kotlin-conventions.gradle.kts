@@ -23,8 +23,6 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
 }
 
 sourceSets {
@@ -64,7 +62,7 @@ tasks.withType<Detekt>().configureEach {
 detekt {
     buildUponDefaultConfig = false
     allRules = false
-    config = files("$rootDir/buildSrc/detekt/detekt.yml")
+    config = files("$rootDir/detekt/detekt.yml")
 
     reports {
         html.enabled = true // observe findings in your browser with structure and code snippets

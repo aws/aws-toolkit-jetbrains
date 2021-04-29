@@ -46,6 +46,7 @@ formatting:
     active: true
   Indentation:
     active: true
+    excludes: ['**/TelemetryDefinitions.kt']
   MaximumLineLength:
     active: false
   NoEmptyFirstLineInMethodBlock:

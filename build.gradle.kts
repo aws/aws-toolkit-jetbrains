@@ -6,6 +6,7 @@ import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 
 val ideProfile = IdeVersions.ideProfile(project)
 val toolkitVersion: String by project
+val detektVersion: String by project
 
 plugins {
     id("base")
@@ -43,6 +44,7 @@ tasks.createRelease.configure {
 dependencies {
     aggregateCoverage(project(":intellij"))
     aggregateCoverage(project(":ui-tests"))
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
     detektPlugins(project(":detekt"))
 }
 

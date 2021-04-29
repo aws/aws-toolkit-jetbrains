@@ -15,20 +15,18 @@ class CopyrightHeaderRule : Rule() {
     private val header =
         """^// Copyright \d{4} Amazon.com, Inc. or its affiliates. All Rights Reserved.\n// SPDX-License-Identifier: Apache-2.0\n""".toRegex()
 
-    override val issue = Issue("copyright-header", Severity.Style, "Check if the file has the correct header", Debt.FIVE_MINS)
+    override val issue = Issue("CopyrightHeader", Severity.Style, "Check if the file has the correct header", Debt.FIVE_MINS)
 
     override fun visitKtFile(file: KtFile) {
+        println("AAAAAAAAAAAAAAAAAAAAAA")
         super.visitKtFile(file)
         if (!header.containsMatchIn(file.text)) {
             report(
                 CodeSmell(
                     issue, Entity.atPackageOrFirstDecl(file), message = "Missing or incorrect file header"
-
                 )
             )
         }
-        file.text
-        super.visitKtFile(file)
     }
 }
 
