@@ -74,7 +74,19 @@ class AttachDebugger(
                     // "Aborted!" text to be printed
                     session.addSessionListener(object : XDebugSessionListener {
                         override fun sessionStopped() {
-                            if (!samCompleted.get()) {
+                            launch {
+                                // So sadly this has a race condition, the debugger disconnects before
+                                // the process actually ends, so if that branch goes faster, then we still
+                                // call cancel. So, wait an arbitrary short amount of time (500ms) that should
+                                // strike a good balance between speed and a reasonable amount of time for it to
+                                // print and exit
+                                for (i in 1..5) {
+                                    if (samCompleted.get()) {
+                                        return@launch
+                                    } else {
+                                        delay(100)
+                                    }
+                                }
                                 context.cancel()
                             }
                         }
