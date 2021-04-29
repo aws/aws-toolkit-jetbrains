@@ -55,6 +55,11 @@ subprojects {
             sarif.enabled = true // standardized SARIF format to support integrations with Github Code Scanning
         }
     }
+
+    tasks.withType<Detekt>().configureEach {
+        jvmTarget = "1.8"
+        dependsOn(":detekt-rules:assemble")
+    }
 }
 
 tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
@@ -74,11 +79,6 @@ tasks.register("runIde") {
     doFirst {
         throw GradleException("Use project specific runIde command, i.e. :jetbrains-core:runIde, :intellij:runIde")
     }
-}
-
-tasks.withType<Detekt>().configureEach {
-    jvmTarget = "1.8"
-    dependsOn(":detekt-rules:assemble")
 }
 
 tasks.check {

@@ -5,7 +5,7 @@ val kotlinVersion: String by project
 val detektVersion: String by project
 
 plugins {
-    id("toolkit-kotlin-conventions")
+    kotlin
 }
 
 dependencies {
