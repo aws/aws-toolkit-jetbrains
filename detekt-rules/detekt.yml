@@ -1,11 +1,9 @@
 build:
-  # this should be dropped to 0 slowly, 205 comes from test
-  maxIssues: 205
   excludeCorrectable: false
 
 config:
-  validation: true
-  warningsAsErrors: false
+  # false so we can do custom rules
+  validation: false
 
 processors:
   active: true
@@ -201,4 +199,8 @@ potential-bugs:
   UselessPostfixExpression:
     active: false
   WrongEqualsTypeParameter:
+    active: true
+
+CustomDetektRules:
+  AwsCopyrightHeader:
     active: true

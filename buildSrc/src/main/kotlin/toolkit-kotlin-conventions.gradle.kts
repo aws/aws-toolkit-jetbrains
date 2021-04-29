@@ -1,17 +1,14 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val kotlinVersion: String by project
 val coroutinesVersion: String by project
-val detektVersion: String by project
 
 plugins {
     id("java")
     kotlin("jvm")
-    id("io.gitlab.arturbosch.detekt")
 }
 
 dependencies {
@@ -53,24 +50,4 @@ java {
 tasks.withType<KotlinCompile>().all {
     kotlinOptions.jvmTarget = "1.8"
     kotlinOptions.apiVersion = "1.3"
-}
-
-tasks.withType<Detekt>().configureEach {
-    jvmTarget = "1.8"
-}
-
-detekt {
-    buildUponDefaultConfig = false
-    allRules = false
-    config = files("$rootDir/detekt/detekt.yml")
-
-    reports {
-        html.enabled = true // observe findings in your browser with structure and code snippets
-        xml.enabled = true // checkstyle like format mainly for integrations like Jenkins
-        sarif.enabled = true // standardized SARIF format (https://sarifweb.azurewebsites.net/) to support integrations with Github Code Scanning
-    }
-}
-
-tasks.check {
-    dependsOn(tasks.detekt)
 }

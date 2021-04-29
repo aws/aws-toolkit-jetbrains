@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 rootProject.name = "aws-toolkit-jetbrains"
 
-include("detekt")
 include("resources")
 include("sdk-codegen")
 include("core")
@@ -11,6 +10,7 @@ include("jetbrains-ultimate")
 include("jetbrains-rider")
 include("intellij")
 include("ui-tests")
+include("detekt-rules")
 
 plugins {
     id("com.gradle.enterprise").version("3.4.1")

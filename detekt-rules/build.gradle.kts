@@ -6,7 +6,6 @@ val detektVersion: String by project
 
 plugins {
     id("toolkit-kotlin-conventions")
-    id("io.gitlab.arturbosch.detekt")
 }
 
 dependencies {
