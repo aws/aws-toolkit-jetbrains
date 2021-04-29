@@ -3,29 +3,35 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-/*
-import com.pinterest.ktlint.core.Rule
-import org.jetbrains.kotlin.com.intellij.lang.ASTNode
+import io.gitlab.arturbosch.detekt.api.CodeSmell
+import io.gitlab.arturbosch.detekt.api.Debt
+import io.gitlab.arturbosch.detekt.api.Entity
+import io.gitlab.arturbosch.detekt.api.Issue
+import io.gitlab.arturbosch.detekt.api.Rule
+import io.gitlab.arturbosch.detekt.api.Severity
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jetbrains.kotlin.psi.psiUtil.getSuperNames
 
-class DialogModalityRule : Rule("run-in-edt-wo-modality-in-dialog") {
-    override fun visit(node: ASTNode, autoCorrect: Boolean, emit: (offset: Int, errorMessage: String, canBeAutoCorrected: Boolean) -> Unit) {
-        val element = node.psi ?: return
+class DialogModalityRule : Rule() {
+    override val issue = Issue("RunInEdtWithoutModalityInDialog", Severity.Defect, "Use ModalityState when calling runInEdt in dialogs", Debt.FIVE_MINS)
 
-        when (element) {
-            is KtCallExpression -> {
-                val callee = element.calleeExpression as? KtNameReferenceExpression ?: return
-                if (callee.getReferencedName() != "runInEdt") return
-                val clz = element.containingClass() ?: return
-                if (clz.getSuperNames().none { it in KNOWN_DIALOG_SUPER_TYPES }) return
+    override fun visitCallExpression(element: KtCallExpression) {
+        super.visitCallExpression(element)
+        val callee = element.calleeExpression as? KtNameReferenceExpression ?: return
+        if (callee.getReferencedName() != "runInEdt") return
+        val clz = element.containingClass() ?: return
+        if (clz.getSuperNames().none { it in KNOWN_DIALOG_SUPER_TYPES }) return
 
-                if (element.valueArguments.none { it.text == "ModalityState.any()" }) {
-                    emit(node.startOffset, "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits.", false)
-                }
-            }
+        if (element.valueArguments.none { it.text == "ModalityState.any()" }) {
+            report(
+                CodeSmell(
+                    issue,
+                    Entity.from(element),
+                    message = "Call to runInEdt without ModalityState.any() within Dialog will not run until Dialog exits."
+                )
+            )
         }
     }
 
@@ -33,4 +39,3 @@ class DialogModalityRule : Rule("run-in-edt-wo-modality-in-dialog") {
         private val KNOWN_DIALOG_SUPER_TYPES = setOf("DialogWrapper")
     }
 }
-*/

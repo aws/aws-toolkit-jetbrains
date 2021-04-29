@@ -3,25 +3,31 @@
 
 package software.aws.toolkits.gradle.detekt.rules
 
-/*
-
-import com.pinterest.ktlint.core.Rule
-import org.jetbrains.kotlin.com.intellij.lang.ASTNode
+import io.gitlab.arturbosch.detekt.api.CodeSmell
+import io.gitlab.arturbosch.detekt.api.Debt
+import io.gitlab.arturbosch.detekt.api.Entity
+import io.gitlab.arturbosch.detekt.api.Issue
+import io.gitlab.arturbosch.detekt.api.Rule
+import io.gitlab.arturbosch.detekt.api.Severity
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtReturnExpression
 
-class ExpressionBodyRule : Rule("expression-body") {
-    override fun visit(node: ASTNode, autoCorrect: Boolean, emit: (offset: Int, errorMessage: String, canBeAutoCorrected: Boolean) -> Unit) {
-        val element = node.psi ?: return
-        when (element) {
-            is KtNamedFunction -> {
-                val body = element.bodyExpression as? KtBlockExpression ?: return
-                if (body.statements.firstOrNull() is KtReturnExpression) {
-                    emit(node.startOffset, "Use expression body instead of one line return", false)
-                }
-            }
+class ExpressionBodyRule : Rule() {
+    override val issue = Issue("ExpressionBody", Severity.Style, "Use expression syntax when there is one statement", Debt.FIVE_MINS)
+
+    override fun visitNamedFunction(element: KtNamedFunction) {
+        super.visitNamedFunction(element)
+        val body = element.bodyExpression as? KtBlockExpression ?: return
+        if (body.statements.firstOrNull() is KtReturnExpression) {
+            report(
+                CodeSmell(
+                    issue,
+                    Entity.from(element),
+                    message = "Use expression body instead of one line return"
+                )
+            )
         }
     }
 }
-*/
+

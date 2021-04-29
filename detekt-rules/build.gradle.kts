@@ -3,6 +3,8 @@
 
 val kotlinVersion: String by project
 val detektVersion: String by project
+val junitVersion: String by project
+val assertjVersion: String by project
 
 plugins {
     kotlin
@@ -11,4 +13,6 @@ plugins {
 dependencies {
     implementation("io.gitlab.arturbosch.detekt:detekt-api:$detektVersion")
     testImplementation("io.gitlab.arturbosch.detekt:detekt-test:$detektVersion")
+    testImplementation("junit:junit:$junitVersion")
+    testImplementation("org.assertj:assertj-core:$assertjVersion")
 }

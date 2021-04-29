@@ -1,12 +1,10 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.gradle.ktlint.rules
-/*
-import com.pinterest.ktlint.core.LintError
-import com.pinterest.ktlint.test.lint
+import io.gitlab.arturbosch.detekt.test.lint
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import software.aws.toolkits.gradle.detekt.rules.CopyrightHeaderRule
 
 class CopyrightHeaderRuleTest {
     private val rule = CopyrightHeaderRule()
@@ -19,9 +17,10 @@ class CopyrightHeaderRuleTest {
         import a.b.c
                 """.trimIndent()
             )
-        ).containsExactly(
-            LintError(1, 1, "copyright-header", "Missing or incorrect file header")
         )
+            .hasOnlyOneElementSatisfying {
+                it.id == "CopyrightHeader" && it.message == "Missing or incorrect file header"
+            }
     }
 
     @Test
@@ -38,4 +37,4 @@ class CopyrightHeaderRuleTest {
         ).isEmpty()
     }
 }
-*/
+

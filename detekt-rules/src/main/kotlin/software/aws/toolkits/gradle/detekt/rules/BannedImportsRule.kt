@@ -2,34 +2,53 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.gradle.detekt.rules
-/*
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import io.gitlab.arturbosch.detekt.api.Rule
-import org.jetbrains.kotlin.com.intellij.lang.ASTNode
-import org.jetbrains.kotlin.psi.KtImportDirective
 
-class BannedImportsRule : Rule("banned-imports") {
-    override fun visitImportDirective(
-        node: ASTNode,
-        autoCorrect: Boolean,
-        emit: (offset: Int, errorMessage: String, canBeAutoCorrected: Boolean) -> Unit
-    ) {
-        val element = node.psi ?: return
-        if (element is KtImportDirective) {
+import io.gitlab.arturbosch.detekt.api.CodeSmell
+import io.gitlab.arturbosch.detekt.api.Debt
+import io.gitlab.arturbosch.detekt.api.Entity
+import io.gitlab.arturbosch.detekt.api.Issue
+import io.gitlab.arturbosch.detekt.api.Rule
+import io.gitlab.arturbosch.detekt.api.Severity
+import org.jetbrains.kotlin.psi.KtImportList
+
+class BannedImportsRule : Rule() {
+    override val issue = Issue("BannedImports", Severity.Defect, "Imports banned by the project", Debt.FIVE_MINS)
+
+    override fun visitImportList(importList: KtImportList) {
+        super.visitImportList(importList)
+        importList.imports.forEach { element ->
             if (element.importedFqName?.asString() == "org.assertj.core.api.Assertions") {
-                emit(node.startOffset, "Import the assertion you want to use directly instead of importing the top level Assertions", false)
+                report(
+                    CodeSmell(
+                        issue,
+                        Entity.from(element),
+                        message = "Import the assertion you want to use directly instead of importing the top level Assertions"
+                    )
+                )
             }
 
             if (element.importedFqName?.asString()?.startsWith("org.hamcrest") == true) {
-                emit(node.startOffset, "Use AssertJ instead of Hamcrest assertions", false)
+                report(
+                    CodeSmell(
+                        issue,
+                        Entity.from(element),
+                        message = "Use AssertJ instead of Hamcrest assertions"
+                    )
+                )
             }
 
             if (element.importedFqName?.asString()?.startsWith("kotlin.test.assert") == true &&
                 element.importedFqName?.asString()?.startsWith("kotlin.test.assertNotNull") == false
             ) {
-                emit(node.startOffset, "Use AssertJ instead of Kotlin test assertions", false)
+                report(
+                    CodeSmell(
+                        issue,
+                        Entity.from(element),
+                        message = "Use AssertJ instead of Kotlin test assertions"
+                    )
+                )
             }
         }
     }
 }
-*/
+
