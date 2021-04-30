@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 
 val detektVersion: String by project
 
@@ -16,17 +17,34 @@ dependencies {
 }
 
 detekt {
+    val rulesProject = project(":detekt-rules").projectDir
     input.from("$projectDir")
     buildUponDefaultConfig = false
     parallel = true
     allRules = false
-    config = files("$rootDir/detekt-rules/detekt.yml")
+    config = files("$rulesProject/detekt.yml")
+    baseline = file("$rulesProject/baseline.xml")
 
     reports {
         html.enabled = true // observe findings in your browser with structure and code snippets
         xml.enabled = true // checkstyle like format mainly for integrations like Jenkins
         sarif.enabled = true // standardized SARIF format to support integrations with Github Code Scanning
     }
+}
+
+val detektProjectBaseline by tasks.registering(DetektCreateBaselineTask::class) {
+    val rulesProject = project(":detekt-rules").projectDir
+    description = "Updates the DeteKt baseline file"
+    buildUponDefaultConfig.set(false)
+    ignoreFailures.set(true)
+    parallel.set(true)
+    setSource(files(rootDir))
+    config.setFrom(files("$rulesProject/detekt.yml"))
+    baseline.set(file("$rulesProject/baseline.xml"))
+    include("**/*.kt")
+    include("**/*.kts")
+    exclude("**/resources/**")
+    exclude("**/build/**")
 }
 
 tasks.withType<Detekt>().configureEach {
