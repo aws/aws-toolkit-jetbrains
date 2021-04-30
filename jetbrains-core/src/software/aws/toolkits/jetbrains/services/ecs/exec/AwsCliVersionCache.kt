@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableCommon
 import software.aws.toolkits.jetbrains.utils.FileInfoCache
 import software.aws.toolkits.resources.message
 
-object EcsExecVersionCache : FileInfoCache<SemVer>() {
+object AwsCliVersionCache : FileInfoCache<SemVer>() {
     override fun getFileInfo(path: String): SemVer {
         val executableName = "awsCli"
         val sanitizedPath = path.nullize(true) ?: throw RuntimeException(message("executableCommon.cli_not_configured", executableName))

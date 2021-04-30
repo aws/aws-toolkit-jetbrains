@@ -3,16 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.ecs
 
-import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
@@ -24,9 +20,11 @@ import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
+import software.aws.toolkits.jetbrains.services.ecs.exec.OpenShellInContainerDialog
 import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog
 import software.aws.toolkits.jetbrains.services.ecs.exec.SessionManagerPluginWarning
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
+import software.aws.toolkits.jetbrains.services.ecs.resources.SessionManagerPluginInstallationVerfication
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -42,7 +40,8 @@ class ContainerActions(
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
         StartRemoteShellAction(project, container),
         ContainerLogsAction(project, container),
-        ExecuteCommandAction(project, container)
+        ExecuteCommandAction(project, container),
+        ExecuteCommandInShellAction(project, container)
     )
 }
 
@@ -121,15 +120,25 @@ class ExecuteCommandAction(
     private val container: ContainerDetails
 ) : AnAction(message("ecs.execute_command_run"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
-        var sessionManagerInstalled: Int = 1
-        runBlocking(Dispatchers.IO) {
-            val process = CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess()
-            sessionManagerInstalled = process.exitCode
-        }
+        val sessionManagerInstalled = SessionManagerPluginInstallationVerfication.checkInstallation()
         if (sessionManagerInstalled != 0) {
             SessionManagerPluginWarning(project).show()
         } else {
             RunCommandDialog(project, container).show()
+        }
+    }
+}
+
+class ExecuteCommandInShellAction(
+    private val project: Project,
+    private val container: ContainerDetails
+) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
+    override fun actionPerformed(e: AnActionEvent) {
+        val sessionManagerInstalled = SessionManagerPluginInstallationVerfication.checkInstallation()
+        if (sessionManagerInstalled != 0) {
+            SessionManagerPluginWarning(project).show()
+        } else {
+            OpenShellInContainerDialog(project, container).show()
         }
     }
 }

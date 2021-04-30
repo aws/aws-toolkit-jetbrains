@@ -13,15 +13,16 @@ import software.aws.toolkits.jetbrains.settings.ExecutableDetector
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class EcsExecCommandExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
+class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
     override val displayName: String = "aws"
-    override val id: String = "ecsExec"
+    override val id: String = "awsCli"
     override fun version(path: Path): SemVer =
-        ExecutableCommon.getVersion(path.toString(), EcsExecVersionCache, this.displayName)
+        ExecutableCommon.getVersion(path.toString(), AwsCliVersionCache, this.displayName)
 
     override fun validate(path: Path) {
         val version = this.version(path)
         ExecutableCommon.checkSemVerVersion(version, MIN_VERSION, MAX_VERSION, this.displayName)
+        RunCommandDialog.path = path.toString()
     }
 
     override fun resolve(): Path? {
@@ -38,11 +39,10 @@ class EcsExecCommandExecutable : ExecutableType<SemVer>, AutoResolvable, Validat
                 )
             }
             ) ?: return null
-
         return Paths.get(path)
     }
     companion object {
-        val MAX_VERSION: SemVer = SemVer("2.1.37", 2, 1, 37) // exclusive
+        val MAX_VERSION: SemVer = SemVer("3.0.0", 3, 0, 0) // exclusive
         val MIN_VERSION: SemVer = SemVer("1.0.0", 1, 0, 0) // inclusive
     }
 }

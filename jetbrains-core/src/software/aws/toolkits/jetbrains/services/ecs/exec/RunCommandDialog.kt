@@ -3,18 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
+import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.runners.ExecutionEnvironmentBuilder
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.tools.Tool
+import com.intellij.tools.ToolRunProfile
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.panel
-import com.pty4j.PtyProcess
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
-import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.ui.selected
@@ -59,34 +59,43 @@ class RunCommandDialog(private val project: Project, private val container: Cont
 
     override fun doOKAction() {
         super.doOKAction()
-        constructExecCommand(command.text)
+        runCommand()
     }
 
-    private fun constructExecCommand(commandToExecute: String) {
-        ExecutableManager.getInstance().getExecutable<EcsExecCommandExecutable>().thenAccept { ecsExecExecutable ->
-            when (ecsExecExecutable) {
-                is ExecutableInstance.Executable -> ecsExecExecutable
-                is ExecutableInstance.UnresolvedExecutable -> throw Exception("Couldn't resolve executable")
-                is ExecutableInstance.InvalidExecutable -> throw Exception(ecsExecExecutable.validationError)
-            }
-
-            val cmdLine = buildBaseCmdLine(project, ecsExecExecutable)
-                .withParameters("ecs")
-                .withParameters("execute-command")
-                .withParameters("--cluster")
-                .withParameters(container.service.clusterArn())
-                .withParameters("--task")
-                .withParameters(task)
-                .withParameters("--command")
-                .withParameters(commandToExecute)
-                .withParameters("--interactive")
-
-            val cmdList = cmdLine.getCommandLineList(null).toTypedArray()
-            val env = cmdLine.effectiveEnvironment
-            val ptyProcess = PtyProcess.exec(cmdList, env, null)
-        }
+    fun constructExecCommandParameters(commandToExecute: String) = task?.let {
+        message(
+            "ecs.execute_command_parameters",
+            container.service.clusterArn(),
+            it,
+            commandToExecute
+        )
     }
-    private fun buildBaseCmdLine(project: Project, executable: ExecutableInstance.Executable) = executable.getCommandLine()
-        .withEnvironment(project.activeRegion().toEnvironmentVariables())
-        .withEnvironment(project.activeCredentialProvider().resolveCredentials().toEnvironmentVariables())
+
+    private fun runCommand() {
+        val execCommand = Tool()
+        updateExecCommandRunSettings(execCommand, command.text)
+        val environment = ExecutionEnvironmentBuilder
+            .create(
+                project,
+                DefaultRunExecutor.getRunExecutorInstance(),
+                ToolRunProfile(
+                    execCommand,
+                    SimpleDataContext.getProjectContext(project)
+                )
+            )
+            .build()
+        environment.runner.execute(environment)
+    }
+
+    fun updateExecCommandRunSettings(execCommand: Tool, commandToExecute: String) {
+        execCommand.isShowConsoleOnStdOut = true
+        execCommand.isUseConsole = true
+        execCommand.parameters = constructExecCommandParameters(commandToExecute)
+        execCommand.name = container.containerDefinition.name()
+        execCommand.program = path
+    }
+
+    companion object {
+        var path = ""
+    }
 }
