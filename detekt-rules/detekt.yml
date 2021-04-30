@@ -147,11 +147,6 @@ potential-bugs:
     active: true
   IteratorNotThrowingNoSuchElementException:
     active: true
-  LateinitUsage:
-    active: false
-    excludes:  [ '**/test/**' ]
-    excludeAnnotatedProperties: [ ]
-    ignoreOnClassesPattern: ''
   MapGetWithNotNullAssertionOperator:
     active: false
   MissingWhenCase:
