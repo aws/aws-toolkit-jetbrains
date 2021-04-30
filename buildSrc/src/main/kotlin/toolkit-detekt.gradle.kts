@@ -26,9 +26,8 @@ detekt {
     baseline = file("$rulesProject/baseline.xml")
 
     reports {
-        html.enabled = true // observe findings in your browser with structure and code snippets
-        xml.enabled = true // checkstyle like format mainly for integrations like Jenkins
-        sarif.enabled = true // standardized SARIF format to support integrations with Github Code Scanning
+        html.enabled = true // Human readable report
+        xml.enabled = true // Checkstyle like format for CI tool integrations
     }
 }
 

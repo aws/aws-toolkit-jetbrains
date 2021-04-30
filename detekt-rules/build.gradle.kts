@@ -9,6 +9,7 @@ val assertjVersion: String by project
 plugins {
     kotlin
     id("toolkit-testing")
+    id("toolkit-detekt")
 }
 
 dependencies {

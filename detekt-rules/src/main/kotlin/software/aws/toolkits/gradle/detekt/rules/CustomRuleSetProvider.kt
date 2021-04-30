@@ -12,7 +12,6 @@ class CustomRuleSetProvider : RuleSetProvider {
     override fun instance(config: Config): RuleSet = RuleSet(
         ruleSetId,
         listOf(
-            CopyrightHeaderRule(),
             BannedPatternRule(BannedPatternRule.DEFAULT_PATTERNS),
             ExpressionBodyRule(),
             LazyLogRule(),
