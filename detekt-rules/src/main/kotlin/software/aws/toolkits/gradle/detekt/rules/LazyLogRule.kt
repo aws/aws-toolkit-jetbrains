@@ -31,7 +31,6 @@ class LazyLogRule : Rule() {
                 return
             }
 
-            // TODO remove when ktlint is upgraded
             if (optOut.any { name -> element.containingKtFile.packageFqName.startsWith(Name.identifier(name)) }) {
                 return
             }
