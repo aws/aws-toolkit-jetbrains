@@ -30,24 +30,25 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
 
-class S3VirtualBucket(private val s3Bucket: Bucket, val client: S3Client, val project: Project) :
-    LightVirtualFile(s3Bucket.name()),
+class S3VirtualBucket(private val s3Bucket: Bucket, val prefix: String?, val client: S3Client, val project: Project) :
+    // for display purposes, the desired bucket sub-root is passed as the name of the LightVirtualFile
+    LightVirtualFile("${s3Bucket.name()}/$prefix"),
     CoroutineScope by ApplicationThreadPoolScope("S3VirtualBucket") {
     override fun isWritable(): Boolean = false
-    override fun getPath(): String = s3Bucket.name()
+    override fun getPath(): String = super.getName()
     override fun isValid(): Boolean = true
     override fun getParent(): VirtualFile? = null
-    override fun toString(): String = s3Bucket.name()
+    override fun toString(): String = super.getName()
     override fun isDirectory(): Boolean = false /* Unit tests refuse to open this in an editor if this is true */
 
     override fun equals(other: Any?): Boolean {
         if (other !is S3VirtualBucket) {
             return false
         }
-        return s3Bucket.name() == (other as? S3VirtualBucket)?.s3Bucket?.name()
+        return s3Bucket.name() == (other as? S3VirtualBucket)?.s3Bucket?.name() && prefix == (other as? S3VirtualBucket)?.prefix
     }
 
-    override fun hashCode(): Int = s3Bucket.name().hashCode()
+    override fun hashCode(): Int = s3Bucket.name().hashCode() + prefix.hashCode()
 
     suspend fun newFolder(name: String) {
         withContext(Dispatchers.IO) {

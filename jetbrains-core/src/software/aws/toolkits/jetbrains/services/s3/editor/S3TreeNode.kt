@@ -77,7 +77,15 @@ abstract class S3LazyLoadParentNode<T>(bucket: S3VirtualBucket, parent: S3LazyLo
     protected abstract fun loadObjects(continuationMarker: T? = null): List<S3TreeNode>
 }
 
-class S3TreeDirectoryNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?, key: String) :
+class S3TreePrefixedDirectoryNode(bucket: S3VirtualBucket) : S3TreeDirectoryNode(bucket, null, bucket.prefix ?: "") {
+    override fun displayName() = if (key.endsWith("/")) {
+        key
+    } else {
+        "Prefix: $key"
+    }
+}
+
+open class S3TreeDirectoryNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?, key: String) :
     S3LazyLoadParentNode<String>(bucket, parent, key) {
     init {
         icon = AllIcons.Nodes.Folder
@@ -102,7 +110,8 @@ class S3TreeDirectoryNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryNode?,
             val s3Objects = response
                 .contents()
                 ?.filterNotNull()
-                ?.filterNot { it.key() == key }
+                // filter out the directory root
+                ?.filterNot { it.key() == key && this !is S3TreePrefixedDirectoryNode }
                 ?.map { S3TreeObjectNode(this, it.key(), it.size(), it.lastModified()) }
                 ?: emptyList()
 

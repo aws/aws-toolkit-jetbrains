@@ -50,7 +50,10 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
     }
 
     private fun createTreeTable(disposable: Disposable, virtualBucket: S3VirtualBucket): S3TreeTable {
-        val rootNode = S3TreeDirectoryNode(virtualBucket, null, "")
+        val rootNode = virtualBucket.prefix?.let {
+            S3TreePrefixedDirectoryNode(virtualBucket)
+        } ?: S3TreeDirectoryNode(virtualBucket, null, "")
+
         val structureTreeModel: StructureTreeModel<SimpleTreeStructure> = StructureTreeModel(
             SimpleTreeStructure.Impl(rootNode),
             null,
@@ -64,7 +67,7 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
             structureTreeModel
         )
         val treeTable = S3TreeTable(model, rootNode, virtualBucket, project).also {
-            it.setRootVisible(false)
+            it.setRootVisible(rootNode is S3TreePrefixedDirectoryNode)
             it.cellSelectionEnabled = false
             it.rowSelectionAllowed = true
             it.rowSorter = S3RowSorter(it.model)
