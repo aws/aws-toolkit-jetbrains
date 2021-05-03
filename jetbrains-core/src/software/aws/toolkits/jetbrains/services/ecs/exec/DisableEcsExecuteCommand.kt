@@ -10,7 +10,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
+import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.ecs.EcsServiceNode
+import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -43,13 +45,14 @@ class DisableEcsExecuteCommand :
     }
 
     override fun update(selected: EcsServiceNode, e: AnActionEvent) {
-        e.presentation.isVisible = EcsExecUtils(selected.nodeProject).executeCommandFlagStatus(selected.value)
+        e.presentation.isVisible = selected.executeCommandEnabled()
     }
 
     private suspend fun disableExecuteCommand(project: Project, service: Service) {
         EcsExecUtils(project).updateExecuteCommandFlag(service, enabled = false)
         val serviceUpdated = EcsExecUtils(project).checkServiceState(service)
         if (serviceUpdated) {
+            project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()))
             notifyInfo(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_success", service.serviceName()))
         } else {
             notifyError(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_failed", service.serviceName()))
