@@ -7,12 +7,14 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.testFramework.PsiTestUtil
+import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -45,9 +47,15 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         )
     }
 
+    val projectRule = PythonCodeInsightTestFixtureRule()
+    val tempFolderRule = TemporaryFolder()
+
     @Rule
     @JvmField
-    val projectRule = PythonCodeInsightTestFixtureRule()
+    val ruleChain = RuleChain(
+        projectRule,
+        tempFolderRule
+    )
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")

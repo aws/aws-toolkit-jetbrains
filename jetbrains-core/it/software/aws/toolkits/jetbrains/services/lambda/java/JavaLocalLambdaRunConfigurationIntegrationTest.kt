@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.services.lambda.java
 
 import com.intellij.compiler.CompilerTestUtil
 import com.intellij.execution.executors.DefaultDebugExecutor
+import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -43,9 +45,15 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         )
     }
 
+    val projectRule = HeavyJavaCodeInsightTestFixtureRule()
+    val tempFolderRule = TemporaryFolder()
+
     @Rule
     @JvmField
-    val projectRule = HeavyJavaCodeInsightTestFixtureRule()
+    val ruleChain = RuleChain(
+        projectRule,
+        tempFolderRule
+    )
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")

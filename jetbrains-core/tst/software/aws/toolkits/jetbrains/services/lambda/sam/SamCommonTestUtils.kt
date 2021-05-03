@@ -23,7 +23,7 @@ object SamCommonTestUtils {
 
     fun getMaxVersionAsJson() = getVersionAsJson(SamExecutable.maxVersion.toString())
 
-    fun makeATestSam(message: String, path: String? = null, exitCode: Int = 0): Path {
+    fun makeATestSam(message: String, path: String? = null, exitCode: Int = 0, windowsScript: String? = null, posixScript: String? = null): Path {
         val sam = path?.let {
             Paths.get(it)
         } ?: Files.createTempFile(
@@ -34,13 +34,13 @@ object SamCommonTestUtils {
         val stream = if (exitCode == 0) 1 else 2
 
         val contents = if (SystemInfo.isWindows) {
-            """
+            windowsScript ?: """
                 @echo off
                 echo${if (message.isEmpty()) "." else " $message"} ${if (stream != 1) "1>&$stream" else ""}
                 exit $exitCode
             """.trimIndent()
         } else {
-            """
+            posixScript ?: """
                 echo '$message' >&$stream
                 exit $exitCode
             """.trimIndent()
@@ -55,6 +55,30 @@ object SamCommonTestUtils {
         }
 
         return sam
+    }
+
+    fun makeADelayedSam(path: String? = null, delayInSeconds: Int = 10): Path {
+        val realSam = System.getenv().getOrDefault("SAM_CLI_EXEC", SamExecutable().resolve().toString())
+        val windowsScript = """
+            @echo off
+            set argC=0
+            for %%x in (%*) do Set /A argC+=1
+            if argC 2 (
+                for /l %%i in (1,1,$delayInSeconds) do (
+                    echo "." 1>&2
+                    timeout 1 > NUL
+                )
+            )
+            $realSam %*
+        """.trimIndent()
+        val posixScript = """
+            if [ "$#" -ge "2" ]; then
+                for i in {1..$delayInSeconds}; do echo '.' >&2 && sleep 1; done
+            fi
+            $realSam "$@"
+        """.trimIndent()
+
+        return makeATestSam("", path, windowsScript = windowsScript, posixScript = posixScript)
     }
 
     fun CodeInsightTestFixture.addSamTemplate(

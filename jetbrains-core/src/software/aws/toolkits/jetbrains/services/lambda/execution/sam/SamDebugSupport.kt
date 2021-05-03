@@ -12,6 +12,9 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 interface SamDebugSupport {
     fun numberOfDebugPorts(): Int = 1
 
+    // By default, requires the port to be open on the container before attempting to attach the debugger
+    fun waitForDebugPortOpen(): Boolean = true
+
     /**
      * SAM arguments added to the execution of `sam local invoke`. These include --debugger-path and --debug-args
      * for debugging, and anything else that is needed on a per-runtime basis

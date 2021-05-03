@@ -6,11 +6,13 @@ package software.aws.toolkits.jetbrains.services.lambda.nodejs
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.openapi.module.ModuleType
 import com.intellij.testFramework.PsiTestUtil
+import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -41,9 +43,15 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         )
     }
 
+    val projectRule = HeavyNodeJsCodeInsightTestFixtureRule()
+    val tempFolderRule = TemporaryFolder()
+
     @Rule
     @JvmField
-    val projectRule = HeavyNodeJsCodeInsightTestFixtureRule()
+    val ruleChain = RuleChain(
+        projectRule,
+        tempFolderRule
+    )
 
     @Rule
     @JvmField

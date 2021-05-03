@@ -49,7 +49,6 @@ import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.Runtime
-import java.nio.file.Path
 import java.nio.file.Paths
 
 class SamRunningState(
@@ -178,8 +177,6 @@ class SamRunningState(
         }
         return executor.startExecution()
     }
-
-    private data class BuildRequest(val template: Path, val logicalId: String, val buildEnvVars: Map<String, String>, val buildDir: Path)
 
     private fun runConfigId() = environment.executionId.toString()
 

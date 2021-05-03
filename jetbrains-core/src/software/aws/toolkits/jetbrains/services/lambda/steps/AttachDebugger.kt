@@ -10,14 +10,20 @@ import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.ui.ConsoleView
 import com.intellij.execution.ui.ConsoleViewContentType
+import com.intellij.openapi.application.ExpirableExecutor
+import com.intellij.openapi.application.impl.coroutineDispatchingContext
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.xdebugger.XDebuggerManager
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
@@ -30,6 +36,9 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
+import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Socket
 
 class AttachDebugger(
     val environment: ExecutionEnvironment,
@@ -39,30 +48,75 @@ class AttachDebugger(
     override val hidden = false
 
     override fun execute(context: Context, messageEmitter: MessageEmitter, ignoreCancellation: Boolean) {
+        val heartbeatDisposable = Disposer.newDisposable()
+        var lastHeartbeat = System.currentTimeMillis()
+
         val session = runBlocking {
             try {
-                withTimeout(SamDebugSupport.debuggerConnectTimeoutMs()) {
+                val connectJob = async(CoroutineName("SamWaitForDebugProcess")) {
                     val debugPorts = context.getRequiredAttribute(DEBUG_PORTS)
-                    val debugProcessStarter = state
+                    val debuggerSupport = state
                         .settings
                         .resolveDebuggerSupport()
-                        .createDebugProcess(context, environment, state, state.settings.debugHost, debugPorts)
-                    val session = runBlocking(getCoroutineUiContext()) {
+                    val debugProcessStarter = debuggerSupport.createDebugProcess(context, environment, state, state.settings.debugHost, debugPorts)
+
+                    // always wait until we have a sam invoke process handle before trying to attach
+                    val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
+                    if (debuggerSupport.waitForDebugPortOpen()) {
+                        // spin until port is accepting connections
+                        var isAvailable = false
+                        while (!isAvailable) {
+                            try {
+                                Socket().use {
+                                    it.connect(InetSocketAddress("127.0.0.1", debugPorts.first()))
+                                }
+                                isAvailable = true
+                            } catch (e: IOException) {
+                                LOG.warn("retry")
+                                delay(500)
+                            }
+                        }
+                    }
+
+                    val session = withContext(getCoroutineUiContext()) {
                         val debugManager = XDebuggerManager.getInstance(environment.project)
                         // Requires EDT on some paths, so always requires to be run on EDT
                         debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, debugProcessStarter)
                     }
-                    val samProcessHandler = context.pollingGet(SamRunnerStep.SAM_PROCESS_HANDLER)
-                    samProcessHandler.addProcessListener(buildProcessAdapter { session.consoleView })
+
+                    samProcessHandler.addProcessListener(buildConsoleOutputProcessAdapter { session.consoleView })
+                    samProcessHandler.addProcessListener(
+                        object : ProcessAdapter() {
+                            override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                                lastHeartbeat = System.currentTimeMillis()
+                            }
+                        },
+                        heartbeatDisposable
+                    )
+
                     session
                 }
+
+                launch(ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(heartbeatDisposable).coroutineDispatchingContext()) {
+                    while (connectJob.isActive) {
+                        if ((System.currentTimeMillis() - lastHeartbeat) > SamDebugSupport.debuggerConnectTimeoutMs()) {
+                            throw ExecutionException(message("lambda.debug.process.start.timeout"))
+                        }
+                        delay(500)
+                    }
+                }
+
+                connectJob.await()
             } catch (e: TimeoutCancellationException) {
                 throw ExecutionException(message("lambda.debug.process.start.timeout"))
             } catch (e: Throwable) {
                 LOG.warn(e) { "Failed to start debugger" }
                 throw ExecutionException(e)
+            } finally {
+                Disposer.dispose(heartbeatDisposable)
             }
         }
+
         // Make sure the session is always cleaned up
         launch {
             while (!context.isCompleted()) {
@@ -74,7 +128,8 @@ class AttachDebugger(
 
     private companion object {
         val LOG = getLogger<AttachDebugger>()
-        fun buildProcessAdapter(console: (() -> ConsoleView?)) = object : ProcessAdapter() {
+
+        fun buildConsoleOutputProcessAdapter(console: (() -> ConsoleView?)) = object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 // Skip system messages
                 if (outputType == ProcessOutputTypes.SYSTEM) {
