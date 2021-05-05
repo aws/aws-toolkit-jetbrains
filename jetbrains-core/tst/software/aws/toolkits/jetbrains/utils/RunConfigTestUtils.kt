@@ -89,7 +89,7 @@ fun executeRunConfigurationAndWait(runConfiguration: RunConfiguration, executorI
     return executionFuture.get(4, TimeUnit.MINUTES)
 }
 
-fun stopOnPause(project: Project, callback: () -> Unit = {}) {
+fun stopOnPause(project: Project) {
     project.messageBus.connect().subscribe(
         XDebuggerManager.TOPIC,
         object : XDebuggerManagerListener {
@@ -102,7 +102,6 @@ fun stopOnPause(project: Project, callback: () -> Unit = {}) {
                             runInEdt {
                                 val suspendContext = debugProcess.session.suspendContext
                                 println("Stopping: $suspendContext")
-                                callback()
                                 debugProcess.stop()
                             }
                         }
