@@ -43,7 +43,7 @@ class NewFolderAction : S3ObjectAction(message("s3.new.folder"), AllIcons.Action
                     S3Telemetry.createFolder(project, result)
                 }
             }
-        }
+        } ?: S3Telemetry.createFolder(project, Result.Cancelled)
     }
 
     override fun enabled(nodes: List<S3TreeNode>): Boolean = nodes.isEmpty() ||
