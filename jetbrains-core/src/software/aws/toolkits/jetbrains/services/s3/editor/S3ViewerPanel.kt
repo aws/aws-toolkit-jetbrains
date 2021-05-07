@@ -13,29 +13,47 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.SearchTextField
 import com.intellij.ui.SideBorder
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.SimpleTreeStructure
 import com.intellij.util.concurrency.Invoker
+import com.intellij.util.text.nullize
+import software.aws.toolkits.jetbrains.utils.ui.onEmpty
+import software.aws.toolkits.jetbrains.utils.ui.onEnter
 import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.SwingConstants
 import javax.swing.table.DefaultTableCellRenderer
 
-class S3ViewerPanel(disposable: Disposable, private val project: Project, virtualBucket: S3VirtualBucket) {
+class S3ViewerPanel(private val disposable: Disposable, private val project: Project, virtualBucket: S3VirtualBucket) {
     val component: JComponent
-    val treeTable: S3TreeTable
+    lateinit var treeTable: S3TreeTable
+        private set
+    private val filterComponent: JComponent
+    private lateinit var toolbarComponent: JComponent
 
     init {
         component = JPanel(BorderLayout())
 
-        treeTable = createTreeTable(disposable, virtualBucket)
-        val toolbarComponent = createToolbar(treeTable).component
-        toolbarComponent.border = IdeBorderFactory.createBorder(SideBorder.TOP)
 
-        setupContextMenu(treeTable)
+        filterComponent = SearchTextField()
+        filterComponent.textEditor.emptyText.text = "Filter by prefix"
+        val handler = {
+            component.removeAll()
+            virtualBucket.prefix = filterComponent.text.nullize(nullizeSpaces = true)
+            setupTreeTable(virtualBucket)
+        }
+
+        filterComponent.onEnter(handler)
+        filterComponent.onEmpty {
+            // only refresh if view is currently filtered
+            if (!virtualBucket.prefix.isNullOrBlank()) {
+                handler()
+            }
+        }
 
         DataManager.registerDataProvider(component) {
             when {
@@ -45,8 +63,22 @@ class S3ViewerPanel(disposable: Disposable, private val project: Project, virtua
             }
         }
 
+        setupTreeTable(virtualBucket)
+    }
+
+    private fun setupTreeTable(virtualBucket: S3VirtualBucket) {
+        treeTable = createTreeTable(disposable, virtualBucket)
+        toolbarComponent = createToolbar(treeTable).component
+        toolbarComponent.border = IdeBorderFactory.createBorder(SideBorder.TOP)
+
+        setupContextMenu(treeTable)
+
+        val panel = JPanel(BorderLayout())
+        panel.add(toolbarComponent, BorderLayout.CENTER)
+        panel.add(filterComponent, BorderLayout.EAST)
+
+        component.add(panel, BorderLayout.NORTH)
         component.add(ScrollPaneFactory.createScrollPane(treeTable), BorderLayout.CENTER)
-        component.add(toolbarComponent, BorderLayout.SOUTH)
     }
 
     private fun createTreeTable(disposable: Disposable, virtualBucket: S3VirtualBucket): S3TreeTable {
