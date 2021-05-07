@@ -22,6 +22,7 @@ import com.intellij.util.concurrency.Invoker
 import com.intellij.util.text.nullize
 import software.aws.toolkits.jetbrains.utils.ui.onEmpty
 import software.aws.toolkits.jetbrains.utils.ui.onEnter
+import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -39,7 +40,7 @@ class S3ViewerPanel(private val disposable: Disposable, private val project: Pro
         component = JPanel(BorderLayout())
 
         filterComponent = SearchTextField()
-        filterComponent.textEditor.emptyText.text = "Filter by prefix"
+        filterComponent.textEditor.emptyText.text = message("s3.prefix.filter")
         val handler = {
             component.removeAll()
             virtualBucket.prefix = filterComponent.text.nullize(nullizeSpaces = true)
