@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.uitests.fixtures
 
-import com.intellij.remoterobot.data.componentAs
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
@@ -12,9 +11,7 @@ import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
-import org.assertj.swing.fixture.JTextComponentFixture
 import java.time.Duration
-import javax.swing.JTextField
 
 fun ComponentFixture.rightClick() = step("Right click") {
     runJs("robot.rightClick(component);")
@@ -33,17 +30,23 @@ fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text 
 
 fun ContainerFixture.fillSearchTextField(text: String) = step("Fill search text field with $text") {
     val field = find<ComponentFixture>(byXpath("//div[@class='SearchTextField']"), Duration.ofSeconds(5))
-    field.runJs("""
-        component.getTextEditor().setText('$text');
-        component.getTextEditor().postActionEvent();
-    """.trimIndent(), runInEdt = true)
+    field.runJs(
+        """
+            component.getTextEditor().setText('$text');
+            component.getTextEditor().postActionEvent();
+        """.trimIndent(),
+        runInEdt = true
+    )
 }
 
 fun ContainerFixture.clearSearchTextField() = step("Clear search text field") {
     val field = find<ComponentFixture>(byXpath("//div[@class='SearchTextField']"), Duration.ofSeconds(5))
-    field.runJs("""
-        component.getTextEditor().getClientProperty('JTextField.Search.CancelAction').actionPerformed(null)
-    """.trimIndent(), runInEdt = true)
+    field.runJs(
+        """
+            component.getTextEditor().getClientProperty('JTextField.Search.CancelAction').actionPerformed(null)
+        """.trimIndent(),
+        runInEdt = true
+    )
 }
 
 fun ContainerFixture.fillDeletionAndConfirm() = step("Fill in delete me and delete") {

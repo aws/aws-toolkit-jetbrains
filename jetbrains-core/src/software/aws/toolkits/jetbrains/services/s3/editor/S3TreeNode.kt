@@ -307,7 +307,7 @@ class S3TreeErrorNode(
 class S3TreeEmptyNode(
     bucket: S3VirtualBucket,
     parentNode: S3LazyLoadParentNode<*>
-): S3TreeNode(bucket, parentNode, "${parentNode.key}empty") {
+) : S3TreeNode(bucket, parentNode, "${parentNode.key}empty") {
     override fun displayName(): String = message("explorer.empty_node")
     override fun update(presentation: PresentationData) {
         presentation.addText(displayName(), SimpleTextAttributes.GRAYED_ATTRIBUTES)

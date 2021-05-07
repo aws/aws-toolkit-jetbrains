@@ -32,7 +32,6 @@ import java.io.OutputStream
 import java.net.URL
 
 class S3VirtualBucket(val s3Bucket: Bucket, prefix: String?, val client: S3Client, val project: Project) :
-    // for display purposes, the desired bucket sub-root is passed as the name of the LightVirtualFile
     LightVirtualFile(vfsName(s3Bucket, prefix)),
     CoroutineScope by ApplicationThreadPoolScope("S3VirtualBucket") {
 

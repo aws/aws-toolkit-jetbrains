@@ -38,7 +38,6 @@ class S3ViewerPanel(private val disposable: Disposable, private val project: Pro
     init {
         component = JPanel(BorderLayout())
 
-
         filterComponent = SearchTextField()
         filterComponent.textEditor.emptyText.text = "Filter by prefix"
         val handler = {
