@@ -50,12 +50,6 @@ class EnableEcsExecuteCommand :
 
     private suspend fun enableExecuteCommand(project: Project, service: Service) {
         EcsExecUtils.updateExecuteCommandFlag(project, service, enabled = true)
-        val serviceUpdated = EcsExecUtils.checkServiceState(project, service)
-        if (serviceUpdated) {
-            project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()))
-            notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))
-        } else {
-            notifyError(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_failed", service.serviceName()))
-        }
+        EcsExecUtils.checkServiceState(project, service, enable = true)
     }
 }

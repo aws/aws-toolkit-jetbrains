@@ -50,12 +50,6 @@ class DisableEcsExecuteCommand :
 
     private suspend fun disableExecuteCommand(project: Project, service: Service) {
         EcsExecUtils.updateExecuteCommandFlag(project, service, enabled = false)
-        val serviceUpdated = EcsExecUtils.checkServiceState(project, service)
-        if (serviceUpdated) {
-            project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()))
-            notifyInfo(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_success", service.serviceName()))
-        } else {
-            notifyError(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_failed", service.serviceName()))
-        }
+        EcsExecUtils.checkServiceState(project, service, enable = false)
     }
 }
