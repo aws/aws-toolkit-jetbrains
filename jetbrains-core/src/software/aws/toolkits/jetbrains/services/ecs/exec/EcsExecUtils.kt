@@ -7,18 +7,17 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import software.amazon.awssdk.core.waiters.WaiterResponse
 import software.amazon.awssdk.services.ecs.EcsClient
+import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
+import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 
-class EcsExecUtils(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
-    fun updateExecuteCommandFlag(service: Service, enabled: Boolean) {
+object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
+    fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
         launch {
             val request = UpdateServiceRequest.builder()
                 .cluster(service.clusterArn())
@@ -29,24 +28,13 @@ class EcsExecUtils(private val project: Project) : CoroutineScope by Application
         }
     }
 
-    suspend fun checkServiceState(service: Service): Boolean {
-        return try {
-            do {
-                delay(5000)
-                val response = checkServiceCompletion(service, project)
-            } while (response.deployments().first().rolloutStateAsString() != "COMPLETED")
-            true
-        } catch (e: Exception) {
-            false
-        }
+    suspend fun checkServiceState(project: Project, service: Service): Boolean {
+        delay(5000)
+        val request = DescribeServicesRequest.builder().cluster(service.clusterArn()).services(service.serviceArn()).build()
+        val client = project.awsClient<EcsClient>()
+        val waiter = client.waiter()
+        val waiterResponse: WaiterResponse<DescribeServicesResponse> = waiter.waitUntilServicesStable(request)
+        if (waiterResponse.matched().response().isPresent) { return true }
+        return false
     }
-
-    private fun checkServiceCompletion(service: Service, project: Project): Service =
-        AwsResourceCache.getInstance().getResourceNow(
-            EcsResources.describeService(
-                service.clusterArn(),
-                service.serviceArn()
-            ),
-            project.activeRegion(), project.activeCredentialProvider(), forceFetch = true
-        )
 }
