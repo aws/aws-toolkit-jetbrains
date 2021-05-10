@@ -125,7 +125,4 @@ class UpdateFunctionConfigDialog(private val project: Project, private val initi
     )
 
     override fun getHelpId(): String = HelpIds.UPDATE_FUNCTION_CONFIGURATION_DIALOG.id
-
-    @TestOnly
-    fun getViewForTestAssertions() = view
 }
