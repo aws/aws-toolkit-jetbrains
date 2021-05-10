@@ -57,7 +57,7 @@ class OpenShellInContainerDialog(
                         }
                     }
                 ).constraints(grow)
-                    .withErrorOnApplyIf(message("ecs.execute_command_no_shell_selected")) { it.editor.item.toString().isNullOrBlank() }
+                    .withErrorOnApplyIf(message("ecs.execute_command_shell_comboBox_empty")) { it.editor.item.toString().isNullOrBlank() }
                     .also { it.component.isEditable = true }
             }
         }
