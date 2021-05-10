@@ -17,6 +17,7 @@ import org.jacoco.core.data.ISessionInfoVisitor
 import org.jacoco.core.data.SessionInfo
 import org.jacoco.core.runtime.RemoteControlReader
 import org.jacoco.core.runtime.RemoteControlWriter
+import java.io.FileOutputStream
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
@@ -62,12 +63,12 @@ class RemoteCoverage private constructor(task: Test) {
         private val serverSocket = ServerSocket(DEFAULT_JACOCO_PORT)
         private val isRunning = AtomicBoolean(false)
 
-        private val outputStream = parameters.execFile.asFile.get().outputStream()
-        private val fileWriter = ExecutionDataWriter(outputStream)
         private val serverRunnable = Runnable {
-            while (!isRunning.get()) {
-                val clientSocket = serverSocket.accept()
-                JacocoHandler(clientSocket, fileWriter).start()
+            parameters.execFile.asFile.get().outputStream().use {
+                while (!isRunning.get()) {
+                    val clientSocket = serverSocket.accept()
+                    JacocoHandler(clientSocket, it).run()
+                }
             }
         }
         private lateinit var serverThread: Thread
@@ -84,19 +85,17 @@ class RemoteCoverage private constructor(task: Test) {
         override fun close() {
             if (isRunning.getAndSet(false)) {
                 serverThread.interrupt()
-                outputStream.close()
             }
         }
     }
 
-    private class JacocoHandler(private val socket: Socket, private val fileWriter: ExecutionDataWriter) : Thread(), ISessionInfoVisitor,
-        IExecutionDataVisitor {
+    private class JacocoHandler(private val socket: Socket, private val outputFile: FileOutputStream) : ISessionInfoVisitor, IExecutionDataVisitor {
+        private val fileWriter = ExecutionDataWriter(outputFile)
 
-        override fun run() {
+        fun run() {
             socket.use {
                 socket.getInputStream().use { input ->
                     socket.getOutputStream().use { output ->
-
                         val reader = RemoteControlReader(input)
                         reader.setSessionInfoVisitor(this)
                         reader.setExecutionDataVisitor(this)
