@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.testFramework.ProjectRule
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.ecs.model.Service
@@ -48,7 +48,7 @@ class DisableEcsExecuteCommandTest {
         val sut = DisableEcsExecuteCommand()
         val node = listOf(EcsServiceNode(projectRule.project, ecsService, clusterArn))
         val actionVisibility = sut.updateAction(node).isVisible
-        Assertions.assertThat(actionVisibility).isFalse
+        assertThat(actionVisibility).isFalse
     }
 
     fun AnAction.updateAction(node: List<EcsServiceNode>): Presentation {

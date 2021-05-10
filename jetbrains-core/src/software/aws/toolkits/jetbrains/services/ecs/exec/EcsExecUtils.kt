@@ -7,10 +7,8 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import software.amazon.awssdk.core.waiters.WaiterResponse
 import software.amazon.awssdk.services.ecs.EcsClient
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
-import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -43,23 +41,20 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         val request = DescribeServicesRequest.builder().cluster(service.clusterArn()).services(service.serviceArn()).build()
         val client = project.awsClient<EcsClient>()
         val waiter = client.waiter()
-        try{
+        try {
             waiter.waitUntilServicesStable(request)
             project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()))
-            if(enable){
+            if (enable) {
                 notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))
-            }
-            else{
+            } else {
                 notifyInfo(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_success", service.serviceName()))
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             if (enable) {
                 notifyError(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_failed", service.serviceName()))
-            }
-            else {
+            } else {
                 notifyError(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_failed", service.serviceName()))
             }
         }
-
     }
 }
