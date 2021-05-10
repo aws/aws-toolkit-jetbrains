@@ -65,7 +65,7 @@ class RemoteCoverage private constructor(task: Test) {
 
         private val serverRunnable = Runnable {
             parameters.execFile.asFile.get().outputStream().use {
-                while (!isRunning.get()) {
+                while (isRunning.get()) {
                     val clientSocket = serverSocket.accept()
                     JacocoHandler(clientSocket, it).run()
                 }
