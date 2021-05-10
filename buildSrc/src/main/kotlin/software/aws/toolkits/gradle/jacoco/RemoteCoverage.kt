@@ -47,8 +47,10 @@ class RemoteCoverage private constructor(task: Test) {
                 jacocoServer.get().start()
                 task.project.gradle.addBuildListener(object : BuildAdapter() {
                     override fun buildFinished(result: BuildResult) {
-                        jacocoServer.get().close()
                         task.project.gradle.removeListener(this)
+                        runCatching {
+                            jacocoServer.get().close()
+                        }
                     }
                 })
             }
