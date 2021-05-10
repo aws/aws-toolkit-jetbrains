@@ -31,7 +31,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
 
-class S3VirtualBucket(val s3Bucket: Bucket, prefix: String?, val client: S3Client, val project: Project) :
+class S3VirtualBucket(val s3Bucket: Bucket, prefix: String, val client: S3Client, val project: Project) :
     LightVirtualFile(vfsName(s3Bucket, prefix)),
     CoroutineScope by ApplicationThreadPoolScope("S3VirtualBucket") {
 
@@ -125,7 +125,7 @@ class S3VirtualBucket(val s3Bucket: Bucket, prefix: String?, val client: S3Clien
     private companion object {
         const val MAX_ITEMS_TO_LOAD = 300
 
-        fun vfsName(s3Bucket: Bucket, subroot: String?): String = if (subroot.isNullOrBlank()) {
+        fun vfsName(s3Bucket: Bucket, subroot: String): String = if (subroot.isBlank()) {
             s3Bucket.name()
         } else {
             "${s3Bucket.name()}/$subroot"

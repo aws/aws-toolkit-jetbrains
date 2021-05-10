@@ -40,11 +40,11 @@ class S3ViewerPanel(private val disposable: Disposable, private val project: Pro
         component = JPanel(BorderLayout())
 
         filterComponent = SearchTextField()
-        filterComponent.textEditor.text = virtualBucket.prefix ?: ""
+        filterComponent.textEditor.text = virtualBucket.prefix
         filterComponent.textEditor.emptyText.text = message("s3.prefix.filter")
         val handler = {
             component.removeAll()
-            virtualBucket.prefix = filterComponent.text.nullize(nullizeSpaces = true)
+            virtualBucket.prefix = filterComponent.text.nullize(nullizeSpaces = true) ?: ""
             setupTreeTable(virtualBucket)
         }
 

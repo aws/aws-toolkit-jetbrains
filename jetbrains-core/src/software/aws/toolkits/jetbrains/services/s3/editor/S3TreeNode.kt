@@ -79,7 +79,7 @@ abstract class S3LazyLoadParentNode<T>(bucket: S3VirtualBucket, parent: S3LazyLo
     protected abstract fun loadObjects(continuationMarker: T? = null): List<S3TreeNode>
 }
 
-class S3TreePrefixedDirectoryNode(bucket: S3VirtualBucket) : S3TreeDirectoryNode(bucket, null, bucket.prefix ?: "") {
+class S3TreePrefixedDirectoryNode(bucket: S3VirtualBucket) : S3TreeDirectoryNode(bucket, null, bucket.prefix) {
     fun isDelimited() = !key.endsWith("/")
     override fun displayName() = if (isDelimited()) {
         message("s3.prefix.label", key)
