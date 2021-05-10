@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.util.ExceptionUtil
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
