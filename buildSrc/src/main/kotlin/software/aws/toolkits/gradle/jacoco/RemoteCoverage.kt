@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.gradle.jacoco
 
+import org.gradle.BuildAdapter
+import org.gradle.BuildResult
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
@@ -30,6 +32,7 @@ class RemoteCoverage private constructor(task: Test) {
         task.extensions.findByType(JacocoTaskExtension::class.java)?.let {
             val execFile = it.destinationFile ?: return@let
 
+            // Use a shared service since it does not block task execution
             val jacocoServer = task.project.gradle.sharedServices.registerIfAbsent("jacocoServer", JacocoServer::class.java) {
                 if (!execFile.exists()) {
                     task.project.mkdir(execFile.parentFile)
@@ -41,6 +44,12 @@ class RemoteCoverage private constructor(task: Test) {
 
             task.doFirst {
                 jacocoServer.get().start()
+                task.project.gradle.addBuildListener(object : BuildAdapter() {
+                    override fun buildFinished(result: BuildResult) {
+                        jacocoServer.get().close()
+                        task.project.gradle.removeListener(this)
+                    }
+                })
             }
         } ?: task.logger.warn("$task does not have Jacoco enabled on it")
     }
@@ -51,26 +60,32 @@ class RemoteCoverage private constructor(task: Test) {
         }
 
         private val serverSocket = ServerSocket(DEFAULT_JACOCO_PORT)
-        private val signalShutdown = AtomicBoolean(false)
+        private val isRunning = AtomicBoolean(false)
 
         private val outputStream = parameters.execFile.asFile.get().outputStream()
         private val fileWriter = ExecutionDataWriter(outputStream)
-        private val serverThread = Thread {
-            while (!signalShutdown.get()) {
+        private val serverRunnable = Runnable {
+            while (!isRunning.get()) {
                 val clientSocket = serverSocket.accept()
                 JacocoHandler(clientSocket, fileWriter).start()
             }
         }
+        private lateinit var serverThread: Thread
 
         fun start() {
-            serverThread.start()
+            if (!isRunning.getAndSet(true)) {
+                serverThread = Thread(serverRunnable)
+                serverThread.start()
+            } else {
+                throw IllegalStateException("Jacoco server is already running!")
+            }
         }
 
         override fun close() {
-            signalShutdown.set(true)
-            serverThread.interrupt()
-
-            outputStream.close()
+            if (isRunning.getAndSet(false)) {
+                serverThread.interrupt()
+                outputStream.close()
+            }
         }
     }
 
