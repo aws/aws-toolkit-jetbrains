@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.text.SemVer
 import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
@@ -41,8 +42,22 @@ class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
             ) ?: return null
         return Paths.get(path)
     }
+
     companion object {
         val MAX_VERSION: SemVer = SemVer("3.0.0", 3, 0, 0) // exclusive
         val MIN_VERSION: SemVer = SemVer("1.0.0", 1, 0, 0) // inclusive
     }
+}
+
+fun GeneralCommandLine.execCommand(environmentVariables: Map<String, String>, clusterArn: String, task: String, shell: String) = this.apply {
+    withParameters("ecs")
+    withParameters("execute-command")
+    withParameters("--cluster")
+    withParameters(clusterArn)
+    withParameters("--task")
+    withParameters(task)
+    withParameters("--command")
+    withParameters(shell)
+    withParameters("--interactive")
+    withEnvironment(environmentVariables)
 }

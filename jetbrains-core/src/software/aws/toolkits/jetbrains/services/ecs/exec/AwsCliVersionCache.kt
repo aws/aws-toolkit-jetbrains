@@ -12,7 +12,7 @@ import software.aws.toolkits.resources.message
 
 object AwsCliVersionCache : FileInfoCache<SemVer>() {
     override fun getFileInfo(path: String): SemVer {
-        val executableName = "awsCli"
+        val executableName = "AWS CLI"
         val sanitizedPath = path.nullize(true) ?: throw RuntimeException(message("executableCommon.cli_not_configured", executableName))
         val commandLine = ExecutableCommon.getCommandLine(sanitizedPath, executableName).withParameters("--version")
         val process = CapturingProcessHandler(commandLine).runProcess()
@@ -25,6 +25,10 @@ object AwsCliVersionCache : FileInfoCache<SemVer>() {
             output.ifEmpty {
                 throw IllegalStateException(message("executableCommon.empty_info", executableName))
             }
+            /*
+            aws --version returns an output in this format: aws-cli/2.1.34 Python/3.8.8 Darwin/19.6.0 exe/x86_64 prompt/off
+            We extract the version required using substrings
+             */
             val cliVersion = output.substringAfter("aws-cli/").substringBefore(" ")
             return SemVer.parseFromText(cliVersion) ?: throw IllegalStateException(
                 message(

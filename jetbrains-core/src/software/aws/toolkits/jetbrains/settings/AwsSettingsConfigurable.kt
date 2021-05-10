@@ -74,7 +74,7 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
         samHelp = createHelpLink(HelpIds.SAM_CLI_INSTALL)
         samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
         awsCliHelp = createHelpLink(HelpIds.AWS_CLI_INSTALL)
-        awsCliExecutablePath = createCliConfigurationElement(awsCliExecutableInstance, awsCli)
+        awsCliExecutablePath = createCliConfigurationElement(awsCliExecutableInstance, AWS_CLI)
         defaultRegionHandling = ComboBox(UseAwsCredentialRegion.values())
         profilesNotification = ComboBox(ProfilesNotification.values())
     }
@@ -246,6 +246,6 @@ class AwsSettingsConfigurable(private val project: Project) : SearchableConfigur
     companion object {
         private const val CLOUDDEBUG = "clouddebug"
         private const val SAM = "sam"
-        private const val awsCli = "awsCli"
+        private const val AWS_CLI = "awsCli"
     }
 }

@@ -9,8 +9,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 object SessionManagerPluginInstallationVerfication {
-    fun checkInstallation(): Int = runBlocking(Dispatchers.IO) {
+    fun checkInstallation(): Boolean = runBlocking(Dispatchers.IO) {
         val process = CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess()
-        process.exitCode
+        if (process.exitCode != 0) {
+            false
+        }
+        true
     }
 }

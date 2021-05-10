@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.tools.Tool
-import com.intellij.ui.components.JBTextField
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -35,33 +33,32 @@ class RunCommandDialogTest {
     private val containerDefinition = ContainerDefinition.builder().name("sample-container").build()
     private val container = ContainerDetails(ecsService, containerDefinition)
 
-    val command = JBTextField("ls")
+    val command = "ls"
     private val task = Task.builder().clusterArn(clusterArn).taskArn(taskArn).build()
     private val taskList = listOf(task.taskArn())
+    private val verifyCommand = "ecs execute-command --cluster $clusterArn --task $taskArn --command $command --interactive"
 
     @Test
     fun `Correctly formed string of parameters to execute command is returned`() {
-        val verifyCommand = "ecs execute-command --cluster " + clusterArn + " --task " + taskArn + " --command " + command.text + " --interactive"
+
         resourceCache.addEntry(
             projectRule.project, EcsResources.listTasks(clusterArn, serviceArn),
             CompletableFuture.completedFuture(taskList)
         )
         runInEdtAndWait {
-            val execCommandParameters = RunCommandDialog(projectRule.project, container).constructExecCommandParameters(command.text)
+            val execCommandParameters = RunCommandDialog(projectRule.project, container).constructExecCommandParameters(command)
             assertThat(execCommandParameters).isEqualTo(verifyCommand)
         }
     }
 
     @Test
     fun `Run Parameters of Execute Command are set correctly`() {
-        val execCommand = Tool()
-        val verifyCommand = "ecs execute-command --cluster " + clusterArn + " --task " + taskArn + " --command " + command.text + " --interactive"
         resourceCache.addEntry(
             projectRule.project, EcsResources.listTasks(clusterArn, serviceArn),
             CompletableFuture.completedFuture(taskList)
         )
         runInEdtAndWait {
-            RunCommandDialog(projectRule.project, container).updateExecCommandRunSettings(execCommand, command.text)
+            val execCommand = RunCommandDialog(projectRule.project, container).buildExecCommandConfiguration(command)
             assertThat(execCommand.name).isEqualTo("sample-container")
             assertThat(execCommand.parameters).isEqualTo(verifyCommand)
             assertThat(execCommand.isUseConsole).isTrue

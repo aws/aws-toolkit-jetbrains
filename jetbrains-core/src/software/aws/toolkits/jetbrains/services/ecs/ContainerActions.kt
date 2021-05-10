@@ -14,6 +14,8 @@ import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.core.getResource
 import software.aws.toolkits.jetbrains.core.getResourceNow
@@ -40,6 +42,7 @@ class ContainerActions(
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
         StartRemoteShellAction(project, container),
         ContainerLogsAction(project, container),
+        Separator.getInstance(),
         ExecuteCommandAction(project, container),
         ExecuteCommandInShellAction(project, container)
     )
@@ -121,11 +124,15 @@ class ExecuteCommandAction(
 ) : AnAction(message("ecs.execute_command_run"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
         val sessionManagerInstalled = SessionManagerPluginInstallationVerfication.checkInstallation()
-        if (sessionManagerInstalled != 0) {
+        if (!sessionManagerInstalled) {
             SessionManagerPluginWarning(project).show()
         } else {
             RunCommandDialog(project, container).show()
         }
+    }
+    override fun update(e: AnActionEvent) {
+        e.presentation.isVisible = container.service.enableExecuteCommand() &&
+            !EcsUtils.isInstrumented(container.service.serviceArn())
     }
 }
 
@@ -135,10 +142,20 @@ class ExecuteCommandInShellAction(
 ) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
         val sessionManagerInstalled = SessionManagerPluginInstallationVerfication.checkInstallation()
-        if (sessionManagerInstalled != 0) {
+        if (!sessionManagerInstalled) {
             SessionManagerPluginWarning(project).show()
         } else {
-            OpenShellInContainerDialog(project, container).show()
+            val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+            if (connectionSettings != null) {
+                val environmentVariables = connectionSettings.region.toEnvironmentVariables() +
+                    connectionSettings.credentials.resolveCredentials().toEnvironmentVariables()
+                OpenShellInContainerDialog(project, container, environmentVariables).show()
+            }
         }
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isVisible = container.service.enableExecuteCommand() &&
+            !EcsUtils.isInstrumented(container.service.serviceArn())
     }
 }

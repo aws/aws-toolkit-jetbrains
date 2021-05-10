@@ -5,63 +5,69 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.CollectionComboBoxModel
+import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.panel
 import com.pty4j.PtyProcess
 import org.jetbrains.plugins.terminal.TerminalTabState
 import org.jetbrains.plugins.terminal.TerminalView
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalProcess
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalRunner
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
-import software.aws.toolkits.jetbrains.utils.ui.selected
+import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message
-import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
 
-class OpenShellInContainerDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
-    private val resourceCache = AwsResourceCache.getInstance()
-    private val tasks = resourceCache.getResourceNow(
-        EcsResources.listTasks(
-            container.service.clusterArn(),
-            container.service.serviceArn()
-        ),
-        project.activeRegion(),
-        project.activeCredentialProvider(),
-    )
-    private val shellList = listOf("bash", "sh", "zsh")
-    private val shellOption = DefaultComboBoxModel(shellList.toTypedArray())
-    private val taskList = DefaultComboBoxModel(tasks.toTypedArray())
-    private val shell = ComboBox(shellOption)
-    var task = if (tasks.isNotEmpty()) tasks.first() else null
+class OpenShellInContainerDialog(
+    private val project: Project,
+    private val container: ContainerDetails,
+    private val environmentVariables: Map<String, String>
+) : DialogWrapper(project) {
+
+    private val tasks = ResourceSelector
+        .builder()
+        .resource(
+            EcsResources.listTasks(
+                container.service.clusterArn(),
+                container.service.serviceArn()
+            )
+        )
+        .awsConnection(project)
+        .build()
+    private val shellList = listOf("/bin/bash", "/bin/sh", "/bin/zsh")
+    private val shellOption = CollectionComboBoxModel(shellList)
+    private var shell = shellList.first()
     private val component by lazy {
         panel {
-            row(message("ecs.execute_command_task")) {
-                comboBox(taskList, { task }, { if (it != null) { task = it } })
-                    .constraints(growX)
-                    .withErrorOnApplyIf(message("ecs.execute_command_task_comboBox_empty")) { it.selected() == null }
+            row(message("ecs.execute_command_task.label")) {
+                tasks(growX, pushX).growPolicy(GrowPolicy.MEDIUM_TEXT)
             }
-            row(message("ecs.execute_command_shell")) {
-                shell()
-                    .constraints(growX)
-                    .withErrorOnApplyIf(message("ecs.execute_command_shell_comboBox_empty")) { it.selected() == null || it.selected() == "" }
+            row(message("ecs.execute_command_shell.label")) {
+                comboBox(
+                    shellOption, { shell },
+                    {
+                        if (it != null) {
+                            shell = it
+                        }
+                    }
+                ).constraints(grow)
+                    .withErrorOnApplyIf(message("ecs.execute_command_no_command")) { it.item.isNullOrBlank() }
+                    .also { it.component.isEditable = true }
             }
         }
     }
+
     init {
         super.init()
         title = message("ecs.execute_command_run_command_in_shell")
         setOKButtonText(message("general.execute_button"))
-        shell.isEditable = true
     }
+
     override fun createCenterPanel(): JComponent? = component
 
     override fun doOKAction() {
@@ -73,24 +79,12 @@ class OpenShellInContainerDialog(private val project: Project, private val conta
         ExecutableManager.getInstance().getExecutable<AwsCliExecutable>().thenAccept { awsCliExecutable ->
             when (awsCliExecutable) {
                 is ExecutableInstance.Executable -> awsCliExecutable
-                is ExecutableInstance.UnresolvedExecutable -> throw Exception("Couldn't resolve executable")
+                is ExecutableInstance.UnresolvedExecutable -> throw Exception(message("executableCommon.missing_executable", "AWS CLI"))
                 is ExecutableInstance.InvalidExecutable -> throw Exception(awsCliExecutable.validationError)
             }
+            val commandLine = constructExecCommand(awsCliExecutable)
 
-            val cmdLine = buildBaseCmdLine(project, awsCliExecutable)
-                .withParameters("ecs")
-                .withParameters("execute-command")
-                .withParameters("--cluster")
-                .withParameters(container.service.clusterArn())
-                .withParameters("--task")
-                .withParameters(task)
-                .withParameters("--command")
-                .withParameters("/bin/" + shell.item)
-                .withParameters("--interactive")
-
-            val cmdList = cmdLine.getCommandLineList(null).toTypedArray()
-            val env = cmdLine.effectiveEnvironment
-            val ptyProcess = PtyProcess.exec(cmdList, env, null)
+            val ptyProcess = PtyProcess.exec(commandLine?.cmdList, commandLine?.env, null)
             val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
             val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
@@ -99,7 +93,18 @@ class OpenShellInContainerDialog(private val project: Project, private val conta
             }
         }
     }
-    private fun buildBaseCmdLine(project: Project, executable: ExecutableInstance.Executable) = executable.getCommandLine()
-        .withEnvironment(project.activeRegion().toEnvironmentVariables())
-        .withEnvironment(project.activeCredentialProvider().resolveCredentials().toEnvironmentVariables())
+
+    private fun constructExecCommand(executable: ExecutableInstance.Executable): CmdLine? {
+        val commandLine = tasks.selected()?.let {
+            executable.getCommandLine().execCommand(environmentVariables, container.service.clusterArn(), it, shell)
+        }
+        val cmdList = commandLine?.getCommandLineList(null)?.toTypedArray()
+        val env = commandLine?.effectiveEnvironment
+        return env?.let { cmdList?.let { it1 -> CmdLine(it1, it) } }
+    }
 }
+
+data class CmdLine(
+    val cmdList: Array<String>,
+    val env: Map<String, String>
+)
