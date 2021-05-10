@@ -83,9 +83,11 @@ class S3ViewerPanel(private val disposable: Disposable, private val project: Pro
     }
 
     private fun createTreeTable(disposable: Disposable, virtualBucket: S3VirtualBucket): S3TreeTable {
-        val rootNode = virtualBucket.prefix?.let {
+        val rootNode = if (virtualBucket.prefix.isNotBlank()) {
             S3TreePrefixedDirectoryNode(virtualBucket)
-        } ?: S3TreeDirectoryNode(virtualBucket, null, "")
+        } else {
+            S3TreeDirectoryNode(virtualBucket, null, "")
+        }
 
         val structureTreeModel: StructureTreeModel<SimpleTreeStructure> = StructureTreeModel(
             SimpleTreeStructure.Impl(rootNode),
