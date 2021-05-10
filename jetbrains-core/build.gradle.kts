@@ -7,6 +7,7 @@ import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 plugins {
     id("toolkit-kotlin-conventions")
+    id("toolkit-detekt")
     id("toolkit-testing")
     id("toolkit-integration-testing")
     id("toolkit-intellij-subplugin")
@@ -33,10 +34,12 @@ sourceSets {
         java.srcDir("${project.buildDir}/generated-src")
     }
 }
+
 val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
     inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
     outputDirectory = file("${project.buildDir}/generated-src")
 }
+
 tasks.compileKotlin {
     dependsOn(generateTelemetry)
 }
@@ -52,6 +55,12 @@ tasks.jar {
     from(changelog) {
         into("META-INF")
     }
+}
+
+tasks.processTestResources {
+    // TODO how can we remove this. Fails due to:
+    // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 dependencies {
