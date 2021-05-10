@@ -37,6 +37,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         panel {
             row(message("ecs.execute_command_task.label")) {
                 tasks(growX, pushX).growPolicy(GrowPolicy.MEDIUM_TEXT)
+                    .withErrorOnApplyIf(message("ecs.execute_command_task_comboBox_empty")) { it.item.isNullOrEmpty() }
             }
             row(message("ecs.execute_command.label")) {
                 comboBox(
@@ -47,7 +48,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                         }
                     }
                 ).constraints(grow)
-                    .withErrorOnApplyIf(message("ecs.execute_command_no_command")) { it.selected() == null }
+                    .withErrorOnApplyIf(message("ecs.execute_command_no_command")) { it.editor.item.toString().isNullOrBlank() }
                     .also {
                         it.component.isEditable = true
                         it.component.selectedIndex = -1
