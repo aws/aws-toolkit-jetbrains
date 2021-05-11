@@ -23,7 +23,6 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
-import software.aws.toolkits.jetbrains.utils.WebStormTestUtils
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
 import software.aws.toolkits.jetbrains.utils.rules.HeavyNodeJsCodeInsightTestFixtureRule
@@ -90,7 +89,7 @@ class NodeJsLocalTypeScriptLambdaRunConfigurationIntegrationTest(private val run
         }
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
-        WebStormTestUtils.ensureBuiltInServerStarted()
+        ensureBuiltInServerStarted()
     }
 
     @After
