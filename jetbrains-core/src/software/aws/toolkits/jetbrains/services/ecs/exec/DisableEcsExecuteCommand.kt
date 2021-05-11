@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.ecs.EcsServiceNode
+import software.aws.toolkits.jetbrains.services.ecs.EcsUtils
 import software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
@@ -41,7 +42,7 @@ class DisableEcsExecuteCommand :
     }
 
     override fun update(selected: EcsServiceNode, e: AnActionEvent) {
-        e.presentation.isVisible = selected.executeCommandEnabled()
+        e.presentation.isVisible = selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn())
     }
 
     private suspend fun disableExecuteCommand(project: Project, service: Service) {
