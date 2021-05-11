@@ -32,8 +32,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
     }
 
     suspend fun checkServiceState(project: Project, service: Service, enable: Boolean) {
-        /*
-         There appears to be a lag between the time the UpdateService call is made and
+        /* There appears to be a lag between the time the UpdateService call is made and
          the time the changes are surfaced via the DescribeServices call.
          Hence a delay of 5000 milliseconds is added before polling for the completion state of the service
          */
