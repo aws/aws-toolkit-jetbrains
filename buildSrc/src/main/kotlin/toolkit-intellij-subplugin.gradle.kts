@@ -78,7 +78,7 @@ afterEvaluate {
         version.set(productProfile.sdkVersion)
         plugins.set(productProfile.plugins.toList())
 
-        downloadSources.set(flavor != IdeFlavor.IC)
+        downloadSources.set(flavor != IdeFlavor.IC && System.getenv("CI") == null)
         instrumentCode.set(flavor != IdeFlavor.RD)
     }
 
