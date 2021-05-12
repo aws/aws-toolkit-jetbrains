@@ -24,10 +24,11 @@ val resharperDlls = configurations.create("resharperDlls") {
 }
 
 intellij {
-    version = ideProfile.community.sdkVersion
-    pluginName = "aws-toolkit-jetbrains"
-    updateSinceUntilBuild = false
-    instrumentCode = false
+    version.set(ideProfile.community.sdkVersion)
+    pluginName.set("aws-toolkit-jetbrains")
+    updateSinceUntilBuild.set(false)
+
+    instrumentCode.set(false)
 }
 
 tasks.prepareSandbox {
@@ -37,8 +38,8 @@ tasks.prepareSandbox {
 }
 
 tasks.publishPlugin {
-    token(publishToken)
-    channels(publishChannel.split(",").map { it.trim() })
+    token.set(publishToken)
+    channels.set(publishChannel.split(",").map { it.trim() })
 }
 
 tasks.check {

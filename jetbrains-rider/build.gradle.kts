@@ -90,7 +90,7 @@ configure<RdGenExtension> {
 
     classpath({
         println("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
-        File(intellij.ideaDependency.classes, "lib/rd").resolve("rider-model.jar").absolutePath
+        File(intellij.getIdeaDependency(project).classes, "lib/rd").resolve("rider-model.jar").absolutePath
     })
 
     sources(projectDir.resolve("protocol/model"))
@@ -197,10 +197,10 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
 }
 
 fun getNugetPackagesPath(): File {
-    val sdkPath = intellij.ideaDependency.classes
+    val sdkPath = intellij.getIdeaDependency(project).classes
     println("SDK path: $sdkPath")
 
-    val riderSdk = File(sdkPath, "lib/DotNetSdkForRdPlugins")
+    val riderSdk = File(sdkPath as File, "lib/DotNetSdkForRdPlugins")
 
     println("NuGet packages: $riderSdk")
     if (!riderSdk.isDirectory) throw IllegalStateException("$riderSdk does not exist or not a directory")

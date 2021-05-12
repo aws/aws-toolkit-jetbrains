@@ -74,22 +74,22 @@ afterEvaluate {
     }
 
     intellij {
-        pluginName = "aws-toolkit-jetbrains"
-        version = productProfile.sdkVersion
+        pluginName.set("aws-toolkit-jetbrains")
+        version.set(productProfile.sdkVersion)
+        plugins.set(productProfile.plugins.toList())
 
-        setPlugins(*productProfile.plugins)
-
-        downloadSources = flavor != IdeFlavor.IC
-        instrumentCode = flavor != IdeFlavor.RD
+        downloadSources.set(flavor != IdeFlavor.IC)
+        instrumentCode.set(flavor != IdeFlavor.RD)
     }
 
     tasks.jar {
         archiveBaseName.set("aws-toolkit-jetbrains-$flavor")
     }
 
+
     tasks.patchPluginXml {
-        setSinceBuild(ideProfile.sinceVersion)
-        setUntilBuild(ideProfile.untilVersion)
+        sinceBuild.set(ideProfile.sinceVersion)
+        untilBuild.set(ideProfile.untilVersion)
     }
 
     // Disable building the settings search cache since it 1. fails the build, 2. gets run on the final packaged plugin
@@ -98,7 +98,7 @@ afterEvaluate {
     }
 
     tasks.withType<Test>().all {
-        systemProperty("log.dir", "${Utils.stringInput(intellij.sandboxDirectory)}-test/logs")
+        systemProperty("log.dir", "${Utils.stringInput(intellij.sandboxDir)}-test/logs")
         systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
     }
 
@@ -110,9 +110,9 @@ afterEvaluate {
         val alternativeIde = System.getenv("ALTERNATIVE_IDE")
         if (alternativeIde != null) {
             // remove the trailing slash if there is one or else it will not work
-            val path = alternativeIde.trimEnd('/')
-            if (File(path).exists()) {
-                setIdeDirectory(path)
+            val path = File(alternativeIde.trimEnd('/'))
+            if (path.exists()) {
+                ideDir.set(path)
             } else {
                 throw GradleException("ALTERNATIVE_IDE path not found $alternativeIde")
             }
@@ -120,7 +120,7 @@ afterEvaluate {
     }
 
     tasks.withType<DownloadRobotServerPluginTask>() {
-        version = remoteRobotVersion
+        version.set(remoteRobotVersion)
     }
 
     // Enable coverage for the UI test target IDE
