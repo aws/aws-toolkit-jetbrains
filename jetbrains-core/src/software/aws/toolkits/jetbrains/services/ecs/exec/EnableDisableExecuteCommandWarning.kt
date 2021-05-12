@@ -11,9 +11,11 @@ import com.intellij.ui.layout.panel
 import software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings
 import software.aws.toolkits.jetbrains.utils.ui.visible
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.EcsTelemetry
+import software.aws.toolkits.telemetry.Result
 import javax.swing.JComponent
 
-class EnableDisableExecuteCommandWarning(project: Project, enable: Boolean, serviceName: String) : DialogWrapper(project) {
+class EnableDisableExecuteCommandWarning(private val project: Project, private val enable: Boolean, private val serviceName: String) : DialogWrapper(project) {
     private val warningIcon = JBLabel(Messages.getWarningIcon())
     private var dontDisplayWarning = false
     private var confirmNonProduction = false
@@ -54,6 +56,15 @@ class EnableDisableExecuteCommandWarning(project: Project, enable: Boolean, serv
         super.doOKAction()
         if (dontDisplayWarning) {
             settings.showExecuteCommandWarning = false
+        }
+    }
+
+    override fun doCancelAction() {
+        super.doCancelAction()
+        if (enable) {
+            EcsTelemetry.enableExecuteCommand(project, Result.Cancelled)
+        } else {
+            EcsTelemetry.disableExecuteCommand(project, Result.Cancelled)
         }
     }
 
