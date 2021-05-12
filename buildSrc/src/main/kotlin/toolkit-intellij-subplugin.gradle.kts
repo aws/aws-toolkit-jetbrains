@@ -51,8 +51,6 @@ configurations {
     runtimeClasspath {
         // Exclude dependencies that ship with iDE
         exclude(group = "org.slf4j")
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
 
         // Exclude dependencies we don't use to make plugin smaller
         exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
@@ -119,7 +117,7 @@ afterEvaluate {
         }
     }
 
-    tasks.withType<DownloadRobotServerPluginTask>() {
+    tasks.withType<DownloadRobotServerPluginTask> {
         version.set(remoteRobotVersion)
     }
 
@@ -139,7 +137,7 @@ afterEvaluate {
 
         // These are experiments to enable for UI tests
         systemProperty("aws.feature.connectedLocalTerminal", true)
-        ciOnly() {
+        ciOnly {
             systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
         }
 
