@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
@@ -23,17 +22,7 @@ class DisableEcsExecuteCommand :
 
     override fun actionPerformed(selected: EcsServiceNode, e: AnActionEvent) {
         if (!settings.showExecuteCommandWarning ||
-            (
-                Messages.showYesNoCancelDialog(
-                        message("ecs.execute_command_disable_warning"),
-                        message("ecs.execute_command_disable_warning_title"),
-                        message("ecs.execute_command_warning_dialog_option_yes"),
-                        message("ecs.execute_command_warning_dialog_option_no"),
-                        message("ecs.execute_command_warning_dialog_option_cancel"),
-                        Messages.getWarningIcon(),
-                        ExecuteCommandWarningDoNotShow()
-                    ) == 0
-                )
+            EnableDisableExecuteCommandWarning(selected.nodeProject, enable = false, selected.value.serviceName()).showAndGet()
         ) {
             launch {
                 disableExecuteCommand(selected.nodeProject, selected.value)
