@@ -400,7 +400,7 @@ Resources:
     }
 
     @Test
-    fun metadata_buildMethod() {
+    fun `supports BuildMethod in Metadata block`() {
         val fixture = projectRule.fixture
 
         fixture.openFile(
@@ -427,7 +427,7 @@ Resources:
     }
 
     @Test
-    fun metadata_nullBuildMethod() {
+    fun `supports no Metadata block`() {
         val fixture = projectRule.fixture
 
         fixture.openFile(
