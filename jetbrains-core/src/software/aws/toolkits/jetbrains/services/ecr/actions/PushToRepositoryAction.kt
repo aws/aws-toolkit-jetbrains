@@ -13,6 +13,7 @@ import com.intellij.execution.impl.RunDialog
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.DumbAwareAction
@@ -314,7 +315,7 @@ internal class PushToEcrDialog(
                 }
             }
 
-            runInEdt {
+            runInEdt(ModalityState.any()) {
                 listener.run()
             }
         }
