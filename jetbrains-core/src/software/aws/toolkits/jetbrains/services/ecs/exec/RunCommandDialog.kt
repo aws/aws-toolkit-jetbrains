@@ -17,8 +17,8 @@ import com.intellij.ui.layout.panel
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
 import javax.swing.JComponent
@@ -76,7 +76,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
 
     override fun doCancelAction() {
         super.doCancelAction()
-        //EcsTelemetry.runExecuteCommand(project, Result.Cancelled, EcsExecuteCommandType.Command)
+        EcsTelemetry.runExecuteCommand(project, Result.Cancelled, EcsExecuteCommandType.Command)
     }
 
     fun constructExecCommandParameters(commandToExecute: String) =
@@ -105,7 +105,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
             environment.runner.execute(environment)
            // EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Command)
         } catch (e : Exception) {
-        //EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Command)
+        EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Command)
         }
     }
 

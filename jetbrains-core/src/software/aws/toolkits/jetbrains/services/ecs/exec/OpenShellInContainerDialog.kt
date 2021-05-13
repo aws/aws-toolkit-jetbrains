@@ -21,6 +21,7 @@ import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
 import javax.swing.JComponent
@@ -80,7 +81,7 @@ class OpenShellInContainerDialog(
 
     override fun doCancelAction() {
         super.doCancelAction()
-        //EcsTelemetry.runExecuteCommand(project, Result.Cancelled, EcsExecuteCommandType.Shell)
+        EcsTelemetry.runExecuteCommand(project, Result.Cancelled, EcsExecuteCommandType.Shell)
     }
 
     private fun runExecCommand() {
@@ -100,10 +101,10 @@ class OpenShellInContainerDialog(
                 runInEdt {
                     TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name() })
                 }
-                //EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Shell)
+                EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Shell)
             }
         } catch (e: Exception) {
-            //EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Shell)
+            EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Shell)
         }
     }
 
