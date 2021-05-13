@@ -21,6 +21,8 @@ import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.EcsTelemetry
+import software.aws.toolkits.telemetry.Result
 import javax.swing.JComponent
 
 class OpenShellInContainerDialog(
@@ -76,22 +78,32 @@ class OpenShellInContainerDialog(
         runExecCommand()
     }
 
+    override fun doCancelAction() {
+        super.doCancelAction()
+        //EcsTelemetry.runExecuteCommand(project, Result.Cancelled, EcsExecuteCommandType.Shell)
+    }
+
     private fun runExecCommand() {
-        ExecutableManager.getInstance().getExecutable<AwsCliExecutable>().thenAccept { awsCliExecutable ->
-            when (awsCliExecutable) {
-                is ExecutableInstance.Executable -> awsCliExecutable
-                is ExecutableInstance.UnresolvedExecutable -> throw Exception(message("executableCommon.missing_executable", "AWS CLI"))
-                is ExecutableInstance.InvalidExecutable -> throw Exception(awsCliExecutable.validationError)
-            }
-            val commandLine = constructExecCommand(awsCliExecutable)
+        try {
+            ExecutableManager.getInstance().getExecutable<AwsCliExecutable>().thenAccept { awsCliExecutable ->
+                when (awsCliExecutable) {
+                    is ExecutableInstance.Executable -> awsCliExecutable
+                    is ExecutableInstance.UnresolvedExecutable -> throw Exception(message("executableCommon.missing_executable", "AWS CLI"))
+                    is ExecutableInstance.InvalidExecutable -> throw Exception(awsCliExecutable.validationError)
+                }
+                val commandLine = constructExecCommand(awsCliExecutable)
 
-            val ptyProcess = PtyProcess.exec(commandLine?.cmdList, commandLine?.env, null)
-            val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
-            val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
+                val ptyProcess = PtyProcess.exec(commandLine?.cmdList, commandLine?.env, null)
+                val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
+                val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
-            runInEdt {
-                TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name() })
+                runInEdt {
+                    TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name() })
+                }
+                //EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Shell)
             }
+        } catch (e: Exception) {
+            //EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Shell)
         }
     }
 

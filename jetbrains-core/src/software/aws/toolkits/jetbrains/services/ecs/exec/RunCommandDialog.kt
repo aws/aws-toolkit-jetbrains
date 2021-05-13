@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
+import com.intellij.execution.ExecutionException
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
@@ -18,6 +19,8 @@ import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.EcsTelemetry
+import software.aws.toolkits.telemetry.Result
 import javax.swing.JComponent
 
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
@@ -71,6 +74,11 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         runCommand()
     }
 
+    override fun doCancelAction() {
+        super.doCancelAction()
+        //EcsTelemetry.runExecuteCommand(project, Result.Cancelled, EcsExecuteCommandType.Command)
+    }
+
     fun constructExecCommandParameters(commandToExecute: String) =
         tasks.selected()?.let {
             message(
@@ -82,18 +90,23 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         }
 
     private fun runCommand() {
-        val execCommand = buildExecCommandConfiguration(command)
-        val environment = ExecutionEnvironmentBuilder
-            .create(
-                project,
-                DefaultRunExecutor.getRunExecutorInstance(),
-                ToolRunProfile(
-                    execCommand,
-                    SimpleDataContext.getProjectContext(project)
+        try {
+            val execCommand = buildExecCommandConfiguration(command)
+            val environment = ExecutionEnvironmentBuilder
+                .create(
+                    project,
+                    DefaultRunExecutor.getRunExecutorInstance(),
+                    ToolRunProfile(
+                        execCommand,
+                        SimpleDataContext.getProjectContext(project)
+                    )
                 )
-            )
-            .build()
-        environment.runner.execute(environment)
+                .build()
+            environment.runner.execute(environment)
+           // EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Command)
+        } catch (e : Exception) {
+        //EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Command)
+        }
     }
 
     fun buildExecCommandConfiguration(commandToExecute: String): Tool {
