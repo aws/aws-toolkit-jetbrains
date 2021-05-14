@@ -24,17 +24,17 @@ class SearchPanel(private val tableInfo: TableInfo, initialSearchType: SearchTyp
 
     private val queryScanPanel: DialogPanel = panel {
         row {
-            label(message("dynamo.viewer.search.index.label"))
+            label(message("dynamodb.viewer.search.index.label"))
             comboBox(searchIndexModel, ::searchIndex, IndexRenderer(searchIndexModel)).constraints(growX, pushX)
         }
 
         row {
-            button(message("dynamo.viewer.search.run.title")) { runAction() }
+            button(message("dynamodb.viewer.search.run.title")) { runAction() }
         }
     }.withBorder(JBUI.Borders.empty(0, UIUtil.PANEL_REGULAR_INSETS.left))
 
     private val panel: JComponent = JPanel(BorderLayout()).apply {
-        val decorator = HideableDecorator(this, message("dynamo.viewer.search.title"), false)
+        val decorator = HideableDecorator(this, message("dynamodb.viewer.search.title"), false)
         decorator.setOn(false) // Collapse by default
         decorator.setContentComponent(queryScanPanel)
     }

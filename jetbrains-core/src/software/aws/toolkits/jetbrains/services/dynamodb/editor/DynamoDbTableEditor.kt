@@ -58,7 +58,7 @@ class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDa
                     loadingPanel.add(
                         JBPanelWithEmptyText().also {
                             it.emptyText.setText(
-                                message("dynamo.viewer.open.failed.with_error", e.message ?: message("general.unknown_error")),
+                                message("dynamodb.viewer.open.failed.with_error", e.message ?: message("general.unknown_error")),
                                 SimpleTextAttributes.ERROR_ATTRIBUTES
                             )
                         },

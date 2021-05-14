@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.dynamodb.editor
 import com.intellij.ui.CollectionComboBoxModel
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.dynamodb.Index
+import software.aws.toolkits.resources.message
 
 class IndexComboBoxModel(indexes: TableInfo) : CollectionComboBoxModel<Index>() {
     val separatorNames: Map<Int, String>
@@ -24,12 +25,12 @@ class IndexComboBoxModel(indexes: TableInfo) : CollectionComboBoxModel<Index>() 
             add(tableInfo.tableIndex)
 
             if (tableInfo.localSecondary.isNotEmpty()) {
-                groupIndexes[size] = "Local"
+                groupIndexes[size] = message("dynamodb.viewer.search.index.local")
                 addAll(tableInfo.localSecondary)
             }
 
             if (tableInfo.globalSecondary.isNotEmpty()) {
-                groupIndexes[size] = "Global"
+                groupIndexes[size] = message("dynamodb.viewer.search.index.global")
                 addAll(tableInfo.globalSecondary)
             }
         }
