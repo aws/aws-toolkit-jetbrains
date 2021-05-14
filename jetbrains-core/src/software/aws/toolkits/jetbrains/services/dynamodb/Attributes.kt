@@ -8,6 +8,11 @@ import java.util.Base64
 
 typealias SearchResults = List<Map<String, DynamoAttribute<*>>>
 
+/**
+ * See:
+ * * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_AttributeValue.html,
+ * * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.NamingRulesDataTypes.html
+ */
 sealed class DynamoAttribute<T>(val value: T) {
     abstract val dataType: String
 
