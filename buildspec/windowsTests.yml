@@ -26,7 +26,7 @@ phases:
         }
 
          # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
-        ./gradlew This Should Fail
+        ./gradlew check :jetbrains-rider:compileTestKotlin -x :jetbrains-rider:test --info --full-stacktrace --console plain
         if ($LastExitCode -ne 0) {
           Write-Host "Command failed with exit code $LastExitCode"
           exit -1
