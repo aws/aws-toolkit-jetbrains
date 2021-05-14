@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.dynamodb.DynamoAttribute
 import software.aws.toolkits.jetbrains.services.dynamodb.Index
 import software.aws.toolkits.jetbrains.services.dynamodb.SearchResults
+import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JTable
 import javax.swing.table.AbstractTableModel
@@ -43,7 +44,7 @@ class TableResults : JBTable(TableModel(BidirectionalMap(), emptyList())) {
     }
 
     fun setError(e: Exception) {
-        emptyText.setText(e.message ?: "TODO", SimpleTextAttributes.ERROR_ATTRIBUTES)
+        emptyText.setText(e.message ?: message("general.unknown_error"), SimpleTextAttributes.ERROR_ATTRIBUTES)
         setPaintBusy(false)
     }
 }
@@ -60,7 +61,7 @@ class TableRenderer : DefaultTableCellRenderer() {
 class TableModel(private val columns: BidirectionalMap<String, Int>, private val data: List<Map<String, DynamoAttribute<*>>>) : AbstractTableModel() {
     override fun getRowCount(): Int = data.size
     override fun getColumnCount(): Int = columns.size
-    override fun getColumnName(column: Int): String = columns.getKeysByValue(column)?.firstOrNull() ?: "foo"
+    override fun getColumnName(column: Int): String = columns.getKeysByValue(column)?.firstOrNull() ?: ""
 
     override fun getValueAt(rowIndex: Int, columnIndex: Int): DynamoAttribute<*>? {
         val columnName = getColumnName(columnIndex)

@@ -9,7 +9,9 @@ import com.intellij.openapi.fileEditor.FileEditorLocation
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
 import com.intellij.openapi.util.UserDataHolderBase
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLoadingPanel
+import com.intellij.ui.components.JBPanelWithEmptyText
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -25,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.dynamodb.Index
 import software.aws.toolkits.jetbrains.services.dynamodb.toAttribute
 import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
@@ -48,16 +51,30 @@ class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDa
         loadingPanel.startLoading()
 
         coroutineScope.launch(bg) {
-            val tableInfo = getTableInfo(dynamoTable.tableName)
+            val tableInfo = try {
+                getTableInfo(dynamoTable.tableName)
+            } catch (e: Exception) {
+                withContext(edt) {
+                    loadingPanel.add(
+                        JBPanelWithEmptyText().also {
+                            it.emptyText.setText(
+                                message("dynamo.viewer.open.failed.with_error", e.message ?: message("general.unknown_error")),
+                                SimpleTextAttributes.ERROR_ATTRIBUTES
+                            )
+                        },
+                        BorderLayout.CENTER
+                    )
+                    loadingPanel.stopLoading()
+                }
+                return@launch
+            }
 
-            launch(edt) {
+            withContext(edt) {
                 searchPanel = SearchPanel(
                     tableInfo = tableInfo,
                     initialSearchType = SearchPanel.SearchType.Scan,
                     initialSearchIndex = tableInfo.tableIndex,
-                    runAction = {
-                        executeSearch()
-                    }
+                    runAction = { executeSearch() }
                 )
 
                 loadingPanel.add(searchPanel.getComponent(), BorderLayout.NORTH)
