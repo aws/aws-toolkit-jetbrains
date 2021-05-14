@@ -60,24 +60,31 @@ open class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
     }
 
     fun clickRow(rowNumber: Int) {
-        runJs("""
+        runJs(
+            """
            JTreeFixture(robot, component).clickRow($rowNumber) 
-        """)
+        """
+        )
     }
 
     fun doubleClickRow(rowNumber: Int) {
-        runJs("""
+        runJs(
+            """
            JTreeFixture(robot, component).doubleClickRow($rowNumber) 
-        """)
+        """
+        )
     }
 
     fun rightClickRow(rowNumber: Int) {
-        runJs("""
+        runJs(
+            """
            JTreeFixture(robot, component).rightClickRow($rowNumber) 
-        """)
+        """
+        )
     }
 
-    fun collectExpandedPaths(): List<TreePathToRow> = callJs<ArrayList<ArrayList<String?>>>("""
+    fun collectExpandedPaths(): List<TreePathToRow> = callJs<ArrayList<ArrayList<String?>>>(
+        """
             const paths = new java.util.ArrayList()
             com.intellij.util.ui.tree.TreeUtil.visitVisibleRows(component, (p) => {
                 const nodes = new java.util.ArrayList()
@@ -87,11 +94,14 @@ open class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
                 return nodes
             }, (p) => paths.add(p))
             paths
-        """, true).mapIndexed { index, path ->
+        """,
+        true
+    ).mapIndexed { index, path ->
         TreePathToRow(path.filterNotNull().filter { it.isNotEmpty() }, index)
     }
 
-    fun collectSelectedPaths(): List<List<String>> = callJs<ArrayList<ArrayList<String?>>>("""
+    fun collectSelectedPaths(): List<List<String>> = callJs<ArrayList<ArrayList<String?>>>(
+        """
         const paths = new java.util.ArrayList()
         const treePaths = component.getSelectionPaths()
 
@@ -109,7 +119,9 @@ open class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
             }
         }
         paths
-    """, true).map { path ->
+    """,
+        true
+    ).map { path ->
         path.filterNotNull().filter { it.isNotEmpty() }
     }
 
@@ -122,7 +134,8 @@ open class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
     fun getValueAtRow(row: Int) = collectRows()[row]
 
     fun expand(vararg path: String): JTreeFixture {
-        runJs("""
+        runJs(
+            """
             const expandingPathNodes = [${path.joinToString(",") { "\"${it}\"" }}]
             const ignoreRoot = component.isRootVisible() === false
             const treePath = com.intellij.ui.tree.TreePathUtil.convertArrayToTreePath(expandingPathNodes)
@@ -130,7 +143,8 @@ open class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
             const visitor = new com.intellij.ui.tree.TreeVisitor.ByTreePath(ignoreRoot, treePath, toStringConverter);
             
             com.intellij.util.ui.tree.TreeUtil.promiseExpand(component, visitor).blockingGet(5000)
-        """)
+        """
+        )
         return this
     }
 
@@ -142,7 +156,8 @@ open class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
     }
 
     fun expandAllExcept(vararg nodes: String): JTreeFixture {
-        runJs("""
+        runJs(
+            """
             var excludedNodes = [${nodes.joinToString(",") { "\"$it\"" }}]
             function visit(treePath) {
                 var pathStr = treePath.toString()
@@ -155,14 +170,17 @@ open class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
             const visitor = { visit: visit }
             
             com.intellij.util.ui.tree.TreeUtil.promiseExpand(component, new com.intellij.ui.tree.TreeVisitor(visitor)).blockingGet(5000)
-        """)
+        """
+        )
         return this
     }
 
     fun collapsePath(vararg path: String, fullMatch: Boolean = true) = findExpandedPath(*path, fullMatch = fullMatch)?.let {
-        runJs("""
+        runJs(
+            """
             JTreeFixture(robot, component).collapseRow(${it.row})
-        """)
+        """
+        )
     }
 
     private fun findExpandedPath(vararg path: String, fullMatch: Boolean): TreePathToRow? = collectExpandedPaths().singleOrNull { expandedPath ->
