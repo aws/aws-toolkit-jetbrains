@@ -26,13 +26,14 @@ class DynamoDbServiceNode(project: Project, service: AwsExplorerServiceNode) :
 
 class DynamoDbTableNode(project: Project, private val tableName: String) :
     AwsExplorerResourceNode<String>(project, DynamoDbClient.SERVICE_METADATA_ID, tableName, AwsIcons.Resources.Dynamo.TABLE) {
+    private val arn = run {
+        val account = tryOrNull { nodeProject.getResourceIfPresent(StsResources.ACCOUNT) } ?: ""
+        "arn:${nodeProject.activeRegion().partitionId}:dynamodb:${nodeProject.activeRegion().id}:$account:table/$tableName"
+    }
+
     override fun displayName(): String = tableName
     override fun resourceType(): String = "table"
-
-    override fun resourceArn(): String {
-        val account = tryOrNull { nodeProject.getResourceIfPresent(StsResources.ACCOUNT) } ?: ""
-        return "arn:${nodeProject.activeRegion().partitionId}:dynamodb:${nodeProject.activeRegion().id}:$account:table/$tableName"
-    }
+    override fun resourceArn(): String = arn
 
     override fun onDoubleClick() {
         DynamoDbTableEditorProvider.openViewer(nodeProject, resourceArn())

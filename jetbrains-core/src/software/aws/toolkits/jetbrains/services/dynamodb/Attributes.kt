@@ -22,7 +22,7 @@ sealed class DynamoAttribute<T>(val value: T) {
 class StringAttribute(value: String) : DynamoAttribute<String>(value) {
     override val dataType: String = "S"
 
-    override fun stringRepresentation(): String = "\"$value\""
+    override fun stringRepresentation(): String = '"' + value + '"'
 }
 
 class BooleanAttribute(value: Boolean) : DynamoAttribute<Boolean>(value) {
