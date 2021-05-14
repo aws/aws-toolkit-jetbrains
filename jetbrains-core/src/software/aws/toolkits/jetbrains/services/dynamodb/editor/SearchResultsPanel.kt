@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.dynamo.editor
+package software.aws.toolkits.jetbrains.services.dynamodb.editor
 
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
@@ -11,8 +11,8 @@ import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SideBorder
 import com.intellij.util.ui.components.BorderLayoutPanel
-import software.aws.toolkits.jetbrains.services.dynamo.Index
-import software.aws.toolkits.jetbrains.services.dynamo.SearchResults
+import software.aws.toolkits.jetbrains.services.dynamodb.Index
+import software.aws.toolkits.jetbrains.services.dynamodb.SearchResults
 
 class SearchResultsPanel : BorderLayoutPanel() {
     private val resultsTable = TableResults()

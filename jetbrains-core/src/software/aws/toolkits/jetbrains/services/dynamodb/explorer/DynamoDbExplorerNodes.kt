@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.dynamo.explorer
+package software.aws.toolkits.jetbrains.services.dynamodb.explorer
 
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
@@ -13,18 +13,18 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.getResourceIfPresent
-import software.aws.toolkits.jetbrains.services.dynamo.DynamoResources
-import software.aws.toolkits.jetbrains.services.dynamo.editor.DynamoTableEditorProvider
+import software.aws.toolkits.jetbrains.services.dynamodb.DynamoDbResources
+import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditorProvider
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.resources.message
 
-class DynamoServiceNode(project: Project, service: AwsExplorerServiceNode) :
-    CacheBackedAwsExplorerServiceRootNode<String>(project, service, DynamoResources.LIST_TABLES) {
+class DynamoDbServiceNode(project: Project, service: AwsExplorerServiceNode) :
+    CacheBackedAwsExplorerServiceRootNode<String>(project, service, DynamoDbResources.LIST_TABLES) {
     override fun displayName(): String = message("explorer.node.dynamo")
-    override fun toNode(child: String): AwsExplorerNode<*> = DynamoTableNode(nodeProject, child)
+    override fun toNode(child: String): AwsExplorerNode<*> = DynamoDbTableNode(nodeProject, child)
 }
 
-class DynamoTableNode(project: Project, private val tableName: String) :
+class DynamoDbTableNode(project: Project, private val tableName: String) :
     AwsExplorerResourceNode<String>(project, DynamoDbClient.SERVICE_METADATA_ID, tableName, AwsIcons.Resources.Dynamo.TABLE) {
     override fun displayName(): String = tableName
     override fun resourceType(): String = "table"
@@ -35,6 +35,6 @@ class DynamoTableNode(project: Project, private val tableName: String) :
     }
 
     override fun onDoubleClick() {
-        DynamoTableEditorProvider.openViewer(nodeProject, resourceArn())
+        DynamoDbTableEditorProvider.openViewer(nodeProject, resourceArn())
     }
 }

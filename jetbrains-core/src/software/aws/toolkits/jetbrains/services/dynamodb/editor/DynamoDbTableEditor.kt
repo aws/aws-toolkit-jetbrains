@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.dynamo.editor
+package software.aws.toolkits.jetbrains.services.dynamodb.editor
 
 import com.intellij.codeHighlighting.BackgroundEditorHighlighter
 import com.intellij.openapi.fileEditor.FileEditor
@@ -20,19 +20,17 @@ import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement
 import software.amazon.awssdk.services.dynamodb.model.KeyType
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.services.dynamo.DynamoUtils.executeStatementPaginator
-import software.aws.toolkits.jetbrains.services.dynamo.Index
-import software.aws.toolkits.jetbrains.services.dynamo.toAttribute
+import software.aws.toolkits.jetbrains.services.dynamodb.Index
 import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import java.awt.BorderLayout
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
-class DynamoTableEditor(private val dynamoTable: DynamoVirtualFile) : UserDataHolderBase(), FileEditor {
+class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDataHolderBase(), FileEditor {
     data class EditorState(var maxResults: Int = DEFAULT_MAX_RESULTS)
 
-    private val coroutineScope = CoroutineScope(CoroutineName("DynamoTableEditor") + SupervisorJob())
+    private val coroutineScope = CoroutineScope(CoroutineName("DynamoDbTableEditor") + SupervisorJob())
     private val bg = getCoroutineBgContext(disposable = this)
     private val edt = getCoroutineUiContext(disposable = this)
 

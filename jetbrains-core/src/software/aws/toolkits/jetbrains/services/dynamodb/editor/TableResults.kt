@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.dynamo.editor
+package software.aws.toolkits.jetbrains.services.dynamodb.editor
 
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.EditorFontType
@@ -12,9 +12,9 @@ import com.intellij.util.containers.BidirectionalMap
 import com.intellij.util.containers.Convertor
 import com.intellij.util.ui.StatusText
 import software.aws.toolkits.jetbrains.core.utils.buildList
-import software.aws.toolkits.jetbrains.services.dynamo.DynamoAttribute
-import software.aws.toolkits.jetbrains.services.dynamo.Index
-import software.aws.toolkits.jetbrains.services.dynamo.SearchResults
+import software.aws.toolkits.jetbrains.services.dynamodb.DynamoAttribute
+import software.aws.toolkits.jetbrains.services.dynamodb.Index
+import software.aws.toolkits.jetbrains.services.dynamodb.SearchResults
 import java.awt.Component
 import javax.swing.JTable
 import javax.swing.table.AbstractTableModel

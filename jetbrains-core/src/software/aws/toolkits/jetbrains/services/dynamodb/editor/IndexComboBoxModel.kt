@@ -1,11 +1,11 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.dynamo.editor
+package software.aws.toolkits.jetbrains.services.dynamodb.editor
 
 import com.intellij.ui.CollectionComboBoxModel
 import software.aws.toolkits.jetbrains.core.utils.buildList
-import software.aws.toolkits.jetbrains.services.dynamo.Index
+import software.aws.toolkits.jetbrains.services.dynamodb.Index
 
 class IndexComboBoxModel(indexes: TableInfo) : CollectionComboBoxModel<Index>() {
     val separatorNames: Map<Int, String>

@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.dynamo.editor
+package software.aws.toolkits.jetbrains.services.dynamodb.editor
 
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -17,19 +17,19 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamodbTelemetry
 import software.aws.toolkits.telemetry.Result
 
-class DynamoTableEditorProvider : FileEditorProvider, DumbAware {
-    override fun accept(project: Project, file: VirtualFile): Boolean = file is DynamoVirtualFile
+class DynamoDbTableEditorProvider : FileEditorProvider, DumbAware {
+    override fun accept(project: Project, file: VirtualFile): Boolean = file is DynamoDbVirtualFile
 
-    override fun createEditor(project: Project, file: VirtualFile): FileEditor = DynamoTableEditor(file as DynamoVirtualFile)
+    override fun createEditor(project: Project, file: VirtualFile): FileEditor = DynamoDbTableEditor(file as DynamoDbVirtualFile)
 
-    override fun getEditorTypeId(): String = "DynamoTableEditor"
+    override fun getEditorTypeId(): String = "DynamoDbTableEditor"
 
     override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_DEFAULT_EDITOR
 
     companion object {
         fun openViewer(project: Project, tableArn: String) {
             try {
-                val virtualFile = DynamoVirtualFile(tableArn, project.awsClient())
+                val virtualFile = DynamoDbVirtualFile(tableArn, project.awsClient())
                 FileEditorManager.getInstance(project).openTextEditor(
                     OpenFileDescriptor(project, virtualFile),
                     /*focusEditor*/ true

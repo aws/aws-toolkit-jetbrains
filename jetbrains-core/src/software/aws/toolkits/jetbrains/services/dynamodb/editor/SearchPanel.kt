@@ -1,14 +1,14 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.dynamo.editor
+package software.aws.toolkits.jetbrains.services.dynamodb.editor
 
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.HideableDecorator
 import com.intellij.ui.layout.panel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import software.aws.toolkits.jetbrains.services.dynamo.Index
+import software.aws.toolkits.jetbrains.services.dynamodb.Index
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import javax.swing.JComponent
