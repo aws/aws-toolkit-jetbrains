@@ -27,7 +27,7 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     fun openNewProjectWizard() {
         // TODO: Remove FIX_WHEN_MIN_IS_203
         if (remoteRobot.ideMajorVersion() <= 202) {
-            actionLink(ActionLinkFixture.byTextContains("New Project")).click()
+            actionLink(ActionLinkFixtureExt.byTextContains("New Project")).click()
         } else {
             selectTab("Projects")
             // This can match two things: If no previous projects, its a SVG icon, else a jbutton
