@@ -20,7 +20,9 @@ import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement
 import software.amazon.awssdk.services.dynamodb.model.KeyType
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.services.dynamodb.DynamoDbUtils.executeStatementPaginator
 import software.aws.toolkits.jetbrains.services.dynamodb.Index
+import software.aws.toolkits.jetbrains.services.dynamodb.toAttribute
 import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import java.awt.BorderLayout
@@ -158,6 +160,7 @@ class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDa
          */
         private const val PREVIEW_SIZE = 20
 
+        /* Matches the options from the console */
         val MAX_RESULTS_OPTIONS = listOf(50, 100, 200, 300)
         private const val DEFAULT_MAX_RESULTS = 50
     }

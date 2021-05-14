@@ -14,7 +14,8 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditor
 
 class ConfigureMaxResultsAction : ComputableActionGroup.Simple(/* popup */ true) {
-    override fun computeChildren(manager: ActionManager): Array<AnAction> = DynamoDbTableEditor.MAX_RESULTS_OPTIONS.map { (ChangeMaxResults(it)) }.toTypedArray()
+    override fun computeChildren(manager: ActionManager): Array<AnAction> = DynamoDbTableEditor.MAX_RESULTS_OPTIONS
+        .map { (ChangeMaxResults(it)) }.toTypedArray()
 
     private class ChangeMaxResults(private val choice: Int) : ToggleAction(choice.toString()), DumbAware {
         override fun isSelected(e: AnActionEvent): Boolean = getEditorState(e.dataContext)?.maxResults == choice
