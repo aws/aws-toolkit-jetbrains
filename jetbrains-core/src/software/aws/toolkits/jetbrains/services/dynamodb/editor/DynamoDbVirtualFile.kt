@@ -9,12 +9,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 /**
  * Light virtual file to represent a dynamo table, used to open the custom editor
  */
-class DynamoDbVirtualFile(private val tableArm: String, val dynamoDbClient: DynamoDbClient) : LightVirtualFile(tableArm) {
+class DynamoDbVirtualFile(private val tableArn: String, val dynamoDbClient: DynamoDbClient) : LightVirtualFile(tableArn) {
     init {
         isWritable = false
     }
 
-    val tableName = tableArm.substringAfterLast('/')
+    val tableName = tableArn.substringAfterLast('/')
 
     /**
      * Override the presentable name so editor tabs only use table name
@@ -24,7 +24,7 @@ class DynamoDbVirtualFile(private val tableArm: String, val dynamoDbClient: Dyna
     /**
      * Use the ARN as the path so editor tool tips can be differentiated
      */
-    override fun getPath(): String = tableArm
+    override fun getPath(): String = tableArn
 
     /**
      * We use the ARN as the equality, so that we can show 2 tables from different accounts/regions with same name
@@ -33,8 +33,8 @@ class DynamoDbVirtualFile(private val tableArm: String, val dynamoDbClient: Dyna
         if (other !is DynamoDbVirtualFile) {
             return false
         }
-        return this.tableArm == other.tableArm
+        return this.tableArn == other.tableArn
     }
 
-    override fun hashCode(): Int = tableArm.hashCode()
+    override fun hashCode(): Int = tableArn.hashCode()
 }
