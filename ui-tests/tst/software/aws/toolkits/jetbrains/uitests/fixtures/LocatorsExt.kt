@@ -8,12 +8,10 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.Locators
 
 object LocatorsExt {
-    fun byType(clsName: String,): Locator {
-        return byXpath(
-            "by type $clsName",
-            """//div[@javaclass="$clsName" or contains(@classhierarchy, "$clsName ") or contains(@classhierarchy, " $clsName ")]"""
-        )
-    }
+    fun byType(clsName: String,): Locator = byXpath(
+        "by type $clsName",
+        """//div[@javaclass="$clsName" or contains(@classhierarchy, "$clsName ") or contains(@classhierarchy, " $clsName ")]"""
+    )
 
     fun byTypeAndProperties(
         clsName: String,
