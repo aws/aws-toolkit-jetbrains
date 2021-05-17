@@ -13,10 +13,6 @@ import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
 import java.time.Duration
 
-fun ComponentFixture.rightClick() = step("Right click") {
-    runJs("robot.rightClick(component);")
-}
-
 fun ContainerFixture.pressOk() = findAndClick("//div[@text='OK']")
 fun ContainerFixture.pressDelete() = findAndClick("//div[@text='Delete']")
 fun ContainerFixture.pressCancel() = findAndClick("//div[@text='Cancel']")
@@ -26,6 +22,27 @@ fun ContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath
 
 fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).text = text
+}
+
+fun ContainerFixture.fillSearchTextField(text: String) = step("Fill search text field with $text") {
+    val field = find<ComponentFixture>(byXpath("//div[@class='SearchTextField']"), Duration.ofSeconds(5))
+    field.runJs(
+        """
+            component.getTextEditor().setText('$text');
+            component.getTextEditor().postActionEvent();
+        """.trimIndent(),
+        runInEdt = true
+    )
+}
+
+fun ContainerFixture.clearSearchTextField() = step("Clear search text field") {
+    val field = find<ComponentFixture>(byXpath("//div[@class='SearchTextField']"), Duration.ofSeconds(5))
+    field.runJs(
+        """
+            component.getTextEditor().getClientProperty('JTextField.Search.CancelAction').actionPerformed(null)
+        """.trimIndent(),
+        runInEdt = true
+    )
 }
 
 fun ContainerFixture.fillDeletionAndConfirm() = step("Fill in delete me and delete") {
