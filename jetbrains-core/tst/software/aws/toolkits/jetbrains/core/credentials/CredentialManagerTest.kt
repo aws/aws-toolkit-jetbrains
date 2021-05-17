@@ -215,7 +215,7 @@ class CredentialManagerTest {
 
     private class TestCredentialProviderFactory(
         override val id: String,
-        private val initialProviderIds: List<String>,
+        private val initialProviderIds: List<String>
     ) : CredentialProviderFactory {
         private val credentialsMapping = mutableMapOf<String, TestCredentialProviderIdentifier>()
         private lateinit var callback: CredentialsChangeListener
