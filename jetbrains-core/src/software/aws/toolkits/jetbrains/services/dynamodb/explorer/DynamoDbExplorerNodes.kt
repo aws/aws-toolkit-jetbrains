@@ -25,7 +25,7 @@ class DynamoDbServiceNode(project: Project, service: AwsExplorerServiceNode) :
 }
 
 class DynamoDbTableNode(project: Project, private val tableName: String) :
-    AwsExplorerResourceNode<String>(project, DynamoDbClient.SERVICE_METADATA_ID, tableName, AwsIcons.Resources.Dynamo.TABLE) {
+    AwsExplorerResourceNode<String>(project, DynamoDbClient.SERVICE_METADATA_ID, tableName, AwsIcons.Resources.DynamoDb.TABLE) {
     private val arn = run {
         val account = tryOrNull { nodeProject.getResourceIfPresent(StsResources.ACCOUNT) } ?: ""
         "arn:${nodeProject.activeRegion().partitionId}:dynamodb:${nodeProject.activeRegion().id}:$account:table/$tableName"

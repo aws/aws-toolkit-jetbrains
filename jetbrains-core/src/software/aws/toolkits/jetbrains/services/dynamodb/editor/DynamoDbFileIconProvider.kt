@@ -11,7 +11,7 @@ import javax.swing.Icon
 
 class DynamoDbFileIconProvider : FileIconProvider {
     override fun getIcon(file: VirtualFile, flags: Int, project: Project?): Icon? = if (file is DynamoDbVirtualFile) {
-        AwsIcons.Resources.Dynamo.TABLE
+        AwsIcons.Resources.DynamoDb.TABLE
     } else {
         null
     }

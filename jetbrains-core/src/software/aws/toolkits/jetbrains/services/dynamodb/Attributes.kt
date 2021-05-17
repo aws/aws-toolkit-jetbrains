@@ -8,6 +8,8 @@ import java.util.Base64
 
 typealias SearchResults = List<Map<String, DynamoAttribute<*>>>
 
+private const val QUOTE = '"'
+
 /**
  * See:
  * * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_AttributeValue.html,
@@ -22,7 +24,7 @@ sealed class DynamoAttribute<T>(val value: T) {
 class StringAttribute(value: String) : DynamoAttribute<String>(value) {
     override val dataType: String = "S"
 
-    override fun stringRepresentation(): String = '"' + value + '"'
+    override fun stringRepresentation(): String = QUOTE + value + QUOTE
 }
 
 class BooleanAttribute(value: Boolean) : DynamoAttribute<Boolean>(value) {
@@ -49,7 +51,7 @@ class StringSetAttribute(value: List<String>) : DynamoAttribute<List<String>>(va
     override val dataType: String = "SS"
 
     override fun stringRepresentation(): String = value.joinToString(prefix = "{", postfix = "}") {
-        "\"$it\""
+        QUOTE + it + QUOTE
     }
 }
 
@@ -71,7 +73,7 @@ class MapAttribute(value: Map<String, DynamoAttribute<*>>) : DynamoAttribute<Map
     override val dataType: String = "M"
 
     override fun stringRepresentation(): String = value.entries.joinToString(prefix = "{", postfix = "}") {
-        """"${it.key}": {"${it.value.dataType}": ${it.value.stringRepresentation()}}"""
+        "$QUOTE${it.key}$QUOTE: {$QUOTE${it.value.dataType}$QUOTE: ${it.value.stringRepresentation()}}"
     }
 }
 
@@ -79,7 +81,7 @@ class ListAttribute(value: List<DynamoAttribute<*>>) : DynamoAttribute<List<Dyna
     override val dataType: String = "L"
 
     override fun stringRepresentation(): String = value.joinToString(prefix = "[", postfix = "]") {
-        """{"${it.dataType}": ${it.stringRepresentation()}}"""
+        "{$QUOTE${it.dataType}$QUOTE: ${it.stringRepresentation()}}"
     }
 }
 

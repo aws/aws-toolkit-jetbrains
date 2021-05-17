@@ -10,10 +10,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient
  * Light virtual file to represent a dynamo table, used to open the custom editor
  */
 class DynamoDbVirtualFile(private val tableArn: String, val dynamoDbClient: DynamoDbClient) : LightVirtualFile(tableArn) {
-    init {
-        isWritable = false
-    }
-
     val tableName = tableArn.substringAfterLast('/')
 
     /**
@@ -25,6 +21,8 @@ class DynamoDbVirtualFile(private val tableArn: String, val dynamoDbClient: Dyna
      * Use the ARN as the path so editor tool tips can be differentiated
      */
     override fun getPath(): String = tableArn
+
+    override fun isWritable(): Boolean = false
 
     /**
      * We use the ARN as the equality, so that we can show 2 tables from different accounts/regions with same name

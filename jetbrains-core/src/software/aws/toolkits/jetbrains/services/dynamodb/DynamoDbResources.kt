@@ -7,7 +7,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 
 object DynamoDbResources {
-    val LIST_TABLES = ClientBackedCachedResource(DynamoDbClient::class, "dynamo.list_tables") {
+    val LIST_TABLES = ClientBackedCachedResource(DynamoDbClient::class, "dynamodb.list_tables") {
         listTablesPaginator().tableNames().toList()
     }
 }

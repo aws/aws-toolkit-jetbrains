@@ -18,8 +18,8 @@ class SearchResultsPanel : BorderLayoutPanel() {
     private val resultsTable = TableResults()
 
     init {
-        val primaryToolbar = createToolBar("aws.toolkit.dynamoViewer.toolbar.primary")
-        val secondaryToolbar = createToolBar("aws.toolkit.dynamoViewer.toolbar.secondary")
+        val primaryToolbar = createToolbar("aws.toolkit.dynamoViewer.toolbar.primary")
+        val secondaryToolbar = createToolbar("aws.toolkit.dynamoViewer.toolbar.secondary")
 
         val toolbarPanel = BorderLayoutPanel().apply {
             addToLeft(primaryToolbar.component)
@@ -32,7 +32,7 @@ class SearchResultsPanel : BorderLayoutPanel() {
         border = IdeBorderFactory.createBorder(SideBorder.TOP)
     }
 
-    private fun createToolBar(group: String): ActionToolbar {
+    private fun createToolbar(group: String): ActionToolbar {
         val actionManager = ActionManager.getInstance()
         val actionGroup = actionManager.getAction(group) as ActionGroup
 
