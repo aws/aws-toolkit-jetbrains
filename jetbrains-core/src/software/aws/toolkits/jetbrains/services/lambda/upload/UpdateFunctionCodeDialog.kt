@@ -11,7 +11,8 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.lambda.model.PackageType
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.Lambda.findPsiElementsForHandler
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
@@ -20,6 +21,8 @@ import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.steps.updateLambdaCodeWorkflowForImage
 import software.aws.toolkits.jetbrains.services.lambda.steps.updateLambdaCodeWorkflowForZip
+import software.aws.toolkits.jetbrains.services.sts.StsResources
+import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
 import software.aws.toolkits.jetbrains.settings.UpdateLambdaSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -55,13 +58,21 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
     override fun doValidate(): ValidationInfo? = view.validatePanel()
 
     override fun doCancelAction() {
-        LambdaTelemetry.deploy(
-            project,
-            result = Result.Cancelled,
-            regionId = project.activeRegion().id,
-            lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
-            initialDeploy = false
-        )
+        val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+        val account = connectionSettings?.let { AwsResourceCache.getInstance().getResourceIfPresent(StsResources.ACCOUNT, it) }
+        account?.let { it ->
+            MetricEventMetadata(
+                awsAccount = it,
+                awsRegion = connectionSettings.region.toString()
+            )
+        }?.let { metricEventMetadata ->
+            LambdaTelemetry.deploy(
+                metadata = metricEventMetadata,
+                result = Result.Cancelled,
+                lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
+                initialDeploy = false
+            )
+        }
         super.doCancelAction()
     }
 
@@ -73,6 +84,8 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
     override fun getHelpId(): String = HelpIds.UPDATE_FUNCTION_CODE_DIALOG.id
 
     private fun upsertLambdaCode() {
+        val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+        val account = connectionSettings?.let { AwsResourceCache.getInstance().getResourceIfPresent(StsResources.ACCOUNT, it) }
         if (!okAction.isEnabled) {
             return
         }
@@ -85,24 +98,36 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
                 title = message("lambda.service_name"),
                 content = message("lambda.function.code_updated.notification", initialSettings.name)
             )
-            LambdaTelemetry.deploy(
-                project,
-                result = Result.Succeeded,
-                regionId = project.activeRegion().id,
-                lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
-                initialDeploy = false
-            )
+            account?.let { it ->
+                MetricEventMetadata(
+                    awsAccount = it,
+                    awsRegion = connectionSettings.region.toString()
+                )
+            }?.let { metricEventMetadata ->
+                LambdaTelemetry.deploy(
+                    metadata = metricEventMetadata,
+                    result = Result.Succeeded,
+                    lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
+                    initialDeploy = false
+                )
+            }
         }
 
         workflow.onError = {
             it.notifyError(project = project, title = message("lambda.service_name"))
-            LambdaTelemetry.deploy(
-                project,
-                result = Result.Failed,
-                regionId = project.activeRegion().id,
-                lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
-                initialDeploy = false
-            )
+            account?.let { it ->
+                MetricEventMetadata(
+                    awsAccount = it,
+                    awsRegion = connectionSettings.region.toString()
+                )
+            }?.let { metricEventMetadata ->
+                LambdaTelemetry.deploy(
+                    metadata = metricEventMetadata,
+                    result = Result.Failed,
+                    lambdaPackageType = LambdaPackageType.from(initialSettings.packageType.toString()),
+                    initialDeploy = false
+                )
+            }
         }
 
         workflow.startExecution()

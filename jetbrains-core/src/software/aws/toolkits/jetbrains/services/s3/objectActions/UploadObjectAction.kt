@@ -70,9 +70,9 @@ fun uploadObjects(project: Project, treeTable: S3TreeTable, files: List<VirtualF
                 }
             }
 
-            S3Telemetry.uploadObjects(project, Result.Succeeded, files.size.toDouble())
+            S3Telemetry.uploadObjects(project, Result.Succeeded)
         } catch (e: Exception) {
-            S3Telemetry.uploadObjects(project, Result.Failed, files.size.toDouble())
+            S3Telemetry.uploadObjects(project, Result.Failed)
         } finally {
             if (changeMade) {
                 treeTable.invalidateLevel(parentNode)

@@ -17,6 +17,7 @@ import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
+import software.aws.toolkits.core.credentials.CredentialSourceId
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.region.AwsRegion
@@ -214,10 +215,11 @@ class CredentialManagerTest {
 
     private class TestCredentialProviderFactory(
         override val id: String,
-        private val initialProviderIds: List<String>
+        private val initialProviderIds: List<String>,
     ) : CredentialProviderFactory {
         private val credentialsMapping = mutableMapOf<String, TestCredentialProviderIdentifier>()
         private lateinit var callback: CredentialsChangeListener
+        override val credentialSourceId: CredentialSourceId = CredentialSourceId.SharedCredentials
 
         override fun setUp(credentialLoadCallback: CredentialsChangeListener) {
             callback = credentialLoadCallback
