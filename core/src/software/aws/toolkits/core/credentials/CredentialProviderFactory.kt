@@ -14,7 +14,12 @@ interface CredentialProviderFactory {
      * ID used to uniquely identify this factory
      */
     val id: String
+
+    /**
+     * ID used to indicate where credentials are stored or retrieved from
+     */
     val credentialSourceId: CredentialSourceId
+
     /**
      * Invoked on creation of the factory to update the credential system with what [CredentialIdentifier] this factory
      * is capable of creating. The provided [credentialLoadCallback] is capable of being invoked multiple times in the case that

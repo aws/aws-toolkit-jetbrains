@@ -69,7 +69,6 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
     override fun doValidate(): ValidationInfo? = view.validatePanel()
 
     override fun doCancelAction() {
-
         LambdaTelemetry.deploy(
             project,
             result = Result.Cancelled,
