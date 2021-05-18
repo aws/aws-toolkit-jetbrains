@@ -40,7 +40,6 @@ class RunCommandDialogTest {
 
     @Test
     fun `Correctly formed string of parameters to execute command is returned`() {
-
         resourceCache.addEntry(
             projectRule.project, EcsResources.listTasks(clusterArn, serviceArn),
             CompletableFuture.completedFuture(taskList)

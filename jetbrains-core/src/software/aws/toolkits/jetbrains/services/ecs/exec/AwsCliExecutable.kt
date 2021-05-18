@@ -45,6 +45,7 @@ class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
 
     companion object {
         val MAX_VERSION: SemVer = SemVer("3.0.0", 3, 0, 0) // exclusive
+
         val MIN_VERSION: SemVer = SemVer("1.0.0", 1, 0, 0) // inclusive
     }
 }

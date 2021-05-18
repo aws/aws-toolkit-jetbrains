@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
-import com.intellij.execution.ExecutionException
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
@@ -103,9 +102,9 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 )
                 .build()
             environment.runner.execute(environment)
-           // EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Command)
-        } catch (e : Exception) {
-        EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Command)
+            EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Command)
+        } catch (e: Exception) {
+            EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Command)
         }
     }
 

@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -98,7 +99,7 @@ class OpenShellInContainerDialog(
                 val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
                 val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
-                runInEdt {
+                runInEdt(ModalityState.any()) {
                     TerminalView.getInstance(project).createNewSession(runner, TerminalTabState().also { it.myTabName = container.containerDefinition.name() })
                 }
                 EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Shell)

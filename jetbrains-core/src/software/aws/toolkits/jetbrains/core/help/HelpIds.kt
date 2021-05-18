@@ -74,11 +74,13 @@ enum class HelpIds(shortId: String, val url: String) {
         "rdsIamAuth",
         "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html"
     ),
+
     // Session Manager Plugin
     SESSION_MANAGER_PLUGIN(
         "sessionManagerPluginInstallationInstructions",
         "https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html"
     ),
+
     // AWS CLI
     AWS_CLI_INSTALL(
         "awsCli.install",
