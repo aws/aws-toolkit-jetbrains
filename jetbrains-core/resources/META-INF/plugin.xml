@@ -144,6 +144,7 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamSettings"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CloudDebugSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
@@ -288,6 +289,9 @@ with what features/services are supported.
             <separator/>
             <action id="ecs.function.instrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.InstrumentResourceFromExplorerAction"/>
             <action id="clouddebug.resource.deinstrument" class="software.aws.toolkits.jetbrains.services.clouddebug.actions.DeinstrumentResourceFromExplorerAction"/>
+            <separator/>
+            <action id="ecs.exec.enable" class="software.aws.toolkits.jetbrains.services.ecs.exec.EnableEcsExecuteCommand"/>
+            <action id="ecs.exec.disable" class="software.aws.toolkits.jetbrains.services.ecs.exec.DisableEcsExecuteCommand"/>
             <separator/>
         </group>
 
