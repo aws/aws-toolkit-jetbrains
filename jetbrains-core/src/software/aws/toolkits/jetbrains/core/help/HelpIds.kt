@@ -18,7 +18,7 @@ enum class HelpIds(shortId: String, val url: String) {
         "https://docs.aws.amazon.com/console/apprunner/manage-connections"
     ),
 
-
+    // Explorer
     EXPLORER_WINDOW(
         "explorerWindow",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer"

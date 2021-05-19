@@ -33,7 +33,7 @@ class DeployAction : SingleResourceNodeAction<AppRunnerServiceNode>(message("app
     override fun update(selected: AppRunnerServiceNode, e: AnActionEvent) {
         e.presentation.isVisible = selected.service.status() == ServiceStatus.RUNNING
     }
-    
+
     override fun actionPerformed(selected: AppRunnerServiceNode, e: AnActionEvent) {
         val project = selected.nodeProject
         ProgressManager.getInstance().run(
