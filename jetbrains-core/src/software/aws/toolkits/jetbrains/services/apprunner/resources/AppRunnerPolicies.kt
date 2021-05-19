@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.apprunner.resources
 
 // Policy name and content from https://docs.aws.amazon.com/apprunner/latest/dg/security_iam_service-with-iam.html
 const val APPRUNNER_ECR_DEFAULT_ROLE_NAME = "AppRunnerECRAccessRole"
-const val APPRUNNER_ECR_MANAGED_POLICY = "AWSAppRunnerServicePolicyForECRAccess"
-const val APPRUNNER_SERVICE_ROLE_URI = "apprunner.amazonaws.com"
+const val APPRUNNER_ECR_MANAGED_POLICY = "service-role/AWSAppRunnerServicePolicyForECRAccess"
+const val APPRUNNER_SERVICE_ROLE_URI = "build.apprunner.amazonaws.com"
