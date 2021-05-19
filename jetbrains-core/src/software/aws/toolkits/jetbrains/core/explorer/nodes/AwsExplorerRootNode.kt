@@ -7,6 +7,7 @@ import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
+import software.amazon.awssdk.services.apprunner.AppRunnerClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
@@ -20,11 +21,12 @@ class AwsExplorerRootNode(private val nodeProject: Project) : AbstractTreeNode<A
         val regionProvider = AwsRegionProvider.getInstance()
 
         return EP_NAME.extensionList
-            .filter { regionProvider.isServiceSupported(region, it.serviceId) }
+            // TODO remove AppRunner hack
+            .filter { regionProvider.isServiceSupported(region, it.serviceId) || (it.serviceId == AppRunnerClient.SERVICE_NAME && region.id == "us-east-1") }
             .map { it.buildServiceRootNode(nodeProject) }
     }
 
-    override fun update(presentation: PresentationData) { }
+    override fun update(presentation: PresentationData) {}
 
     companion object {
         private val EP_NAME = ExtensionPointName<AwsExplorerServiceNode>("aws.toolkit.explorer.serviceNode")

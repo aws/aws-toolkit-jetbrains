@@ -4,6 +4,10 @@
 package software.aws.toolkits.jetbrains.core.help
 
 enum class HelpIds(shortId: String, val url: String) {
+    APPRUNNER_PAUSE_RESUME(
+        "appRunnerPauseResume",
+        "https://docs,aws.amazon.com/apprunner/latest/dg/manage-pause.html"
+    ),
     EXPLORER_WINDOW(
         "explorerWindow",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer"
