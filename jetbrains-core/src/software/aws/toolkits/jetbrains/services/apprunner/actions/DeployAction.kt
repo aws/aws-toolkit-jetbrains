@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
 import software.amazon.awssdk.services.apprunner.model.AppRunnerException
+import software.amazon.awssdk.services.apprunner.model.ServiceStatus
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -29,6 +30,10 @@ import software.aws.toolkits.telemetry.ApprunnerTelemetry
 import software.aws.toolkits.telemetry.Result
 
 class DeployAction : SingleResourceNodeAction<AppRunnerServiceNode>(message("apprunner.action.deploy")), DumbAware {
+    override fun update(selected: AppRunnerServiceNode, e: AnActionEvent) {
+        e.presentation.isVisible = selected.service.status() == ServiceStatus.RUNNING
+    }
+    
     override fun actionPerformed(selected: AppRunnerServiceNode, e: AnActionEvent) {
         val project = selected.nodeProject
         ProgressManager.getInstance().run(
