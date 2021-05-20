@@ -21,8 +21,7 @@ class AwsExplorerRootNode(private val nodeProject: Project) : AbstractTreeNode<A
         val regionProvider = AwsRegionProvider.getInstance()
 
         return EP_NAME.extensionList
-            // TODO remove AppRunner hack
-            .filter { regionProvider.isServiceSupported(region, it.serviceId) || (it.serviceId == AppRunnerClient.SERVICE_NAME && region.id == "us-east-1") }
+            .filter { regionProvider.isServiceSupported(region, it.serviceId) }
             .map { it.buildServiceRootNode(nodeProject) }
     }
 
