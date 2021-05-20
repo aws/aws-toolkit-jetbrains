@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
-import org.jetbrains.intellij.Utils
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
 import software.aws.toolkits.gradle.intellij.IdeVersions
@@ -96,7 +95,7 @@ afterEvaluate {
     }
 
     tasks.withType<Test>().all {
-        systemProperty("log.dir", "${Utils.stringInput(intellij.sandboxDir)}-test/logs")
+        systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" })
         systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
     }
 
