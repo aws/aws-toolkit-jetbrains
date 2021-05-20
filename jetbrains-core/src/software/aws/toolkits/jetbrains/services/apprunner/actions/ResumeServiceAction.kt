@@ -6,7 +6,10 @@ package software.aws.toolkits.jetbrains.services.apprunner.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
+import com.intellij.ui.components.JBLabel
+import com.intellij.ui.layout.panel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
@@ -18,6 +21,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
+import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -26,6 +30,7 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.ApprunnerTelemetry
 import software.aws.toolkits.telemetry.Result
+import javax.swing.JComponent
 
 class ResumeServiceAction :
     SingleResourceNodeAction<AppRunnerServiceNode>(message("apprunner.action.resume")),
@@ -35,15 +40,27 @@ class ResumeServiceAction :
         e.presentation.isVisible = selected.service.status() == ServiceStatus.PAUSED
     }
 
-    // TODO add help links
     override fun actionPerformed(selected: AppRunnerServiceNode, e: AnActionEvent) {
-        val answer = Messages.showYesNoDialog(
-            selected.nodeProject,
-            message("apprunner.resume.warning", selected.service.serviceName()),
-            message("apprunner.action.resume"),
-            Messages.getWarningIcon()
-        )
-        if (answer == Messages.YES) {
+        val dialog = object : DialogWrapper(selected.nodeProject) {
+            init {
+                init()
+                setOKButtonText(message("apprunner.action.resume.confirm"))
+            }
+
+            override fun getTitle(): String = message("apprunner.action.resume")
+            override fun getHelpId(): String = HelpIds.APPRUNNER_PAUSE_RESUME.id
+            override fun createCenterPanel(): JComponent = panel {
+                row {
+                    JBLabel().apply {
+                        text = message("apprunner.resume.warning", selected.service.serviceName())
+                        icon = Messages.getWarningIcon()
+                        iconTextGap = 8
+                    }(grow)
+                }
+            }
+        }
+
+        if (dialog.showAndGet()) {
             launch {
                 performResume(selected.nodeProject, selected.nodeProject.awsClient(), selected.service)
             }
