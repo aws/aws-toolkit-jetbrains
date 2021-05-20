@@ -28,7 +28,7 @@ class ViewSystemLogsAction :
             try {
                 viewLogGroup(selected, "service")
             } finally {
-                ApprunnerTelemetry.viewSystemLogs(selected.nodeProject)
+                ApprunnerTelemetry.viewServiceLogs(selected.nodeProject)
             }
         }
     }
