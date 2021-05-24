@@ -6,10 +6,10 @@ package software.aws.toolkits.jetbrains.core.utils
 /*
  * Replace with [kotlin.collections.buildList] when experimental is removed
  */
-fun <E> buildList(builderAction: MutableList<E>.() -> Unit): List<E> = ArrayList<E>().apply(builderAction)
-fun <E> buildList(capacity: Int, builderAction: MutableList<E>.() -> Unit): List<E> = ArrayList<E>(capacity).apply(builderAction)
+inline fun <E> buildList(builderAction: MutableList<E>.() -> Unit): List<E> = ArrayList<E>().apply(builderAction)
+inline fun <E> buildList(capacity: Int, builderAction: MutableList<E>.() -> Unit): List<E> = ArrayList<E>(capacity).apply(builderAction)
 
 /*
  * Replace with [kotlin.collections.buildMap] when experimental is removed
  */
-fun <T, U> buildMap(builderAction: MutableMap<T, U>.() -> Unit): Map<T, U> = mutableMapOf<T, U>().apply(builderAction)
+inline fun <T, U> buildMap(builderAction: MutableMap<T, U>.() -> Unit): Map<T, U> = mutableMapOf<T, U>().apply(builderAction)
