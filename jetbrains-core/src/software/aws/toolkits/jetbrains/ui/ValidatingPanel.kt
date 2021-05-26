@@ -24,14 +24,13 @@ import java.awt.event.ActionEvent
 import javax.swing.AbstractAction
 import javax.swing.JButton
 import javax.swing.JComponent
-import kotlin.reflect.jvm.jvmName
 
 class ValidatingPanel internal constructor(
     parentDisposable: Disposable,
     private val contentPanel: DialogPanel,
     validatingButtons: Map<JButton, (event: ActionEvent) -> Unit>
 ) : BorderLayoutPanel() {
-    private val disposable = Disposer.newDisposable(parentDisposable, this::class.jvmName)
+    private val disposable = Disposer.newDisposable(parentDisposable, this::class.java.name)
     private val validatingActions = createButtonActions(validatingButtons)
 
     // Used for the validateOnApply checking
