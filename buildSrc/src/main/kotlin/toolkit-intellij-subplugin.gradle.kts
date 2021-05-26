@@ -95,7 +95,7 @@ afterEvaluate {
     }
 
     tasks.withType<Test>().all {
-        systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" })
+        systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
         systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
     }
 
