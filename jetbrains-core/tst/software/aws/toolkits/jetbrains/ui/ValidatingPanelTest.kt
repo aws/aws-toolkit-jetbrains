@@ -14,8 +14,7 @@ import com.intellij.ui.layout.applyToComponent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import java.awt.event.ActionEvent
-import javax.swing.Action
+import javax.swing.JButton
 import javax.swing.JTextField
 
 @RunsInEdt
@@ -36,25 +35,25 @@ class ValidatingPanelTest {
     fun `valid panels can execute actions`() {
         val testPanel = TestPanel(initialTextValue = "Valid text")
 
-        assertThat(testPanel.validatingAction.isEnabled).isTrue
-        assertThat(testPanel.normalAction.isEnabled).isTrue
+        assertThat(testPanel.validatingButton.isEnabled).isTrue
+        assertThat(testPanel.normalButton.isEnabled).isTrue
 
-        assertThat(testPanel.executeValidatingAction()).isTrue
-        assertThat(testPanel.executeNormalAction()).isTrue
+        assertThat(testPanel.executeValidatingButton()).isTrue
+        assertThat(testPanel.executeNormalButton()).isTrue
     }
 
     @Test
     fun `invalid panels can only execute normal actions`() {
         val testPanel = TestPanel()
 
-        assertThat(testPanel.validatingAction.isEnabled).isTrue
-        assertThat(testPanel.normalAction.isEnabled).isTrue
+        assertThat(testPanel.validatingButton.isEnabled).isTrue
+        assertThat(testPanel.normalButton.isEnabled).isTrue
 
-        assertThat(testPanel.executeValidatingAction()).isFalse
-        assertThat(testPanel.executeNormalAction()).isTrue
+        assertThat(testPanel.executeValidatingButton()).isFalse
+        assertThat(testPanel.executeNormalButton()).isTrue
 
-        assertThat(testPanel.validatingAction.isEnabled).isFalse
-        assertThat(testPanel.normalAction.isEnabled).isTrue
+        assertThat(testPanel.validatingButton.isEnabled).isFalse
+        assertThat(testPanel.normalButton.isEnabled).isTrue
     }
 
     @Test
@@ -63,8 +62,8 @@ class ValidatingPanelTest {
 
         assertThat(testPanel.textFieldValidator?.validationInfo).isNull()
 
-        assertThat(testPanel.executeValidatingAction()).isFalse
-        assertThat(testPanel.validatingAction.isEnabled).isFalse
+        assertThat(testPanel.executeValidatingButton()).isFalse
+        assertThat(testPanel.validatingButton.isEnabled).isFalse
 
         assertThat(testPanel.textFieldValidator?.validationInfo?.message).isNotEmpty
     }
@@ -74,17 +73,17 @@ class ValidatingPanelTest {
         val testPanel = TestPanel()
 
         assertThat(testPanel.textFieldValidator?.validationInfo).isNull()
-        assertThat(testPanel.validatingAction.isEnabled).isTrue
+        assertThat(testPanel.validatingButton.isEnabled).isTrue
 
         testPanel.textFieldComponent.text = "Foo"
 
         assertThat(testPanel.textFieldValidator?.validationInfo?.message).isNotEmpty
-        assertThat(testPanel.validatingAction.isEnabled).isFalse
+        assertThat(testPanel.validatingButton.isEnabled).isFalse
 
         testPanel.textFieldComponent.text = "Valid Text"
 
         assertThat(testPanel.textFieldValidator?.validationInfo).isNull()
-        assertThat(testPanel.validatingAction.isEnabled).isTrue
+        assertThat(testPanel.validatingButton.isEnabled).isTrue
     }
 
     @Test
@@ -97,7 +96,7 @@ class ValidatingPanelTest {
 
         testPanel.textFieldComponent.text = updatedText
 
-        assertThat(testPanel.executeValidatingAction()).isTrue
+        assertThat(testPanel.executeValidatingButton()).isTrue
 
         assertThat(testPanel.testText).isEqualTo(updatedText)
     }
@@ -105,16 +104,31 @@ class ValidatingPanelTest {
     inner class TestPanel(initialTextValue: String = "") {
         var testText = initialTextValue
 
-        private val validatingActionName = "NeedsValidation"
-        private val normalActionName = "DoesNotNeedValidation"
-        private val testEvent = ActionEvent(this, ActionEvent.ACTION_PERFORMED, "test")
-        private var validatingActionRan = false
-        private var normalActionRan = false
+        private val validatingButtonName = "NeedsValidation"
+        private val normalButtonName = "DoesNotNeedValidation"
+        private var validatingButtonRan = false
+        private var normalButtonRan = false
         lateinit var textFieldComponent: JTextField
+            private set
+        lateinit var validatingButton: JButton
+            private set
+        lateinit var normalButton: JButton
             private set
 
         private val panel = validatingPanel(disposableRule.disposable) {
             row {
+                validatingButton(validatingButtonName) {
+                    validatingButtonRan = true
+                }.applyToComponent {
+                    validatingButton = this
+                }
+
+                button(normalButtonName) {
+                    normalButtonRan = true
+                }.applyToComponent {
+                    normalButton = this
+                }
+
                 textField(::testText)
                     .withValidationOnInput { it.validateText() }
                     .withValidationOnApply { it.validateText() }
@@ -122,36 +136,20 @@ class ValidatingPanelTest {
                         textFieldComponent = this
                     }
             }
-
-            actions {
-                addAction(validatingActionName) {
-                    validatingActionRan = true
-                }
-
-                addAction(normalActionName, requiresValidation = false) {
-                    normalActionRan = true
-                }
-            }
         }
 
         private fun JBTextField.validateText() = if (this.text.length < 5) ValidationInfo("Test Error, '${this.text}'.length() < 5", this) else null
 
-        val validatingAction: Action
-            get() = panel.getAction(validatingActionName)!!
-
-        fun executeValidatingAction(): Boolean {
-            validatingActionRan = false
-            validatingAction.actionPerformed(testEvent)
-            return validatingActionRan
+        fun executeValidatingButton(): Boolean {
+            validatingButtonRan = false
+            validatingButton.doClick()
+            return validatingButtonRan
         }
 
-        val normalAction: Action
-            get() = panel.getAction(normalActionName)!!
-
-        fun executeNormalAction(): Boolean {
-            normalActionRan = false
-            normalAction.actionPerformed(testEvent)
-            return normalActionRan
+        fun executeNormalButton(): Boolean {
+            normalButtonRan = false
+            normalButton.doClick()
+            return normalButtonRan
         }
 
         val textFieldValidator: ComponentValidator?

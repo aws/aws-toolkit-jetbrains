@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.ui
 
+import com.intellij.BundleBase
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -12,29 +13,33 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.wm.IdeFocusManager
+import com.intellij.ui.layout.Cell
+import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.LayoutBuilder
 import com.intellij.ui.layout.RowBuilder
 import com.intellij.ui.layout.panel
 import com.intellij.util.Alarm
 import com.intellij.util.ui.components.BorderLayoutPanel
-import java.awt.Component
+import software.aws.toolkits.jetbrains.core.utils.buildList
 import java.awt.event.ActionEvent
 import javax.swing.AbstractAction
 import javax.swing.JButton
 import javax.swing.JComponent
 import kotlin.reflect.jvm.jvmName
 
-class ValidatingPanel internal constructor(parentDisposable: Disposable, private val contentPanel: DialogPanel, panelActions: List<PanelAction>) :
-    BorderLayoutPanel() {
+class ValidatingPanel internal constructor(
+    parentDisposable: Disposable,
+    private val contentPanel: DialogPanel,
+    validatingButtons: Map<JButton, (event: ActionEvent) -> Unit>
+) : BorderLayoutPanel() {
     private val disposable = Disposer.newDisposable(parentDisposable, this::class.jvmName)
-    private val buttonActions = createButtonActions(panelActions)
+    private val validatingActions = createButtonActions(validatingButtons)
 
     // Used for the validateOnApply checking
     private val validateCallbacks = contentPanel.validateCallbacks.toList()
     private val validationAlarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, disposable)
     private var previousErrors = emptyList<ValidationInfo>()
     private var validatorStarted = false
-    private var performingAction = false
 
     init {
         // Used for the validateOnInput checking
@@ -43,32 +48,23 @@ class ValidatingPanel internal constructor(parentDisposable: Disposable, private
         }
 
         addToCenter(contentPanel)
-        addToBottom(createActionsPanel())
     }
 
-    private fun createButtonActions(panelActions: List<PanelAction>) = panelActions.associateBy(
-        keySelector = { it.name },
-        valueTransform = {
-            if (it.requiresValidation) {
-                ValidatingAction(it.name, it.actionListener)
-            } else {
-                ButtonAction(it.name, it.actionListener)
-            }
-        }
-    )
-
-    private fun createActionsPanel(): Component = panel {
-        row {
-            buttonActions.forEach {
-                component(JButton(it.value))
+    private fun createButtonActions(buttons: Map<JButton, (event: ActionEvent) -> Unit>): List<ValidatingAction> {
+        return buildList(buttons.size) {
+            buttons.forEach { (button, action) ->
+                add(
+                    ValidatingAction(action).also {
+                        button.hideActionText = true // Text is already configured on the button
+                        button.action = it
+                    }
+                )
             }
         }
     }
-
-    fun getAction(name: String): ButtonAction? = buttonActions[name]
 
     private fun updateActionButtons(panelIsValid: Boolean) {
-        buttonActions.values.filterIsInstance<ValidatingAction>().forEach { it.isEnabled = panelIsValid }
+        validatingActions.forEach { it.isEnabled = panelIsValid }
     }
 
     private fun performValidation(): List<ValidationInfo> {
@@ -113,27 +109,11 @@ class ValidatingPanel internal constructor(parentDisposable: Disposable, private
                 initValidation()
             }
         }
-        validationAlarm.addRequest(validateRequest, VALIDATION_INTERVAL, ModalityState.stateForComponent(this))
+        validationAlarm.addRequest(validateRequest, VALIDATION_INTERVAL_MS, ModalityState.stateForComponent(this))
     }
 
-    open inner class ButtonAction internal constructor(name: String, private val listener: (event: ActionEvent) -> Unit) : AbstractAction(name) {
+    private inner class ValidatingAction(private val listener: (ActionEvent) -> Unit) : AbstractAction() {
         override fun actionPerformed(e: ActionEvent) {
-            if (performingAction) return
-            try {
-                performingAction = true
-                doAction(e)
-            } finally {
-                performingAction = false
-            }
-        }
-
-        protected open fun doAction(e: ActionEvent) {
-            listener.invoke(e)
-        }
-    }
-
-    private inner class ValidatingAction internal constructor(name: String, listener: (ActionEvent) -> Unit) : ButtonAction(name, listener) {
-        override fun doAction(e: ActionEvent) {
             val errorList = performValidation()
             if (errorList.isNotEmpty()) {
                 // Give the first error focus
@@ -146,8 +126,7 @@ class ValidatingPanel internal constructor(parentDisposable: Disposable, private
                 startTrackingValidation()
             } else {
                 contentPanel.apply()
-
-                super.doAction(e)
+                listener.invoke(e)
             }
         }
     }
@@ -189,34 +168,27 @@ class ValidatingPanel internal constructor(parentDisposable: Disposable, private
     }
 
     private companion object {
-        const val VALIDATION_INTERVAL = 300
+        const val VALIDATION_INTERVAL_MS = 300
     }
 }
 
 interface ValidatingPanelBuilder : RowBuilder {
-    fun actions(isVertical: Boolean = false, init: ValidatingActionsBuilder.() -> Unit)
+    fun Cell.validatingButton(text: String, actionListener: (event: ActionEvent) -> Unit): CellBuilder<JButton>
 }
 
 class ValidatingPanelBuilderImpl(private val contentBuilder: LayoutBuilder) :
     ValidatingPanelBuilder,
     RowBuilder by contentBuilder {
-    internal val actions = mutableListOf<PanelAction>()
+    internal val actions = mutableMapOf<JButton, (event: ActionEvent) -> Unit>()
 
-    override fun actions(isVertical: Boolean, init: ValidatingActionsBuilder.() -> Unit) {
-        ValidatingActionsBuilder(this@ValidatingPanelBuilderImpl).init()
+    override fun Cell.validatingButton(text: String, actionListener: (event: ActionEvent) -> Unit): CellBuilder<JButton> {
+        val button = JButton(BundleBase.replaceMnemonicAmpersand(text))
+        actions[button] = actionListener
+        return component(button)
     }
 
     fun build(parentDisposable: Disposable, contentPanel: DialogPanel): ValidatingPanel = ValidatingPanel(parentDisposable, contentPanel, actions)
 }
-
-class ValidatingActionsBuilder(private val validatingPanelBuilder: ValidatingPanelBuilderImpl) {
-    fun addAction(name: String, requiresValidation: Boolean = true, actionListener: (event: ActionEvent) -> Unit) {
-        validatingPanelBuilder.actions.add(PanelAction(name, requiresValidation, actionListener))
-    }
-}
-
-@PublishedApi
-internal data class PanelAction(val name: String, val requiresValidation: Boolean, val actionListener: (event: ActionEvent) -> Unit)
 
 fun validatingPanel(disposable: Disposable, init: ValidatingPanelBuilder.() -> Unit): ValidatingPanel {
     val ref = Ref<ValidatingPanelBuilderImpl>()
