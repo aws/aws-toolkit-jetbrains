@@ -11,7 +11,6 @@ import com.intellij.openapi.ui.ComponentValidator
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.Ref
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.ui.layout.Cell
 import com.intellij.ui.layout.CellBuilder
@@ -189,13 +188,11 @@ class ValidatingPanelBuilderImpl(private val contentBuilder: LayoutBuilder) :
 }
 
 fun validatingPanel(disposable: Disposable, init: ValidatingPanelBuilder.() -> Unit): ValidatingPanel {
-    val ref = Ref<ValidatingPanelBuilderImpl>()
+    lateinit var builder: ValidatingPanelBuilderImpl
     val contentPanel = panel {
-        val builder = ValidatingPanelBuilderImpl(this)
+        builder = ValidatingPanelBuilderImpl(this)
         builder.init()
-
-        ref.set(builder)
     }
 
-    return ref.get().build(disposable, contentPanel)
+    return builder.build(disposable, contentPanel)
 }
