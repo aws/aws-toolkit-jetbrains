@@ -50,16 +50,14 @@ class ValidatingPanel internal constructor(
         addToCenter(contentPanel)
     }
 
-    private fun createButtonActions(buttons: Map<JButton, (event: ActionEvent) -> Unit>): List<ValidatingAction> {
-        return buildList(buttons.size) {
-            buttons.forEach { (button, action) ->
-                add(
-                    ValidatingAction(action).also {
-                        button.hideActionText = true // Text is already configured on the button
-                        button.action = it
-                    }
-                )
-            }
+    private fun createButtonActions(buttons: Map<JButton, (event: ActionEvent) -> Unit>): List<ValidatingAction> = buildList(buttons.size) {
+        buttons.forEach { (button, action) ->
+            add(
+                ValidatingAction(action).also {
+                    button.hideActionText = true // Text is already configured on the button
+                    button.action = it
+                }
+            )
         }
     }
 
