@@ -6,7 +6,6 @@ import software.aws.toolkits.gradle.changelog.tasks.GenerateGithubChangeLog
 
 val ideProfile = IdeVersions.ideProfile(project)
 val toolkitVersion: String by project
-val ktlintVersion: String by project
 
 plugins {
     id("base")
@@ -27,8 +26,8 @@ allprojects {
                 }
             }
         }
-        gradlePluginPortal()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
