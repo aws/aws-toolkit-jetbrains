@@ -1,4 +1,10 @@
 {
-    "types": [],
+    "types": [
+        {
+            "name": "insightsDialogOpenSource",
+            "allowedValues": ["explorer", "resultsWindow", "logGroup"],
+            "description": "Dialog open trigger source location"
+        }
+    ],
     "metrics": []
 }
