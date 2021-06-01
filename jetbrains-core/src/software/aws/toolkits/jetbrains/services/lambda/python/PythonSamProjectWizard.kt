@@ -51,10 +51,7 @@ abstract class PythonSamProjectTemplate : SamAppTemplateBased() {
         indicator: ProgressIndicator
     ) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
-        if(settings.packagingType != PackageType.IMAGE) {
-            addSourceRoots(rootModel.project, rootModel, contentRoot)
-        }
-
+        addSourceRoots(rootModel.project, rootModel, contentRoot)
     }
 }
 
@@ -81,10 +78,7 @@ class SamDynamoDBCookieCutter : SamProjectTemplate() {
         indicator: ProgressIndicator
     ) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
-        if(settings.packagingType != PackageType.IMAGE) {
-            addSourceRoots(rootModel.project, rootModel, contentRoot)
-        }
-
+        addSourceRoots(rootModel.project, rootModel, contentRoot)
     }
 
     override fun templateParameters(projectName: String, runtime: LambdaRuntime, packagingType: PackageType): TemplateParameters = LocationBasedTemplate(

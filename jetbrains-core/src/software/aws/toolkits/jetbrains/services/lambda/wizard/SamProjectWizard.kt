@@ -15,6 +15,7 @@ import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroupExtensionPointObject
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import java.nio.file.Paths
 
 /**
@@ -68,6 +69,7 @@ abstract class SamProjectTemplate {
 
     protected fun addSourceRoots(project: Project, modifiableModel: ModifiableRootModel, projectRoot: VirtualFile) {
         val template = SamCommon.getTemplateFromDirectory(projectRoot) ?: return
+        val abc = SamTemplateUtils.getCodeLocation(template.canonicalPath, projectRoot.presentableName)
         val codeUris = SamCommon.getCodeUrisFromTemplate(project, template)
         modifiableModel.contentEntries.forEach { contentEntry ->
             if (contentEntry.file == projectRoot) {
