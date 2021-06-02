@@ -18,11 +18,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.rules.SystemPropertyHelper
-import software.aws.toolkits.jetbrains.core.credentials.CredentialFileHelpNotifications.CredentialFileNotificationPanel
+import software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider.CredentialFileNotificationPanel
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 
 @RunsInEdt
-class CredentialFileHelpNotificationsTest {
+class CredentialsFileHelpNotificationProviderTest {
     @Rule
     @JvmField
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
@@ -68,7 +68,7 @@ class CredentialFileHelpNotificationsTest {
     @Test
     fun `notification not shown on credentials file when hidden forever`() {
         val propertiesComponent = PropertiesComponent.getInstance()
-        val originalValue = propertiesComponent.getValue(CredentialFileHelpNotifications.DISABLE_KEY)
+        val originalValue = propertiesComponent.getValue(CredentialsFileHelpNotificationProvider.DISABLE_KEY)
         try {
             val editor = openEditor(credentialsFile)
             getEditorNotifications(editor)!!.hideForever(credentialsFile, projectRule.project)
@@ -80,7 +80,7 @@ class CredentialFileHelpNotificationsTest {
             val newEditor = openEditor(credentialsFile)
             assertThat(getEditorNotifications(newEditor)).isNull()
         } finally {
-            propertiesComponent.setValue(CredentialFileHelpNotifications.DISABLE_KEY, originalValue)
+            propertiesComponent.setValue(CredentialsFileHelpNotificationProvider.DISABLE_KEY, originalValue)
         }
     }
 
@@ -112,6 +112,6 @@ class CredentialFileHelpNotificationsTest {
     private fun getEditorNotifications(editor: FileEditor): CredentialFileNotificationPanel? {
         PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
         NonBlockingReadActionImpl.waitForAsyncTaskCompletion()
-        return editor.getUserData(CredentialFileHelpNotifications.KEY)
+        return editor.getUserData(CredentialsFileHelpNotificationProvider.KEY)
     }
 }

@@ -13,16 +13,19 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotifications
 import software.amazon.awssdk.profiles.ProfileFileLocation
-import software.aws.toolkits.jetbrains.core.credentials.CredentialFileHelpNotifications.CredentialFileNotificationPanel
+import software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider.CredentialFileNotificationPanel
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
 
-class CredentialFileHelpNotifications : EditorNotifications.Provider<CredentialFileNotificationPanel>(), DumbAware {
+class CredentialsFileHelpNotificationProvider : EditorNotifications.Provider<CredentialFileNotificationPanel>(), DumbAware {
     override fun getKey(): Key<CredentialFileNotificationPanel> = KEY
 
     override fun createNotificationPanel(file: VirtualFile, fileEditor: FileEditor, project: Project): CredentialFileNotificationPanel? {
+        // Check if user dismissed permanently
         if (PropertiesComponent.getInstance().isTrueValue(DISABLE_KEY)) return null
+        // Check if user hid per editor tab
         if (fileEditor.getUserData(HIDE_KEY) != null) return null
+        // Check if editor is for the config/credential file
         if (!isCredentialsFile(file)) return null
 
         return CredentialFileNotificationPanel(file, project, fileEditor)
@@ -66,8 +69,19 @@ class CredentialFileHelpNotifications : EditorNotifications.Provider<CredentialF
     }
 
     companion object {
+        /**
+         * Key used to store the notification panel in an editor
+         */
         val KEY = Key.create<CredentialFileNotificationPanel>("software.aws.toolkits.jetbrains.core.credentials.editor.notification.provider")
+
+        /**
+         * Key to indicate we should hide the panel (per editor)
+         */
         private val HIDE_KEY = Key.create<Boolean>("software.aws.toolkits.jetbrains.core.credentials.editor.notification.hidden")
+
+        /**
+         * Name of the IDE wide setting to never show again
+         */
         const val DISABLE_KEY = "software.aws.toolkits.jetbrains.core.credentials.editor.notification.disabled"
     }
 }
