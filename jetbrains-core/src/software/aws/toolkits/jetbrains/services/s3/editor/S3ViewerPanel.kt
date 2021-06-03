@@ -139,6 +139,6 @@ class S3ViewerPanel(private val disposable: Disposable, private val project: Pro
     }
 
     private companion object {
-        const val ACTION_PLACE = "S3BucketViewer"
+        const val ACTION_PLACE = "S3ViewerPanel"
     }
 }
