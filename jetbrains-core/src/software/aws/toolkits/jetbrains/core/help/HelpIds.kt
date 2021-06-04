@@ -100,6 +100,12 @@ enum class HelpIds(shortId: String, val url: String) {
     AWS_CLI_INSTALL(
         "awsCli.install",
         "https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html"
+    ),
+
+    //Ecs Exec
+    ECS_EXEC_PERMISSIONS_REQUIRED(
+        "ecsExecPermissions",
+        "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html#ecs-exec-enabling-and-using"
     )
     ;
 

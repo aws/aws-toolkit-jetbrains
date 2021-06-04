@@ -34,8 +34,7 @@ class EnableEcsExecuteCommand :
         e.presentation.isVisible = !selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn())
     }
 
-    private suspend fun enableExecuteCommand(project: Project, service: Service) {
+    private fun enableExecuteCommand(project: Project, service: Service) {
         EcsExecUtils.updateExecuteCommandFlag(project, service, enabled = true)
-        EcsExecUtils.checkServiceState(project, service, enable = true)
     }
 }

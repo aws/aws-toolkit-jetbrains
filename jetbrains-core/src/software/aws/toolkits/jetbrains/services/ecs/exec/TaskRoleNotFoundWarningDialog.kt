@@ -12,14 +12,14 @@ import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
-class SessionManagerPluginWarning(project: Project) : DialogWrapper(project) {
+class TaskRoleNotFoundWarningDialog(project: Project) : DialogWrapper(project) {
     private val warningIcon = JBLabel(Messages.getWarningIcon())
     private val component by lazy {
         panel {
             row {
                 warningIcon(grow)
                 right {
-                    label(message("session_manager_plugin_installation_warning"))
+                    label(message("ecs.execute_command_task_role_invalid_warning"))
                 }
             }
         }
@@ -27,9 +27,10 @@ class SessionManagerPluginWarning(project: Project) : DialogWrapper(project) {
 
     init {
         super.init()
+        title = message("ecs.execute_command_task_role_invalid_warning_title")
     }
 
-    override fun getHelpId(): String? = HelpIds.SESSION_MANAGER_PLUGIN.id
-
     override fun createCenterPanel(): JComponent? = component
+
+    override fun getHelpId(): String? = HelpIds.ECS_EXEC_PERMISSIONS_REQUIRED.id
 }
