@@ -187,6 +187,8 @@ with what features/services are supported.
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow" />
 
+        <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider"/>
+
         <toolWindow id="aws.explorer" anchor="left" secondary="true"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
                     icon="AwsIcons.Logos.AWS"/>
@@ -358,9 +360,9 @@ with what features/services are supported.
         </group>
 
         <group id="aws.toolkit.explorer.s3.bucket" popup="true" compact="false">
-            <action id="s3.open.bucket.viewer"
+            <action id="aws.toolkit.s3.open.bucket.viewer"
                     class="software.aws.toolkits.jetbrains.services.s3.bucketActions.OpenBucketViewerAction"/>
-            <action id="s3.open.bucket.viewer.prefixed"
+            <action id="aws.toolkit.s3.open.bucket.viewer.prefixed"
                     class="software.aws.toolkits.jetbrains.services.s3.bucketActions.OpenPrefixedBucketViewerAction"/>
             <separator/>
             <action id="s3.copy.bucketname.check"
