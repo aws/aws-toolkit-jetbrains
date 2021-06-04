@@ -26,7 +26,7 @@ import software.aws.toolkits.telemetry.Result
 object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
     fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
         launch {
-            try{
+            try {
                 val request = UpdateServiceRequest.builder()
                     .cluster(service.clusterArn())
                     .service(service.serviceName())
@@ -40,7 +40,6 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                     EcsTelemetry.enableExecuteCommand(project, Result.Failed)
                 }
             }
-
         }
     }
 

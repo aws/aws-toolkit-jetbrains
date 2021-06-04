@@ -102,7 +102,7 @@ enum class HelpIds(shortId: String, val url: String) {
         "https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html"
     ),
 
-    //Ecs Exec
+    // Ecs Exec
     ECS_EXEC_PERMISSIONS_REQUIRED(
         "ecsExecPermissions",
         "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html#ecs-exec-enabling-and-using"
