@@ -23,6 +23,7 @@ import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
+import software.aws.toolkits.core.credentials.CredentialSourceId
 import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
@@ -86,6 +87,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
     private val profileHolder = ProfileHolder()
 
     override val id = PROFILE_FACTORY_ID
+    override val credentialSourceId: CredentialSourceId = CredentialSourceId.SharedCredentials
 
     override fun setUp(credentialLoadCallback: CredentialsChangeListener) {
         // Load the initial data, then start the background watcher
@@ -373,10 +375,11 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
 private fun Profile.toCredentialType(): CredentialType? = when {
     this.propertyExists(SSO_URL) -> CredentialType.SsoProfile
     this.propertyExists(ProfileProperty.ROLE_ARN) -> {
-        if (this.propertyExists(ProfileProperty.MFA_SERIAL))
+        if (this.propertyExists(ProfileProperty.MFA_SERIAL)) {
             CredentialType.AssumeMfaRoleProfile
-        else
+        } else {
             CredentialType.AssumeRoleProfile
+        }
     }
     this.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> CredentialType.StaticSessionProfile
     this.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> CredentialType.StaticProfile

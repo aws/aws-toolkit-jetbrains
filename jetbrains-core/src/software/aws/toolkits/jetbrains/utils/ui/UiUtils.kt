@@ -4,9 +4,12 @@
 
 package software.aws.toolkits.jetbrains.utils.ui
 
+import com.intellij.icons.AllIcons
+import com.intellij.ide.HelpTooltip
 import com.intellij.lang.Language
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.GraphicsConfig
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.CellRendererPanel
@@ -14,7 +17,12 @@ import com.intellij.ui.ClickListener
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.JBColor
 import com.intellij.ui.JreHiDpiUtil
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.layout.Cell
+import com.intellij.ui.layout.CellBuilder
+import com.intellij.ui.layout.ComponentPredicate
+import com.intellij.ui.layout.Row
 import com.intellij.ui.paint.LinePainter2D
 import com.intellij.ui.speedSearch.SpeedSearchSupply
 import com.intellij.util.text.DateFormatUtil
@@ -224,4 +232,62 @@ class ResizingDateColumnRenderer(showSeconds: Boolean) : ResizingColumnRenderer(
 
 class ResizingTextColumnRenderer : ResizingColumnRenderer() {
     override fun getText(value: Any?): String? = (value as? String)?.trim()
+}
+
+/**
+ * When a panel is made of more than one panel, apply and the validation callbacks do not work as expected for
+ * the child panels. This function makes it so the validation callbacks and apply are actually called.
+ * @param applies An additional function that allows control based on visibility of other components or other factors
+ */
+fun CellBuilder<DialogPanel>.installOnParent(applies: () -> Boolean = { true }): CellBuilder<DialogPanel> {
+    withValidationOnApply {
+        if (!applies()) {
+            null
+        } else {
+            val errors = this@installOnParent.component.validateCallbacks.mapNotNull { it() }
+            if (errors.isEmpty()) {
+                this@installOnParent.component.apply()
+            }
+            errors.firstOrNull()
+        }
+    }
+    return this
+}
+
+/**
+ * Similar to {@link com.intellij.ui.layout.CellBuilder#enableIf} but for component visibility
+ */
+fun CellBuilder<JComponent>.visibleIf(predicate: ComponentPredicate): CellBuilder<JComponent> {
+    component.isVisible = predicate()
+    predicate.addListener {
+        component.isVisible = it
+    }
+    return this
+}
+
+fun Row.visibleIf(predicate: ComponentPredicate): Row {
+    visible = predicate()
+    predicate.addListener { visible = it }
+    return this
+}
+
+val AbstractButton.notSelected: ComponentPredicate
+    get() = object : ComponentPredicate() {
+        override fun invoke(): Boolean = !isSelected
+
+        override fun addListener(listener: (Boolean) -> Unit) {
+            addChangeListener { listener(!isSelected) }
+        }
+    }
+
+/**
+ * Add a contextual help icon component
+ */
+fun Cell.contextualHelp(description: String): CellBuilder<JBLabel> {
+    val l = JBLabel(AllIcons.General.ContextHelp)
+    HelpTooltip().apply {
+        setDescription(description)
+        installOn(l)
+    }
+    return component(l)
 }

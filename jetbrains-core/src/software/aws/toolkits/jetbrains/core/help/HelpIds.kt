@@ -4,10 +4,26 @@
 package software.aws.toolkits.jetbrains.core.help
 
 enum class HelpIds(shortId: String, val url: String) {
+    // App Runner
+    APPRUNNER_PAUSE_RESUME(
+        "appRunnerPauseResume",
+        "https://docs.aws.amazon.com/console/apprunner/manage-pause"
+    ),
+    APPRUNNER_CODE_CONFIG(
+        "appRunnerCodeConfig",
+        "https://docs.aws.amazon.com/console/apprunner/config-file"
+    ),
+    APPRUNNER_CONNECTIONS(
+        "appRunnnerServiceConnections",
+        "https://docs.aws.amazon.com/console/apprunner/manage-connections"
+    ),
+
+    // Explorer
     EXPLORER_WINDOW(
         "explorerWindow",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer"
     ),
+
     // Cloud Debugging
     CLOUD_DEBUG_ENABLE(
         "enableCloudDebugging",
@@ -17,6 +33,7 @@ enum class HelpIds(shortId: String, val url: String) {
         "cloudDebugRunConfiguration",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/run-debug-config-dialog-cloud-debug"
     ),
+
     // Lambda
     CREATE_FUNCTION_DIALOG(
         "createFunctionDialog",
@@ -30,6 +47,7 @@ enum class HelpIds(shortId: String, val url: String) {
         "updateFunctionCodeDialog",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/update-code-dialog"
     ),
+
     // Serverless
     NEW_SERVERLESS_PROJECT_DIALOG(
         "newServerlessProjectDialog",
@@ -39,16 +57,19 @@ enum class HelpIds(shortId: String, val url: String) {
         "deployServerlessApplicationDialog",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/deploy-serverless-application-dialog"
     ),
+
     // Schema code download
     DOWNLOAD_CODE_FOR_SCHEMA_DIALOG(
         "downloadCodeForSchemaDialog",
         "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/eventbridge-schemas.html"
     ),
+
     // Schema search
     SCHEMA_SEARCH_DIALOG(
         "schemaSearchDialog",
         "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/eventbridge-schemas.html"
     ),
+
     // Others
     RUN_DEBUG_CONFIGURATIONS_DIALOG(
         "runDebugConfigurationsDialog",
@@ -62,6 +83,7 @@ enum class HelpIds(shortId: String, val url: String) {
         "sam.install",
         "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html"
     ),
+
     // RDS
     RDS_SETUP_IAM_AUTH(
         "rdsIamAuth",
