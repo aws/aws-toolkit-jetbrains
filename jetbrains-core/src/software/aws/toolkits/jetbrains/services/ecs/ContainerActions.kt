@@ -28,7 +28,7 @@ import software.aws.toolkits.jetbrains.services.ecs.exec.OpenShellInContainerDia
 import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog
 import software.aws.toolkits.jetbrains.services.ecs.exec.SessionManagerPluginWarning
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
-import software.aws.toolkits.jetbrains.services.ecs.resources.SessionManagerPluginInstallationVerfication
+import software.aws.toolkits.jetbrains.services.ecs.resources.SessionManagerPluginInstallationVerification
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -127,7 +127,7 @@ class ExecuteCommandAction(
     private val container: ContainerDetails
 ) : AnAction(message("ecs.execute_command_run"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
-        val sessionManagerInstalled = SessionManagerPluginInstallationVerfication.checkInstallation()
+        val sessionManagerInstalled = SessionManagerPluginInstallationVerification.checkInstallation()
         if (!sessionManagerInstalled) {
             SessionManagerPluginWarning(project).show()
         } else {
@@ -145,7 +145,7 @@ class ExecuteCommandInShellAction(
     private val container: ContainerDetails
 ) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
-        val sessionManagerInstalled = SessionManagerPluginInstallationVerfication.checkInstallation()
+        val sessionManagerInstalled = SessionManagerPluginInstallationVerification.checkInstallation()
         if (!sessionManagerInstalled) {
             SessionManagerPluginWarning(project).show()
         } else {

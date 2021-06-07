@@ -8,12 +8,16 @@ import com.intellij.execution.process.CapturingProcessHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
-object SessionManagerPluginInstallationVerfication {
+object SessionManagerPluginInstallationVerification {
     fun checkInstallation(): Boolean = runBlocking(Dispatchers.IO) {
-        val process = CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess()
-        if (process.exitCode != 0) {
+        try {
+            val process = CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess()
+            if (process.exitCode != 0) {
+                false
+            }
+            true
+        } catch (e: Exception) {
             false
         }
-        true
     }
 }

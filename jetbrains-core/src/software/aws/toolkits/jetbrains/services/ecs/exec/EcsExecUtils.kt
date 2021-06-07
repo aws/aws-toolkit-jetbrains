@@ -32,18 +32,18 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                 .enableExecuteCommand(enabled)
                 .forceNewDeployment(true).build()
             project.awsClient<EcsClient>().updateService(request)
+            checkServiceState(project, service, enable = enabled)
         }
     }
 
     private fun checkServiceState(project: Project, service: Service, enable: Boolean) {
-
-        val title = if(enable) {
+        val title = if (enable) {
             "Enabling Command Execution"
         } else {
             "Disabling Command Execution"
         }
         ProgressManager.getInstance().run(
-            object: Task.Backgroundable(project, title, false) {
+            object : Task.Backgroundable(project, title, false) {
                 override fun run(indicator: ProgressIndicator) {
                     /* There appears to be a lag between the time the UpdateService call is made and
                     the time the changes are surfaced via the DescribeServices call.
@@ -76,7 +76,6 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                         EcsTelemetry.disableExecuteCommand(project, Result.Failed)
                     }
                 }
-
             }
         )
     }
