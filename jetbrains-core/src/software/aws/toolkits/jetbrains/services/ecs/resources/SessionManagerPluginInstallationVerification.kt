@@ -5,8 +5,10 @@ package software.aws.toolkits.jetbrains.services.ecs.resources
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import software.aws.toolkits.jetbrains.services.ecs.exec.SessionManagerPluginWarning
 
 object SessionManagerPluginInstallationVerification {
     fun checkInstallation(): Boolean = runBlocking(Dispatchers.IO) {
@@ -18,6 +20,14 @@ object SessionManagerPluginInstallationVerification {
             true
         } catch (e: Exception) {
             false
+        }
+    }
+
+    fun requiresSessionManager(project: Project, block: () -> Unit) {
+        if (checkInstallation()) {
+            block()
+        } else {
+            SessionManagerPluginWarning(project).show()
         }
     }
 }

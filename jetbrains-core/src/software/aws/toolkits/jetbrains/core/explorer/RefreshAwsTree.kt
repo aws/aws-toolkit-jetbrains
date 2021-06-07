@@ -5,15 +5,26 @@ package software.aws.toolkits.jetbrains.core.explorer
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.clearResourceForCurrentConnection
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 
-fun Project.refreshAwsTree(resource: Resource<*>? = null) {
-    if (resource == null) {
-        this.clearResourceForCurrentConnection()
+fun Project.refreshAwsTree(resource: Resource<*>? = null, connectionSettings: ConnectionSettings? = null) {
+    if (connectionSettings == null) {
+        if (resource == null) {
+            this.clearResourceForCurrentConnection()
+        } else {
+            this.clearResourceForCurrentConnection(resource)
+        }
     } else {
-        this.clearResourceForCurrentConnection(resource)
+        if (resource == null) {
+            AwsResourceCache.getInstance().clear(connectionSettings)
+        } else {
+            AwsResourceCache.getInstance().clear(resource, connectionSettings)
+        }
     }
+
     runInEdt {
         // redraw explorer
         ExplorerToolWindow.getInstance(this).invalidateTree()

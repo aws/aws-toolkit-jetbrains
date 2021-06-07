@@ -16,6 +16,8 @@ import software.amazon.awssdk.services.ecs.model.InvalidParameterException
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -34,8 +36,9 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                     .service(service.serviceName())
                     .enableExecuteCommand(enabled)
                     .forceNewDeployment(true).build()
+                val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
                 project.awsClient<EcsClient>().updateService(request)
-                checkServiceState(project, service, enable = enabled)
+                checkServiceState(project, service, enabled, connectionSettings)
             } catch (e: InvalidParameterException) {
                 runInEdt {
                     TaskRoleNotFoundWarningDialog(project).show()
@@ -45,7 +48,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         }
     }
 
-    private fun checkServiceState(project: Project, service: Service, enable: Boolean) {
+    private fun checkServiceState(project: Project, service: Service, enable: Boolean, connectionSettings: ConnectionSettings?) {
         val title = if (enable) {
             message("ecs.execute_command_enable_progress_indicator_message")
         } else {
@@ -54,11 +57,6 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         ProgressManager.getInstance().run(
             object : Task.Backgroundable(project, title, false) {
                 override fun run(indicator: ProgressIndicator) {
-                    /* There appears to be a lag between the time the UpdateService call is made and
-                    the time the changes are surfaced via the DescribeServices call.
-                    Hence a delay of 5000 milliseconds is added before polling for the completion state of the service
-                    */
-                    Thread.sleep(5000)
                     val request = DescribeServicesRequest.builder().cluster(service.clusterArn()).services(service.serviceArn()).build()
                     val client = project.awsClient<EcsClient>()
                     val waiter = client.waiter()
@@ -66,7 +64,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                 }
 
                 override fun onSuccess() {
-                    project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()))
+                    project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()), connectionSettings)
                     if (enable) {
                         notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))
                         EcsTelemetry.enableExecuteCommand(project, Result.Succeeded)

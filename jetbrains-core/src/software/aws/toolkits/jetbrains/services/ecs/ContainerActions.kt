@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWin
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
 import software.aws.toolkits.jetbrains.services.ecs.exec.OpenShellInContainerDialog
 import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog
-import software.aws.toolkits.jetbrains.services.ecs.exec.SessionManagerPluginWarning
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.services.ecs.resources.SessionManagerPluginInstallationVerification
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -127,10 +126,7 @@ class ExecuteCommandAction(
     private val container: ContainerDetails
 ) : AnAction(message("ecs.execute_command_run"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
-        val sessionManagerInstalled = SessionManagerPluginInstallationVerification.checkInstallation()
-        if (!sessionManagerInstalled) {
-            SessionManagerPluginWarning(project).show()
-        } else {
+        SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
             RunCommandDialog(project, container).show()
         }
     }
@@ -145,10 +141,7 @@ class ExecuteCommandInShellAction(
     private val container: ContainerDetails
 ) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
-        val sessionManagerInstalled = SessionManagerPluginInstallationVerification.checkInstallation()
-        if (!sessionManagerInstalled) {
-            SessionManagerPluginWarning(project).show()
-        } else {
+        SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
             val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
             if (connectionSettings != null) {
                 val environmentVariables = connectionSettings.region.toEnvironmentVariables() +
