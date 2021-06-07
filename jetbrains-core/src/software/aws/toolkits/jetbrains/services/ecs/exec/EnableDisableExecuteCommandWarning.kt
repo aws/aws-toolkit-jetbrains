@@ -39,7 +39,7 @@ class EnableDisableExecuteCommandWarning(private val project: Project, private v
                     .constraints(grow)
             }
             row {
-                checkBox(message("notice.suppress"), { dontDisplayWarning }, { dontDisplayWarning = it })
+                checkBox(message("general.notification.action.hide_forever"), { dontDisplayWarning }, { dontDisplayWarning = it })
             }
         }
     }
