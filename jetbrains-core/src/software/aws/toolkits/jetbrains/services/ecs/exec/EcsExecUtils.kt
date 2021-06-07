@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.EcsClient
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
@@ -33,33 +35,49 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         }
     }
 
-    suspend fun checkServiceState(project: Project, service: Service, enable: Boolean) {
-        /* There appears to be a lag between the time the UpdateService call is made and
-         the time the changes are surfaced via the DescribeServices call.
-         Hence a delay of 5000 milliseconds is added before polling for the completion state of the service
-         */
-        delay(5000)
-        val request = DescribeServicesRequest.builder().cluster(service.clusterArn()).services(service.serviceArn()).build()
-        val client = project.awsClient<EcsClient>()
-        val waiter = client.waiter()
-        try {
-            waiter.waitUntilServicesStable(request)
-            project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()))
-            if (enable) {
-                notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))
-                EcsTelemetry.enableExecuteCommand(project, Result.Succeeded)
-            } else {
-                notifyInfo(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_success", service.serviceName()))
-                EcsTelemetry.disableExecuteCommand(project, Result.Succeeded)
-            }
-        } catch (e: Exception) {
-            if (enable) {
-                notifyError(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_failed", service.serviceName()))
-                EcsTelemetry.enableExecuteCommand(project, Result.Failed)
-            } else {
-                notifyError(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_failed", service.serviceName()))
-                EcsTelemetry.disableExecuteCommand(project, Result.Failed)
-            }
+    private fun checkServiceState(project: Project, service: Service, enable: Boolean) {
+
+        val title = if(enable) {
+            "Enabling Command Execution"
+        } else {
+            "Disabling Command Execution"
         }
+        ProgressManager.getInstance().run(
+            object: Task.Backgroundable(project, title, false) {
+                override fun run(indicator: ProgressIndicator) {
+                    /* There appears to be a lag between the time the UpdateService call is made and
+                    the time the changes are surfaced via the DescribeServices call.
+                    Hence a delay of 5000 milliseconds is added before polling for the completion state of the service
+                    */
+                    Thread.sleep(5000)
+                    val request = DescribeServicesRequest.builder().cluster(service.clusterArn()).services(service.serviceArn()).build()
+                    val client = project.awsClient<EcsClient>()
+                    val waiter = client.waiter()
+                    waiter.waitUntilServicesStable(request)
+                }
+
+                override fun onSuccess() {
+                    project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()))
+                    if (enable) {
+                        notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))
+                        EcsTelemetry.enableExecuteCommand(project, Result.Succeeded)
+                    } else {
+                        notifyInfo(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_success", service.serviceName()))
+                        EcsTelemetry.disableExecuteCommand(project, Result.Succeeded)
+                    }
+                }
+
+                override fun onThrowable(error: Throwable) {
+                    if (enable) {
+                        notifyError(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_failed", service.serviceName()))
+                        EcsTelemetry.enableExecuteCommand(project, Result.Failed)
+                    } else {
+                        notifyError(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_failed", service.serviceName()))
+                        EcsTelemetry.disableExecuteCommand(project, Result.Failed)
+                    }
+                }
+
+            }
+        )
     }
 }
