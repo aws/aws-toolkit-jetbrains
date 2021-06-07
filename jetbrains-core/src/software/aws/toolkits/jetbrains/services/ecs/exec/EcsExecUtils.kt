@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -11,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.EcsClient
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
+import software.amazon.awssdk.services.ecs.model.InvalidParameterException
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -26,13 +28,20 @@ import software.aws.toolkits.telemetry.Result
 object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
     fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
         launch {
-            val request = UpdateServiceRequest.builder()
-                .cluster(service.clusterArn())
-                .service(service.serviceName())
-                .enableExecuteCommand(enabled)
-                .forceNewDeployment(true).build()
-            project.awsClient<EcsClient>().updateService(request)
-            checkServiceState(project, service, enable = enabled)
+            try {
+                val request = UpdateServiceRequest.builder()
+                    .cluster(service.clusterArn())
+                    .service(service.serviceName())
+                    .enableExecuteCommand(enabled)
+                    .forceNewDeployment(true).build()
+                project.awsClient<EcsClient>().updateService(request)
+                checkServiceState(project, service, enable = enabled)
+            } catch (e: InvalidParameterException) {
+                runInEdt {
+                    TaskRoleNotFoundWarningDialog(project).show()
+                    EcsTelemetry.enableExecuteCommand(project, Result.Failed)
+                }
+            }
         }
     }
 
