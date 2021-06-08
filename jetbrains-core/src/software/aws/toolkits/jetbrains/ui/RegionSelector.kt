@@ -47,6 +47,9 @@ class RegionSelector : ComboBox<AwsRegion>() {
             it.displayName
         }
 
+        /**
+         * @param serviceId If specified, will filter the list of regions down to only the regions that support the specified service
+         */
         fun Cell.regionSelector(prop: KMutableProperty0<AwsRegion>, serviceId: String? = null): CellBuilder<ComboBox<AwsRegion>> {
             val regionProvider = AwsRegionProvider.getInstance()
             val regions = when {
