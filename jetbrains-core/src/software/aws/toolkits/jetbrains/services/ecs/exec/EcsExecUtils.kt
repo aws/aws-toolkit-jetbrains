@@ -16,9 +16,7 @@ import software.amazon.awssdk.services.ecs.model.InvalidParameterException
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Companion.getConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -54,7 +52,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         } else {
             message("ecs.execute_command_disable_progress_indicator_message")
         }
-        val currentConnectionSettings = project.getConnectionSettings()
+
         ProgressManager.getInstance().run(
             object : Task.Backgroundable(project, title, false) {
                 override fun run(indicator: ProgressIndicator) {
@@ -65,6 +63,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                 }
 
                 override fun onSuccess() {
+                    val currentConnectionSettings = project.getConnectionSettings()
                     project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()), currentConnectionSettings)
 
                     if (enable) {
