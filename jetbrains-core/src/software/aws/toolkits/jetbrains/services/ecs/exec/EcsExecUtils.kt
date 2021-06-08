@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Companion.getConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
@@ -36,9 +37,8 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                     .service(service.serviceName())
                     .enableExecuteCommand(enabled)
                     .forceNewDeployment(true).build()
-                val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
                 project.awsClient<EcsClient>().updateService(request)
-                checkServiceState(project, service, enabled, connectionSettings)
+                checkServiceState(project, service, enabled)
             } catch (e: InvalidParameterException) {
                 runInEdt {
                     TaskRoleNotFoundWarningDialog(project).show()
@@ -48,12 +48,13 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         }
     }
 
-    private fun checkServiceState(project: Project, service: Service, enable: Boolean, connectionSettings: ConnectionSettings?) {
+    private fun checkServiceState(project: Project, service: Service, enable: Boolean) {
         val title = if (enable) {
             message("ecs.execute_command_enable_progress_indicator_message")
         } else {
             message("ecs.execute_command_disable_progress_indicator_message")
         }
+        val currentConnectionSettings = project.getConnectionSettings()
         ProgressManager.getInstance().run(
             object : Task.Backgroundable(project, title, false) {
                 override fun run(indicator: ProgressIndicator) {
@@ -64,7 +65,8 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                 }
 
                 override fun onSuccess() {
-                    project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()), connectionSettings)
+                    project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()), currentConnectionSettings)
+
                     if (enable) {
                         notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))
                         EcsTelemetry.enableExecuteCommand(project, Result.Succeeded)
