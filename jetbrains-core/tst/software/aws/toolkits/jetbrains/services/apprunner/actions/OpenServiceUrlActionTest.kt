@@ -4,7 +4,9 @@
 package software.aws.toolkits.jetbrains.services.apprunner.actions
 
 import com.intellij.ide.browsers.BrowserLauncher
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.replaceService
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -23,7 +25,9 @@ class OpenServiceUrlActionTest {
     @Test
     fun `Open Service Url passes the correct URL to the browser launcher`() {
         val launcher = mock<BrowserLauncher>()
-        val action = OpenServiceUrlAction(launcher)
+        val action = OpenServiceUrlAction()
+
+        ApplicationManager.getApplication().replaceService(BrowserLauncher::class.java, launcher, projectRule.project)
         action.actionPerformed(AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceUrl(url).build()), mock())
 
         verify(launcher).browse("https://$url", project = projectRule.project)
