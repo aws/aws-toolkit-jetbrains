@@ -259,6 +259,9 @@ with what features/services are supported.
     </extensions>
 
     <actions>
+        <action internal="true" id="aws.toolkit.open.telemetry.viewer"
+                class="software.aws.toolkits.jetbrains.services.telemetry.viewer.OpenTelemetryAction"/>
+
         <group id="aws.toolkit.explorer.ecr" popup="true" compact="false">
             <action id="ecr.repository.create" class="software.aws.toolkits.jetbrains.services.ecr.actions.CreateRepositoryAction"/>
         </group>
@@ -271,6 +274,7 @@ with what features/services are supported.
         </group>
 
         <group id="aws.toolkit.explorer.ecr.tag" popup="true" compact="false">
+            <action id="ecr.image.createAppRunnerService" class="software.aws.toolkits.jetbrains.services.ecr.actions.CreateAppRunnerServiceAction"/>
             <action id="ecr.image.copyUri" class="software.aws.toolkits.jetbrains.services.ecr.actions.CopyTagUriAction"/>
             <separator/>
             <action id="ecr.image.delete" class="software.aws.toolkits.jetbrains.services.ecr.actions.DeleteTagAction"/>
