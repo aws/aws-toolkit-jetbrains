@@ -76,11 +76,7 @@ abstract class SamProjectTemplate {
             val functions = SamTemplateUtils.findFunctionsFromTemplate(project, template)
             val functionLocations = functions.map {
                 val codeLocation = SamTemplateUtils.getCodeLocation(template.toNioPath().toAbsolutePath(), it.logicalName)
-                if(codeLocation.startsWith("./")){
-                    templatePath.resolve(codeLocation.substring(2))
-                } else {
-                    templatePath.resolve(codeLocation)
-                }
+                templatePath.parent.resolve(codeLocation)
             }
 
             val localFileSystem = LocalFileSystem.getInstance()
