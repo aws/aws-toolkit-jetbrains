@@ -88,7 +88,6 @@ abstract class SamProjectTemplate {
                     function.forEach { contentEntry.addSourceFolder(it, false) }
                 }
             }
-
         }
     }
 
