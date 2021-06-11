@@ -25,14 +25,14 @@ class RemoteLambdaRunner : AsyncProgramRunner<RunnerSettings>() {
 
     override fun execute(environment: ExecutionEnvironment, state: RunProfileState): Promise<RunContentDescriptor?> {
         val runPromise = AsyncPromise<RunContentDescriptor?>()
+        val remoteState = state as RemoteLambdaState
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                state.execute(environment.executor, this)?.let {
-                    val builder = RunContentBuilder(it, environment)
+                val executionResult = remoteState.execute(environment.executor, this)
+                val builder = RunContentBuilder(executionResult, environment)
 
-                    runInEdt(ModalityState.any()) {
-                        runPromise.setResult(builder.showRunContent(environment.contentToReuse))
-                    }
+                runInEdt(ModalityState.any()) {
+                    runPromise.setResult(builder.showRunContent(environment.contentToReuse))
                 }
             } catch (e: Exception) {
                 runInEdt(ModalityState.any()) {
