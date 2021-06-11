@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.execution
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.configurations.RunnerSettings
+import com.intellij.openapi.application.Experiments
 import com.intellij.openapi.options.SettingsEditor
 import com.jetbrains.python.run.AbstractPythonRunConfiguration
 import com.jetbrains.python.run.PythonRunConfigurationExtension
@@ -14,16 +15,20 @@ import software.aws.toolkits.resources.message
 class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
     private val delegate = AwsConnectionRunConfigurationExtension<AbstractPythonRunConfiguration<*>>()
 
-    override fun isApplicableFor(configuration: AbstractPythonRunConfiguration<*>): Boolean = true
+    override fun isApplicableFor(configuration: AbstractPythonRunConfiguration<*>): Boolean = isEnabled()
 
-    override fun isEnabledFor(applicableConfiguration: AbstractPythonRunConfiguration<*>, runnerSettings: RunnerSettings?): Boolean = true
+    override fun isEnabledFor(applicableConfiguration: AbstractPythonRunConfiguration<*>, runnerSettings: RunnerSettings?): Boolean = isEnabled()
 
     override fun patchCommandLine(
         configuration: AbstractPythonRunConfiguration<*>,
         runnerSettings: RunnerSettings?,
         cmdLine: GeneralCommandLine,
         runnerId: String
-    ) = delegate.addEnvironmentVariables(configuration, cmdLine, runtimeString = { configuration.getSdk()?.versionString })
+    ) {
+        if (isEnabled()) {
+            delegate.addEnvironmentVariables(configuration, cmdLine, runtimeString = { configuration.getSdk()?.versionString })
+        }
+    }
 
     override fun readExternal(runConfiguration: AbstractPythonRunConfiguration<*>, element: Element) = delegate.readExternal(runConfiguration, element)
 
@@ -34,4 +39,10 @@ class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
     override fun <P : AbstractPythonRunConfiguration<*>?> createEditor(configuration: P): SettingsEditor<P>? = connectionSettingsEditor(
         configuration
     )
+
+    private fun isEnabled() = Experiments.getInstance().isFeatureEnabled(EXPERIMENT_ID)
+
+    companion object {
+        const val EXPERIMENT_ID = "aws.pythonRunConfigurationExtension"
+    }
 }

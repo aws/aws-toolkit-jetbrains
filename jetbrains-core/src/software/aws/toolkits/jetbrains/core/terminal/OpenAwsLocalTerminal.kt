@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.terminal
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.Experiments
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.ExceptionUtil
@@ -25,10 +26,18 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result
 
-class OpenAwsLocalTerminal : DumbAwareAction(message("aws.terminal.action"), message("aws.terminal.action.tooltip"), TerminalIcons.OpenTerminal_13x13) {
+class OpenAwsLocalTerminal : DumbAwareAction(
+    { message("aws.terminal.action") },
+    { message("aws.terminal.action.tooltip") },
+    TerminalIcons.OpenTerminal_13x13
+) {
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.project?.let { AwsConnectionManager.getInstance(it) }?.isValidConnectionSettings() == true
+        if (Experiments.getInstance().isFeatureEnabled("aws.connectedLocalTerminal")) {
+            e.presentation.isEnabled = e.project?.let { AwsConnectionManager.getInstance(it) }?.isValidConnectionSettings() == true
+        } else {
+            e.presentation.isEnabledAndVisible = false
+        }
     }
 
     override fun actionPerformed(e: AnActionEvent) {

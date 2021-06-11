@@ -8,6 +8,7 @@ import com.intellij.execution.application.ApplicationConfiguration
 import com.intellij.execution.configurations.JavaParameters
 import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.execution.configurations.RunnerSettings
+import com.intellij.openapi.application.Experiments
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemRunConfiguration
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.projectRoots.JavaSdk
@@ -23,13 +24,16 @@ class JavaAwsConnectionExtension : RunConfigurationExtension() {
      * does not pass down the environment variables. The base that controls this is ExternalSystemRunConfiguration, so we should use that to be safe
      * so that we don't encounter a similar situation with a different class based on it.
      */
-    override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean = configuration !is ExternalSystemRunConfiguration
+    override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean =
+        Experiments.getInstance().isFeatureEnabled(EXPERIMENT_ID) && configuration !is ExternalSystemRunConfiguration
 
     override fun <T : RunConfigurationBase<*>?> updateJavaParameters(configuration: T, params: JavaParameters, runnerSettings: RunnerSettings?) {
-        configuration ?: return
-        val environment = params.env
+        if (Experiments.getInstance().isFeatureEnabled(EXPERIMENT_ID)) {
+            configuration ?: return
+            val environment = params.env
 
-        delegate.addEnvironmentVariables(configuration, environment, runtimeString = { determineVersion(configuration) })
+            delegate.addEnvironmentVariables(configuration, environment, runtimeString = { determineVersion(configuration) })
+        }
     }
 
     override fun getEditorTitle() = message("aws_connection.tab.label")
@@ -46,5 +50,9 @@ class JavaAwsConnectionExtension : RunConfigurationExtension() {
         ModuleRootManager.getInstance(it).sdk
     }?.let {
         JavaSdk.getInstance().getVersion(it)?.name
+    }
+
+    companion object {
+        const val EXPERIMENT_ID = "aws.javaRunConfigurationExtension"
     }
 }

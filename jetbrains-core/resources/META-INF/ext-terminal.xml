@@ -2,6 +2,11 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <experimentalFeature id="aws.connectedLocalTerminal">
+            <description>Create a local Terminal instance injecting the current AWS Connection (credentials/region) as Environment Variables</description>
+        </experimentalFeature>
+    </extensions>
     <actions>
         <group id="aws.toolkit.explorer.titleBar.terminal">
             <add-to-group group-id="aws.toolkit.explorer.titleBar" anchor="after" relative-to-action="aws.settings.refresh"/>

@@ -35,6 +35,7 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
+import software.aws.toolkits.jetbrains.utils.rules.ExperimentRule
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
@@ -64,6 +65,10 @@ class JavaAwsConnectionExtensionIntegrationTest {
     @Rule
     @JvmField
     val credentialManagerRule = MockCredentialManagerRule()
+
+    @Rule
+    @JvmField
+    val experiment = ExperimentRule(JavaAwsConnectionExtension.EXPERIMENT_ID)
 
     @Test
     fun connectionDetailsAreInjected() {
