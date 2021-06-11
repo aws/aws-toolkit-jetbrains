@@ -114,4 +114,4 @@ The plugin is distributed according to the terms outlined in our [LICENSE](LICEN
 [cloudwatch-logs-icon]: jetbrains-core/resources/icons/resources/cloudwatchlogs/CloudWatchLogs.svg
 [cloudformation-icon]: jetbrains-core/resources/icons/resources/CloudFormationStack.svg
 [redshift-icon]: jetbrains-core/resources/icons/resources/Redshift.svg
-[find-action]: https://www.jetbrains.com/help/rider/Navigating_to_Action.html
+[find-action]: https://www.jetbrains.com/help/idea/searching-everywhere.html#search_actions
