@@ -25,6 +25,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.lang.IllegalStateException
 import javax.swing.JComponent
 
 class OpenShellInContainerDialog(
@@ -93,9 +94,8 @@ class OpenShellInContainerDialog(
                     is ExecutableInstance.UnresolvedExecutable -> throw Exception(message("executableCommon.missing_executable", "AWS CLI"))
                     is ExecutableInstance.InvalidExecutable -> throw Exception(awsCliExecutable.validationError)
                 }
-                val commandLine = constructExecCommand(awsCliExecutable)
 
-                val ptyProcess = PtyProcess.exec(commandLine?.cmdList, commandLine?.env, null)
+                val ptyProcess = constructExecCommand(awsCliExecutable)
                 val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
                 val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
@@ -109,17 +109,15 @@ class OpenShellInContainerDialog(
         }
     }
 
-    private fun constructExecCommand(executable: ExecutableInstance.Executable): CmdLine? {
-        val commandLine = tasks.selected()?.let {
-            executable.getCommandLine().execCommand(environmentVariables, container.service.clusterArn(), it, shell)
-        }
-        val cmdList = commandLine?.getCommandLineList(null)?.toTypedArray()
-        val env = commandLine?.effectiveEnvironment
-        return env?.let { cmdList?.let { it1 -> CmdLine(it1, it) } }
+    private fun constructExecCommand(executable: ExecutableInstance.Executable): PtyProcess {
+        val task = tasks.selected() ?: throw IllegalStateException("No tasks selected")
+        val commandLine = executable.getCommandLine().execCommand(
+            environmentVariables,
+            container.service.clusterArn(),
+            task,
+            shell,
+            container.containerDefinition.name()
+        )
+        return PtyProcess.exec(commandLine.getCommandLineList(null).toTypedArray(), commandLine.effectiveEnvironment, null)
     }
 }
-
-data class CmdLine(
-    val cmdList: Array<String>,
-    val env: Map<String, String>
-)

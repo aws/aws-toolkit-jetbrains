@@ -23,7 +23,6 @@ class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
     override fun validate(path: Path) {
         val version = this.version(path)
         ExecutableCommon.checkSemVerVersion(version, MIN_VERSION, MAX_VERSION, this.displayName)
-        RunCommandDialog.path = path.toString()
     }
 
     override fun resolve(): Path? {
@@ -50,7 +49,12 @@ class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
     }
 }
 
-fun GeneralCommandLine.execCommand(environmentVariables: Map<String, String>, clusterArn: String, task: String, shell: String) = this.apply {
+fun GeneralCommandLine.execCommand(
+    environmentVariables: Map<String, String>,
+    clusterArn: String, task: String,
+    shell: String,
+    containerName: String
+) = this.apply {
     withParameters("ecs")
     withParameters("execute-command")
     withParameters("--cluster")
@@ -60,5 +64,7 @@ fun GeneralCommandLine.execCommand(environmentVariables: Map<String, String>, cl
     withParameters("--command")
     withParameters(shell)
     withParameters("--interactive")
+    withParameters("--container")
+    withParameters(containerName)
     withEnvironment(environmentVariables)
 }
