@@ -8,11 +8,11 @@ import com.intellij.execution.application.ApplicationConfiguration
 import com.intellij.execution.configurations.JavaParameters
 import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.execution.configurations.RunnerSettings
-import com.intellij.openapi.application.Experiments
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemRunConfiguration
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.util.registry.Registry
 import org.jdom.Element
 import software.aws.toolkits.resources.message
 
@@ -25,10 +25,10 @@ class JavaAwsConnectionExtension : RunConfigurationExtension() {
      * so that we don't encounter a similar situation with a different class based on it.
      */
     override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean =
-        Experiments.getInstance().isFeatureEnabled(EXPERIMENT_ID) && configuration !is ExternalSystemRunConfiguration
+        Registry.`is`(FEATURE_ID) && configuration !is ExternalSystemRunConfiguration
 
     override fun <T : RunConfigurationBase<*>?> updateJavaParameters(configuration: T, params: JavaParameters, runnerSettings: RunnerSettings?) {
-        if (Experiments.getInstance().isFeatureEnabled(EXPERIMENT_ID)) {
+        if (Registry.`is`(FEATURE_ID)) {
             configuration ?: return
             val environment = params.env
 
@@ -53,6 +53,6 @@ class JavaAwsConnectionExtension : RunConfigurationExtension() {
     }
 
     companion object {
-        const val EXPERIMENT_ID = "aws.javaRunConfigurationExtension"
+        const val FEATURE_ID = "aws.feature.javaRunConfigurationExtension"
     }
 }

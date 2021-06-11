@@ -6,9 +6,9 @@ package software.aws.toolkits.jetbrains.core.terminal
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.Experiments
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.ExceptionUtil
 import icons.TerminalIcons
 import org.jetbrains.plugins.terminal.TerminalTabState
@@ -33,7 +33,7 @@ class OpenAwsLocalTerminal : DumbAwareAction(
 ) {
 
     override fun update(e: AnActionEvent) {
-        if (Experiments.getInstance().isFeatureEnabled("aws.connectedLocalTerminal")) {
+        if (Registry.`is`("aws.feature.connectedLocalTerminal")) {
             e.presentation.isEnabled = e.project?.let { AwsConnectionManager.getInstance(it) }?.isValidConnectionSettings() == true
         } else {
             e.presentation.isEnabledAndVisible = false

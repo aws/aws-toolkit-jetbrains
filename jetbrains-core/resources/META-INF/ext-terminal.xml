@@ -3,9 +3,9 @@
 
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
-        <experimentalFeature id="aws.connectedLocalTerminal">
-            <description>Create a local Terminal instance injecting the current AWS Connection (credentials/region) as Environment Variables</description>
-        </experimentalFeature>
+        <registryKey key="aws.feature.connectedLocalTerminal"
+                     defaultValue="false"
+                     description="(Experimental) Create a local Terminal instance injecting the current AWS Connection (credentials/region) as Environment Variables"/>
     </extensions>
     <actions>
         <group id="aws.toolkit.explorer.titleBar.terminal">

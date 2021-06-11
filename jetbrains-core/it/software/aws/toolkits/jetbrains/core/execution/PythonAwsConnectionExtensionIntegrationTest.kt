@@ -15,7 +15,7 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
-import software.aws.toolkits.jetbrains.utils.rules.ExperimentRule
+import software.aws.toolkits.jetbrains.utils.rules.RegistryRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import kotlin.test.assertNotNull
 
@@ -35,7 +35,7 @@ class PythonAwsConnectionExtensionIntegrationTest {
 
     @Rule
     @JvmField
-    val experiment = ExperimentRule(PythonAwsConnectionExtension.EXPERIMENT_ID)
+    val experiment = RegistryRule(PythonAwsConnectionExtension.FEATURE_ID)
 
     private val pythonExecutable = System.getenv("PYTHON_PATH")
 
