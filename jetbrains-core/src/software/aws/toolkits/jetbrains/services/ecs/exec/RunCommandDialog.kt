@@ -20,6 +20,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.nio.file.Path
 import javax.swing.JComponent
 
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
@@ -84,13 +85,15 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 "ecs.execute_command_parameters",
                 container.service.clusterArn(),
                 it,
-                commandToExecute
+                commandToExecute,
+                container.containerDefinition.name()
             )
         }
 
     private fun runCommand() {
         try {
-            val execCommand = buildExecCommandConfiguration(command)
+            val awsCliPath = AwsCliExecutable().resolve() ?: throw IllegalStateException(message("executableCommon.missing_executable", "AWS CLI"))
+            val execCommand = buildExecCommandConfiguration(command, awsCliPath)
             val environment = ExecutionEnvironmentBuilder
                 .create(
                     project,
@@ -108,18 +111,17 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         }
     }
 
-    fun buildExecCommandConfiguration(commandToExecute: String): Tool {
+    fun buildExecCommandConfiguration(commandToExecute: String, path: Path): Tool {
         val execCommand = Tool()
         execCommand.isShowConsoleOnStdOut = true
         execCommand.isUseConsole = true
         execCommand.parameters = constructExecCommandParameters(commandToExecute)
         execCommand.name = container.containerDefinition.name()
-        execCommand.program = path
+        execCommand.program = path.toAbsolutePath().toString()
         return execCommand
     }
 
     companion object {
-        var path = ""
         val commandsEnteredPreviously = mutableSetOf<String>()
     }
 }

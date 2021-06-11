@@ -24,12 +24,13 @@ class AwsCliExecutableTest {
             environmentVariables = envVariables,
             clusterArn = clusterArn,
             task = taskArn,
-            shell = "/bin/bash"
+            shell = "/bin/bash",
+            containerName = "sample-container"
         )
         assertThat(executeCommand.environment).containsEntry("region", "sample-region")
         assertThat(executeCommand.environment).containsEntry("credentials", "sample-credentials")
         assertThat(executeCommand.commandLineString).isEqualTo(
-            "aws ecs execute-command --cluster $clusterArn --task $taskArn --command /bin/bash --interactive"
+            "aws ecs execute-command --cluster $clusterArn --task $taskArn --command /bin/bash --interactive --container sample-container"
         )
     }
 }

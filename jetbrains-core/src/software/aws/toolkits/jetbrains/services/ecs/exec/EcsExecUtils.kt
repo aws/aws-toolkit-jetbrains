@@ -48,9 +48,9 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
 
     private fun checkServiceState(project: Project, service: Service, enable: Boolean) {
         val title = if (enable) {
-            message("ecs.execute_command_enable_progress_indicator_message")
+            message("ecs.execute_command_enable_progress_indicator_message", service.serviceName())
         } else {
-            message("ecs.execute_command_disable_progress_indicator_message")
+            message("ecs.execute_command_disable_progress_indicator_message", service.serviceName())
         }
 
         ProgressManager.getInstance().run(

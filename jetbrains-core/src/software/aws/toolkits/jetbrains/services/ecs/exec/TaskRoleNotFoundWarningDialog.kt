@@ -8,18 +8,19 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.layout.panel
-import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
+import javax.swing.Action
 import javax.swing.JComponent
 
 class TaskRoleNotFoundWarningDialog(project: Project) : DialogWrapper(project) {
     private val warningIcon = JBLabel(Messages.getWarningIcon())
+    private val warningMessage = JBLabel(message("ecs.execute_command_task_role_invalid_warning"))
     private val component by lazy {
         panel {
             row {
                 warningIcon(grow)
                 right {
-                    label(message("ecs.execute_command_task_role_invalid_warning"))
+                    warningMessage(grow).also { it.component.setCopyable(true) }
                 }
             }
         }
@@ -30,7 +31,8 @@ class TaskRoleNotFoundWarningDialog(project: Project) : DialogWrapper(project) {
         title = message("ecs.execute_command_task_role_invalid_warning_title")
     }
 
-    override fun createCenterPanel(): JComponent? = component
+    // Overriden to remove the Cancel button
+    override fun createActions(): Array<Action> = arrayOf(okAction)
 
-    override fun getHelpId(): String? = HelpIds.ECS_EXEC_PERMISSIONS_REQUIRED.id
+    override fun createCenterPanel(): JComponent? = component
 }
