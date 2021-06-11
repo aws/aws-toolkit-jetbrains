@@ -139,11 +139,7 @@ class JavaAwsConnectionExtensionIntegrationTest {
             val jdkName = "Real JDK"
             val jdk = SdkConfigurationUtil.setupSdk(emptyArray(), jdkHomeDir, JavaSdk.getInstance(), false, null, jdkName)!!
 
-            ProjectJdkTable.getInstance().addJdk(jdk)
-            Disposer.register(
-                projectRule.fixture.testRootDisposable,
-                Disposable { WriteAction.runAndWait<Nothing> { ProjectJdkTable.getInstance().removeJdk(jdk) } }
-            )
+            ProjectJdkTable.getInstance().addJdk(jdk, projectRule.fixture.testRootDisposable)
 
             for (module in modules) {
                 ModuleRootModificationUtil.setModuleSdk(module, jdk)

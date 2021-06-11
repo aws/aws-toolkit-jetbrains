@@ -89,7 +89,7 @@ environment provided by the SAM CLI.
 *Note: database features require using a paid JetBrains product*
 #### ![Amazon S3][s3-icon] Amazon S3
 * View and manage your S3 buckets
-* Upload/Download to from bucketsÅ
+* Upload/Download to from buckets
 * [Learn more](https://docs.aws.amazon.com/console/toolkit-for-jetbrains/s3-tasks)
 
 ### Experimental Features
