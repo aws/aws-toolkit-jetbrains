@@ -15,7 +15,6 @@ import software.amazon.awssdk.services.ecs.model.Task
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
-import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
 class RunCommandDialogTest {
