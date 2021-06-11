@@ -15,8 +15,8 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
-import software.aws.toolkits.jetbrains.utils.rules.RegistryRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.RegistryRule
 import kotlin.test.assertNotNull
 
 class PythonAwsConnectionExtensionIntegrationTest {
