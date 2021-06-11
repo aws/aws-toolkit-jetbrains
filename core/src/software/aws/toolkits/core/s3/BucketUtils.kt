@@ -25,8 +25,7 @@ fun S3Client.deleteBucketAndContents(bucket: String) {
 }
 
 fun S3Client.regionForBucket(bucketName: String): String = this.getBucketLocation {
-        it.bucket(bucketName)
-    }.locationConstraintAsString()
-        .takeIf { it.isNotEmpty() } // getBucketLocation returns an explicit empty string location contraint for us-east-1
-        ?: Region.US_EAST_1.id()
-
+    it.bucket(bucketName)
+}.locationConstraintAsString()
+    .takeIf { it.isNotEmpty() } // getBucketLocation returns an explicit empty string location contraint for us-east-1
+    ?: Region.US_EAST_1.id()
