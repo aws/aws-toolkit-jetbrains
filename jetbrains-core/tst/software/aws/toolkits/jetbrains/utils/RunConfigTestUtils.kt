@@ -61,6 +61,9 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
                     }
                 }
             )
+            if (!execute.processHandler.isStartNotified) {
+                execute.processHandler.startNotify()
+            }
         } catch (e: Exception) {
             executionFuture.completeExceptionally(e)
         }
