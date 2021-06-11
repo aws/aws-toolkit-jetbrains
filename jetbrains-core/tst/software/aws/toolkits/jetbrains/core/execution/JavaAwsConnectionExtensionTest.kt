@@ -19,6 +19,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
+import software.aws.toolkits.jetbrains.utils.rules.RegistryRule
 
 class JavaAwsConnectionExtensionTest {
 
@@ -30,9 +31,13 @@ class JavaAwsConnectionExtensionTest {
     @JvmField
     val settingsRule = AwsSettingsRule()
 
-    @JvmField
     @Rule
+    @JvmField
     val regionProvider = MockRegionProviderRule()
+
+    @Rule
+    @JvmField
+    val registryRule = RegistryRule(JavaAwsConnectionExtension.FEATURE_ID)
 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
