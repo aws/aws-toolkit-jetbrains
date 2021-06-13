@@ -1,8 +1,8 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import software.aws.toolkits.gradle.IdeVersions
 import software.aws.toolkits.gradle.intellij
+import software.aws.toolkits.gradle.intellij.IdeVersions
 
 plugins {
     id("org.jetbrains.intellij")
