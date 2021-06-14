@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.tools.Tool
@@ -13,9 +14,14 @@ import com.intellij.tools.ToolRunProfile
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.panel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
@@ -23,7 +29,9 @@ import software.aws.toolkits.telemetry.Result
 import java.nio.file.Path
 import javax.swing.JComponent
 
-class RunCommandDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
+class RunCommandDialog(private val project: Project, private val container: ContainerDetails) :
+    DialogWrapper(project),
+    CoroutineScope by ApplicationThreadPoolScope("RunCommandDialog") {
     private val tasks = ResourceSelector
         .builder()
         .resource(
@@ -71,7 +79,19 @@ class RunCommandDialog(private val project: Project, private val container: Cont
     override fun doOKAction() {
         super.doOKAction()
         commandsEnteredPreviously.add(command)
-        runCommand()
+        val task = tasks.selected() ?: throw IllegalStateException("Task not Selected")
+        launch {
+            try {
+                EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
+                withContext(getCoroutineUiContext(ModalityState.any())) {
+                    runCommand()
+                }
+            } catch (e: Exception) {
+                withContext(getCoroutineUiContext(ModalityState.any())) {
+                    TaskRoleNotFoundWarningDialog(project).show()
+                }
+            }
+        }
     }
 
     override fun doCancelAction() {
