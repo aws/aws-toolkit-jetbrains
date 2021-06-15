@@ -65,4 +65,5 @@ class EcsServiceNode(project: Project, private val service: Service, private val
     override fun location() = EcsCloudDebugLocation(nodeProject, service)
     fun executeCommandEnabled() = value.enableExecuteCommand()
     fun clusterArn(): String = clusterArn
+    var execCommandStateChangeInProgress = false
 }

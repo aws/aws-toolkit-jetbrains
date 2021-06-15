@@ -34,7 +34,8 @@ import software.aws.toolkits.resources.message
 
 class ContainerActions(
     private val project: Project,
-    private val container: ContainerDetails
+    private val container: ContainerDetails,
+    private val execCommandStateChangeInProgress: Boolean
 ) : ActionGroup(container.containerDefinition.name(), null, null) {
     init {
         isPopup = true
@@ -44,8 +45,8 @@ class ContainerActions(
         StartRemoteShellAction(project, container),
         ContainerLogsAction(project, container),
         Separator.getInstance(),
-        ExecuteCommandAction(project, container),
-        ExecuteCommandInShellAction(project, container)
+        ExecuteCommandAction(project, container, execCommandStateChangeInProgress),
+        ExecuteCommandInShellAction(project, container, execCommandStateChangeInProgress)
     )
 }
 
@@ -60,7 +61,13 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
             return emptyList()
         }
 
-        val containerActions = containers.map { ContainerActions(selected.nodeProject, ContainerDetails(selected.value, it)) }
+        val containerActions = containers.map {
+            ContainerActions(
+                selected.nodeProject,
+                ContainerDetails(selected.value, it),
+                selected.execCommandStateChangeInProgress
+            )
+        }
 
         if (containerActions.isEmpty()) {
             return emptyList()
@@ -123,7 +130,8 @@ class ContainerLogsAction(
 
 class ExecuteCommandAction(
     private val project: Project,
-    private val container: ContainerDetails
+    private val container: ContainerDetails,
+    private val execCommandStateChangeInProgress: Boolean
 ) : AnAction(message("ecs.execute_command_run"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
         SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
@@ -132,13 +140,14 @@ class ExecuteCommandAction(
     }
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn())
+            !EcsUtils.isInstrumented(container.service.serviceArn()) && !execCommandStateChangeInProgress
     }
 }
 
 class ExecuteCommandInShellAction(
     private val project: Project,
-    private val container: ContainerDetails
+    private val container: ContainerDetails,
+    private val execCommandStateChangeInProgress: Boolean
 ) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
     override fun actionPerformed(e: AnActionEvent) {
         SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
@@ -153,6 +162,8 @@ class ExecuteCommandInShellAction(
 
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn()) && pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")
+            !EcsUtils.isInstrumented(container.service.serviceArn()) &&
+            pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal") &&
+            !execCommandStateChangeInProgress
     }
 }
