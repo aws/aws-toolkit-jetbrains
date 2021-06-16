@@ -22,7 +22,7 @@ class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
 
     override fun validate(path: Path) {
         val version = this.version(path)
-        ExecutableCommon.checkSemVerVersionForParallelValidVersions(version, MIN_VERSION_v2, MAX_VERSION_v1, MIN_VERSION_v2, MAX_VERSION_v2, this.displayName)
+        ExecutableCommon.checkSemVerVersionForParallelValidVersions(version, MIN_VERSION_v1, MAX_VERSION_v1, MIN_VERSION_v2, MAX_VERSION_v2, this.displayName)
     }
 
     override fun resolve(): Path? {
@@ -45,7 +45,7 @@ class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
     companion object {
         val MAX_VERSION_v2: SemVer = SemVer("3.0.0", 3, 0, 0) // exclusive
 
-        val MAX_VERSION_v1: SemVer = SemVer("2.0.0", 3, 0, 0) // exclusive
+        val MAX_VERSION_v1: SemVer = SemVer("2.0.0", 2, 0, 0) // exclusive
 
         val MIN_VERSION_v1: SemVer = SemVer("1.19.28", 1, 19, 28) // inclusive
 
