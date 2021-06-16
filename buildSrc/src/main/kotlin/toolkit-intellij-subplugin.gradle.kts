@@ -5,7 +5,7 @@ import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
 import org.jetbrains.intellij.Utils
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
-import software.aws.toolkits.gradle.IdeVersions
+import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij
@@ -136,6 +136,9 @@ afterEvaluate {
 
         systemProperty("aws.telemetry.skip_prompt", "true")
         systemProperty("aws.suppress_deprecation_prompt", true)
+
+        // These are experiments to enable for UI tests
+        systemProperty("aws.feature.connectedLocalTerminal", true)
         ciOnly() {
             systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
         }
