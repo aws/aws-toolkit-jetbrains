@@ -3,14 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
-import com.intellij.util.text.SyncDateFormat
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.TimeFormatConversion
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.ZoneId
-import java.util.*
 
 class TableUtilsTest {
     private val sampleTime: Long = 1621173813000
