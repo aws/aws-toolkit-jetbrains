@@ -26,6 +26,6 @@ class CopyServiceUrlActionTest {
         val action = CopyServiceUrlAction()
         action.actionPerformed(AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceUrl(url).build()), mock())
         val data = CopyPasteManager.getInstance().getContents<String>(DataFlavor.stringFlavor)
-        assertThat(data).isEqualTo(url)
+        assertThat(data).isEqualTo("https://$url")
     }
 }
