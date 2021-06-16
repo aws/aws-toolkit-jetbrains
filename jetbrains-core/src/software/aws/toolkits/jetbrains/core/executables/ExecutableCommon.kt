@@ -66,21 +66,29 @@ class ExecutableCommon {
         }
 
         @JvmStatic
-        fun checkSemVerVersionForParallelValidVersions(version: SemVer, min_v1: SemVer, max_v1: SemVer, min_v2: SemVer, max_v2:SemVer, executableName: String) {
+        fun checkSemVerVersionForParallelValidVersions(
+            version: SemVer,
+            minVersionLower: SemVer,
+            maxVersionLower: SemVer,
+            minVersionHigher: SemVer,
+            maxVersionHigher: SemVer,
+            executableName: String
+        ) {
+            // for use of AWS CLI version 1 and version 2 in ECS Exec
             val versionOutOfRangeMessage = message(
                 "executableCommon.version_range_wrong",
                 executableName,
-                min_v1,
-                max_v1,
-                min_v2,
-                max_v2,
+                minVersionLower,
+                maxVersionLower,
+                minVersionHigher,
+                maxVersionHigher,
                 version
             )
-            if(version >= max_v1 && version < min_v2) {
+            if (version >= maxVersionLower && version < minVersionHigher) {
                 throw RuntimeException("$versionOutOfRangeMessage")
-            } else if (version >= max_v2) {
+            } else if (version >= maxVersionHigher) {
                 throw RuntimeException("$versionOutOfRangeMessage ${message("executableCommon.version_too_high")}")
-            } else if (version < min_v1) {
+            } else if (version < minVersionLower) {
                 throw RuntimeException("$versionOutOfRangeMessage ${message("executableCommon.version_too_low", executableName)}")
             }
         }

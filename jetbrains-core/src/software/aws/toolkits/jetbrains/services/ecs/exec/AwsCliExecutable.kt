@@ -49,7 +49,7 @@ class AwsCliExecutable : ExecutableType<SemVer>, AutoResolvable, Validatable {
 
         val MIN_VERSION_v1: SemVer = SemVer("1.19.28", 1, 19, 28) // inclusive
 
-        val MIN_VERSION_v2: SemVer = SemVer("2.1.30", 2, 1, 30) //inclusive
+        val MIN_VERSION_v2: SemVer = SemVer("2.1.30", 2, 1, 30) // inclusive
     }
 }
 
