@@ -42,4 +42,13 @@ class ExecutableCommonTest {
         assertThatThrownBy { ExecutableCommon.checkSemVerVersion(curr, min, max, name) }
             .isInstanceOf(RuntimeException::class.java).hasMessageContaining(name)
     }
+
+    fun checkSemVerVersionForParallelValidVersionsThrowsIfUnder() {
+        val curr = SemVer("1.0.0", 10, 0, 0)
+        val min = SemVer("1.0.1", 1, 0, 1)
+        val max = SemVer("9.9.9", 9, 9, 9)
+        val name = "you must be this tall to ride"
+        assertThatThrownBy { ExecutableCommon.checkSemVerVersionForParallelValidVersions(curr, min, max, name) }
+            .isInstanceOf(RuntimeException::class.java).hasMessageContaining(name)
+    }
 }

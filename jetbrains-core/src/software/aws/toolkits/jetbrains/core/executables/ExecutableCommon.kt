@@ -65,6 +65,26 @@ class ExecutableCommon {
             }
         }
 
+        @JvmStatic
+        fun checkSemVerVersionForParallelValidVersions(version: SemVer, min_v1: SemVer, max_v1: SemVer, min_v2: SemVer, max_v2:SemVer, executableName: String) {
+            val versionOutOfRangeMessage = message(
+                "executableCommon.version_range_wrong",
+                executableName,
+                min_v1,
+                max_v1,
+                min_v2,
+                max_v2,
+                version
+            )
+            if(version >= max_v1 && version < min_v2) {
+                throw RuntimeException("$versionOutOfRangeMessage")
+            } else if (version >= max_v2) {
+                throw RuntimeException("$versionOutOfRangeMessage ${message("executableCommon.version_too_high")}")
+            } else if (version < min_v1) {
+                throw RuntimeException("$versionOutOfRangeMessage ${message("executableCommon.version_too_low", executableName)}")
+            }
+        }
+
         /**
          * @return Version of the executable, as whatever type is tracked by the FileInfoCache object
          */
