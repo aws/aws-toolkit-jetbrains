@@ -6,7 +6,6 @@ import com.jetbrains.rd.generator.gradle.RdGenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension.IdeFlavor
-import java.nio.file.Path
 
 buildscript {
     // Cannot be removed or else it will fail to compile
@@ -56,8 +55,8 @@ dependencies {
 // Not published to gradle plugin portal, use old syntax
 apply(plugin = "com.jetbrains.rdgen")
 
-val resharperPluginPath = File(projectDir, "ReSharper.AWS")
-val resharperBuildPath = File(project.buildDir, "dotnetBuild")
+val resharperPluginPath = project.layout.projectDirectory.dir("ReSharper.AWS")
+val resharperBuildPath = project.layout.buildDirectory.dir("dotnetBuild")
 
 val resharperParts = listOf(
     "AWS.Daemon",
@@ -72,21 +71,21 @@ val buildConfiguration = project.extra.properties["BuildConfiguration"] ?: "Debu
 // Protocol
 val protocolGroup = "protocol"
 
-val csDaemonGeneratedOutput = File(resharperPluginPath, "src/AWS.Daemon/Protocol")
-val csPsiGeneratedOutput = File(resharperPluginPath, "src/AWS.Psi/Protocol")
-val csAwsSettingsGeneratedOutput = File(resharperPluginPath, "src/AWS.Settings/Protocol")
-val csAwsProjectGeneratedOutput = File(resharperPluginPath, "src/AWS.Project/Protocol")
+val csDaemonGeneratedOutput = resharperPluginPath.dir("src/AWS.Daemon/Protocol")
+val csPsiGeneratedOutput = resharperPluginPath.dir("src/AWS.Psi/Protocol")
+val csAwsSettingsGeneratedOutput = resharperPluginPath.dir("src/AWS.Settings/Protocol")
+val csAwsProjectGeneratedOutput = resharperPluginPath.dir("src/AWS.Project/Protocol")
 
-val riderGeneratedSources = File("$buildDir/generated-src/software/aws/toolkits/jetbrains/protocol")
+val riderGeneratedSources = project.layout.buildDirectory.dir("generated-src/software/aws/toolkits/jetbrains/protocol")
 
-val modelDir = File(projectDir, "protocol/model")
-val rdgenDir = File("${project.buildDir}/rdgen/")
-
-rdgenDir.mkdirs()
+val modelDir = project.layout.projectDirectory.dir("protocol/model")
+val rdgenDir = project.layout.buildDirectory.dir("rdgen").also {
+    it.get().asFile.mkdirs()
+}
 
 configure<RdGenExtension> {
     verbose = true
-    hashFolder = rdgenDir.toString()
+    hashFolder = rdgenDir.get().asFile.absolutePath
 
     classpath({
         println("Calculating classpath for rdgen, intellij.ideaDependency is: ${intellij.ideaDependency}")
@@ -101,7 +100,7 @@ val generateModels = tasks.register<RdGenTask>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
 
-    inputs.dir(file("protocol/model"))
+    inputs.dir(project.layout.projectDirectory.dir("protocol/model"))
 
     outputs.dir(riderGeneratedSources)
     outputs.dir(csDaemonGeneratedOutput)
@@ -109,31 +108,24 @@ val generateModels = tasks.register<RdGenTask>("generateModels") {
     outputs.dir(csAwsSettingsGeneratedOutput)
     outputs.dir(csAwsProjectGeneratedOutput)
 
-    systemProperty("ktDaemonGeneratedOutput", riderGeneratedSources.resolve("DaemonProtocol").absolutePath)
-    systemProperty("csDaemonGeneratedOutput", csDaemonGeneratedOutput.absolutePath)
+    systemProperty("ktDaemonGeneratedOutput", riderGeneratedSources.get().dir("DaemonProtocol").asFile.absolutePath)
+    systemProperty("csDaemonGeneratedOutput", csDaemonGeneratedOutput.asFile.absolutePath)
 
-    systemProperty("ktPsiGeneratedOutput", riderGeneratedSources.resolve("PsiProtocol").absolutePath)
-    systemProperty("csPsiGeneratedOutput", csPsiGeneratedOutput.absolutePath)
+    systemProperty("ktPsiGeneratedOutput", riderGeneratedSources.get().dir("PsiProtocol").asFile.absolutePath)
+    systemProperty("csPsiGeneratedOutput", csPsiGeneratedOutput.asFile.absolutePath)
 
-    systemProperty("ktAwsSettingsGeneratedOutput", riderGeneratedSources.resolve("AwsSettingsProtocol").absolutePath)
-    systemProperty("csAwsSettingsGeneratedOutput", csAwsSettingsGeneratedOutput.absolutePath)
+    systemProperty("ktAwsSettingsGeneratedOutput", riderGeneratedSources.get().dir("AwsSettingsProtocol").asFile.absolutePath)
+    systemProperty("csAwsSettingsGeneratedOutput", csAwsSettingsGeneratedOutput.asFile.absolutePath)
 
-    systemProperty("ktAwsProjectGeneratedOutput", riderGeneratedSources.resolve("AwsProjectProtocol").absolutePath)
-    systemProperty("csAwsProjectGeneratedOutput", csAwsProjectGeneratedOutput.absolutePath)
-}
-
-val cleanGenerateModels = tasks.register<Delete>("cleanGenerateModels") {
-    group = protocolGroup
-    description = "Clean up generated protocol models"
-
-    delete(generateModels)
+    systemProperty("ktAwsProjectGeneratedOutput", riderGeneratedSources.get().dir("AwsProjectProtocol").asFile.absolutePath)
+    systemProperty("csAwsProjectGeneratedOutput", csAwsProjectGeneratedOutput.asFile.absolutePath)
 }
 
 // Backend
 val backendGroup = "backend"
 
 val prepareBuildProps = tasks.register("prepareBuildProps") {
-    val riderSdkVersionPropsPath = File(resharperPluginPath, "RiderSdkPackageVersion.props")
+    val riderSdkVersionPropsPath = resharperPluginPath.file("RiderSdkPackageVersion.props")
     group = backendGroup
 
     inputs.property("riderNugetSdkVersion", ideProfile.rider.nugetVersion)
@@ -148,15 +140,15 @@ val prepareBuildProps = tasks.register("prepareBuildProps") {
   </PropertyGroup>
 </Project>
 """
-        riderSdkVersionPropsPath.writeText(configText)
+        riderSdkVersionPropsPath.asFile.writeText(configText)
     }
 }
 
 val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
     group = backendGroup
 
-    val nugetConfigPath = File(projectDir, "NuGet.Config")
-    val nugetConfigPath211 = Path.of(projectDir.absolutePath, "testData", "NuGet.config").toFile()
+    val nugetConfigPath = project.layout.projectDirectory.file("NuGet.Config")
+    val nugetConfigPath211 = project.layout.projectDirectory.dir("testData").file("NuGet.config")
 
     inputs.property("rdVersion", ideProfile.rider.sdkVersion)
     outputs.files(nugetConfigPath, nugetConfigPath211)
@@ -170,8 +162,8 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
   </packageSources>
 </configuration>
 """
-        nugetConfigPath.writeText(configText)
-        nugetConfigPath211.writeText(configText)
+        nugetConfigPath.asFile.writeText(configText)
+        nugetConfigPath211.asFile.writeText(configText)
     }
 }
 
@@ -180,15 +172,18 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     description = "Builds the full ReSharper backend plugin solution"
     dependsOn(generateModels, prepareBuildProps, prepareNuGetConfig)
 
+    inputs.files(generateModels)
+    inputs.files(prepareBuildProps)
     inputs.files(prepareNuGetConfig)
     inputs.dir(resharperPluginPath)
     outputs.dir(resharperBuildPath)
+
     outputs.cacheIf { true }
 
     doLast {
         val arguments = listOf(
             "build",
-            "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
+            resharperPluginPath.file("ReSharper.AWS.sln").asFile.absolutePath
         )
         exec {
             executable = "dotnet"
@@ -234,14 +229,8 @@ artifacts {
     add(resharperDlls.name, resharperDllsDir)
 }
 
-val cleanNetBuilds = tasks.register<Delete>("cleanNetBuilds") {
-    group = protocolGroup
-    description = "Clean up obj/ bin/ folders under ReSharper.AWS"
-    delete(resharperBuildPath)
-}
-
 tasks.clean {
-    dependsOn(cleanGenerateModels, cleanNetBuilds)
+    dependsOn("cleanGenerateModels", "cleanPrepareBuildProps", "cleanPrepareNuGetConfig", "cleanBuildReSharperPlugin")
 }
 
 // Tasks:
