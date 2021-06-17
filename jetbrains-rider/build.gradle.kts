@@ -156,7 +156,6 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
     group = backendGroup
 
     val nugetConfigPath = File(projectDir, "NuGet.Config")
-    // FIX_WHEN_MIN_IS_211 remove the projectDir one above
     val nugetConfigPath211 = Path.of(projectDir.absolutePath, "testData", "NuGet.config").toFile()
 
     inputs.property("rdVersion", ideProfile.rider.sdkVersion)
@@ -181,8 +180,10 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     description = "Builds the full ReSharper backend plugin solution"
     dependsOn(generateModels, prepareBuildProps, prepareNuGetConfig)
 
+    inputs.files(prepareNuGetConfig)
     inputs.dir(resharperPluginPath)
     outputs.dir(resharperBuildPath)
+    outputs.cacheIf { true }
 
     doLast {
         val arguments = listOf(
