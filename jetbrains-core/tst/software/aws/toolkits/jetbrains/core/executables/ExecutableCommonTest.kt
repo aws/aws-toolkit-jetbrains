@@ -51,8 +51,16 @@ class ExecutableCommonTest {
         val min2 = SemVer("4.0.1", 4, 0, 1)
         val max2 = SemVer("9.9.9", 9, 9, 9)
         val name = "Lower than minimum"
-        assertThatThrownBy { ExecutableCommon.checkSemVerVersionForParallelValidVersions(curr, min1, max1, min2, max2, name) }
-            .isInstanceOf(RuntimeException::class.java).hasMessageContaining(name)
+        assertThatThrownBy {
+            ExecutableCommon.checkSemVerVersionForParallelValidVersions(
+                curr,
+                listOf(
+                    ExecutableVersionRange(min1, max1),
+                    ExecutableVersionRange(min2, max2)
+                ),
+                name
+            )
+        }.isInstanceOf(RuntimeException::class.java)
     }
 
     @Test
@@ -63,8 +71,16 @@ class ExecutableCommonTest {
         val min2 = SemVer("4.0.1", 4, 0, 1)
         val max2 = SemVer("8.8.8", 8, 8, 8)
         val name = "Higher than maximum"
-        assertThatThrownBy { ExecutableCommon.checkSemVerVersionForParallelValidVersions(curr, min1, max1, min2, max2, name) }
-            .isInstanceOf(RuntimeException::class.java)
+        assertThatThrownBy {
+            ExecutableCommon.checkSemVerVersionForParallelValidVersions(
+                curr,
+                listOf(
+                    ExecutableVersionRange(min1, max1),
+                    ExecutableVersionRange(min2, max2)
+                ),
+                name
+            )
+        }.isInstanceOf(RuntimeException::class.java)
     }
 
     @Test
@@ -75,7 +91,15 @@ class ExecutableCommonTest {
         val min2 = SemVer("4.0.1", 4, 0, 1)
         val max2 = SemVer("8.8.8", 8, 8, 8)
         val name = "Between two ranges"
-        assertThatThrownBy { ExecutableCommon.checkSemVerVersionForParallelValidVersions(curr, min1, max1, min2, max2, name) }
-            .isInstanceOf(RuntimeException::class.java)
+        assertThatThrownBy {
+            ExecutableCommon.checkSemVerVersionForParallelValidVersions(
+                curr,
+                listOf(
+                    ExecutableVersionRange(min1, max1),
+                    ExecutableVersionRange(min2, max2)
+                ),
+                name
+            )
+        }.isInstanceOf(RuntimeException::class.java)
     }
 }

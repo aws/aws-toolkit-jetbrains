@@ -68,29 +68,25 @@ class ExecutableCommon {
         @JvmStatic
         fun checkSemVerVersionForParallelValidVersions(
             version: SemVer,
-            minVersionLower: SemVer,
-            maxVersionLower: SemVer,
-            minVersionHigher: SemVer,
-            maxVersionHigher: SemVer,
+            versionRange: List<ExecutableVersionRange>,
             executableName: String
         ) {
             // for use of AWS CLI version 1 and version 2 in ECS Exec
+
+            val versionRanges = versionRange.joinToString(separator = " / ", transform = { "${it.min}  ≤ version < ${it.max}" })
             val versionOutOfRangeMessage = message(
                 "executableCommon.version_range_wrong",
                 executableName,
-                minVersionLower,
-                maxVersionLower,
-                minVersionHigher,
-                maxVersionHigher,
+                versionRanges,
                 version
             )
-            if (version >= maxVersionLower && version < minVersionHigher) {
-                throw RuntimeException("$versionOutOfRangeMessage")
-            } else if (version >= maxVersionHigher) {
-                throw RuntimeException("$versionOutOfRangeMessage ${message("executableCommon.version_too_high")}")
-            } else if (version < minVersionLower) {
-                throw RuntimeException("$versionOutOfRangeMessage ${message("executableCommon.version_too_low", executableName)}")
+
+            versionRange.forEach {
+                if (it.max > version && version >= it.min) {
+                    return
+                }
             }
+            throw RuntimeException(versionOutOfRangeMessage)
         }
 
         /**
@@ -109,3 +105,5 @@ class ExecutableCommon {
         private val DEFAULT_TIMEOUT = Duration.ofSeconds(5)
     }
 }
+
+data class ExecutableVersionRange(val min: SemVer, val max: SemVer)
