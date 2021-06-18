@@ -14,5 +14,5 @@ object AwsToolkit {
         PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))?.version ?: "Unknown"
     }
 
-    fun isCloudDebugEnabled() = Registry.`is`("aws.feature.cloudDebug")
+    fun isCloudDebugEnabled() = Registry.`is`("aws.feature.ecsCloudDebug")
 }
