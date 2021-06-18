@@ -71,7 +71,11 @@ class ExecutableCommon {
             versionRange: List<ExecutableVersionRange>,
             executableName: String
         ) {
-            // for use of AWS CLI version 1 and version 2 in ECS Exec
+            versionRange.forEach {
+                if (it.max > version && version >= it.min) {
+                    return
+                }
+            }
 
             val versionRanges = versionRange.joinToString(separator = " / ", transform = { "${it.min}  ≤ version < ${it.max}" })
             val versionOutOfRangeMessage = message(
@@ -81,11 +85,6 @@ class ExecutableCommon {
                 version
             )
 
-            versionRange.forEach {
-                if (it.max > version && version >= it.min) {
-                    return
-                }
-            }
             throw RuntimeException(versionOutOfRangeMessage)
         }
 
