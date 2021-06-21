@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.ComboboxSpeedSearch
@@ -11,6 +12,7 @@ import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.PropertyBinding
 import com.intellij.ui.layout.Row
+import com.intellij.ui.layout.ValidationInfoBuilder
 import com.intellij.ui.layout.applyToComponent
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialType
@@ -112,12 +114,15 @@ class CredentialIdentifierSelector(identifiers: List<CredentialIdentifier> = Cre
                 set = { prop.set(it!!) /* Guarded by apply check */ }
             )
             return createSelector(binding, identifiers)
-                .withValidationOnApply { it.validateSelection() }
-                .withValidationOnInput { it.validateSelection() }
+                .withValidationOnApply { validateSelection(it) }
+                .withValidationOnInput { validateSelection(it) }
         }
 
-        private fun CredentialIdentifierSelector.validateSelection() =
-            if (!this.isSelectionValid()) error(message("credentials.invalid.invalid_selection")) else null
+        private fun ValidationInfoBuilder.validateSelection(selector: CredentialIdentifierSelector): ValidationInfo? = if (!selector.isSelectionValid()) {
+            error(message("credentials.invalid.invalid_selection"))
+        } else {
+            null
+        }
 
         private fun Row.createSelector(
             binding: PropertyBinding<CredentialIdentifier?>,

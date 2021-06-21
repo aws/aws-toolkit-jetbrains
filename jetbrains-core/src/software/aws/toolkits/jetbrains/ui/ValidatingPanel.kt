@@ -107,7 +107,7 @@ class ValidatingPanel internal constructor(
         validationAlarm.addRequest(validateRequest, VALIDATION_INTERVAL_MS, ModalityState.stateForComponent(this))
     }
 
-    fun hasValidInputs(): Boolean {
+    fun runValidation(): Boolean {
         val errorList = performValidation()
         return if (errorList.isNotEmpty()) {
             // Give the first error focus
@@ -127,7 +127,7 @@ class ValidatingPanel internal constructor(
 
     private inner class ValidatingAction(text: String, private val listener: (ActionEvent) -> Unit) : AbstractAction(text) {
         override fun actionPerformed(e: ActionEvent) {
-            if (hasValidInputs()) {
+            if (runValidation()) {
                 listener.invoke(e)
             }
         }
@@ -170,7 +170,7 @@ class ValidatingPanel internal constructor(
     }
 
     fun apply() {
-        if (hasValidInputs()) {
+        if (runValidation()) {
             contentPanel.apply()
         }
     }

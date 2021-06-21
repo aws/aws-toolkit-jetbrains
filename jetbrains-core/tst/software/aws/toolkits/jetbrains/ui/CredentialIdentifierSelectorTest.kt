@@ -136,7 +136,7 @@ class CredentialIdentifierSelectorTest {
         test.selector.setSelectedCredentialIdentifier(selection)
         panel.apply()
 
-        assertThat(panel.hasValidInputs()).isTrue
+        assertThat(panel.runValidation()).isTrue
         assertThat(test.credentialIdentifierUiDsl).isEqualTo(selection)
     }
 
@@ -146,7 +146,7 @@ class CredentialIdentifierSelectorTest {
         val panel = test.panel()
         panel.apply()
 
-        assertThat(panel.hasValidInputs()).isFalse
+        assertThat(panel.runValidation()).isFalse
         assertThatThrownBy { test.credentialIdentifierUiDsl }.isInstanceOf(UninitializedPropertyAccessException::class.java)
     }
 
@@ -156,7 +156,7 @@ class CredentialIdentifierSelectorTest {
         val panel = test.panel()
         panel.apply()
 
-        assertThat(panel.hasValidInputs()).isTrue
+        assertThat(panel.runValidation()).isTrue
         assertThat(test.credentialIdentifierUiDsl).isNull()
     }
 }
