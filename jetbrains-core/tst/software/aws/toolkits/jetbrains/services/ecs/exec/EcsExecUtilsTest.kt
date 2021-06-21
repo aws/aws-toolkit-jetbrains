@@ -75,7 +75,7 @@ class EcsExecUtilsTest {
             }
             argumentCaptor<Notification>().apply {
                 verify(notificationMock).notify(capture())
-                assertThat(firstValue.content).contains(message("ecs.execute_command_enable_in_progress"))
+                assertThat(firstValue.content).contains(message("ecs.execute_command_enable_in_progress", ecsService.serviceName()))
             }
         }
     }
@@ -99,7 +99,7 @@ class EcsExecUtilsTest {
 
             argumentCaptor<Notification>().apply {
                 verify(notificationMock).notify(capture())
-                assertThat(firstValue.content).contains(message("ecs.execute_command_disable_in_progress"))
+                assertThat(firstValue.content).contains(message("ecs.execute_command_disable_in_progress", ecsService.serviceName()))
             }
         }
     }

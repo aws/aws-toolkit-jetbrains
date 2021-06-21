@@ -106,9 +106,9 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         val serviceStateChangeInProgress = response.services().first().deployments().first().rolloutState() == DeploymentRolloutState.IN_PROGRESS
         if (serviceStateChangeInProgress) {
             if (actionName == message("ecs.execute_command_enable")) {
-                notifyWarn(actionName, message("ecs.execute_command_enable_in_progress"), project)
+                notifyWarn(actionName, message("ecs.execute_command_enable_in_progress", service.serviceName()), project)
             } else {
-                notifyWarn(actionName, message("ecs.execute_command_disable_in_progress"), project)
+                notifyWarn(actionName, message("ecs.execute_command_disable_in_progress", service.serviceName()), project)
             }
         } else {
             block()
