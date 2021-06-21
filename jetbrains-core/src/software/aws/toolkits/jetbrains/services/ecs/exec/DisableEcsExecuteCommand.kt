@@ -25,18 +25,16 @@ class DisableEcsExecuteCommand :
             EnableDisableExecuteCommandWarning(selected.nodeProject, enable = false, selected.value.serviceName()).showAndGet()
         ) {
             launch {
-                disableExecuteCommand(selected.nodeProject, selected.value, selected)
+                disableExecuteCommand(selected.nodeProject, selected.value)
             }
         }
     }
 
     override fun update(selected: EcsServiceNode, e: AnActionEvent) {
-        e.presentation.isVisible = selected.executeCommandEnabled() &&
-            !EcsUtils.isInstrumented(selected.value.serviceArn()) &&
-            !selected.execCommandStateChangeInProgress
+        e.presentation.isVisible = selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn())
     }
 
-    private fun disableExecuteCommand(project: Project, service: Service, selectedNode: EcsServiceNode) {
-        EcsExecUtils.updateExecuteCommandFlag(project, service, enabled = false, selectedNode)
+    private fun disableExecuteCommand(project: Project, service: Service) {
+        EcsExecUtils.updateExecuteCommandFlag(project, service, enabled = false)
     }
 }
