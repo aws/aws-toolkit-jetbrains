@@ -27,7 +27,7 @@ gradleEnterprise {
     }
 }
 
-val regionEnv: Provider<String> = providers.environmentVariable("SOME_ENV_VAR").forUseAtConfigurationTime()
+val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION").forUseAtConfigurationTime()
 val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET").forUseAtConfigurationTime()
 val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX").forUseAtConfigurationTime()
 if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
