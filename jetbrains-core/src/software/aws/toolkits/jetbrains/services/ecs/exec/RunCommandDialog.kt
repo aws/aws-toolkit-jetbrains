@@ -11,7 +11,9 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.tools.Tool
 import com.intellij.tools.ToolRunProfile
 import com.intellij.ui.CollectionComboBoxModel
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.GrowPolicy
+import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
@@ -22,6 +24,8 @@ import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.nio.file.Path
 import javax.swing.JComponent
+import javax.swing.JTextField
+import javax.swing.plaf.basic.BasicComboBoxEditor
 
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
     private val tasks = ResourceSelector
@@ -55,6 +59,14 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                     .also {
                         it.component.isEditable = true
                         it.component.selectedIndex = -1
+                    }.applyToComponent {
+                        editor = object : BasicComboBoxEditor.UIResource() {
+                            override fun createEditorComponent(): JTextField {
+                                val noCommandEntered = JBTextField()
+                                noCommandEntered.emptyText.text = message("ecs.execute_command_run_command_default_text")
+                                return noCommandEntered
+                            }
+                        }
                     }
             }
         }
@@ -93,7 +105,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
     private fun runCommand() {
         try {
             val awsCliPath = AwsCliExecutable().resolve() ?: throw IllegalStateException(message("executableCommon.missing_executable", "AWS CLI"))
-            val execCommand = buildExecCommandConfiguration(command, awsCliPath)
+            val execCommand = buildExecCommandConfiguration(('"' + command + '"'), awsCliPath)
             val environment = ExecutionEnvironmentBuilder
                 .create(
                     project,

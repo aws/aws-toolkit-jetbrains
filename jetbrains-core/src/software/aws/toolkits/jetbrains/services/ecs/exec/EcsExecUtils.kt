@@ -9,8 +9,8 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.EcsClient
+import software.amazon.awssdk.services.ecs.model.DeploymentRolloutState
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
 import software.amazon.awssdk.services.ecs.model.InvalidParameterException
 import software.amazon.awssdk.services.ecs.model.Service
@@ -22,13 +22,14 @@ import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
 
 object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
     fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
-        launch {
+        if (ensureServiceIsInStableState(project, service)) {
             try {
                 val request = UpdateServiceRequest.builder()
                     .cluster(service.clusterArn())
@@ -42,6 +43,12 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                     TaskRoleNotFoundWarningDialog(project).show()
                     EcsTelemetry.enableExecuteCommand(project, Result.Failed)
                 }
+            }
+        } else {
+            if (enabled) {
+                notifyWarn(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_in_progress", service.serviceName()), project)
+            } else {
+                notifyWarn(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_in_progress", service.serviceName()), project)
             }
         }
     }
@@ -86,5 +93,15 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                 }
             }
         )
+    }
+
+    fun ensureServiceIsInStableState(project: Project, service: Service): Boolean {
+        val response = project.awsClient<EcsClient>().describeServices(
+            DescribeServicesRequest.builder()
+                .cluster(service.clusterArn())
+                .services(service.serviceArn()).build()
+        )
+        val serviceStateChangeInProgress = response.services().first().deployments().first().rolloutState() == DeploymentRolloutState.IN_PROGRESS
+        return !serviceStateChangeInProgress
     }
 }
