@@ -75,8 +75,8 @@ tasks.jar {
 }
 
 tasks.patchPluginXml {
-    sinceBuild.set(ideProfile.sinceVersion)
-    untilBuild.set(ideProfile.untilVersion)
+    sinceBuild.set(toolkitIntelliJ.ideProfile().map { it.sinceVersion })
+    untilBuild.set(toolkitIntelliJ.ideProfile().map { it.untilVersion })
 }
 
 // Disable building the settings search cache since it 1. fails the build, 2. gets run on the final packaged plugin
