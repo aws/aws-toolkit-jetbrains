@@ -4,10 +4,9 @@
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
-import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
-import software.aws.toolkits.gradle.intellij
+import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension.IdeFlavor
 
@@ -62,92 +61,82 @@ tasks.processResources {
 }
 
 // Run after the project has been evaluated so that the extension (intellijToolkit) has been configured
-afterEvaluate {
-    val flavor = toolkitIntelliJ.ideFlavor.get()
-    val productProfile = when (flavor) {
-        IdeFlavor.IC -> ideProfile.community
-        IdeFlavor.IU -> ideProfile.ultimate
-        IdeFlavor.RD -> ideProfile.rider
-    }
+intellij {
+    pluginName.set("aws-toolkit-jetbrains")
+    version.set(toolkitIntelliJ.productProfile().map { it.sdkVersion })
+    plugins.set(toolkitIntelliJ.productProfile().map { it.plugins.toMutableList() })
 
-    intellij {
-        pluginName.set("aws-toolkit-jetbrains")
-        version.set(productProfile.sdkVersion)
-        plugins.set(productProfile.plugins.toList())
+    downloadSources.set(toolkitIntelliJ.ideFlavor.map { it == IdeFlavor.IC && System.getenv("CI") == null })
+    instrumentCode.set(toolkitIntelliJ.ideFlavor.map { it != IdeFlavor.RD })
+}
 
-        downloadSources.set(flavor != IdeFlavor.IC && System.getenv("CI") == null)
-        instrumentCode.set(flavor != IdeFlavor.RD)
-    }
+tasks.jar {
+    archiveBaseName.set(toolkitIntelliJ.ideFlavor.map { "aws-toolkit-jetbrains-$it" })
+}
 
-    tasks.jar {
-        archiveBaseName.set("aws-toolkit-jetbrains-$flavor")
-    }
+tasks.patchPluginXml {
+    sinceBuild.set(ideProfile.sinceVersion)
+    untilBuild.set(ideProfile.untilVersion)
+}
 
+// Disable building the settings search cache since it 1. fails the build, 2. gets run on the final packaged plugin
+tasks.buildSearchableOptions {
+    enabled = false
+}
 
-    tasks.patchPluginXml {
-        sinceBuild.set(ideProfile.sinceVersion)
-        untilBuild.set(ideProfile.untilVersion)
-    }
+tasks.withType<Test>().all {
+    systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
+    systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
+}
 
-    // Disable building the settings search cache since it 1. fails the build, 2. gets run on the final packaged plugin
-    tasks.buildSearchableOptions {
-        enabled = false
-    }
+tasks.withType<JavaExec> {
+    systemProperty("aws.toolkits.enableTelemetry", false)
+}
 
-    tasks.withType<Test>().all {
-        systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
-        systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
-    }
-
-    tasks.withType<JavaExec> {
-        systemProperty("aws.toolkits.enableTelemetry", false)
-    }
-
-    tasks.runIde {
-        val alternativeIde = System.getenv("ALTERNATIVE_IDE")
-        if (alternativeIde != null) {
-            // remove the trailing slash if there is one or else it will not work
-            val path = File(alternativeIde.trimEnd('/'))
-            if (path.exists()) {
-                ideDir.set(path)
-            } else {
-                throw GradleException("ALTERNATIVE_IDE path not found $alternativeIde")
-            }
+tasks.runIde {
+    val alternativeIde = System.getenv("ALTERNATIVE_IDE")
+    if (alternativeIde != null) {
+        // remove the trailing slash if there is one or else it will not work
+        val path = File(alternativeIde.trimEnd('/'))
+        if (path.exists()) {
+            ideDir.set(path)
+        } else {
+            throw GradleException("ALTERNATIVE_IDE path not found $alternativeIde")
         }
     }
+}
 
-    tasks.withType<DownloadRobotServerPluginTask> {
-        version.set(remoteRobotVersion)
+tasks.withType<DownloadRobotServerPluginTask> {
+    version.set(remoteRobotVersion)
+}
+
+// Enable coverage for the UI test target IDE
+extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<RunIdeForUiTestTask>())
+tasks.withType<RunIdeForUiTestTask>().all {
+    systemProperty("robot-server.port", remoteRobotPort)
+    systemProperty("ide.mac.file.chooser.native", "false")
+    systemProperty("jb.consents.confirmation.enabled", "false")
+    // This does some magic in EndUserAgreement.java to make it not show the privacy policy
+    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
+    // This only works on 2020.3+ FIX_WHEN_MIN_IS_203 remove this explanation
+    systemProperty("ide.show.tips.on.startup.default.value", false)
+
+    systemProperty("aws.telemetry.skip_prompt", "true")
+    systemProperty("aws.suppress_deprecation_prompt", true)
+
+    // These are experiments to enable for UI tests
+    systemProperty("aws.feature.connectedLocalTerminal", true)
+    ciOnly {
+        systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
     }
 
-    // Enable coverage for the UI test target IDE
-    extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<RunIdeForUiTestTask>())
-    tasks.withType<RunIdeForUiTestTask>().all {
-        systemProperty("robot-server.port", remoteRobotPort)
-        systemProperty("ide.mac.file.chooser.native", "false")
-        systemProperty("jb.consents.confirmation.enabled", "false")
-        // This does some magic in EndUserAgreement.java to make it not show the privacy policy
-        systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-        // This only works on 2020.3+ FIX_WHEN_MIN_IS_203 remove this explanation
-        systemProperty("ide.show.tips.on.startup.default.value", false)
+    debugOptions {
+        enabled.set(true)
+        suspend.set(false)
+    }
 
-        systemProperty("aws.telemetry.skip_prompt", "true")
-        systemProperty("aws.suppress_deprecation_prompt", true)
-
-        // These are experiments to enable for UI tests
-        systemProperty("aws.feature.connectedLocalTerminal", true)
-        ciOnly {
-            systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
-        }
-
-        debugOptions {
-            enabled.set(true)
-            suspend.set(false)
-        }
-
-        configure<JacocoTaskExtension> {
-            includes = listOf("software.aws.toolkits.*")
-            output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
-        }
+    configure<JacocoTaskExtension> {
+        includes = listOf("software.aws.toolkits.*")
+        output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
     }
 }
