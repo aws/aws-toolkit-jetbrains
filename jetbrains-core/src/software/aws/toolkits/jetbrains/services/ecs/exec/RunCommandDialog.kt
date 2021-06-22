@@ -105,7 +105,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
     private fun runCommand() {
         try {
             val awsCliPath = AwsCliExecutable().resolve() ?: throw IllegalStateException(message("executableCommon.missing_executable", "AWS CLI"))
-            val execCommand = buildExecCommandConfiguration(("\"" + command + "\""), awsCliPath)
+            val execCommand = buildExecCommandConfiguration(('"' + command + '"'), awsCliPath)
             val environment = ExecutionEnvironmentBuilder
                 .create(
                     project,

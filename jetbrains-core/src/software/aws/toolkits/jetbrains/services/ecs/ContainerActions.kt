@@ -35,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.ecs.resources.SessionManagerPlug
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 
 class ContainerActions(
@@ -139,12 +140,14 @@ class ExecuteCommandAction(
     CoroutineScope by ApplicationThreadPoolScope("ContainerActions") {
     override fun actionPerformed(e: AnActionEvent) {
         launch {
-            EcsExecUtils.ensureServiceIsInStableState(project, container.service, message("ecs.execute_command_run")) {
+            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
                     runInEdt {
                         RunCommandDialog(project, container).show()
                     }
                 }
+            } else {
+                notifyWarn(message("ecs.execute_command_run"), message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project)
             }
         }
     }
@@ -161,7 +164,7 @@ class ExecuteCommandInShellAction(
     CoroutineScope by ApplicationThreadPoolScope("ContainerActions") {
     override fun actionPerformed(e: AnActionEvent) {
         launch {
-            EcsExecUtils.ensureServiceIsInStableState(project, container.service, message("ecs.execute_command_run_command_in_shell")) {
+            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
                     val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
                     if (connectionSettings != null) {
@@ -172,6 +175,11 @@ class ExecuteCommandInShellAction(
                         }
                     }
                 }
+            } else {
+                notifyWarn(
+                    message("ecs.execute_command_run_command_in_shell"),
+                    message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project
+                )
             }
         }
     }

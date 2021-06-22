@@ -29,28 +29,26 @@ import software.aws.toolkits.telemetry.Result
 
 object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
     fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
-        val callingActionName = if (enabled) message("ecs.execute_command_enable") else message("ecs.execute_command_disable")
-
-        ensureServiceIsInStableState(project, service, callingActionName) {
+        if (ensureServiceIsInStableState(project, service)) {
             try {
-                val client = project.awsClient<EcsClient>()
-                val res = client.describeServices(DescribeServicesRequest.builder().cluster(service.clusterArn()).services(service.serviceArn()).build())
-                if (res.services().first().deployments().first().rolloutState() == DeploymentRolloutState.IN_PROGRESS) {
-                    notifyWarn("Process in Progress", "Command Execution is being enabled")
-                } else {
-                    val request = UpdateServiceRequest.builder()
-                        .cluster(service.clusterArn())
-                        .service(service.serviceName())
-                        .enableExecuteCommand(enabled)
-                        .forceNewDeployment(true).build()
-                    client.updateService(request)
-                    checkServiceState(project, service, enabled)
-                }
+                val request = UpdateServiceRequest.builder()
+                    .cluster(service.clusterArn())
+                    .service(service.serviceName())
+                    .enableExecuteCommand(enabled)
+                    .forceNewDeployment(true).build()
+                project.awsClient<EcsClient>().updateService(request)
+                checkServiceState(project, service, enabled)
             } catch (e: InvalidParameterException) {
                 runInEdt {
                     TaskRoleNotFoundWarningDialog(project).show()
                     EcsTelemetry.enableExecuteCommand(project, Result.Failed)
                 }
+            }
+        } else {
+            if (enabled) {
+                notifyWarn(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_in_progress", service.serviceName()), project)
+            } else {
+                notifyWarn(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_in_progress", service.serviceName()), project)
             }
         }
     }
@@ -97,21 +95,13 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         )
     }
 
-    fun ensureServiceIsInStableState(project: Project, service: Service, actionName: String, block: () -> Unit) {
+    fun ensureServiceIsInStableState(project: Project, service: Service): Boolean {
         val response = project.awsClient<EcsClient>().describeServices(
             DescribeServicesRequest.builder()
                 .cluster(service.clusterArn())
                 .services(service.serviceArn()).build()
         )
         val serviceStateChangeInProgress = response.services().first().deployments().first().rolloutState() == DeploymentRolloutState.IN_PROGRESS
-        if (serviceStateChangeInProgress) {
-            if (actionName == message("ecs.execute_command_enable")) {
-                notifyWarn(actionName, message("ecs.execute_command_enable_in_progress", service.serviceName()), project)
-            } else {
-                notifyWarn(actionName, message("ecs.execute_command_disable_in_progress", service.serviceName()), project)
-            }
-        } else {
-            block()
-        }
+        return !serviceStateChangeInProgress
     }
 }
