@@ -21,11 +21,16 @@ import software.amazon.awssdk.services.ec2.model.Instance
 import software.amazon.awssdk.services.ec2.model.Reservation
 import software.amazon.awssdk.services.ecs.EcsClient
 import software.amazon.awssdk.services.ecs.model.ContainerInstance
+import software.amazon.awssdk.services.ecs.model.Deployment
+import software.amazon.awssdk.services.ecs.model.DeploymentRolloutState
 import software.amazon.awssdk.services.ecs.model.DescribeContainerInstancesRequest
 import software.amazon.awssdk.services.ecs.model.DescribeContainerInstancesResponse
+import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
+import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse
 import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse
 import software.amazon.awssdk.services.ecs.model.LaunchType
+import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.Task
 import software.amazon.awssdk.services.ecs.model.TaskDefinition
 import software.amazon.awssdk.services.ecs.model.TaskOverride
@@ -42,11 +47,6 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import java.util.concurrent.CompletableFuture
-import software.amazon.awssdk.services.ecs.model.Deployment
-import software.amazon.awssdk.services.ecs.model.DeploymentRolloutState
-import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
-import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse
-import software.amazon.awssdk.services.ecs.model.Service
 
 class EcsExecUtilsTest {
     @Rule
