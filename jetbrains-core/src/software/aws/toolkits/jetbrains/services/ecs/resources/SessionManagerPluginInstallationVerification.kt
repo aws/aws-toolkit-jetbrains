@@ -5,13 +5,15 @@ package software.aws.toolkits.jetbrains.services.ecs.resources
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.vcs.log.runInEdt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.ecs.exec.SessionManagerPluginWarning
 
 object SessionManagerPluginInstallationVerification {
-    fun checkInstallation(): Boolean = runBlocking(Dispatchers.IO) {
+    private fun checkInstallation(): Boolean = runBlocking(Dispatchers.IO) {
         try {
             val process = CapturingProcessHandler(GeneralCommandLine("session-manager-plugin")).runProcess()
             if (process.exitCode != 0) {
@@ -27,7 +29,9 @@ object SessionManagerPluginInstallationVerification {
         if (checkInstallation()) {
             block()
         } else {
-            SessionManagerPluginWarning(project).show()
+            runInEdt {
+                SessionManagerPluginWarning(project).show()
+            }
         }
     }
 }

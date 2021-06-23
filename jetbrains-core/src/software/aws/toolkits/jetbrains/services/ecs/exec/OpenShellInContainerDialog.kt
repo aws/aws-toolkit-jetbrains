@@ -130,7 +130,7 @@ class OpenShellInContainerDialog(
             environmentVariables,
             container.service.clusterArn(),
             task,
-            shell,
+            ('"' + shell + '"'),
             container.containerDefinition.name()
         )
         return PtyProcess.exec(commandLine.getCommandLineList(null).toTypedArray(), commandLine.effectiveEnvironment, null)

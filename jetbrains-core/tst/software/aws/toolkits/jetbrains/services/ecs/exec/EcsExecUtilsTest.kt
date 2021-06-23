@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -41,6 +42,11 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import java.util.concurrent.CompletableFuture
+import software.amazon.awssdk.services.ecs.model.Deployment
+import software.amazon.awssdk.services.ecs.model.DeploymentRolloutState
+import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
+import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse
+import software.amazon.awssdk.services.ecs.model.Service
 
 class EcsExecUtilsTest {
     @Rule
@@ -232,5 +238,49 @@ class EcsExecUtilsTest {
 
         val haveRequiredPermissions = EcsExecUtils.checkRequiredPermissions(projectRule.project, clusterArn, taskArn)
         assertThat(haveRequiredPermissions).isTrue
+    }
+
+    @Test
+    fun `Service update in progress returns false`() {
+        val ecsService = Service.builder()
+            .clusterArn(clusterArn)
+            .serviceArn(serviceArn)
+            .enableExecuteCommand(true)
+            .serviceName("service-name")
+            .deployments(listOf(Deployment.builder().rolloutState(DeploymentRolloutState.IN_PROGRESS).build()))
+            .build()
+        ecsClient.stub {
+            on {
+                describeServices(any<DescribeServicesRequest>())
+            } doAnswer {
+                DescribeServicesResponse.builder().services(ecsService).build()
+            }
+        }
+        val serviceStateStable = runBlocking {
+            EcsExecUtils.ensureServiceIsInStableState(projectRule.project, ecsService)
+        }
+        assertThat(serviceStateStable).isFalse
+    }
+
+    @Test
+    fun `Service is currently stable returns true`() {
+        val ecsService = Service.builder()
+            .clusterArn(clusterArn)
+            .serviceArn(serviceArn)
+            .enableExecuteCommand(true)
+            .serviceName("service-name")
+            .deployments(listOf(Deployment.builder().rolloutState(DeploymentRolloutState.COMPLETED).build()))
+            .build()
+        ecsClient.stub {
+            on {
+                describeServices(any<DescribeServicesRequest>())
+            } doAnswer {
+                DescribeServicesResponse.builder().services(ecsService).build()
+            }
+        }
+        val serviceStateStable = runBlocking {
+            EcsExecUtils.ensureServiceIsInStableState(projectRule.project, ecsService)
+        }
+        assertThat(serviceStateStable).isTrue
     }
 }

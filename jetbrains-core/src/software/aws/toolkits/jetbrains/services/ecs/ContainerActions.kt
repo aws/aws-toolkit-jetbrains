@@ -7,8 +7,11 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
@@ -24,18 +27,22 @@ import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
+import software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecUtils
 import software.aws.toolkits.jetbrains.services.ecs.exec.OpenShellInContainerDialog
 import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.services.ecs.resources.SessionManagerPluginInstallationVerification
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 
 class ContainerActions(
     private val project: Project,
     private val container: ContainerDetails
 ) : ActionGroup(container.containerDefinition.name(), null, null) {
+
     init {
         isPopup = true
     }
@@ -60,7 +67,12 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
             return emptyList()
         }
 
-        val containerActions = containers.map { ContainerActions(selected.nodeProject, ContainerDetails(selected.value, it)) }
+        val containerActions = containers.map {
+            ContainerActions(
+                selected.nodeProject,
+                ContainerDetails(selected.value, it)
+            )
+        }
 
         if (containerActions.isEmpty()) {
             return emptyList()
@@ -124,10 +136,19 @@ class ContainerLogsAction(
 class ExecuteCommandAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.execute_command_run"), null, null) {
+) : AnAction(message("ecs.execute_command_run"), null, null),
+    CoroutineScope by ApplicationThreadPoolScope("ContainerActions") {
     override fun actionPerformed(e: AnActionEvent) {
-        SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
-            RunCommandDialog(project, container).show()
+        launch {
+            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+                SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
+                    runInEdt {
+                        RunCommandDialog(project, container).show()
+                    }
+                }
+            } else {
+                notifyWarn(message("ecs.execute_command_run"), message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project)
+            }
         }
     }
     override fun update(e: AnActionEvent) {
@@ -139,20 +160,33 @@ class ExecuteCommandAction(
 class ExecuteCommandInShellAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
+) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null),
+    CoroutineScope by ApplicationThreadPoolScope("ContainerActions") {
     override fun actionPerformed(e: AnActionEvent) {
-        SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
-            val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
-            if (connectionSettings != null) {
-                val environmentVariables = connectionSettings.region.toEnvironmentVariables() +
-                    connectionSettings.credentials.resolveCredentials().toEnvironmentVariables()
-                OpenShellInContainerDialog(project, container, environmentVariables).show()
+        launch {
+            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+                SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
+                    val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+                    if (connectionSettings != null) {
+                        val environmentVariables = connectionSettings.region.toEnvironmentVariables() +
+                            connectionSettings.credentials.resolveCredentials().toEnvironmentVariables()
+                        runInEdt {
+                            OpenShellInContainerDialog(project, container, environmentVariables).show()
+                        }
+                    }
+                }
+            } else {
+                notifyWarn(
+                    message("ecs.execute_command_run_command_in_shell"),
+                    message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project
+                )
             }
         }
     }
 
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn()) && pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")
+            !EcsUtils.isInstrumented(container.service.serviceArn()) &&
+            pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")
     }
 }
