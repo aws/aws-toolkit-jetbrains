@@ -85,10 +85,10 @@ class OpenShellInContainerDialog(
         super.doOKAction()
         val task = tasks.selected() ?: throw IllegalStateException("Task not Selected")
         launch {
-            try {
-                EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
+            val taskRoleFound: Boolean = EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
+            if (taskRoleFound) {
                 runExecCommand()
-            } catch (e: Exception) {
+            } else {
                 withContext(getCoroutineUiContext(ModalityState.any())) {
                     TaskRoleNotFoundWarningDialog(project).show()
                 }

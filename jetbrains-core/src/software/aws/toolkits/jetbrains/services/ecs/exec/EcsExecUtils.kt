@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -98,52 +99,75 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         )
     }
 
-    fun checkRequiredPermissions(project: Project, clusterArn: String, taskArn: String) {
+    fun getEc2InstanceTaskRoleArn(project: Project, clusterArn: String, ecsClient: EcsClient, task: software.amazon.awssdk.services.ecs.model.Task): String? {
+        try {
+            val iamClient = project.awsClient<IamClient>()
+            val containerInstanceArn = task.containerInstanceArn()
+            val res = ecsClient.describeContainerInstances(
+                DescribeContainerInstancesRequest
+                    .builder()
+                    .cluster(clusterArn)
+                    .containerInstances(containerInstanceArn).build()
+            )
+            val ec2InstanceId = res.containerInstances().first().ec2InstanceId()
+            val instanceProfileArn = project.awsClient<Ec2Client>().describeInstances(
+                DescribeInstancesRequest.builder().instanceIds(ec2InstanceId).build()
+            ).reservations().first().instances().first().iamInstanceProfile().arn() ?: return null
+            val instanceProfileName = instanceProfileArn.substringAfter(":instance-profile/")
+            return iamClient.getInstanceProfile(GetInstanceProfileRequest.builder().instanceProfileName(instanceProfileName).build()).instanceProfile()
+                .roles().first().arn() ?: null
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    fun getTaskRoleArn(project: Project, clusterArn: String, taskArn: String): String? {
         val ecsClient = project.awsClient<EcsClient>()
-        val iamClient = project.awsClient<IamClient>()
-        val task = ecsClient.describeTasks(DescribeTasksRequest.builder().tasks(taskArn).cluster(clusterArn).build())
-        val taskRoleArn = if (task.tasks()[0].overrides().taskRoleArn() != null) {
-            task.tasks()[0].overrides().taskRoleArn()
+        val task = ecsClient.describeTasks(DescribeTasksRequest.builder().tasks(taskArn).cluster(clusterArn).build()).tasks().first()
+        return if (task.overrides().taskRoleArn() != null) {
+            task.overrides().taskRoleArn()
         } else {
-            val roleArn = project.getResourceNow(EcsResources.describeTaskDefinition(task.tasks()[0].taskDefinitionArn())).taskRoleArn()
+            val roleArn = project.getResourceNow(EcsResources.describeTaskDefinition(task.taskDefinitionArn())).taskRoleArn()
             if (roleArn == null) {
-                val launchType = task.tasks()[0].launchType()
+                val launchType = task.launchType()
                 if (launchType == LaunchType.EC2) {
-                    val containerInstanceArn = task.tasks()[0].containerInstanceArn()
-                    val res = ecsClient.describeContainerInstances(
-                        DescribeContainerInstancesRequest
-                            .builder()
-                            .cluster(clusterArn)
-                            .containerInstances(containerInstanceArn).build()
-                    )
-                    val ec2InstanceId = res.containerInstances()[0].ec2InstanceId()
-                    val instanceProfileArn = project.awsClient<Ec2Client>().describeInstances(
-                        DescribeInstancesRequest.builder().instanceIds(ec2InstanceId).build()
-                    ).reservations()[0].instances()[0].iamInstanceProfile().arn()
-                        ?: throw Exception(message("ecs.execute_command_no_task_role_found_exception"))
-                    val instanceProfileName = instanceProfileArn.substringAfter(":instance-profile/")
-                    iamClient.getInstanceProfile(GetInstanceProfileRequest.builder().instanceProfileName(instanceProfileName).build()).instanceProfile()
-                        .roles()[0].arn() ?: throw Exception(message("ecs.execute_command_no_task_role_found_exception"))
+                    val ec2InstanceTaskRoleArn = getEc2InstanceTaskRoleArn(project, clusterArn, ecsClient, task)
+                    ec2InstanceTaskRoleArn
                 } else {
-                    throw Exception(message("ecs.execute_command_no_task_role_found_exception"))
+                    return null
                 }
             } else {
                 roleArn
             }
         }
-        val permissions = listOf(
-            message("session_manager_create_control_channel_permission"),
-            message("session_manager_create_data_channel_permission"),
-            message("session_manager_open_control_channel_permission"),
-            message("session_manager_open_data_channel_permission")
-        )
+    }
 
-        val response = iamClient.simulatePrincipalPolicy(SimulatePrincipalPolicyRequest.builder().policySourceArn(taskRoleArn).actionNames(permissions).build())
-        val permissionResults = response.evaluationResults().map { it.evalDecision().name }
-        for (permission in permissionResults) {
-            if (permission != PolicyEvaluationDecisionType.ALLOWED.name) {
-                throw Exception("Required permissions not found")
+    fun checkRequiredPermissions(project: Project, clusterArn: String, taskArn: String): Boolean {
+        try {
+            val iamClient = project.awsClient<IamClient>()
+            val taskRoleArn = getTaskRoleArn(project, clusterArn, taskArn) ?: return false
+            val permissions = listOf(
+                message("session_manager_create_control_channel_permission"),
+                message("session_manager_create_data_channel_permission"),
+                message("session_manager_open_control_channel_permission"),
+                message("session_manager_open_data_channel_permission")
+            )
+
+            val response = iamClient.simulatePrincipalPolicy(
+                SimulatePrincipalPolicyRequest
+                    .builder()
+                    .policySourceArn(taskRoleArn)
+                    .actionNames(permissions).build()
+            )
+            val permissionResults = response.evaluationResults().map { it.evalDecision().name }
+            for (permission in permissionResults) {
+                if (permission != PolicyEvaluationDecisionType.ALLOWED.name) {
+                    return false
+                }
             }
+        } catch (e: Exception) {
+            notifyWarn(message("ecs.execute_command_permissions_required_title"), message("ecs.execute_command_permissions_not_verified"))
         }
+        return true
     }
 }

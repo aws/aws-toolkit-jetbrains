@@ -81,12 +81,10 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         commandsEnteredPreviously.add(command)
         val task = tasks.selected() ?: throw IllegalStateException("Task not Selected")
         launch {
-            try {
-                EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
-                withContext(getCoroutineUiContext(ModalityState.any())) {
-                    runCommand()
-                }
-            } catch (e: Exception) {
+            val taskRoleFound: Boolean = EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
+            if (taskRoleFound) {
+                runCommand()
+            } else {
                 withContext(getCoroutineUiContext(ModalityState.any())) {
                     TaskRoleNotFoundWarningDialog(project).show()
                 }
@@ -110,7 +108,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
             )
         }
 
-    private fun runCommand() {
+    private suspend fun runCommand() {
         try {
             val awsCliPath = AwsCliExecutable().resolve() ?: throw IllegalStateException(message("executableCommon.missing_executable", "AWS CLI"))
             val execCommand = buildExecCommandConfiguration(command, awsCliPath)
@@ -124,7 +122,11 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                     )
                 )
                 .build()
-            environment.runner.execute(environment)
+
+            withContext(getCoroutineUiContext(ModalityState.any())) {
+                environment.runner.execute(environment)
+            }
+
             EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Command)
         } catch (e: Exception) {
             EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Command)
