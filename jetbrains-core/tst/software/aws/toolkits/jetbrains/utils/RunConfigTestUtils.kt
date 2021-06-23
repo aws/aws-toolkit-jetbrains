@@ -15,6 +15,7 @@ import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.runInEdtAndWait
@@ -46,22 +47,26 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
     val executionFuture = CompletableFuture<Output>()
     // In the real world create and execute runs on EDT
     runInEdt {
-        val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build {
-            it.processHandler?.addProcessListener(
+        try {
+            val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
+            // Hack: Normally this is handled through the ProgramRunner and RunContentDescriptor, but since we bypass ProgramRunner we need to do it ourselves
+            Disposer.register(executionEnvironment.project, executionEnvironment)
+            // Bypass ProgramRunner since AsyncProgramRunner has no ability for us to wait
+            val execute = executionEnvironment.state!!.execute(executionEnvironment.executor, executionEnvironment.runner)!!
+            execute.processHandler.addProcessListener(
                 object : OutputListener() {
                     override fun processTerminated(event: ProcessEvent) {
                         super.processTerminated(event)
                         // if using the default step executor as the process handle, need to pull text from it or it will be empty
                         // otherwise, pull the output from the process itself
-                        val output = (it.processHandler as? StepExecutor.StepExecutorProcessHandler)?.getFinalOutput() ?: this.output
+                        val output = (execute.processHandler as? StepExecutor.StepExecutorProcessHandler)?.getFinalOutput() ?: this.output
                         executionFuture.complete(output)
                     }
                 }
             )
-        }
-
-        try {
-            executionEnvironment.runner.execute(executionEnvironment)
+            if (!execute.processHandler.isStartNotified) {
+                execute.processHandler.startNotify()
+            }
         } catch (e: Exception) {
             executionFuture.completeExceptionally(e)
         }
