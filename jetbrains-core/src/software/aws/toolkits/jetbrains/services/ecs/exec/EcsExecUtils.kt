@@ -8,16 +8,13 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.services.ec2.Ec2Client
 import software.amazon.awssdk.services.ecs.EcsClient
 import software.amazon.awssdk.services.ecs.model.DeploymentRolloutState
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
-import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest
 import software.amazon.awssdk.services.ecs.model.InvalidParameterException
 import software.amazon.awssdk.services.ecs.model.LaunchType
 import software.amazon.awssdk.services.ecs.model.Service
-import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.iam.model.PolicyEvaluationDecisionType
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -25,7 +22,6 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Com
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
@@ -34,22 +30,21 @@ import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
 import software.amazon.awssdk.services.ecs.model.Task as EcsTask
 
-object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
-
-    const val SESSION_MANAGER_CREATE_CONTROL_CHANNEL_PERMISSION = "ssmmessages:CreateControlChannel"
-    const val SESSION_MANAGER_CREATE_DATA_CHANNEL_PERMISSION = "ssmmessages:CreateDataChannel"
-    const val SESSION_MANAGER_OPEN_CONTROL_CHANNEL_PERMISSION = "ssmmessages:OpenControlChannel"
-    const val SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION = "ssmmessages:OpenDataChannel"
+object EcsExecUtils {
+    private const val SESSION_MANAGER_CREATE_CONTROL_CHANNEL_PERMISSION = "ssmmessages:CreateControlChannel"
+    private const val SESSION_MANAGER_CREATE_DATA_CHANNEL_PERMISSION = "ssmmessages:CreateDataChannel"
+    private const val SESSION_MANAGER_OPEN_CONTROL_CHANNEL_PERMISSION = "ssmmessages:OpenControlChannel"
+    private const val SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION = "ssmmessages:OpenDataChannel"
 
     fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
         if (ensureServiceIsInStableState(project, service)) {
             try {
-                val request = UpdateServiceRequest.builder()
-                    .cluster(service.clusterArn())
-                    .service(service.serviceName())
-                    .enableExecuteCommand(enabled)
-                    .forceNewDeployment(true).build()
-                project.awsClient<EcsClient>().updateService(request)
+                project.awsClient<EcsClient>().updateService {
+                    it.cluster(service.clusterArn())
+                    it.service(service.serviceName())
+                    it.enableExecuteCommand(enabled)
+                    it.forceNewDeployment(true)
+                }
                 checkServiceState(project, service, enabled)
             } catch (e: InvalidParameterException) {
                 runInEdt {
@@ -113,7 +108,8 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
             val iamClient = project.awsClient<IamClient>()
             val containerInstanceArn = task.containerInstanceArn()
             val res = ecsClient.describeContainerInstances {
-                it.cluster(clusterArn).containerInstances(containerInstanceArn)
+                it.cluster(clusterArn)
+                it.containerInstances(containerInstanceArn)
             }
             val ec2InstanceId = res.containerInstances().first().ec2InstanceId()
             val instanceProfileArn = project.awsClient<Ec2Client>().describeInstances {
@@ -128,21 +124,19 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
 
     fun getTaskRoleArn(project: Project, clusterArn: String, taskArn: String): String? {
         val ecsClient = project.awsClient<EcsClient>()
-        val task = ecsClient.describeTasks(DescribeTasksRequest.builder().tasks(taskArn).cluster(clusterArn).build()).tasks().first()
+        val task = ecsClient.describeTasks {
+            it.tasks(taskArn)
+            it.cluster(clusterArn)
+        }.tasks().first()
         return if (task.overrides().taskRoleArn() != null) {
             task.overrides().taskRoleArn()
         } else {
-            val roleArn = project.getResourceNow(EcsResources.describeTaskDefinition(task.taskDefinitionArn())).taskRoleArn()
-            if (roleArn == null) {
-                val launchType = task.launchType()
-                if (launchType == LaunchType.EC2) {
-                    getEc2InstanceTaskRoleArn(project, clusterArn, ecsClient, task)
-                } else {
-                    return null
+            project.getResourceNow(EcsResources.describeTaskDefinition(task.taskDefinitionArn())).taskRoleArn()
+                ?: when (task.launchType()) {
+                    LaunchType.EC2 -> getEc2InstanceTaskRoleArn(project, clusterArn, ecsClient, task)
+                    LaunchType.FARGATE -> null
+                    else -> throw RuntimeException("Launch Type is not supported")
                 }
-            } else {
-                roleArn
-            }
         }
     }
 
@@ -159,7 +153,8 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
             )
 
             val response = iamClient.simulatePrincipalPolicy {
-                it.policySourceArn(taskRoleArn).actionNames(permissions)
+                it.policySourceArn(taskRoleArn)
+                it.actionNames(permissions)
             }
 
             val permissionResults = response.evaluationResults().map { it.evalDecision().name }
@@ -176,7 +171,8 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
 
     fun ensureServiceIsInStableState(project: Project, service: Service): Boolean {
         val response = project.awsClient<EcsClient>().describeServices {
-            it.cluster(service.clusterArn()).services(service.serviceArn())
+            it.cluster(service.clusterArn())
+            it.services(service.serviceArn())
         }
         val serviceStateChangeInProgress = response.services().first().deployments().first().rolloutState() == DeploymentRolloutState.IN_PROGRESS
         return !serviceStateChangeInProgress

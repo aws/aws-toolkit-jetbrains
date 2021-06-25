@@ -16,7 +16,6 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
@@ -34,8 +33,8 @@ import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
 
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails) :
-    DialogWrapper(project),
-    CoroutineScope by ApplicationThreadPoolScope("RunCommandDialog") {
+    DialogWrapper(project) {
+    private val coroutineScope = ApplicationThreadPoolScope("RunCommandDialog")
     private val tasks = ResourceSelector
         .builder()
         .resource(
@@ -92,7 +91,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         super.doOKAction()
         commandsEnteredPreviously.add(command)
         val task = tasks.selected() ?: throw IllegalStateException("Task not Selected")
-        launch {
+        coroutineScope.launch {
             val taskRoleFound: Boolean = EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
             if (taskRoleFound) {
                 runCommand()

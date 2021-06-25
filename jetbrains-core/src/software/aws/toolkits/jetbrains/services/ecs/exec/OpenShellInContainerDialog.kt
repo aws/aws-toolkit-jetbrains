@@ -11,7 +11,6 @@ import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.panel
 import com.pty4j.PtyProcess
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.terminal.TerminalTabState
@@ -37,8 +36,8 @@ class OpenShellInContainerDialog(
     private val project: Project,
     private val container: ContainerDetails,
     private val environmentVariables: Map<String, String>
-) : DialogWrapper(project), CoroutineScope by ApplicationThreadPoolScope("OpenShellInContainerDialog") {
-
+) : DialogWrapper(project) {
+    private val coroutineScope = ApplicationThreadPoolScope("OpenShellInContainerDialog")
     private val tasks = ResourceSelector
         .builder()
         .resource(
@@ -84,7 +83,7 @@ class OpenShellInContainerDialog(
     override fun doOKAction() {
         super.doOKAction()
         val task = tasks.selected() ?: throw IllegalStateException("Task not Selected")
-        launch {
+        coroutineScope.launch {
             val taskRoleFound: Boolean = EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
             if (taskRoleFound) {
                 runExecCommand()
