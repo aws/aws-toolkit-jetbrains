@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.services.ecs.EcsServiceNode
 import software.aws.toolkits.jetbrains.services.ecs.EcsUtils
@@ -31,7 +32,7 @@ class EnableEcsExecuteCommand :
     }
 
     override fun update(selected: EcsServiceNode, e: AnActionEvent) {
-        e.presentation.isVisible = !selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn())
+        e.presentation.isVisible = !selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn()) && AwsToolkit.isEcsExecEnabled()
     }
 
     private fun enableExecuteCommand(project: Project, service: Service) {
