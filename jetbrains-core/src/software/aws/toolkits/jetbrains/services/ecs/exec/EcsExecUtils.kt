@@ -10,21 +10,16 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.services.ec2.Ec2Client
-import software.amazon.awssdk.services.ec2.model.DescribeInstancesRequest
 import software.amazon.awssdk.services.ecs.EcsClient
 import software.amazon.awssdk.services.ecs.model.DeploymentRolloutState
-import software.amazon.awssdk.services.ecs.model.DescribeContainerInstancesRequest
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest
 import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest
 import software.amazon.awssdk.services.ecs.model.InvalidParameterException
 import software.amazon.awssdk.services.ecs.model.LaunchType
 import software.amazon.awssdk.services.ecs.model.Service
-import software.amazon.awssdk.services.ecs.model.Task as EcsTask
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.amazon.awssdk.services.iam.IamClient
-import software.amazon.awssdk.services.iam.model.GetInstanceProfileRequest
 import software.amazon.awssdk.services.iam.model.PolicyEvaluationDecisionType
-import software.amazon.awssdk.services.iam.model.SimulatePrincipalPolicyRequest
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Companion.getConnectionSettings
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
@@ -37,12 +32,15 @@ import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
+import software.amazon.awssdk.services.ecs.model.Task as EcsTask
 
 object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
-    private const val SESSION_MANAGER_CREATE_CONTROL_CHANNEL_PERMISSION = "ssmmessages:CreateControlChannel"
-    private const val SESSION_MANAGER_CREATE_DATA_CHANNEL_PERMISSION = "ssmmessages:CreateDataChannel"
-    private const val SESSION_MANAGER_OPEN_CONTROL_CHANNEL_PERMISSION = "ssmmessages:OpenControlChannel"
-    private const val SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION = "ssmmessages:OpenDataChannel"
+
+    const val SESSION_MANAGER_CREATE_CONTROL_CHANNEL_PERMISSION = "ssmmessages:CreateControlChannel"
+    const val SESSION_MANAGER_CREATE_DATA_CHANNEL_PERMISSION = "ssmmessages:CreateDataChannel"
+    const val SESSION_MANAGER_OPEN_CONTROL_CHANNEL_PERMISSION = "ssmmessages:OpenControlChannel"
+    const val SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION = "ssmmessages:OpenDataChannel"
+
     fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
         if (ensureServiceIsInStableState(project, service)) {
             try {
@@ -114,19 +112,15 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         try {
             val iamClient = project.awsClient<IamClient>()
             val containerInstanceArn = task.containerInstanceArn()
-            val res = ecsClient.describeContainerInstances(
-                DescribeContainerInstancesRequest
-                    .builder()
-                    .cluster(clusterArn)
-                    .containerInstances(containerInstanceArn).build()
-            )
+            val res = ecsClient.describeContainerInstances {
+                it.cluster(clusterArn).containerInstances(containerInstanceArn)
+            }
             val ec2InstanceId = res.containerInstances().first().ec2InstanceId()
-            val instanceProfileArn = project.awsClient<Ec2Client>().describeInstances(
-                DescribeInstancesRequest.builder().instanceIds(ec2InstanceId).build()
-            ).reservations().first().instances().first().iamInstanceProfile().arn() ?: return null
+            val instanceProfileArn = project.awsClient<Ec2Client>().describeInstances {
+                it.instanceIds(ec2InstanceId)
+            }.reservations().first().instances().first().iamInstanceProfile().arn() ?: return null
             val instanceProfileName = instanceProfileArn.substringAfter(":instance-profile/")
-            return iamClient.getInstanceProfile(GetInstanceProfileRequest.builder().instanceProfileName(instanceProfileName).build()).instanceProfile()
-                .roles().first().arn() ?: null
+            return iamClient.getInstanceProfile { it.instanceProfileName(instanceProfileName) }.instanceProfile().roles().first().arn() ?: null
         } catch (e: Exception) {
             return null
         }
@@ -156,6 +150,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         try {
             val iamClient = project.awsClient<IamClient>()
             val taskRoleArn = getTaskRoleArn(project, clusterArn, taskArn) ?: return false
+
             val permissions = listOf(
                 SESSION_MANAGER_CREATE_CONTROL_CHANNEL_PERMISSION,
                 SESSION_MANAGER_CREATE_DATA_CHANNEL_PERMISSION,
@@ -163,10 +158,10 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
                 SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION
             )
 
-
-            val response = iamClient.simulatePrincipalPolicy{
+            val response = iamClient.simulatePrincipalPolicy {
                 it.policySourceArn(taskRoleArn).actionNames(permissions)
             }
+
             val permissionResults = response.evaluationResults().map { it.evalDecision().name }
             for (permission in permissionResults) {
                 if (permission != PolicyEvaluationDecisionType.ALLOWED.name) {
@@ -180,11 +175,9 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
     }
 
     fun ensureServiceIsInStableState(project: Project, service: Service): Boolean {
-        val response = project.awsClient<EcsClient>().describeServices(
-            DescribeServicesRequest.builder()
-                .cluster(service.clusterArn())
-                .services(service.serviceArn()).build()
-        )
+        val response = project.awsClient<EcsClient>().describeServices {
+            it.cluster(service.clusterArn()).services(service.serviceArn())
+        }
         val serviceStateChangeInProgress = response.services().first().deployments().first().rolloutState() == DeploymentRolloutState.IN_PROGRESS
         return !serviceStateChangeInProgress
     }

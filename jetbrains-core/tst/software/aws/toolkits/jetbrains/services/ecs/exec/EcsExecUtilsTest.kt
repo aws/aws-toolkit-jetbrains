@@ -223,8 +223,14 @@ class EcsExecUtilsTest {
         val task = Task.builder()
             .taskArn(taskArn)
             .overrides(TaskOverride.builder().build())
+            .taskDefinitionArn(taskDefinitionArn)
             .build()
         val evaluationResult = EvaluationResult.builder().evalDecision(PolicyEvaluationDecisionType.ALLOWED).build()
+        val taskDefinition = TaskDefinition.builder().taskDefinitionArn(taskDefinitionArn).taskRoleArn(taskRoleArn).build()
+        resourceCache.addEntry(
+            projectRule.project, EcsResources.describeTaskDefinition(task.taskDefinitionArn()),
+            CompletableFuture.completedFuture(taskDefinition)
+        )
 
         ecsClient.stub {
             on { describeTasks(any<DescribeTasksRequest>()) } doAnswer { DescribeTasksResponse.builder().tasks(listOf(task)).build() }
@@ -238,6 +244,34 @@ class EcsExecUtilsTest {
 
         val haveRequiredPermissions = EcsExecUtils.checkRequiredPermissions(projectRule.project, clusterArn, taskArn)
         assertThat(haveRequiredPermissions).isTrue
+    }
+
+    @Test
+    fun `Task role doesn't have required permissions`() {
+        val task = Task.builder()
+            .taskArn(taskArn)
+            .overrides(TaskOverride.builder().build())
+            .taskDefinitionArn(taskDefinitionArn)
+            .build()
+
+        val evaluationResult = EvaluationResult.builder().evalDecision(PolicyEvaluationDecisionType.IMPLICIT_DENY).build()
+        val taskDefinition = TaskDefinition.builder().taskDefinitionArn(taskDefinitionArn).taskRoleArn(taskRoleArn).build()
+        resourceCache.addEntry(
+            projectRule.project, EcsResources.describeTaskDefinition(task.taskDefinitionArn()),
+            CompletableFuture.completedFuture(taskDefinition)
+        )
+        ecsClient.stub {
+            on { describeTasks(any<DescribeTasksRequest>()) } doAnswer { DescribeTasksResponse.builder().tasks(listOf(task)).build() }
+        }
+
+        iamClient.stub {
+            on { simulatePrincipalPolicy(any<SimulatePrincipalPolicyRequest>()) } doAnswer {
+                SimulatePrincipalPolicyResponse.builder().evaluationResults(evaluationResult).build()
+            }
+        }
+
+        val haveRequiredPermissions = EcsExecUtils.checkRequiredPermissions(projectRule.project, clusterArn, taskArn)
+        assertThat(haveRequiredPermissions).isFalse
     }
 
     @Test
