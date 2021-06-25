@@ -9,7 +9,9 @@ import org.gradle.api.Project
  * Only run the given block if this build is running within a CI system (e.g. GitHub actions, CodeBuild etc)
  */
 fun Project.ciOnly(block: () -> Unit) {
-    if (providers.environmentVariable("CI").forUseAtConfigurationTime().isPresent) {
+    if (isCi()) {
         block()
     }
 }
+
+fun Project.isCi() : Boolean = providers.environmentVariable("CI").isPresent
