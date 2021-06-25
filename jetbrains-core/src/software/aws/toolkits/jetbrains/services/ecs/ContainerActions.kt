@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
 import software.amazon.awssdk.services.ecs.model.Service
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
@@ -153,7 +154,7 @@ class ExecuteCommandAction(
     }
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn())
+            !EcsUtils.isInstrumented(container.service.serviceArn()) && AwsToolkit.isEcsExecEnabled()
     }
 }
 
@@ -187,6 +188,6 @@ class ExecuteCommandInShellAction(
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
             !EcsUtils.isInstrumented(container.service.serviceArn()) &&
-            pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal")
+            pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal") && AwsToolkit.isEcsExecEnabled()
     }
 }
