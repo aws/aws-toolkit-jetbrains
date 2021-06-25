@@ -151,7 +151,6 @@ object EcsExecUtils {
                 SESSION_MANAGER_OPEN_CONTROL_CHANNEL_PERMISSION,
                 SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION
             )
-
             val response = iamClient.simulatePrincipalPolicy {
                 it.policySourceArn(taskRoleArn)
                 it.actionNames(permissions)
