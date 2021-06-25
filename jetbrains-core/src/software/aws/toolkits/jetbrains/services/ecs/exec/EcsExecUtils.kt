@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest
 import software.amazon.awssdk.services.ecs.model.InvalidParameterException
 import software.amazon.awssdk.services.ecs.model.LaunchType
 import software.amazon.awssdk.services.ecs.model.Service
+import software.amazon.awssdk.services.ecs.model.Task as EcsTask
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest
 import software.amazon.awssdk.services.iam.IamClient
 import software.amazon.awssdk.services.iam.model.GetInstanceProfileRequest
@@ -38,6 +39,10 @@ import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
 
 object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
+    private const val SESSION_MANAGER_CREATE_CONTROL_CHANNEL_PERMISSION = "ssmmessages:CreateControlChannel"
+    private const val SESSION_MANAGER_CREATE_DATA_CHANNEL_PERMISSION = "ssmmessages:CreateDataChannel"
+    private const val SESSION_MANAGER_OPEN_CONTROL_CHANNEL_PERMISSION = "ssmmessages:OpenControlChannel"
+    private const val SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION = "ssmmessages:OpenDataChannel"
     fun updateExecuteCommandFlag(project: Project, service: Service, enabled: Boolean) {
         if (ensureServiceIsInStableState(project, service)) {
             try {
@@ -105,7 +110,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
         )
     }
 
-    fun getEc2InstanceTaskRoleArn(project: Project, clusterArn: String, ecsClient: EcsClient, task: software.amazon.awssdk.services.ecs.model.Task): String? {
+    private fun getEc2InstanceTaskRoleArn(project: Project, clusterArn: String, ecsClient: EcsClient, task: EcsTask): String? {
         try {
             val iamClient = project.awsClient<IamClient>()
             val containerInstanceArn = task.containerInstanceArn()
@@ -137,8 +142,7 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
             if (roleArn == null) {
                 val launchType = task.launchType()
                 if (launchType == LaunchType.EC2) {
-                    val ec2InstanceTaskRoleArn = getEc2InstanceTaskRoleArn(project, clusterArn, ecsClient, task)
-                    ec2InstanceTaskRoleArn
+                    getEc2InstanceTaskRoleArn(project, clusterArn, ecsClient, task)
                 } else {
                     return null
                 }
@@ -153,18 +157,16 @@ object EcsExecUtils : CoroutineScope by ApplicationThreadPoolScope("EcsExec") {
             val iamClient = project.awsClient<IamClient>()
             val taskRoleArn = getTaskRoleArn(project, clusterArn, taskArn) ?: return false
             val permissions = listOf(
-                message("session_manager_create_control_channel_permission"),
-                message("session_manager_create_data_channel_permission"),
-                message("session_manager_open_control_channel_permission"),
-                message("session_manager_open_data_channel_permission")
+                SESSION_MANAGER_CREATE_CONTROL_CHANNEL_PERMISSION,
+                SESSION_MANAGER_CREATE_DATA_CHANNEL_PERMISSION,
+                SESSION_MANAGER_OPEN_CONTROL_CHANNEL_PERMISSION,
+                SESSION_MANAGER_OPEN_DATA_CHANNEL_PERMISSION
             )
 
-            val response = iamClient.simulatePrincipalPolicy(
-                SimulatePrincipalPolicyRequest
-                    .builder()
-                    .policySourceArn(taskRoleArn)
-                    .actionNames(permissions).build()
-            )
+
+            val response = iamClient.simulatePrincipalPolicy{
+                it.policySourceArn(taskRoleArn).actionNames(permissions)
+            }
             val permissionResults = response.evaluationResults().map { it.evalDecision().name }
             for (permission in permissionResults) {
                 if (permission != PolicyEvaluationDecisionType.ALLOWED.name) {
