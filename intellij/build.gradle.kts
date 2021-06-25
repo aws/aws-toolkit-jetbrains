@@ -26,7 +26,6 @@ intellij {
     version.set(ideProfile.community.sdkVersion)
     pluginName.set("aws-toolkit-jetbrains")
     updateSinceUntilBuild.set(false)
-
     instrumentCode.set(false)
 }
 
