@@ -54,9 +54,17 @@ object EcsExecUtils {
             }
         } else {
             if (enabled) {
-                notifyWarn(title = message("ecs.execute_command_enable"), content = message("ecs.execute_command_enable_in_progress", service.serviceName()), project = project)
+                notifyWarn(
+                    title = message("ecs.execute_command_enable"),
+                    content = message("ecs.execute_command_enable_in_progress", service.serviceName()),
+                    project = project
+                )
             } else {
-                notifyWarn(title = message("ecs.execute_command_disable"), content = message("ecs.execute_command_disable_in_progress", service.serviceName()), project = project)
+                notifyWarn(
+                    title = message("ecs.execute_command_disable"),
+                    content = message("ecs.execute_command_disable_in_progress", service.serviceName()),
+                    project = project
+                )
             }
         }
     }
@@ -82,20 +90,36 @@ object EcsExecUtils {
                     project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()), currentConnectionSettings)
 
                     if (enable) {
-                        notifyInfo(title = message("ecs.execute_command_enable"), content = message("ecs.execute_command_enable_success", service.serviceName()), project = project)
+                        notifyInfo(
+                            title = message("ecs.execute_command_enable"),
+                            content = message("ecs.execute_command_enable_success", service.serviceName()),
+                            project = project
+                        )
                         EcsTelemetry.enableExecuteCommand(project, Result.Succeeded)
                     } else {
-                        notifyInfo(title = message("ecs.execute_command_disable"), content = message("ecs.execute_command_disable_success", service.serviceName()), project = project)
+                        notifyInfo(
+                            title = message("ecs.execute_command_disable"),
+                            content = message("ecs.execute_command_disable_success", service.serviceName()),
+                            project = project
+                        )
                         EcsTelemetry.disableExecuteCommand(project, Result.Succeeded)
                     }
                 }
 
                 override fun onThrowable(error: Throwable) {
                     if (enable) {
-                        notifyError(title = message("ecs.execute_command_enable"), content = message("ecs.execute_command_enable_failed", service.serviceName()), project = project)
+                        notifyError(
+                            title = message("ecs.execute_command_enable"),
+                            content = message("ecs.execute_command_enable_failed", service.serviceName()),
+                            project = project
+                        )
                         EcsTelemetry.enableExecuteCommand(project, Result.Failed)
                     } else {
-                        notifyError(title = message("ecs.execute_command_disable"), content = message("ecs.execute_command_disable_failed", service.serviceName()), project = project)
+                        notifyError(
+                            title = message("ecs.execute_command_disable"),
+                            content = message("ecs.execute_command_disable_failed", service.serviceName()),
+                            project = project
+                        )
                         EcsTelemetry.disableExecuteCommand(project, Result.Failed)
                     }
                 }
@@ -163,7 +187,11 @@ object EcsExecUtils {
                 }
             }
         } catch (e: Exception) {
-            notifyWarn(title = message("ecs.execute_command_permissions_required_title"), content = message("ecs.execute_command_permissions_not_verified"), project = project)
+            notifyWarn(
+                title = message("ecs.execute_command_permissions_required_title"),
+                content = message("ecs.execute_command_permissions_not_verified"),
+                project = project
+            )
         }
         return true
     }
