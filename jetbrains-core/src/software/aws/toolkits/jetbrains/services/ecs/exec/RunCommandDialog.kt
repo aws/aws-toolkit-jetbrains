@@ -131,7 +131,6 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                         ToolRunProfile(execCommand, SimpleDataContext.getProjectContext(project))
                     )
                     .build()
-
             withContext(getCoroutineUiContext(ModalityState.any())) {
                 environment.runner.execute(environment)
             }
