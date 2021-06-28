@@ -134,13 +134,13 @@ object EcrUtils {
             is ImageEcrPushRequest -> {
                 LOG.debug("Pushing '${pushRequest.localImageId}' to ECR")
                 val model = buildDockerRepositoryModel(ecrLogin, pushRequest.remoteRepo, pushRequest.remoteTag)
-                pushImage(project, pushRequest.dockerServerRuntime, model)
+                pushImage(project, pushRequest.localImageId, pushRequest.dockerServerRuntime, model)
             }
         }
     }
 
-    suspend fun pushImage(project: Project, serverRuntime: DockerServerRuntimeInstance, config: DockerRepositoryModel) {
-        val dockerApplicationRuntime = getDockerApplicationRuntimeInstance(serverRuntime, config.tag)
+    suspend fun pushImage(project: Project, localTag: String, serverRuntime: DockerServerRuntimeInstance, config: DockerRepositoryModel) {
+        val dockerApplicationRuntime = getDockerApplicationRuntimeInstance(serverRuntime, localTag)
         dockerApplicationRuntime.pushImage(project, config)
     }
 

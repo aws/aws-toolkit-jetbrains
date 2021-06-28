@@ -67,7 +67,7 @@ class EcrPullIntegrationTest {
             val config = EcrUtils.buildDockerRepositoryModel(ecrLogin, remoteRepo, remoteTag)
 
             // push up and image and then delete the local tag
-            EcrUtils.pushImage(projectRule.project, serverInstance, config)
+            EcrUtils.pushImage(projectRule.project, localImageId, serverInstance, config)
             runtime.agentApplication.deleteImage()
             assertThat(runtime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
 
