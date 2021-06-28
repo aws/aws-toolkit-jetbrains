@@ -54,9 +54,9 @@ object EcsExecUtils {
             }
         } else {
             if (enabled) {
-                notifyWarn(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_in_progress", service.serviceName()), project)
+                notifyWarn(title = message("ecs.execute_command_enable"), content = message("ecs.execute_command_enable_in_progress", service.serviceName()), project = project)
             } else {
-                notifyWarn(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_in_progress", service.serviceName()), project)
+                notifyWarn(title = message("ecs.execute_command_disable"), content = message("ecs.execute_command_disable_in_progress", service.serviceName()), project = project)
             }
         }
     }
@@ -82,20 +82,20 @@ object EcsExecUtils {
                     project.refreshAwsTree(EcsResources.describeService(service.clusterArn(), service.serviceArn()), currentConnectionSettings)
 
                     if (enable) {
-                        notifyInfo(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_success", service.serviceName()))
+                        notifyInfo(title = message("ecs.execute_command_enable"), content = message("ecs.execute_command_enable_success", service.serviceName()), project = project)
                         EcsTelemetry.enableExecuteCommand(project, Result.Succeeded)
                     } else {
-                        notifyInfo(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_success", service.serviceName()))
+                        notifyInfo(title = message("ecs.execute_command_disable"), content = message("ecs.execute_command_disable_success", service.serviceName()), project = project)
                         EcsTelemetry.disableExecuteCommand(project, Result.Succeeded)
                     }
                 }
 
                 override fun onThrowable(error: Throwable) {
                     if (enable) {
-                        notifyError(message("ecs.execute_command_enable"), message("ecs.execute_command_enable_failed", service.serviceName()))
+                        notifyError(title = message("ecs.execute_command_enable"), content = message("ecs.execute_command_enable_failed", service.serviceName()), project = project)
                         EcsTelemetry.enableExecuteCommand(project, Result.Failed)
                     } else {
-                        notifyError(message("ecs.execute_command_disable"), message("ecs.execute_command_disable_failed", service.serviceName()))
+                        notifyError(title = message("ecs.execute_command_disable"), content = message("ecs.execute_command_disable_failed", service.serviceName()), project = project)
                         EcsTelemetry.disableExecuteCommand(project, Result.Failed)
                     }
                 }
@@ -163,7 +163,7 @@ object EcsExecUtils {
                 }
             }
         } catch (e: Exception) {
-            notifyWarn(message("ecs.execute_command_permissions_required_title"), message("ecs.execute_command_permissions_not_verified"))
+            notifyWarn(title = message("ecs.execute_command_permissions_required_title"), content = message("ecs.execute_command_permissions_not_verified"), project = project)
         }
         return true
     }
