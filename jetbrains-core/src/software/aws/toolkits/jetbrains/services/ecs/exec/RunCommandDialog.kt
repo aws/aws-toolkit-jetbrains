@@ -123,16 +123,14 @@ class RunCommandDialog(private val project: Project, private val container: Cont
         try {
             val awsCliPath = AwsCliExecutable().resolve() ?: throw IllegalStateException(message("executableCommon.missing_executable", "AWS CLI"))
             val execCommand = buildExecCommandConfiguration(('"' + command + '"'), awsCliPath)
-            val environment = ExecutionEnvironmentBuilder
-                .create(
-                    project,
-                    DefaultRunExecutor.getRunExecutorInstance(),
-                    ToolRunProfile(
-                        execCommand,
-                        SimpleDataContext.getProjectContext(project)
+            val environment =
+                ExecutionEnvironmentBuilder
+                    .create(
+                        project,
+                        DefaultRunExecutor.getRunExecutorInstance(),
+                        ToolRunProfile(execCommand, SimpleDataContext.getProjectContext(project))
                     )
-                )
-                .build()
+                    .build()
 
             withContext(getCoroutineUiContext(ModalityState.any())) {
                 environment.runner.execute(environment)
