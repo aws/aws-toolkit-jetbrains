@@ -15,8 +15,7 @@ import software.aws.toolkits.jetbrains.services.ecr.EcrUtils
 
 abstract class EcrDockerAction :
     SingleExplorerNodeAction<EcrRepositoryNode>(),
-    DumbAware
-{
+    DumbAware {
     abstract val coroutineScope: CoroutineScope
     protected val dockerServerRuntime by lazy { coroutineScope.dockerServerRuntimeAsync() }
 

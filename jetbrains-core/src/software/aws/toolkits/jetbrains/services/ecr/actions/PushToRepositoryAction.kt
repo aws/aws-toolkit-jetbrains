@@ -16,7 +16,6 @@ import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
-import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.DialogWrapper
@@ -35,11 +34,8 @@ import com.intellij.ui.layout.listCellRenderer
 import com.intellij.ui.layout.panel
 import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.exception.SdkException
@@ -47,7 +43,6 @@ import software.amazon.awssdk.services.ecr.EcrClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
 import software.aws.toolkits.jetbrains.services.ecr.DockerRunConfiguration
 import software.aws.toolkits.jetbrains.services.ecr.DockerfileEcrPushRequest
 import software.aws.toolkits.jetbrains.services.ecr.EcrPushRequest
