@@ -83,6 +83,19 @@ object EcrUtils {
         RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
     )
 
+    fun buildDockerRepositoryModel(ecrLogin: EcrLogin?, repository: Repository, tag: String) = DockerRepositoryModel().also {
+        val repoUri = repository.repositoryUri
+        it.repository = repoUri
+        it.tag = tag
+        it.registry = DockerRegistry()
+        it.registry.address = repoUri
+        ecrLogin?.let { login ->
+            val (username, password) = login
+            it.registry.username = username
+            it.registry.password = password
+        }
+    }
+
     suspend fun getDockerServerRuntimeInstance(server: RemoteServer<DockerCloudConfiguration>? = null): DockerConnection {
         val instancePromise = AsyncPromise<DockerServerRuntimeInstance>()
         val connection = server?.let {
@@ -115,18 +128,7 @@ object EcrUtils {
             }
             is ImageEcrPushRequest -> {
                 LOG.debug("Pushing '${pushRequest.localImageId}' to ECR")
-                val (username, password) = ecrLogin
-                val model = DockerRepositoryModel().also {
-                    val repoUri = pushRequest.remoteRepo.repositoryUri
-                    it.registry = DockerRegistry().also { registry ->
-                        registry.address = repoUri
-                        registry.username = username
-                        registry.password = password
-                    }
-                    it.repository = repoUri
-                    it.tag = pushRequest.remoteTag
-                }
-
+                val model = buildDockerRepositoryModel(ecrLogin, pushRequest.remoteRepo, pushRequest.remoteTag)
                 val dockerApplicationRuntime = getDockerApplicationRuntimeInstance(pushRequest.dockerServerRuntime, pushRequest.localImageId)
                 dockerApplicationRuntime.pushImage(project, model)
             }

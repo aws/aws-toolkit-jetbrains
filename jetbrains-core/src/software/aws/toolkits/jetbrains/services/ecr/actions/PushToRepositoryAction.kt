@@ -71,12 +71,8 @@ import software.aws.toolkits.telemetry.Result
 import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
 
-class PushToRepositoryAction :
-    SingleExplorerNodeAction<EcrRepositoryNode>(),
-    DumbAware,
-    CoroutineScope by ApplicationThreadPoolScope("PushRepositoryAction") {
-    private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance> =
-        async(start = CoroutineStart.LAZY) { EcrUtils.getDockerServerRuntimeInstance().runtimeInstance }
+class PushToRepositoryAction : EcrDockerAction() {
+    override val coroutineScope = ApplicationThreadPoolScope("PushRepositoryAction")
 
     override fun actionPerformed(selected: EcrRepositoryNode, e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
@@ -89,7 +85,7 @@ class PushToRepositoryAction :
             return
         }
 
-        launch {
+        coroutineScope.launch {
             val pushRequest = dialog.getPushRequest()
             var result = Result.Failed
             try {
@@ -138,8 +134,8 @@ internal class PushToEcrDialog(
     private val project: Project,
     selectedRepository: Repository,
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance>
-) : DialogWrapper(project, null, false, IdeModalityType.PROJECT),
-    CoroutineScope by ApplicationThreadPoolScope("PushRepositoryDialog") {
+) : DialogWrapper(project, null, false, IdeModalityType.PROJECT) {
+    private val coroutineScope = ApplicationThreadPoolScope("PushRepositoryDialog")
     private val defaultTag = "latest"
     private var type = BuildType.LocalImage
     private var remoteTag = ""
@@ -162,7 +158,7 @@ internal class PushToEcrDialog(
 
         init()
 
-        launch {
+        coroutineScope.launch {
             val serverRuntime = dockerServerRuntime.await()
             val images = serverRuntime.agent.getImages(null)
             localImageRepoTags.add(images.toLocalImageList())
@@ -202,6 +198,7 @@ internal class PushToEcrDialog(
         row(message("ecr.repo.label")) {
             component(remoteRepos)
                 .growPolicy(GrowPolicy.MEDIUM_TEXT)
+                .withErrorOnApplyIf(message("loading_resource.still_loading")) { it.isLoading }
                 .withErrorOnApplyIf(message("ecr.repo.not_selected")) { it.selected() == null }
         }
 
