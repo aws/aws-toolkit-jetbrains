@@ -11,6 +11,8 @@ import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.panel
 import com.pty4j.PtyProcess
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.terminal.TerminalTabState
 import org.jetbrains.plugins.terminal.TerminalView
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalProcess
@@ -21,6 +23,8 @@ import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
@@ -33,7 +37,7 @@ class OpenShellInContainerDialog(
     private val container: ContainerDetails,
     private val environmentVariables: Map<String, String>
 ) : DialogWrapper(project) {
-
+    private val coroutineScope = ApplicationThreadPoolScope("OpenShellInContainerDialog")
     private val tasks = ResourceSelector
         .builder()
         .resource(
@@ -78,7 +82,17 @@ class OpenShellInContainerDialog(
 
     override fun doOKAction() {
         super.doOKAction()
-        runExecCommand()
+        val task = tasks.selected() ?: throw IllegalStateException("Task not Selected")
+        coroutineScope.launch {
+            val taskRoleFound: Boolean = EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
+            if (taskRoleFound) {
+                runExecCommand()
+            } else {
+                withContext(getCoroutineUiContext(ModalityState.any())) {
+                    TaskRoleNotFoundWarningDialog(project).show()
+                }
+            }
+        }
     }
 
     override fun doCancelAction() {

@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.AwsToolkit
@@ -17,15 +16,15 @@ import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.resources.message
 
 class EnableEcsExecuteCommand :
-    SingleResourceNodeAction<EcsServiceNode>(message("ecs.execute_command_enable"), null),
-    CoroutineScope by ApplicationThreadPoolScope("EnableExecuteCommand") {
+    SingleResourceNodeAction<EcsServiceNode>(message("ecs.execute_command_enable"), null) {
+    private val coroutineScope = ApplicationThreadPoolScope("EnableExecuteCommand")
     private val settings = EcsExecCommandSettings.getInstance()
 
     override fun actionPerformed(selected: EcsServiceNode, e: AnActionEvent) {
         if (!settings.showExecuteCommandWarning ||
             EnableDisableExecuteCommandWarning(selected.nodeProject, enable = true, selected.value.serviceName()).showAndGet()
         ) {
-            launch {
+            coroutineScope.launch {
                 enableExecuteCommand(selected.nodeProject, selected.value)
             }
         }

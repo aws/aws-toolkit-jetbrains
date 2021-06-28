@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.tools.Tool
@@ -15,9 +16,13 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
@@ -27,7 +32,9 @@ import javax.swing.JComponent
 import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
 
-class RunCommandDialog(private val project: Project, private val container: ContainerDetails) : DialogWrapper(project) {
+class RunCommandDialog(private val project: Project, private val container: ContainerDetails) :
+    DialogWrapper(project) {
+    private val coroutineScope = ApplicationThreadPoolScope("RunCommandDialog")
     private val tasks = ResourceSelector
         .builder()
         .resource(
@@ -83,7 +90,17 @@ class RunCommandDialog(private val project: Project, private val container: Cont
     override fun doOKAction() {
         super.doOKAction()
         commandsEnteredPreviously.add(command)
-        runCommand()
+        val task = tasks.selected() ?: throw IllegalStateException("Task not Selected")
+        coroutineScope.launch {
+            val taskRoleFound: Boolean = EcsExecUtils.checkRequiredPermissions(project, container.service.clusterArn(), task)
+            if (taskRoleFound) {
+                runCommand()
+            } else {
+                withContext(getCoroutineUiContext(ModalityState.any())) {
+                    TaskRoleNotFoundWarningDialog(project).show()
+                }
+            }
+        }
     }
 
     override fun doCancelAction() {
@@ -102,7 +119,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
             )
         }
 
-    private fun runCommand() {
+    private suspend fun runCommand() {
         try {
             val awsCliPath = AwsCliExecutable().resolve() ?: throw IllegalStateException(message("executableCommon.missing_executable", "AWS CLI"))
             val execCommand = buildExecCommandConfiguration(('"' + command + '"'), awsCliPath)
@@ -116,7 +133,11 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                     )
                 )
                 .build()
-            environment.runner.execute(environment)
+
+            withContext(getCoroutineUiContext(ModalityState.any())) {
+                environment.runner.execute(environment)
+            }
+
             EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Command)
         } catch (e: Exception) {
             EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Command)

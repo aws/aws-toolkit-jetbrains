@@ -10,7 +10,6 @@ import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
@@ -137,10 +136,10 @@ class ContainerLogsAction(
 class ExecuteCommandAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.execute_command_run"), null, null),
-    CoroutineScope by ApplicationThreadPoolScope("ContainerActions") {
+) : AnAction(message("ecs.execute_command_run"), null, null) {
+    private val coroutineScope = ApplicationThreadPoolScope("ContainerActions")
     override fun actionPerformed(e: AnActionEvent) {
-        launch {
+        coroutineScope.launch {
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
                     runInEdt {
@@ -161,10 +160,10 @@ class ExecuteCommandAction(
 class ExecuteCommandInShellAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null),
-    CoroutineScope by ApplicationThreadPoolScope("ContainerActions") {
+) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
+    private val coroutineScope = ApplicationThreadPoolScope("ContainerActions")
     override fun actionPerformed(e: AnActionEvent) {
-        launch {
+        coroutineScope.launch {
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
                     val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
