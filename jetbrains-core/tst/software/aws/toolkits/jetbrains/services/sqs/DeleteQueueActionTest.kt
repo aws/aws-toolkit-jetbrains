@@ -68,7 +68,9 @@ class DeleteQueueActionTest {
             SqsWindow.getInstance(projectRule.project).pollMessage(Queue(QUEUE_URL, anAwsRegion()))
         }
         DeleteQueueAction().performDelete(mockNode)
-        assertThat(SqsWindow.getInstance(projectRule.project).findQueue(QUEUE_URL)).isNull()
+        runInEdtAndWait {
+            assertThat(SqsWindow.getInstance(projectRule.project).findQueue(QUEUE_URL)).isNull()
+        }
     }
 
     @Test
