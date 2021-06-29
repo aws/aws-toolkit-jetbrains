@@ -26,6 +26,8 @@ class SqsWindow(private val project: Project) {
     }
 
     private fun showQueue(queue: Queue): SqsWindowUi {
+        ApplicationManager.getApplication().assertIsDispatchThread()
+
         SqsTelemetry.openQueue(project, queue.telemetryType())
 
         val toolWindow = SqsWindowFactory.getToolWindow(project)
@@ -40,6 +42,8 @@ class SqsWindow(private val project: Project) {
     }
 
     fun findQueue(queueUrl: String): Content? {
+        ApplicationManager.getApplication().assertIsDispatchThread()
+
         val toolWindow = SqsWindowFactory.getToolWindow(project)
         val contentManager = toolWindow.contentManager
 

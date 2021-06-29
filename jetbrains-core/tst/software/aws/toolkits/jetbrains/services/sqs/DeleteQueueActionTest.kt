@@ -8,6 +8,7 @@ import com.intellij.openapi.wm.impl.ToolWindowHeadlessManagerImpl
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.replaceService
+import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -63,7 +64,9 @@ class DeleteQueueActionTest {
     @Test
     fun `Delete queue closes tool window`() {
         val mockNode = SqsQueueNode(projectRule.project, QUEUE_URL)
-        SqsWindow.getInstance(projectRule.project).pollMessage(Queue(QUEUE_URL, anAwsRegion()))
+        runInEdtAndWait {
+            SqsWindow.getInstance(projectRule.project).pollMessage(Queue(QUEUE_URL, anAwsRegion()))
+        }
         DeleteQueueAction().performDelete(mockNode)
         assertThat(SqsWindow.getInstance(projectRule.project).findQueue(QUEUE_URL)).isNull()
     }
