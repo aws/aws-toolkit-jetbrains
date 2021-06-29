@@ -48,7 +48,7 @@ class DeleteQueueActionTest {
 
         val mockToolWindow = ToolWindowHeadlessManagerImpl.MockToolWindow(projectRule.project)
         val mockToolWindowManager = mock<ToolWindowManager> {
-            on {getToolWindow(any()) } doReturn mockToolWindow
+            on { getToolWindow(any()) } doReturn mockToolWindow
         }
         projectRule.project.replaceService(ToolWindowManager::class.java, mockToolWindowManager, disposableRule.disposable)
     }
