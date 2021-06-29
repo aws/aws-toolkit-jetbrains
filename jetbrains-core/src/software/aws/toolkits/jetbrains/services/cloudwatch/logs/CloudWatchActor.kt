@@ -4,12 +4,12 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
 import com.intellij.util.ExceptionUtil
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -467,7 +467,7 @@ class InsightsQueryResultsActor(
     }
 
     // run on a separate context so we don't lock up the message listener
-    private fun startLoading() = coroutineScope.launch(Dispatchers.Default) {
+    private fun startLoading() = coroutineScope.launch(getCoroutineUiContext(ModalityState.any())) {
         tableLoading()
         val loadedQueryResults = mutableSetOf<String>()
         var response: GetQueryResultsResponse
