@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
@@ -30,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.LogResu
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.identifier
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.toLogResult
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -467,7 +467,7 @@ class InsightsQueryResultsActor(
     }
 
     // run on a separate context so we don't lock up the message listener
-    private fun startLoading() = coroutineScope.launch(getCoroutineUiContext(ModalityState.any())) {
+    private fun startLoading() = coroutineScope.launch(getCoroutineBgContext()) {
         tableLoading()
         val loadedQueryResults = mutableSetOf<String>()
         var response: GetQueryResultsResponse

@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
@@ -18,7 +17,7 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -69,7 +68,7 @@ class SaveQueryDialog(
     override fun getOKAction(): Action = action
 
     private suspend fun getExistingQueryId(queryName: String): String? {
-        val definitions = withContext(getCoroutineUiContext(ModalityState.any())) {
+        val definitions = withContext(getCoroutineBgContext()) {
             resourceCache.getResourceNow(
                 CloudWatchResources.DESCRIBE_QUERY_DEFINITIONS,
                 region = connectionSettings.region,
