@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.treeStructure.treetable.TreeTableTree
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -62,9 +62,8 @@ abstract class ObjectActionTestBase {
 
         sut.update(actionEvent)
 
-        Assertions.assertThat(actionEvent.presentation.isEnabled).isFalse
+        assertThat(actionEvent.presentation.isEnabled).isFalse
     }
-
 
     protected fun AnAction.executeAction(nodes: List<S3TreeNode>) {
         val event = createEventFor(this, nodes)
