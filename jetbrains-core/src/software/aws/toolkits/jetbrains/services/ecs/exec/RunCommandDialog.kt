@@ -10,7 +10,6 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.tools.Tool
-import com.intellij.tools.ToolRunProfile
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.GrowPolicy
@@ -32,7 +31,7 @@ import javax.swing.JComponent
 import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
 
-class RunCommandDialog(private val project: Project, private val container: ContainerDetails) :
+class RunCommandDialog(private val project: Project, private val container: ContainerDetails, private val connectionSettings: Map<String, String>) :
     DialogWrapper(project) {
     private val coroutineScope = ApplicationThreadPoolScope("RunCommandDialog")
     private val tasks = ResourceSelector
@@ -127,9 +126,10 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 .create(
                     project,
                     DefaultRunExecutor.getRunExecutorInstance(),
-                    ToolRunProfile(
+                    RunCommandRunProfile(
                         execCommand,
-                        SimpleDataContext.getProjectContext(project)
+                        SimpleDataContext.getProjectContext(project),
+                        connectionSettings
                     )
                 )
                 .build()

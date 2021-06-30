@@ -143,7 +143,7 @@ class ExecuteCommandAction(
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
                     runInEdt {
-                        RunCommandDialog(project, container).show()
+                        RunCommandDialog(project, container, CurrentConnectionSettings.getConnectionSettings(project)).show()
                     }
                 }
             } else {
@@ -166,13 +166,8 @@ class ExecuteCommandInShellAction(
         coroutineScope.launch {
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
-                    val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
-                    if (connectionSettings != null) {
-                        val environmentVariables = connectionSettings.region.toEnvironmentVariables() +
-                            connectionSettings.credentials.resolveCredentials().toEnvironmentVariables()
-                        runInEdt {
-                            OpenShellInContainerDialog(project, container, environmentVariables).show()
-                        }
+                    runInEdt {
+                        OpenShellInContainerDialog(project, container, CurrentConnectionSettings.getConnectionSettings(project)).show()
                     }
                 }
             } else {
@@ -188,5 +183,13 @@ class ExecuteCommandInShellAction(
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
             !EcsUtils.isInstrumented(container.service.serviceArn()) &&
             pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal") && AwsToolkit.isEcsExecEnabled()
+    }
+}
+
+object CurrentConnectionSettings {
+    fun getConnectionSettings(project: Project): Map<String, String> {
+        val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings() ?: throw IllegalStateException("No Credentials found")
+        return connectionSettings.region.toEnvironmentVariables() +
+            connectionSettings.credentials.resolveCredentials().toEnvironmentVariables()
     }
 }

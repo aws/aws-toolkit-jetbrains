@@ -12,8 +12,8 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.tools.ToolRunProfile
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.ecs.model.Task
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import java.nio.file.Files
@@ -57,12 +58,23 @@ class RunCommandDialogTest {
 
     private val containerDefinition = ContainerDefinition.builder().name("sample-container").build()
     private val container = ContainerDetails(ecsService, containerDefinition)
-
+    lateinit var connectionSettings: Map <String, String>
     val command = "ls"
     private val task = Task.builder().clusterArn(clusterArn).taskArn(taskArn).build()
     private val taskList = listOf(task.taskArn())
     private val containerName = containerDefinition.name()
     private val verifyCommand = "ecs execute-command --cluster $clusterArn --task $taskArn --command $command --interactive --container $containerName"
+
+    @Before
+    fun setup() {
+        val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
+        val credentials = credentialManager.addCredentials("DummyID", AwsBasicCredentials.create("AccessEcsExecDummy", "SecretEcsExecDummy"))
+        accountSettings.changeCredentialProviderAndWait(credentials)
+        connectionSettings = (accountSettings.connectionSettings()?.region?.toEnvironmentVariables() ?: throw IllegalStateException("No region")) + (
+            accountSettings.connectionSettings()?.credentials?.resolveCredentials()
+                ?.toEnvironmentVariables() ?: throw IllegalStateException("No credentials found")
+            )
+    }
 
     @Test
     fun `Correctly formed string of parameters to execute command is returned`() {
@@ -71,7 +83,7 @@ class RunCommandDialogTest {
             CompletableFuture.completedFuture(taskList)
         )
         runInEdtAndWait {
-            val execCommandParameters = RunCommandDialog(projectRule.project, container).constructExecCommandParameters(command)
+            val execCommandParameters = RunCommandDialog(projectRule.project, container, connectionSettings).constructExecCommandParameters(command)
             assertThat(execCommandParameters).isEqualTo(verifyCommand)
         }
     }
@@ -84,7 +96,7 @@ class RunCommandDialogTest {
         )
         val samplePath = tempFolder.newFile("sample-file").toPath()
         runInEdtAndWait {
-            val execCommand = RunCommandDialog(projectRule.project, container).buildExecCommandConfiguration(command, samplePath)
+            val execCommand = RunCommandDialog(projectRule.project, container, connectionSettings).buildExecCommandConfiguration(command, samplePath)
             assertThat(execCommand.name).isEqualTo("sample-container")
             assertThat(execCommand.parameters).isEqualTo(verifyCommand)
             assertThat(execCommand.isUseConsole).isTrue
@@ -95,9 +107,6 @@ class RunCommandDialogTest {
 
     @Test
     fun `Credentials are attached as environment variables when running AWS CLI`() {
-        val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
-        val credentials = credentialManager.addCredentials("DummyID", AwsBasicCredentials.create("AccessEcsExecDummy", "SecretEcsExecDummy"))
-        accountSettings.changeCredentialProviderAndWait(credentials)
         resourceCache.addEntry(
             projectRule.project, EcsResources.listTasks(clusterArn, serviceArn),
             CompletableFuture.completedFuture(taskList)
@@ -106,13 +115,14 @@ class RunCommandDialogTest {
         runInEdtAndWait {
             val environmentVariables = mutableListOf<String>()
             val counter = CountDownLatch(5)
-            val execCommand = RunCommandDialog(projectRule.project, container).buildExecCommandConfiguration(('"' + command + '"'), programPath)
+            val execCommand = RunCommandDialog(projectRule.project, container, connectionSettings)
+                .buildExecCommandConfiguration(('"' + command + '"'), programPath)
             val environment =
                 ExecutionEnvironmentBuilder
                     .create(
                         projectRule.project,
                         DefaultRunExecutor.getRunExecutorInstance(),
-                        ToolRunProfile(execCommand, SimpleDataContext.getProjectContext(projectRule.project))
+                        RunCommandRunProfile(execCommand, SimpleDataContext.getProjectContext(projectRule.project), connectionSettings)
                     )
                     .build {
                         it.processHandler?.addProcessListener(object : ProcessAdapter() {
@@ -142,13 +152,23 @@ class RunCommandDialogTest {
         )
 
         val contents =
-            """
+            if (SystemInfo.isWindows) {
+                """
+            echo %AWS_ACCESS_KEY_ID%
+            echo %AWS_SECRET_ACCESS_KEY%
+            echo %AWS_DEFAULT_REGION%
+            echo %AWS_REGION%
+            exit $exitCode
+                """.trimIndent()
+            } else {
+                """
             printenv AWS_ACCESS_KEY_ID
             printenv AWS_SECRET_ACCESS_KEY
             printenv AWS_DEFAULT_REGION
             printenv AWS_REGION
             exit $exitCode
-            """.trimIndent()
+                """.trimIndent()
+            }
 
         Files.write(execPath, contents.toByteArray())
 
