@@ -141,7 +141,7 @@ class RunCommandDialogTest {
             if (SystemInfo.isWindows) ".bat" else ".sh"
         )
 
-        val contents = if (SystemInfo.isWindows) {
+        val contents =
             """
             printenv AWS_ACCESS_KEY_ID
             printenv AWS_SECRET_ACCESS_KEY
@@ -149,15 +149,7 @@ class RunCommandDialogTest {
             printenv AWS_REGION
             exit $exitCode
             """.trimIndent()
-        } else {
-            """
-            printenv AWS_ACCESS_KEY_ID
-            printenv AWS_SECRET_ACCESS_KEY
-            printenv AWS_DEFAULT_REGION
-            printenv AWS_REGION
-            exit $exitCode
-            """.trimIndent()
-        }
+
         Files.write(execPath, contents.toByteArray())
 
         if (SystemInfo.isUnix) {
