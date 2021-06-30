@@ -3,15 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.deploy
 
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.testFramework.EdtRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
+import com.intellij.testFramework.TemporaryDirectory
 import com.intellij.testFramework.runInEdtAndGet
-import com.intellij.ui.MutableCollectionComboBoxModel
+import com.intellij.testFramework.writeChild
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+import software.amazon.awssdk.services.cloudformation.model.StackSummary
+import software.amazon.awssdk.services.ecr.EcrClient
+import software.amazon.awssdk.services.s3.S3Client
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
@@ -25,8 +32,15 @@ class DeploySamApplicationValidatorTest {
     @JvmField
     val ruleChain = RuleChain(projectRule, EdtRule())
 
-    private lateinit var view: DeployServerlessApplicationPanel
-    private lateinit var sut: DeploySamApplicationValidator
+    @Rule
+    @JvmField
+    val tempDir = TemporaryDirectory()
+
+    @JvmField
+    @Rule
+    val mockClientManagerRule = MockClientManagerRule()
+
+    private lateinit var sut: DeployServerlessApplicationDialog
 
     private val parameters = listOf<Parameter>(
         TestParameter(logicalName = "param1", type = "String", defaultValue = "value1"),
@@ -35,106 +49,118 @@ class DeploySamApplicationValidatorTest {
 
     @Before
     fun wireMocksTogetherWithValidOptions() {
-        view = runInEdtAndGet {
-            DeployServerlessApplicationPanel(projectRule.project)
+        mockClientManagerRule.apply {
+            create<CloudFormationClient>()
+            create<S3Client>()
+            create<EcrClient>()
         }
 
-        view.withTemplateParameters(parameters)
-
-        view.updateStack.isSelected = true
-        view.stacks.model = MutableCollectionComboBoxModel(listOf(Stack("stack123"))).also { it.selectedItem = Stack("stack123") }
-        view.stacks.forceLoaded()
-
-        view.s3Bucket.model = MutableCollectionComboBoxModel(listOf("bucket123")).also { it.selectedItem = "bucket123" }
-        view.s3Bucket.forceLoaded()
+        sut = runInEdtAndGet {
+            DeployServerlessApplicationDialog(
+                projectRule.project,
+                tempDir.newVirtualDirectory().writeChild("path.yaml", byteArrayOf()),
+                loadResourcesOnCreate = false
+            )
+        }
 
         val repo = Repository("repoName", "arn", "repositoryuri")
-        view.ecrRepo.model = MutableCollectionComboBoxModel(listOf(repo)).also { it.selectedItem = repo }
-        view.ecrRepo.forceLoaded()
-
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
+        sut.forceUi(
+            isCreateStack = false,
+            hasImageFunctions = false,
+            stacks = listOf(StackSummary.builder().stackName("stack123").build()),
+            buckets = listOf("bucket123"),
+            ecrRepos = listOf(repo),
+            stackName = "stack123",
+            bucket = "bucket123",
+            ecrRepo = repo.repositoryName,
+            autoExecute = false,
+            useContainer = true
+        )
+        sut.populateParameters(parameters, parameters)
     }
 
     @Test
     fun validInputsReturnsNull() {
-        assertThat(sut.validateSettings()).isNull()
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsNoRepoReturnsNull() {
-        view.ecrRepo.selectedItem = null
-        assertThat(sut.validateSettings()).isNull()
+        sut.forceUi(forceEcrRepo = true, ecrRepo = null)
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsWithNewStackReturnsNull() {
-        view.createStack.isSelected = true
-        view.newStackName.text = "createStack"
-        assertThat(sut.validateSettings()).isNull()
+        sut.forceUi(isCreateStack = true, stackName = "createStack")
+        assertThat(sut.validateAll()).isEmpty()
 
-        view.newStackName.text = "n"
-        assertThat(sut.validateSettings()).isNull()
+        sut.forceUi(stackName = "n")
+        assertThat(sut.validateAll()).isEmpty()
 
-        view.newStackName.text = "n1"
-        assertThat(sut.validateSettings()).isNull()
+        sut.forceUi(stackName = "n1")
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsWithImageReturnsNull() {
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = true, templateParameters = parameters)
-        assertThat(sut.validateSettings()).isNull()
+        sut.forceUi(hasImageFunctions = true)
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
-    fun stackMustBeSpecified() {
-        view.stacks.selectedItem = null
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.stack.missing"))
+    fun stackMustBeSelected() {
+        sut.forceUi(isCreateStack = false, forceStackName = true, stackName = null)
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains(message("serverless.application.deploy.validation.stack.missing")) }
     }
 
     @Test
     fun newStackNameMustBeSpecified() {
-        view.createStack.isSelected = true
-        view.newStackName.text = null
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.missing"))
+        sut.forceUi(isCreateStack = true, forceStackName = true, stackName = null)
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.missing")) }
     }
 
     @Test
     fun invalidStackName_TooLong() {
-        view.createStack.isSelected = true
-        view.newStackName.text = "x".repeat(DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH + 1)
-        assertThat(sut.validateSettings()?.message).contains(
-            message("serverless.application.deploy.validation.new.stack.name.too.long", DeploySamApplicationValidator.MAX_STACK_NAME_LENGTH)
-        )
+        val maxLength = DeployServerlessApplicationDialog.MAX_STACK_NAME_LENGTH
+        sut.forceUi(isCreateStack = true, stackName = "x".repeat(maxLength + 1))
+
+        assertThat(sut.panel.validateCallbacks.mapNotNull { it.invoke() }).singleElement()
+            .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.too.long", maxLength)) }
     }
 
     @Test
     fun invalidStackName_Duplicate() {
-        view.createStack.isSelected = true
-        view.newStackName.text = "bar"
-        view.stacks.model = MutableCollectionComboBoxModel(listOf(Stack("foo"), Stack("bar"), Stack("baz")))
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.duplicate"))
+        sut.forceUi(
+            isCreateStack = true, stackName = "bar",
+            stacks = listOf(
+                StackSummary.builder().stackName("foo").build(),
+                StackSummary.builder().stackName("bar").build(),
+                StackSummary.builder().stackName("baz").build()
+            )
+        )
+
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.duplicate")) }
     }
 
     @Test
     fun invalidStackName_InvalidChars() {
-        view.createStack.isSelected = true
-        view.newStackName.text = "stack_1"
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.invalid"))
-
-        view.newStackName.text = "stack 1"
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.invalid"))
-
-        view.newStackName.text = "stack#1"
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.invalid"))
-
-        view.newStackName.text = "1stack"
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.invalid"))
-
-        view.newStackName.text = " stack"
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.invalid"))
-
-        view.newStackName.text = "stack!@#$%^&*()_+-="
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.new.stack.name.invalid"))
+        val invalid = listOf(
+            "stack_1",
+            "stack#1",
+            "1stack",
+            " stack",
+            "stack!@#$%^&*()_+-="
+        )
+        invalid.forEach {
+            sut.forceUi(isCreateStack = true, stackName = it)
+            assertThat(sut.validateAll())
+                .singleElement()
+                .matches({ it.message.contains(message("serverless.application.deploy.validation.new.stack.name.invalid")) }, "for input $it")
+        }
     }
 
     @Test
@@ -150,10 +176,9 @@ class DeploySamApplicationValidatorTest {
             TestParameter(logicalName = "param8", type = "AWS::SSM::Parameter::Value<String>", defaultValue = "something"),
 
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()).isNull()
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
@@ -166,10 +191,9 @@ class DeploySamApplicationValidatorTest {
             TestParameter(logicalName = "param7", type = "List<AWS::EC2::AvailabilityZone::Name>", defaultValue = ""),
             TestParameter(logicalName = "param8", type = "AWS::SSM::Parameter::Value<String>", defaultValue = ""),
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()).isNull()
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
@@ -184,10 +208,9 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).isNull()
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
@@ -203,10 +226,10 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).contains("tooShort does not meet MinLength")
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains("tooShort does not meet MinLength") }
     }
 
     @Test
@@ -222,10 +245,10 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).contains("tooLong exceeds MaxLength")
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains("tooLong exceeds MaxLength") }
     }
 
     @Test
@@ -241,10 +264,10 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).contains("regexFail does not match AllowedPattern")
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains("regexFail does not match AllowedPattern") }
     }
 
     @Test
@@ -268,10 +291,10 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).contains("AllowedPattern for badRegex is not valid")
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains("AllowedPattern for badRegex is not valid") }
     }
 
     @Test
@@ -280,10 +303,10 @@ class DeploySamApplicationValidatorTest {
             TestParameter(logicalName = "notANumber", type = "Number", defaultValue = "f"),
             TestParameter(logicalName = "notANumber2", type = "Number", defaultValue = "")
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).contains("not a number")
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains("not a number") }
     }
 
     @Test
@@ -299,10 +322,10 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).contains("tooSmall is smaller than MinValue")
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains("tooSmall is smaller than MinValue") }
     }
 
     @Test
@@ -318,10 +341,10 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).contains("tooBig is larger than MaxValue")
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains("tooBig is larger than MaxValue") }
     }
 
     @Test
@@ -337,24 +360,28 @@ class DeploySamApplicationValidatorTest {
                 )
             )
         )
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = false, templateParameters = parameters)
-        view.withTemplateParameters(parameters)
+        sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateSettings()?.message).isNull()
+        assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
     fun s3BucketMustBeSpecified() {
-        view.s3Bucket.selectedItem = null
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.s3.bucket.empty"))
+        sut.forceUi(forceBucket = true, bucket = null)
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains(message("serverless.application.deploy.validation.s3.bucket.empty")) }
     }
 
     @Test
-    fun ecrReoMustBeSpecifiedWithImages() {
-        sut = DeploySamApplicationValidator(view, hasImageFunctions = true, templateParameters = parameters)
-        view.ecrRepo.selectedItem = null
-        assertThat(sut.validateSettings()?.message).contains(message("serverless.application.deploy.validation.ecr.repo.empty"))
+    fun ecrRepoMustBeSpecifiedWithImages() {
+        sut.forceUi(hasImageFunctions = true, forceEcrRepo = true, ecrRepo = null)
+
+        assertThat(sut.validateAll()).singleElement()
+            .matches { it.message.contains(message("serverless.application.deploy.validation.ecr.repo.empty")) }
     }
+
+    private fun DeployServerlessApplicationDialog.validateAll(): List<ValidationInfo> =
+        this.panel.validateCallbacks.mapNotNull { it.invoke() }
 
     private class TestParameter(
         override val logicalName: String,
