@@ -117,6 +117,7 @@ with what features/services are supported.
         </extensionPoint>
 
         <extensionPoint name="executable" interface="software.aws.toolkits.jetbrains.core.executables.ExecutableType" dynamic="true"/>
+        <extensionPoint name="executable2" interface="software.aws.toolkits.jetbrains.core.executables.ExecutableType2" dynamic="true"/>
 
         <extensionPoint name="clouddebug.debuggerSupport" interface="software.aws.toolkits.jetbrains.services.clouddebug.DebuggerSupport" dynamic="true"/>
 
@@ -170,6 +171,10 @@ with what features/services are supported.
                             testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryService" />
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.executables.ExecutableManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.executables.DefaultExecutableManager"/>
+
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.executables.ExecutableSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.executables.ExecutableManager2"/>
+
         <applicationService serviceInterface="software.aws.toolkits.core.ToolkitClientManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.MockClientManager"/>
@@ -244,6 +249,7 @@ with what features/services are supported.
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
+        <executable2 implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable2"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.ecs.exec.AwsCliExecutable"/>
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
@@ -497,6 +503,9 @@ with what features/services are supported.
                 <action id="aws.toolkit.dynamoViewer.changeMaxResults" class="software.aws.toolkits.jetbrains.services.dynamodb.editor.actions.ConfigureMaxResultsAction"/>
             </group>
         </group>
+        <action id="software.aws.toolkits.jetbrains.core.executables.ExecutableTester"
+                class="software.aws.toolkits.jetbrains.core.executables.ExecutableTester"
+                text="Test ExecutableManager"/>
     </actions>
 
 </idea-plugin>

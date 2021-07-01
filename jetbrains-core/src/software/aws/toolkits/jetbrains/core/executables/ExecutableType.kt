@@ -13,6 +13,8 @@ interface ExecutableType<VersionScheme> {
     val id: String
     val displayName: String
 
+    fun supportedVersions(): List<VersionRange<VersionScheme>> = emptyList()
+
     /**
      * Determine the version number of the given path
      */
@@ -32,25 +34,53 @@ interface ExecutableType<VersionScheme> {
     }
 }
 
-interface AutoResolvable {
+interface ExecutableType2<VersionScheme : Version> {
+    val id: String
+    val displayName: String
 
+    fun supportedVersions(): List<VersionRange<VersionScheme>> = emptyList()
+
+    fun determineVersion(path: Path): VersionScheme
+
+    companion object {
+        val EP_NAME = ExtensionPointName<ExecutableType2<*>>("aws.toolkit.executable2")
+
+        internal fun executables(): List<ExecutableType2<*>> = EP_NAME.extensionList
+
+        @JvmStatic
+        fun <T : ExecutableType2<*>> getExecutable(clazz: Class<T>): T = executables().filterIsInstance(clazz).first()
+
+        inline fun <reified T : ExecutableType2<*>> getInstance(): ExecutableType2<*> = getExecutable(T::class.java)
+    }
+}
+
+interface AutoResolvable {
     /**
      * Attempt to automatically resolve the path
      *
      * @return the resolved path or null if not found
-     * @throws if an exception occurred attempting to resolve the path, when success was expected
+     * @throws Exception if an exception occurred attempting to resolve the path
      */
     fun resolve(): Path?
 }
 
-interface Validatable {
+interface Manged : AutoResolvable {
+    // TODO: How do we want to handle updating....do we block the usage? Download and then lock its usage while installed?
 
     /**
-     * Validate the executable at the given path, this may include version checks
-     * or any other validation required to ensure this executable is compatible with
-     * the toolkit.
+     * Attempt to automatically install the tool to Toolkit's managed location
      *
-     * If validation fails throw exception, [Exception.message] is displayed to the user
+     * @return the installed path. This **must** return the same path as [AutoResolvable.resolve]
+     * @throws Exception if the installation failed
+     */
+    fun install(): Path
+
+    fun isUpdateAvailable(): Boolean
+}
+
+interface Validatable {
+    /**
+     * Validate the executable at the given path, beyond being a supported version to ensure this executable is compatible wit the toolkit.
      */
     fun validate(path: Path)
 }
