@@ -57,3 +57,13 @@ dependencies {
         resharperDlls(project(":jetbrains-rider", configuration = "resharperDlls"))
     }
 }
+
+configurations {
+    // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
+    runtimeClasspath {
+        exclude(group = "org.slf4j")
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
+    }
+}
