@@ -10,6 +10,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
@@ -168,174 +169,175 @@ class DeployServerlessApplicationDialog(
 
     override fun getHelpId(): String = HelpIds.DEPLOY_SERVERLESS_APPLICATION_DIALOG.id
 
-    override fun createCenterPanel() = panel
+    override fun createCenterPanel() = buildPanel()
 
-    internal val panel = panel {
-        val wideInputSizeGroup = "wideInputSizeGroup"
-        // create stack
-        buttonGroup(::deployType) {
-            row {
-                val createStackButton = radioButton(
-                    message("serverless.application.deploy.label.stack.new"),
-                    value = DeployType.CREATE
-                ).toolTipText(message("serverless.application.deploy.tooltip.createStack"))
+    internal fun buildPanel() =
+        panel {
+            val wideInputSizeGroup = "wideInputSizeGroup"
+            // create stack
+            buttonGroup(::deployType) {
+                row {
+                    val createStackButton = radioButton(
+                        message("serverless.application.deploy.label.stack.new"),
+                        value = DeployType.CREATE
+                    ).toolTipText(message("serverless.application.deploy.tooltip.createStack"))
 
-                createStackButton.selected.addListener {
-                    refreshTemplateParameters()
-                }
+                    createStackButton.selected.addListener {
+                        refreshTemplateParameters()
+                    }
 
-                textField(::newStackName)
-                    .sizeGroup(wideInputSizeGroup)
-                    .constraints(growX)
-                    .enableIf(createStackButton.selected)
-                    .toolTipText(message("serverless.application.deploy.tooltip.createStack"))
-                    .withValidationOnApply { field ->
-                        if (!field.isEnabled) {
-                            null
-                        } else {
-                            validateStackName(field.text)?.let { field.validationInfo(it) }
+                    textField(::newStackName)
+                        .sizeGroup(wideInputSizeGroup)
+                        .constraints(growX)
+                        .enableIf(createStackButton.selected)
+                        .toolTipText(message("serverless.application.deploy.tooltip.createStack"))
+                        .withValidationOnApply { field ->
+                            if (!field.isEnabled) {
+                                null
+                            } else {
+                                validateStackName(field.text)?.let { field.validationInfo(it) }
+                            }
                         }
+                }
+
+                // update stack
+                row {
+                    val updateStackButton = radioButton(
+                        message("serverless.application.deploy.label.stack.select"),
+                        value = DeployType.UPDATE
+                    ).toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
+
+                    updateStackButton.selected.addListener {
+                        refreshTemplateParameters()
                     }
+
+                    stackSelector()
+                        .sizeGroup(wideInputSizeGroup)
+                        .constraints(growX)
+                        .enableIf(updateStackButton.selected)
+                        .withErrorOnApplyIf(message("serverless.application.deploy.validation.stack.missing")) {
+                            it.isEnabled && (it.isLoading || it.selected() == null)
+                        }
+                        .toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
+                }
             }
 
-            // update stack
+            // stack parameters
             row {
-                val updateStackButton = radioButton(
-                    message("serverless.application.deploy.label.stack.select"),
-                    value = DeployType.UPDATE
-                ).toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
+                cell(isFullWidth = true) {
+                    if (ApplicationManager.getApplication().isUnitTestMode) {
+                        // dialog can't be created in test mode since there's a lot of magic happening to the dialog, so insert a dummy to test validation logic
+                        label("dummy").withValidationOnApply { validateParameters() }
+                        return@cell
+                    }
 
-                updateStackButton.selected.addListener {
-                    refreshTemplateParameters()
+                    val tableComponent = environmentVariablesTable.component
+                    ToolbarDecorator.findAddButton(tableComponent)?.isVisible = false
+                    ToolbarDecorator.findRemoveButton(tableComponent)?.isVisible = false
+                    ToolbarDecorator.findEditButton(tableComponent)?.isVisible = false
+
+                    tableComponent()
+                        .withBinding(
+                            componentGet = { _ ->
+                                environmentVariablesTable.stopEditing()
+                                environmentVariablesTable.environmentVariables
+                            },
+                            componentSet = { _, value ->
+                                environmentVariablesTable.setValues(value)
+                            },
+                            ::templateParameters.toBinding()
+                        )
+                        .toolTipText(message("serverless.application.deploy.tooltip.template.parameters"))
+                        .applyToComponent {
+                            border = IdeBorderFactory.createTitledBorder(message("serverless.application.deploy.template.parameters"), false)
+                        }
+                        .withValidationOnApply { validateParameters() }
                 }
+            }
 
-                stackSelector()
-                    .sizeGroup(wideInputSizeGroup)
+            // s3 bucket
+            row(message("serverless.application.deploy.label.bucket")) {
+                s3BucketSelector()
                     .constraints(growX)
-                    .enableIf(updateStackButton.selected)
-                    .withErrorOnApplyIf(message("serverless.application.deploy.validation.stack.missing")) {
-                        it.isEnabled && (it.isLoading || it.selected() == null)
-                    }
-                    .toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
-            }
-        }
-
-        // stack parameters
-        row {
-            cell(isFullWidth = true) {
-                if (ApplicationManager.getApplication().isUnitTestMode) {
-                    // dialog can't be created in test mode since there's a lot of magic happening to the dialog, so insert a dummy to test validation logic
-                    label("dummy").withValidationOnApply { validateParameters() }
-                    return@cell
-                }
-
-                val tableComponent = environmentVariablesTable.component
-                ToolbarDecorator.findAddButton(tableComponent)?.isVisible = false
-                ToolbarDecorator.findRemoveButton(tableComponent)?.isVisible = false
-                ToolbarDecorator.findEditButton(tableComponent)?.isVisible = false
-
-                tableComponent()
-                    .withBinding(
-                        componentGet = { _ ->
-                            environmentVariablesTable.stopEditing()
-                            environmentVariablesTable.environmentVariables
-                        },
-                        componentSet = { _, value ->
-                            environmentVariablesTable.setValues(value)
-                        },
-                        ::templateParameters.toBinding()
-                    )
-                    .toolTipText(message("serverless.application.deploy.tooltip.template.parameters"))
-                    .applyToComponent {
-                        border = IdeBorderFactory.createTitledBorder(message("serverless.application.deploy.template.parameters"), false)
-                    }
-                    .withValidationOnApply { validateParameters() }
-            }
-        }
-
-        // s3 bucket
-        row(message("serverless.application.deploy.label.bucket")) {
-            s3BucketSelector()
-                .constraints(growX)
-                .withErrorOnApplyIf(message("serverless.application.deploy.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
-                .toolTipText(message("serverless.application.deploy.tooltip.s3Bucket"))
-
-            button(message("serverless.application.deploy.button.bucket.create")) {
-                val bucketDialog = CreateS3BucketDialog(
-                    project = project,
-                    s3Client = s3Client,
-                    parent = it.source as? Component
-                )
-
-                if (bucketDialog.showAndGet()) {
-                    bucketDialog.bucketName().let {
-                        s3BucketSelector.reload(forceFetch = true)
-                        s3BucketSelector.selectedItem = it
-                    }
-                }
-            }
-        }
-
-        // ecr repo
-        val ecrSelectorPanel = panel {
-            row(message("serverless.application.deploy.label.repo")) {
-                ecrRepoSelector()
-                    .constraints(growX)
-                    .withErrorOnApplyIf(message("serverless.application.deploy.validation.ecr.repo.empty")) {
-                        it.isLoading || it.selected() == null
-                    }
-                    .toolTipText(message("serverless.application.deploy.tooltip.ecrRepo"))
+                    .withErrorOnApplyIf(message("serverless.application.deploy.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
+                    .toolTipText(message("serverless.application.deploy.tooltip.s3Bucket"))
 
                 button(message("serverless.application.deploy.button.bucket.create")) {
-                    val ecrDialog = CreateEcrRepoDialog(
+                    val bucketDialog = CreateS3BucketDialog(
                         project = project,
-                        ecrClient = ecrClient,
+                        s3Client = s3Client,
                         parent = it.source as? Component
                     )
 
-                    if (ecrDialog.showAndGet()) {
-                        ecrRepoSelector.reload(forceFetch = true)
-                        ecrRepoSelector.selectedItem { it.repositoryName == ecrDialog.repoName }
+                    if (bucketDialog.showAndGet()) {
+                        bucketDialog.bucketName().let {
+                            s3BucketSelector.reload(forceFetch = true)
+                            s3BucketSelector.selectedItem = it
+                        }
                     }
                 }
             }
-        }
-        row {
-            ecrSelectorPanel(grow)
-                .installOnParent { showImageOptions }
-                .applyToComponent {
-                    isVisible = showImageOptions
+
+            // ecr repo
+            val ecrSelectorPanel = panel {
+                row(message("serverless.application.deploy.label.repo")) {
+                    ecrRepoSelector()
+                        .constraints(growX)
+                        .withErrorOnApplyIf(message("serverless.application.deploy.validation.ecr.repo.empty")) {
+                            it.isLoading || it.selected() == null
+                        }
+                        .toolTipText(message("serverless.application.deploy.tooltip.ecrRepo"))
+
+                    button(message("serverless.application.deploy.button.bucket.create")) {
+                        val ecrDialog = CreateEcrRepoDialog(
+                            project = project,
+                            ecrClient = ecrClient,
+                            parent = it.source as? Component
+                        )
+
+                        if (ecrDialog.showAndGet()) {
+                            ecrRepoSelector.reload(forceFetch = true)
+                            ecrRepoSelector.selectedItem { it.repositoryName == ecrDialog.repoName }
+                        }
+                    }
                 }
-        }
+            }
+            row {
+                ecrSelectorPanel(grow)
+                    .installOnParent { showImageOptions }
+                    .applyToComponent {
+                        isVisible = showImageOptions
+                    }
+            }
 
-        // cfn caps
-        row {
-            label(message("cloudformation.capabilities"))
-                .toolTipText(message("cloudformation.capabilities.toolTipText"))
+            // cfn caps
+            row {
+                label(message("cloudformation.capabilities"))
+                    .toolTipText(message("cloudformation.capabilities.toolTipText"))
 
-            cell(isFullWidth = true) {
-                capabilitiesSelector.checkboxes.forEach {
-                    it()
+                cell(isFullWidth = true) {
+                    capabilitiesSelector.checkboxes.forEach {
+                        it()
+                    }
+                }
+            }
+
+            // confirmation
+            row {
+                cell(isFullWidth = true) {
+                    checkBox(message("serverless.application.deploy.review_required"), ::requireReview)
+                        .toolTipText(message("serverless.application.deploy.tooltip.deploymentConfirmation"))
+                }
+            }
+
+            // in container
+            row {
+                cell(isFullWidth = true) {
+                    checkBox(message("serverless.application.deploy.use_container"), ::useContainer)
+                        .toolTipText(message("lambda.sam.buildInContainer.tooltip"))
                 }
             }
         }
-
-        // confirmation
-        row {
-            cell(isFullWidth = true) {
-                checkBox(message("serverless.application.deploy.review_required"), ::requireReview)
-                    .toolTipText(message("serverless.application.deploy.tooltip.deploymentConfirmation"))
-            }
-        }
-
-        // in container
-        row {
-            cell(isFullWidth = true) {
-                checkBox(message("serverless.application.deploy.use_container"), ::useContainer)
-                    .toolTipText(message("lambda.sam.buildInContainer.tooltip"))
-            }
-        }
-    }
 
     private fun refreshTemplateParameters(updateStackName: String? = null) {
         when (deployType.name) {
@@ -401,6 +403,7 @@ class DeployServerlessApplicationDialog(
 
     @TestOnly
     fun forceUi(
+        panel: DialogPanel,
         isCreateStack: Boolean? = null,
         hasImageFunctions: Boolean? = null,
         stacks: List<StackSummary>? = null,

@@ -3,12 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.deploy
 
+import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.testFramework.EdtRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
 import com.intellij.testFramework.TemporaryDirectory
-import com.intellij.testFramework.runInEdtAndGet
+import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.writeChild
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -41,6 +42,7 @@ class DeploySamApplicationValidatorTest {
     val mockClientManagerRule = MockClientManagerRule()
 
     private lateinit var sut: DeployServerlessApplicationDialog
+    private lateinit var sutPanel: DialogPanel
 
     private val parameters = listOf<Parameter>(
         TestParameter(logicalName = "param1", type = "String", defaultValue = "value1"),
@@ -55,16 +57,18 @@ class DeploySamApplicationValidatorTest {
             create<EcrClient>()
         }
 
-        sut = runInEdtAndGet {
-            DeployServerlessApplicationDialog(
+        runInEdtAndWait {
+            sut = DeployServerlessApplicationDialog(
                 projectRule.project,
                 tempDir.newVirtualDirectory().writeChild("path.yaml", byteArrayOf()),
                 loadResourcesOnCreate = false
             )
+            sutPanel = sut.buildPanel()
         }
 
         val repo = Repository("repoName", "arn", "repositoryuri")
         sut.forceUi(
+            panel,
             isCreateStack = false,
             hasImageFunctions = false,
             stacks = listOf(StackSummary.builder().stackName("stack123").build()),
@@ -86,38 +90,38 @@ class DeploySamApplicationValidatorTest {
 
     @Test
     fun validInputsNoRepoReturnsNull() {
-        sut.forceUi(forceEcrRepo = true, ecrRepo = null)
+        sut.forceUi(panel, forceEcrRepo = true, ecrRepo = null)
         assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsWithNewStackReturnsNull() {
-        sut.forceUi(isCreateStack = true, stackName = "createStack")
+        sut.forceUi(panel, isCreateStack = true, stackName = "createStack")
         assertThat(sut.validateAll()).isEmpty()
 
-        sut.forceUi(stackName = "n")
+        sut.forceUi(panel, stackName = "n")
         assertThat(sut.validateAll()).isEmpty()
 
-        sut.forceUi(stackName = "n1")
+        sut.forceUi(panel, stackName = "n1")
         assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsWithImageReturnsNull() {
-        sut.forceUi(hasImageFunctions = true)
+        sut.forceUi(panel, hasImageFunctions = true)
         assertThat(sut.validateAll()).isEmpty()
     }
 
     @Test
     fun stackMustBeSelected() {
-        sut.forceUi(isCreateStack = false, forceStackName = true, stackName = null)
+        sut.forceUi(panel, isCreateStack = false, forceStackName = true, stackName = null)
         assertThat(sut.validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.stack.missing")) }
     }
 
     @Test
     fun newStackNameMustBeSpecified() {
-        sut.forceUi(isCreateStack = true, forceStackName = true, stackName = null)
+        sut.forceUi(panel, isCreateStack = true, forceStackName = true, stackName = null)
         assertThat(sut.validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.missing")) }
     }
@@ -125,7 +129,7 @@ class DeploySamApplicationValidatorTest {
     @Test
     fun invalidStackName_TooLong() {
         val maxLength = DeployServerlessApplicationDialog.MAX_STACK_NAME_LENGTH
-        sut.forceUi(isCreateStack = true, stackName = "x".repeat(maxLength + 1))
+        sut.forceUi(panel, isCreateStack = true, stackName = "x".repeat(maxLength + 1))
 
         assertThat(sut.panel.validateCallbacks.mapNotNull { it.invoke() }).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.too.long", maxLength)) }
@@ -134,6 +138,7 @@ class DeploySamApplicationValidatorTest {
     @Test
     fun invalidStackName_Duplicate() {
         sut.forceUi(
+            panel,
             isCreateStack = true, stackName = "bar",
             stacks = listOf(
                 StackSummary.builder().stackName("foo").build(),
@@ -156,7 +161,7 @@ class DeploySamApplicationValidatorTest {
             "stack!@#$%^&*()_+-="
         )
         invalid.forEach {
-            sut.forceUi(isCreateStack = true, stackName = it)
+            sut.forceUi(panel, isCreateStack = true, stackName = it)
             assertThat(sut.validateAll())
                 .singleElement()
                 .matches({ it.message.contains(message("serverless.application.deploy.validation.new.stack.name.invalid")) }, "for input $it")
@@ -367,21 +372,21 @@ class DeploySamApplicationValidatorTest {
 
     @Test
     fun s3BucketMustBeSpecified() {
-        sut.forceUi(forceBucket = true, bucket = null)
+        sut.forceUi(panel, forceBucket = true, bucket = null)
         assertThat(sut.validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.s3.bucket.empty")) }
     }
 
     @Test
     fun ecrRepoMustBeSpecifiedWithImages() {
-        sut.forceUi(hasImageFunctions = true, forceEcrRepo = true, ecrRepo = null)
+        sut.forceUi(panel, hasImageFunctions = true, forceEcrRepo = true, ecrRepo = null)
 
         assertThat(sut.validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.ecr.repo.empty")) }
     }
 
     private fun DeployServerlessApplicationDialog.validateAll(): List<ValidationInfo> =
-        this.panel.validateCallbacks.mapNotNull { it.invoke() }
+        sutPanel.validateCallbacks.mapNotNull { it.invoke() }
 
     private class TestParameter(
         override val logicalName: String,
