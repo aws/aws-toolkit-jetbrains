@@ -68,7 +68,7 @@ class DeploySamApplicationValidatorTest {
 
         val repo = Repository("repoName", "arn", "repositoryuri")
         sut.forceUi(
-            panel,
+            sutPanel,
             isCreateStack = false,
             hasImageFunctions = false,
             stacks = listOf(StackSummary.builder().stackName("stack123").build()),
@@ -85,60 +85,60 @@ class DeploySamApplicationValidatorTest {
 
     @Test
     fun validInputsReturnsNull() {
-        assertThat(sut.validateAll()).isEmpty()
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsNoRepoReturnsNull() {
-        sut.forceUi(panel, forceEcrRepo = true, ecrRepo = null)
-        assertThat(sut.validateAll()).isEmpty()
+        sut.forceUi(sutPanel, forceEcrRepo = true, ecrRepo = null)
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsWithNewStackReturnsNull() {
-        sut.forceUi(panel, isCreateStack = true, stackName = "createStack")
-        assertThat(sut.validateAll()).isEmpty()
+        sut.forceUi(sutPanel, isCreateStack = true, stackName = "createStack")
+        assertThat(validateAll()).isEmpty()
 
-        sut.forceUi(panel, stackName = "n")
-        assertThat(sut.validateAll()).isEmpty()
+        sut.forceUi(sutPanel, stackName = "n")
+        assertThat(validateAll()).isEmpty()
 
-        sut.forceUi(panel, stackName = "n1")
-        assertThat(sut.validateAll()).isEmpty()
+        sut.forceUi(sutPanel, stackName = "n1")
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
     fun validInputsWithImageReturnsNull() {
-        sut.forceUi(panel, hasImageFunctions = true)
-        assertThat(sut.validateAll()).isEmpty()
+        sut.forceUi(sutPanel, hasImageFunctions = true)
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
     fun stackMustBeSelected() {
-        sut.forceUi(panel, isCreateStack = false, forceStackName = true, stackName = null)
-        assertThat(sut.validateAll()).singleElement()
+        sut.forceUi(sutPanel, isCreateStack = false, forceStackName = true, stackName = null)
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.stack.missing")) }
     }
 
     @Test
     fun newStackNameMustBeSpecified() {
-        sut.forceUi(panel, isCreateStack = true, forceStackName = true, stackName = null)
-        assertThat(sut.validateAll()).singleElement()
+        sut.forceUi(sutPanel, isCreateStack = true, forceStackName = true, stackName = null)
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.missing")) }
     }
 
     @Test
     fun invalidStackName_TooLong() {
         val maxLength = DeployServerlessApplicationDialog.MAX_STACK_NAME_LENGTH
-        sut.forceUi(panel, isCreateStack = true, stackName = "x".repeat(maxLength + 1))
+        sut.forceUi(sutPanel, isCreateStack = true, stackName = "x".repeat(maxLength + 1))
 
-        assertThat(sut.panel.validateCallbacks.mapNotNull { it.invoke() }).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.too.long", maxLength)) }
     }
 
     @Test
     fun invalidStackName_Duplicate() {
         sut.forceUi(
-            panel,
+            sutPanel,
             isCreateStack = true, stackName = "bar",
             stacks = listOf(
                 StackSummary.builder().stackName("foo").build(),
@@ -147,7 +147,7 @@ class DeploySamApplicationValidatorTest {
             )
         )
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.new.stack.name.duplicate")) }
     }
 
@@ -161,8 +161,8 @@ class DeploySamApplicationValidatorTest {
             "stack!@#$%^&*()_+-="
         )
         invalid.forEach {
-            sut.forceUi(panel, isCreateStack = true, stackName = it)
-            assertThat(sut.validateAll())
+            sut.forceUi(sutPanel, isCreateStack = true, stackName = it)
+            assertThat(validateAll())
                 .singleElement()
                 .matches({ it.message.contains(message("serverless.application.deploy.validation.new.stack.name.invalid")) }, "for input $it")
         }
@@ -183,7 +183,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).isEmpty()
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
@@ -198,7 +198,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).isEmpty()
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
@@ -215,7 +215,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).isEmpty()
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
@@ -233,7 +233,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains("tooShort does not meet MinLength") }
     }
 
@@ -252,7 +252,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains("tooLong exceeds MaxLength") }
     }
 
@@ -271,7 +271,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains("regexFail does not match AllowedPattern") }
     }
 
@@ -298,7 +298,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains("AllowedPattern for badRegex is not valid") }
     }
 
@@ -310,7 +310,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains("not a number") }
     }
 
@@ -329,7 +329,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains("tooSmall is smaller than MinValue") }
     }
 
@@ -348,7 +348,7 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains("tooBig is larger than MaxValue") }
     }
 
@@ -367,25 +367,25 @@ class DeploySamApplicationValidatorTest {
         )
         sut.populateParameters(parameters, parameters)
 
-        assertThat(sut.validateAll()).isEmpty()
+        assertThat(validateAll()).isEmpty()
     }
 
     @Test
     fun s3BucketMustBeSpecified() {
-        sut.forceUi(panel, forceBucket = true, bucket = null)
-        assertThat(sut.validateAll()).singleElement()
+        sut.forceUi(sutPanel, forceBucket = true, bucket = null)
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.s3.bucket.empty")) }
     }
 
     @Test
     fun ecrRepoMustBeSpecifiedWithImages() {
-        sut.forceUi(panel, hasImageFunctions = true, forceEcrRepo = true, ecrRepo = null)
+        sut.forceUi(sutPanel, hasImageFunctions = true, forceEcrRepo = true, ecrRepo = null)
 
-        assertThat(sut.validateAll()).singleElement()
+        assertThat(validateAll()).singleElement()
             .matches { it.message.contains(message("serverless.application.deploy.validation.ecr.repo.empty")) }
     }
 
-    private fun DeployServerlessApplicationDialog.validateAll(): List<ValidationInfo> =
+    private fun validateAll(): List<ValidationInfo> =
         sutPanel.validateCallbacks.mapNotNull { it.invoke() }
 
     private class TestParameter(
