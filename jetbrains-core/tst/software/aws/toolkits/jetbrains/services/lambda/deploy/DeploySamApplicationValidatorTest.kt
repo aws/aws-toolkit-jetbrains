@@ -5,12 +5,13 @@ package software.aws.toolkits.jetbrains.services.lambda.deploy
 
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.testFramework.EdtRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.RunsInEdt
 import com.intellij.testFramework.TemporaryDirectory
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.testFramework.writeChild
+import com.intellij.util.io.writeChild
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -24,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
+import java.nio.file.Files
 
 @RunsInEdt
 class DeploySamApplicationValidatorTest {
@@ -57,10 +59,12 @@ class DeploySamApplicationValidatorTest {
             create<EcrClient>()
         }
 
+        val dir = Files.createDirectory(tempDir.newPath()).toAbsolutePath()
+
         runInEdtAndWait {
             sut = DeployServerlessApplicationDialog(
                 projectRule.project,
-                tempDir.newVirtualDirectory().writeChild("path.yaml", byteArrayOf()),
+                VfsUtil.findFileByIoFile(dir.writeChild("path.yaml", byteArrayOf()).toFile(), true)!!,
                 loadResourcesOnCreate = false
             )
             sutPanel = sut.buildPanel()
