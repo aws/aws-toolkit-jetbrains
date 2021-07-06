@@ -12,6 +12,7 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.UserActivityProviderComponent
+import org.jetbrains.annotations.Nls
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import java.util.LinkedHashMap
@@ -27,7 +28,9 @@ import javax.swing.event.DocumentEvent
  * needs but with same UX so users are used to it. Namely we do not support inheriting system env vars, but rest
  * of UX is the same
  */
-class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityProviderComponent {
+class EnvironmentVariablesTextField(
+    @Nls dialogTitle: String? = null
+) : TextFieldWithBrowseButton(), UserActivityProviderComponent {
     private var data = EnvironmentVariablesData.create(emptyMap(), false)
     private val listeners = CopyOnWriteArrayList<ChangeListener>()
 
@@ -40,7 +43,7 @@ class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityP
 
     init {
         addActionListener {
-            EnvironmentVariablesDialog(this).show()
+            EnvironmentVariablesDialog(this, dialogTitle ?: message("environment.variables.dialog.title")).show()
         }
 
         textField.document.addDocumentListener(
@@ -97,14 +100,14 @@ class EnvironmentVariablesTextField : TextFieldWithBrowseButton(), UserActivityP
         }
     }
 
-    private inner class EnvironmentVariablesDialog(parent: Component) : DialogWrapper(parent, true) {
+    private inner class EnvironmentVariablesDialog(parent: Component, title: String) : DialogWrapper(parent, true) {
         private val envVarTable = EnvVariablesTable().apply {
             setValues(convertToVariables(data.envs, false))
             setPasteActionEnabled(true)
         }
 
         init {
-            title = message("environment.variables.dialog.title")
+            this.title = title
             init()
         }
 
