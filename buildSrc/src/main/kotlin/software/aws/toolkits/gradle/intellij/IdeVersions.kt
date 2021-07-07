@@ -100,6 +100,9 @@ object IdeVersions {
                 sdkVersion = "2021.1",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "Pythonid:211.6693.115",
