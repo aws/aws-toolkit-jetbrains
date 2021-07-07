@@ -20,6 +20,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.Task
+import software.aws.toolkits.core.credentials.aCredentialsIdentifier
+import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
@@ -63,11 +65,17 @@ class RunCommandDialogTest {
     private val taskList = listOf(task.taskArn())
     private val containerName = containerDefinition.name()
     private val verifyCommand = "ecs execute-command --cluster $clusterArn --task $taskArn --command $command --interactive --container $containerName"
+    private val dummyRegion = anAwsRegion()
 
     @Before
     fun setup() {
         val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
-        val credentials = credentialManager.addCredentials("DummyID", AwsBasicCredentials.create("AccessEcsExecDummy", "SecretEcsExecDummy"))
+        val dummyCredential = aCredentialsIdentifier(defaultRegionId = dummyRegion.id)
+        val credentials = credentialManager.addCredentials(
+            dummyCredential.id,
+            AwsBasicCredentials.create("AccessKeyEcsExecDummy", "SecretKeyEcsExecDummy"),
+            dummyRegion
+        )
         accountSettings.changeCredentialProviderAndWait(credentials)
         connectionSettings = accountSettings.connectionSettings() ?: throw Exception("No credentials found")
     }
@@ -111,14 +119,13 @@ class RunCommandDialogTest {
                                 super.onTextAvailable(event, outputType)
                                 environmentVariables.add(event.text.split("\n").first())
                             }
-                        })
-                        it.processHandler?.addProcessListener(object : ProcessAdapter() {
+
                             override fun processTerminated(event: ProcessEvent) {
                                 super.processTerminated(event)
-                                assertThat(environmentVariables[1]).isEqualTo("AccessEcsExecDummy")
-                                assertThat(environmentVariables[2]).isEqualTo("SecretEcsExecDummy")
-                                assertThat(environmentVariables[3]).isEqualTo("us-east-1")
-                                assertThat(environmentVariables[4]).isEqualTo("us-east-1")
+                                assertThat(environmentVariables[1]).isEqualTo("AccessKeyEcsExecDummy")
+                                assertThat(environmentVariables[2]).isEqualTo("SecretKeyEcsExecDummy")
+                                assertThat(environmentVariables[3]).isEqualTo(dummyRegion)
+                                assertThat(environmentVariables[4]).isEqualTo(dummyRegion)
                             }
                         })
                     }

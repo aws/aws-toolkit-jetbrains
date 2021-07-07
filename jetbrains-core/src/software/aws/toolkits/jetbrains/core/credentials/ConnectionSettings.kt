@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 
@@ -12,3 +13,9 @@ val ConnectionSettings.shortName get() = "${credentials.shortName}@${region.id}"
 
 fun ConnectionSettings.toEnvironmentVariables(): Map<String, String> = region.toEnvironmentVariables() +
     credentials.resolveCredentials().toEnvironmentVariables()
+
+fun <T> Project.withAwsConnection(block: (ConnectionSettings) -> T): T {
+    val connectionSettings = AwsConnectionManager.getInstance(this).connectionSettings()
+        ?: throw IllegalStateException("Connection settings are not configured")
+    return block(connectionSettings)
+}
