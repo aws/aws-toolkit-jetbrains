@@ -7,7 +7,6 @@ import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
-import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.ProjectRule
@@ -22,6 +21,7 @@ import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.Task
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
@@ -32,7 +32,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CountDownLatch
 
 class RunCommandDialogTest {
     @Rule
@@ -58,7 +57,7 @@ class RunCommandDialogTest {
 
     private val containerDefinition = ContainerDefinition.builder().name("sample-container").build()
     private val container = ContainerDetails(ecsService, containerDefinition)
-    lateinit var connectionSettings: Map <String, String>
+    lateinit var connectionSettings: ConnectionSettings
     val command = "ls"
     private val task = Task.builder().clusterArn(clusterArn).taskArn(taskArn).build()
     private val taskList = listOf(task.taskArn())
@@ -70,10 +69,7 @@ class RunCommandDialogTest {
         val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
         val credentials = credentialManager.addCredentials("DummyID", AwsBasicCredentials.create("AccessEcsExecDummy", "SecretEcsExecDummy"))
         accountSettings.changeCredentialProviderAndWait(credentials)
-        connectionSettings = (accountSettings.connectionSettings()?.region?.toEnvironmentVariables() ?: throw IllegalStateException("No region")) + (
-            accountSettings.connectionSettings()?.credentials?.resolveCredentials()
-                ?.toEnvironmentVariables() ?: throw IllegalStateException("No credentials found")
-            )
+        connectionSettings = accountSettings.connectionSettings() ?: throw Exception("No credentials found")
     }
 
     @Test
@@ -89,23 +85,6 @@ class RunCommandDialogTest {
     }
 
     @Test
-    fun `Run Parameters of Execute Command are set correctly`() {
-        resourceCache.addEntry(
-            projectRule.project, EcsResources.listTasks(clusterArn, serviceArn),
-            CompletableFuture.completedFuture(taskList)
-        )
-        val samplePath = tempFolder.newFile("sample-file").toPath()
-        runInEdtAndWait {
-            val execCommand = RunCommandDialog(projectRule.project, container, connectionSettings).buildExecCommandConfiguration(command, samplePath)
-            assertThat(execCommand.name).isEqualTo("sample-container")
-            assertThat(execCommand.parameters).isEqualTo(verifyCommand)
-            assertThat(execCommand.isUseConsole).isTrue
-            assertThat(execCommand.isShowConsoleOnStdOut).isTrue
-            assertThat(execCommand.program).isEqualTo(samplePath.toString())
-        }
-    }
-
-    @Test
     fun `Credentials are attached as environment variables when running AWS CLI`() {
         resourceCache.addEntry(
             projectRule.project, EcsResources.listTasks(clusterArn, serviceArn),
@@ -114,36 +93,44 @@ class RunCommandDialogTest {
         val programPath = makeSampleCliExecutable()
         runInEdtAndWait {
             val environmentVariables = mutableListOf<String>()
-            val counter = CountDownLatch(5)
-            val execCommand = RunCommandDialog(projectRule.project, container, connectionSettings)
-                .buildExecCommandConfiguration(('"' + command + '"'), programPath)
             val environment =
                 ExecutionEnvironmentBuilder
                     .create(
                         projectRule.project,
                         DefaultRunExecutor.getRunExecutorInstance(),
-                        RunCommandRunProfile(execCommand, SimpleDataContext.getProjectContext(projectRule.project), connectionSettings)
+                        RunCommandRunProfile(
+                            connectionSettings?.toEnvironmentVariables(),
+                            RunCommandDialog(projectRule.project, container, connectionSettings)
+                                .constructExecCommandParameters(command),
+                            containerName, programPath.toAbsolutePath().toString()
+                        )
                     )
                     .build {
                         it.processHandler?.addProcessListener(object : ProcessAdapter() {
-
                             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                                 super.onTextAvailable(event, outputType)
                                 environmentVariables.add(event.text.split("\n").first())
-                                counter.countDown()
+                            }
+                        })
+                        it.processHandler?.addProcessListener(object : ProcessAdapter() {
+                            override fun processTerminated(event: ProcessEvent) {
+                                super.processTerminated(event)
+                                assertThat(environmentVariables[1]).isEqualTo("AccessEcsExecDummy")
+                                assertThat(environmentVariables[2]).isEqualTo("SecretEcsExecDummy")
+                                assertThat(environmentVariables[3]).isEqualTo("us-east-1")
+                                assertThat(environmentVariables[4]).isEqualTo("us-east-1")
                             }
                         })
                     }
             environment.runner.execute(environment)
-            counter.await()
-            assertThat(environmentVariables[1]).isEqualTo("AccessEcsExecDummy")
-            assertThat(environmentVariables[2]).isEqualTo("SecretEcsExecDummy")
-            assertThat(environmentVariables[3]).isEqualTo("us-east-1")
-            assertThat(environmentVariables[4]).isEqualTo("us-east-1")
         }
     }
 
     private fun makeSampleCliExecutable(path: String? = null, exitCode: Int = 0): Path {
+        val accessKeyId = "\$Env:AWS_ACCESS_KEY_ID"
+        val secretAccessKey = "\$Env:AWS_SECRET_ACCESS_KEY"
+        val defaultRegion = "\$Env:AWS_DEFAULT_REGION"
+        val region = "\$Env:AWS_REGION"
         val execPath = path?.let {
             Paths.get(it)
         } ?: Files.createTempFile(
@@ -154,14 +141,14 @@ class RunCommandDialogTest {
         val contents =
             if (SystemInfo.isWindows) {
                 """
-            echo %AWS_ACCESS_KEY_ID%
-            echo %AWS_SECRET_ACCESS_KEY%
-            echo %AWS_DEFAULT_REGION%
-            echo %AWS_REGION%
+            echo $accessKeyId
+            echo $secretAccessKey
+            echo $defaultRegion
+            echo $region
             exit $exitCode
                 """.trimIndent()
             } else {
-                """
+                """    
             printenv AWS_ACCESS_KEY_ID
             printenv AWS_SECRET_ACCESS_KEY
             printenv AWS_DEFAULT_REGION

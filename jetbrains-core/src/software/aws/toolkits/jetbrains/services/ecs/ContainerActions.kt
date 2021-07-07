@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.ecs.model.Service
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
 import software.aws.toolkits.jetbrains.core.getResource
 import software.aws.toolkits.jetbrains.core.getResourceNow
@@ -143,7 +142,10 @@ class ExecuteCommandAction(
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
                     runInEdt {
-                        RunCommandDialog(project, container, CurrentConnectionSettings.getConnectionSettings(project)).show()
+                        val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+                        if (connectionSettings != null) {
+                            RunCommandDialog(project, container, connectionSettings).show()
+                        }
                     }
                 }
             } else {
@@ -167,7 +169,10 @@ class ExecuteCommandInShellAction(
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
                 SessionManagerPluginInstallationVerification.requiresSessionManager(project) {
                     runInEdt {
-                        OpenShellInContainerDialog(project, container, CurrentConnectionSettings.getConnectionSettings(project)).show()
+                        val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+                        if (connectionSettings != null) {
+                            OpenShellInContainerDialog(project, container, connectionSettings).show()
+                        }
                     }
                 }
             } else {
@@ -183,13 +188,5 @@ class ExecuteCommandInShellAction(
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
             !EcsUtils.isInstrumented(container.service.serviceArn()) &&
             pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal") && AwsToolkit.isEcsExecEnabled()
-    }
-}
-
-object CurrentConnectionSettings {
-    fun getConnectionSettings(project: Project): Map<String, String> {
-        val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings() ?: throw IllegalStateException("No Credentials found")
-        return connectionSettings.region.toEnvironmentVariables() +
-            connectionSettings.credentials.resolveCredentials().toEnvironmentVariables()
     }
 }
