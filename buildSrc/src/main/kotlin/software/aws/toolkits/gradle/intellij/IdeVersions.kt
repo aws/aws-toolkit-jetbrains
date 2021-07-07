@@ -161,7 +161,7 @@ class Profile(
     val untilVersion: String = "$sinceVersion.*",
     val community: ProductProfile,
     val ultimate: ProductProfile,
-    val rider: ProductProfile,
+    val rider: RiderProfile,
 )
 
 private fun shortenedIdeProfileName(sdkName: String): String {
