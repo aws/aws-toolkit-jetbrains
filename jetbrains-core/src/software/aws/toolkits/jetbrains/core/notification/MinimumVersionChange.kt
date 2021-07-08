@@ -18,7 +18,7 @@ import software.aws.toolkits.resources.message
 
 class MinimumVersionChange @JvmOverloads constructor(isUnderTest: Boolean = false) : StartupActivity.DumbAware {
     private val minVersionHuman = "2020.3"
-    private val minVersion = 212
+    private val minVersion = 203
 
     init {
         if (ApplicationManager.getApplication().isUnitTestMode && !isUnderTest) {
