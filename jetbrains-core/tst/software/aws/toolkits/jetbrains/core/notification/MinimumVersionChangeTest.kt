@@ -88,16 +88,27 @@ class MinimumVersionChangeTest {
     }
 
     @Test
-    fun `notice is shown if IDE is above max version`() {
+    fun `notice is hidden if IDE is at min version version`() {
+        applicationInfo.stub {
+            on { build } doReturn BuildNumber("IC", MinimumVersionChange.MIN_VERSION, 999)
+        }
+
+        sut.runActivity(projectRule.project)
+
+        assertThat(notifications.notifications).isEmpty()
+    }
+
+    @Test
+    fun `notice is shown if IDE is below min version`() {
         applicationInfo.stub {
             on { build } doReturn BuildNumber("IC", 123, 456)
-            on { fullVersion } doReturn "2032.1"
+            on { fullVersion } doReturn "2012.3"
         }
 
         sut.runActivity(projectRule.project)
 
         assertThat(notifications.notifications).singleElement().satisfies {
-            assertThat(it.content).matches("""Support for [\w ]+ 2032\.1 is being deprecated .*""".toPattern())
+            assertThat(it.content).matches("""Support for [\w ]+ 2012\.3 is being deprecated .*""".toPattern())
             assertThat(it.actions).singleElement()
         }
     }

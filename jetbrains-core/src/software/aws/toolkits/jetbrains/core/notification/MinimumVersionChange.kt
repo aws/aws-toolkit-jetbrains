@@ -17,9 +17,6 @@ import com.intellij.openapi.startup.StartupActivity
 import software.aws.toolkits.resources.message
 
 class MinimumVersionChange @JvmOverloads constructor(isUnderTest: Boolean = false) : StartupActivity.DumbAware {
-    private val minVersionHuman = "2020.3"
-    private val minVersion = 203
-
     init {
         if (ApplicationManager.getApplication().isUnitTestMode && !isUnderTest) {
             throw ExtensionNotApplicableException.INSTANCE
@@ -36,7 +33,7 @@ class MinimumVersionChange @JvmOverloads constructor(isUnderTest: Boolean = fals
             return
         }
 
-        if (ApplicationInfo.getInstance().build.baselineVersion > minVersion) {
+        if (ApplicationInfo.getInstance().build.baselineVersion >= MIN_VERSION) {
             return
         }
 
@@ -45,7 +42,7 @@ class MinimumVersionChange @JvmOverloads constructor(isUnderTest: Boolean = fals
             "aws.toolkit_deprecation.message",
             ApplicationNamesInfo.getInstance().fullProductName,
             ApplicationInfo.getInstance().fullVersion,
-            minVersionHuman
+            MIN_VERSION_HUMAN
         )
 
         // TODO: Migrate to this FIX_WHEN_MIN_IS_203
@@ -60,6 +57,9 @@ class MinimumVersionChange @JvmOverloads constructor(isUnderTest: Boolean = fals
     }
 
     companion object {
+        const val MIN_VERSION = 203
+        const val MIN_VERSION_HUMAN = "2020.3"
+
         // Used by tests to make sure the prompt never shows up
         const val SKIP_PROMPT = "aws.suppress_deprecation_prompt"
         const val IGNORE_PROMPT = "aws.ignore_deprecation_prompt"
