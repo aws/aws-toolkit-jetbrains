@@ -24,12 +24,12 @@ import javax.swing.event.ChangeListener
 import javax.swing.event.DocumentEvent
 
 /**
- * Our version of [com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton] to fit our
- * needs but with same UX so users are used to it. Namely we do not support inheriting system env vars, but rest
- * of UX is the same
+ * Our version of [com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton].
+ * It has been modified to support our use case of having a compact, generic key-value entry dialog.
+ * Inheriting system env vars is not supported, but rest of UX is generally the same
  */
-class EnvironmentVariablesTextField(
-    @Nls dialogTitle: String? = null
+class KeyValueTextField(
+    @Nls dialogTitle: String = message("environment.variables.dialog.title")
 ) : TextFieldWithBrowseButton(), UserActivityProviderComponent {
     private var data = EnvironmentVariablesData.create(emptyMap(), false)
     private val listeners = CopyOnWriteArrayList<ChangeListener>()
@@ -43,7 +43,7 @@ class EnvironmentVariablesTextField(
 
     init {
         addActionListener {
-            EnvironmentVariablesDialog(this, dialogTitle ?: message("environment.variables.dialog.title")).show()
+            EnvironmentVariablesDialog(this, dialogTitle).show()
         }
 
         textField.document.addDocumentListener(

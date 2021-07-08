@@ -103,7 +103,7 @@ class SamDeployTest {
         val stackName = "SamDeployTest-${UUID.randomUUID()}"
         val templateFile = setUpProject(largeTemplateLocation)
         runAssertsAndClean(stackName) {
-            val changeSetArn = createChangeSet(templateFile, stackName, false, parameters = mapOf("InstanceType" to "t2.small"))
+            val changeSetArn = createChangeSet(templateFile, stackName, hasImage = false, parameters = mapOf("InstanceType" to "t2.small"))
 
             assertThat(changeSetArn).isNotNull()
 
@@ -127,7 +127,7 @@ class SamDeployTest {
         val stackName = "SamDeployTest-${UUID.randomUUID()}"
         val templateFile = setUpProject()
         runAssertsAndClean(stackName) {
-            val changeSetArn = createChangeSet(templateFile, stackName, false, parameters = mapOf("TestParameter" to "FooBar"))
+            val changeSetArn = createChangeSet(templateFile, stackName, hasImage = false, parameters = mapOf("TestParameter" to "FooBar"))
 
             assertThat(changeSetArn).isNotNull()
 
@@ -176,7 +176,7 @@ class SamDeployTest {
         val templateFile = setUpProject()
         runAssertsAndClean(stackName) {
             val changeSetArn = createChangeSet(
-                templateFile, stackName, false,
+                templateFile, stackName, hasImage = false,
                 tags = mapOf(
                     "TestTag" to "FooBar",
                     "some:gross" to "tag name and value",

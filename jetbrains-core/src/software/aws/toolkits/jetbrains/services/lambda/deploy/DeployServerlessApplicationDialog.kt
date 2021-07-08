@@ -42,7 +42,7 @@ import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
-import software.aws.toolkits.jetbrains.ui.EnvironmentVariablesTextField
+import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.jetbrains.utils.ui.installOnParent
@@ -110,8 +110,8 @@ class DeployServerlessApplicationDialog(
         }
         .build()
 
-    private val parametersField = EnvironmentVariablesTextField()
-    private val tagsField = EnvironmentVariablesTextField()
+    private val parametersField = KeyValueTextField()
+    private val tagsField = KeyValueTextField()
     private val capabilitiesSelector = CapabilitiesEnumCheckBoxes()
 
     private var templateFileParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
@@ -229,7 +229,7 @@ class DeployServerlessApplicationDialog(
                 parametersField()
                     .withBinding(::templateParameters.toBinding())
                     .toolTipText(message("serverless.application.deploy.tooltip.template.parameters"))
-                    .withValidationOnApply { validateParameters() }
+                    .withValidationOnApply { validateParameters(it) }
             }
 
             // deploy tags
@@ -237,10 +237,6 @@ class DeployServerlessApplicationDialog(
             row(tagsString) {
                 tagsField()
                     .withBinding(::tags.toBinding())
-                    .withValidationOnApply {
-                        // TODO: https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html#tag-conventions
-                        null
-                    }
             }
 
             // s3 bucket
@@ -327,18 +323,18 @@ class DeployServerlessApplicationDialog(
             }
         }
 
-    private fun refreshTemplateParametersAndTags(updateStackName: String? = null) {
+    private fun refreshTemplateParametersAndTags(stackName: String? = null) {
         when (deployType.name) {
             DeployType.CREATE.name -> {
                 populateParameters(templateFileParameters)
             }
 
             DeployType.UPDATE.name -> {
-                val stackName = updateStackName ?: stackSelector.selected()?.stackName()
-                if (stackName == null) {
+                val selectedStackName = stackName ?: stackSelector.selected()?.stackName()
+                if (selectedStackName == null) {
                     populateParameters(emptyList())
                 } else {
-                    cloudFormationClient.describeStack(stackName) {
+                    cloudFormationClient.describeStack(selectedStackName) {
                         it?.let {
                             runInEdt(ModalityState.any()) {
                                 // This check is here in-case createStack was selected before we got this update back
@@ -372,9 +368,9 @@ class DeployServerlessApplicationDialog(
         return null
     }
 
-    private fun validateParameters(): ValidationInfo? {
+    private fun validateParameters(parametersComponent: KeyValueTextField): ValidationInfo? {
         // validate on ui element because value hasn't been committed yet
-        val parameters = parametersField.envVars
+        val parameters = parametersComponent.envVars
         val parameterDeclarations = templateFileParameters.associateBy { it.logicalName }
 
         val invalidParameters = parameters.entries.mapNotNull { (name, value) ->
@@ -466,7 +462,7 @@ class DeployServerlessApplicationDialog(
         templateFileParameters = templateFileDeclarationOverrides ?: CloudFormationTemplate.parse(project, templateFile).parameters().toList()
     }
 
-    internal fun populateTags(tags: List<Tag>) {
+    private fun populateTags(tags: List<Tag>) {
         tagsField.envVars = tags.associate { it.key() to it.value() }
     }
 
