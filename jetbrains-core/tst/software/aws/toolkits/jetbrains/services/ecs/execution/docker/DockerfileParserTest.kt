@@ -16,6 +16,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import java.io.File
 
 class DockerfileParserTest {
 
@@ -158,7 +159,7 @@ class DockerfileParserTest {
                 COPY . .
             """.trimIndent()
         )
-        val directory = file.parent.path + "/"
+        val directory = file.parent.path + File.separator
         runInEdtAndWait {
             assertThat(sut.parse(file)).isEqualTo(
                 DockerfileDetails(
