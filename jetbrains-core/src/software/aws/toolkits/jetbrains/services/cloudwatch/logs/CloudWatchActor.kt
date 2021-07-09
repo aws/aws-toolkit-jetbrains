@@ -9,8 +9,6 @@ import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
 import com.intellij.util.ExceptionUtil
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -31,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.LogResu
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.identifier
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.toLogResult
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -40,14 +39,15 @@ sealed class CloudWatchActor<T, Message>(
     protected val project: Project,
     protected val client: CloudWatchLogsClient,
     protected val table: TableView<T>
-) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsActor"), Disposable {
+) : Disposable {
+    protected val coroutineScope = ApplicationThreadPoolScope("CloudWatchLogsActor", this)
     val channel = Channel<Message>()
 
     protected abstract val emptyText: String
     protected abstract val tableErrorMessage: String
     protected abstract val notFoundText: String
 
-    protected val edtContext = getCoroutineUiContext(disposable = this@CloudWatchActor)
+    protected val edtContext = getCoroutineUiContext()
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         LOG.error(e) { "Exception thrown in the LogStreamActor not handled:" }
         notifyError(title = message("general.unknown_error"), project = project)
@@ -56,7 +56,7 @@ sealed class CloudWatchActor<T, Message>(
     }
 
     init {
-        launch(exceptionHandler) {
+        coroutineScope.launch(exceptionHandler) {
             handleMessages()
         }
     }
@@ -467,7 +467,7 @@ class InsightsQueryResultsActor(
     }
 
     // run on a separate context so we don't lock up the message listener
-    private fun startLoading() = launch(Dispatchers.Default) {
+    private fun startLoading() = coroutineScope.launch(getCoroutineBgContext()) {
         tableLoading()
         val loadedQueryResults = mutableSetOf<String>()
         var response: GetQueryResultsResponse
@@ -529,7 +529,7 @@ class InsightsQueryResultsActor(
             }
         }
 
-        launch {
+        coroutineScope.launch {
             // network call; run off EDT
             try {
                 client.stopQuery {
