@@ -21,7 +21,6 @@ import com.intellij.execution.runners.ProgramRunner
 import com.intellij.execution.ui.RunContentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import java.io.File
 import javax.swing.Icon
 
 class RunCommandRunProfile(
@@ -47,20 +46,9 @@ class RunCommandRunProfile(
     override fun getIcon(): Icon? = null
 
     fun getCommandLine(): GeneralCommandLine? {
-        val exePath = path
         val commandLine = GeneralCommandLine()
-        try {
-            commandLine.parametersList.addParametersString(parameters)
-            val exeFile = File(exePath)
-            if (exeFile.isDirectory && exeFile.name.endsWith(".app")) {
-                commandLine.exePath = "open"
-                commandLine.parametersList.prependAll("-a", exePath)
-            } else {
-                commandLine.exePath = exePath
-            }
-        } catch (e: Exception) {
-            return null
-        }
+        commandLine.parametersList.addParametersString(parameters)
+        commandLine.exePath = path
         commandLine.withEnvironment(credentials)
         return commandLine
     }

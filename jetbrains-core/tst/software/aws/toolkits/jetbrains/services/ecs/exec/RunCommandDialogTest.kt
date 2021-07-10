@@ -16,11 +16,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.Task
-import software.aws.toolkits.core.credentials.aCredentialsIdentifier
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
@@ -31,9 +29,9 @@ import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 
 class RunCommandDialogTest {
     @Rule
@@ -52,6 +50,10 @@ class RunCommandDialogTest {
     @JvmField
     val credentialManager = MockCredentialManagerRule()
 
+    @Rule
+    @JvmField
+    val accountSettings = MockAwsConnectionManager.ProjectAccountSettingsManagerRule(projectRule)
+
     private val clusterArn = "arn:aws:ecs:us-east-1:123456789012:cluster/cluster-name"
     private val serviceArn = "arn:aws:ecs:us-east-1:123456789012:service/service-name"
     private val taskArn = "arn:aws:ecs:us-east-1:123456789012:task/task-name"
@@ -60,7 +62,7 @@ class RunCommandDialogTest {
     private val containerDefinition = ContainerDefinition.builder().name("sample-container").build()
     private val container = ContainerDetails(ecsService, containerDefinition)
     lateinit var connectionSettings: ConnectionSettings
-    val command = "ls"
+    private val command = "ls"
     private val task = Task.builder().clusterArn(clusterArn).taskArn(taskArn).build()
     private val taskList = listOf(task.taskArn())
     private val containerName = containerDefinition.name()
@@ -69,15 +71,10 @@ class RunCommandDialogTest {
 
     @Before
     fun setup() {
-        val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
-        val dummyCredential = aCredentialsIdentifier(defaultRegionId = dummyRegion.id)
-        val credentials = credentialManager.addCredentials(
-            dummyCredential.id,
-            AwsBasicCredentials.create("AccessKeyEcsExecDummy", "SecretKeyEcsExecDummy"),
-            dummyRegion
-        )
-        accountSettings.changeCredentialProviderAndWait(credentials)
-        connectionSettings = accountSettings.connectionSettings() ?: throw Exception("No credentials found")
+        val credentials = credentialManager.addCredentials()
+        accountSettings.settingsManager.changeCredentialProviderAndWait(credentials)
+        accountSettings.settingsManager.changeRegionAndWait(dummyRegion)
+        connectionSettings = accountSettings.settingsManager.connectionSettings() ?: throw Exception("No credentials found")
     }
 
     @Test
@@ -100,6 +97,7 @@ class RunCommandDialogTest {
         )
         val programPath = makeSampleCliExecutable()
         runInEdtAndWait {
+            val counter = CountDownLatch(5)
             val environmentVariables = mutableListOf<String>()
             val environment =
                 ExecutionEnvironmentBuilder
@@ -118,29 +116,26 @@ class RunCommandDialogTest {
                             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                                 super.onTextAvailable(event, outputType)
                                 environmentVariables.add(event.text.split("\n").first())
-                            }
-
-                            override fun processTerminated(event: ProcessEvent) {
-                                super.processTerminated(event)
-                                assertThat(environmentVariables[1]).isEqualTo("AccessKeyEcsExecDummy")
-                                assertThat(environmentVariables[2]).isEqualTo("SecretKeyEcsExecDummy")
-                                assertThat(environmentVariables[3]).isEqualTo(dummyRegion)
-                                assertThat(environmentVariables[4]).isEqualTo(dummyRegion)
+                                counter.countDown()
                             }
                         })
                     }
             environment.runner.execute(environment)
+            counter.await()
+            assertThat(environmentVariables[1]).isEqualTo("Access")
+            assertThat(environmentVariables[2]).isEqualTo("Secret")
+            assertThat(environmentVariables[3]).isEqualTo(dummyRegion.id)
+            assertThat(environmentVariables[4]).isEqualTo(dummyRegion.id)
         }
     }
 
-    private fun makeSampleCliExecutable(path: String? = null, exitCode: Int = 0): Path {
+    private fun makeSampleCliExecutable(): Path {
         val accessKeyId = "\$Env:AWS_ACCESS_KEY_ID"
         val secretAccessKey = "\$Env:AWS_SECRET_ACCESS_KEY"
         val defaultRegion = "\$Env:AWS_DEFAULT_REGION"
         val region = "\$Env:AWS_REGION"
-        val execPath = path?.let {
-            Paths.get(it)
-        } ?: Files.createTempFile(
+        val exitCode = 0
+        val execPath = Files.createTempFile(
             "awCli",
             if (SystemInfo.isWindows) ".bat" else ".sh"
         )
