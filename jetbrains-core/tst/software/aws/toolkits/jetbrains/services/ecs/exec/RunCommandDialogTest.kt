@@ -116,7 +116,7 @@ class RunCommandDialogTest {
                             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                                 super.onTextAvailable(event, outputType)
                                 if (SystemInfo.isWindows) {
-                                    environmentVariables.add(event.text)
+                                    environmentVariables.add(event.text.replace("\n", ""))
                                 } else {
                                     environmentVariables.add(event.text.split("\n").first())
                                 }
