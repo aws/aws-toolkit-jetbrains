@@ -8,7 +8,6 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
@@ -26,14 +25,15 @@ class ToolkitDockerAdapterTest {
 
     @Test
     fun toLocalImageList() {
-        whenever(agent.getImages(any())).thenReturn(
-            arrayOf(
-                mockDockerApplication("sha256:nulltag", null),
-                mockDockerApplication("sha256:nonetag", arrayOf("<none>:<none>")),
-                mockDockerApplication("sha256:singletag", arrayOf("tag")),
-                mockDockerApplication("sha256:multipletags", arrayOf("tag1", "remote:tag2")),
-            )
+        val mocks = arrayOf(
+            mockDockerApplication("sha256:nulltag", null),
+            mockDockerApplication("sha256:nonetag", arrayOf("<none>:<none>")),
+            mockDockerApplication("sha256:singletag", arrayOf("tag")),
+            mockDockerApplication("sha256:multipletags", arrayOf("tag1", "remote:tag2")),
         )
+
+        // can't declare mocks inline for thenReturn
+        whenever(agent.getImages(null)).thenReturn(mocks)
 
         runBlocking {
             assertThat(sut.getLocalImages()).containsExactly(
@@ -43,6 +43,13 @@ class ToolkitDockerAdapterTest {
                 LocalImage("sha256:multipletags", "tag1"),
                 LocalImage("sha256:multipletags", "remote:tag2")
             )
+        }
+    }
+
+    @Test
+    fun `doesn't throw when images are null`() {
+        runBlocking {
+            assertThat(sut.getLocalImages()).isEmpty()
         }
     }
 }

@@ -23,12 +23,12 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, prot
     abstract suspend fun pushImage(localTag: String, config: DockerRepositoryModel)
 
     fun getLocalImages(): List<LocalImage> =
-        agent.getImages(null).flatMap { image ->
-            image.imageRepoTags.map { localTag ->
+        agent.getImages(null)?.flatMap { image ->
+            image.imageRepoTags?.map { localTag ->
                 val tag = localTag.takeUnless { it == NO_TAG_TAG }
                 LocalImage(image.imageId, tag)
-            }
-        }.toList()
+            } ?: listOf(LocalImage(image.imageId, null))
+        }?.toList() ?: emptyList()
 
     fun pullImage(
         config: DockerRepositoryModel,
