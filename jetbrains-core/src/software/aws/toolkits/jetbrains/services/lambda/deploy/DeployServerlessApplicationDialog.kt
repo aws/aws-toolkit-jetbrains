@@ -3,9 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.deploy
 
-import com.intellij.execution.util.EnvVariablesTable
-import com.intellij.execution.util.EnvironmentVariable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.module.ModuleUtilCore
