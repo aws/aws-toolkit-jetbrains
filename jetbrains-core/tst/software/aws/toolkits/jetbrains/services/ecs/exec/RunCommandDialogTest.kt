@@ -115,7 +115,11 @@ class RunCommandDialogTest {
                         it.processHandler?.addProcessListener(object : ProcessAdapter() {
                             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                                 super.onTextAvailable(event, outputType)
-                                environmentVariables.add(event.text.split("\n").first())
+                                if (SystemInfo.isWindows) {
+                                    environmentVariables.add(event.text)
+                                } else {
+                                    environmentVariables.add(event.text.split("\n").first())
+                                }
                                 counter.countDown()
                             }
                         })
@@ -130,10 +134,10 @@ class RunCommandDialogTest {
     }
 
     private fun makeSampleCliExecutable(): Path {
-        val accessKeyId = "\$Env:AWS_ACCESS_KEY_ID"
-        val secretAccessKey = "\$Env:AWS_SECRET_ACCESS_KEY"
-        val defaultRegion = "\$Env:AWS_DEFAULT_REGION"
-        val region = "\$Env:AWS_REGION"
+        val accessKeyId = "%AWS_ACCESS_KEY_ID%"
+        val secretAccessKey = "%AWS_SECRET_ACCESS_KEY%"
+        val defaultRegion = "%AWS_DEFAULT_REGION%"
+        val region = "%AWS_REGION%"
         val exitCode = 0
         val execPath = Files.createTempFile(
             "awCli",
@@ -143,6 +147,7 @@ class RunCommandDialogTest {
         val contents =
             if (SystemInfo.isWindows) {
                 """
+            @echo OFF
             echo $accessKeyId
             echo $secretAccessKey
             echo $defaultRegion
