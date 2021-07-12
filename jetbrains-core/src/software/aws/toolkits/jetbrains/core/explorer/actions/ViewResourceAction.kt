@@ -3,14 +3,20 @@
 
 package software.aws.toolkits.jetbrains.core.explorer.actions
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
-import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.ViewResourceDialog
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 
-class ViewResourceAction<in T : AwsExplorerResourceNode<*>>(text: String) :
-    SingleResourceNodeAction<T>(text, icon = AllIcons.Actions.Cancel), DumbAware {
+abstract class ViewResourceAction<in T : AwsExplorerNode<*>>(actionTitle: String, val resourceType: String) : SingleExplorerNodeAction<T>(actionTitle), DumbAware {
+
     override fun actionPerformed(selected: T, e: AnActionEvent) {
-        TODO("Not yet implemented")
+        val getResourceNameDialog = ViewResourceDialog(selected.nodeProject, resourceType)
+        if(getResourceNameDialog.showAndGet()){
+            viewResource(getResourceNameDialog.resourceName, selected)
+        }
     }
+
+    abstract fun viewResource(resourceToView: String, selected: T)
+
 }

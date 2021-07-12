@@ -3,12 +3,28 @@
 
 package software.aws.toolkits.jetbrains.core.explorer
 
+import com.intellij.ide.ui.UISettings
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.components.JBTextField
+import com.intellij.ui.layout.panel
 import javax.swing.JComponent
 
-class ViewResourceDialog(project: Project, private val resourceType: String, private val resourceName: String): DialogWrapper(project)  {
-    override fun createCenterPanel(): JComponent? {
-        TODO("Not yet implemented")
+class ViewResourceDialog(project: Project, val resourceType: String): DialogWrapper(project)  {
+    var resourceName = ""
+    private val component by lazy{
+        panel{
+            row("$resourceType Name"){
+                textField(::resourceName)
+            }
+        }
     }
+
+    init {
+        super.init()
+    }
+
+    override fun createCenterPanel(): JComponent? = component
+
 }

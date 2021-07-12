@@ -49,6 +49,7 @@ import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_R
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
 import software.aws.toolkits.jetbrains.core.explorer.actions.CopyArnAction
 import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
+import software.aws.toolkits.jetbrains.core.explorer.actions.ViewResourceAction
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
@@ -221,6 +222,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
                         totalActions.add(Separator.create())
                         totalActions.add(it)
                     }
+
 
                     val actionGroup = DefaultActionGroup(totalActions)
                     if (actionGroup.childrenCount > 0) {
