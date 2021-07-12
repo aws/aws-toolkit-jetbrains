@@ -115,11 +115,7 @@ class RunCommandDialogTest {
                         it.processHandler?.addProcessListener(object : ProcessAdapter() {
                             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                                 super.onTextAvailable(event, outputType)
-                                if (SystemInfo.isWindows) {
-                                    environmentVariables.add(event.text.replace("\n", ""))
-                                } else {
-                                    environmentVariables.add(event.text.split("\n").first())
-                                }
+                                environmentVariables.add(event.text.replace("\n", ""))
                                 counter.countDown()
                             }
                         })
