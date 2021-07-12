@@ -78,7 +78,7 @@ class EcrPullIntegrationTest {
             assertThat(runtime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
 
             // pull it from the remote
-            ToolkitDockerAdapter(project, serverInstance).pullImage(config)
+            ToolkitDockerAdapter(project, serverInstance).pullImage(config).await()
             assertThat(runtime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
         }
     }
