@@ -3,6 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-com.jetbrains.rdclient.daemon.util.backendAttributeId
+import com.jetbrains.rdclient.daemon.util.backendAttributeId
 
 fun com.intellij.openapi.editor.markup.RangeHighlighter.attributeId() = this.backendAttributeId!!
