@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.AwsMarkupBaseTest
-import com.jetbrains.rdclient.daemon.util.attributeId
+import com.jetbrains.rdclient.daemon.util.backendAttributeId
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
 import org.testng.annotations.DataProvider
@@ -171,7 +171,7 @@ class LambdaGutterMarkHighlightingTest : AwsMarkupBaseTest() {
         ) {
             waitForDaemon()
             dumpHighlightersTree(
-                valueFilter = { it.attributeId.contains(LAMBDA_RUN_MARKER_ATTRIBUTE_ID) }
+                valueFilter = { it.backendAttributeId!!.contains(LAMBDA_RUN_MARKER_ATTRIBUTE_ID) }
             )
         }
     }

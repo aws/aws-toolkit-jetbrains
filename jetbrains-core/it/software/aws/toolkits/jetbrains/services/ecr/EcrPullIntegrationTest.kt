@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.ecr
 
+import com.intellij.docker.DockerAgentPathMapperImpl
 import com.intellij.docker.remote.run.runtime.DockerAgentBuildImageConfig
 import com.intellij.testFramework.ProjectRule
 import kotlinx.coroutines.runBlocking
@@ -59,12 +60,15 @@ class EcrPullIntegrationTest {
         runBlocking {
             val serverInstance = EcrUtils.getDockerServerRuntimeInstance().runtimeInstance
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
-            val runtime = DelegatedRemoteDockerApplicationRuntime(
-                project,
-                DockerAgentBuildImageConfig(System.currentTimeMillis().toString(), dockerfile, false)
+            val deployment = serverInstance.agent.createDeployment(
+                DockerAgentBuildImageConfig(System.currentTimeMillis().toString(), dockerfile, false),
+                DockerAgentPathMapperImpl(project)
             )
+            val imageId = deployment.deploy("testbuild", null, null)!!.imageId
+
             // gross transform because we only have the short SHA right now
-            val localImageId = runtime.agent.getImages(null).first { it.imageId.startsWith("sha256:${runtime.agentApplication.imageId}") }.imageId
+            val localImage = serverInstance.agent.getImages(null).first { it.imageId.startsWith("sha256:$imageId") }
+            val localImageId = localImage.imageId
             val config = EcrUtils.buildDockerRepositoryModel(ecrLogin, remoteRepo, remoteTag)
             val pushRequest = ImageEcrPushRequest(
                 serverInstance,
@@ -74,12 +78,12 @@ class EcrPullIntegrationTest {
             )
             // push up and image and then delete the local tag
             EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest)
-            runtime.agentApplication.deleteImage()
-            assertThat(runtime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
+            localImage.deleteImage()
+            assertThat(serverInstance.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
 
             // pull it from the remote
             ToolkitDockerAdapter(project, serverInstance).pullImage(config).await()
-            assertThat(runtime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
+            assertThat(serverInstance.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
         }
     }
 }
