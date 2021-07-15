@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.ecr
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.docker.DockerAgentPathMapperImpl
-import com.intellij.docker.remote.run.runtime.DockerAgentBuildImageConfig
 import com.intellij.testFramework.ProjectRule
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
