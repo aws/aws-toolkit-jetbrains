@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.ecr.model.Image
 import software.amazon.awssdk.services.ecr.model.ImageIdentifier
 import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
+import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import java.util.UUID
 
@@ -62,11 +63,9 @@ class EcrPushIntegrationTest {
         runBlocking {
             val serverInstance = EcrUtils.getDockerServerRuntimeInstance().runtimeInstance
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
-            val deployment = serverInstance.agent.createDeployment(
-                DockerAgentBuildImageConfig(System.currentTimeMillis().toString(), dockerfile, false),
-                DockerAgentPathMapperImpl(project)
-            )
-            val imageId = deployment.deploy("testbuild", null, null)!!.imageId
+            val dockerAdapter = ToolkitDockerAdapter(project, serverInstance)
+            val imageId = dockerAdapter.buildLocalImage(dockerfile)!!
+
             // gross transform because we only have the short SHA right now
             val localImage = serverInstance.agent.getImages(null).first { it.imageId.startsWith("sha256:$imageId") }
             val localImageId = localImage.imageId

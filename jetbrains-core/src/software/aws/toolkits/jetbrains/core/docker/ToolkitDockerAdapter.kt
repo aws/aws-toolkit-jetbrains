@@ -15,11 +15,15 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import java.io.File
 
 abstract class AbstractToolkitDockerAdapter(protected val project: Project, protected val serverRuntime: DockerServerRuntimeInstance) {
     internal var agent = serverRuntime.agent
         @TestOnly
         set
+
+    @TestOnly
+    abstract fun buildLocalImage(dockerfile: File): String?
 
     abstract suspend fun pushImage(localTag: String, config: DockerRepositoryModel)
 

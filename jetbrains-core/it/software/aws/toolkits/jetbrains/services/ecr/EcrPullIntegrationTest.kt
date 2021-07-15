@@ -60,11 +60,8 @@ class EcrPullIntegrationTest {
         runBlocking {
             val serverInstance = EcrUtils.getDockerServerRuntimeInstance().runtimeInstance
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
-            val deployment = serverInstance.agent.createDeployment(
-                DockerAgentBuildImageConfig(System.currentTimeMillis().toString(), dockerfile, false),
-                DockerAgentPathMapperImpl(project)
-            )
-            val imageId = deployment.deploy("testbuild", null, null)!!.imageId
+            val dockerAdapter = ToolkitDockerAdapter(project, serverInstance)
+            val imageId = dockerAdapter.buildLocalImage(dockerfile)!!
 
             // gross transform because we only have the short SHA right now
             val localImage = serverInstance.agent.getImages(null).first { it.imageId.startsWith("sha256:$imageId") }
@@ -82,7 +79,7 @@ class EcrPullIntegrationTest {
             assertThat(serverInstance.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
 
             // pull it from the remote
-            ToolkitDockerAdapter(project, serverInstance).pullImage(config).await()
+            dockerAdapter.pullImage(config).await()
             assertThat(serverInstance.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
         }
     }
