@@ -47,7 +47,7 @@ private fun S3Client.upload(
     startInBackground: Boolean = true
 ): CompletionStage<PutObjectResponse> {
     val future = CompletableFuture<PutObjectResponse>()
-    val request = PutObjectRequest.builder().bucket(bucket).key(key).contentType(source.contentType()).build()
+    val request = PutObjectRequest.builder().bucket(bucket).key(key).build()
     ProgressManager.getInstance().run(
         object : Task.Backgroundable(project, message, true, if (startInBackground) ALWAYS_BACKGROUND else null) {
             override fun run(indicator: ProgressIndicator) {

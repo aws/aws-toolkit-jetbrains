@@ -129,11 +129,10 @@ class S3VirtualBucketTest {
     @Test
     fun uploadObject() {
         val s3Client = mockClientManager.create<S3Client>()
-        val uploadCaptor = argumentCaptor<PutObjectRequest>()
 
         s3Client.stub {
             on {
-                putObject(uploadCaptor.capture(), any<RequestBody>())
+                putObject(any<PutObjectRequest>(), any<RequestBody>())
             } doReturn PutObjectResponse.builder()
                 .versionId("VersionFoo")
                 .build()
