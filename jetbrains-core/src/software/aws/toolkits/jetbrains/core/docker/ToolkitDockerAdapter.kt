@@ -6,13 +6,17 @@ package software.aws.toolkits.jetbrains.core.docker
 import com.intellij.docker.DockerDeploymentConfiguration
 import com.intellij.docker.DockerServerRuntimeInstance
 import com.intellij.docker.agent.DockerAgentProgressCallback
+import com.intellij.docker.agent.DockerAgentSourceType
+import com.intellij.docker.agent.progress.DockerResponseItem
 import com.intellij.docker.registry.DockerAgentRepositoryConfigImpl
 import com.intellij.docker.registry.DockerRepositoryModel
+import com.intellij.docker.remote.run.runtime.DockerAgentDeploymentConfigImpl
 import com.intellij.docker.runtimes.DockerApplicationRuntime
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.remoteServer.configuration.RemoteServersManager
 import com.intellij.remoteServer.configuration.deployment.DeploymentConfiguration
@@ -22,6 +26,7 @@ import com.intellij.remoteServer.runtime.deployment.DeploymentStatus
 import com.intellij.remoteServer.runtime.deployment.DeploymentTask
 import com.intellij.remoteServer.runtime.ui.RemoteServersView
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.await
 import org.apache.commons.io.FileUtils
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.concurrency.AsyncPromise
@@ -34,6 +39,9 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
+import java.io.ObjectInputStream
+import java.time.Instant
+import java.util.concurrent.CompletableFuture
 
 abstract class AbstractToolkitDockerAdapter(protected val project: Project, protected val serverRuntime: DockerServerRuntimeInstance) {
     internal var agent = serverRuntime.agent
@@ -159,6 +167,50 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, prot
             }
         }
     )
+
+    // com.intellij.docker.agent.progress.DockerImageBuilder is probably the correct interface to use but need to figure out how to get an instance of it
+    protected suspend fun hackyBuildDockerfileUnderIndicator(project: Project, pushRequest: DockerfileEcrPushRequest): String? {
+        val dockerConfig = (pushRequest.dockerBuildConfiguration.deploymentConfiguration as DockerDeploymentConfiguration)
+        val tag = dockerConfig.separateImageTags.firstOrNull() ?: Instant.now().toEpochMilli().toString()
+        // should never be null
+        val dockerfilePath = dockerConfig.sourceFilePath ?: throw RuntimeException("Docker run configuration started with invalid source file")
+        val config = object : DockerAgentDeploymentConfigImpl(tag, null) {
+            override fun getFile() = File(dockerfilePath)
+
+            override fun sourceType() = DockerAgentSourceType.FILE.toString()
+
+            override fun getCustomContextFolder() =
+                dockerConfig.contextFolderPath?.let {
+                    File(it)
+                } ?: super.getCustomContextFolder()
+        }.withEnvs(dockerConfig.envVars.toTypedArray())
+            .withBuildArgs(dockerConfig.buildArgs.toTypedArray())
+
+        val queue = serverRuntime.agent.createImageBuilder().asyncBuildImage(config).await()
+        val future = CompletableFuture<String?>()
+        object : Task.Backgroundable(project, message("dockerfile.building", dockerfilePath), false) {
+            override fun run(indicator: ProgressIndicator) {
+                indicator.isIndeterminate = true
+                while (true) {
+                    val obj = queue.take()
+                    if (obj.isEmpty()) {
+                        break
+                    }
+                    val deserialized = ObjectInputStream(obj.inputStream()).readObject()
+                    val message = (deserialized as? DockerResponseItem)?.stream
+                    if (message != null && message.trim().isNotEmpty()) {
+                        indicator.text2 = message
+                    }
+
+                    LOG.debug { message ?: deserialized.toString() }
+                }
+
+                future.complete(serverRuntime.agent.getImages(null).firstOrNull { it.imageRepoTags.contains("$tag:latest") }?.imageId)
+            }
+        }.queue()
+
+        return future.await()
+    }
 
     protected companion object {
         const val NO_TAG_TAG = "<none>:<none>"

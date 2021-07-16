@@ -9,6 +9,7 @@ import com.intellij.docker.registry.DockerRepositoryModel
 import com.intellij.docker.remote.run.runtime.DockerAgentBuildImageConfig
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.future.await
+import software.aws.toolkits.jetbrains.services.ecr.DockerfileEcrPushRequest
 import java.io.File
 
 class ToolkitDockerAdapter(project: Project, serverRuntime: DockerServerRuntimeInstance) : AbstractToolkitDockerAdapter(project, serverRuntime) {
@@ -20,6 +21,9 @@ class ToolkitDockerAdapter(project: Project, serverRuntime: DockerServerRuntimeI
 
         return deployment.deploy("untagged image", null, null)?.imageId
     }
+
+    override suspend fun hackyBuildDockerfileWithUi(project: Project, pushRequest: DockerfileEcrPushRequest) =
+        hackyBuildDockerfileUnderIndicator(project, pushRequest)
 
     override suspend fun pushImage(localTag: String, config: DockerRepositoryModel) {
         val physicalLocalRuntime = serverRuntime.findRuntimeLater(localTag, false).await()
