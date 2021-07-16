@@ -52,7 +52,7 @@ class EcrPushIntegrationTest {
         dockerfile.writeText(
             """
                 # arbitrary base image with a shell
-                FROM public.ecr.aws/lambda/provided:latest
+                FROM public.ecr.aws/amazonlinux/amazonlinux:2
                 RUN touch $(date +%s)
             """.trimIndent()
         )
