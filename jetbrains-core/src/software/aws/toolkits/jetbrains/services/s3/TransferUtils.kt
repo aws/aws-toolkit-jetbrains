@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.io.inputStream
 import com.intellij.util.io.outputStream
 import com.intellij.util.io.size
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -37,7 +38,7 @@ fun S3Client.upload(
     key: String,
     message: String = message("s3.upload.object.progress", key),
     startInBackground: Boolean = true
-): CompletionStage<PutObjectResponse> = upload(project, source.inputStream(), source.size(), bucket, key, message, startInBackground)
+): CompletionStage<PutObjectResponse> = upload(project, RequestBody.fromFile(source), bucket, key, message, startInBackground)
 
 fun S3Client.upload(
     project: Project,
@@ -47,16 +48,32 @@ fun S3Client.upload(
     key: String,
     message: String = message("s3.upload.object.progress", key),
     startInBackground: Boolean = true
+): CompletionStage<PutObjectResponse> = upload(project, RequestBody.fromInputStream(source, length), bucket, key, message, startInBackground)
+
+private fun S3Client.upload(
+    project: Project,
+    source: RequestBody,
+    bucket: String,
+    key: String,
+    message: String = message("s3.upload.object.progress", key),
+    startInBackground: Boolean = true
 ): CompletionStage<PutObjectResponse> {
     val future = CompletableFuture<PutObjectResponse>()
-    val request = PutObjectRequest.builder().bucket(bucket).key(key).build()
+    val request = PutObjectRequest.builder().bucket(bucket).key(key).contentType(source.contentType()).build()
     ProgressManager.getInstance().run(
         object : Task.Backgroundable(project, message, true, if (startInBackground) ALWAYS_BACKGROUND else null) {
             override fun run(indicator: ProgressIndicator) {
-                indicator.isIndeterminate = false
+                indicator.isIndeterminate = source.optionalContentLength().isEmpty
+                val requestSource = if (source.optionalContentLength().isPresent) {
+                    val length = source.optionalContentLength().get()
+                    RequestBody.fromInputStream(ProgressMonitorInputStream(indicator, source.contentStreamProvider().newStream(), length), length)
+                } else {
+                    source
+                }
+
                 try {
-                    val result = ProgressMonitorInputStream(indicator, source, length = length).use {
-                        this@upload.putObject(request, RequestBody.fromInputStream(it, length))
+                    val result = requestSource.use {
+                        this@upload.putObject(request, source)
                     }
                     future.complete(result)
                 } catch (e: Exception) {
