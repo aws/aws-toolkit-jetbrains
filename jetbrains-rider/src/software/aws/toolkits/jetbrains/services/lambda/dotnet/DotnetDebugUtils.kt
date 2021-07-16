@@ -173,7 +173,10 @@ object DotnetDebugUtils {
             "exec",
             "-i",
             dockerContainer,
-            REMOTE_NETCORE_CLI_PATH,
+            // use dotnet binary bundled with worker since Lambda netcore2.1 image seems to be missing:
+            // System.Runtime.CompilerServices.TupleElementNamesAttribute' from assembly 'mscorlib, Version=4.0.0.0
+            // and therefore cannot debug netcore2.1 under Rider 2021.2+
+            "$REMOTE_DEBUGGER_DIR/linux-x64/dotnet/dotnet",
             "$REMOTE_DEBUGGER_DIR/${DotNetDebuggerUtils.debuggerAssemblyFile.name}",
             "--mode=$DEBUGGER_MODE",
             "--frontend-port=$frontendPort",
