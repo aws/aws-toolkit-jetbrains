@@ -3,27 +3,24 @@
 
 package software.aws.toolkits.jetbrains.services.s3.bucketActions
 
+import software.amazon.awssdk.services.s3.model.S3Exception
 import software.aws.toolkits.jetbrains.core.explorer.actions.ViewResourceAction
 import software.aws.toolkits.jetbrains.services.s3.S3ServiceNode
 import software.aws.toolkits.jetbrains.services.s3.openEditor
-import software.amazon.awssdk.services.s3.model.Bucket
-import software.amazon.awssdk.services.s3.model.S3Exception
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class ViewBucketAction : ViewResourceAction<S3ServiceNode>(message("action.aws.toolkit.s3.open.bucket.viewer.text"), message("s3.bucket.label")) {
 
     override fun viewResource(resourceToView: String, selected: S3ServiceNode) {
-        try{
-            if(resourceToView.startsWith("S3://")){
-                openEditor(selected.nodeProject,resourceToView.substringAfter("S3://").substringBefore("/"))
+        try {
+            if (resourceToView.startsWith("S3://")) {
+                openEditor(selected.nodeProject, resourceToView.substringAfter("S3://").substringBefore("/"))
             } else {
                 openEditor(selected.nodeProject, resourceToView)
             }
         } catch (e: S3Exception) {
             e.notifyError(message("s3.open.viewer.bucket.failed"))
         }
-
-
     }
 }

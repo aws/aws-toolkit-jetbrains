@@ -8,11 +8,11 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.layout.panel
 import javax.swing.JComponent
 
-class ViewResourceDialog(project: Project, val resourceType: String): DialogWrapper(project)  {
+class ViewResourceDialog(project: Project, val resourceType: String) : DialogWrapper(project) {
     var resourceName = ""
-    private val component by lazy{
-        panel{
-            row("$resourceType Name/URI:"){
+    private val component by lazy {
+        panel {
+            row("$resourceType Name/URI:") {
                 textField(::resourceName).constraints(grow)
             }
         }
@@ -23,5 +23,4 @@ class ViewResourceDialog(project: Project, val resourceType: String): DialogWrap
     }
 
     override fun createCenterPanel(): JComponent? = component
-
 }

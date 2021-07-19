@@ -130,7 +130,7 @@ open class S3TreeDirectoryNode(bucket: S3VirtualBucket, parent: S3TreeDirectoryN
         } catch (e: NoSuchBucketException) {
             bucket.handleDeletedBucket()
             return emptyList()
-        } catch (e: S3Exception){
+        } catch (e: S3Exception) {
             e.notifyError("Access denied to bucket")
             return buildList {
                 if (continuationMarker != null) {

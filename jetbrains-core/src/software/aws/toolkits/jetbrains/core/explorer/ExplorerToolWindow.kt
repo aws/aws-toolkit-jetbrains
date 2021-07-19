@@ -222,7 +222,6 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
                         totalActions.add(it)
                     }
 
-
                     val actionGroup = DefaultActionGroup(totalActions)
                     if (actionGroup.childrenCount > 0) {
                         val popupMenu = actionManager.createActionPopupMenu(explorerToolWindowPlace, actionGroup)

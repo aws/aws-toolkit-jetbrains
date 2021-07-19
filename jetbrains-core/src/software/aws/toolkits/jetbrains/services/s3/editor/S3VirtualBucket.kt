@@ -16,7 +16,6 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier
-import software.amazon.awssdk.services.s3.model.S3Exception
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.s3.download
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
@@ -69,8 +68,6 @@ class S3VirtualBucket(val s3Bucket: String, prefix: String, val client: S3Client
             }
         }
 
-
-
     suspend fun listObjectVersions(key: String, keyMarker: String?, versionIdMarker: String?): ListObjectVersionsResponse? =
         withContext(getCoroutineBgContext()) {
             client.listObjectVersions {
@@ -87,7 +84,7 @@ class S3VirtualBucket(val s3Bucket: String, prefix: String, val client: S3Client
 
     suspend fun renameObject(fromKey: String, toKey: String) {
         withContext(getCoroutineBgContext()) {
-            client.copyObject { it.copySource("${s3Bucket}/$fromKey").destinationBucket(s3Bucket).destinationKey(toKey) }
+            client.copyObject { it.copySource("$s3Bucket/$fromKey").destinationBucket(s3Bucket).destinationKey(toKey) }
             client.deleteObject { it.bucket(s3Bucket).key(fromKey) }
         }
     }
@@ -129,7 +126,7 @@ class S3VirtualBucket(val s3Bucket: String, prefix: String, val client: S3Client
         fun vfsName(s3BucketName: String, subroot: String): String = if (subroot.isBlank()) {
             s3BucketName
         } else {
-            "${s3BucketName}/$subroot"
+            "$s3BucketName/$subroot"
         }
     }
 }
