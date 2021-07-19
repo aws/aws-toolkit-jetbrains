@@ -3,11 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.explorer
 
-import com.intellij.ide.ui.UISettings
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.panel
 import javax.swing.JComponent
 
@@ -15,8 +12,8 @@ class ViewResourceDialog(project: Project, val resourceType: String): DialogWrap
     var resourceName = ""
     private val component by lazy{
         panel{
-            row("$resourceType Name"){
-                textField(::resourceName)
+            row("$resourceType Name/URI:"){
+                textField(::resourceName).constraints(grow)
             }
         }
     }

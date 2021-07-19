@@ -77,11 +77,11 @@ class S3ViewerEditor(project: Project, private val bucket: S3VirtualBucket) : Us
     override fun setState(state: FileEditorState) {}
 }
 
-fun openEditor(project: Project, bucket: Bucket, prefix: String = ""): Editor? = try {
+fun openEditor(project: Project, bucketName: String, prefix: String = ""): Editor? = try {
     FileEditorManager.getInstance(project).openTextEditor(
         OpenFileDescriptor(
             project,
-            S3VirtualBucket(bucket, prefix, project.awsClient(), project)
+            S3VirtualBucket(bucketName, prefix, project.awsClient(), project)
         ),
         true
     ).also {
