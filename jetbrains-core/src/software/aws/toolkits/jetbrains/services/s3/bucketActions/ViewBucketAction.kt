@@ -10,12 +10,12 @@ import software.aws.toolkits.jetbrains.services.s3.openEditor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
-class ViewBucketAction : ViewResourceAction<S3ServiceNode>(message("action.aws.toolkit.s3.open.bucket.viewer.text"), message("s3.bucket.label")) {
+class ViewBucketAction : ViewResourceAction<S3ServiceNode>(message("action.aws.toolkit.s3.open.bucket.viewer.text"), message("s3.bucket.label"), "S3://") {
 
     override fun viewResource(resourceToView: String, selected: S3ServiceNode) {
         try {
-            if (resourceToView.startsWith("S3://")) {
-                openEditor(selected.nodeProject, resourceToView.substringAfter("S3://").substringBefore("/"))
+            if (resourceToView.startsWith("S3://", ignoreCase = true)) {
+                openEditor(selected.nodeProject, resourceToView.split("S3://", ignoreCase = true).last().substringBefore("/"))
             } else {
                 openEditor(selected.nodeProject, resourceToView)
             }

@@ -8,11 +8,11 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.explorer.ViewResourceDialog
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 
-abstract class ViewResourceAction<in T : AwsExplorerNode<*>>(actionTitle: String, val resourceType: String) :
+abstract class ViewResourceAction<in T : AwsExplorerNode<*>>(private val actionTitle: String, val resourceType: String, private val prefix: String) :
     SingleExplorerNodeAction<T>(actionTitle), DumbAware {
 
     override fun actionPerformed(selected: T, e: AnActionEvent) {
-        val getResourceNameDialog = ViewResourceDialog(selected.nodeProject, resourceType)
+        val getResourceNameDialog = ViewResourceDialog(selected.nodeProject, resourceType, actionTitle, prefix)
         if (getResourceNameDialog.showAndGet()) {
             viewResource(getResourceNameDialog.resourceName, selected)
         }
