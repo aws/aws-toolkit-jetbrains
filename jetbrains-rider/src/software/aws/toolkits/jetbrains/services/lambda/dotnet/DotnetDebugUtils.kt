@@ -52,7 +52,6 @@ object DotnetDebugUtils {
     private const val DEBUGGER_MODE = "server"
 
     private const val REMOTE_DEBUGGER_DIR = "/tmp/lambci_debug_files"
-    private const val REMOTE_NETCORE_CLI_PATH = "/var/lang/bin/dotnet"
     const val NUMBER_OF_DEBUG_PORTS = 2
 
     fun createDebugProcess(
