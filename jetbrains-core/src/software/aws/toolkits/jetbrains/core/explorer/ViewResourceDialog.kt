@@ -12,7 +12,7 @@ class ViewResourceDialog(project: Project, val resourceType: String) : DialogWra
     var resourceName = ""
     private val component by lazy {
         panel {
-            row("$resourceType Name/URI:") {
+            row("$resourceType:") {
                 textField(::resourceName).constraints(grow)
             }
         }
