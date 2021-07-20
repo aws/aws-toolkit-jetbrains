@@ -8,7 +8,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.layout.panel
 import javax.swing.JComponent
 
-class ViewResourceDialog(project: Project, val resourceType: String, actionTitle: String, val prefix: String) : DialogWrapper(project) {
+class ViewResourceDialog(project: Project, val resourceType: String, actionTitle: String, val prefix: String? = null) : DialogWrapper(project) {
     var resourceName = ""
     private val component by lazy {
         panel {
@@ -21,8 +21,8 @@ class ViewResourceDialog(project: Project, val resourceType: String, actionTitle
     }
 
     init {
-        init()
         title = actionTitle
+        init()
     }
 
     override fun createCenterPanel(): JComponent = component

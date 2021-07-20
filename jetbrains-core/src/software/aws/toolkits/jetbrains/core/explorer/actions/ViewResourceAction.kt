@@ -8,7 +8,7 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.explorer.ViewResourceDialog
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 
-abstract class ViewResourceAction<in T : AwsExplorerNode<*>>(private val actionTitle: String, val resourceType: String, private val prefix: String) :
+abstract class ViewResourceAction<in T : AwsExplorerNode<*>>(private val actionTitle: String, val resourceType: String, private val prefix: String? = null) :
     SingleExplorerNodeAction<T>(actionTitle), DumbAware {
 
     override fun actionPerformed(selected: T, e: AnActionEvent) {
