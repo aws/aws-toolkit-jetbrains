@@ -12,11 +12,13 @@ abstract class ViewResourceAction<in T : AwsExplorerNode<*>>(private val actionT
     SingleExplorerNodeAction<T>(actionTitle), DumbAware {
 
     override fun actionPerformed(selected: T, e: AnActionEvent) {
-        val getResourceNameDialog = ViewResourceDialog(selected.nodeProject, resourceType, actionTitle, prefix)
+        val getResourceNameDialog = ViewResourceDialog(selected.nodeProject, resourceType, actionTitle, this::checkResourceNameValidity)
         if (getResourceNameDialog.showAndGet()) {
             viewResource(getResourceNameDialog.resourceName, selected)
         }
     }
 
     abstract fun viewResource(resourceToView: String, selected: T)
+
+    abstract fun checkResourceNameValidity(resourceName: String?) : Boolean
 }

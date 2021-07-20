@@ -23,4 +23,8 @@ class ViewBucketAction : ViewResourceAction<S3ServiceNode>(message("action.aws.t
             e.notifyError(message("s3.open.viewer.bucket.failed"))
         }
     }
+
+    override fun checkResourceNameValidity(resourceName: String?): Boolean {
+        return resourceName.equals("S3://", ignoreCase = true)
+    }
 }
