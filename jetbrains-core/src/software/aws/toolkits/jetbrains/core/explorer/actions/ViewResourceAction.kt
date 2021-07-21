@@ -20,5 +20,5 @@ abstract class ViewResourceAction<in T : AwsExplorerNode<*>>(private val actionT
 
     abstract fun viewResource(resourceToView: String, selected: T)
 
-    abstract fun checkResourceNameValidity(resourceName: String?) : Boolean
+    abstract fun checkResourceNameValidity(resourceName: String?): Boolean
 }

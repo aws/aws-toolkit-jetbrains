@@ -24,7 +24,5 @@ class ViewBucketAction : ViewResourceAction<S3ServiceNode>(message("action.aws.t
         }
     }
 
-    override fun checkResourceNameValidity(resourceName: String?): Boolean {
-        return resourceName.equals("S3://", ignoreCase = true)
-    }
+    override fun checkResourceNameValidity(resourceName: String?): Boolean = resourceName.equals("S3://", ignoreCase = true)
 }
