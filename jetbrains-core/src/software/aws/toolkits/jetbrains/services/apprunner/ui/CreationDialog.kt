@@ -30,7 +30,7 @@ import javax.swing.JComponent
 
 class CreationDialog(private val project: Project, ecrUri: String? = null) :
     DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     val panel = CreationPanel(project, ecrUri)
 
     init {

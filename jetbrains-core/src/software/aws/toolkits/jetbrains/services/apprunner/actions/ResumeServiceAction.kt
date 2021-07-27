@@ -59,7 +59,7 @@ class ResumeServiceAction :
         }
 
         if (dialog.showAndGet()) {
-            val scope = selected.nodeProject.applicationThreadPoolScope(this::class)
+            val scope = applicationThreadPoolScope(selected.nodeProject)
             scope.launch {
                 performResume(selected.nodeProject, selected.nodeProject.awsClient(), selected.service)
             }

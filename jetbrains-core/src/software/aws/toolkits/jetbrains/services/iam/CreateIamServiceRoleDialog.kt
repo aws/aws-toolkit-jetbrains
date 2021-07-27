@@ -27,7 +27,7 @@ class CreateIamServiceRoleDialog(
     name: String = "",
     parent: Component? = null,
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     var name: String = name
         private set
     internal val view = panel {

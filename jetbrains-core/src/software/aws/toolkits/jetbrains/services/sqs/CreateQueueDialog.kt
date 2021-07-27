@@ -27,7 +27,7 @@ class CreateQueueDialog(
     private val project: Project,
     private val client: SqsClient
 ) : DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     val view = CreateQueuePanel()
 
     init {

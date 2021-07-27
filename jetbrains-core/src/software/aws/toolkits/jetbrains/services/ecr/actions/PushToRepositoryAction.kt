@@ -71,7 +71,7 @@ class PushToRepositoryAction : EcrDockerAction() {
     override fun actionPerformed(selected: EcrRepositoryNode, e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: EcrClient = project.awsClient()
-        val scope = project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(project)
         val dialog = PushToEcrDialog(project, selected.repository, scope.dockerServerRuntimeAsync())
         if (!dialog.showAndGet()) {
             // user cancelled; noop
@@ -124,7 +124,7 @@ internal class PushToEcrDialog(
     selectedRepository: Repository,
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance>
 ) : DialogWrapper(project, null, false, IdeModalityType.PROJECT) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val defaultTag = "latest"
     private var type = BuildType.LocalImage
     private var remoteTag = ""

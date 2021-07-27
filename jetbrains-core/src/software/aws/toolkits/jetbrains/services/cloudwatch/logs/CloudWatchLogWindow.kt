@@ -26,7 +26,7 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 
 class CloudWatchLogWindow(private val project: Project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val toolWindow = ToolkitToolWindowManager.getInstance(project, CW_LOGS_TOOL_WINDOW)
     private val edtContext = getCoroutineUiContext()
 

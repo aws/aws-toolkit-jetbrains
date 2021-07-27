@@ -25,7 +25,7 @@ class EcsLogGroupAction :
         val project = selected.nodeProject
         val client = project.awsClient<CloudWatchLogsClient>()
         val logGroup = "/ecs/${clusterArnToName(selected.resourceArn())}"
-        val scope = project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(project)
         scope.launch {
             if (client.checkIfLogGroupExists(logGroup)) {
                 val window = CloudWatchLogWindow.getInstance(project)

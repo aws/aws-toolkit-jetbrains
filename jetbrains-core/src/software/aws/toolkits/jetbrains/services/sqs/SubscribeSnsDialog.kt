@@ -31,7 +31,7 @@ class SubscribeSnsDialog(
     private val project: Project,
     private val queue: Queue
 ) : DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val snsClient: SnsClient = project.awsClient()
     private val sqsClient: SqsClient = project.awsClient()
     private val iamClient: IamClient = project.awsClient()

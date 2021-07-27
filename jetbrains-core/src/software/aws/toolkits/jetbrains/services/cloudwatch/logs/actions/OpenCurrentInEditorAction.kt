@@ -22,7 +22,7 @@ class OpenCurrentInEditorAction(
 ) :
     AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.Menu_open),
     DumbAware {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val edt = getCoroutineUiContext()
 
     override fun actionPerformed(e: AnActionEvent) {

@@ -36,7 +36,7 @@ class RenameObjectAction :
         if (newName == null) {
             S3Telemetry.renameObject(project, Result.Cancelled)
         } else {
-            val scope = project.applicationThreadPoolScope(this::class)
+            val scope = applicationThreadPoolScope(project)
             scope.launch {
                 try {
                     treeTable.bucket.renameObject(node.key, "${node.parent?.key}$newName")

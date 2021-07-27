@@ -39,7 +39,7 @@ class IamAuth : DatabaseAuthProvider {
     override fun createWidget(creds: DatabaseCredentials, source: LocalDataSource): AuthWidget? = IamAuthWidget()
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = connection.runConfiguration.project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(connection.runConfiguration.project)
         return scope.future {
             var result = Result.Succeeded
             val project = connection.runConfiguration.project

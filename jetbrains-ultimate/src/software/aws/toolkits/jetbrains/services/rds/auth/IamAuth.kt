@@ -51,7 +51,7 @@ class IamAuth : DatabaseAuthProvider {
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = connection.runConfiguration.project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(connection.runConfiguration.project)
         return scope.future {
             var result = Result.Succeeded
             try {

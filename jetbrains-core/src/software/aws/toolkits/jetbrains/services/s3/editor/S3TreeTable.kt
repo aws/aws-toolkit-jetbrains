@@ -46,7 +46,7 @@ class S3TreeTable(
     val bucket: S3VirtualBucket,
     private val project: Project
 ) : TreeTable(treeTableModel) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val edt = getCoroutineUiContext()
 
     private val dropTargetListener = object : DropTargetAdapter() {

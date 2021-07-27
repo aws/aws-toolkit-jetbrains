@@ -32,7 +32,7 @@ class SaveQueryDialog(
     private val query: String,
     private val logGroups: List<String>
 ) : DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     val view = EnterQueryName()
     private val action: OkAction = object : OkAction() {
         init {

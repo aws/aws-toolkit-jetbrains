@@ -34,7 +34,7 @@ class QueryEditorDialog(
     private val project: Project,
     private val initialQueryDetails: QueryDetails
 ) : DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     constructor(project: Project, connectionSettings: ConnectionSettings, logGroupName: String) :
         this(project, defaultQuery(connectionSettings, logGroupName))
 

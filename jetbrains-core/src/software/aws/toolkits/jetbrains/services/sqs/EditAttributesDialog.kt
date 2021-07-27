@@ -29,7 +29,7 @@ class EditAttributesDialog(
     private val queue: Queue,
     private val attributes: Map<QueueAttributeName, String>
 ) : DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     val view = EditAttributesPanel()
 
     init {

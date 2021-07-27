@@ -44,7 +44,7 @@ class DeleteObjectAction : S3ObjectAction(message("s3.delete.object.action"), Al
         if (response != Messages.OK) {
             S3Telemetry.deleteObject(project, Result.Cancelled)
         } else {
-            val scope = project.applicationThreadPoolScope(this::class)
+            val scope = applicationThreadPoolScope(project)
             scope.launch {
                 try {
                     treeTable.bucket.deleteObjects(nodes.map { it.key })

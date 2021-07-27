@@ -6,14 +6,14 @@ package software.aws.toolkits.jetbrains.core
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import com.intellij.util.containers.ContainerUtil
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import kotlin.reflect.KClass
 
 class ProjectLevelCoroutineScopeTracker(
-    @SuppressWarnings("UnusedProperty")
+    @Suppress("unused")
     private val project: Project
 ) : Disposable {
-    private val scopes: MutableMap<String, ApplicationThreadPoolScope> = mutableMapOf()
+    private val scopes: MutableMap<String, ApplicationThreadPoolScope> = ContainerUtil.createConcurrentWeakValueMap()
     fun applicationThreadPoolScope(coroutineName: String): ApplicationThreadPoolScope =
         scopes.computeIfAbsent(coroutineName) { ApplicationThreadPoolScope(coroutineName, this) }
 
@@ -26,4 +26,5 @@ class ProjectLevelCoroutineScopeTracker(
 
 fun Project.applicationThreadPoolScope(coroutineName: String) = ProjectLevelCoroutineScopeTracker.getInstance(this).applicationThreadPoolScope(coroutineName)
 
-fun Project.applicationThreadPoolScope(clazz: KClass<out Any>) = ProjectLevelCoroutineScopeTracker.getInstance(this).applicationThreadPoolScope(clazz.java.name)
+@Suppress("unused") // T receiver needed to infer type
+inline fun <reified T : Any> T.applicationThreadPoolScope(project: Project) = project.applicationThreadPoolScope(T::class.java.name)

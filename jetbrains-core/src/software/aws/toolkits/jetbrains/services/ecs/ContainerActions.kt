@@ -136,7 +136,7 @@ class ExecuteCommandAction(
     private val project: Project,
     private val container: ContainerDetails
 ) : AnAction(message("ecs.execute_command_run"), null, null) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     override fun actionPerformed(e: AnActionEvent) {
         coroutineScope.launch {
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
@@ -162,7 +162,7 @@ class ExecuteCommandInShellAction(
     private val project: Project,
     private val container: ContainerDetails
 ) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     override fun actionPerformed(e: AnActionEvent) {
         coroutineScope.launch {
             if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {

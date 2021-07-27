@@ -22,7 +22,7 @@ import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 class TailLogsAction(private val project: Project, private val channel: () -> Channel<CloudWatchLogsActor.Message>) :
     ToggleAction(message("cloudwatch.logs.tail"), null, AllIcons.RunConfigurations.Scroll_down),
     DumbAware {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private var isSelected = false
     var logStreamingJob: Job? = null
         private set

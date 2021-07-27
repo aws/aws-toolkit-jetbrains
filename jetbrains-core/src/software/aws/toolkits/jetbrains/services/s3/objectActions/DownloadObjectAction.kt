@@ -195,7 +195,7 @@ class DownloadObjectAction :
     }
 
     private fun downloadAll(project: Project, files: List<DownloadInfo>) {
-        val scope = project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(project)
         scope.launch {
             try {
                 files.forEach {

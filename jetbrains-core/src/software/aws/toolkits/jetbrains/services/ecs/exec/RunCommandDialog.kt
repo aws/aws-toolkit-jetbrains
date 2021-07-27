@@ -32,7 +32,7 @@ import javax.swing.plaf.basic.BasicComboBoxEditor
 
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails, private val connectionSettings: ConnectionSettings) :
     DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val tasks = ResourceSelector
         .builder()
         .resource(

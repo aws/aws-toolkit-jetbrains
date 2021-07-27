@@ -24,7 +24,7 @@ class LambdaLogGroupAction :
         val project = selected.nodeProject
         val client = project.awsClient<CloudWatchLogsClient>()
         val logGroup = "/aws/lambda/${selected.functionName()}"
-        val scope = project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(project)
         scope.launch {
             if (client.checkIfLogGroupExists(logGroup)) {
                 val window = CloudWatchLogWindow.getInstance(project)

@@ -25,7 +25,7 @@ import software.aws.toolkits.telemetry.FeedbackTelemetry
 import software.aws.toolkits.telemetry.Result
 
 class FeedbackDialog(private val project: Project) : DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     val panel = SubmitFeedbackPanel()
 
     init {

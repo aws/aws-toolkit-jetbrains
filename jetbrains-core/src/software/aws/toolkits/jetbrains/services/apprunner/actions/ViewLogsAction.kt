@@ -22,7 +22,7 @@ class ViewSystemLogsAction :
     SingleResourceNodeAction<AppRunnerServiceNode>(message("apprunner.view_service_log_streams"), null, AwsIcons.Resources.CloudWatch.LOGS),
     DumbAware {
     override fun actionPerformed(selected: AppRunnerServiceNode, e: AnActionEvent) {
-        val scope = selected.nodeProject.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(selected.nodeProject)
         scope.launch {
             try {
                 viewLogGroup(selected, "service")
@@ -37,7 +37,7 @@ class ViewApplicationLogsAction :
     SingleResourceNodeAction<AppRunnerServiceNode>(message("apprunner.view_application_log_streams"), null, AwsIcons.Resources.CloudWatch.LOGS),
     DumbAware {
     override fun actionPerformed(selected: AppRunnerServiceNode, e: AnActionEvent) {
-        val scope = selected.nodeProject.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(selected.nodeProject)
         scope.launch {
             try {
                 viewLogGroup(selected, "application")

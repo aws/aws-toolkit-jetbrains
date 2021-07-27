@@ -25,7 +25,7 @@ class NewFolderAction : S3ObjectAction(message("s3.new.folder"), AllIcons.Action
         val project = dataContext.getRequiredData(CommonDataKeys.PROJECT)
         val treeTable = dataContext.getRequiredData(S3EditorDataKeys.BUCKET_TABLE)
         val node = nodes.firstOrNull() ?: treeTable.rootNode
-        val scope = project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(project)
 
         Messages.showInputDialog(project, message("s3.new.folder.name"), message("s3.new.folder"), null)?.let { key ->
             scope.launch {

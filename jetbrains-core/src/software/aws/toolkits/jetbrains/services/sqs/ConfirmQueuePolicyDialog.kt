@@ -31,7 +31,7 @@ class ConfirmQueuePolicyDialog(
     private val existingPolicy: String?,
     parent: Component? = null
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val policyStatement = createSqsSnsSubscribePolicyStatement(queue.arn, topicArn)
 
     val view = ConfirmPolicyPanel(project, message("sqs.confirm.iam.warning.sqs_queue_permissions"))

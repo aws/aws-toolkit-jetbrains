@@ -23,7 +23,7 @@ class EnableEcsExecuteCommand :
         if (!settings.showExecuteCommandWarning ||
             EnableDisableExecuteCommandWarning(selected.nodeProject, enable = true, selected.value.serviceName()).showAndGet()
         ) {
-            val coroutineScope = selected.nodeProject.applicationThreadPoolScope(this::class)
+            val coroutineScope = applicationThreadPoolScope(selected.nodeProject)
             coroutineScope.launch {
                 enableExecuteCommand(selected.nodeProject, selected.value)
             }

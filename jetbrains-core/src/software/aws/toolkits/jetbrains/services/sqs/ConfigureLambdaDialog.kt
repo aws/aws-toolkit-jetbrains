@@ -33,7 +33,7 @@ class ConfigureLambdaDialog(
     private val project: Project,
     private val queue: Queue
 ) : DialogWrapper(project) {
-    private val coroutineScope = project.applicationThreadPoolScope(this::class)
+    private val coroutineScope = applicationThreadPoolScope(project)
     private val lambdaClient: LambdaClient = project.awsClient()
     private val iamClient: IamClient = project.awsClient()
     val view = ConfigureLambdaPanel(project)

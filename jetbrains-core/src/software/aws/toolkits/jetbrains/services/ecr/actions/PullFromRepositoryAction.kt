@@ -40,7 +40,7 @@ class PullFromRepositoryAction : EcrDockerAction() {
 
         val (repo, image) = dialog.getPullRequest()
         val client: EcrClient = project.awsClient()
-        val scope = project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(project)
         scope.launch {
             val runtime = scope.dockerServerRuntimeAsync().await()
             val authData = withContext(getCoroutineBgContext()) {

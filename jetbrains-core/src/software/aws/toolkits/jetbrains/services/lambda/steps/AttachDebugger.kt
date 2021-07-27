@@ -100,7 +100,7 @@ class AttachDebugger(
                 throw ExecutionException(e)
             }
         }
-        val scope = context.project.applicationThreadPoolScope(this::class)
+        val scope = applicationThreadPoolScope(context.project)
         // Make sure the session is always cleaned up
         scope.launch {
             while (!context.isCompleted()) {

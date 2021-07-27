@@ -65,7 +65,7 @@ object GoDebugHelper {
             val processHandler = process.processHandler
             val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
 
-            val scope = session.project.applicationThreadPoolScope(this@GoDebugHelper::class)
+            val scope = applicationThreadPoolScope(session.project)
             processHandler.addProcessListener(
                 object : ProcessAdapter() {
                     override fun startNotified(event: ProcessEvent) {
