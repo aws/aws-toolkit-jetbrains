@@ -28,9 +28,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
+import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindow
 import software.aws.toolkits.resources.message
 
 class ViewLogsActionTest {
@@ -47,18 +46,18 @@ class ViewLogsActionTest {
     val mockClientManagerRule = MockClientManagerRule()
 
     private lateinit var node: AppRunnerServiceNode
-    private lateinit var toolWindowManager: ToolkitToolWindow
+    private lateinit var toolWindow: ToolkitToolWindow
 
     @Before
     fun setup() {
-        toolWindowManager = ToolkitToolWindowManager.getInstance(projectRule.project, CloudWatchLogWindow.CW_LOGS_TOOL_WINDOW)
+        toolWindow = CloudWatchLogsToolWindow.getOrCreateToolWindow(projectRule.project)
         node = AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceId(aString()).build())
     }
 
     @After
     fun cleanup() {
         // close tabs we created
-        toolWindowManager.findPrefix("").forEach {
+        toolWindow.findPrefix("").forEach {
             runInEdtAndWait {
                 it.dispose()
             }
@@ -79,9 +78,9 @@ class ViewLogsActionTest {
             viewLogGroup(node, "service")
         }
 
-        val windows = toolWindowManager.findPrefix("")
+        val windows = toolWindow.findPrefix("")
         assertThat(windows.size).isEqualTo(1)
-        assertThat(windows.first().name).isEqualTo(message("cloudwatch.logs.log_group_title", "service"))
+        assertThat(windows.first().displayName).isEqualTo(message("cloudwatch.logs.log_group_title", "service"))
     }
 
     @Test

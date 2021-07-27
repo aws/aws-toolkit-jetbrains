@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRe
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
+import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.DeleteGroupAction
 import java.util.function.Consumer
 import javax.swing.JPanel
@@ -54,18 +54,18 @@ class DeleteGroupActionTest {
         whenever(cloudwatchmock.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(stream).build())
         val mockNode = CloudWatchLogsNode(projectRule.project, "arn", "name")
-        val toolWindowManager = ToolkitToolWindowManager.getInstance(projectRule.project, CloudWatchLogWindow.CW_LOGS_TOOL_WINDOW)
-        toolWindowManager.addTab("test", JPanel(), true, "name")
-        toolWindowManager.addTab("test", JPanel(), true, "name/eman")
-        toolWindowManager.addTab("test", JPanel(), true, "name2")
-        assertThat(toolWindowManager.findPrefix("name").size).isEqualTo(2)
+        val toolWindow = CloudWatchLogsToolWindow.getOrCreateToolWindow(projectRule.project)
+        toolWindow.addTab("test", JPanel(), true, "name")
+        toolWindow.addTab("test", JPanel(), true, "name/eman")
+        toolWindow.addTab("test", JPanel(), true, "name2")
+        assertThat(toolWindow.findPrefix("name").size).isEqualTo(2)
         val delete = DeleteGroupAction()
         delete.performDelete(mockNode)
         // retryable because removing windows is done asynchronously
         retryableAssert {
-            assertThat(toolWindowManager.find("name")).isNull()
-            assertThat(toolWindowManager.find("name/eman")).isNull()
-            assertThat(toolWindowManager.findPrefix("name2").size).isEqualTo(1)
+            assertThat(toolWindow.find("name")).isNull()
+            assertThat(toolWindow.find("name/eman")).isNull()
+            assertThat(toolWindow.findPrefix("name2").size).isEqualTo(1)
         }
     }
 

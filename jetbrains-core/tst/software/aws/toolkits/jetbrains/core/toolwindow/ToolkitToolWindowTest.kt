@@ -3,27 +3,35 @@
 
 package software.aws.toolkits.jetbrains.core.toolwindow
 
+import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.jetbrains.core.toolwindow.AbstractToolkitToolWindow.Companion.show
 import java.util.UUID
 import javax.swing.JLabel
 
-class ToolkitToolWindowManagerTest {
+class ToolkitToolWindowTest {
 
     @Rule
     @JvmField
     val projectRule = ProjectRule()
 
-    private val jbToolWindowManager = ToolWindowManager.getInstance(projectRule.project)
+    private lateinit var jbToolWindowManager: ToolWindowManager
+
+    @Before
+    fun setUp() {
+        jbToolWindowManager = ToolWindowManager.getInstance(projectRule.project)
+    }
 
     @Test
     fun canAddAToolWindow() {
         val testToolWindow = aToolkitToolWindow()
 
-        val sut = ToolkitToolWindowManager.getInstance(projectRule.project, testToolWindow)
+        val sut = AbstractToolkitToolWindow.getOrCreateToolWindow(projectRule.project, testToolWindow)
 
         sut.addTab("World", JLabel().also { it.text = "Hello" })
 
@@ -36,7 +44,7 @@ class ToolkitToolWindowManagerTest {
     fun canRefreshAnExistingToolWindow() {
         val testToolWindow = aToolkitToolWindow()
 
-        val sut = ToolkitToolWindowManager.getInstance(projectRule.project, testToolWindow)
+        val sut = AbstractToolkitToolWindow.getOrCreateToolWindow(projectRule.project, testToolWindow)
 
         val component = JLabel().also { it.text = "Hello" }
         sut.addTab("Refreshable", component, refresh = { component.text = "World" })
@@ -47,24 +55,10 @@ class ToolkitToolWindowManagerTest {
     }
 
     @Test
-    fun toolWindowIsRemovedWhenAllComponentsAreClosed() {
-        val testToolWindow = aToolkitToolWindow()
-
-        val sut = ToolkitToolWindowManager.getInstance(projectRule.project, testToolWindow)
-        val component = JLabel().also { it.text = "Hello" }
-
-        val tab = sut.addTab("World", component)
-
-        tab.dispose()
-
-        assertThat(jbToolWindowManager.getToolWindow(testToolWindow.id)).isNull()
-    }
-
-    @Test
     fun canFindAPreviouslyAddedTab() {
         val testToolWindow = aToolkitToolWindow()
 
-        val sut = ToolkitToolWindowManager.getInstance(projectRule.project, testToolWindow)
+        val sut = AbstractToolkitToolWindow.getOrCreateToolWindow(projectRule.project, testToolWindow)
         val tab = sut.addTab("World", JLabel().also { it.text = "Hello" }, id = "myId")
 
         assertThat(sut.find("myId")).isSameAs(tab)
@@ -74,10 +68,10 @@ class ToolkitToolWindowManagerTest {
     fun onlyOneToolWindowCreatedPerType() {
         val testToolWindow = aToolkitToolWindow()
 
-        val sut = ToolkitToolWindowManager.getInstance(projectRule.project, testToolWindow)
+        val sut = AbstractToolkitToolWindow.getOrCreateToolWindow(projectRule.project, testToolWindow)
 
-        assertThat(ToolkitToolWindowManager.getInstance(projectRule.project, testToolWindow)).isSameAs(sut)
+        assertThat(AbstractToolkitToolWindow.getOrCreateToolWindow(projectRule.project, testToolWindow)).isEqualTo(sut)
     }
 
-    private fun aToolkitToolWindow() = ToolkitToolWindowType(UUID.randomUUID().toString(), "Tool Window")
+    private fun aToolkitToolWindow() = RegisterToolWindowTask(UUID.randomUUID().toString())
 }

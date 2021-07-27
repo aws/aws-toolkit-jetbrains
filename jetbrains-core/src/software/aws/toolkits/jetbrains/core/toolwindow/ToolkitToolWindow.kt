@@ -4,135 +4,118 @@
 package software.aws.toolkits.jetbrains.core.toolwindow
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
+import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindow
-import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.content.Content
-import com.intellij.ui.content.impl.ContentImpl
-import icons.AwsIcons
-import java.util.concurrent.ConcurrentHashMap
-import javax.swing.Icon
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import javax.swing.JComponent
 
 interface ToolkitToolWindow {
+    val toolWindow: ToolWindow
+
     fun addTab(
         title: String,
         component: JComponent,
         activate: Boolean = false,
         id: String = title,
-        disposable: Disposable? = null,
+        disposeLater: Disposable? = null,
         refresh: () -> Unit = { }
-    ): ToolkitToolWindowTab
+    ): Content
 
-    fun find(id: String): ToolkitToolWindowTab?
+    fun removeContent(content: Content)
+
+    fun find(id: String): Content?
 
     // prefix is prefix of the id. Assumes the window is using id composed of paths, like: "loggroup/logstream"
-    fun findPrefix(prefix: String): List<ToolkitToolWindowTab>
+    fun findPrefix(prefix: String): List<Content>
 }
 
-interface ToolkitToolWindowTab : Disposable {
-    val name: String
-    fun show(refresh: Boolean = false)
-}
-
-class ToolkitToolWindowManager(private val project: Project) : Disposable {
-    private val toolWindows = ConcurrentHashMap<ToolkitToolWindowType, ManagedToolkitToolWindow>()
-    internal fun getInstance(type: ToolkitToolWindowType) = toolWindows.computeIfAbsent(type) { ManagedToolkitToolWindow(type) }
-
-    inner class ManagedToolkitToolWindow(private val type: ToolkitToolWindowType) : ToolkitToolWindow {
-        private val tabs = mutableMapOf<String, ManagedToolkitToolWindowTab>()
-
+abstract class AbstractToolkitToolWindow {
+    internal class DefaultToolkitToolWindow(override val toolWindow: ToolWindow) : ToolkitToolWindow {
         override fun addTab(
             title: String,
             component: JComponent,
             activate: Boolean,
             id: String,
-            disposable: Disposable?,
+            disposeLater: Disposable?,
             refresh: () -> Unit
-        ): ToolkitToolWindowTab {
-            val content = ContentImpl(component, title, true)
-            val toolWindow = windowManager.getToolWindow(type.id)
-                ?: windowManager.registerToolWindow(type.id, true, type.anchor, this@ToolkitToolWindowManager, true).also {
-                    it.setIcon(type.icon)
-                    it.stripeTitle = type.title
-                }
-            Disposer.register(content, Disposable { closeWindowIfEmpty(toolWindow, type.id) })
-            disposable?.let { Disposer.register(content, it) }
-            toolWindow.contentManager.addContent(content)
-            return ManagedToolkitToolWindowTab(toolWindow, content, refresh).also {
-                tabs[id] = it
-                if (activate) {
-                    it.show()
-                }
+        ): Content {
+            val contentManager = toolWindow.contentManager
+            val content = contentManager.factory.createContent(component, title, false).also {
+                it.isCloseable = true
+                it.isPinnable = true
+                it.putUserData(AWS_TOOLKIT_TOOL_WINDOW_KEY, toolWindow)
+                it.putUserData(AWS_TOOLKIT_TAB_ID_KEY, id)
+                it.putUserData(AWS_TOOLKIT_TAB_REFRESH_FUNCTION_KEY, refresh)
             }
+
+            contentManager.addContent(content)
+            disposeLater?.let { Disposer.register(content, it) }
+            if (activate) {
+                content.show()
+            }
+
+            return content
         }
 
-        override fun find(id: String): ToolkitToolWindowTab? {
-            val tab = tabs[id] ?: return null
-            if (Disposer.isDisposed(tab.content)) {
-                tabs.remove(id)
-                return null
-            }
-            return tab
-        }
-
-        override fun findPrefix(prefix: String): List<ToolkitToolWindowTab> = tabs
-            .filter { it.key.startsWith("$prefix/") || it.key == prefix }
-            .mapNotNull {
-                if (Disposer.isDisposed(it.value.content)) {
-                    tabs.remove(it.key)
-                    null
-                } else {
-                    it.value
-                }
-            }
-    }
-
-    class ManagedToolkitToolWindowTab(private val toolWindow: ToolWindow, internal val content: Content, private val refresh: () -> Unit) :
-        ToolkitToolWindowTab {
-        override val name: String = content.displayName
-
-        override fun show(refresh: Boolean) {
-            toolWindow.activate(null, true)
-            toolWindow.contentManager.setSelectedContent(content)
-            if (refresh) {
-                refresh()
-            }
-        }
-
-        override fun dispose() {
-            if (!Disposer.isDisposed(content)) {
+        override fun removeContent(content: Content) {
+            runInEdt {
                 toolWindow.contentManager.removeContent(content, true)
             }
         }
-    }
 
-    private val windowManager
-        get() = ToolWindowManager.getInstance(project)
+        override fun findPrefix(prefix: String): List<Content> =
+            toolWindow.contentManager.contents.filter {
+                val key = it.getUserData(AWS_TOOLKIT_TAB_ID_KEY) ?: ""
+                key.startsWith("$prefix/") || key == prefix
+            }
 
-    private fun closeWindowIfEmpty(window: ToolWindow, id: String) {
-        if (window.contentManager.contentCount == 0) {
-            windowManager.unregisterToolWindow(id)
-        }
-    }
+        override fun find(id: String): Content? =
+            toolWindow.contentManager.contents.find { id == it.getUserData(AWS_TOOLKIT_TAB_ID_KEY) }
 
-    override fun dispose() {
+        override fun equals(other: Any?): Boolean =
+            (other as? DefaultToolkitToolWindow)?.toolWindow?.equals(toolWindow) == true
+
+        override fun hashCode(): Int =
+            toolWindow.hashCode()
     }
 
     companion object {
-        fun getInstance(project: Project, toolWindowType: ToolkitToolWindowType): ToolkitToolWindow = ServiceManager.getService(
-            project,
-            ToolkitToolWindowManager::class.java
-        ).getInstance(toolWindowType)
+        internal val AWS_TOOLKIT_TOOL_WINDOW_KEY = Key.create<ToolWindow>("awsToolkitToolWindow")
+        internal val AWS_TOOLKIT_TAB_ID_KEY = Key.create<String>("awsToolkitTabId")
+        internal val AWS_TOOLKIT_TAB_REFRESH_FUNCTION_KEY = Key.create<() -> Unit>("awsToolkitRefreshFunction")
+
+        internal fun getOrCreateToolWindow(project: Project, registrationTask: RegisterToolWindowTask): ToolkitToolWindow {
+            val toolWindowManager = ToolWindowManager.getInstance(project)
+            val window = toolWindowManager.getToolWindow(registrationTask.id) ?: run {
+                runBlocking {
+                    withContext(getCoroutineUiContext()) {
+                        toolWindowManager.registerToolWindow(registrationTask).also {
+                            it.installWatcher(it.contentManager)
+                        }
+                    }
+                }
+            }
+
+            return DefaultToolkitToolWindow(window)
+        }
+
+        fun Content.show(refresh: Boolean = false) {
+            this.getUserData(AWS_TOOLKIT_TOOL_WINDOW_KEY)?.let { toolWindow ->
+                toolWindow.activate(null, true)
+                toolWindow.contentManager.setSelectedContent(this)
+            }
+
+            if (refresh) {
+                this.getUserData(AWS_TOOLKIT_TAB_REFRESH_FUNCTION_KEY)?.invoke()
+            }
+        }
     }
 }
-
-data class ToolkitToolWindowType(
-    val id: String,
-    val title: String,
-    val icon: Icon = AwsIcons.Logos.AWS,
-    val anchor: ToolWindowAnchor = ToolWindowAnchor.BOTTOM
-)

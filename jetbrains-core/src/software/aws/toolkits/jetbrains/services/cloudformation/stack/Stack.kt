@@ -20,18 +20,17 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.content.Content
 import com.intellij.uiDesigner.core.GridConstraints
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.ui.JBUI
-import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
+import software.aws.toolkits.jetbrains.core.toolwindow.AbstractToolkitToolWindow.Companion.show
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowTab
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
+import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindow
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudformationTelemetry
 import java.time.Duration
@@ -45,11 +44,9 @@ private val UPDATE_STACK_STATUS_INTERVAL = Duration.ofSeconds(5)
 private val UPDATE_STACK_STATUS_INTERVAL_ON_FINAL_STATE = Duration.ofSeconds(60)
 private const val REDRAW_ANIMATED_ICON_INTERVAL = 70
 private const val TREE_TABLE_INITIAL_PROPORTION = 0.25f
-internal val STACK_TOOL_WINDOW =
-    ToolkitToolWindowType("AWS.CloudFormation", message("cloudformation.toolwindow.label"), icon = AwsIcons.Logos.CLOUD_FORMATION_TOOL)
 
 class StackWindowManager(private val project: Project) {
-    private val toolWindow = ToolkitToolWindowManager.getInstance(project, STACK_TOOL_WINDOW)
+    private val toolWindow = CloudFormationToolWindow.getOrCreateToolWindow(project)
 
     fun openStack(stackName: String, stackId: String) {
         assert(SwingUtilities.isEventDispatchThread())
@@ -75,7 +72,7 @@ private class StackUI(
     toolWindow: ToolkitToolWindow
 ) : UpdateListener, Disposable {
 
-    val toolWindowTab: ToolkitToolWindowTab
+    val toolWindowTab: Content
     private val animator: IconAnimator
     private val updater: Updater
     private val notificationGroup: NotificationGroup
@@ -91,8 +88,9 @@ private class StackUI(
         eventsTable = EventsTableImpl()
         pageButtons = PageButtons(this::onPageButtonClick)
 
-        notificationGroup = NotificationGroup.findRegisteredGroup(STACK_TOOL_WINDOW.id)
-            ?: NotificationGroup.toolWindowGroup(STACK_TOOL_WINDOW.id, STACK_TOOL_WINDOW.id)
+        val notificationId = CloudFormationToolWindow.TOOLWINDOW_ID
+        notificationGroup = NotificationGroup.findRegisteredGroup(notificationId)
+            ?: NotificationGroup.toolWindowGroup(notificationId, notificationId)
 
         val window = SimpleToolWindowPanel(false, true)
         val mainPanel = OnePixelSplitter(false, TREE_TABLE_INITIAL_PROPORTION).apply {
@@ -171,7 +169,7 @@ private class StackUI(
         window.setContent(mainPanel)
         window.toolbar = createToolbar()
 
-        toolWindowTab = toolWindow.addTab(stackName, window, id = stackId, disposable = this)
+        toolWindowTab = toolWindow.addTab(stackName, window, id = stackId, disposeLater = this)
         listOf(tree, updater, animator, eventsTable, outputsTable, resourcesTable, pageButtons).forEach { Disposer.register(this, it) }
     }
 
