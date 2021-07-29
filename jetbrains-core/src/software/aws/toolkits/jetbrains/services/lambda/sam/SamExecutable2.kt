@@ -14,14 +14,9 @@ import software.aws.toolkits.jetbrains.settings.ExecutableDetector
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class SamExecutable2 : ExecutableType2<SemanticVersion>, AutoResolvable {
-    companion object {
-        // inclusive
-        val minVersion = SemVer("1.0.0", 1, 0, 0)
-
-        // exclusive
-        val maxVersion = SemVer("2.0.0", 2, 0, 0)
-    }
+object SamExecutable2 : ExecutableType2<SemanticVersion>, AutoResolvable {
+    val MIN_VERSION = SemanticVersion(SemVer("1.0.0", 1, 0, 0))
+    val MAX_VERSION = SemanticVersion(SemVer("2.0.0", 2, 0, 0))
 
     override val displayName: String = "sam"
     override val id: String = "samCli"
@@ -34,12 +29,7 @@ class SamExecutable2 : ExecutableType2<SemanticVersion>, AutoResolvable {
         )
     )
 
-    override fun supportedVersions(): List<VersionRange<SemanticVersion>> = listOf(
-        VersionRange(
-            SemanticVersion(minVersion),
-            SemanticVersion(maxVersion)
-        )
-    )
+    override fun supportedVersions(): List<VersionRange<SemanticVersion>> = listOf(VersionRange(MIN_VERSION, MAX_VERSION))
 
     override fun resolve(): Path? {
         val path = (

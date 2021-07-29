@@ -38,13 +38,13 @@ class ExecutableSettingsTest {
             settings
         )
 
-        assertThat(settings.getExecutablePath(TestExecutable())).isEqualTo("/some/path")
+        assertThat(settings.getExecutablePath(TestExecutable)).isEqualTo("/some/path")
     }
 
     @Test
     fun `state can be saved`() {
         val settings = ExecutableSettings.getInstance()
-        settings.setExecutablePath(TestExecutable(), "/some/path")
+        settings.setExecutablePath(TestExecutable, "/some/path")
 
         assertThat(serializeState("executables", settings))
             .isEqualToIgnoringWhitespace(
@@ -64,7 +64,7 @@ class ExecutableSettingsTest {
             )
     }
 
-    class TestExecutable : ExecutableType2<SemanticVersion> {
+    object TestExecutable : ExecutableType2<SemanticVersion> {
         override val displayName: String = "Test Executable"
         override val id: String = "testExecutable"
 

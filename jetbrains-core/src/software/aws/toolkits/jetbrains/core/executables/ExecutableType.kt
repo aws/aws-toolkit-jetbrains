@@ -34,26 +34,36 @@ interface ExecutableType<VersionScheme> {
     }
 }
 
+/**
+ * Represents an executable external program such as a CLI
+ *
+ * Note: It is recommended that all implementations of this interface are stateless and are an `object`
+ */
 interface ExecutableType2<VersionScheme : Version> {
+    /**
+     * ID used to represent the executable in caches and settings. Must be globally unique
+     */
     val id: String
+
+    /**
+     * Name of the executable for users, e.g. the marketing name of the executable
+     */
     val displayName: String
 
+    /**
+     * List of supported [VersionRange]. An empty list means any version is supported
+     */
     fun supportedVersions(): List<VersionRange<VersionScheme>> = emptyList()
 
+    /**
+     * Returns the [Version] for the executable of this type located at the specified location
+     */
     fun determineVersion(path: Path): VersionScheme
-
-    companion object {
-        val EP_NAME = ExtensionPointName<ExecutableType2<*>>("aws.toolkit.executable2")
-
-        internal fun executables(): List<ExecutableType2<*>> = EP_NAME.extensionList
-
-        @JvmStatic
-        fun <T : ExecutableType2<*>> getExecutable(clazz: Class<T>): T = executables().filterIsInstance(clazz).first()
-
-        inline fun <reified T : ExecutableType2<*>> getInstance(): ExecutableType2<*> = getExecutable(T::class.java)
-    }
 }
 
+/**
+ * Indicates that a [ExecutableType2] can be auto-discovered for the user
+ */
 interface AutoResolvable {
     /**
      * Attempt to automatically resolve the path
@@ -78,6 +88,7 @@ interface Manged : AutoResolvable {
     fun isUpdateAvailable(): Boolean
 }
 
+@Deprecated("Should not be used, delete after ExecutableManager2 migration")
 interface Validatable {
     /**
      * Validate the executable at the given path, beyond being a supported version to ensure this executable is compatible wit the toolkit.

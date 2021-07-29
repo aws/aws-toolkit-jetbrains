@@ -117,7 +117,6 @@ with what features/services are supported.
         </extensionPoint>
 
         <extensionPoint name="executable" interface="software.aws.toolkits.jetbrains.core.executables.ExecutableType" dynamic="true"/>
-        <extensionPoint name="executable2" interface="software.aws.toolkits.jetbrains.core.executables.ExecutableType2" dynamic="true"/>
 
         <extensionPoint name="clouddebug.debuggerSupport" interface="software.aws.toolkits.jetbrains.services.clouddebug.DebuggerSupport" dynamic="true"/>
 
@@ -255,7 +254,6 @@ with what features/services are supported.
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
-        <executable2 implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable2"/>
         <executable implementation="software.aws.toolkits.jetbrains.services.ecs.exec.AwsCliExecutable"/>
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
