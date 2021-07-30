@@ -49,36 +49,38 @@ class ExecutableManager2 {
     fun <T : Version> validateCompatability(
         project: Project?,
         executable: Executable<ExecutableType2<T>>?,
-        additionalStrictRange: List<VersionRange<T>>? = null
-    ): Compatability {
+        stricterMinVersion: T? = null
+    ): Validity {
         if (executable == null) {
-            return Compatability.NotInstalled()
+            return Validity.NotInstalled()
         }
 
 //        return runUnderProgressIfNeeded(project, message("version.progress.title"), false) {
         return runUnderProgressIfNeeded(project, "Validating CLI", false) {
-            determineCompatability(executable, additionalStrictRange)
+            determineCompatability(executable, stricterMinVersion)
         }
     }
 
-    private fun <T : Version> determineCompatability(executable: Executable<ExecutableType2<T>>, additionalStrictRange: List<VersionRange<T>>?): Compatability {
+    private fun <T : Version> determineCompatability(executable: Executable<ExecutableType2<T>>, stricterMinVersion: T?): Validity {
         assertIsNonDispatchThread()
 
         val version = when (val cacheResult = versionCache.getValue(executable)) {
-            is Result.Failure -> return Compatability.NotInstalled(ExceptionUtil.getMessage(cacheResult.reason))
+            is Result.Failure -> return Validity.NotInstalled(ExceptionUtil.getMessage(cacheResult.reason))
             is Result.Success -> cacheResult.version
         }
 
         val baseVersionCompatability = isVersionValid(version, executable.type.supportedVersions())
-        if (baseVersionCompatability != Compatability.Valid) {
+        if (baseVersionCompatability != Validity.Valid) {
             return baseVersionCompatability
         }
 
-        additionalStrictRange?.let {
-            return isVersionValid(version, additionalStrictRange)
+        stricterMinVersion?.let {
+            if (stricterMinVersion > version) {
+                return Validity.VersionTooOld(stricterMinVersion)
+            }
         }
 
-        return Compatability.Valid
+        return Validity.Valid
     }
 
     companion object {

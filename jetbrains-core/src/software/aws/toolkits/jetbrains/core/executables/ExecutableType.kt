@@ -74,7 +74,7 @@ interface AutoResolvable {
     fun resolve(): Path?
 }
 
-interface Manged : AutoResolvable {
+interface Managed : AutoResolvable {
     // TODO: How do we want to handle updating....do we block the usage? Download and then lock its usage while installed?
 
     /**

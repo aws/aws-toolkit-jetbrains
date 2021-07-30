@@ -15,24 +15,22 @@ data class SemanticVersion(private val version: SemVer) : Version {
     override fun compareTo(other: Version): Int = version.compareTo((other as SemanticVersion).version)
 }
 
-data class VersionRange<T>(val minVersion: Version, val maxVersion: Version) {
-    operator fun contains(value: Version): Boolean = value >= minVersion && value < maxVersion
-}
+data class VersionRange<T>(val minVersion: Version, val maxVersion: Version)
 
-fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Compatability {
+fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Validity {
     if (ranges.isEmpty()) {
-        return Compatability.Valid
+        return Validity.Valid
     }
 
     val minVersions = ranges.map { it.minVersion }.sortedDescending()
     if (minVersions.none { minVersion -> version >= minVersion }) {
-        return Compatability.VersionTooOld(minVersions.first()) // Sorted already so take the first which should be the greatest min version
+        return Validity.VersionTooOld(minVersions.first()) // Sorted already so take the first which should be the greatest min version
     }
 
     val maxVersions = ranges.map { it.maxVersion }.sortedDescending()
     if (maxVersions.none { maxVersion -> version < maxVersion }) {
-        return Compatability.VersionTooNew(maxVersions.first()) // Sorted already so take the first which should be the greatest max version
+        return Validity.VersionTooNew(maxVersions.first()) // Sorted already so take the first which should be the greatest max version
     }
 
-    return Compatability.Valid
+    return Validity.Valid
 }
