@@ -9,7 +9,7 @@ import org.junit.Test
 class VersionsTest {
     @Test
     fun `no version ranges means any version is compatible`() {
-        assertThat(isVersionValid(IntegerVersion(4), emptyList())).isEqualTo(Compatability.Valid)
+        assertThat(isVersionValid(IntegerVersion(4), emptyList())).isEqualTo(Validity.Valid)
     }
 
     @Test
@@ -23,7 +23,7 @@ class VersionsTest {
                     VersionRange(IntegerVersion(20), IntegerVersion(22))
                 )
             )
-        ).isInstanceOfSatisfying(Compatability.VersionTooOld::class.java) {
+        ).isInstanceOfSatisfying(Validity.VersionTooOld::class.java) {
             assertThat(it.minVersion).isEqualTo(IntegerVersion(30))
         }
     }
@@ -39,7 +39,7 @@ class VersionsTest {
                     VersionRange(IntegerVersion(20), IntegerVersion(22))
                 )
             )
-        ).isInstanceOfSatisfying(Compatability.VersionTooNew::class.java) {
+        ).isInstanceOfSatisfying(Validity.VersionTooNew::class.java) {
             assertThat(it.maxVersion).isEqualTo(IntegerVersion(33))
         }
     }
@@ -52,9 +52,9 @@ class VersionsTest {
             VersionRange(IntegerVersion(20), IntegerVersion(22))
         )
 
-        assertThat(isVersionValid(IntegerVersion(11), ranges)).isEqualTo(Compatability.Valid)
-        assertThat(isVersionValid(IntegerVersion(21), ranges)).isEqualTo(Compatability.Valid)
-        assertThat(isVersionValid(IntegerVersion(31), ranges)).isEqualTo(Compatability.Valid)
+        assertThat(isVersionValid(IntegerVersion(11), ranges)).isEqualTo(Validity.Valid)
+        assertThat(isVersionValid(IntegerVersion(21), ranges)).isEqualTo(Validity.Valid)
+        assertThat(isVersionValid(IntegerVersion(31), ranges)).isEqualTo(Validity.Valid)
     }
 
     @Test
@@ -63,7 +63,7 @@ class VersionsTest {
             VersionRange(IntegerVersion(10), IntegerVersion(11)),
         )
 
-        assertThat(isVersionValid(IntegerVersion(10), ranges)).isEqualTo(Compatability.Valid)
+        assertThat(isVersionValid(IntegerVersion(10), ranges)).isEqualTo(Validity.Valid)
     }
 
     @Test
@@ -72,7 +72,7 @@ class VersionsTest {
             VersionRange(IntegerVersion(10), IntegerVersion(11)),
         )
 
-        assertThat(isVersionValid(IntegerVersion(11), ranges)).isInstanceOf(Compatability.VersionTooNew::class.java)
+        assertThat(isVersionValid(IntegerVersion(11), ranges)).isInstanceOf(Validity.VersionTooNew::class.java)
     }
 
     data class IntegerVersion(val version: Int) : Version {
