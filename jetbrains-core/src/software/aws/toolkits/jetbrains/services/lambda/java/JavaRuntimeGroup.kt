@@ -44,5 +44,4 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
 
     override fun getIdeSdkType(): SdkType = JavaSdk.getInstance()
 
-    override fun supportsSamBuild(): Boolean = true
 }
