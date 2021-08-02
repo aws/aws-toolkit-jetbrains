@@ -27,7 +27,6 @@ import com.intellij.util.ui.JBUI
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
-import software.aws.toolkits.jetbrains.core.toolwindow.AbstractToolkitToolWindow.Companion.show
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
 import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindow
@@ -46,11 +45,13 @@ private const val REDRAW_ANIMATED_ICON_INTERVAL = 70
 private const val TREE_TABLE_INITIAL_PROPORTION = 0.25f
 
 class StackWindowManager(private val project: Project) {
-    private val toolWindow = CloudFormationToolWindow.getOrCreateToolWindow(project)
+    private val toolWindow = CloudFormationToolWindow.getInstance(project)
 
     fun openStack(stackName: String, stackId: String) {
         assert(SwingUtilities.isEventDispatchThread())
-        toolWindow.find(stackId)?.run { show() } ?: StackUI(project, stackName, stackId, toolWindow).start()
+        if (!toolWindow.showExistingContent(stackId)) {
+            StackUI(project, stackName, stackId, toolWindow).start()
+        }
         CloudformationTelemetry.open(project, success = true)
     }
 
@@ -69,7 +70,7 @@ private class StackUI(
     private val project: Project,
     private val stackName: String,
     stackId: String,
-    toolWindow: ToolkitToolWindow
+    private val toolWindow: ToolkitToolWindow
 ) : UpdateListener, Disposable {
 
     val toolWindowTab: Content
@@ -88,7 +89,7 @@ private class StackUI(
         eventsTable = EventsTableImpl()
         pageButtons = PageButtons(this::onPageButtonClick)
 
-        val notificationId = CloudFormationToolWindow.TOOLWINDOW_ID
+        val notificationId = CloudFormationToolWindow.getInstance(project).toolWindowId
         notificationGroup = NotificationGroup.findRegisteredGroup(notificationId)
             ?: NotificationGroup.toolWindowGroup(notificationId, notificationId)
 
@@ -169,12 +170,14 @@ private class StackUI(
         window.setContent(mainPanel)
         window.toolbar = createToolbar()
 
-        toolWindowTab = toolWindow.addTab(stackName, window, id = stackId, disposeLater = this)
+        toolWindowTab = toolWindow.addTab(stackName, window, id = stackId)
+        // dispose self when toolwindowtab closes
+        Disposer.register(toolWindowTab, this)
         listOf(tree, updater, animator, eventsTable, outputsTable, resourcesTable, pageButtons).forEach { Disposer.register(this, it) }
     }
 
     fun start() {
-        toolWindowTab.show()
+        toolWindow.show(toolWindowTab)
         animator.start()
         updater.start()
     }

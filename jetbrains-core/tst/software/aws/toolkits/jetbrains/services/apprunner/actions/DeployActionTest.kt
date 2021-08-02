@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
-import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindow
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.resources.message
 
@@ -52,7 +52,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
 
     @Before
     fun setup() {
-        toolWindow = CloudWatchLogsToolWindow.getOrCreateToolWindow(projectRule.project)
+        toolWindow = CloudWatchLogWindow.getInstance(projectRule.project)
         appRunnerClient = mockClientManagerRule.create()
         cloudwatchClient = mockClientManagerRule.create()
     }

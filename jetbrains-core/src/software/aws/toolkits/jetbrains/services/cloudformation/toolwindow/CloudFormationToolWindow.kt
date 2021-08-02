@@ -3,24 +3,16 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation.toolwindow
 
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.RegisterToolWindowTask
-import com.intellij.openapi.wm.ToolWindowAnchor
-import icons.AwsIcons
-import software.aws.toolkits.jetbrains.core.toolwindow.AbstractToolkitToolWindow
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 
-class CloudFormationToolWindow : AbstractToolkitToolWindow() {
+class CloudFormationToolWindow(override val project: Project) : ToolkitToolWindow {
+    override val toolWindowId = "aws.cloudformation"
+
     companion object {
-        const val TOOLWINDOW_ID = "aws.cloudformation"
-        private val task = RegisterToolWindowTask(
-            id = TOOLWINDOW_ID,
-            anchor = ToolWindowAnchor.BOTTOM,
-            canCloseContent = true,
-            icon = AwsIcons.Logos.CLOUD_FORMATION_TOOL,
-            stripeTitle = { message("cloudformation.toolwindow.label") }
-        )
-
-        fun getOrCreateToolWindow(project: Project) = getOrCreateToolWindow(project, task)
+        fun getInstance(project: Project) = ServiceManager.getService(project, CloudFormationToolWindow::class.java)
+        private val LOG = getLogger<CloudFormationToolWindow>()
     }
 }

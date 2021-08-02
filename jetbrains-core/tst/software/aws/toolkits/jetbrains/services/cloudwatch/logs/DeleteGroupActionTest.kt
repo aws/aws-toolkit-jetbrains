@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRe
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.DeleteGroupAction
 import java.util.function.Consumer
 import javax.swing.JPanel
@@ -54,7 +53,7 @@ class DeleteGroupActionTest {
         whenever(cloudwatchmock.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(stream).build())
         val mockNode = CloudWatchLogsNode(projectRule.project, "arn", "name")
-        val toolWindow = CloudWatchLogsToolWindow.getOrCreateToolWindow(projectRule.project)
+        val toolWindow = CloudWatchLogWindow.getInstance(projectRule.project)
         toolWindow.addTab("test", JPanel(), true, "name")
         toolWindow.addTab("test", JPanel(), true, "name/eman")
         toolWindow.addTab("test", JPanel(), true, "name2")

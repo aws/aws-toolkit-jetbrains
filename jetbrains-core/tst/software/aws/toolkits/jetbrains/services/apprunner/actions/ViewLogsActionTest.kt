@@ -29,7 +29,7 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
-import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindow
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.resources.message
 
 class ViewLogsActionTest {
@@ -50,7 +50,7 @@ class ViewLogsActionTest {
 
     @Before
     fun setup() {
-        toolWindow = CloudWatchLogsToolWindow.getOrCreateToolWindow(projectRule.project)
+        toolWindow = CloudWatchLogWindow.getInstance(projectRule.project)
         node = AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceId(aString()).build())
     }
 
