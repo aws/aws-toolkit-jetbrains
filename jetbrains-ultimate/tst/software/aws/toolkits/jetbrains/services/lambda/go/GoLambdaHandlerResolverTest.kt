@@ -161,6 +161,21 @@ class GoLambdaHandlerResolverTest {
     }
 
     @Test
+    fun `Find psi named 'main'`() {
+        projectRule.fixture.addGoLambdaHandler(
+            handlerName = "handler",
+            fileContent = """
+            package main
+            
+            func main() { 
+            }
+            """.trimIndent()
+        )
+
+        assertFindPsiElements("main", true)
+    }
+
+    @Test
     fun `Find psi no return or arguments`() {
         projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
@@ -335,6 +350,8 @@ class GoLambdaHandlerResolverTest {
             if (shouldBeFound) {
                 assertThat(lambdas).hasSize(1)
                 assertThat(lambdas[0]).isInstanceOf(GoFunctionDeclaration::class.java)
+                // assert that the lambda was found in a temp directory (i.e. from the injected handler and not something from the go library)
+                assertThat(lambdas[0].containingFile.containingDirectory.isPhysical).isFalse
             } else {
                 assertThat(lambdas).isEmpty()
             }
