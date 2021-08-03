@@ -27,7 +27,7 @@ class ExecutableManager2 {
         return detectExecutable(type)
     }
 
-    private fun <T> detectExecutable(type: T): Path? = if (type is AutoResolvable) {
+    fun <T> detectExecutable(type: T): Path? = if (type is AutoResolvable) {
         type.resolve()
     } else {
         null
@@ -45,6 +45,13 @@ class ExecutableManager2 {
             }
         }
     }
+
+    fun <T : Version> validateCompatability(
+        project: Project?,
+        path: Path,
+        type: ExecutableType2<T>,
+        stricterMinVersion: T? = null
+    ): Validity = validateCompatability(project, getExecutable(type, path), stricterMinVersion)
 
     fun <T : Version> validateCompatability(
         project: Project?,
