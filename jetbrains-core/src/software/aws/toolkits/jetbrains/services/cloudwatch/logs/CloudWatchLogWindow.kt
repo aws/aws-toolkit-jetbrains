@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
+import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindowFactory
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.DetailedLogRecord
@@ -23,7 +24,7 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 
 class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
-    override val toolWindowId = "aws.cloudwatchlogs"
+    override val toolWindowId = CloudWatchLogsToolWindowFactory.TOOLWINDOW_ID
     private val edtContext = getCoroutineUiContext()
 
     suspend fun showLogGroup(logGroup: String) {

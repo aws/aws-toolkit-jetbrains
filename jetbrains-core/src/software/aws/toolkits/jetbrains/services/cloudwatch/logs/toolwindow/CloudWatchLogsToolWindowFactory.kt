@@ -17,4 +17,8 @@ class CloudWatchLogsToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun init(toolWindow: ToolWindow) {
         toolWindow.stripeTitle = message("cloudwatch.logs.toolwindow")
     }
+
+    companion object {
+        const val TOOLWINDOW_ID = "aws.cloudwatchlogs"
+    }
 }

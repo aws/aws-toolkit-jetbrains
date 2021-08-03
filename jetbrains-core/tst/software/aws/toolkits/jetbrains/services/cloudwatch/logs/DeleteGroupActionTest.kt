@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.impl.ToolWindowHeadlessManagerImpl
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -19,6 +21,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRe
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindowFactory
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.DeleteGroupAction
 import java.util.function.Consumer
 import javax.swing.JPanel
@@ -37,6 +40,8 @@ class DeleteGroupActionTest {
 
     @Before
     fun setupMocks() {
+        (ToolWindowManager.getInstance(projectRule.project) as ToolWindowHeadlessManagerImpl)
+            .doRegisterToolWindow(CloudWatchLogsToolWindowFactory.TOOLWINDOW_ID)
         cloudwatchmock = mockClientManager.create()
     }
 

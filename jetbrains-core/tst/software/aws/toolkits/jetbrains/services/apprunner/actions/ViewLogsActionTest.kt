@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.apprunner.actions
 
 import com.intellij.notification.Notification
 import com.intellij.notification.Notifications
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.impl.ToolWindowHeadlessManagerImpl
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
@@ -29,6 +31,7 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
+import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindowFactory
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.resources.message
 
@@ -50,6 +53,8 @@ class ViewLogsActionTest {
 
     @Before
     fun setup() {
+        (ToolWindowManager.getInstance(projectRule.project) as ToolWindowHeadlessManagerImpl)
+            .doRegisterToolWindow(CloudWatchLogsToolWindowFactory.TOOLWINDOW_ID)
         toolWindow = CloudWatchLogWindow.getInstance(projectRule.project)
         node = AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceId(aString()).build())
     }
