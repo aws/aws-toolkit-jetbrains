@@ -161,21 +161,6 @@ class GoLambdaHandlerResolverTest {
     }
 
     @Test
-    fun `Find psi named 'main'`() {
-        projectRule.fixture.addGoLambdaHandler(
-            handlerName = "handler",
-            fileContent = """
-            package main
-            
-            func main() { 
-            }
-            """.trimIndent()
-        )
-
-        assertFindPsiElements("main", true)
-    }
-
-    @Test
     fun `Find psi no return or arguments`() {
         projectRule.fixture.addGoLambdaHandler(
             handlerName = "handler",
