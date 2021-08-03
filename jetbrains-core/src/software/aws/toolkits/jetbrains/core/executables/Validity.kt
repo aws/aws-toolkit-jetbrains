@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.executables
 
 import com.intellij.openapi.ui.ValidationInfo
-import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
@@ -12,7 +11,7 @@ sealed class Validity() {
     data class NotInstalled(val detailedMessage: String? = null) : Validity()
     data class VersionTooOld(val minVersion: Version) : Validity()
     data class VersionTooNew(val maxVersion: Version) : Validity()
-    object Valid : Validity()
+    data class Valid(val version: Version) : Validity()
 }
 
 fun Validity.toErrorMessage(executableType: ExecutableType2<*>): String? = when (this) {
@@ -28,6 +27,6 @@ fun Validity.toErrorMessage(executableType: ExecutableType2<*>): String? = when 
     is Validity.VersionTooOld -> message("executableCommon.version_too_low2", executableType.displayName, this.minVersion)
 }
 
-fun Validity.toValidationInfo(executableType: ExecutableType2<*>, component: JComponent): ValidationInfo? = this.toErrorMessage(executableType)?.let {
-    component.validationInfo(it)
+fun Validity.toValidationInfo(executableType: ExecutableType2<*>, component: JComponent? = null): ValidationInfo? = this.toErrorMessage(executableType)?.let {
+    ValidationInfo(it, component)
 }
