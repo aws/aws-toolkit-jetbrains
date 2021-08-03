@@ -8,14 +8,12 @@ import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.text.SyncDateFormat
 import com.intellij.util.ui.ListTableModel
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamsDateColumn
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.TimeFormatConversion
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
@@ -26,18 +24,9 @@ import javax.swing.RowSorter
 import javax.swing.SortOrder
 
 class TableUtilsTest {
-    private val defaultLocale = Locale.getDefault()
-
-    @After
-    fun cleanUp() {
-        Locale.setDefault(defaultLocale)
-    }
-
     @Test
     fun `test short MDY sorting`() {
-        Locale.setDefault(Locale.ENGLISH)
-        val dateFormat = DateFormat.getDateInstance(DateFormat.SHORT)
-        assertThat((dateFormat as SimpleDateFormat).toPattern()).isEqualTo("M/d/yy")
+        val dateFormat = SimpleDateFormat("M/d/yy", Locale.ENGLISH)
 
         val model = ListTableModel(
             arrayOf(LogStreamsDateColumn(SyncDateFormat(dateFormat))),
@@ -61,16 +50,14 @@ class TableUtilsTest {
 
     @Test
     fun `test medium MDY sorting`() {
-        Locale.setDefault(Locale.ENGLISH)
-        val dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM)
-        assertThat((dateFormat as SimpleDateFormat).toPattern()).isEqualTo("MMM d, y")
+        val dateFormat = SimpleDateFormat("MMM d, y", Locale.ENGLISH)
 
         val model = ListTableModel(
             arrayOf(LogStreamsDateColumn(SyncDateFormat(dateFormat))),
             mutableListOf(
-                mockLogStream(stringToEpoch("Jun 11, 21", dateFormat)),
-                mockLogStream(stringToEpoch("Feb 1, 21", dateFormat)),
-                mockLogStream(stringToEpoch("Jul 11, 21", dateFormat)),
+                mockLogStream(stringToEpoch("Jun 11, 2021", dateFormat)),
+                mockLogStream(stringToEpoch("Feb 1, 2021", dateFormat)),
+                mockLogStream(stringToEpoch("Jul 11, 2021", dateFormat)),
             )
         )
 
@@ -79,9 +66,33 @@ class TableUtilsTest {
         }
 
         assertThat(table).satisfies {
-            assertThat(it.getValueAt(0, 0)).isEqualTo("Jul 11, 21")
-            assertThat(it.getValueAt(1, 0)).isEqualTo("Jun 11, 21")
-            assertThat(it.getValueAt(2, 0)).isEqualTo("Feb 1, 21")
+            assertThat(it.getValueAt(0, 0)).isEqualTo("Jul 11, 2021")
+            assertThat(it.getValueAt(1, 0)).isEqualTo("Jun 11, 2021")
+            assertThat(it.getValueAt(2, 0)).isEqualTo("Feb 1, 2021")
+        }
+    }
+
+    @Test
+    fun `test medium DMY sorting`() {
+        val dateFormat = SimpleDateFormat("d MMM y", Locale.ENGLISH)
+
+        val model = ListTableModel(
+            arrayOf(LogStreamsDateColumn(SyncDateFormat(dateFormat))),
+            mutableListOf(
+                mockLogStream(stringToEpoch("11 Jun 2021", dateFormat)),
+                mockLogStream(stringToEpoch("1 Feb 2021", dateFormat)),
+                mockLogStream(stringToEpoch("11 Jul 2021", dateFormat)),
+            )
+        )
+
+        val table = JBTable(model).also {
+            it.rowSorter.sortKeys = listOf(RowSorter.SortKey(0, SortOrder.DESCENDING))
+        }
+
+        assertThat(table).satisfies {
+            assertThat(it.getValueAt(0, 0)).isEqualTo("11 Jul 2021")
+            assertThat(it.getValueAt(1, 0)).isEqualTo("11 Jun 2021")
+            assertThat(it.getValueAt(2, 0)).isEqualTo("1 Feb 2021")
         }
     }
 

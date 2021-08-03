@@ -11,7 +11,6 @@ import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
-import software.aws.toolkits.jetbrains.utils.ui.ResizingDateColumnRenderer
 import software.aws.toolkits.jetbrains.utils.ui.ResizingTextColumnRenderer
 import software.aws.toolkits.jetbrains.utils.ui.WrappingCellRenderer
 import software.aws.toolkits.jetbrains.utils.ui.setSelectionHighlighting
@@ -75,9 +74,13 @@ class LogGroupFilterTableSorter(model: ListTableModel<LogStream>) : TableRowSort
     }
 }
 
-class LogStreamDateColumn : ColumnInfo<LogStreamEntry, String>(message("general.time")) {
-    private val renderer = ResizingDateColumnRenderer(showSeconds = false)
-    override fun valueOf(item: LogStreamEntry?): String? = renderer.getText(item?.timestamp?.toString())
+class LogStreamDateColumn(private val format: SyncDateFormat? = null) : ColumnInfo<LogStreamEntry, String>(message("general.time")) {
+    private val renderer = ResizingTextColumnRenderer()
+    override fun valueOf(item: LogStreamEntry?): String? = TimeFormatConversion.convertEpochTimeToStringDateTime(
+        item?.timestamp,
+        showSeconds = true,
+        format = format
+    )
 
     override fun isCellEditable(item: LogStreamEntry?): Boolean = false
     override fun getRenderer(item: LogStreamEntry?): TableCellRenderer? = renderer
