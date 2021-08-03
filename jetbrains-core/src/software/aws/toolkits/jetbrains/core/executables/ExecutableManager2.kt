@@ -77,7 +77,7 @@ class ExecutableManager2 {
         }
 
         val baseVersionCompatability = isVersionValid(version, executable.type.supportedVersions())
-        if (baseVersionCompatability != Validity.Valid) {
+        if (baseVersionCompatability !is Validity.Valid) {
             return baseVersionCompatability
         }
 
@@ -87,7 +87,7 @@ class ExecutableManager2 {
             }
         }
 
-        return Validity.Valid
+        return Validity.Valid(version)
     }
 
     companion object {

@@ -19,7 +19,7 @@ data class VersionRange<T>(val minVersion: Version, val maxVersion: Version)
 
 fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Validity {
     if (ranges.isEmpty()) {
-        return Validity.Valid
+        return Validity.Valid(version)
     }
 
     val minVersions = ranges.map { it.minVersion }.sortedDescending()
@@ -32,5 +32,5 @@ fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Val
         return Validity.VersionTooNew(maxVersions.first()) // Sorted already so take the first which should be the greatest max version
     }
 
-    return Validity.Valid
+    return Validity.Valid(version)
 }

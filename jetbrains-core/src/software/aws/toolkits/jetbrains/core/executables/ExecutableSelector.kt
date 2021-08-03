@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.executables
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -13,14 +12,14 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.text.nullize
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.resources.message
+import java.awt.event.ActionListener
 import java.nio.file.Path
 import java.nio.file.Paths
 import javax.swing.JButton
 
-open class ExecutableSelector(private val type: ExecutableType2<*>, disposable: Disposable) : BorderLayoutPanel() {
+open class ExecutableSelector<T : ExecutableType2<*>>(private val type: T, private val validationResultHolder: Wrapper) : BorderLayoutPanel() {
     private val testButton = JButton("Check")
-    private val pathSelector = TextFieldWithBrowseButton(null, disposable)
-    private val errorHolder = Wrapper()
+    private val pathSelector = TextFieldWithBrowseButton(null as ActionListener?)
     private var autoDetectedPath = ""
 
     init {
@@ -33,23 +32,25 @@ open class ExecutableSelector(private val type: ExecutableType2<*>, disposable: 
 
         testButton.addActionListener {
             val pathToCheck = getConfiguredPath() ?: autoDetectedPath
-            val executable = checkExecutable(Paths.get(pathToCheck))
-
-            val errorComponent = executable.toErrorMessage(type)?.let {
-                val htmlLabel = "<html>${it.replace("\n", "<br/>")}</html>"
-                JBLabel(htmlLabel).apply {
-                    foreground = DialogWrapper.ERROR_FOREGROUND_COLOR
+            val label = when (val validity = checkExecutable(Paths.get(pathToCheck), type)) {
+                is Validity.Valid -> {
+                    JBLabel("<html>${type.displayName} version is ${validity.version.displayValue()}")
+                }
+                else -> {
+                    val message = "<html>${validity.toErrorMessage(type)?.replace("\n", "<br/>")}</html>"
+                    JBLabel(message).apply {
+                        foreground = DialogWrapper.ERROR_FOREGROUND_COLOR
+                    }
                 }
             }
 
-            errorHolder.setContent(errorComponent)
+            validationResultHolder.setContent(label)
 
             this.revalidate()
         }
 
         addToCenter(pathSelector)
         addToRight(testButton)
-        addToBottom(errorHolder)
     }
 
     fun reset() {
@@ -69,9 +70,9 @@ open class ExecutableSelector(private val type: ExecutableType2<*>, disposable: 
 
     private fun getConfiguredPath(): String? = pathSelector.text.trim().nullize()
 
-    open fun checkExecutable(executable: Path): Validity = ExecutableManager2.getInstance().validateCompatability(
+    open fun checkExecutable(executable: Path, type: T): Validity = ExecutableManager2.getInstance().validateCompatability(
         project = null,
         path = executable,
-        type = type
+        type = this.type
     )
 }
