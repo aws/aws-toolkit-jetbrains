@@ -72,11 +72,6 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
     override fun execute(environment: ExecutionEnvironment, state: RunProfileState): Promise<RunContentDescriptor?> {
         val runPromise = AsyncPromise<RunContentDescriptor?>()
-//        val runContentDescriptor = state.execute(environment.executor, this)?.let {
-//            RunContentBuilder(it, environment).showRunContent(environment.contentToReuse)
-//        }
-//
-//        runPromise.setResult(runContentDescriptor)
         ReadAction.nonBlocking<ExecutionResult> {
             state.execute(environment.executor, this)
         }.finishOnUiThread(ModalityState.any()) { executionResult ->
