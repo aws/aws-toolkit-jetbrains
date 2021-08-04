@@ -211,6 +211,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
 
     @Test
     fun `works when handler is 'main'`() {
+        assumeFalse(false) // TODO: fix when new build images are ready
         // fails if [Lambda.findPsiElementsForHandler] finds the handler in the Go standard library
         val sdkDir = GoSdkUtil.suggestSdkDirectory()!!.children.sortedByDescending { it.name }.first().canonicalPath!!
         VfsRootAccess.allowRootAccess(projectRule.project, sdkDir)
