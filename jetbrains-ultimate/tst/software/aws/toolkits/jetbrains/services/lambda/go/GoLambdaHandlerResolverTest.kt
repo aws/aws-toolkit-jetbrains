@@ -335,8 +335,6 @@ class GoLambdaHandlerResolverTest {
             if (shouldBeFound) {
                 assertThat(lambdas).hasSize(1)
                 assertThat(lambdas[0]).isInstanceOf(GoFunctionDeclaration::class.java)
-                // assert that the lambda was found in a temp directory (i.e. from the injected handler and not something from the go library)
-                assertThat(lambdas[0].containingFile.containingDirectory.isPhysical).isFalse
             } else {
                 assertThat(lambdas).isEmpty()
             }
