@@ -25,7 +25,8 @@ class ContainerCredentialProviderFactory : CredentialProviderFactory {
             override val id: String = "containerRoleCredential"
             override val displayName = "ecs:containerRole"
             override val factoryId = InstanceRoleCredentialProviderFactory.FACTORY_ID
-            override val credentialType: CredentialType = CredentialType.EcsMetadata
+            override val credentialType = CredentialType.EcsMetadata
+            override val defaultRegionId = System.getenv("AWS_REGION")
         }
     }
 

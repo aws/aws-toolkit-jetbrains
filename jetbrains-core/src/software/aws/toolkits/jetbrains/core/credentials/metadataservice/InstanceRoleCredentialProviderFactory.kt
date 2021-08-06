@@ -9,6 +9,7 @@ import software.amazon.awssdk.core.SdkSystemSetting
 import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.SdkHttpMethod
 import software.amazon.awssdk.http.SdkHttpRequest
+import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialSourceId
@@ -18,6 +19,7 @@ import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import java.io.IOException
 import java.net.URI
@@ -31,7 +33,13 @@ class InstanceRoleCredentialProviderFactory : CredentialProviderFactory {
             override val id: String = "ec2InstanceRoleCredential"
             override val displayName = "ec2:instanceProfile"
             override val factoryId = FACTORY_ID
-            override val credentialType: CredentialType = CredentialType.Ec2Metadata
+            override val credentialType = CredentialType.Ec2Metadata
+            override val defaultRegionId = try {
+                EC2MetadataUtils.getEC2InstanceRegion()
+            } catch (e: Exception) {
+                LOG.warn(e) { "Failed to query instance region from ec2 instance metadata" }
+                null
+            }
         }
     }
 
