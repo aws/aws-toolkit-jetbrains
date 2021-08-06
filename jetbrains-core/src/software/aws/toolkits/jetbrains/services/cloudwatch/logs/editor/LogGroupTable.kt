@@ -55,8 +55,8 @@ class LogGroupTable(
 
     init {
         val (sortColumn, sortOrder) = when (type) {
-            TableType.LIST -> 1 to SortOrder.DESCENDING
-            TableType.FILTER -> 1 to SortOrder.ASCENDING
+            TableType.LIST -> 1 to SortOrder.DESCENDING // Sort by event time, most recent first
+            TableType.FILTER -> 0 to SortOrder.ASCENDING // Sort by name alphabetically
         }
         val tableModel = ListTableModel(
             arrayOf(LogStreamsStreamColumn(sortable = type == TableType.FILTER), LogStreamsDateColumn(sortable = type == TableType.LIST)),
