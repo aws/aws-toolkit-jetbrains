@@ -6,9 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials.metadataservice
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider
 import software.amazon.awssdk.core.SdkSystemSetting
-import software.amazon.awssdk.http.HttpExecuteRequest
-import software.amazon.awssdk.http.SdkHttpMethod
-import software.amazon.awssdk.http.SdkHttpRequest
 import software.amazon.awssdk.regions.internal.util.EC2MetadataUtils
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
@@ -20,9 +17,6 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsSdkClient
-import java.io.IOException
-import java.net.URI
 
 class InstanceRoleCredentialProviderFactory : CredentialProviderFactory {
     override val id = FACTORY_ID
@@ -43,6 +37,10 @@ class InstanceRoleCredentialProviderFactory : CredentialProviderFactory {
         }
     }
 
+    private val provider = InstanceProfileCredentialsProvider.builder()
+        .asyncCredentialUpdateEnabled(false)
+        .build()
+
     override fun setUp(credentialLoadCallback: CredentialsChangeListener) {
         if (SdkSystemSetting.AWS_EC2_METADATA_DISABLED.booleanValue.orElse(false)) {
             LOG.debug { "EC2 metadata provider disabled by system setting" }
@@ -55,27 +53,11 @@ class InstanceRoleCredentialProviderFactory : CredentialProviderFactory {
             return
         }
 
-        val client = AwsSdkClient.getInstance().sharedSdkClient()
-        val uri = URI.create(endpoint)
-        // URI = scheme:[//authority]path[?query][#fragment]
-        val request = client.prepareRequest(
-            HttpExecuteRequest.builder().request(
-                SdkHttpRequest.builder()
-                    .method(SdkHttpMethod.HEAD)
-                    .protocol(uri.scheme)
-                    .host(uri.authority)
-                    .build()
-            ).build()
-        )
-
         try {
-            val response = request.call().httpResponse()
-            if (!response.isSuccessful) {
-                LOG.debug { "HEAD request to ec2 metadata failed" }
-                return
-            }
-        } catch (e: IOException) {
-            LOG.debug(e) { "Skipping instance role credential provider since endpoint failed to connect" }
+            provider.resolveCredentials()
+        } catch (e: Exception) {
+            provider.close()
+            LOG.debug { "Instance role credential provider failed to resolve credentials" }
             return
         }
 
@@ -89,9 +71,7 @@ class InstanceRoleCredentialProviderFactory : CredentialProviderFactory {
     }
 
     override fun createAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): AwsCredentialsProvider =
-        InstanceProfileCredentialsProvider.builder()
-            .asyncCredentialUpdateEnabled(false)
-            .build()
+        provider
 
     companion object {
         const val FACTORY_ID = "InstanceRoleCredentialProviderFactory"

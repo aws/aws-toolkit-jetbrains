@@ -53,6 +53,8 @@ class ContainerCredentialProviderFactoryTest {
 
     @Before
     fun setUp() {
+        System.setProperty(SdkSystemSetting.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI.property(), "")
+        System.setProperty(SdkSystemSetting.AWS_CONTAINER_CREDENTIALS_FULL_URI.property(), "")
         profileLoadCallback.stub {
             on { profileLoadCallback.invoke(credentialChangeEvent.capture()) }.thenReturn(Unit)
         }
@@ -88,8 +90,9 @@ class ContainerCredentialProviderFactoryTest {
 
     @Test
     fun `credentials can be resolved`() {
-        // only testing full_uri; assume sdk handles relative_uri properly for us
+        // assume sdk handles full_uri/relative_uri properly for us
         System.setProperty(SdkSystemSetting.AWS_CONTAINER_CREDENTIALS_FULL_URI.property(), "http://localhost:${wireMockRule.port()}")
+        System.setProperty(SdkSystemSetting.AWS_CONTAINER_SERVICE_ENDPOINT.property(), "http://localhost:${wireMockRule.port()}")
         wireMockRule.stubFor(
             any(urlPathEqualTo("/"))
                 .willReturn(

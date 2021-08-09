@@ -24,16 +24,16 @@ class ContainerCredentialProviderFactory : CredentialProviderFactory {
         object : CredentialIdentifier {
             override val id: String = "containerRoleCredential"
             override val displayName = "ecs:containerRole"
-            override val factoryId = InstanceRoleCredentialProviderFactory.FACTORY_ID
+            override val factoryId = FACTORY_ID
             override val credentialType = CredentialType.EcsMetadata
             override val defaultRegionId = System.getenv("AWS_REGION")
         }
     }
 
     override fun setUp(credentialLoadCallback: CredentialsChangeListener) {
-        if (!SdkSystemSetting.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI.stringValue.isPresent &&
-            !SdkSystemSetting.AWS_CONTAINER_CREDENTIALS_FULL_URI.stringValue.isPresent
-        ) {
+        // deviates from SDK behavior by treating the empty value as unset
+        val credSettings = arrayOf(SdkSystemSetting.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI, SdkSystemSetting.AWS_CONTAINER_CREDENTIALS_FULL_URI)
+        if (credSettings.none { it.stringValue.orElse("").isNotBlank() }) {
             getLogger<ContainerCredentialProviderFactory>().debug {
                 "Skipping container credential provider since container credentials environment variables were not available"
             }
@@ -54,4 +54,8 @@ class ContainerCredentialProviderFactory : CredentialProviderFactory {
         ContainerCredentialsProvider.builder()
             .asyncCredentialUpdateEnabled(false)
             .build()
+
+    companion object {
+        const val FACTORY_ID = "ContainerCredentialProviderFactory"
+    }
 }

@@ -22,7 +22,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.core.SdkSystemSetting
-import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
@@ -51,7 +50,6 @@ class InstanceRoleCredentialProviderFactoryTest {
     @JvmField
     val disposableRule = DisposableRule()
 
-    private val mockSdkHttpClient = mock<SdkHttpClient>()
     private val profileLoadCallback = mock<CredentialsChangeListener>()
     private val credentialChangeEvent = argumentCaptor<CredentialsChangeEvent>()
     private val sut = InstanceRoleCredentialProviderFactory()
@@ -86,6 +84,12 @@ class InstanceRoleCredentialProviderFactoryTest {
                             }
                         """.trimIndent()
                     )
+                )
+        )
+        wireMockRule.stubFor(
+            any(urlPathEqualTo("/latest/dynamic/instance-identity/document"))
+                .willReturn(
+                    aResponse().withBody("""{"region": "us-fake-1"}""")
                 )
         )
     }
