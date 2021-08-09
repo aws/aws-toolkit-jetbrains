@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
-import com.intellij.execution.ExecutionResult
 import com.intellij.execution.configurations.RunProfile
 import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.configurations.RunnerSettings
@@ -13,10 +12,6 @@ import com.intellij.execution.runners.AsyncProgramRunner
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.RunContentBuilder
 import com.intellij.execution.ui.RunContentDescriptor
-import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.application.runInEdt
-import com.intellij.util.concurrency.AppExecutorUtil
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
 import org.slf4j.event.Level

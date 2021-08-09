@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTem
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
-import java.io.File
 import java.nio.file.Files
 
 class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", LambdaRuntime.DOTNETCORE2_1)
