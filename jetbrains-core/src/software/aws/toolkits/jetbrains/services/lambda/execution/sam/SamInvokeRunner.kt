@@ -15,6 +15,7 @@ import com.intellij.execution.runners.RunContentBuilder
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.runInEdt
 import com.intellij.util.concurrency.AppExecutorUtil
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
@@ -72,14 +73,11 @@ class SamInvokeRunner : AsyncProgramRunner<RunnerSettings>() {
 
     override fun execute(environment: ExecutionEnvironment, state: RunProfileState): Promise<RunContentDescriptor?> {
         val runPromise = AsyncPromise<RunContentDescriptor?>()
-        ReadAction.nonBlocking<ExecutionResult> {
-            state.execute(environment.executor, this)
-        }.finishOnUiThread(ModalityState.any()) { executionResult ->
-            executionResult?.let {
-                val runContent = RunContentBuilder(it, environment).showRunContent(environment.contentToReuse)
-                runPromise.setResult(runContent)
-            }
-        }.submit(AppExecutorUtil.getAppExecutorService())
+        val runContentDescriptor = state.execute(environment.executor, this)?.let {
+            RunContentBuilder(it, environment).showRunContent(environment.contentToReuse)
+        }
+
+        runPromise.setResult(runContentDescriptor)
 
         return runPromise
     }

@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.utils
 
+import com.intellij.execution.ExecutionListener
+import com.intellij.execution.ExecutionManager
 import com.intellij.execution.ExecutorRegistry
 import com.intellij.execution.Output
 import com.intellij.execution.OutputListener
@@ -11,6 +13,7 @@ import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.application.runInEdt
@@ -48,26 +51,28 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
     // In the real world create and execute runs on EDT
     runInEdt {
         try {
-            val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration).build()
+            val runner = ProgramRunner.getRunner(executorId, runConfiguration)!!
+            val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration)
+                .runner(runner)
+                .build {
+                it.processHandler!!.addProcessListener(
+                    object : OutputListener() {
+                        override fun processTerminated(event: ProcessEvent) {
+                            super.processTerminated(event)
+                            // if using the default step executor as the process handle, need to pull text from it or it will be empty
+                            // otherwise, pull the output from the process itself
+                            val output = (it.processHandler as? StepExecutor.StepExecutorProcessHandler)?.getFinalOutput() ?: this.output
+                            executionFuture.complete(output)
+                        }
+                    }
+                )
+            }
             // Hack: Normally this is handled through the ProgramRunner and RunContentDescriptor, but since we bypass ProgramRunner we need to do it ourselves
             Disposer.register(executionEnvironment.project, executionEnvironment)
-            // Bypass ProgramRunner since AsyncProgramRunner has no ability for us to wait
-            val execute = executionEnvironment.state!!.execute(executionEnvironment.executor, executionEnvironment.runner)!!
-            execute.processHandler.addProcessListener(
-                object : OutputListener() {
-                    override fun processTerminated(event: ProcessEvent) {
-                        super.processTerminated(event)
-                        // if using the default step executor as the process handle, need to pull text from it or it will be empty
-                        // otherwise, pull the output from the process itself
-                        val output = (execute.processHandler as? StepExecutor.StepExecutorProcessHandler)?.getFinalOutput() ?: this.output
-                        executionFuture.complete(output)
-                    }
-                }
-            )
-            if (!execute.processHandler.isStartNotified) {
-                execute.processHandler.startNotify()
-            }
-        } catch (e: Exception) {
+
+            // TODO: exception isn't propagated out and test is forced to wait to timeout instead of exiting immediately
+            runner.execute(executionEnvironment)
+        } catch (e: Throwable) {
             executionFuture.completeExceptionally(e)
         }
     }
