@@ -106,7 +106,7 @@ class NodeJsLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             project = projectRule.project,
             runtime = runtime,
             handler = "hello_world/app.lambdaHandler",
-            input = projectRule.fixture.tempDirFixture.createFile("tmp", "Hello World").canonicalPath!!,
+            input = projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!,
             inputIsFile = true,
             credentialsProviderId = mockCredentialsId
         )
