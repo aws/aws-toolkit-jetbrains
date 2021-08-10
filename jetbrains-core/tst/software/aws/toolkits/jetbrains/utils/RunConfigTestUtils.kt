@@ -29,6 +29,7 @@ import org.junit.Assume.assumeTrue
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
+import software.aws.toolkits.jetbrains.services.lambda.execution.TEST_PROCESS_LISTENER
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon.Companion.minImageVersion
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
@@ -51,19 +52,21 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
             val runner = ProgramRunner.getRunner(executorId, runConfiguration)!!
             val executionEnvironment = ExecutionEnvironmentBuilder.create(executor, runConfiguration)
                 .runner(runner)
-                .build {
-                    it.processHandler!!.addProcessListener(
-                        object : OutputListener() {
-                            override fun processTerminated(event: ProcessEvent) {
-                                super.processTerminated(event)
-                                // if using the default step executor as the process handle, need to pull text from it or it will be empty
-                                // otherwise, pull the output from the process itself
-                                val output = (it.processHandler as? StepExecutor.StepExecutorProcessHandler)?.getFinalOutput() ?: this.output
-                                executionFuture.complete(output)
-                            }
-                        }
-                    )
+                .build()
+
+            executionEnvironment.putUserData(
+                TEST_PROCESS_LISTENER,
+                object : OutputListener() {
+                    override fun processTerminated(event: ProcessEvent) {
+                        super.processTerminated(event)
+                        // if using the default step executor as the process handle, need to pull text from it or it will be empty
+                        // otherwise, pull the output from the process itself
+                        val output = (event.processHandler as? StepExecutor.StepExecutorProcessHandler)?.getFinalOutput() ?: this.output
+                        executionFuture.complete(output)
+                    }
                 }
+            )
+
             // Hack: Normally this is handled through the ProgramRunner and RunContentDescriptor, but since we bypass ProgramRunner we need to do it ourselves
             Disposer.register(executionEnvironment.project, executionEnvironment)
 

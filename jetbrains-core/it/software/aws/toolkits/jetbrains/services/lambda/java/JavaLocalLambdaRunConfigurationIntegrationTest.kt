@@ -114,7 +114,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
-            input = projectRule.fixture.tempDirFixture.createFile("tmp", "Hello World").canonicalPath!!,
+            input = projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!,
             inputIsFile = true,
             credentialsProviderId = mockId
         )
