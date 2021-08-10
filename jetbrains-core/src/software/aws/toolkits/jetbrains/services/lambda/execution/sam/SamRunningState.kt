@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.PathMapping
 import software.aws.toolkits.jetbrains.services.lambda.LambdaBuilder
-import software.aws.toolkits.jetbrains.services.lambda.execution.TEST_PROCESS_LISTENER
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.steps.AttachDebugger
@@ -79,10 +78,6 @@ class SamRunningState(
 
         pathMappings = createPathMappings(lambdaBuilder, settings, buildLambdaRequest)
         val buildWorkflow = buildWorkflow(environment, settings, this, buildLambdaRequest, buildView)
-
-        environment.getUserData(TEST_PROCESS_LISTENER)?.let {
-            buildWorkflow.addProcessListener(it)
-        }
 
         return DefaultExecutionResult(buildView, buildWorkflow)
     }
