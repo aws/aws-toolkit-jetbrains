@@ -3,22 +3,24 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.util.text.SemVer
 import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
 import software.aws.toolkits.jetbrains.core.tools.SemanticVersion
 import software.aws.toolkits.jetbrains.core.tools.ToolType
 import software.aws.toolkits.jetbrains.core.tools.VersionRange
 import software.aws.toolkits.jetbrains.settings.ExecutableDetector
-import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths
 
-object SamExecutable2 : ToolType<SemanticVersion>, AutoResolvable {
-    val MIN_VERSION = SemanticVersion(SemVer("1.0.0", 1, 0, 0))
-    val MAX_VERSION = SemanticVersion(SemVer("2.0.0", 2, 0, 0))
+object SamCli : ToolType<SemanticVersion>, AutoResolvable {
+    private val MIN_VERSION = SemanticVersion(1, 0, 0)
+    private val MAX_VERSION = SemanticVersion( 2, 0, 0)
+
+    // The minimum SAM CLI version required for images. TODO remove when sam min > 1.13.0
+    val MIN_IMAGE_VERSION = SemanticVersion(1, 13, 0)
 
     override val displayName: String = "SAM CLI"
     override val id: String = "samCli"
@@ -29,11 +31,9 @@ object SamExecutable2 : ToolType<SemanticVersion>, AutoResolvable {
             throw IllegalStateException(output.stderr)
         }
 
-        val tree = SamCommon.mapper.readTree(output.stdout)
+        val tree = jacksonObjectMapper().readTree(output.stdout)
         val version = tree.get(SamCommon.SAM_INFO_VERSION_KEY).asText()
-        return SemanticVersion(
-            SemVer.parseFromText(version) ?: throw IllegalStateException(message("executableCommon.version_parse_error", SamCommon.SAM_NAME, version))
-        )
+        return SemanticVersion.parse(version)
     }
 
     override fun supportedVersions(): List<VersionRange<SemanticVersion>> = listOf(VersionRange(MIN_VERSION, MAX_VERSION))

@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.core.tools.toValidationInfo
 import software.aws.toolkits.jetbrains.services.lambda.minSamInitVersion
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable2
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCli
 import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
@@ -39,7 +39,7 @@ class SamInitSelectionPanel(
     private lateinit var packageZip: JRadioButton
     private lateinit var templateComboBox: ComboBox<SamProjectTemplate>
     private lateinit var fragments: Wrapper
-    private lateinit var executableSelector: ToolPathSelector<SamExecutable2>
+    private lateinit var executableSelector: ToolPathSelector<SamCli>
     private lateinit var executableResult: Wrapper
 
     private val wizardFragments: Map<WizardFragment, JComponent>
@@ -89,7 +89,7 @@ class SamInitSelectionPanel(
 
     private fun createUIComponents() {
         executableResult = Wrapper()
-        executableSelector = ToolPathSelector(SamExecutable2, executableResult).apply { reset() }
+        executableSelector = ToolPathSelector(SamCli, executableResult).apply { reset() }
     }
 
     // Source all templates, find all the runtimes they support, then filter those by what the IDE supports
@@ -162,7 +162,7 @@ class SamInitSelectionPanel(
         executableSelector.apply()
 
         val toolManager = ToolManager.getInstance()
-        val samExecutable2 = toolManager.getExecutable(SamExecutable2)
+        val samExecutable2 = toolManager.getExecutable(SamCli)
 
         val stricterMinVersion = listOfNotNull(
             if (packageType() == PackageType.IMAGE) SamCommon.minImageVersion else null,
@@ -177,7 +177,7 @@ class SamInitSelectionPanel(
             stricterMinVersion = stricterMinVersion
         )
 
-        validity.toValidationInfo(SamExecutable2)?.let {
+        validity.toValidationInfo(SamCli)?.let {
             return it
         }
 

@@ -3,10 +3,25 @@
 
 package software.aws.toolkits.jetbrains.core.tools
 
-import com.intellij.util.text.SemVer
+data class SemanticVersion(val major: Int, val minor: Int, val patch: Int) : Version {
+    override fun displayValue(): String = "$major.$minor.$patch"
 
-data class SemanticVersion(private val version: SemVer) : Version {
-    override fun displayValue(): String = version.toString()
+    // TODO: Support pre-release
+    override fun compareTo(other: Version): Int = COMPARATOR.compare(this, other as SemanticVersion)
 
-    override fun compareTo(other: Version): Int = version.compareTo((other as SemanticVersion).version)
+    companion object {
+        private val COMPARATOR = compareBy<SemanticVersion> { it.major }
+            .thenBy { it.minor }
+            .thenBy { it.patch }
+
+        fun parse(version: String): SemanticVersion {
+            val parts = version.split(".", limit = 3)
+            if (parts.size != 3) {
+                throw IllegalArgumentException("$version not in the format of MAJOR.MINOR.PATH")
+            }
+
+            val patch = parts[3].substringBefore("-").toInt()
+            return SemanticVersion(parts[0].toInt(), parts[1].toInt(), patch)
+        }
+    }
 }
