@@ -7,7 +7,7 @@ interface Version : Comparable<Version> {
     fun displayValue(): String
 }
 
-data class VersionRange<T>(val minVersion: Version, val maxVersion: Version)
+infix fun <T: Version> T.until(that: T): VersionRange<T> = VersionRange(this, that)
 
 fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Validity {
     if (ranges.isEmpty()) {
@@ -26,3 +26,5 @@ fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Val
 
     return Validity.Valid(version)
 }
+
+data class VersionRange<T: Version>(val minVersion: T, val maxVersion: T)

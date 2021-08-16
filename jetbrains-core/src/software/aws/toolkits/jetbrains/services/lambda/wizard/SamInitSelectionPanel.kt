@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.core.tools.ToolPathSelector
 import software.aws.toolkits.jetbrains.core.tools.toValidationInfo
 import software.aws.toolkits.jetbrains.services.lambda.minSamInitVersion
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCli
 import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.resources.message
@@ -165,11 +164,11 @@ class SamInitSelectionPanel(
         val samExecutable2 = toolManager.getExecutable(SamCli)
 
         val stricterMinVersion = listOfNotNull(
-            if (packageType() == PackageType.IMAGE) SamCommon.minImageVersion else null,
-            selectedRuntime.minSamInitVersion()
-        ).max()?.let {
-            SemanticVersion(it)
-        }
+            if (packageType() == PackageType.IMAGE) SamCli.MIN_IMAGE_VERSION else null,
+            selectedRuntime.minSamInitVersion().run {
+                SemanticVersion(major, minor, patch)
+            }
+        ).max()
 
         val validity = toolManager.validateCompatability(
             project = null,

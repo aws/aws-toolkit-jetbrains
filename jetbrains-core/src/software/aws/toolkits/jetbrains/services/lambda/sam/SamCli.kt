@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
 import software.aws.toolkits.jetbrains.core.tools.SemanticVersion
 import software.aws.toolkits.jetbrains.core.tools.ToolType
 import software.aws.toolkits.jetbrains.core.tools.VersionRange
+import software.aws.toolkits.jetbrains.core.tools.until
 import software.aws.toolkits.jetbrains.settings.ExecutableDetector
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -36,7 +37,7 @@ object SamCli : ToolType<SemanticVersion>, AutoResolvable {
         return SemanticVersion.parse(version)
     }
 
-    override fun supportedVersions(): List<VersionRange<SemanticVersion>> = listOf(VersionRange(MIN_VERSION, MAX_VERSION))
+    override fun supportedVersions(): List<VersionRange<SemanticVersion>> = listOf(MIN_VERSION until MAX_VERSION)
 
     override fun resolve(): Path? {
         val path = (
