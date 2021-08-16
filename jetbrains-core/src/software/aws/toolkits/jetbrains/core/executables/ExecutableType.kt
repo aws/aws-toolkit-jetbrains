@@ -13,8 +13,6 @@ interface ExecutableType<VersionScheme> {
     val id: String
     val displayName: String
 
-    fun supportedVersions(): List<VersionRange<VersionScheme>> = emptyList()
-
     /**
      * Determine the version number of the given path
      */
@@ -34,36 +32,6 @@ interface ExecutableType<VersionScheme> {
     }
 }
 
-/**
- * Represents an executable external program such as a CLI
- *
- * Note: It is recommended that all implementations of this interface are stateless and are an `object`
- */
-interface ExecutableType2<VersionScheme : Version> {
-    /**
-     * ID used to represent the executable in caches and settings. Must be globally unique
-     */
-    val id: String
-
-    /**
-     * Name of the executable for users, e.g. the marketing name of the executable
-     */
-    val displayName: String
-
-    /**
-     * List of supported [VersionRange]. An empty list means any version is supported
-     */
-    fun supportedVersions(): List<VersionRange<VersionScheme>> = emptyList()
-
-    /**
-     * Returns the [Version] for the executable of this type located at the specified location
-     */
-    fun determineVersion(path: Path): VersionScheme
-}
-
-/**
- * Indicates that a [ExecutableType2] can be auto-discovered for the user
- */
 interface AutoResolvable {
     /**
      * Attempt to automatically resolve the path
@@ -74,21 +42,7 @@ interface AutoResolvable {
     fun resolve(): Path?
 }
 
-interface Managed : AutoResolvable {
-    // TODO: How do we want to handle updating....do we block the usage? Download and then lock its usage while installed?
-
-    /**
-     * Attempt to automatically install the tool to Toolkit's managed location
-     *
-     * @return the installed path. This **must** return the same path as [AutoResolvable.resolve]
-     * @throws Exception if the installation failed
-     */
-    fun install(): Path
-
-    fun isUpdateAvailable(): Boolean
-}
-
-@Deprecated("Should not be used, delete after ExecutableManager2 migration")
+@Deprecated("Should not be used, delete after ToolManager migration")
 interface Validatable {
     /**
      * Validate the executable at the given path, beyond being a supported version to ensure this executable is compatible wit the toolkit.

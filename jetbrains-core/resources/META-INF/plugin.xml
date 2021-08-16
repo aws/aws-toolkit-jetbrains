@@ -171,8 +171,8 @@ with what features/services are supported.
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.executables.ExecutableManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.executables.DefaultExecutableManager"/>
 
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.executables.ExecutableSettings"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.executables.ExecutableManager2"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.tools.ToolSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.tools.ToolManager"/>
 
         <applicationService serviceInterface="software.aws.toolkits.core.ToolkitClientManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"

@@ -1,25 +1,29 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.executables
+package software.aws.toolkits.jetbrains.core.tools
 
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.util.text.SemVer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.jetbrains.core.tools.SemanticVersion
+import software.aws.toolkits.jetbrains.core.tools.ToolSettings
+import software.aws.toolkits.jetbrains.core.tools.ToolType
+import software.aws.toolkits.jetbrains.core.tools.VersionRange
 import software.aws.toolkits.jetbrains.utils.deserializeState
 import software.aws.toolkits.jetbrains.utils.serializeState
 import java.nio.file.Path
 
-class ExecutableSettingsTest {
+class ToolSettingsTest {
     @Rule
     @JvmField
     val application = ApplicationRule()
 
     @Test
     fun `state can be loaded`() {
-        val settings = ExecutableSettings.getInstance()
+        val settings = ToolSettings.getInstance()
 
         deserializeState(
             """
@@ -43,7 +47,7 @@ class ExecutableSettingsTest {
 
     @Test
     fun `state can be saved`() {
-        val settings = ExecutableSettings.getInstance()
+        val settings = ToolSettings.getInstance()
         settings.setExecutablePath(TestExecutable, "/some/path")
 
         assertThat(serializeState("executables", settings))
@@ -64,8 +68,8 @@ class ExecutableSettingsTest {
             )
     }
 
-    object TestExecutable : ExecutableType2<SemanticVersion> {
-        override val displayName: String = "Test Executable"
+    object TestExecutable : ToolType<SemanticVersion> {
+        override val displayName: String = "Test Tool"
         override val id: String = "testExecutable"
 
         override fun determineVersion(path: Path) = SemanticVersion(SemVer("1.2.3", 1, 2, 3))

@@ -1,16 +1,16 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.executables
+package software.aws.toolkits.jetbrains.core.tools
 
 import java.nio.file.Path
 
-class Executable<out T : ExecutableType2<*>>(val type: T, val path: Path) {
+class Tool<out T : ToolType<*>>(val type: T, val path: Path) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as Executable<*>
+        other as Tool<*>
 
         if (type.id != other.type.id) return false
         if (path != other.path) return false

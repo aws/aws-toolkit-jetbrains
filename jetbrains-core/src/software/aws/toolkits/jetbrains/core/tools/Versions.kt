@@ -1,18 +1,10 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.executables
-
-import com.intellij.util.text.SemVer
+package software.aws.toolkits.jetbrains.core.tools
 
 interface Version : Comparable<Version> {
     fun displayValue(): String
-}
-
-data class SemanticVersion(private val version: SemVer) : Version {
-    override fun displayValue(): String = version.toString()
-
-    override fun compareTo(other: Version): Int = version.compareTo((other as SemanticVersion).version)
 }
 
 data class VersionRange<T>(val minVersion: Version, val maxVersion: Version)

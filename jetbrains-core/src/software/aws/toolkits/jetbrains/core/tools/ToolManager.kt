@@ -1,26 +1,27 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.executables
+package software.aws.toolkits.jetbrains.core.tools
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.ExceptionUtil
+import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class ExecutableManager2 {
-    private val versionCache = ExecutableVersionCache()
+class ToolManager {
+    private val versionCache = ToolVersionCache()
 
-    fun <T : ExecutableType2<V>, V : Version> getExecutable(type: T): Executable<T>? = getExecutablePath(type)?.let { getExecutable(type, it) }
-    fun <T : ExecutableType2<V>, V : Version> getExecutable(type: T, path: Path): Executable<T> = Executable(type, path)
+    fun <T : ToolType<V>, V : Version> getExecutable(type: T): Tool<T>? = getExecutablePath(type)?.let { getExecutable(type, it) }
+    fun <T : ToolType<V>, V : Version> getExecutable(type: T, path: Path): Tool<T> = Tool(type, path)
 
-    private fun <T : ExecutableType2<*>> getExecutablePath(type: T): Path? {
+    private fun <T : ToolType<*>> getExecutablePath(type: T): Path? {
         // Check if user gave a custom path
-        ExecutableSettings.getInstance().getExecutablePath(type)?.let {
+        ToolSettings.getInstance().getExecutablePath(type)?.let {
             return Paths.get(it)
         }
 
@@ -33,14 +34,14 @@ class ExecutableManager2 {
         null
     }
 
-    fun <T : Version> determineVersion(executable: Executable<ExecutableType2<T>>): T {
+    fun <T : Version> determineVersion(tool: Tool<ToolType<T>>): T {
         assertIsNonDispatchThread()
 
-        return when (val result = versionCache.getValue(executable)) {
-            is Result.Failure -> {
-                throw RuntimeException(message("failed to identify version of {0}", executable.type.displayName), result.reason)
+        return when (val result = versionCache.getValue(tool)) {
+            is ToolVersionCache.Result.Failure -> {
+                throw RuntimeException(message("failed to identify version of {0}", tool.type.displayName), result.reason)
             }
-            is Result.Success<T> -> {
+            is ToolVersionCache.Result.Success<T> -> {
                 result.version
             }
         }
@@ -49,34 +50,34 @@ class ExecutableManager2 {
     fun <T : Version> validateCompatability(
         project: Project?,
         path: Path,
-        type: ExecutableType2<T>,
+        type: ToolType<T>,
         stricterMinVersion: T? = null
     ): Validity = validateCompatability(project, getExecutable(type, path), stricterMinVersion)
 
     fun <T : Version> validateCompatability(
         project: Project?,
-        executable: Executable<ExecutableType2<T>>?,
+        tool: Tool<ToolType<T>>?,
         stricterMinVersion: T? = null
     ): Validity {
-        if (executable == null) {
+        if (tool == null) {
             return Validity.NotInstalled()
         }
 
 //        return runUnderProgressIfNeeded(project, message("version.progress.title"), false) {
         return runUnderProgressIfNeeded(project, "Validating CLI", false) {
-            determineCompatability(executable, stricterMinVersion)
+            determineCompatability(tool, stricterMinVersion)
         }
     }
 
-    private fun <T : Version> determineCompatability(executable: Executable<ExecutableType2<T>>, stricterMinVersion: T?): Validity {
+    private fun <T : Version> determineCompatability(tool: Tool<ToolType<T>>, stricterMinVersion: T?): Validity {
         assertIsNonDispatchThread()
 
-        val version = when (val cacheResult = versionCache.getValue(executable)) {
-            is Result.Failure -> return Validity.NotInstalled(ExceptionUtil.getMessage(cacheResult.reason))
-            is Result.Success -> cacheResult.version
+        val version = when (val cacheResult = versionCache.getValue(tool)) {
+            is ToolVersionCache.Result.Failure -> return Validity.NotInstalled(ExceptionUtil.getMessage(cacheResult.reason))
+            is ToolVersionCache.Result.Success -> cacheResult.version
         }
 
-        val baseVersionCompatability = isVersionValid(version, executable.type.supportedVersions())
+        val baseVersionCompatability = isVersionValid(version, tool.type.supportedVersions())
         if (baseVersionCompatability !is Validity.Valid) {
             return baseVersionCompatability
         }
@@ -92,6 +93,6 @@ class ExecutableManager2 {
 
     companion object {
         @JvmStatic
-        fun getInstance(): ExecutableManager2 = service()
+        fun getInstance(): ToolManager = service()
     }
 }

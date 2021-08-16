@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.executables
+package software.aws.toolkits.jetbrains.core.tools
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.ui.DialogWrapper
@@ -17,14 +17,14 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import javax.swing.JButton
 
-open class ExecutableSelector<T : ExecutableType2<*>>(private val type: T, private val validationResultHolder: Wrapper) : BorderLayoutPanel() {
+open class ToolPathSelector<T : ToolType<*>>(private val type: T, private val validationResultHolder: Wrapper) : BorderLayoutPanel() {
     private val testButton = JButton("Check")
     private val pathSelector = TextFieldWithBrowseButton(null as ActionListener?)
     private var autoDetectedPath = ""
 
     init {
         pathSelector.addBrowseFolderListener(
-            "Select Executable",
+            "Select Tool",
             null,
             null,
             FileChooserDescriptorFactory.createSingleFileDescriptor(),
@@ -54,7 +54,7 @@ open class ExecutableSelector<T : ExecutableType2<*>>(private val type: T, priva
     }
 
     fun reset() {
-        autoDetectedPath = ExecutableManager2.getInstance().detectExecutable(type)?.toString() ?: ""
+        autoDetectedPath = ToolManager.getInstance().detectExecutable(type)?.toString() ?: ""
 
         val emptyText = if (autoDetectedPath.isNotBlank()) {
             message("executableCommon.auto_resolved", autoDetectedPath)
@@ -65,12 +65,12 @@ open class ExecutableSelector<T : ExecutableType2<*>>(private val type: T, priva
     }
 
     fun apply() {
-        ExecutableSettings.getInstance().setExecutablePath(type, getConfiguredPath())
+        ToolSettings.getInstance().setExecutablePath(type, getConfiguredPath())
     }
 
     private fun getConfiguredPath(): String? = pathSelector.text.trim().nullize()
 
-    open fun checkExecutable(executable: Path, type: T): Validity = ExecutableManager2.getInstance().validateCompatability(
+    open fun checkExecutable(executable: Path, type: T): Validity = ToolManager.getInstance().validateCompatability(
         project = null,
         path = executable,
         type = this.type
