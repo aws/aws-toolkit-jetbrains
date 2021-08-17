@@ -18,7 +18,7 @@ import java.nio.file.Paths
 
 object SamCli : ToolType<SemanticVersion>, AutoResolvable {
     private val MIN_VERSION = SemanticVersion(1, 0, 0)
-    private val MAX_VERSION = SemanticVersion( 2, 0, 0)
+    private val MAX_VERSION = SemanticVersion(2, 0, 0)
 
     // The minimum SAM CLI version required for images. TODO remove when sam min > 1.13.0
     val MIN_IMAGE_VERSION = SemanticVersion(1, 13, 0)

@@ -46,7 +46,7 @@ class ToolManager {
      *
      * @return Either the path to the tool if found, or null if the tool can't be found or not auto-detectable
      */
-    fun <T: ToolType<*>> detectTool(type: T): Path? = if (type is AutoDetectable) {
+    fun <T : ToolType<*>> detectTool(type: T): Path? = if (type is AutoDetectable) {
         type.resolve()
     } else {
         null

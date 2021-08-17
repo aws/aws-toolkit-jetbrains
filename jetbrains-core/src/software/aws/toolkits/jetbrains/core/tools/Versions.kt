@@ -40,5 +40,5 @@ fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Val
  * @property minVersion The minimum version supported, inclusive.
  * @property maxVersion The maximum version supported, exclusive.
  */
-data class VersionRange<T: Version>(val minVersion: T, val maxVersion: T)
-infix fun <T: Version> T.until(that: T): VersionRange<T> = VersionRange(this, that)
+data class VersionRange<T : Version>(val minVersion: T, val maxVersion: T)
+infix fun <T : Version> T.until(that: T): VersionRange<T> = VersionRange(this, that)
