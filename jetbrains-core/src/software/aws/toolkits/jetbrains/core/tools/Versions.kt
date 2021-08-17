@@ -3,12 +3,19 @@
 
 package software.aws.toolkits.jetbrains.core.tools
 
+/**
+ * Top level interface for different versioning schemes such as semantic version
+ */
 interface Version : Comparable<Version> {
+    /**
+     * @return Human-readable representation of the version
+     */
     fun displayValue(): String
 }
 
-infix fun <T: Version> T.until(that: T): VersionRange<T> = VersionRange(this, that)
-
+/**
+ * @return true if the specified version is compatible with any of the specified version ranges. Always returns true if no ranges are specified.
+ */
 fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Validity {
     if (ranges.isEmpty()) {
         return Validity.Valid(version)
@@ -27,4 +34,11 @@ fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Val
     return Validity.Valid(version)
 }
 
+/**
+ * Represents a range of versions.
+ *
+ * @property minVersion The minimum version supported, inclusive.
+ * @property maxVersion The maximum version supported, exclusive.
+ */
 data class VersionRange<T: Version>(val minVersion: T, val maxVersion: T)
+infix fun <T: Version> T.until(that: T): VersionRange<T> = VersionRange(this, that)

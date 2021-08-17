@@ -161,7 +161,7 @@ class SamInitSelectionPanel(
         executableSelector.apply()
 
         val toolManager = ToolManager.getInstance()
-        val samExecutable2 = toolManager.getExecutable(SamCli)
+        val samExecutable2 = toolManager.getTool(SamCli)
 
         val stricterMinVersion = listOfNotNull(
             if (packageType() == PackageType.IMAGE) SamCli.MIN_IMAGE_VERSION else null,

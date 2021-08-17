@@ -54,7 +54,7 @@ open class ToolPathSelector<T : ToolType<*>>(private val type: T, private val va
     }
 
     fun reset() {
-        autoDetectedPath = ToolManager.getInstance().detectExecutable(type)?.toString() ?: ""
+        autoDetectedPath = ToolManager.getInstance().detectTool(type)?.toString() ?: ""
 
         val emptyText = if (autoDetectedPath.isNotBlank()) {
             message("executableCommon.auto_resolved", autoDetectedPath)
@@ -70,9 +70,9 @@ open class ToolPathSelector<T : ToolType<*>>(private val type: T, private val va
 
     private fun getConfiguredPath(): String? = pathSelector.text.trim().nullize()
 
-    open fun checkExecutable(executable: Path, type: T): Validity = ToolManager.getInstance().validateCompatability(
+    open fun checkExecutable(toolExecutablePath: Path, type: T): Validity = ToolManager.getInstance().validateCompatability(
         project = null,
-        path = executable,
+        path = toolExecutablePath,
         type = this.type
     )
 }

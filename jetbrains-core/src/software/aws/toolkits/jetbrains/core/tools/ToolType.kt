@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.tools
 import java.nio.file.Path
 
 /**
- * Represents an executable external program such as a CLI
+ * Represents an executable external tool such as a CLI
  *
  * Note: It is recommended that all implementations of this interface are stateless and are an `object`
  */
@@ -33,11 +33,11 @@ interface ToolType<VersionScheme : Version> {
 }
 
 /**
- * Indicates that a [ToolType] can be auto-discovered for the user
+ * Indicates that a [ToolType] can be auto-detected for the user on their system
  */
-interface AutoResolvable {
+interface AutoDetectable {
     /**
-     * Attempt to automatically resolve the path
+     * Attempt to automatically detect the tool's binary file
      *
      * @return the resolved path or null if not found
      * @throws Exception if an exception occurred attempting to resolve the path
