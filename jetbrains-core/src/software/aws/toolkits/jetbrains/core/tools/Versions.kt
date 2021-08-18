@@ -16,22 +16,22 @@ interface Version : Comparable<Version> {
 /**
  * @return true if the specified version is compatible with any of the specified version ranges. Always returns true if no ranges are specified.
  */
-fun <T : Version> isVersionValid(version: T, ranges: List<VersionRange<T>>): Validity {
+fun <T : Version> T.isValid(ranges: List<VersionRange<T>>): Validity {
     if (ranges.isEmpty()) {
-        return Validity.Valid(version)
+        return Validity.Valid(this)
     }
 
     val minVersions = ranges.map { it.minVersion }.sortedDescending()
-    if (minVersions.none { minVersion -> version >= minVersion }) {
+    if (minVersions.none { minVersion -> this >= minVersion }) {
         return Validity.VersionTooOld(minVersions.first()) // Sorted already so take the first which should be the greatest min version
     }
 
     val maxVersions = ranges.map { it.maxVersion }.sortedDescending()
-    if (maxVersions.none { maxVersion -> version < maxVersion }) {
+    if (maxVersions.none { maxVersion -> this < maxVersion }) {
         return Validity.VersionTooNew(maxVersions.first()) // Sorted already so take the first which should be the greatest max version
     }
 
-    return Validity.Valid(version)
+    return Validity.Valid(this)
 }
 
 /**

@@ -1,29 +1,30 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.executables
+package software.aws.toolkits.jetbrains.core.tools
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import software.aws.toolkits.jetbrains.utils.isInstanceOf
+import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 
 class VersionsTest {
     @Test
     fun `no version ranges means any version is compatible`() {
-        assertThat(isVersionValid(IntegerVersion(4), emptyList())).isEqualTo(Validity.Valid)
+        assertThat(IntegerVersion(4).isValid(emptyList())).isInstanceOf<Validity.Valid>()
     }
 
     @Test
     fun `version below all min versions returns VersionTooOld`() {
         assertThat(
-            isVersionValid(
-                IntegerVersion(4),
+            IntegerVersion(4).isValid(
                 listOf(
                     VersionRange(IntegerVersion(10), IntegerVersion(11)),
                     VersionRange(IntegerVersion(30), IntegerVersion(33)),
                     VersionRange(IntegerVersion(20), IntegerVersion(22))
                 )
             )
-        ).isInstanceOfSatisfying(Validity.VersionTooOld::class.java) {
+        ).isInstanceOfSatisfying<Validity.VersionTooOld> {
             assertThat(it.minVersion).isEqualTo(IntegerVersion(30))
         }
     }
@@ -31,15 +32,14 @@ class VersionsTest {
     @Test
     fun `version above all max versions returns VersionTooNew`() {
         assertThat(
-            isVersionValid(
-                IntegerVersion(40),
+            IntegerVersion(40).isValid(
                 listOf(
                     VersionRange(IntegerVersion(10), IntegerVersion(11)),
                     VersionRange(IntegerVersion(30), IntegerVersion(33)),
                     VersionRange(IntegerVersion(20), IntegerVersion(22))
                 )
             )
-        ).isInstanceOfSatisfying(Validity.VersionTooNew::class.java) {
+        ).isInstanceOfSatisfying<Validity.VersionTooNew> {
             assertThat(it.maxVersion).isEqualTo(IntegerVersion(33))
         }
     }
@@ -52,9 +52,9 @@ class VersionsTest {
             VersionRange(IntegerVersion(20), IntegerVersion(22))
         )
 
-        assertThat(isVersionValid(IntegerVersion(11), ranges)).isEqualTo(Validity.Valid)
-        assertThat(isVersionValid(IntegerVersion(21), ranges)).isEqualTo(Validity.Valid)
-        assertThat(isVersionValid(IntegerVersion(31), ranges)).isEqualTo(Validity.Valid)
+        assertThat(IntegerVersion(11).isValid(ranges)).isInstanceOf<Validity.Valid>()
+        assertThat(IntegerVersion(21).isValid(ranges)).isInstanceOf<Validity.Valid>()
+        assertThat(IntegerVersion(31).isValid(ranges)).isInstanceOf<Validity.Valid>()
     }
 
     @Test
@@ -63,7 +63,7 @@ class VersionsTest {
             VersionRange(IntegerVersion(10), IntegerVersion(11)),
         )
 
-        assertThat(isVersionValid(IntegerVersion(10), ranges)).isEqualTo(Validity.Valid)
+        assertThat(IntegerVersion(10).isValid(ranges)).isInstanceOf<Validity.Valid>()
     }
 
     @Test
@@ -72,12 +72,11 @@ class VersionsTest {
             VersionRange(IntegerVersion(10), IntegerVersion(11)),
         )
 
-        assertThat(isVersionValid(IntegerVersion(11), ranges)).isInstanceOf(Validity.VersionTooNew::class.java)
+        assertThat(IntegerVersion(11).isValid(ranges)).isInstanceOf(Validity.VersionTooNew::class.java)
     }
 
     data class IntegerVersion(val version: Int) : Version {
         override fun displayValue(): String = version.toString()
-
         override fun compareTo(other: Version): Int = version.compareTo((other as IntegerVersion).version)
     }
 }

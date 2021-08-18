@@ -34,7 +34,7 @@ open class ToolPathSelector<T : ToolType<*>>(private val type: T, private val va
             val pathToCheck = getConfiguredPath() ?: autoDetectedPath
             val label = when (val validity = checkExecutable(Paths.get(pathToCheck), type)) {
                 is Validity.Valid -> {
-                    JBLabel("<html>${type.displayName} version is ${validity.version.displayValue()}")
+                    JBLabel("${type.displayName} version is ${validity.version.displayValue()}")
                 }
                 else -> {
                     val message = "<html>${validity.toErrorMessage(type)?.replace("\n", "<br/>")}</html>"

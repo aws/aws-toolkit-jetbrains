@@ -3,11 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.tools
 
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.util.ProgressIndicatorUtils
 import com.intellij.openapi.util.ThrowableComputable
+import software.aws.toolkits.core.utils.lastModified
 import java.nio.file.Files
-import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
@@ -23,21 +22,22 @@ class ToolVersionCache {
 
     @Suppress("UNCHECKED_CAST")
     fun <V : Version> getValue(tool: Tool<ToolType<V>>): Result<V> = ProgressIndicatorUtils.computeWithLockAndCheckingCanceled(
-        lock, 50, TimeUnit.MILLISECONDS,
+        lock,
+        50,
+        TimeUnit.MILLISECONDS,
         ThrowableComputable {
             val lastResult = cache[tool]
             var lastModifiedTime = 0L
             try {
-                lastModifiedTime = getLastModificationTime(tool.path)
+                lastModifiedTime = tool.path.lastModified().toMillis()
+
                 if (lastResult == null || lastResult.lastModifiedTime < lastModifiedTime) {
-                    Result.Success(testExecutable(tool), lastModifiedTime).also {
+                    Result.Success(getVersion(tool), lastModifiedTime).also {
                         cache[tool] = it
                     } as Result<V>
                 } else {
                     lastResult as Result<V>
                 }
-            } catch (e: ProcessCanceledException) {
-                throw e
             } catch (e: Exception) {
                 Result.Failure(e, lastModifiedTime).also {
                     cache[tool] = it
@@ -46,9 +46,7 @@ class ToolVersionCache {
         }
     )
 
-    private fun <T : Version> testExecutable(tool: Tool<ToolType<T>>): Version = tool.type.determineVersion(tool.path)
-
-    private fun getLastModificationTime(path: Path): Long = Files.getLastModifiedTime(path).toMillis()
+    private fun <T : Version> getVersion(tool: Tool<ToolType<T>>): Version = tool.type.determineVersion(tool.path)
 
     sealed class Result<T : Version>(open val lastModifiedTime: Long) {
         data class Failure(val reason: Exception, override val lastModifiedTime: Long) : Result<Nothing>(lastModifiedTime)

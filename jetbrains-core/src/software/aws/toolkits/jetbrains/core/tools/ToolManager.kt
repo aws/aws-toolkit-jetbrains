@@ -46,7 +46,7 @@ class ToolManager {
      *
      * @return Either the path to the tool if found, or null if the tool can't be found or not auto-detectable
      */
-    fun <T : ToolType<*>> detectTool(type: T): Path? = if (type is AutoDetectable) {
+    fun <T : ToolType<*>> detectTool(type: T): Path? = if (type is AutoDetectableTool<*>) {
         type.resolve()
     } else {
         null
@@ -58,7 +58,7 @@ class ToolManager {
      * If called on a UI thread, a modal dialog is shown while the validation is in progress to avoid UI lock-ups
      */
     fun <T : Version> validateCompatability(
-        project: Project?,
+        project: Project? = null,
         path: Path,
         type: ToolType<T>,
         stricterMinVersion: T? = null
@@ -70,7 +70,7 @@ class ToolManager {
      * If called on a UI thread, a modal dialog is shown while the validation is in progress to avoid UI lock-ups
      */
     fun <T : Version> validateCompatability(
-        project: Project?,
+        project: Project? = null,
         tool: Tool<ToolType<T>>?,
         stricterMinVersion: T? = null
     ): Validity {
@@ -92,7 +92,7 @@ class ToolManager {
             is ToolVersionCache.Result.Success -> cacheResult.version
         }
 
-        val baseVersionCompatability = isVersionValid(version, tool.type.supportedVersions())
+        val baseVersionCompatability = version.isValid(tool.type.supportedVersions())
         if (baseVersionCompatability !is Validity.Valid) {
             return baseVersionCompatability
         }

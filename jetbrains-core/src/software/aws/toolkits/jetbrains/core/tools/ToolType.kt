@@ -35,7 +35,7 @@ interface ToolType<VersionScheme : Version> {
 /**
  * Indicates that a [ToolType] can be auto-detected for the user on their system
  */
-interface AutoDetectable {
+interface AutoDetectableTool<VersionScheme : Version> : ToolType<VersionScheme> {
     /**
      * Attempt to automatically detect the tool's binary file
      *

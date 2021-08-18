@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.core.tools
 
 import java.nio.file.Path
 
-class Tool<out T : ToolType<*>>(val type: T, val path: Path) {
+data class Tool<out T : ToolType<*>>(val type: T, val path: Path) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
