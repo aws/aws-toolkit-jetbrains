@@ -18,9 +18,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatc
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.DetailedLogRecord
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryDetails
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryResultList
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryResultPanel
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry

@@ -12,7 +12,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.InsightsQueryResultsActor
 import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
@@ -25,7 +24,8 @@ class QueryResultPanel(
     fields: List<String>,
     queryId: String,
     private val queryDetails: QueryDetails
-) : SimpleToolWindowPanel(false, true), CoroutineScope by ApplicationThreadPoolScope(ID), Disposable {
+) : SimpleToolWindowPanel(false, true), Disposable {
+    private val coroutineScope = ApplicationThreadPoolScope(ID, this)
     init {
         val resultsTable = QueryResultsTable(project, queryDetails.connectionSettings, fields, queryId)
         Disposer.register(this, resultsTable)
@@ -42,7 +42,7 @@ class QueryResultPanel(
             ),
             false
         ).component
-        launch { resultsTable.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll) }
+        coroutineScope.launch { resultsTable.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll) }
     }
 
     override fun dispose() {
