@@ -92,17 +92,18 @@ class DynamoDbTest {
                     step("Check full table scan (default index)") {
                         val columnCount = step("Check columns") {
                             val cols = findByXpath("//div[@class='JBTableHeader']").retrieveData().textDataList.map { it.text }
-                            assertThat(cols).containsExactlyInAnyOrder(
-                                "NumericId",
-                                "StringSecondary",
-                                "TertiaryColumn",
-                                "Bool",
-                                "Int",
-                                "StringMap",
-                                "NumberMap",
-                                "MapOfMap",
-                                "StringList",
-                                "NumberList"
+                            // Can't do a straight-up string match because the column headers may be truncated for space
+                            assertThat(cols).satisfiesExactlyInAnyOrder(
+                                { assertThat(it).startsWith("Num") },
+                                { assertThat(it).startsWith("Str") },
+                                { assertThat(it).startsWith("Ter") },
+                                { assertThat(it).startsWith("Boo") },
+                                { assertThat(it).startsWith("Int") },
+                                { assertThat(it).startsWith("Str") },
+                                { assertThat(it).startsWith("Num") },
+                                { assertThat(it).startsWith("Map") },
+                                { assertThat(it).startsWith("Str") },
+                                { assertThat(it).startsWith("Num") }
                             )
                             cols.size
                         }
