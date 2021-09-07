@@ -45,5 +45,6 @@ class ToolTest {
     class TestToolType(override val id: String) : ToolType<SemanticVersion> {
         override val displayName: String = id
         override fun determineVersion(path: Path): SemanticVersion = SemanticVersion(1, 2, 3)
+        override fun supportedVersions(): VersionRange<SemanticVersion>? = null
     }
 }

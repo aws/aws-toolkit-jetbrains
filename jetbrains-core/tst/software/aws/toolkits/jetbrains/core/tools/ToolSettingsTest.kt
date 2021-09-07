@@ -80,7 +80,6 @@ class ToolSettingsTest {
         override val id: String = "testExecutable"
 
         override fun determineVersion(path: Path) = SemanticVersion(1, 2, 3)
-
-        override fun supportedVersions(): List<VersionRange<SemanticVersion>> = emptyList()
+        override fun supportedVersions(): VersionRange<SemanticVersion>? = null
     }
 }

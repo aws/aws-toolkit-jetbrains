@@ -24,7 +24,7 @@ interface ToolType<VersionScheme : Version> {
     /**
      * List of supported [VersionRange]. An empty list means any version is supported
      */
-    fun supportedVersions(): List<VersionRange<VersionScheme>> = emptyList()
+    fun supportedVersions(): VersionRange<VersionScheme>?
 
     /**
      * Returns the [Version] for the executable of this type located at the specified location

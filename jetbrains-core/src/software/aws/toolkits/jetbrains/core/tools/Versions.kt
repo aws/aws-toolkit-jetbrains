@@ -14,24 +14,13 @@ interface Version : Comparable<Version> {
 }
 
 /**
- * @return true if the specified version is compatible with any of the specified version ranges. Always returns true if no ranges are specified.
+ * @return true if the specified version is compatible with the specified version ranges. Always returns true if no range is specified.
  */
-fun <T : Version> T.isValid(ranges: List<VersionRange<T>>): Validity {
-    if (ranges.isEmpty()) {
-        return Validity.Valid(this)
-    }
-
-    val minVersions = ranges.map { it.minVersion }.sortedDescending()
-    if (minVersions.none { minVersion -> this >= minVersion }) {
-        return Validity.VersionTooOld(minVersions.first()) // Sorted already so take the first which should be the greatest min version
-    }
-
-    val maxVersions = ranges.map { it.maxVersion }.sortedDescending()
-    if (maxVersions.none { maxVersion -> this < maxVersion }) {
-        return Validity.VersionTooNew(maxVersions.first()) // Sorted already so take the first which should be the greatest max version
-    }
-
-    return Validity.Valid(this)
+fun <T : Version> T.isValid(range: VersionRange<T>?): Validity = when {
+    range == null -> Validity.Valid(this)
+    this < range.minVersion -> Validity.VersionTooOld(range.minVersion)
+    range.maxVersion <= this -> Validity.VersionTooNew(range.maxVersion)
+    else -> Validity.Valid(this)
 }
 
 /**
@@ -41,4 +30,5 @@ fun <T : Version> T.isValid(ranges: List<VersionRange<T>>): Validity {
  * @property maxVersion The maximum version supported, exclusive.
  */
 data class VersionRange<T : Version>(val minVersion: T, val maxVersion: T)
+
 infix fun <T : Version> T.until(that: T): VersionRange<T> = VersionRange(this, that)

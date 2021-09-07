@@ -92,7 +92,10 @@ class ToolManager {
             is ToolVersionCache.Result.Success -> cacheResult.version
         }
 
-        val baseVersionCompatability = version.isValid(tool.type.supportedVersions())
+        val baseVersionCompatability = tool.type.supportedVersions()?.let {
+            version.isValid(it)
+        } ?: Validity.Valid(version)
+
         if (baseVersionCompatability !is Validity.Valid) {
             return baseVersionCompatability
         }

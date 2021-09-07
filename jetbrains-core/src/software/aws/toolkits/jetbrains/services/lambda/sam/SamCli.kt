@@ -10,7 +10,6 @@ import com.intellij.openapi.util.SystemInfo
 import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
 import software.aws.toolkits.jetbrains.core.tools.SemanticVersion
 import software.aws.toolkits.jetbrains.core.tools.ToolType
-import software.aws.toolkits.jetbrains.core.tools.VersionRange
 import software.aws.toolkits.jetbrains.core.tools.until
 import software.aws.toolkits.jetbrains.settings.ExecutableDetector
 import java.nio.file.Path
@@ -37,7 +36,7 @@ object SamCli : ToolType<SemanticVersion>, AutoResolvable {
         return SemanticVersion.parse(version)
     }
 
-    override fun supportedVersions(): List<VersionRange<SemanticVersion>> = listOf(MIN_VERSION until MAX_VERSION)
+    override fun supportedVersions() = MIN_VERSION until MAX_VERSION
 
     override fun resolve(): Path? {
         val path = (

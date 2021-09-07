@@ -211,7 +211,7 @@ class ToolManagerTest {
     fun `a version new low returns VersionTooNew`() {
         val type = createUndetectableMock {
             on { determineVersion(any()) } doReturn SemanticVersion(2, 3, 4)
-            on { supportedVersions() } doReturn listOf(SemanticVersion(1, 0, 0) until SemanticVersion(2, 0, 0))
+            on { supportedVersions() } doReturn (SemanticVersion(1, 0, 0) until SemanticVersion(2, 0, 0))
         }
 
         val tool = sut.getTool(type, tempFolder.newFile().toPath())
@@ -223,7 +223,7 @@ class ToolManagerTest {
     fun `a version too low returns VersionTooOld`() {
         val type = createUndetectableMock {
             on { determineVersion(any()) } doReturn SemanticVersion(1, 2, 3)
-            on { supportedVersions() } doReturn listOf(SemanticVersion(2, 0, 0) until SemanticVersion(3, 0, 0))
+            on { supportedVersions() } doReturn (SemanticVersion(2, 0, 0) until SemanticVersion(3, 0, 0))
         }
 
         val tool = sut.getTool(type, tempFolder.newFile().toPath())
@@ -235,17 +235,13 @@ class ToolManagerTest {
     fun `a stricter min version can be applied`() {
         val type = createUndetectableMock {
             on { determineVersion(any()) } doReturn SemanticVersion(1, 2, 3)
-            on { supportedVersions() } doReturn listOf(SemanticVersion(1, 0, 0) until SemanticVersion(3, 0, 0))
+            on { supportedVersions() } doReturn (SemanticVersion(1, 0, 0) until SemanticVersion(3, 0, 0))
         }
 
         val tool = sut.getTool(type, tempFolder.newFile().toPath())
 
         assertThat(sut.validateCompatability(tool = tool, stricterMinVersion = SemanticVersion(2, 0, 0))).isInstanceOf<Validity.VersionTooOld>()
     }
-
-    // Stricter version checking
-
-    // Version too old
 
     private fun createUndetectableMock(toolId: String = aString(), stubBuilder: (KStubbing<ToolType<SemanticVersion>>).() -> Unit = {}) =
         mock<ToolType<SemanticVersion>>()
