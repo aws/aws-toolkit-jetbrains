@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.ExceptionUtil
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
+import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -78,8 +79,7 @@ class ToolManager {
             return Validity.NotInstalled()
         }
 
-//        return runUnderProgressIfNeeded(project, message("version.progress.title"), false) {
-        return runUnderProgressIfNeeded(project, "Validating CLI", false) {
+        return runUnderProgressIfNeeded(project, message("executableCommon.validating", tool.type.displayName), false) {
             determineCompatability(tool, stricterMinVersion)
         }
     }
