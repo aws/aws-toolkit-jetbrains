@@ -27,7 +27,7 @@ class AsyncComboBox<T>(
     customizer: SimpleListCellRenderer.Customizer<in T>? = null
 ) : ComboBox<T>(comboBoxModel), Disposable {
     private val loading = AtomicBoolean(false)
-    private val scope = ApplicationThreadPoolScope("oh", this)
+    private val scope = ApplicationThreadPoolScope("AsyncComboBox", this)
     init {
         renderer = object : SimpleListCellRenderer<T>() {
             override fun getListCellRendererComponent(
