@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
@@ -30,7 +29,8 @@ import java.time.temporal.ChronoUnit
 import javax.swing.Action
 import javax.swing.JComponent
 
-class QueryEditorDialog(
+class QueryEditorDialog internal constructor(
+    // TODO: Exposed for testing only, should be refactored to be private
     private val project: Project,
     private val initialQueryDetails: QueryDetails
 ) : DialogWrapper(project) {
@@ -60,7 +60,8 @@ class QueryEditorDialog(
         // Do nothing, close logic is handled separately
     }
 
-    suspend fun setView(queryDetails: QueryDetails) {
+    // TODO: Exposed for testing only, should be refactored to be private
+    internal suspend fun setView(queryDetails: QueryDetails) {
         when (val timeRange = queryDetails.timeRange) {
             is TimeRange.AbsoluteRange -> {
                 view.setAbsolute()
@@ -92,7 +93,7 @@ class QueryEditorDialog(
             region = initialQueryDetails.connectionSettings.region,
             credentialProvider = initialQueryDetails.connectionSettings.credentials
         ).await().map { it.logGroupName() }
-        withContext(getCoroutineUiContext(ModalityState.stateForComponent(view.logGroupTable))) {
+        withContext(getCoroutineUiContext()) {
             view.logGroupTable.populateLogGroups(initialQueryDetails.logGroups.toSet(), availableLogGroups)
         }
     }
@@ -111,7 +112,8 @@ class QueryEditorDialog(
         }
     }
 
-    fun getQueryDetails(): QueryDetails {
+    // TODO: Exposed for testing only, should be refactored to be private
+    internal fun getQueryDetails(): QueryDetails {
         val timeRange = if (view.absoluteTimeRadioButton.isSelected) {
             TimeRange.AbsoluteRange(
                 startDate = view.startDate.date,
@@ -154,7 +156,8 @@ class QueryEditorDialog(
         }
     }
 
-    fun validateEditorEntries(view: QueryEditor): ValidationInfo? {
+    // TODO: Exposed for testing only, should be refactored to be private
+    internal fun validateEditorEntries(view: QueryEditor): ValidationInfo? {
         if (!view.absoluteTimeRadioButton.isSelected && !view.relativeTimeRadioButton.isSelected) {
             return ValidationInfo(message("cloudwatch.logs.validation.timerange"), view.absoluteTimeRadioButton)
         }
@@ -176,7 +179,8 @@ class QueryEditorDialog(
         return null
     }
 
-    fun startQueryAsync(queryDetails: QueryDetails) = coroutineScope.async {
+    // TODO: Exposed for testing only, should be refactored to be private
+    internal fun startQueryAsync(queryDetails: QueryDetails) = coroutineScope.async {
         val (credentials, region) = queryDetails.connectionSettings
         val client = AwsClientManager.getInstance().getClient<CloudWatchLogsClient>(credentials, region)
         val timeRange = queryDetails.getQueryRange()
@@ -211,14 +215,15 @@ class QueryEditorDialog(
     }
 
     companion object {
-        private fun defaultQuery(connectionSettings: ConnectionSettings, logGroupName: String) = QueryDetails(
-            connectionSettings,
+        private fun defaultQuery(connection: ConnectionSettings, logGroupName: String) = QueryDetails(
+            connection,
             mutableListOf(logGroupName),
             TimeRange.RelativeRange(10, ChronoUnit.MINUTES),
             QueryString.InsightsQueryString(DEFAULT_INSIGHTS_QUERY_STRING)
         )
 
-        fun getFields(query: String): List<String> {
+        // TODO: Exposed for testing only, should be refactored to be private
+        internal fun getFields(query: String): List<String> {
             val fieldsIdentifier = "fields"
             val fieldList = mutableListOf<List<String>>()
             query.replace("\\|", "")
