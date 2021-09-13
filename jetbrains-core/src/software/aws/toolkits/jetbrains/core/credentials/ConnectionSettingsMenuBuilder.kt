@@ -154,8 +154,6 @@ class ConnectionSettingsMenuBuilder private constructor() {
     ) : DumbAwareToggleAction<CredentialIdentifier>(value.displayName, value, selected, onSelect)
 
     companion object {
-        private const val ID = "ConnectionSettingsMenu"
-
         fun connectionSettingsMenuBuilder(): ConnectionSettingsMenuBuilder = ConnectionSettingsMenuBuilder()
     }
 }
