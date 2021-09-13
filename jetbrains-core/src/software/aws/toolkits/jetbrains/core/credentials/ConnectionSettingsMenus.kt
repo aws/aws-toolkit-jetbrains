@@ -44,8 +44,6 @@ enum class ChangeSettingsMode(val showRegions: Boolean, val showCredentials: Boo
  * @see ProjectLevelSettingSelector
  * @see SettingsSelectorComboBoxAction
  */
-
-// TODO: Write tests for these!
 abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMode) {
     private val listeners by lazy {
         EventDispatcher.create(ChangeListener::class.java)
@@ -67,13 +65,13 @@ abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMod
     private fun regionTooltip() = currentRegion()?.displayName
 
     protected abstract fun currentRegion(): AwsRegion?
-    protected abstract fun onRegionChange(region: AwsRegion)
+    protected open fun onRegionChange(region: AwsRegion) {}
 
     private fun credentialsDisplay() = currentCredentials()?.shortName ?: message("settings.credentials.none_selected")
     private fun credentialsTooltip() = currentCredentials()?.displayName
 
     protected abstract fun currentCredentials(): CredentialIdentifier?
-    protected abstract fun onCredentialChange(identifier: CredentialIdentifier)
+    protected open fun onCredentialChange(identifier: CredentialIdentifier) {}
 
     fun selectionMenuActions(): DefaultActionGroup = connectionSettingsMenuBuilder().apply {
         if (menuMode.showRegions) {
