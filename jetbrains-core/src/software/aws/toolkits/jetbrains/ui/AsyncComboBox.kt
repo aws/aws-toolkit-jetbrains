@@ -76,6 +76,7 @@ class AsyncComboBox<T>(
                     {
                         scope.launch {
                             newModel.invoke(delegatedComboBoxModel(indicator))
+                            indicator.checkCanceled()
                             loading.set(false)
                             repaint()
                         }
@@ -122,11 +123,11 @@ class AsyncComboBox<T>(
             override fun getElementAt(index: Int): T = comboBoxModel.getElementAt(index)
 
             override fun addListDataListener(l: ListDataListener?) {
-                TODO("Not supported")
+                throw NotImplementedError()
             }
 
             override fun removeListDataListener(l: ListDataListener?) {
-                TODO("Not supported")
+                throw NotImplementedError()
             }
 
             override fun setSelectedItem(anItem: Any?) {
