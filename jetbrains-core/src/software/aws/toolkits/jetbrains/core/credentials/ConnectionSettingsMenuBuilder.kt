@@ -4,17 +4,13 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.ui.popup.ListPopup
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -29,19 +25,16 @@ class ConnectionSettingsMenuBuilder private constructor() {
     private var credentialsSelectionSettings: CredentialsSelectionSettings? = null
     private var accountSettingsManager: AwsConnectionManager? = null
 
-    fun withRegions(currentSelection: AwsRegion?, onChange: (AwsRegion) -> Unit): ConnectionSettingsMenuBuilder {
+    fun withRegions(currentSelection: AwsRegion?, onChange: (AwsRegion) -> Unit): ConnectionSettingsMenuBuilder = apply {
         regionSelectionSettings = RegionSelectionSettings(currentSelection, onChange)
-        return this
     }
 
-    fun withCredentials(currentSelection: CredentialIdentifier?, onChange: (CredentialIdentifier) -> Unit): ConnectionSettingsMenuBuilder {
+    fun withCredentials(currentSelection: CredentialIdentifier?, onChange: (CredentialIdentifier) -> Unit): ConnectionSettingsMenuBuilder = apply {
         credentialsSelectionSettings = CredentialsSelectionSettings(currentSelection, onChange)
-        return this
     }
 
-    fun withRecentChoices(project: Project): ConnectionSettingsMenuBuilder {
+    fun withRecentChoices(project: Project): ConnectionSettingsMenuBuilder = apply {
         accountSettingsManager = AwsConnectionManager.getInstance(project)
-        return this
     }
 
     fun build(): DefaultActionGroup {
@@ -164,30 +157,5 @@ class ConnectionSettingsMenuBuilder private constructor() {
         private const val ID = "ConnectionSettingsMenu"
 
         fun connectionSettingsMenuBuilder(): ConnectionSettingsMenuBuilder = ConnectionSettingsMenuBuilder()
-
-        fun projectConnectionSettingsMenu(project: Project, dataContext: DataContext, showRegions: Boolean = true, showCredentials: Boolean = true): ListPopup {
-            val accountSettingsManager = AwsConnectionManager.getInstance(project)
-
-            val actionGroup = connectionSettingsMenuBuilder().apply {
-                withRecentChoices(project)
-
-                if (showRegions) {
-                    withRegions(accountSettingsManager.selectedRegion) { accountSettingsManager.changeRegion(it) }
-                }
-
-                if (showCredentials) {
-                    withCredentials(accountSettingsManager.selectedCredentialIdentifier) { accountSettingsManager.changeCredentialProvider(it) }
-                }
-            }.build()
-
-            return JBPopupFactory.getInstance().createActionGroupPopup(
-                message("settings.title"),
-                actionGroup,
-                dataContext,
-                JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-                true,
-                ActionPlaces.getActionGroupPopupPlace(ID)
-            )
-        }
     }
 }

@@ -8,15 +8,10 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.resources.message
 
-class ConfigureAwsConnectionAction(private val withRegions: Boolean = true, private val withCredentials: Boolean = true) :
-    DumbAwareAction(message("configure.toolkit")) {
+class ConfigureAwsConnectionAction(private val mode: ChangeSettingsMode = ChangeSettingsMode.BOTH) : DumbAwareAction(message("configure.toolkit")) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
-        ConnectionSettingsMenuBuilder.projectConnectionSettingsMenu(
-            project,
-            e.dataContext,
-            withRegions,
-            withCredentials
-        ).showCenteredInCurrentWindow(project)
+        val selector = ProjectLevelSettingSelector(project, mode)
+        selector.createPopup(e.dataContext).showCenteredInCurrentWindow(project)
     }
 }

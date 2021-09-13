@@ -11,7 +11,6 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.util.Consumer
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.Companion.projectConnectionSettingsMenu
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
 
@@ -37,6 +36,7 @@ private class AwsSettingsPanel(private val project: Project) :
     StatusBarWidget,
     StatusBarWidget.MultipleTextValuesPresentation,
     ConnectionSettingsStateChangeNotifier {
+    private val settingsSelector = ProjectLevelSettingSelector(project, ChangeSettingsMode.BOTH)
     private val accountSettingsManager = AwsConnectionManager.getInstance(project)
     private lateinit var statusBar: StatusBar
 
@@ -48,7 +48,7 @@ private class AwsSettingsPanel(private val project: Project) :
 
     override fun getSelectedValue() = "AWS: ${accountSettingsManager.connectionState.shortMessage}"
 
-    override fun getPopupStep(): ListPopup = projectConnectionSettingsMenu(project, DataManager.getInstance().getDataContext(statusBar.component))
+    override fun getPopupStep(): ListPopup = settingsSelector.createPopup(DataManager.getInstance().getDataContext(statusBar.component))
 
     override fun getClickConsumer(): Consumer<MouseEvent>? = null
 

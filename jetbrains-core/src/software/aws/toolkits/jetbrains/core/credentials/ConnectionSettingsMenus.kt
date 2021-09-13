@@ -6,12 +6,14 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.ComboBoxAction
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.EventDispatcher
 import com.intellij.util.ui.components.BorderLayoutPanel
@@ -92,6 +94,14 @@ abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMod
 
         customizeSelectionMenu(this)
     }.build()
+
+    fun createPopup(context: DataContext): ListPopup = JBPopupFactory.getInstance().createActionGroupPopup(
+        message("settings.title"),
+        selectionMenuActions(),
+        context,
+        JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+        true
+    )
 
     protected open fun customizeSelectionMenu(builder: ConnectionSettingsMenuBuilder) {}
 
@@ -181,14 +191,7 @@ class SettingsSelectorComboLabel(private val selectorLogic: SettingsSelectorLogi
     }
 
     private fun showPopup() {
-        val popup = JBPopupFactory.getInstance().createActionGroupPopup(
-            null,
-            selectorLogic.selectionMenuActions(),
-            DataManager.getInstance().getDataContext(this),
-            JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-            true
-        )
-        popup.showUnderneathOf(this)
+        selectorLogic.createPopup(DataManager.getInstance().getDataContext(this)).showUnderneathOf(this)
     }
 
     private fun updateText() {
