@@ -121,6 +121,25 @@ class ScopeTest {
         assertScopeIsCorrectThread(disposableCoroutineScope(disposableRule.disposable))
     }
 
+    @Test
+    fun `application and project trackers are different`() {
+        val projectFile = tempDir.newFile("${testName.methodName}${ProjectFileType.DOT_DEFAULT_EXTENSION}").toPath()
+        val options = createTestOpenProjectOptions(runPostStartUpActivities = false)
+        val project2 = ProjectManagerEx.getInstanceEx().openProject(projectFile, options)!!
+
+        try {
+            assertThat(
+                listOf(
+                    PluginCoroutineScopeTracker.getInstance(),
+                    PluginCoroutineScopeTracker.getInstance(projectRule.project),
+                    PluginCoroutineScopeTracker.getInstance(project2)
+                )
+            ).doesNotHaveDuplicates()
+        } finally {
+            PlatformTestUtil.forceCloseProjectWithoutSaving(project2)
+        }
+    }
+
     private fun createFakePluginScope(componentManager: ComponentManager = ApplicationManager.getApplication()): Disposable {
         // We can't unload the real plugin in tests, so make another instance of the service and replace it for the tests
         val tracker = PluginCoroutineScopeTracker()
