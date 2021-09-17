@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.coroutines
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
@@ -33,9 +34,12 @@ class CoroutineUtilsTest {
 
     @Test
     fun `getCoroutineBgContext context runs not on UI thread`() {
-        runBlocking {
-            withContext(getCoroutineBgContext()) {
-                assertThat(ApplicationManager.getApplication().isDispatchThread).isFalse
+        runInEdtAndWait {
+            assertThat(ApplicationManager.getApplication().isDispatchThread).isTrue
+            runBlocking {
+                withContext(getCoroutineBgContext()) {
+                    assertThat(ApplicationManager.getApplication().isDispatchThread).isFalse
+                }
             }
         }
     }

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.coroutines
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.Application
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -37,12 +38,14 @@ fun projectCoroutineScope(project: Project, coroutineName: String): CoroutineSco
  * **Note: If a call lives past the closing of a UI such as kicking off a resource creation, use [projectCoroutineScope].
  * Otherwise, the coroutine will be canceled when the UI is closed!**
  */
-fun disposableCoroutineScope(disposable: Disposable, coroutineName: String): CoroutineScope =
-    PluginCoroutineScopeTracker.getInstance().applicationThreadPoolScope(coroutineName).also {
+fun disposableCoroutineScope(disposable: Disposable, coroutineName: String): CoroutineScope {
+    check(disposable !is Project && disposable !is Application) { "disposable should not be a project or application" }
+    return PluginCoroutineScopeTracker.getInstance().applicationThreadPoolScope(coroutineName).also {
         Disposer.register(disposable) {
             it.cancel(CancellationException("Parent disposable was disposed"))
         }
     }
+}
 
 /**
  * Version of [applicationCoroutineScope] the class name as the coroutine name.

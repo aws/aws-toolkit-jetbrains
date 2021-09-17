@@ -21,11 +21,13 @@ import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestName
+import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import java.time.Duration
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CountDownLatch
@@ -138,6 +140,16 @@ class ScopeTest {
         } finally {
             PlatformTestUtil.forceCloseProjectWithoutSaving(project2)
         }
+    }
+
+    @Test
+    fun `disposableCoroutineScope can't take a project`() {
+        assertThatThrownBy { disposableCoroutineScope(projectRule.project) }.isInstanceOf<IllegalStateException>()
+    }
+
+    @Test
+    fun `disposableCoroutineScope can't take an application`() {
+        assertThatThrownBy { disposableCoroutineScope(ApplicationManager.getApplication()) }.isInstanceOf<IllegalStateException>()
     }
 
     private fun createFakePluginScope(componentManager: ComponentManager = ApplicationManager.getApplication()): Disposable {
