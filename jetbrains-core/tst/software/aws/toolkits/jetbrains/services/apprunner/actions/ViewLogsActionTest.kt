@@ -75,9 +75,9 @@ class ViewLogsActionTest {
             }
         }
 
-        viewLogGroup(node, "service")
 
         val windows = runInEdtAndGet {
+            viewLogGroup(node, "service")
             toolWindowManager.findPrefix("")
         }
         assertThat(windows.size).isEqualTo(1)
