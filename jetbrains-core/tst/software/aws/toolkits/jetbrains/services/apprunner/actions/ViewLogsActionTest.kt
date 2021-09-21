@@ -75,7 +75,6 @@ class ViewLogsActionTest {
             }
         }
 
-
         val windows = runInEdtAndGet {
             viewLogGroup(node, "service")
             toolWindowManager.findPrefix("")
