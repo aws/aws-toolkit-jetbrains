@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.completion
 
+import base.allowCustomDotnetRoots
 import base.msBuild
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.util.IconLoader
@@ -15,6 +16,7 @@ import com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
 import com.jetbrains.rider.test.scriptingApi.setUpDotNetCoreCliPath
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeClass
+import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
 
 class DotNetHandlerCompletionTest : BaseTestWithSolution() {
@@ -22,6 +24,12 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     override fun getSolutionDirectoryName(): String = ""
 
     override val waitForCaches = true
+
+    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_203
+    @BeforeSuite
+    fun allowDotnetRoots() {
+        allowCustomDotnetRoots()
+    }
 
     @BeforeClass
     fun setUpBuildToolPath() {

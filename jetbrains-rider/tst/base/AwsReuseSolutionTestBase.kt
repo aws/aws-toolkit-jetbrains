@@ -39,6 +39,12 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     override val testCaseNameToTempDir: String
         get() = getSolutionDirectoryName()
 
+    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_211
+    @BeforeClass
+    fun allowDotnetRoots() {
+        allowCustomDotnetRoots()
+    }
+
     @BeforeClass(alwaysRun = true)
     fun setUpClassSolution() {
         openSolution(getSolutionDirectoryName())
