@@ -174,15 +174,17 @@ class SettingsSelectorComboLabel(private val selectorLogic: SettingsSelectorLogi
     private val label = JBLabel()
 
     init {
+        val arrowLabel = JBLabel(AllIcons.General.ArrowDown)
         add(label, BorderLayout.CENTER)
-        addToRight(JBLabel(AllIcons.General.ArrowDown))
+        addToRight(arrowLabel)
 
-        addMouseListener(object : MouseAdapter() {
+        val clickAdapter = object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 showPopup()
             }
-        })
-
+        }
+        label.addMouseListener(clickAdapter)
+        arrowLabel.addMouseListener(clickAdapter)
         selectorLogic.addChangeListener {
             updateText()
         }
