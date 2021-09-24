@@ -18,6 +18,7 @@ import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Companion.getConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
+import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.getResourceIfPresent
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -52,17 +53,23 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
     }
 
     fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit) {
-        if (project?.isDisposed == true) {
-            record(
+        // It is possible that a race can happen if we record telemetry but project has been closed, i.e. async actions
+        val metricEventMetadata = if (project != null) {
+            if (project.isDisposed) {
                 MetricEventMetadata(
                     awsAccount = METADATA_INVALID,
                     awsRegion = METADATA_INVALID
-                ),
-                buildEvent
-            )
+                )
+            } else {
+                MetricEventMetadata(
+                    awsAccount = project.getConnectionSettings()?.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
+                    awsRegion = project.activeRegion().id
+                )
+            }
         } else {
-            record(project?.getConnectionSettings(), buildEvent)
+            MetricEventMetadata()
         }
+        record(metricEventMetadata, buildEvent)
     }
 
     private fun ConnectionSettings.activeAwsAccountIfKnown(): String? = tryOrNull { this.getResourceIfPresent(StsResources.ACCOUNT) }
