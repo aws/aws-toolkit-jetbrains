@@ -53,7 +53,10 @@ class AttachDebugger(val environment: ExecutionEnvironment, val state: SamRunnin
             // saveDocumentsAndProjectsAndApp has a runBlocking call that needs EDT and deadlocks coroutines
             invokeAndWaitIfNeeded {
                 val session = debugManager.startSessionAndShowTab(environment.runProfile.name, environment.contentToReuse, debugProcessStarter)
+                // Tie SAM output to the Debug tab's console so that it is viewable in both spots
                 samProcessHandler.addProcessListener(buildProcessAdapter { session.consoleView })
+
+                // Tie the debug session to the overall workflow, so if it gets cancelled (Stop button on SAM tab), we tell the debugger to stop too
                 context.addListener(object : Context.Listener {
                     override fun onCancel() {
                         session.stop()
