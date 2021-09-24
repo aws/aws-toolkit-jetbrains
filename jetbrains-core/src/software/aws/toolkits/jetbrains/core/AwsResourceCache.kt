@@ -23,7 +23,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Companion.getConnectionSettings
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Companion.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
@@ -150,7 +150,7 @@ interface AwsResourceCache {
  * @param[forceFetch] force the resource to refresh (and update cache) even if a valid cache version exists. Default: false
  */
 fun <T> Project.getResource(resource: Resource<T>, useStale: Boolean = true, forceFetch: Boolean = false): CompletionStage<T> =
-    AwsResourceCache.getInstance().getResource(resource, this.getConnectionSettings(), useStale, forceFetch)
+    AwsResourceCache.getInstance().getResource(resource, this.getConnectionSettingsOrThrow(), useStale, forceFetch)
 
 /**
  * Blocking version of [getResource]
@@ -159,27 +159,34 @@ fun <T> Project.getResource(resource: Resource<T>, useStale: Boolean = true, for
  * @param[forceFetch] force the resource to refresh (and update cache) even if a valid cache version exists. Default: false
  */
 fun <T> Project.getResourceNow(resource: Resource<T>, timeout: Duration = DEFAULT_TIMEOUT, useStale: Boolean = true, forceFetch: Boolean = false): T =
-    AwsResourceCache.getInstance().getResourceNow(resource, this.getConnectionSettings(), timeout, useStale, forceFetch)
+    AwsResourceCache.getInstance().getResourceNow(resource, this.getConnectionSettingsOrThrow(), timeout, useStale, forceFetch)
 
 /**
  * Gets the [resource] if it exists in the cache.
  *
  * @param[useStale] return a cached version if it exists (even if it's expired). Default: true
  */
-fun <T> Project.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = true): T? =
-    AwsResourceCache.getInstance().getResourceIfPresent(resource, this.getConnectionSettings(), useStale)
+fun <T> ConnectionSettings.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = true): T? =
+    AwsResourceCache.getInstance().getResourceIfPresent(resource, this, useStale)
+
+/**
+ * Gets the [resource] if it exists in the cache.
+ *
+ * @see [ConnectionSettings.getResourceIfPresent]
+ */
+fun <T> Project.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = true): T? = getConnectionSettingsOrThrow().getResourceIfPresent(resource, useStale)
 
 /**
  * Clears the contents of the cache for the specific [resource] type, in the currently active [ConnectionSettings]
  */
 fun Project.clearResourceForCurrentConnection(resource: Resource<*>) =
-    AwsResourceCache.getInstance().clear(resource, this.getConnectionSettings())
+    AwsResourceCache.getInstance().clear(resource, this.getConnectionSettingsOrThrow())
 
 /**
  * Clears the contents of the cache of all resource types for the currently active [ConnectionSettings]
  */
 fun Project.clearResourceForCurrentConnection() =
-    AwsResourceCache.getInstance().clear(this.getConnectionSettings())
+    AwsResourceCache.getInstance().clear(this.getConnectionSettingsOrThrow())
 
 sealed class Resource<T> {
 
