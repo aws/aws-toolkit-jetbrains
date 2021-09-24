@@ -31,7 +31,7 @@ class EcsClusterParentNodeTest {
         resourceCache.addEntry(
             projectRule.project,
             EcsResources.LIST_CLUSTER_ARNS,
-            CompletableFutureUtils.failedFuture(RuntimeException("Simulated error"))
+            CompletableFuture.failedFuture(RuntimeException("Simulated error"))
         )
 
         assertThat(node.children).hasSize(1)
