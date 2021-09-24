@@ -53,10 +53,13 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
 
     fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit) {
         if (project?.isDisposed == true) {
-            record(MetricEventMetadata(
+            record(
+                MetricEventMetadata(
                     awsAccount = METADATA_INVALID,
                     awsRegion = METADATA_INVALID
-                ), buildEvent)
+                ),
+                buildEvent
+            )
         } else {
             record(project?.getConnectionSettings(), buildEvent)
         }

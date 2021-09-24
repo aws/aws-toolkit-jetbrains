@@ -174,7 +174,8 @@ fun <T> ConnectionSettings.getResourceIfPresent(resource: Resource<T>, useStale:
  *
  * @see [ConnectionSettings.getResourceIfPresent]
  */
-fun <T> Project.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = true): T? = getConnectionSettingsOrThrow().getResourceIfPresent(resource, useStale)
+fun <T> Project.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = true): T? =
+    getConnectionSettingsOrThrow().getResourceIfPresent(resource, useStale)
 
 /**
  * Clears the contents of the cache for the specific [resource] type, in the currently active [ConnectionSettings]
@@ -273,6 +274,7 @@ class DefaultAwsResourceCache(
     private val maintenanceInterval: Duration
 ) : AwsResourceCache, Disposable, ToolkitCredentialsChangeListener {
     private val coroutineScope = disposableCoroutineScope(this)
+
     @Suppress("unused")
     constructor() : this(Clock.systemDefaultZone(), MAXIMUM_CACHE_ENTRIES, DEFAULT_MAINTENANCE_INTERVAL)
 
