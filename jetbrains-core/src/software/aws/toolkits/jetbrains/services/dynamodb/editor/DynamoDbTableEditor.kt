@@ -30,9 +30,9 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamoDbFetchType
 import software.aws.toolkits.telemetry.DynamoDbIndexType
 import software.aws.toolkits.telemetry.DynamodbTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.awt.BorderLayout
 import java.beans.PropertyChangeListener
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JComponent
 
 class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDataHolderBase(), FileEditor {
@@ -128,7 +128,7 @@ class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDa
                 LOG.debug { "Querying Dynamo with '$partiqlStatement'" }
 
                 val request = ExecuteStatementRequest.builder().statement(partiqlStatement).build()
-                val succeeded = AtomicBoolean(true)
+                var telemetryResult = Result.Succeeded
                 try {
                     val results = dynamoTable.dynamoDbClient.executeStatementPaginator(request)
                         .flatMap { it.items().asSequence() }
@@ -142,7 +142,7 @@ class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDa
                     }
                 } catch (e: Exception) {
                     LOG.error(e) { "Query failed to execute" }
-                    succeeded.set(false)
+                    telemetryResult = Result.Failed
                     withContext(edt) {
                         searchResults.setError(e)
                         searchResults.setBusy(false)
@@ -156,7 +156,7 @@ class DynamoDbTableEditor(private val dynamoTable: DynamoDbVirtualFile) : UserDa
                     }
                     DynamodbTelemetry.fetchRecords(
                         dynamoTable.connectionSettings,
-                        success = succeeded.get(),
+                        result = telemetryResult,
                         dynamoDbFetchType = fetchType,
                         dynamoDbIndexType = indexType
                     )
