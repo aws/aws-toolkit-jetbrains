@@ -69,10 +69,9 @@ class FindPid : Step() {
         val DOTNET_PID = AttributeBagKey.create<Int>("DOTNET_PID")
         private const val FIND_PID_SCRIPT =
             """
-            for i in `ls /proc/*/exe` ; do
-                symlink=`readlink  ${'$'}i 2>/dev/null`;
-                if [[ "${'$'}symlink" == *"/dotnet" ]]; then
-                    echo  ${'$'}i | sed -n 's/.*\/proc\/\(.*\)\/exe.*/\1/p'
+            for i in `ls /proc/*/cmdline` ; do
+                if cat "$i" 2>/dev/null | tr '\0' ' ' | grep -cq '/usr/bin/dotnet'; then
+                    echo  $i | sed -n 's/.*\/proc\/\(.*\)\/cmdline.*/\1/p'
                 fi;
             done;
         """
