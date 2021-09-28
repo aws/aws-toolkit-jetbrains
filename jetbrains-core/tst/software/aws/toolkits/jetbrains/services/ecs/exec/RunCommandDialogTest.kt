@@ -20,7 +20,6 @@ import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.Task
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule

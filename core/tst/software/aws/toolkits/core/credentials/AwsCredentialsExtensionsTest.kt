@@ -1,14 +1,12 @@
-// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.core.credentials
+package software.aws.toolkits.core.credentials
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.aws.toolkits.core.credentials.mergeWithExistingEnvironmentVariables
-import software.aws.toolkits.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.core.utils.test.aString
 
 class AwsCredentialsExtensionsTest {

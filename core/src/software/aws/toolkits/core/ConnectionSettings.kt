@@ -10,5 +10,6 @@ import software.aws.toolkits.core.region.AwsRegion
 data class ConnectionSettings(val credentials: ToolkitCredentialsProvider, val region: AwsRegion)
 
 val ConnectionSettings.shortName get() = "${credentials.shortName}@${region.id}"
+
 fun ConnectionSettings.toEnvironmentVariables(): Map<String, String> = region.toEnvironmentVariables() +
     credentials.resolveCredentials().toEnvironmentVariables()
