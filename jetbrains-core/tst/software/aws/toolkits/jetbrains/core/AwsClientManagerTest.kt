@@ -32,6 +32,7 @@ import software.amazon.awssdk.core.signer.Signer
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.region.Endpoint
 import software.aws.toolkits.core.region.Service
 import software.aws.toolkits.core.region.anAwsRegion
@@ -197,40 +198,20 @@ class AwsClientManagerTest {
     fun userAgentIsPassed() {
         wireMockRule.stubFor(any(anyUrl()).willReturn(aResponse().withStatus(200)))
 
-        getClientManager().createNewClient(
-            LambdaClient::class,
-            regionProvider.createAwsRegion(),
-            credentialManager.createCredentialProvider(),
-            endpointOverride = wireMockRule.baseUrl()
-        ).use {
-            it.listFunctions()
-        }
-
-        wireMockRule.verify(anyRequestedFor(anyUrl()).withHeader("User-Agent", ContainsPattern("AWS-Toolkit-For-JetBrains/")))
-    }
-
-    @Test
-    fun canCustomizeClientCreationViaExtensionPoint() {
-        wireMockRule.stubFor(any(anyUrl()).willReturn(aResponse().withStatus(200)))
-
-        val customizer = object : AwsClientCustomizer {
-            override fun customize(builder: AwsClientBuilder<*, *>) {
-                if (builder is LambdaClientBuilder) {
-                    builder.endpointOverride(URI.create(wireMockRule.baseUrl()))
-                }
+        val aConnection = ConnectionSettings(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
+        val customizer = AwsClientCustomizer { connection, builder ->
+            assertThat(connection).isEqualTo(aConnection)
+            if (builder is LambdaClientBuilder) {
+                builder.endpointOverride(URI.create(wireMockRule.baseUrl()))
             }
         }
         ExtensionTestUtil.maskExtensions(CUSTOMIZER_EP, listOf(customizer), disposableRule.disposable)
 
-        getClientManager().createNewClient(
-            LambdaClient::class,
-            regionProvider.createAwsRegion(),
-            credentialManager.createCredentialProvider()
-        ).use {
+        getClientManager().createNewClient(LambdaClient::class, aConnection).use {
             it.listFunctions()
         }
 
-        wireMockRule.verify(anyRequestedFor(urlPathMatching("(.*)/functions/")))
+        wireMockRule.verify(anyRequestedFor(urlPathMatching("(.*)/functions/")).withHeader("User-Agent", ContainsPattern("AWS-Toolkit-For-JetBrains/")))
     }
 
     // Test against real version so bypass ServiceManager for the client manager

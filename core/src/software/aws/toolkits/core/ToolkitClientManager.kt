@@ -42,24 +42,23 @@ abstract class ToolkitClientManager {
     ): T = this.getClient(T::class, credProvider, region)
 
     @Suppress("UNCHECKED_CAST")
-    open fun <T : SdkClient> getClient(
+    fun <T : SdkClient> getClient(
         sdkClass: KClass<T>,
-        credProvider: ToolkitCredentialsProvider,
-        region: AwsRegion
+        connection: ConnectionSettings
     ): T {
         val key = AwsClientKey(
-            credentialProviderId = credProvider.id,
-            region = region,
+            credentialProviderId = connection.credentials.id,
+            region = connection.region,
             serviceClass = sdkClass
         )
 
         val serviceId = key.serviceClass.java.getField("SERVICE_METADATA_ID").get(null) as String
-        if (serviceId !in GLOBAL_SERVICE_DENY_LIST && getRegionProvider().isServiceGlobal(region, serviceId)) {
-            val globalRegion = getRegionProvider().getGlobalRegionForService(region, serviceId)
-            return cachedClients.computeIfAbsent(key.copy(region = globalRegion)) { createNewClient(sdkClass, globalRegion, credProvider) } as T
+        if (serviceId !in GLOBAL_SERVICE_DENY_LIST && getRegionProvider().isServiceGlobal(connection.region, serviceId)) {
+            val globalRegion = getRegionProvider().getGlobalRegionForService(connection.region, serviceId)
+            return cachedClients.computeIfAbsent(key.copy(region = globalRegion)) { createNewClient(sdkClass, connection.copy(region = globalRegion)) } as T
         }
 
-        return cachedClients.computeIfAbsent(key) { createNewClient(sdkClass, region, credProvider) } as T
+        return cachedClients.computeIfAbsent(key) { createNewClient(sdkClass, connection) } as T
     }
 
     protected abstract fun getRegionProvider(): ToolkitRegionProvider
@@ -67,7 +66,7 @@ abstract class ToolkitClientManager {
     /**
      * Allow implementations to apply customizations to clients before they are built
      */
-    protected open fun clientCustomizer(builder: AwsClientBuilder<*, *>) {}
+    protected open fun clientCustomizer(connection: ConnectionSettings, builder: AwsClientBuilder<*, *>) {}
 
     /**
      * Calls [AutoCloseable.close] on all managed clients and clears the cache
@@ -92,17 +91,14 @@ abstract class ToolkitClientManager {
     @Suppress("UNCHECKED_CAST")
     open fun <T : SdkClient> createNewClient(
         sdkClass: KClass<T>,
-        region: AwsRegion,
-        credProvider: ToolkitCredentialsProvider,
-        endpointOverride: String? = null
+        connection: ConnectionSettings
     ): T = createNewClient(
         sdkClass = sdkClass,
         httpClient = sdkHttpClient(),
-        region = Region.of(region.id),
-        credProvider = credProvider,
+        region = Region.of(connection.region.id),
+        credProvider = connection.credentials,
         userAgent = userAgent,
-        endpointOverride = endpointOverride,
-        clientCustomizer = ::clientCustomizer
+        clientCustomizer = { builder -> clientCustomizer(connection, builder) }
     )
 
     companion object {
@@ -145,3 +141,9 @@ abstract class ToolkitClientManager {
         }
     }
 }
+
+fun <T : SdkClient> ToolkitClientManager.getClient(
+    sdkClass: KClass<T>,
+    credProvider: ToolkitCredentialsProvider,
+    region: AwsRegion
+): T = this.getClient(sdkClass, ConnectionSettings(credProvider, region))

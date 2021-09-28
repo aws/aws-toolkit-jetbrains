@@ -47,8 +47,8 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
 
     override fun getRegionProvider(): ToolkitRegionProvider = AwsRegionProvider.getInstance()
 
-    override fun clientCustomizer(builder: AwsClientBuilder<*, *>) {
-        CUSTOMIZER_EP.extensionList.forEach { it.customize(builder) }
+    override fun clientCustomizer(connection: ConnectionSettings, builder: AwsClientBuilder<*, *>) {
+        CUSTOMIZER_EP.extensionList.forEach { it.customize(connection, builder) }
     }
 
     companion object {
@@ -82,14 +82,14 @@ inline fun <reified T : SdkClient> ConnectionSettings.awsClient(): T = AwsClient
  *
  * ```
  * class MyDevEndpointCustomizer : AwsClientCustomizer {
- *   override fun customize(builder: AwsClientBuilder<*, *>) {
- *     if (builder is LambdaClientBuilder) {
+ *   override fun customize(connection: ConnectionSettings, builder: AwsClientBuilder<*, *>) {
+ *     if (builder is LambdaClientBuilder && connection.region.id == "us-west-2") {
  *       builder.endpointOverride(URI.create("http://localhost:8888"))
  *     }
  *   }
  * }
  * ```
  */
-interface AwsClientCustomizer {
-    fun customize(builder: AwsClientBuilder<*, *>)
+fun interface AwsClientCustomizer {
+    fun customize(connection: ConnectionSettings, builder: AwsClientBuilder<*, *>)
 }
