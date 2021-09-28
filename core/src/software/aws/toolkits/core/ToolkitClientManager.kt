@@ -5,6 +5,7 @@ package software.aws.toolkits.core
 
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.awscore.client.builder.AwsDefaultClientBuilder
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption
@@ -64,6 +65,11 @@ abstract class ToolkitClientManager {
     protected abstract fun getRegionProvider(): ToolkitRegionProvider
 
     /**
+     * Allow implementations to apply customizations to clients before they are built
+     */
+    protected open fun clientCustomizer(builder: AwsClientBuilder<*, *>) {}
+
+    /**
      * Calls [AutoCloseable.close] on all managed clients and clears the cache
      */
     protected fun shutdown() {
@@ -95,7 +101,8 @@ abstract class ToolkitClientManager {
         region = Region.of(region.id),
         credProvider = credProvider,
         userAgent = userAgent,
-        endpointOverride = endpointOverride
+        endpointOverride = endpointOverride,
+        clientCustomizer = ::clientCustomizer
     )
 
     companion object {
@@ -110,7 +117,8 @@ abstract class ToolkitClientManager {
             region: Region,
             credProvider: AwsCredentialsProvider,
             userAgent: String? = null,
-            endpointOverride: String? = null
+            endpointOverride: String? = null,
+            clientCustomizer: (AwsClientBuilder<*, *>) -> Unit = {}
         ): T {
             val builderMethod = sdkClass.java.methods.find {
                 it.name == "builder" && Modifier.isStatic(it.modifiers) && Modifier.isPublic(it.modifiers)
@@ -132,6 +140,7 @@ abstract class ToolkitClientManager {
                         builder.endpointOverride(URI.create(it))
                     }
                 }
+                .apply(clientCustomizer)
                 .build() as T
         }
     }

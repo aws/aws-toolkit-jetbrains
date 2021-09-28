@@ -8,7 +8,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.ex.ApplicationInfoEx
 import com.intellij.openapi.components.service
+import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.ConnectionSettings
@@ -45,6 +47,10 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
 
     override fun getRegionProvider(): ToolkitRegionProvider = AwsRegionProvider.getInstance()
 
+    override fun clientCustomizer(builder: AwsClientBuilder<*, *>) {
+        CUSTOMIZER_EP.extensionList.forEach { it.customize(builder) }
+    }
+
     companion object {
         @JvmStatic
         fun getInstance(): ToolkitClientManager = service()
@@ -54,6 +60,8 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
             val platformVersion = tryOrNull { ApplicationInfoEx.getInstanceEx().fullVersion.replace(' ', '-') }
             "AWS-Toolkit-For-JetBrains/${AwsToolkit.PLUGIN_VERSION} $platformName/$platformVersion"
         }
+
+        internal val CUSTOMIZER_EP = ExtensionPointName<AwsClientCustomizer>("aws.toolkit.sdk.clientCustomizer")
     }
 }
 
@@ -66,3 +74,12 @@ inline fun <reified T : SdkClient> Project.awsClient(): T {
 }
 
 inline fun <reified T : SdkClient> ConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(credentials, region)
+
+/**
+ * Used to override behavior during AWS SDK Client creation.
+ *
+ * Useful for injecting things like test endpoints.
+ */
+interface AwsClientCustomizer {
+    fun customize(builder: AwsClientBuilder<*, *>)
+}
