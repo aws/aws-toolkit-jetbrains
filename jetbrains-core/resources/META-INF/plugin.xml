@@ -152,7 +152,7 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"/>
-        <applicationConfigurable key="aws.settings.dynamic_resources_configurable.title" instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable" />
+        <applicationConfigurable key="aws.settings.dynamic_resources_configurable.title" instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable" parentId="aws"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
