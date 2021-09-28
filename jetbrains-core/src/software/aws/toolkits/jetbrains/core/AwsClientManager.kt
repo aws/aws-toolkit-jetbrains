@@ -76,9 +76,19 @@ inline fun <reified T : SdkClient> Project.awsClient(): T {
 inline fun <reified T : SdkClient> ConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(credentials, region)
 
 /**
- * Used to override behavior during AWS SDK Client creation.
+ * Used to override/add behavior during AWS SDK Client creation.
  *
- * Useful for injecting things like test endpoints.
+ * Example usage to add a local development endpoint for a particular service:
+ *
+ * ```
+ * class MyDevEndpointCustomizer : AwsClientCustomizer {
+ *   override fun customize(builder: AwsClientBuilder<*, *>) {
+ *     if (builder is LambdaClientBuilder) {
+ *       builder.endpointOverride(URI.create("http://localhost:8888"))
+ *     }
+ *   }
+ * }
+ * ```
  */
 interface AwsClientCustomizer {
     fun customize(builder: AwsClientBuilder<*, *>)

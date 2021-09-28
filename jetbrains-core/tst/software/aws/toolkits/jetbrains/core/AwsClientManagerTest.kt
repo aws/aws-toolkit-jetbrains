@@ -7,10 +7,10 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.any
 import com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
-import com.github.tomakehurst.wiremock.matching.EqualToPattern
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.use
@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import java.net.URI
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible
 
@@ -215,9 +216,7 @@ class AwsClientManagerTest {
         val customizer = object : AwsClientCustomizer {
             override fun customize(builder: AwsClientBuilder<*, *>) {
                 if (builder is LambdaClientBuilder) {
-                    builder.overrideConfiguration {
-                        it.putHeader("HELLO", "WORLD")
-                    }
+                    builder.endpointOverride(URI.create(wireMockRule.baseUrl()))
                 }
             }
         }
@@ -226,13 +225,12 @@ class AwsClientManagerTest {
         getClientManager().createNewClient(
             LambdaClient::class,
             regionProvider.createAwsRegion(),
-            credentialManager.createCredentialProvider(),
-            endpointOverride = wireMockRule.baseUrl()
+            credentialManager.createCredentialProvider()
         ).use {
             it.listFunctions()
         }
 
-        wireMockRule.verify(anyRequestedFor(anyUrl()).withHeader("HELLO", EqualToPattern("WORLD")))
+        wireMockRule.verify(anyRequestedFor(urlPathMatching("(.*)/functions/")))
     }
 
     // Test against real version so bypass ServiceManager for the client manager
