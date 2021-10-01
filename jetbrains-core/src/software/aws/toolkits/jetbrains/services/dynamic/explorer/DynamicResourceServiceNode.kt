@@ -115,7 +115,7 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
                         dynamicResourceIdentifier,
                         model
                     )
-                    DynamicResourceSchemaMapping.getInstance().addResourceSchemaMapping(nodeProject, file)
+                    //DynamicResourceSchemaMapping.getInstance().addResourceSchemaMapping(nodeProject, file)
 
                     indicator.text = message("dynamic_resources.fetch.open")
                     WriteCommandAction.runWriteCommandAction(nodeProject) {
