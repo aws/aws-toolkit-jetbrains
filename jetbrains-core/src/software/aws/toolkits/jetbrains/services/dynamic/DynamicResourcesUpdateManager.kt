@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.cloudcontrol.CloudControlClient
 import software.amazon.awssdk.services.cloudcontrol.model.Operation
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
 import software.amazon.awssdk.services.cloudcontrol.model.ProgressEvent
+import software.amazon.awssdk.services.cloudcontrol.model.RequestTokenNotFoundException
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
@@ -128,7 +129,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
 
     private fun getProgress() {
         var size = pendingMutations.size
-
+        var isValidToken = true
         while (size > 0) {
             val mutation = pendingMutations.remove()
             if (!mutation.status.isTerminal()) {
@@ -136,21 +137,11 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                 val progress = try {
                     client.getResourceRequestStatus { it.requestToken(mutation.token) }
                 } catch (e: Exception) {
-                    e.notifyError(
-                        message(
-                            "dynamic_resources.operation_status_notification_title",
-                            mutation.resourceIdentifier ?: mutation.resourceType,
-                            mutation.operation.name.toLowerCase()
-                        ),
-                        project
-                    )
-                    DynamicresourceTelemetry.mutateResource(
-                        project,
-                        Result.Failed,
-                        mutation.resourceType,
-                        addOperationToTelemetry(mutation.operation),
-                        ChronoUnit.MILLIS.between(mutation.startTime, DynamicResourceTelemetryResources.getCurrentTime()).toDouble()
-                    )
+                    unableToGetProgress(e, mutation)
+                    null
+                } catch (e: RequestTokenNotFoundException) {
+                    isValidToken = false
+                    unableToGetProgress(e, mutation)
                     null
                 }
                 val updatedMutation = when (val event = progress?.progressEvent()) {
@@ -164,7 +155,10 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                 if (updatedMutation != mutation) {
                     project.messageBus.syncPublisher(DYNAMIC_RESOURCE_STATE_CHANGED).mutationStatusChanged(updatedMutation)
                 }
-                pendingMutations.add(updatedMutation)
+
+                if (isValidToken) {
+                    pendingMutations.add(updatedMutation)
+                }
             }
             size--
         }
@@ -173,6 +167,27 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
         if (pendingMutations.size != 0) {
             alarm.addRequest({ getProgress() }, DEFAULT_DELAY)
         }
+    }
+
+    private fun unableToGetProgress(
+        e: Exception,
+        mutation: ResourceMutationState
+    ) {
+        e.notifyError(
+            message(
+                "dynamic_resources.operation_status_notification_title",
+                mutation.resourceIdentifier ?: mutation.resourceType,
+                mutation.operation.name.toLowerCase()
+            ),
+            project
+        )
+        DynamicresourceTelemetry.mutateResource(
+            project,
+            Result.Failed,
+            mutation.resourceType,
+            addOperationToTelemetry(mutation.operation),
+            ChronoUnit.MILLIS.between(mutation.startTime, DynamicResourceTelemetryResources.getCurrentTime()).toDouble()
+        )
     }
 
     companion object {
