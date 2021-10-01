@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.dynamic.explorer
 
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -11,7 +14,10 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.cloudcontrol.CloudControlClient
+import software.amazon.awssdk.services.cloudcontrol.model.CreateResourceRequest
+import software.amazon.awssdk.services.cloudcontrol.model.CreateResourceResponse
 import software.amazon.awssdk.services.cloudcontrol.model.DeleteResourceRequest
 import software.amazon.awssdk.services.cloudcontrol.model.DeleteResourceResponse
 import software.amazon.awssdk.services.cloudcontrol.model.GetResourceRequestStatusRequest
@@ -41,7 +47,7 @@ class DynamicResourceUpdateManagerTest {
     @Rule
     val mockClientManager = MockClientManagerRule()
 
-    private lateinit var cloudFormationClient: CloudControlClient
+    private lateinit var cloudControlClient: CloudControlClient
     private lateinit var dynamicResourceUpdateManager: DynamicResourceUpdateManager
     private lateinit var connectionSettings: ConnectionSettings
     private val resource = DynamicResource(ResourceType("AWS::SampleService::Type", "SampleService", "Type"), "sampleIdentifier")
@@ -49,7 +55,7 @@ class DynamicResourceUpdateManagerTest {
     @Before
     fun setup() {
         connectionSettings = ConnectionSettings(aToolkitCredentialsProvider(), anAwsRegion())
-        cloudFormationClient = mockClientManager.create(connectionSettings.region, connectionSettings.credentials)
+        cloudControlClient = mockClientManager.create(connectionSettings.region, connectionSettings.credentials)
     }
 
     @Test
@@ -57,7 +63,7 @@ class DynamicResourceUpdateManagerTest {
         var testOperationState: MutableList<ResourceMutationState> = mutableListOf()
         dynamicResourceUpdateManager = DynamicResourceUpdateManager.getInstance(projectRule.project)
 
-        cloudFormationClient.stub {
+        cloudControlClient.stub {
             on { deleteResource(any<DeleteResourceRequest>()) } doAnswer {
                 DeleteResourceResponse.builder().progressEvent(
                     ProgressEvent.builder()
@@ -106,7 +112,7 @@ class DynamicResourceUpdateManagerTest {
         var testOperationStatus: MutableList<OperationStatus> = mutableListOf()
         dynamicResourceUpdateManager = DynamicResourceUpdateManager.getInstance(projectRule.project)
 
-        cloudFormationClient.stub {
+        cloudControlClient.stub {
             on { deleteResource(any<DeleteResourceRequest>()) } doAnswer {
                 DeleteResourceResponse.builder().progressEvent(
                     ProgressEvent.builder()
@@ -135,7 +141,57 @@ class DynamicResourceUpdateManagerTest {
                 object : DynamicResourceStateMutationHandler {
 
                     override fun mutationStatusChanged(state: ResourceMutationState) {
-                        testOperationStatus.add(state.status)
+                        FileEditorManager.getInstance(projectRule.project).closeFile()
+                    }
+
+                    override fun statusCheckComplete() {
+
+                    }
+                }
+            )
+        dynamicResourceUpdateManager.deleteResource(DynamicResourceIdentifier(connectionSettings, resource.type.fullName, resource.identifier))
+        CountDownLatch(1).await(400, TimeUnit.MILLISECONDS)
+        assertThat(testOperationStatus.size).isEqualTo(1)
+        assertThat(testOperationStatus.first()).isEqualTo(OperationStatus.SUCCESS)
+    }
+
+    @Test
+    fun `abc`(){
+        var testOperationStatus: MutableList<OperationStatus> = mutableListOf()
+        dynamicResourceUpdateManager = DynamicResourceUpdateManager.getInstance(projectRule.project)
+
+        cloudControlClient.stub {
+            on { createResource(any<CreateResourceRequest>()) } doAnswer {
+                CreateResourceResponse.builder().progressEvent(
+                    ProgressEvent.builder()
+                        .requestToken("sampleToken")
+                        .typeName(resource.type.fullName)
+                        .operation(Operation.CREATE)
+                        .operationStatus(OperationStatus.IN_PROGRESS)
+                        .build()
+                ).build()
+            }
+            on { getResourceRequestStatus(any<GetResourceRequestStatusRequest>()) } doAnswer {
+                GetResourceRequestStatusResponse.builder().progressEvent(
+                    ProgressEvent.builder()
+                        .requestToken("sampleToken")
+                        .operation(Operation.CREATE)
+                        .operationStatus(OperationStatus.SUCCESS)
+                        .build()
+                )
+                    .build()
+            }
+        }
+        val sampleFile = LightVirtualFile("sampleFile","sampleContent")
+        FileEditorManager.getInstance(projectRule.project).openFile(sampleFile, false)
+        assertThat(FileEditorManager.getInstance(projectRule.project).openFiles.size).isEqualTo(1)
+        projectRule.project.messageBus.connect(projectRule.project)
+            .subscribe(
+                DynamicResourceUpdateManager.DYNAMIC_RESOURCE_STATE_CHANGED,
+                object : DynamicResourceStateMutationHandler {
+                    val checkToken: MutableMap<String, VirtualFile> = mutableMapOf()
+                    override fun mutationStatusChanged(state: ResourceMutationState) {
+                       // FileEditorManager.getInstance(projectRule.project).closeFile(check)
                     }
 
                     override fun statusCheckComplete() {
@@ -143,7 +199,7 @@ class DynamicResourceUpdateManagerTest {
                     }
                 }
             )
-        dynamicResourceUpdateManager.deleteResource(DynamicResourceIdentifier(connectionSettings, resource.type.fullName, resource.identifier))
+        dynamicResourceUpdateManager.createResource(connectionSettings, resource.type.fullName, resource.identifier))
         CountDownLatch(1).await(400, TimeUnit.MILLISECONDS)
         assertThat(testOperationStatus.size).isEqualTo(1)
         assertThat(testOperationStatus.first()).isEqualTo(OperationStatus.SUCCESS)
