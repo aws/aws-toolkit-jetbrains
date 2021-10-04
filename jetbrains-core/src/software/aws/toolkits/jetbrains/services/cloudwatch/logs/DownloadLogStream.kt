@@ -24,9 +24,9 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenStreamInEditor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.buildStringFromLogsOutput
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -161,7 +161,7 @@ class LogStreamDownloadToFileTask(
                 title = message("aws.notification.title"),
                 content = message("cloudwatch.logs.saving_to_disk_succeeded", logStream, file.path),
                 notificationActions = listOf(
-                    object : AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.Menu_open) {
+                    object : AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.MenuOpen) {
                         override fun actionPerformed(e: AnActionEvent) {
                             val virtualFile = VirtualFileWrapper(file).virtualFile
                                 ?: throw IllegalStateException("Log Stream was downloaded but does not exist on disk!")

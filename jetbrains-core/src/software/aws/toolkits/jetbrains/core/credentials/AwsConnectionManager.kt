@@ -15,6 +15,7 @@ import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.messages.Topic
 import org.jetbrains.concurrency.AsyncPromise
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
@@ -265,9 +266,6 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
             ConnectionSettingsStateChangeNotifier::class.java
         )
 
-        fun Project.getConnectionSettings(): ConnectionSettings = getInstance(this).connectionSettings()
-            ?: throw IllegalStateException("Bug: Attempting to retrieve connection settings with invalid connection state")
-
         @JvmStatic
         fun getInstance(project: Project): AwsConnectionManager = ServiceManager.getService(project, AwsConnectionManager::class.java)
 
@@ -275,6 +273,17 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
         private const val MAX_HISTORY = 5
         internal val AwsConnectionManager.selectedPartition get() = selectedRegion?.let { AwsRegionProvider.getInstance().partitions()[it.partitionId] }
     }
+}
+
+fun Project.getConnectionSettingsOrThrow(): ConnectionSettings = getConnectionSettings()
+    ?: throw IllegalStateException("Bug: Attempting to retrieve connection settings with invalid connection state")
+
+fun Project.getConnectionSettings(): ConnectionSettings? = AwsConnectionManager.getInstance(this).connectionSettings()
+
+fun <T> Project.withAwsConnection(block: (ConnectionSettings) -> T): T {
+    val connectionSettings = AwsConnectionManager.getInstance(this).connectionSettings()
+        ?: throw IllegalStateException("Connection settings are not configured")
+    return block(connectionSettings)
 }
 
 /**

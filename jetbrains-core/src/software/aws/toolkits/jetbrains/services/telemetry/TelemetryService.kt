@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NA
@@ -17,6 +18,7 @@ import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
 import software.aws.toolkits.jetbrains.core.getResourceIfPresent
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -39,6 +41,17 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
         setTelemetryEnabled(AwsSettings.getInstance().isTelemetryEnabled)
     }
 
+    fun record(connectionSettings: ConnectionSettings?, buildEvent: MetricEvent.Builder.() -> Unit) {
+        val metricEventMetadata = when (connectionSettings) {
+            is ConnectionSettings -> MetricEventMetadata(
+                awsAccount = connectionSettings.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
+                awsRegion = connectionSettings.region.id
+            )
+            else -> MetricEventMetadata()
+        }
+        record(metricEventMetadata, buildEvent)
+    }
+
     fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit) {
         // It is possible that a race can happen if we record telemetry but project has been closed, i.e. async actions
         val metricEventMetadata = if (project != null) {
@@ -49,7 +62,7 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
                 )
             } else {
                 MetricEventMetadata(
-                    awsAccount = project.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
+                    awsAccount = project.getConnectionSettings()?.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
                     awsRegion = project.activeRegion().id
                 )
             }
@@ -59,7 +72,7 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
         record(metricEventMetadata, buildEvent)
     }
 
-    private fun Project.activeAwsAccountIfKnown(): String? = tryOrNull { this.getResourceIfPresent(StsResources.ACCOUNT) }
+    private fun ConnectionSettings.activeAwsAccountIfKnown(): String? = tryOrNull { this.getResourceIfPresent(StsResources.ACCOUNT) }
 
     @Synchronized
     fun setTelemetryEnabled(isEnabled: Boolean) {

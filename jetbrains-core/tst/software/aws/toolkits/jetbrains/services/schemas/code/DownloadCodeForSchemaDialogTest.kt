@@ -23,7 +23,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
-import software.aws.toolkits.core.utils.failedFuture
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.schemas.Schema
@@ -36,6 +35,7 @@ import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.util.concurrent.CompletableFuture.completedFuture
+import java.util.concurrent.CompletableFuture.failedFuture
 import java.util.function.Function
 
 class DownloadCodeForSchemaDialogTest {
@@ -150,7 +150,7 @@ class DownloadCodeForSchemaDialogTest {
         val fileName = testFile.name
 
         schemaCodeDownloader.stub {
-            on { downloadCode(any(), any()) }.thenReturn(completedFuture(testFile))
+            on { downloadCode(any(), any()) }.thenReturn(completedFuture(testFile.toPath()))
         }
 
         runInEdtAndWait {
