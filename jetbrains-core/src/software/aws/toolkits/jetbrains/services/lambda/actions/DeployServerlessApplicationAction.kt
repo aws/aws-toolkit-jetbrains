@@ -45,6 +45,7 @@ import software.aws.toolkits.jetbrains.services.lambda.steps.createDeployWorkflo
 import software.aws.toolkits.jetbrains.services.lambda.upload.UploadFunctionContinueDialog
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
+import software.aws.toolkits.jetbrains.utils.execution.steps.BuildViewWorkflowEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -126,15 +127,15 @@ class DeployServerlessApplicationAction : AnAction(
 
     private fun continueDeployment(project: Project, templateFile: VirtualFile, settings: DeployServerlessApplicationSettings) {
         val stackName = settings.stackName
+        val emitter = BuildViewWorkflowEmitter.createEmitter(message("serverless.application.deploy_in_progress.title", stackName), stackName, project)
         val workflow = StepExecutor(
             project,
-            message("serverless.application.deploy_in_progress.title", stackName),
             createDeployWorkflow(
                 project,
                 templateFile,
                 settings
             ),
-            stackName
+            emitter
         )
 
         workflow.onSuccess = {
