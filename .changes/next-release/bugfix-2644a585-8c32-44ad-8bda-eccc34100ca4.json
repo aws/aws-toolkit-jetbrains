@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Mac Homebrew changed their cask syntax from 'brew cask install' to 'brew install --cask'"
+}
