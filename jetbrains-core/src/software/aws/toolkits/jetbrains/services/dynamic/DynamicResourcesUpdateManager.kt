@@ -129,26 +129,41 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
 
     private fun getProgress() {
         var size = pendingMutations.size
-        var isValidToken = true
         while (size > 0) {
             val mutation = pendingMutations.remove()
             if (!mutation.status.isTerminal()) {
                 val client = mutation.connectionSettings.awsClient<CloudControlClient>()
-                val progress = try {
-                    client.getResourceRequestStatus { it.requestToken(mutation.token) }
+                val (progressEvent, shouldDropFromPendingQueue) = try {
+                    val progress = client.getResourceRequestStatus { it.requestToken(mutation.token) }
+                    progress.progressEvent() to progress.progressEvent().operationStatus().isTerminal()
                 } catch (e: Exception) {
-                    unableToGetProgress(e, mutation)
-                    null
-                } catch (e: RequestTokenNotFoundException) {
-                    isValidToken = false
-                    unableToGetProgress(e, mutation)
-                    null
+                    when (e) {
+                        is RequestTokenNotFoundException -> {
+                            e.notifyError(
+                                message(
+                                    "dynamic_resources.operation_status_notification_title",
+                                    mutation.resourceIdentifier ?: mutation.resourceType,
+                                    mutation.operation.name.toLowerCase()
+                                ),
+                                project
+                            )
+                            DynamicresourceTelemetry.mutateResource(
+                                project,
+                                Result.Failed,
+                                mutation.resourceType,
+                                addOperationToTelemetry(mutation.operation),
+                                ChronoUnit.MILLIS.between(mutation.startTime, DynamicResourceTelemetryResources.getCurrentTime()).toDouble()
+                            )
+                            null to true
+                        }
+                        else -> null to false
+                    }
                 }
-                val updatedMutation = when (val event = progress?.progressEvent()) {
+                val updatedMutation = when (progressEvent) {
                     is ProgressEvent -> mutation.copy(
-                        status = event.operationStatus(),
-                        resourceIdentifier = event.identifier(),
-                        message = event.statusMessage()
+                        status = progressEvent.operationStatus(),
+                        resourceIdentifier = progressEvent.identifier(),
+                        message = progressEvent.statusMessage()
                     )
                     else -> mutation
                 }
@@ -156,7 +171,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                     project.messageBus.syncPublisher(DYNAMIC_RESOURCE_STATE_CHANGED).mutationStatusChanged(updatedMutation)
                 }
 
-                if (isValidToken) {
+                if (!shouldDropFromPendingQueue) {
                     pendingMutations.add(updatedMutation)
                 }
             }
