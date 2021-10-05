@@ -49,7 +49,7 @@ class StepExecutorTest {
         val step1 = mock<Step>()
         val step2 = mock<Step>()
 
-        createExecutor(step1, step2).startExecution().waitFor(2_000)
+        createExecutor(step1, step2).startAndWait()
 
         verify(step1).run(any(), any(), any())
         verify(step2).run(any(), any(), any())
@@ -73,7 +73,7 @@ class StepExecutorTest {
         }
         val step2 = mock<Step>()
 
-        createExecutor(step1, step2).startExecution().waitFor(2_000)
+        createExecutor(step1, step2).startAndWait()
 
         verify(step1).run(any(), any(), any())
         verifyZeroInteractions(step2)
@@ -98,7 +98,7 @@ class StepExecutorTest {
             on { invoke(any()) }.thenThrow(IllegalStateException("Simulated"))
         }
 
-        createExecutor().startExecution().waitFor(2_000)
+        createExecutor().startAndWait()
 
         verify(successCallback).invoke(any())
         verify(errorCallback).invoke(any())
@@ -126,13 +126,15 @@ class StepExecutorTest {
         }
         val step2 = mock<Step>()
 
-        val execution = createExecutor(step1, step2).startExecution()
+        val stepExecutor = createExecutor(step1, step2)
+        stepExecutor.startExecution()
+        val processHandler = stepExecutor.getProcessHandler()
 
         assertThat(stepStarted.await(3, TimeUnit.SECONDS)).isTrue
 
-        execution.destroyProcess()
+        processHandler.destroyProcess()
         stepPaused.countDown()
-        execution.waitFor(2_000)
+        processHandler.waitFor(2_000)
 
         verifyZeroInteractions(successCallback)
         verify(errorCallback).invoke(any())
@@ -158,7 +160,7 @@ class StepExecutorTest {
             on { invoke(any()) }.thenThrow(IllegalStateException("Simulated 2"))
         }
 
-        createExecutor().startExecution().waitFor(2_000)
+        createExecutor().startAndWait()
 
         verify(successCallback).invoke(any())
         verify(errorCallback).invoke(any())
@@ -178,5 +180,10 @@ class StepExecutorTest {
         executor.onSuccess = successCallback
         executor.onError = errorCallback
         return executor
+    }
+
+    private fun StepExecutor.startAndWait() {
+        this.startExecution()
+        this.getProcessHandler().waitFor(2_000)
     }
 }
