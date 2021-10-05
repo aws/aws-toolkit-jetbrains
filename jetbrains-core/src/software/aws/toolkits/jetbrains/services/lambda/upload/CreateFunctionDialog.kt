@@ -181,7 +181,11 @@ class CreateFunctionDialog(private val project: Project, private val initialRunt
             else -> throw UnsupportedOperationException("$packageType is not supported")
         }
 
-        val emitter = BuildViewWorkflowEmitter.createEmitter(message("lambda.workflow.create_new.name"), view.name.text, project)
+        val emitter = BuildViewWorkflowEmitter.createEmitter(
+            project,
+            message("lambda.workflow.create_new.name"),
+            view.name.text
+        )
         return StepExecutor(project, workflow, emitter)
     }
 

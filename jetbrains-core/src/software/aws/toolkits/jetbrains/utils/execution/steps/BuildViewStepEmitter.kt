@@ -21,9 +21,9 @@ import com.intellij.util.ExceptionUtil
 import software.aws.toolkits.resources.message
 
 class BuildViewWorkflowEmitter private constructor(
+    private val buildListener: BuildProgressListener,
     private val workflowTitle: String,
-    private val workflowId: String,
-    private val buildListener: BuildProgressListener
+    private val workflowId: String
 ) : WorkflowEmitter {
     override fun createStepEmitter(): StepEmitter = BuildViewStepEmitter.createRoot(buildListener, workflowId)
 
@@ -74,11 +74,11 @@ class BuildViewWorkflowEmitter private constructor(
     }
 
     companion object {
-        fun createEmitter(workflowTitle: String, workflowId: String, buildListener: BuildProgressListener) =
-            BuildViewWorkflowEmitter(workflowTitle, workflowId, buildListener)
+        fun createEmitter(buildListener: BuildProgressListener, workflowTitle: String, workflowId: String) =
+            BuildViewWorkflowEmitter(buildListener, workflowTitle, workflowId)
 
-        fun createEmitter(workflowTitle: String, workflowId: String, project: Project) =
-            BuildViewWorkflowEmitter(workflowTitle, workflowId, project.service<BuildViewManager>())
+        fun createEmitter(project: Project, workflowTitle: String, workflowId: String) =
+            BuildViewWorkflowEmitter(project.service<BuildViewManager>(), workflowTitle, workflowId)
     }
 }
 

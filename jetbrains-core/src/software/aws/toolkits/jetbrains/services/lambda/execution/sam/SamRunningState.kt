@@ -160,7 +160,7 @@ class SamRunningState(
                 }
             }
         )
-        val emitter = BuildViewWorkflowEmitter.createEmitter(message("sam.build.running"), environment.executionId.toString(), buildView)
+        val emitter = BuildViewWorkflowEmitter.createEmitter(buildView, message("sam.build.running"), environment.executionId.toString())
         val executor = StepExecutor(environment.project, workflow, emitter)
         executor.onSuccess = {
             reportMetric(settings, Result.Succeeded, environment.isDebug())

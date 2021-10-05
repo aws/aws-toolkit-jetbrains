@@ -49,7 +49,11 @@ class CloudDebugRunState(
             }
         )
 
-        val workflowEmitter = BuildViewWorkflowEmitter.createEmitter(message("cloud_debug.execution.title"), runConfigId(), buildView)
+        val workflowEmitter = BuildViewWorkflowEmitter.createEmitter(
+            buildView,
+            message("cloud_debug.execution.title"),
+            runConfigId()
+        )
 
         val rootStep = CloudDebugWorkflow(settings, environment)
         val context = Context(project)

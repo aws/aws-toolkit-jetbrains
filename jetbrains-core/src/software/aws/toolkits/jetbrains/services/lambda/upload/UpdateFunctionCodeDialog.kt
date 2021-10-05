@@ -160,7 +160,7 @@ class UpdateFunctionCodeDialog(private val project: Project, private val initial
             else -> throw UnsupportedOperationException("$packageType is not supported")
         }
 
-        val emitter = BuildViewWorkflowEmitter.createEmitter(initialSettings.name, initialSettings.name, project)
+        val emitter = BuildViewWorkflowEmitter.createEmitter(project, message("lambda.workflow.update_code.name"), initialSettings.name)
         return StepExecutor(project, workflow, emitter)
     }
 

@@ -60,7 +60,7 @@ abstract class PseCliAction(val project: Project, val actionName: String, privat
             ) {
                 override fun run(indicator: ProgressIndicator) {
                     val startTime = Instant.now()
-                    val workflowEmitter = BuildViewWorkflowEmitter.createEmitter(actionName, actionName, project)
+                    val workflowEmitter = BuildViewWorkflowEmitter.createEmitter(project, actionName, actionName)
                     workflowEmitter.workflowStarted()
 
                     runInEdt {

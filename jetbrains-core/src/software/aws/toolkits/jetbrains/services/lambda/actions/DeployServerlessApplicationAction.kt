@@ -127,7 +127,11 @@ class DeployServerlessApplicationAction : AnAction(
 
     private fun continueDeployment(project: Project, templateFile: VirtualFile, settings: DeployServerlessApplicationSettings) {
         val stackName = settings.stackName
-        val emitter = BuildViewWorkflowEmitter.createEmitter(message("serverless.application.deploy_in_progress.title", stackName), stackName, project)
+        val emitter = BuildViewWorkflowEmitter.createEmitter(
+            project,
+            message("serverless.application.deploy_in_progress.title", stackName),
+            stackName
+        )
         val workflow = StepExecutor(
             project,
             createDeployWorkflow(
