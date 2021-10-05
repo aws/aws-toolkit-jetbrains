@@ -131,7 +131,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
         var size = pendingMutations.size
         while (size > 0) {
             val mutation = pendingMutations.remove()
-            
+
             val client = mutation.connectionSettings.awsClient<CloudControlClient>()
             val (progressEvent, shouldDropFromPendingQueue) = try {
                 val progress = client.getResourceRequestStatus { it.requestToken(mutation.token) }
