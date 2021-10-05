@@ -67,11 +67,14 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
                 }
             }
 
-            runConfiguration.project.messageBus.connect(executionEnvironment).subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
-                override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
-                    handler.addProcessListener(listener)
+            runConfiguration.project.messageBus.connect(executionEnvironment).subscribe(
+                ExecutionManager.EXECUTION_TOPIC,
+                object : ExecutionListener {
+                    override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+                        handler.addProcessListener(listener)
+                    }
                 }
-            })
+            )
 
             // TODO: exception isn't propagated out and test is forced to wait to timeout instead of exiting immediately
             executionEnvironment.runner.execute(executionEnvironment)
