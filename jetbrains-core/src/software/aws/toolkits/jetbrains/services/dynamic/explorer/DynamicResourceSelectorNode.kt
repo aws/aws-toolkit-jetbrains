@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.dynamic.explorer
 
+import com.intellij.ide.projectView.PresentationData
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.util.IconUtil
@@ -18,7 +19,11 @@ class DynamicResourceSelectorNode(nodeProject: Project) : AwsExplorerNode<Unit>(
     override fun getChildren(): List<AwsExplorerNode<*>> = emptyList()
 
     override fun onDoubleClick() {
-        ShowSettingsUtil.getInstance().showSettingsDialog(nodeProject, DynamicResourcesConfigurable::class.java)
+        ShowSettingsUtil.getInstance().showSettingsDialog(null, DynamicResourcesConfigurable::class.java)
         DynamicresourceTelemetry.selectResources(nodeProject)
+    }
+
+    override fun update(presentation: PresentationData) {
+        presentation.tooltip = message("dynamic_resources.add_remove_resources_tooltip", DynamicResourcesSettings.getInstance().resourcesAvailable())
     }
 }
