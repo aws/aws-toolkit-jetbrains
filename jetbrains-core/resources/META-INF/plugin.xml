@@ -90,8 +90,6 @@ with what features/services are supported.
                   topic="software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier"/>
         <listener class="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateChangedNotificationHandler"
                   topic="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateMutationHandler"/>
-        <listener class="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateChangedNotificationHandler"
-                  topic="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateMutationHandler"/>
         <listener class="software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler"
                   topic="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateMutationHandler"/>
     </projectListeners>
