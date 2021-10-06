@@ -30,7 +30,7 @@ class CreateResourceFileStatusHandler(private val project: Project) : DynamicRes
                     }
 
                     val model = try {
-                        project.awsClient<CloudControlClient>()
+                        state.connectionSettings.awsClient<CloudControlClient>()
                             .getResource {
                                 it.typeName(state.resourceType)
                                 it.identifier(state.resourceIdentifier)
@@ -52,13 +52,11 @@ class CreateResourceFileStatusHandler(private val project: Project) : DynamicRes
                         dynamicResourceIdentifier,
                         model
                     )
-                    DynamicResourceSchemaMapping.getInstance().addResourceSchemaMapping(project, file)
+
                     WriteCommandAction.runWriteCommandAction(project) {
                         CodeStyleManager.getInstance(project).reformat(PsiUtilCore.getPsiFile(project, file))
-
                         file.isWritable = false
                         DynamicresourceTelemetry.getResource(project, success = true, resourceType = state.resourceType)
-
                         FileEditorManager.getInstance(project).openFile(file, true)
                     }
                 }
