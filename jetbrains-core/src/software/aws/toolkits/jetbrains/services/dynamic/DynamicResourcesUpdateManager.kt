@@ -184,27 +184,6 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
         }
     }
 
-    private fun unableToGetProgress(
-        e: Exception,
-        mutation: ResourceMutationState
-    ) {
-        e.notifyError(
-            message(
-                "dynamic_resources.operation_status_notification_title",
-                mutation.resourceIdentifier ?: mutation.resourceType,
-                mutation.operation.name.toLowerCase()
-            ),
-            project
-        )
-        DynamicresourceTelemetry.mutateResource(
-            project,
-            Result.Failed,
-            mutation.resourceType,
-            addOperationToTelemetry(mutation.operation),
-            ChronoUnit.MILLIS.between(mutation.startTime, DynamicResourceTelemetryResources.getCurrentTime()).toDouble()
-        )
-    }
-
     companion object {
         private const val DEFAULT_DELAY = 500
         val DYNAMIC_RESOURCE_STATE_CHANGED: Topic<DynamicResourceStateMutationHandler> = Topic.create(
