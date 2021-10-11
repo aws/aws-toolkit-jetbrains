@@ -15,6 +15,4 @@ object AwsToolkit {
     }
 
     fun isDeveloperMode() = Registry.`is`("aws.toolkit.developerMode")
-
-    fun isCloudDebugEnabled() = Registry.`is`("aws.feature.ecsCloudDebug")
 }
