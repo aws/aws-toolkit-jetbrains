@@ -14,10 +14,13 @@ import com.intellij.openapi.extensions.ExtensionPointName
  *
  * Use the `aws.toolkit.experiment` extensionpoint to register experiments. This surfaces the configuration in the AWS Settings panel - and in sub-menus.
  *
+ * @param hidden determines whether this experiment should surface in the settings/menus; hidden experiments can only be enabled by system property or manually modifying config in aws.xml
+ * @param default determines the default state of an experiment
+ *
  * `ToolkitExperiment` implementations should be an `object` for example:
  *
  * ```
- * object MyExperiment : ToolkitExperiment() {..}
+ * object MyExperiment : ToolkitExperiment(..)
  * ```
  *
  * This allows simple use at branch-points for the experiment via the available extension functions:
@@ -32,7 +35,8 @@ abstract class ToolkitExperiment(
     internal val id: String,
     internal val title: () -> String,
     internal val description: () -> String,
-    internal val hidden: Boolean = false
+    internal val hidden: Boolean = false,
+    internal val default: Boolean = false
 ) {
     override fun equals(other: Any?) = (other as? ToolkitExperiment)?.id?.equals(id) == true
     override fun hashCode() = id.hashCode()
@@ -42,23 +46,24 @@ fun ToolkitExperiment.isEnabled(): Boolean = ToolkitExperimentManager.getInstanc
 internal fun ToolkitExperiment.setState(enabled: Boolean) = ToolkitExperimentManager.getInstance().setState(this, enabled)
 
 @State(name = "experiments", storages = [Storage("aws.xml")])
-internal class ToolkitExperimentManager : PersistentStateComponent<Set<String>> {
-    private val enabledState = mutableSetOf<String>()
+internal class ToolkitExperimentManager : PersistentStateComponent<Map<String, Boolean>> {
+    private val enabledState = mutableMapOf<String, Boolean>()
     fun isEnabled(experiment: ToolkitExperiment): Boolean =
-        (experiment.id in enabledState || isEnabledByProperty(experiment.id)) && EP_NAME.extensionList.contains(experiment)
+        (enabledState.getOrDefault(experiment.id, experiment.default) || isEnabledByProperty(experiment.id)) && EP_NAME.extensionList.contains(experiment)
 
     fun setState(experiment: ToolkitExperiment, enabled: Boolean) {
-        when (enabled) {
-            true -> enabledState.add(experiment.id)
-            false -> enabledState.remove(experiment.id)
+        if (enabled == experiment.default) {
+            enabledState.remove(experiment.id)
+        } else {
+            enabledState[experiment.id] = enabled
         }
     }
 
-    override fun getState(): Set<String> = enabledState
+    override fun getState(): Map<String, Boolean> = enabledState
 
-    override fun loadState(state: Set<String>) {
+    override fun loadState(state: Map<String, Boolean>) {
         enabledState.clear()
-        enabledState.addAll(state)
+        enabledState.putAll(state)
     }
 
     companion object {

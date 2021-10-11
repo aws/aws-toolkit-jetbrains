@@ -27,7 +27,7 @@ class ToolkitExperimentManagerTest {
     val systemPropertyHelper = SystemPropertyHelper()
 
     @Test
-    fun experimentsCanBeEnabledBySystemProperty() {
+    fun `experiments can be enabled by system property`() {
         val experiment = DummyExperiment()
 
         ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
@@ -45,7 +45,7 @@ class ToolkitExperimentManagerTest {
     }
 
     @Test
-    fun onlyRegisteredExperimentsCanBeEnabled() {
+    fun `only registered experiments can be enabled`() {
         val registered = DummyExperiment()
         val notRegistred = DummyExperiment()
 
@@ -60,7 +60,7 @@ class ToolkitExperimentManagerTest {
     }
 
     @Test
-    fun hiddenExperimentsAreNotConsideredVisible() {
+    fun `hidden experiments are not considered visible`() {
         val regular = DummyExperiment()
         val hidden = DummyExperiment(hidden = true)
 
@@ -70,7 +70,33 @@ class ToolkitExperimentManagerTest {
     }
 
     @Test
-    fun experimentsAreConsideredEqualBasedOnId() {
+    fun `experiments can be enabled by default`() {
+        val experiment = DummyExperiment(default = true)
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        assertThat(experiment.isEnabled()).isTrue
+    }
+
+    @Test
+    fun `experiments enabled by default can be disabled`() {
+        val experiment = DummyExperiment(default = true)
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        experiment.setState(false)
+        assertThat(experiment.isEnabled()).isFalse
+    }
+
+    @Test
+    fun `state only stored if it differs from default, allowing a previously released experiment to become enabled by default`() {
+        val experiment = DummyExperiment()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        experiment.setState(true)
+
+        assertThat(ToolkitExperimentManager.getInstance().state).containsEntry(experiment.id, true)
+        experiment.setState(false)
+        assertThat(ToolkitExperimentManager.getInstance().state).doesNotContainKey(experiment.id)
+    }
+
+    @Test
+    fun `experiments are considered equal based on id`() {
         val first = DummyExperiment()
         val second = DummyExperiment(id = first.id)
 
@@ -79,4 +105,5 @@ class ToolkitExperimentManagerTest {
     }
 }
 
-class DummyExperiment(id: String = aString(), hidden: Boolean = false) : ToolkitExperiment(id, { "Dummy ($id)" }, { "Dummy Description" }, hidden)
+class DummyExperiment(id: String = aString(), hidden: Boolean = false, default: Boolean = false) :
+    ToolkitExperiment(id, { "Dummy ($id)" }, { "Dummy Description" }, hidden, default)
