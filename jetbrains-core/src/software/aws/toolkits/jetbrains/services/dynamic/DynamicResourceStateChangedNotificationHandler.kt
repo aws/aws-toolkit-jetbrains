@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.dynamic
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.text.StringUtil
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
@@ -25,12 +24,12 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
             notifyInfo(
                 message(
                     "dynamic_resources.operation_status_notification_title",
-                    StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
+                    state.resourceIdentifier ?: state.resourceType,
                     state.operation.name.toLowerCase()
                 ),
                 message(
                     "dynamic_resources.operation_status_success",
-                    StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
+                    state.resourceIdentifier ?: state.resourceType,
                     state.operation.name.toLowerCase()
                 ),
                 project
@@ -48,7 +47,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
                     state,
                     message(
                         "dynamic_resources.operation_status_failed_no_message",
-                        StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
+                        state.resourceIdentifier ?: state.resourceType,
                         state.operation.name.toLowerCase()
                     )
                 )
@@ -57,7 +56,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
                     state,
                     message(
                         "dynamic_resources.operation_status_failed",
-                        StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
+                        state.resourceIdentifier ?: state.resourceType,
                         state.operation.name.toLowerCase(),
                         state.message
                     )
@@ -79,7 +78,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
         notifyError(
             message(
                 "dynamic_resources.operation_status_notification_title",
-                StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
+                state.resourceIdentifier ?: state.resourceType,
                 state.operation.name.toLowerCase()
             ),
             errorMessage,
