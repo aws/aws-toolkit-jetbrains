@@ -29,8 +29,8 @@ import javax.swing.JTextArea
 private const val GROUP_DISPLAY_ID = "AWS Toolkit"
 private val LOG = getLogger<AwsToolkit>()
 
-fun Throwable.notifyError(title: String = "", project: Project? = null, shouldRemoveHtml: Boolean = true) {
-    val message = getCleanedContent(this.message ?: "${this::class.java.name}${this.stackTrace?.joinToString("\n", prefix = "\n")}", shouldRemoveHtml)
+fun Throwable.notifyError(title: String = "", project: Project? = null, stripHtml: Boolean = true) {
+    val message = getCleanedContent(this.message ?: "${this::class.java.name}${this.stackTrace?.joinToString("\n", prefix = "\n")}", stripHtml)
     LOG.warn(this) { title.takeIf { it.isNotBlank() }?.let { "$it ($message)" } ?: message }
     notify(
         Notification(
@@ -51,31 +51,31 @@ private fun notify(type: NotificationType, title: String, content: String = "", 
     notify(notification, project)
 }
 
-fun notifyInfo(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, shouldRemoveHtml: Boolean = true) =
-    notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, shouldRemoveHtml), NotificationType.INFORMATION, listener), project)
+fun notifyInfo(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, stripHtml: Boolean = true) =
+    notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.INFORMATION, listener), project)
 
-fun notifyInfo(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, shouldRemoveHtml: Boolean = true) =
-    notify(NotificationType.INFORMATION, title, getCleanedContent(content, shouldRemoveHtml), project, notificationActions)
+fun notifyInfo(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, stripHtml: Boolean = true) =
+    notify(NotificationType.INFORMATION, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
-fun notifyWarn(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, shouldRemoveHtml: Boolean = true) =
-    notify(NotificationType.WARNING, title, getCleanedContent(content, shouldRemoveHtml), project, notificationActions)
+fun notifyWarn(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, stripHtml: Boolean = true) =
+    notify(NotificationType.WARNING, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
-fun notifyWarn(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, shouldRemoveHtml: Boolean = true) =
-    notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, shouldRemoveHtml), NotificationType.WARNING, listener), project)
+fun notifyWarn(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, stripHtml: Boolean = true) =
+    notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.WARNING, listener), project)
 
-fun notifyError(title: String, content: String = "", project: Project? = null, action: AnAction, shouldRemoveHtml: Boolean = true) =
-    notify(NotificationType.ERROR, title, getCleanedContent(content, shouldRemoveHtml), project, listOf(action))
+fun notifyError(title: String, content: String = "", project: Project? = null, action: AnAction, stripHtml: Boolean = true) =
+    notify(NotificationType.ERROR, title, getCleanedContent(content, stripHtml), project, listOf(action))
 
-fun notifyError(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, shouldRemoveHtml: Boolean = true) =
-    notify(NotificationType.ERROR, title, getCleanedContent(content, shouldRemoveHtml), project, notificationActions)
+fun notifyError(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, stripHtml: Boolean = true) =
+    notify(NotificationType.ERROR, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyError(
     title: String = message("aws.notification.title"),
     content: String = "", project: Project? = null,
     listener: NotificationListener? = null,
-    shouldRemoveHtml: Boolean = true
+    stripHtml: Boolean = true
 ) =
-    notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, shouldRemoveHtml), NotificationType.ERROR, listener), project)
+    notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.ERROR, listener), project)
 
 /**
  * Notify error that AWS credentials are not configured.
@@ -109,7 +109,7 @@ fun notifySamCliNotValidError(
             ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
             notification.expire()
         },
-        shouldRemoveHtml = false
+        stripHtml = false
     )
 }
 
@@ -159,4 +159,4 @@ fun createShowMoreInfoDialogAction(actionName: String?, title: String?, message:
         }
     }
 
-fun getCleanedContent(content: String, shouldRemoveHtml: Boolean): String = if (shouldRemoveHtml) StringUtil.stripHtml(content, true) else content
+private fun getCleanedContent(content: String, stripHtml: Boolean): String = if (stripHtml) StringUtil.stripHtml(content, true) else content
