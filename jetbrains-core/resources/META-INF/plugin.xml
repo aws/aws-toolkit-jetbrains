@@ -126,6 +126,7 @@ with what features/services are supported.
         <extensionPoint name="explorer.nodeProcessor" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor" dynamic="true"/>
         <extensionPoint name="explorer.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider" dynamic="true"/>
         <extensionPoint name="sdk.clientCustomizer" interface="software.aws.toolkits.jetbrains.core.AwsClientCustomizer" dynamic="true"/>
+        <extensionPoint name="experiment" interface="software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -191,6 +192,7 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes"/>
 
         <projectService serviceImplementation = "software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager"/>
@@ -212,6 +214,7 @@ with what features/services are supported.
         <applicationConfigurable id="aws" groupId="tools" key="aws.settings.title" instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
         <projectConfigurable id="aws.lambda" parentId="aws" instance="software.aws.toolkits.jetbrains.services.lambda.settings.LambdaSettingsConfigurable"/>
         <applicationConfigurable parentId="aws" key="aws.settings.dynamic_resources_configurable.title" instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable" />
+        <applicationConfigurable id="aws.experiments" parentId="aws" instance="software.aws.toolkits.jetbrains.core.experiments.ExperimentConfigurable"/>
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>
@@ -255,6 +258,7 @@ with what features/services are supported.
         <registryKey key="aws.feature.ecsCloudDebug" description="Enables the Cloud Debug for ECS set of features" restartRequired="false" defaultValue="true"/>
         <registryKey key="aws.feature.ecsExec" description="Enables the features and actions associated with ECS Execute Command" restartRequired="false" defaultValue="false"/>
         <registryKey key="aws.feature.dynamoDb" description="Enables the features and actions associated with DynamoDB" restartRequired="false" defaultValue="true"/>
+        <registryKey key="aws.toolkit.developerMode" description="Enables features to facilitate development of the toolkit" restartRequired="false" defaultValue="false"/>
         <registryKey key="aws.feature.moreResources.mutation" description="Enables the create/update/delete features and actions associated with more resources" restartRequired="false" defaultValue="false"/>
     </extensions>
 
@@ -292,8 +296,7 @@ with what features/services are supported.
     </extensions>
 
     <actions>
-        <action internal="true" id="aws.toolkit.open.telemetry.viewer"
-                class="software.aws.toolkits.jetbrains.services.telemetry.viewer.OpenTelemetryAction"/>
+        <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
         <action id="aws.settings.refresh"  class="software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction"/>
         <action id="aws.toolkit.showFeedback" class="software.aws.toolkits.jetbrains.ui.feedback.ShowFeedbackDialogAction"/>
         <group id="aws.toolkit.explorer.titleBar" popup="false" compact="true">
@@ -381,7 +384,7 @@ with what features/services are supported.
         </group>
 
         <group id="aws.toolkit.explorer.cloudformation" popup="true" compact="false">
-            <action id="cloudformation.serverless.deploy" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction" />
+            <action id="cloudformation.serverless.deploy" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
         </group>
 
         <group id="aws.toolkit.explorer.cloudformation.stack" popup="true" compact="false">
