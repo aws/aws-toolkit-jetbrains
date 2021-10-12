@@ -25,12 +25,12 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
             notifyInfo(
                 message(
                     "dynamic_resources.operation_status_notification_title",
-                    removeHtml(state.resourceIdentifier, state.resourceType),
+                    StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
                     state.operation.name.toLowerCase()
                 ),
                 message(
                     "dynamic_resources.operation_status_success",
-                    removeHtml(state.resourceIdentifier, state.resourceType),
+                    StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
                     state.operation.name.toLowerCase()
                 ),
                 project
@@ -48,7 +48,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
                     state,
                     message(
                         "dynamic_resources.operation_status_failed_no_message",
-                        removeHtml(state.resourceIdentifier, state.resourceType),
+                        StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
                         state.operation.name.toLowerCase()
                     )
                 )
@@ -57,7 +57,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
                     state,
                     message(
                         "dynamic_resources.operation_status_failed",
-                        removeHtml(state.resourceIdentifier, state.resourceType),
+                        StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
                         state.operation.name.toLowerCase(),
                         state.message
                     )
@@ -79,7 +79,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
         notifyError(
             message(
                 "dynamic_resources.operation_status_notification_title",
-                removeHtml(state.resourceIdentifier, state.resourceType),
+                StringUtil.stripHtml(state.resourceIdentifier ?: state.resourceType, true),
                 state.operation.name.toLowerCase()
             ),
             errorMessage,
@@ -94,6 +94,4 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
             }
         }
     }
-
-    fun removeHtml(identifier: String?, resourceType: String): String = StringUtil.stripHtml(identifier ?: resourceType, true)
 }
