@@ -11,6 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.rules.SystemPropertyHelper
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.utils.rules.RegistryRule
 
 class ToolkitExperimentManagerTest {
 
@@ -26,6 +27,10 @@ class ToolkitExperimentManagerTest {
     @Rule
     val systemPropertyHelper = SystemPropertyHelper()
 
+    @JvmField
+    @Rule
+    val developerModeRule = RegistryRule("aws.toolkit.developerMode", desiredEnabledState = false)
+
     @Test
     fun `experiments can be enabled by system property`() {
         val experiment = DummyExperiment()
@@ -37,10 +42,22 @@ class ToolkitExperimentManagerTest {
         System.setProperty("aws.experiment.${experiment.id}", "")
         assertThat(experiment.isEnabled()).isTrue
 
+        System.setProperty("aws.experiment.${experiment.id}", " ")
+        assertThat(experiment.isEnabled()).isTrue
+
         System.setProperty("aws.experiment.${experiment.id}", "true")
         assertThat(experiment.isEnabled()).isTrue
 
+        System.setProperty("aws.experiment.${experiment.id}", "True")
+        assertThat(experiment.isEnabled()).isTrue
+
+        System.setProperty("aws.experiment.${experiment.id}", "TRUE")
+        assertThat(experiment.isEnabled()).isTrue
+
         System.setProperty("aws.experiment.${experiment.id}", "false")
+        assertThat(experiment.isEnabled()).isFalse
+
+        System.setProperty("aws.experiment.${experiment.id}", "foobar")
         assertThat(experiment.isEnabled()).isFalse
     }
 
@@ -102,6 +119,37 @@ class ToolkitExperimentManagerTest {
 
         assertThat(first === second).isFalse
         assertThat(first).isEqualTo(second)
+    }
+
+    @Test
+    fun `all experiments are enabled in developer mode`() {
+        val experiment = DummyExperiment()
+
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        developerModeRule.setState(true)
+
+        assertThat(experiment.isEnabled()).isTrue
+    }
+
+    @Test
+    fun `explicit enable or disable takes precidence over dev mode and system property`() {
+        val experiment = DummyExperiment()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        developerModeRule.setState(true)
+        experiment.setState(false)
+        System.setProperty("aws.experiment.${experiment.id}", "true")
+
+        assertThat(experiment.isEnabled()).isFalse
+    }
+
+    @Test
+    fun `system property takes precedence over dev mode`() {
+        val experiment = DummyExperiment()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        developerModeRule.setState(true)
+        System.setProperty("aws.experiment.${experiment.id}", "false")
+
+        assertThat(experiment.isEnabled()).isFalse
     }
 }
 

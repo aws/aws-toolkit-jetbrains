@@ -8,6 +8,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
+import software.aws.toolkits.jetbrains.AwsToolkit
 
 /**
  * Used to control the state of an experimental feature.
@@ -49,10 +50,10 @@ internal fun ToolkitExperiment.setState(enabled: Boolean) = ToolkitExperimentMan
 internal class ToolkitExperimentManager : PersistentStateComponent<Map<String, Boolean>> {
     private val enabledState = mutableMapOf<String, Boolean>()
     fun isEnabled(experiment: ToolkitExperiment): Boolean =
-        (enabledState.getOrDefault(experiment.id, experiment.default) || isEnabledByProperty(experiment.id)) && EP_NAME.extensionList.contains(experiment)
+        EP_NAME.extensionList.contains(experiment) && enabledState.getOrDefault(experiment.id, getDefault(experiment))
 
     fun setState(experiment: ToolkitExperiment, enabled: Boolean) {
-        if (enabled == experiment.default) {
+        if (enabled == getDefault(experiment)) {
             enabledState.remove(experiment.id)
         } else {
             enabledState[experiment.id] = enabled
@@ -66,10 +67,18 @@ internal class ToolkitExperimentManager : PersistentStateComponent<Map<String, B
         enabledState.putAll(state)
     }
 
+    private fun getDefault(experiment: ToolkitExperiment): Boolean {
+        val systemProperty = System.getProperty("aws.experiment.${experiment.id}")
+        return when {
+            systemProperty != null -> systemProperty.isBlank() || systemProperty.equals("true", ignoreCase = true)
+            AwsToolkit.isDeveloperMode() -> true
+            else -> experiment.default
+        }
+    }
+
     companion object {
         internal val EP_NAME = ExtensionPointName.create<ToolkitExperiment>("aws.toolkit.experiment")
         internal fun getInstance(): ToolkitExperimentManager = service()
         internal fun visibileExperiments(): List<ToolkitExperiment> = EP_NAME.extensionList.filterNot { it.hidden }
-        private fun isEnabledByProperty(id: String) = System.getProperty("aws.experiment.$id")?.let { it != "false" } ?: false
     }
 }
