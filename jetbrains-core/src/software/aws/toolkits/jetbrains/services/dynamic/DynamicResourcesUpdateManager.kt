@@ -102,7 +102,8 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                     it.typeName(dynamicResourceType)
                     it.desiredState(desiredState)
                 }.progressEvent()
-                CreateResourceFileStatusHandler.resourceCreationProgressTracker[progress.requestToken()] = file
+
+                CreateResourceFileStatusHandler.getInstance(project).recordResourceBeingCreated(progress.requestToken(), file)
                 startCheckingProgress(connectionSettings, progress, DynamicResourceTelemetryResources.getCurrentTime())
             } catch (e: Exception) {
                 e.notifyError(

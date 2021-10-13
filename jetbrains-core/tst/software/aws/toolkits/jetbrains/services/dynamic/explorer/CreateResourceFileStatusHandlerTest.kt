@@ -56,7 +56,7 @@ class CreateResourceFileStatusHandlerTest {
 
     @Test
     fun `If resource creation succeeds, an updated view of file opens`() {
-        createResourceHandler = CreateResourceFileStatusHandler(projectRule.project)
+        createResourceHandler = CreateResourceFileStatusHandler.getInstance(projectRule.project)
 
         cloudControlClient.stub {
             on { getResource(any<GetResourceRequest>()) } doAnswer {
@@ -73,7 +73,7 @@ class CreateResourceFileStatusHandlerTest {
         runInEdtAndWait {
             fileEditorManager.openFile(sampleFile, false)
         }
-        CreateResourceFileStatusHandler.resourceCreationProgressTracker["sampleToken"] = sampleFile
+        createResourceHandler.recordResourceBeingCreated("sampleToken", sampleFile)
         assertThat(fileEditorManager.openFiles.filterIsInstance<CreateDynamicResourceVirtualFile>().size).isEqualTo(1)
 
         val mutationState = ResourceMutationState(
@@ -89,7 +89,7 @@ class CreateResourceFileStatusHandlerTest {
         createResourceHandler.mutationStatusChanged(mutationState)
 
         assertThat(fileEditorManager.openFiles.filterIsInstance<CreateDynamicResourceVirtualFile>().size).isEqualTo(0)
-        assertThat(CreateResourceFileStatusHandler.resourceCreationProgressTracker.size).isEqualTo(0)
+        assertThat(createResourceHandler.getNumberOfResourcesBeingCreated()).isEqualTo(0)
         assertThat(fileEditorManager.openFiles.filterIsInstance<ViewEditableDynamicResourceVirtualFile>().size).isEqualTo(1)
     }
 
