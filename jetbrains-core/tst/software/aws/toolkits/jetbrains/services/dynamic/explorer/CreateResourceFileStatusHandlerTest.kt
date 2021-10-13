@@ -63,6 +63,7 @@ class CreateResourceFileStatusHandlerTest {
                 GetResourceResponse.builder().typeName(resource.type.fullName).resourceDescription(
                     ResourceDescription
                         .builder()
+                        .identifier(resource.identifier)
                         .properties("{\"LogGroupName\":\"testRes5\",\"Arn\":\"sampleArn:*\"}")
                         .build()
                 )
