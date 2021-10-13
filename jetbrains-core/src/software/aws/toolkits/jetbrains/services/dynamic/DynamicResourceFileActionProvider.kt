@@ -12,7 +12,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotifications
 import com.jetbrains.jsonSchema.ide.JsonSchemaService
-import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.resources.message
 
 class DynamicResourceFileActionProvider :
@@ -21,7 +21,7 @@ class DynamicResourceFileActionProvider :
 
     override fun createNotificationPanel(file: VirtualFile, fileEditor: FileEditor, project: Project):
         DynamicResourceVirtualFilePanel? {
-        if (!AwsToolkit.isMoreResourcesMutationEnabled()) return null
+        if (!JsonResourceModificationExperiment.isEnabled()) return null
         return when (file) {
             is CreateDynamicResourceVirtualFile ->
                 DynamicResourceVirtualFilePanel(
