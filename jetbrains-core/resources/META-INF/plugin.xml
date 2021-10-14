@@ -152,7 +152,8 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CloudDebugSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
 
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.SelectedResourcesSettings"
+                            serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultSelectedResourcesSettings"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
@@ -213,7 +214,7 @@ with what features/services are supported.
 
         <applicationConfigurable id="aws" groupId="tools" key="aws.settings.title" instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
         <projectConfigurable id="aws.lambda" parentId="aws" instance="software.aws.toolkits.jetbrains.services.lambda.settings.LambdaSettingsConfigurable"/>
-        <applicationConfigurable parentId="aws" key="aws.settings.dynamic_resources_configurable.title" instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable" />
+        <applicationConfigurable parentId="aws" key="aws.settings.dynamic_resources_configurable.title" instance="software.aws.toolkits.jetbrains.settings.ResourcesConfigurable" />
         <applicationConfigurable id="aws.experiments" parentId="aws" instance="software.aws.toolkits.jetbrains.core.experiments.ExperimentConfigurable"/>
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>

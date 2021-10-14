@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructure
 import software.aws.toolkits.jetbrains.core.fillResourceCache
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes
-import software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings
+import software.aws.toolkits.jetbrains.settings.SelectedResourcesSettings
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import javax.swing.tree.TreeModel
@@ -46,7 +46,7 @@ class DynamicResourceTreeStructureProviderTest {
 
     @Test
     fun `dynamic resources settings node is first in subtree`() {
-        DynamicResourcesSettings.getInstance().selected = DynamicResourceSupportedTypes.getInstance().getSupportedTypes().toSet()
+        SelectedResourcesSettings.getInstance().selected(DynamicResourceSupportedTypes.getInstance().getSupportedTypes().toSet())
 
         val countDownLatch = CountDownLatch(1)
 

@@ -11,7 +11,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes
-import software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings
+import software.aws.toolkits.jetbrains.settings.SelectedResourcesSettings
 import software.aws.toolkits.resources.message
 
 class OtherResourcesNode(project: Project, service: AwsExplorerServiceNode) :
@@ -24,7 +24,7 @@ class OtherResourcesNode(project: Project, service: AwsExplorerServiceNode) :
 
     override fun getChildren(): List<AwsExplorerNode<*>> = super.getChildren()
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
-        val shouldShow = DynamicResourcesSettings.getInstance().selected
+        val shouldShow = SelectedResourcesSettings.getInstance().selected
         val resourcesAvailableInRegion = nodeProject.getResourceNow(CloudControlApiResources.listTypes()).toSet()
 
         return listOf(DynamicResourceSelectorNode(nodeProject)) + DynamicResourceSupportedTypes.getInstance().getSupportedTypes()
