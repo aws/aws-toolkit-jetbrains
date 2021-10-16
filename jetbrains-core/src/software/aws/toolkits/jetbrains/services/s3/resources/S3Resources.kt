@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.s3.resources
 
-import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
@@ -18,9 +17,6 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.filter
-import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import java.time.Instant
 import java.time.LocalDateTime
@@ -50,15 +46,9 @@ object S3Resources {
         }
     }
 
-    val LIST_BUCKETS: Resource<List<Bucket>> = LIST_REGIONALIZED_BUCKETS.map { it.bucket }
-
-    fun listBucketsByActiveRegion(project: Project): Resource<List<Bucket>> {
-        val activeRegion = AwsConnectionManager.getInstance(project).activeRegion
-        return LIST_REGIONALIZED_BUCKETS.filter { it.region == activeRegion }.map { it.bucket }
+    val LIST_BUCKETS: Resource<List<Bucket>> = Resource.View(LIST_REGIONALIZED_BUCKETS) { bucketList, region ->
+        bucketList.filter { it.region == region }.map { it.bucket }
     }
-
-    @JvmStatic
-    fun listBucketNamesByActiveRegion(project: Project): Resource<List<String>> = listBucketsByActiveRegion(project).map { it.name() }
 
     @JvmStatic
     fun formatDate(date: Instant): String {
