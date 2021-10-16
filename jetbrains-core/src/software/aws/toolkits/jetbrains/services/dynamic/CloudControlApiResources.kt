@@ -12,26 +12,25 @@ import software.amazon.awssdk.services.cloudformation.model.RegistryType
 import software.amazon.awssdk.services.cloudformation.model.Visibility
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
+import software.aws.toolkits.jetbrains.core.map
+import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 
 object CloudControlApiResources {
 
-    fun listResources(typeName: String): Resource.Cached<List<DynamicResource>> =
-        ClientBackedCachedResource(CloudControlClient::class, "cloudcontrolapi.dynamic.resources.$typeName") {
-            this.listResourcesPaginator {
-                it.typeName(typeName)
-            }.flatMap {
-                it.resourceDescriptions().map { resource ->
-                    DynamicResource(resourceTypeFromResourceTypeName(it.typeName()), resource.identifier())
-                }
-            }
+    fun listResources(typeName: String): Resource<List<DynamicResource>> = when (typeName) {
+        "AWS::S3::Bucket" -> S3Resources.LIST_BUCKETS.map { it.name() }
+        else -> ClientBackedCachedResource(CloudControlClient::class, "cloudcontrolapi.dynamic.resources.$typeName") {
+            this.listResourcesPaginator { req -> req.typeName(typeName) }
+                .flatMap { page -> page.resourceDescriptions().map { it.identifier() } }
         }
+    }.map { DynamicResource(resourceTypeFromResourceTypeName(typeName), it) }
 
     fun resourceTypeFromResourceTypeName(typeName: String): ResourceType {
         val (_, svc, type) = typeName.split("::")
         return ResourceType(typeName, svc, type)
     }
 
-    fun listResources(resourceType: ResourceType): Resource.Cached<List<DynamicResource>> = listResources(resourceType.fullName)
+    fun listResources(resourceType: ResourceType): Resource<List<DynamicResource>> = listResources(resourceType.fullName)
 
     fun getResourceDisplayName(identifier: String): String =
         if (identifier.startsWith("arn:")) {
@@ -49,9 +48,7 @@ object CloudControlApiResources {
             LightVirtualFile("${resourceType}Schema.json", schema)
         }
 
-    fun listTypes(): Resource.Cached<List<String>> = ClientBackedCachedResource(
-        CloudFormationClient::class, "cloudformation.listTypes"
-    ) {
+    fun listTypes(): Resource.Cached<List<String>> = ClientBackedCachedResource(CloudFormationClient::class, "cloudformation.listTypes") {
         this.listTypesPaginator {
             it.visibility(Visibility.PUBLIC)
             it.type(RegistryType.RESOURCE)
