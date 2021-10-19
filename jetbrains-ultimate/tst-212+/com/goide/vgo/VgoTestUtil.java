@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.goide.vgo.VgoModuleInfoProvider.Vgo
 
 public class VgoTestUtil {
     private static final String GOPATH = getGoTestDataPath("vgo/src/test/testData/mockGoPath").getAbsolutePath();
@@ -121,7 +122,7 @@ public class VgoTestUtil {
 
     public static void setVgoModules(@NotNull CodeInsightTestFixture fixture, @NotNull List<VgoModule> modules) {
         for (VgoModule module : modules) {
-            VgoModuleInfoProvider.VgoModuleInfoProviderForTests.putTestingVgoModule(module, fixture.getTestRootDisposable());
+            VgoModuleInfoProviderForTests.putTestingVgoModule(module, fixture.getTestRootDisposable());
         }
         List<VgoRootToModule> vgoModules =
             ContainerUtil.map(modules, module -> new VgoRootToModule(module.getRoot(), module));

@@ -115,6 +115,7 @@ object DotnetDebugUtils {
 
                             val sessionModel = DotNetDebuggerSessionModel(startInfo)
                             sessionModel.sessionProperties.bindToSettings(debuggerLifetime).apply {
+                                //sessionModel.sessionProperties.bindToSettings(debuggerLifetime).apply {
                                 enableHeuristicPathResolve.set(true)
                             }
 
