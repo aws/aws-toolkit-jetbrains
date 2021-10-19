@@ -16,14 +16,15 @@ import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 
 object CloudControlApiResources {
-
-    fun listResources(typeName: String): Resource<List<DynamicResource>> = when (typeName) {
-        "AWS::S3::Bucket" -> S3Resources.LIST_BUCKETS.map { it.name() }
-        else -> ClientBackedCachedResource(CloudControlClient::class, "cloudcontrolapi.dynamic.resources.$typeName") {
-            this.listResourcesPaginator { req -> req.typeName(typeName) }
-                .flatMap { page -> page.resourceDescriptions().map { it.identifier() } }
-        }
-    }.map { DynamicResource(resourceTypeFromResourceTypeName(typeName), it) }
+    fun listResources(typeName: String): Resource<List<DynamicResource>> {
+        return when (typeName) {
+            S3_BUCKET -> S3Resources.LIST_BUCKETS.map { it.name() }
+            else -> ClientBackedCachedResource(CloudControlClient::class, "cloudcontrolapi.dynamic.resources.$typeName") {
+                this.listResourcesPaginator { req -> req.typeName(typeName) }
+                    .flatMap { page -> page.resourceDescriptions().map { it.identifier() } }
+            }
+        }.map { DynamicResource(resourceTypeFromResourceTypeName(typeName), it) }
+    }
 
     fun resourceTypeFromResourceTypeName(typeName: String): ResourceType {
         val (_, svc, type) = typeName.split("::")
@@ -54,6 +55,7 @@ object CloudControlApiResources {
             it.type(RegistryType.RESOURCE)
         }.flatMap { it.typeSummaries().map { it.typeName() } }
     }
+    private const val S3_BUCKET = "AWS::S3::Bucket"
 }
 
 data class ResourceDetails(val operations: List<PermittedOperation>, val arnRegex: String?, val documentation: String?)

@@ -524,3 +524,9 @@ class AwsResourceCacheTest {
         fun dummyResource(value: String = aString()): Resource.Cached<String> = StringResource(value)
     }
 }
+
+val Resource<*>.id: String
+    get() = when (this) {
+        is Resource.Cached -> this.id
+        is Resource.View<*, *> -> this.underlying.id
+    }
