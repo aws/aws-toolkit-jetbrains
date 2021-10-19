@@ -13,7 +13,6 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.Tree
-import com.intellij.util.ThreeState
 import com.intellij.util.concurrency.Invoker
 import com.intellij.util.ui.tree.TreeUtil
 import org.assertj.core.api.Assertions.assertThat

@@ -38,7 +38,6 @@ class DotNetStartupCommandTest : AwsReuseSolutionTestBase() {
             onCommandGet = { command = it }
         )
 
-        //pumpMessages(Duration.ofSeconds(2).toMillis()) { command.isNotEmpty() }
         pumpMessages(Duration.ofSeconds(2)) { command.isNotEmpty() }
         assertThat(command).isEqualTo(originalCommand)
     }
@@ -67,7 +66,7 @@ class DotNetStartupCommandTest : AwsReuseSolutionTestBase() {
             ),
             onCommandGet = { command = it }
         )
-        //pumpMessages(Duration.ofSeconds(2).toMillis()) { command.isNotEmpty() }
+
         pumpMessages(Duration.ofSeconds(2)) { command.isNotEmpty() }
 
         val expectedCommand = "dotnet /tmp/remote/path/netcoreapp2.1/HelloWorld.dll"
