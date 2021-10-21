@@ -29,7 +29,7 @@ object S3Resources {
     private val regions by lazy { AwsRegionProvider.getInstance().allRegions() }
 
     @TestOnly
-    val LIST_REGIONALIZED_BUCKETS = ClientBackedCachedResource(S3Client::class, "s3.list_buckets") {
+    internal val LIST_REGIONALIZED_BUCKETS = ClientBackedCachedResource(S3Client::class, "s3.list_buckets") {
         val buckets = listBuckets().buckets()
         // TODO when the resource cache is coroutine based, remove the runBlocking and withContext
         runBlocking {
