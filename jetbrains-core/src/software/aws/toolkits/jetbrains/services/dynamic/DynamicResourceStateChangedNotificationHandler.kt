@@ -4,7 +4,10 @@
 package software.aws.toolkits.jetbrains.services.dynamic
 
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiManager
+import software.amazon.awssdk.services.cloudcontrol.model.Operation
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
@@ -21,6 +24,9 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
     private val refreshRequired = AtomicBoolean(false)
     override fun mutationStatusChanged(state: ResourceMutationState) {
         if (state.status == OperationStatus.SUCCESS) {
+            if (state.operation == Operation.UPDATE) {
+                saveFileContent(state)
+            }
             notifyInfo(
                 message(
                     "dynamic_resources.operation_status_notification_title",
@@ -72,6 +78,22 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
         }
         AwsResourceCache.getInstance().clear(CloudControlApiResources.listResources(state.resourceType), state.connectionSettings)
         refreshRequired.set(true)
+    }
+
+    private fun saveFileContent(state: ResourceMutationState) {
+        val file = FileEditorManager.getInstance(project).openFiles.first {
+            it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == state.resourceIdentifier?.let { it1 ->
+                DynamicResourceIdentifier(
+                    state.connectionSettings, state.resourceType,
+                    it1
+                )
+            }
+        } as ViewEditableDynamicResourceVirtualFile
+        file.isWritable = true
+        runInEdt {
+            val psiFile = PsiManager.getInstance(project).findFile(file)
+            psiFile?.text?.let { file.setContent(this, it, true) }
+        }
     }
 
     private fun displayErrorMessage(state: ResourceMutationState, errorMessage: String) {
