@@ -7,6 +7,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.event.Level
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
@@ -27,6 +28,7 @@ object S3Resources {
     private val LOG = getLogger<S3Resources>()
     private val regions by lazy { AwsRegionProvider.getInstance().allRegions() }
 
+    @TestOnly
     val LIST_REGIONALIZED_BUCKETS = ClientBackedCachedResource(S3Client::class, "s3.list_buckets") {
         val buckets = listBuckets().buckets()
         // TODO when the resource cache is coroutine based, remove the runBlocking and withContext
