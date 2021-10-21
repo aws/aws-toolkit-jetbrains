@@ -25,9 +25,9 @@ import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import java.nio.file.Files
 
-class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", LambdaRuntime.DOTNETCORE2_1)
-class Dotnet21LocalLambdaImageRunConfigurationIntegrationTest :
-    DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda2X", LambdaRuntime.DOTNETCORE2_1)
+//class Dotnet21LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda2X", LambdaRuntime.DOTNETCORE2_1)
+//class Dotnet21LocalLambdaImageRunConfigurationIntegrationTest :
+//    DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda2X", LambdaRuntime.DOTNETCORE2_1)
 
 class Dotnet31LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda3X", LambdaRuntime.DOTNETCORE3_1)
 

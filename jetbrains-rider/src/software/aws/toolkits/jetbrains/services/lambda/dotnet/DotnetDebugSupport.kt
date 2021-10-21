@@ -68,10 +68,10 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
     ): XDebugProcessStarter = DotnetDebugUtils.createDebugProcess(environment, debugHost, debugPorts, context)
 }
 
-class Dotnet21ImageDebug : DotnetImageDebugSupport() {
+/*class Dotnet21ImageDebug : DotnetImageDebugSupport() {
     override val id: String = LambdaRuntime.DOTNETCORE2_1.toString()
     override fun displayName() = LambdaRuntime.DOTNETCORE2_1.toString().capitalize()
-}
+}*/
 
 class Dotnet31ImageDebug : DotnetImageDebugSupport() {
     override val id: String = LambdaRuntime.DOTNETCORE3_1.toString()
