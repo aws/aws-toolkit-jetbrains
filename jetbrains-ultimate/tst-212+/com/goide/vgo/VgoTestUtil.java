@@ -36,7 +36,6 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-
 public class VgoTestUtil {
     private static final String GOPATH = getGoTestDataPath("vgo/src/test/testData/mockGoPath").getAbsolutePath();
     private static final Map<String, VgoDependency> DEPENDENCIES =
