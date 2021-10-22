@@ -178,7 +178,7 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
         type.supportedVersions()?.let {
             val latestVersionCompatibility = latestVersion.isValid(it)
             if (latestVersionCompatibility !is Validity.Valid) {
-                LOG.warn { "Latest version of ${type.id}  is not compatible with the toolkit: ${type.supportedVersions()}" }
+                LOG.warn { "Latest version of ${type.id} is not compatible with the toolkit: ${type.supportedVersions()}" }
                 return
             }
         }

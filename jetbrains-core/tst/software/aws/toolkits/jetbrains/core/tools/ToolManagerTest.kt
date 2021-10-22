@@ -22,6 +22,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -52,7 +53,9 @@ class ToolManagerTest {
 
     @Before
     fun setUp() {
-        clock = mock()
+        clock = mock {
+            on { instant() } doReturn Instant.MIN
+        }
         sut = ToolManager(clock)
     }
 
@@ -355,7 +358,60 @@ class ToolManagerTest {
     }
 
     @Test
-    fun `a managed tool with unsupported newer version won't install it`() {
+    fun `a managed tool with unsupported newer version won't update to it`() {
+        val toolId = aString()
+        val version = SemanticVersion(1, 2, 3)
+        val markerFile = managedToolMarkerFile(toolId)
+        val supportedRange = SemanticVersion(1, 0, 0) until SemanticVersion(2, 0, 0)
+
+        // Clear out default mock
+        reset(clock)
+        clock.stub {
+            on { instant() } doReturn Instant.MAX
+        }
+
+        val type = createManagedToolMock(toolId) {
+            on { determineLatestVersion() } doReturn SemanticVersion(3, 0, 0)
+            on { supportedVersions() } doReturn supportedRange
+        }
+
+        markerFile.write(version.displayValue())
+        sut.checkForUpdates(type)
+
+        verify(type).determineLatestVersion()
+        verify(type, never()).downloadVersion(any(), any(), anyOrNull())
+        verify(type, never()).installVersion(any(), any(), anyOrNull())
+    }
+
+    @Test
+    fun `a managed tool with same latest newer version won't update to it`() {
+        val toolId = aString()
+        val version = SemanticVersion(1, 2, 3)
+        val markerFile = managedToolMarkerFile(toolId)
+        val supportedRange = SemanticVersion(1, 0, 0) until SemanticVersion(2, 0, 0)
+        val installPath = managedToolInstallDir(toolId, version.displayValue())
+        val toolBinary = installPath.resolve("myExe")
+
+        // Clear out default mock
+        reset(clock)
+        clock.stub {
+            on { instant() } doReturn Instant.MAX
+        }
+
+        val type = createManagedToolMock(toolId) {
+            on { determineLatestVersion() } doReturn version
+            on { supportedVersions() } doReturn supportedRange
+            on { toTool(eq(installPath)) } doReturn Tool(this.mock, toolBinary)
+            on { determineVersion(eq(toolBinary)) } doReturn version
+        }
+
+        markerFile.write(version.displayValue())
+        toolBinary.write("someExe")
+        sut.checkForUpdates(type)
+
+        verify(type).determineLatestVersion()
+        verify(type, never()).downloadVersion(any(), any(), anyOrNull())
+        verify(type, never()).installVersion(any(), any(), anyOrNull())
     }
 
     private fun createUndetectableMock(toolId: String = aString(), stubBuilder: (KStubbing<ToolType<SemanticVersion>>).() -> Unit = {}) =
