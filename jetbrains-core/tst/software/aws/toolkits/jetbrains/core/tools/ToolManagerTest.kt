@@ -27,6 +27,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.stubbing.Answer
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.managedToolInstallDir
 import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.managedToolMarkerFile
@@ -40,6 +41,8 @@ import java.nio.file.attribute.FileTime
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class ToolManagerTest {
     @Rule
@@ -331,6 +334,22 @@ class ToolManagerTest {
 
     @Test
     fun `a managed tool install clears out its install location first`() {
+        val downloadFile = tempFolder.newFile().toPath()
+        val toolId = aString()
+        val version = SemanticVersion(1, 2, 3)
+        val markerFile = managedToolMarkerFile(toolId)
+        val installPath = managedToolInstallDir(toolId, version.displayValue())
+        val toolBinary = installPath.resolve("myExe")
+        val type = createManagedToolMock(toolId) {
+            on { determineLatestVersion() } doReturn version
+            on { downloadVersion(eq(version), any(), anyOrNull()) } doReturn downloadFile
+            on { toTool(eq(installPath)) } doReturn Tool(this.mock, toolBinary)
+        }
+
+        assertThat(markerFile).doesNotExist()
+        val oldFile = installPath.resolve("someFile").write("hello")
+        assertThat(sut.getOrInstallTool(type).path).isEqualTo(toolBinary)
+        assertThat(oldFile).doesNotExist()
     }
 
     @Test
@@ -385,7 +404,7 @@ class ToolManagerTest {
             on { instant() } doReturnConsecutively listOf(
                 now.plus(Duration.ofDays(7)),
                 now.plus(Duration.ofDays(7).plusHours(1)),
-                now.plus(Duration.ofDays(8))
+                now.plus(Duration.ofDays(9))
             )
         }
 
@@ -405,7 +424,33 @@ class ToolManagerTest {
     }
 
     @Test
-    fun `managed tool checks for updates when retrieved`() {
+    fun `managed tool checks for updates when retrieved non-blocking`() {
+        val toolId = aString()
+        val version = SemanticVersion(1, 2, 3)
+        val markerFile = managedToolMarkerFile(toolId)
+        val installPath = managedToolInstallDir(toolId, version.displayValue())
+        val toolBinary = installPath.resolve("myExe")
+        val latch = CountDownLatch(1)
+        val postCheckLatch = CountDownLatch(1)
+        // Clear out default mock
+        reset(clock)
+        clock.stub {
+            on { instant() } doReturn Instant.MAX
+        }
+
+        val type = createManagedToolMock(toolId) {
+            on { determineLatestVersion() } doAnswer Answer<Version> { latch.countDown(); postCheckLatch.await(); version }
+            on { toTool(eq(installPath)) } doReturn Tool(this.mock, toolBinary)
+        }
+
+        markerFile.write(version.displayValue())
+        toolBinary.write("aFile")
+
+        sut.getTool(type)
+
+        postCheckLatch.countDown()
+
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue
     }
 
     @Test

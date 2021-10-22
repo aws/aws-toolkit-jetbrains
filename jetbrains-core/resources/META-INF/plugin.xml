@@ -304,7 +304,6 @@ with what features/services are supported.
 
     <actions>
         <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
-        <action id="aws.toolkit.ssmtest" class="software.aws.toolkits.jetbrains.core.tools.SsmTest"/>
         <action id="aws.settings.refresh"  class="software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction"/>
         <action id="aws.toolkit.showFeedback" class="software.aws.toolkits.jetbrains.ui.feedback.ShowFeedbackDialogAction"/>
         <group id="aws.toolkit.explorer.titleBar" popup="false" compact="true">
