@@ -7,6 +7,7 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.util.io.HttpRequests
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.*
 import org.assertj.core.api.SoftAssertions
 import org.junit.Rule
 import org.junit.Test
@@ -55,9 +56,9 @@ class SsmPluginTest {
         val downloadedFile = SsmPlugin.downloadVersion(latest, downloadDir, null)
         SsmPlugin.installVersion(downloadedFile, installDir, null)
         val tool = SsmPlugin.toTool(installDir)
-        Assertions.assertThat(tool.path.fileName.toString()).isEqualTo(executableName)
+        assertThat(tool.path.fileName.toString()).isEqualTo(executableName)
 
         val reportedLatest = SsmPlugin.determineVersion(tool.path)
-        Assertions.assertThat(reportedLatest).isEqualTo(latest)
+        assertThat(reportedLatest).isEqualTo(latest)
     }
 }

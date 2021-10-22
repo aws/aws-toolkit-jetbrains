@@ -66,17 +66,17 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
     }
 
     // Visible for test
-    internal fun windowsUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/windows/SessionManagerPlugin.zip"
-    internal fun macUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
-    internal fun ubuntuArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
-    internal fun ubuntuI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
-    internal fun linuxArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
-    internal fun linuxI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
+    fun windowsUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/windows/SessionManagerPlugin.zip"
+    fun macUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
+    fun ubuntuArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
+    fun ubuntuI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
+    fun linuxArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
+    fun linuxI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
 
     override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
             "zip" -> Decompressor.Zip(downloadArtifact).withZipExtensions().extract(destinationDir)
-            "rpm" -> runInstall(GeneralCommandLine("sh", "-c", "rpm2cpio $downloadArtifact | cpio -D $destinationDir -idmv"))
+            "rpm" -> runInstall(GeneralCommandLine("sh", "-c", """rpm2cpio "$downloadArtifact" | cpio -D "$destinationDir" -idmv"""))
             "deb" -> runInstall(GeneralCommandLine("dpkg-deb", "-x", downloadArtifact.toString(), destinationDir.toString()))
             else -> throw IllegalStateException("Unknown extension $extension")
         }
