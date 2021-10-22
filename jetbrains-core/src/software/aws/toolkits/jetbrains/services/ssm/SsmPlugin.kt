@@ -27,7 +27,7 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         ExecUtil.execAndGetOutput(GeneralCommandLine("uname", "-a"), VERSION_TIMEOUT.toMillis().toInt()).stdout.contains("Ubuntu", ignoreCase = true)
     }
     override val id: String = "SSM-Plugin"
-    override val displayName: String = "Session Manager plugin"
+    override val displayName: String = "AWS Session Manager Plugin"
 
     override fun supportedVersions(): VersionRange<FourPartVersion> = FourPartVersion(1, 2, 0, 0) until FourPartVersion(2, 0, 0, 0)
 
@@ -75,7 +75,7 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
     override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
             "zip" -> Decompressor.Zip(downloadArtifact).withZipExtensions().extract(destinationDir)
-            "rpm" -> runInstall(GeneralCommandLine("yum", "install", "-y", "--installroot", destinationDir.toString(), downloadArtifact.toString()))
+            "rpm" -> runInstall(GeneralCommandLine("sh", "-c", "rpm2cpio $downloadArtifact | cpio -D $destinationDir -idmv"))
             "deb" -> runInstall(GeneralCommandLine("dpkg-deb", "-x", downloadArtifact.toString(), destinationDir.toString()))
             else -> throw IllegalStateException("Unknown extension $extension")
         }

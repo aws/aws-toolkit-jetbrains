@@ -18,6 +18,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doReturnConsecutively
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -37,6 +38,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 
 class ToolManagerTest {
@@ -275,6 +277,11 @@ class ToolManagerTest {
         assertThat(installPath).doesNotExist()
         assertThat(sut.getOrInstallTool(type).path).isEqualTo(toolBinary)
         assertThat(markerFile).hasContent(version.displayValue())
+
+        verify(type).determineLatestVersion()
+        verify(type).downloadVersion(any(), any(), anyOrNull())
+        verify(type).installVersion(eq(downloadFile), eq(installPath), anyOrNull())
+        verify(type).toTool(eq(installPath))
     }
 
     @Test
@@ -288,12 +295,12 @@ class ToolManagerTest {
             on { toTool(eq(installPath)) } doReturn Tool(this.mock, toolBinary)
         }
 
-        verify(type, never()).determineLatestVersion()
-        verify(type, never()).downloadVersion(any(), any(), anyOrNull())
-
         markerFile.write(version.displayValue())
         toolBinary.write("aFile")
         assertThat(sut.getOrInstallTool(type).path).isEqualTo(toolBinary)
+
+        verify(type, never()).determineLatestVersion()
+        verify(type, never()).downloadVersion(any(), any(), anyOrNull())
     }
 
     @Test
@@ -314,7 +321,16 @@ class ToolManagerTest {
             markerFile.write(it)
             assertThat(sut.getOrInstallTool(type).path).isEqualTo(toolBinary)
             assertThat(markerFile).hasContent(version.displayValue())
+
+            verify(type).determineLatestVersion()
+            verify(type).downloadVersion(any(), any(), anyOrNull())
+            verify(type).installVersion(eq(downloadFile), eq(installPath), anyOrNull())
+            verify(type).toTool(eq(installPath))
         }
+    }
+
+    @Test
+    fun `a managed tool install clears out its install location first`() {
     }
 
     @Test
@@ -331,10 +347,61 @@ class ToolManagerTest {
 
     @Test
     fun `a managed tool that fails to install bubbles up`() {
+        val downloadFile = tempFolder.newFile().toPath()
+        val toolId = aString()
+        val version = SemanticVersion(1, 2, 3)
+        val markerFile = managedToolMarkerFile(toolId)
+        val installPath = managedToolInstallDir(toolId, version.displayValue())
+        val error = IllegalStateException("Boom!")
+        val type = createManagedToolMock(toolId) {
+            on { determineLatestVersion() } doReturn version
+            on { downloadVersion(eq(version), any(), anyOrNull()) } doReturn downloadFile
+            on { installVersion(any(), any(), anyOrNull()) } doThrow error
+        }
+
+        assertThat(markerFile).doesNotExist()
+        assertThat(installPath).doesNotExist()
+        assertThatThrownBy { sut.getOrInstallTool(type) }
+            .hasMessage(message("executableCommon.failed_install", type.displayName))
+            .hasRootCause(error)
+        assertThat(markerFile).doesNotExist()
+
+        verify(type).determineLatestVersion()
+        verify(type).downloadVersion(any(), any(), anyOrNull())
+        verify(type).installVersion(any(), any(), anyOrNull())
     }
 
     @Test
     fun `managed tool update checks respect TTL`() {
+        val toolId = aString()
+        val version = SemanticVersion(1, 2, 3)
+        val markerFile = managedToolMarkerFile(toolId)
+        val installPath = managedToolInstallDir(toolId, version.displayValue())
+        val toolBinary = installPath.resolve("myExe")
+        val now = Instant.now()
+        // Clear out default mock
+        reset(clock)
+        clock.stub {
+            on { instant() } doReturnConsecutively listOf(
+                now.plus(Duration.ofDays(7)),
+                now.plus(Duration.ofDays(7).plusHours(1)),
+                now.plus(Duration.ofDays(8))
+            )
+        }
+
+        val type = createManagedToolMock(toolId) {
+            on { determineLatestVersion() } doReturn version
+            on { toTool(eq(installPath)) } doReturn Tool(this.mock, toolBinary)
+            on { determineVersion(eq(toolBinary)) } doReturn version
+        }
+
+        markerFile.write(version.displayValue())
+        toolBinary.write("someExe")
+        sut.checkForUpdates(type)
+        sut.checkForUpdates(type)
+        sut.checkForUpdates(type)
+
+        verify(type, times(2)).determineLatestVersion()
     }
 
     @Test

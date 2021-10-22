@@ -7,14 +7,8 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.util.io.HttpRequests
 import java.nio.file.Path
 
-fun saveFileFromUrl(url: String, path: Path, indicator: ProgressIndicator? = null) {
-    try {
-        indicator?.text2 = "Downloading..."
-        return HttpRequests.request(url).userAgent(AwsClientManager.userAgent).saveToFile(path.toFile(), indicator)
-    } finally {
-        indicator?.text2 = ""
-    }
-}
+fun saveFileFromUrl(url: String, path: Path, indicator: ProgressIndicator? = null) =
+    HttpRequests.request(url).userAgent(AwsClientManager.userAgent).saveToFile(path.toFile(), indicator)
 
 fun readBytesFromUrl(url: String, indicator: ProgressIndicator? = null) =
     HttpRequests.request(url).userAgent(AwsClientManager.userAgent).readBytes(indicator)

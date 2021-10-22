@@ -17,6 +17,7 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.io.createDirectories
+import com.intellij.util.io.delete
 import com.intellij.util.io.exists
 import com.intellij.util.io.readText
 import com.intellij.util.io.write
@@ -59,12 +60,12 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
         }
 
         if (type is ManagedToolType<V>) {
-            val managedToolPath = checkForInstalledTool(type)
-            if (managedToolPath != null) {
+            val managedTool = checkForInstalledTool(type)
+            if (managedTool != null) {
                 ApplicationManager.getApplication().executeOnPooledThread {
                     checkForUpdates(type)
                 }
-                return managedToolPath
+                return managedTool
             }
         }
 
@@ -79,13 +80,9 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
             return existingTool
         }
 
-        val progressManager = ProgressManager.getInstance()
-        return progressManager.runProcessWithProgressSynchronously(
-            ThrowableComputable { installTool(type, progressManager.progressIndicator) },
-            message("executableCommon.installing", type.displayName),
-            /* canBeCanceled */ false,
-            project
-        )
+        return runUnderProgressIfNeeded(project, message("executableCommon.installing", type.displayName), cancelable = false) {
+            installTool(type, ProgressManager.getInstance().progressIndicator)
+        }
     }
 
     /**
@@ -167,18 +164,20 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
         assertIsNonDispatchThread()
 
         val now = Instant.now(clock)
-        val lastCheck = updateCheckCache.put(type, now) ?: Instant.MIN
+        val lastCheck = updateCheckCache.getOrDefault(type, Instant.MIN)
         val needCheck = lastCheck.plus(UPDATE_CHECK_INTERVAL).isBefore(now)
         if (!needCheck) {
             LOG.debug { "Checked for newer versions of ${type.id} recently, nothing to do" }
             return
         }
 
+        updateCheckCache[type] = now
+
         val latestVersion = type.determineLatestVersion()
         type.supportedVersions()?.let {
             val latestVersionCompatibility = latestVersion.isValid(it)
             if (latestVersionCompatibility !is Validity.Valid) {
-                LOG.warn { "Latest version of ${type.id} is not compatible with the toolkit: ${type.supportedVersions()}" }
+                LOG.warn { "Latest version of ${type.id} (${latestVersion.displayValue()} is not compatible with the toolkit: ${type.supportedVersions()}" }
                 return
             }
         }
@@ -193,8 +192,8 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
         ProgressManager.getInstance().run(
             object : Task.Backgroundable(
                 project,
-                message("executableCommon.updating", type.displayName), /* canBeCanceled */
-                false,
+                message("executableCommon.updating", type.displayName),
+                /* canBeCanceled */ false,
                 PerformInBackgroundOption.ALWAYS_BACKGROUND
             ) {
                 override fun run(indicator: ProgressIndicator) {
@@ -228,7 +227,12 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
 
         val downloadDir = Files.createTempDirectory(type.id)
         try {
-            val downloadFile = type.downloadVersion(version, downloadDir, indicator)
+            val downloadFile = try {
+                indicator?.text2 = message("executableCommon.downloading", type.displayName)
+                type.downloadVersion(version, downloadDir, indicator)
+            } finally {
+                indicator?.text2 = ""
+            }
 
             val versionString = version.displayValue()
             val installLocation = managedToolInstallDir(type.id, versionString)
@@ -241,6 +245,9 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
                     // Default the indicator to be indeterminate, a tool type can change it back if it can track status better
                     indicator?.isIndeterminate = true
 
+                    if (installLocation.exists()) {
+                        installLocation.delete(recursively = true)
+                    }
                     type.installVersion(downloadFile, installLocation, indicator)
 
                     // Check install before updating marker
@@ -257,6 +264,12 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
     }
 
     private fun <V : Version> checkForInstalledTool(type: ManagedToolType<V>): Tool<ToolType<V>>? {
+        val markerVersion = readMarkerVersion(type) ?: return null
+        val installLocation = managedToolInstallDir(type.id, markerVersion).takeIf { it.exists() } ?: return null
+        return type.toTool(installLocation)
+    }
+
+    private fun readMarkerVersion(type: ManagedToolType<*>): String? {
         val markerFile = managedToolMarkerFile(type.id).takeIf { it.exists() } ?: return null
         val markerVersion = managedToolLock.withLock {
             markerFile.readText()
@@ -265,8 +278,8 @@ class ToolManager @NonInjectable constructor(private val clock: Clock = Clock.sy
         if (markerVersion.contains("/") || markerVersion.contains("\\")) {
             return null
         }
-        val installLocation = managedToolInstallDir(type.id, markerVersion).takeIf { it.exists() } ?: return null
-        return type.toTool(installLocation)
+
+        return markerVersion
     }
 
     companion object {
