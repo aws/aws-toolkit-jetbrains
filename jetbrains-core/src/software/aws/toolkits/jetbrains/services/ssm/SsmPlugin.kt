@@ -21,6 +21,7 @@ import software.aws.toolkits.jetbrains.utils.checkSuccess
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
+import kotlin.streams.asSequence
 
 object SsmPlugin : ManagedToolType<FourPartVersion> {
     private val isUbuntu by lazy {
@@ -49,10 +50,10 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         val downloadUrl = when {
             SystemInfo.isWindows -> windowsUrl(version)
             SystemInfo.isMac -> macUrl(version)
-            SystemInfo.isLinux && isUbuntu && SystemInfo.isArm64 -> ubuntuArm64(version)
-            SystemInfo.isLinux && isUbuntu && SystemInfo.isIntel64 -> ubuntuI64(version)
-            SystemInfo.isLinux && SystemInfo.isArm64 -> linuxArm64(version)
-            SystemInfo.isLinux && SystemInfo.isIntel64 -> linuxI64(version)
+            SystemInfo.isLinux && isUbuntu && SystemInfo.isArm64 -> ubuntuArm64Url(version)
+            SystemInfo.isLinux && isUbuntu && SystemInfo.isIntel64 -> ubuntuI64Url(version)
+            SystemInfo.isLinux && SystemInfo.isArm64 -> linuxArm64Url(version)
+            SystemInfo.isLinux && SystemInfo.isIntel64 -> linuxI64Url(version)
             else -> throw IllegalStateException("Failed to find compatible SSM plugin: SystemInfo=${SystemInfo.OS_NAME}, Arch=${SystemInfo.OS_ARCH}")
         }
 
@@ -67,10 +68,10 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
     // Visible for test
     internal fun windowsUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/windows/SessionManagerPlugin.zip"
     internal fun macUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
-    internal fun ubuntuArm64(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
-    internal fun ubuntuI64(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
-    internal fun linuxArm64(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
-    internal fun linuxI64(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
+    internal fun ubuntuArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
+    internal fun ubuntuI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
+    internal fun linuxArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
+    internal fun linuxI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
 
     override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
@@ -92,16 +93,17 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
     override fun determineLatestVersion(): FourPartVersion = FourPartVersion.parse(getTextFromUrl(VERSION_FILE))
 
     override fun toTool(installDir: Path): Tool<ToolType<FourPartVersion>> {
-        val executable = if (SystemInfo.isWindows) {
+        val executableName = if (SystemInfo.isWindows) {
             "session-manager-plugin.exe"
         } else {
             "session-manager-plugin"
         }
 
-        val executablePath = Path.of("sessionmanager-bundle", "bin", executable)
-        val fullExecutablePath = installDir.resolve(executablePath).takeIf { Files.isExecutable(it) }
-            ?: throw IllegalStateException("Failed to locate $executablePath under $installDir")
-        return Tool(this, fullExecutablePath)
+        return Files.walk(installDir).use { files ->
+            files.asSequence().filter { it.fileName.toString() == executableName && Files.isExecutable(it) }
+                .map { Tool(this, it) }
+                .firstOrNull()
+        } ?: throw IllegalStateException("Failed to locate $executableName under $installDir")
     }
 
     private val LOGGER = getLogger<SsmPlugin>()
