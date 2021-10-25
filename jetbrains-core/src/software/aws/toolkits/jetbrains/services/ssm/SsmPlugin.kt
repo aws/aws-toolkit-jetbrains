@@ -76,7 +76,7 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
     override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
             "zip" -> Decompressor.Zip(downloadArtifact).withZipExtensions().extract(destinationDir)
-            "rpm" -> runInstall(GeneralCommandLine("sh", "-c", """rpm2cpio "$downloadArtifact" | cpio -D "$destinationDir" -idmv"""))
+            "rpm" -> runInstall(GeneralCommandLine("sh", "-c", """rpm2cpio "$downloadArtifact" | (cd "$destinationDir" && cpio -idmv)"""))
             "deb" -> runInstall(GeneralCommandLine("dpkg-deb", "-x", downloadArtifact.toString(), destinationDir.toString()))
             else -> throw IllegalStateException("Unknown extension $extension")
         }
