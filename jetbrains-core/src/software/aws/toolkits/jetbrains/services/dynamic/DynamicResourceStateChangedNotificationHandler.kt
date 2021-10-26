@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceTelemetryResources.addOperationToTelemetry
+import software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceNode
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -25,7 +26,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
     override fun mutationStatusChanged(state: ResourceMutationState) {
         if (state.status == OperationStatus.SUCCESS) {
             if (state.operation == Operation.UPDATE) {
-                saveFileContent(state)
+                refreshViewEditableDynamicResourceVirtualFile(state)
             }
             notifyInfo(
                 message(
@@ -80,15 +81,12 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
         refreshRequired.set(true)
     }
 
-    private fun saveFileContent(state: ResourceMutationState) {
-        val file = FileEditorManager.getInstance(project).openFiles.first {
-            it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == state.resourceIdentifier?.let { it1 ->
-                DynamicResourceIdentifier(
-                    state.connectionSettings, state.resourceType,
-                    it1
-                )
-            }
-        } as ViewEditableDynamicResourceVirtualFile
+    private fun refreshViewEditableDynamicResourceVirtualFile(state: ResourceMutationState) {
+        val file = state.resourceIdentifier?.let { DynamicResourceIdentifier(state.connectionSettings, state.resourceType, it) }?.let {
+            CloudControlApiResourcesUtils.getResourceFile(project,
+                it
+            )
+        } as? ViewEditableDynamicResourceVirtualFile ?: return
         file.isWritable = true
         runInEdt {
             val psiFile = PsiManager.getInstance(project).findFile(file)

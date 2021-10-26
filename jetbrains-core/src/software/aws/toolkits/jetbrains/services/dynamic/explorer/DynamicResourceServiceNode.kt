@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
+import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResourcesUtils
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceIdentifier
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager
@@ -90,10 +91,8 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
 
     fun openResourceModelInEditor(sourceAction: OpenResourceModelSourceAction) {
         val dynamicResourceIdentifier = DynamicResourceIdentifier(nodeProject.getConnectionSettingsOrThrow(), resource.type.fullName, resource.identifier)
-        val openFiles = FileEditorManager.getInstance(nodeProject).openFiles.filter {
-            it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == dynamicResourceIdentifier
-        }
-        if (openFiles.isEmpty()) {
+        val file = CloudControlApiResourcesUtils.getResourceFile(nodeProject, dynamicResourceIdentifier)
+        if (file == null) {
             object : Task.Backgroundable(nodeProject, message("dynamic_resources.fetch.indicator_title", resource.identifier), true) {
                 override fun run(indicator: ProgressIndicator) {
                     indicator.text = message("dynamic_resources.fetch.fetch")
@@ -113,12 +112,11 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
                 }
             }.queue()
         } else {
-            val openFile = openFiles.first()
             if (sourceAction == OpenResourceModelSourceAction.EDIT) {
-                openFile.isWritable = true
+                file.isWritable = true
             }
-            FileEditorManager.getInstance(nodeProject).openFile(openFile, true)
-            EditorNotifications.getInstance(nodeProject).updateNotifications(openFile)
+            FileEditorManager.getInstance(nodeProject).openFile(file, true)
+            EditorNotifications.getInstance(nodeProject).updateNotifications(file)
         }
     }
 
