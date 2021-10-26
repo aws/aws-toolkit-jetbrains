@@ -29,8 +29,8 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.stubbing.Answer
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.managedToolInstallDir
-import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.managedToolMarkerFile
+import software.aws.toolkits.jetbrains.core.tools.DefaultToolManager.Companion.managedToolInstallDir
+import software.aws.toolkits.jetbrains.core.tools.DefaultToolManager.Companion.managedToolMarkerFile
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
@@ -61,7 +61,7 @@ class ToolManagerTest {
         clock = mock {
             on { instant() } doReturn Instant.MIN
         }
-        sut = ToolManager(clock)
+        sut = DefaultToolManager(clock)
     }
 
     @Test
@@ -416,9 +416,11 @@ class ToolManagerTest {
 
         markerFile.write(version.displayValue())
         toolBinary.write("someExe")
-        sut.checkForUpdates(type)
-        sut.checkForUpdates(type)
-        sut.checkForUpdates(type)
+        with(sut as DefaultToolManager) {
+            checkForUpdates(type)
+            checkForUpdates(type)
+            checkForUpdates(type)
+        }
 
         verify(type, times(2)).determineLatestVersion()
     }
@@ -488,7 +490,7 @@ class ToolManagerTest {
         }
 
         markerFile.write(version.displayValue())
-        sut.checkForUpdates(type)
+        (sut as DefaultToolManager).checkForUpdates(type)
 
         verify(type).determineLatestVersion()
         verify(type, never()).downloadVersion(any(), any(), anyOrNull())
@@ -519,7 +521,7 @@ class ToolManagerTest {
 
         markerFile.write(version.displayValue())
         toolBinary.write("someExe")
-        sut.checkForUpdates(type)
+        (sut as DefaultToolManager).checkForUpdates(type)
 
         verify(type).determineLatestVersion()
         verify(type, never()).downloadVersion(any(), any(), anyOrNull())
