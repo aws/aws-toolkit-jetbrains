@@ -12,7 +12,6 @@ object DotNetRuntimeUtils {
 
     private val logger = getLogger<DotNetRuntimeUtils>()
 
-    //private val defaultDotNetCoreRuntime = LambdaRuntime.DOTNETCORE2_1
     private val defaultDotNetCoreRuntime = LambdaRuntime.DOTNETCORE3_1
 
     /**
