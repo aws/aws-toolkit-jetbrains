@@ -53,7 +53,7 @@ class ToolManagerTest {
     @JvmField
     val tempFolder = TemporaryFolder()
 
-    private lateinit var sut: ToolManager
+    private lateinit var sut: DefaultToolManager
     private lateinit var clock: Clock
 
     @Before
@@ -416,11 +416,9 @@ class ToolManagerTest {
 
         markerFile.write(version.displayValue())
         toolBinary.write("someExe")
-        with(sut as DefaultToolManager) {
-            checkForUpdates(type)
-            checkForUpdates(type)
-            checkForUpdates(type)
-        }
+        sut.checkForUpdates(type)
+        sut.checkForUpdates(type)
+        sut.checkForUpdates(type)
 
         verify(type, times(2)).determineLatestVersion()
     }
@@ -490,7 +488,7 @@ class ToolManagerTest {
         }
 
         markerFile.write(version.displayValue())
-        (sut as DefaultToolManager).checkForUpdates(type)
+        sut.checkForUpdates(type)
 
         verify(type).determineLatestVersion()
         verify(type, never()).downloadVersion(any(), any(), anyOrNull())
@@ -521,7 +519,7 @@ class ToolManagerTest {
 
         markerFile.write(version.displayValue())
         toolBinary.write("someExe")
-        (sut as DefaultToolManager).checkForUpdates(type)
+        sut.checkForUpdates(type)
 
         verify(type).determineLatestVersion()
         verify(type, never()).downloadVersion(any(), any(), anyOrNull())

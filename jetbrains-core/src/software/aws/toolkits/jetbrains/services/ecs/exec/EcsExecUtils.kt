@@ -216,6 +216,13 @@ object EcsExecUtils {
         return !serviceStateChangeInProgress
     }
 
+    /**
+     * Start a session with ECS (calling ECS execute-command) and then pass the resulting
+     * session information (along with some other pieces) to the SSM Session Manager Plugin.
+     *
+     * This replicates logic from the AWS CLI:
+     * https://github.com/aws/aws-cli/blob/63f3fcf368805d14848769feae4bbf87cc359739/awscli/customizations/ecs/executecommand.py
+     */
     fun createCommand(
         project: Project,
         connection: ConnectionSettings,
@@ -224,6 +231,7 @@ object EcsExecUtils {
         command: String
     ): GeneralCommandLine {
         val client = connection.awsClient<EcsClient>()
+        val path = SsmPlugin.getOrInstallTool(project).path.toAbsolutePath().toString()
 
         val (containerRuntimeId, session) = runUnderProgressIfNeeded(project, message("ecs.execute_command_call_service"), cancelable = false) {
             val runtimeId = client.getContainerRuntimeId(container.service.clusterArn(), task, container.containerDefinition.name())
@@ -238,8 +246,6 @@ object EcsExecUtils {
 
             runtimeId to session
         }
-
-        val path = SsmPlugin.getOrInstallTool(project).path.toAbsolutePath().toString()
 
         return GeneralCommandLine()
             .withExePath(path)

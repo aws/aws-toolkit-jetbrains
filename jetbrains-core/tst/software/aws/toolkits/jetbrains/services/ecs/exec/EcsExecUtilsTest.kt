@@ -3,10 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
-import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -59,8 +57,8 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.region.US_EAST_1
+import software.aws.toolkits.jetbrains.core.tools.MockToolManagerRule
 import software.aws.toolkits.jetbrains.core.tools.Tool
-import software.aws.toolkits.jetbrains.core.tools.ToolManager
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecUtils.createCommand
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
@@ -84,6 +82,10 @@ class EcsExecUtilsTest {
     @JvmField
     @Rule
     val resourceCache = MockResourceCacheRule()
+
+    @JvmField
+    @Rule
+    val toolManager = MockToolManagerRule()
 
     private lateinit var ecsClient: EcsClient
     private lateinit var iamClient: IamClient
@@ -363,13 +365,7 @@ class EcsExecUtilsTest {
             }.doReturn(cliPath)
         }
 
-        val mockToolManager = mock<ToolManager> {
-            on {
-                getOrInstallTool(SsmPlugin, project = projectRule.project)
-            }.thenReturn(mockTool)
-        }
-
-        ApplicationManager.getApplication().replaceService(ToolManager::class.java, mockToolManager, disposableRule.disposable)
+        toolManager.registerTool(SsmPlugin, mockTool)
 
         ecsClient.stub {
             on {
