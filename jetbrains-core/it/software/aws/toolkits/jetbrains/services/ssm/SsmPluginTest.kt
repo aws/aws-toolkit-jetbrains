@@ -22,14 +22,12 @@ class SsmPluginTest {
     @JvmField
     val tempFolder = TemporaryFolder()
 
-    private val sut = SsmPlugin
-
     @Test
     fun `download URLs all work`() {
         val latest = SsmPlugin.determineLatestVersion()
         SoftAssertions.assertSoftly { softly ->
             listOf(
-//                sut.windowsUrl(latest), TODO: Windows Zip not available yet!
+                // SsmPlugin.windowsUrl(latest), TODO: Windows Zip not available yet!
                 SsmPlugin.linuxArm64Url(latest),
                 SsmPlugin.linuxI64Url(latest),
                 SsmPlugin.ubuntuArm64Url(latest),
