@@ -13,7 +13,6 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.Tree
-import com.intellij.util.concurrency.Invoker
 import com.intellij.util.ui.tree.TreeUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -101,7 +100,7 @@ class AwsExplorerNodeProcessorTest {
 
     private fun createTreeModel(): TreeModel {
         val awsTreeModel = AwsExplorerTreeStructure(projectRule.project)
-        val structureTreeModel = StructureTreeModel(awsTreeModel, null, Invoker.Background(disposableRule.disposable), disposableRule.disposable)
+        val structureTreeModel = StructureTreeModel(awsTreeModel, null, AwsExplorerNodeProcessorTestUtils.getInvoker(disposableRule.disposable), disposableRule.disposable)
         return AsyncTreeModel(structureTreeModel, false, disposableRule.disposable)
     }
 }
