@@ -24,19 +24,12 @@ import java.time.Duration
 import kotlin.streams.asSequence
 
 object SsmPlugin : ManagedToolType<FourPartVersion> {
-    private val hasDpkg by lazy {
-        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("dpkg-deb", "--version"), VERSION_TIMEOUT.toMillis().toInt())
-        output.exitCode == 0
-    }
+    private val hasDpkg by lazy { hasCommand("dpkg-deb") }
 
-    private val hasRpm2Cpio by lazy {
-        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("rpm2cpio", "--help"), VERSION_TIMEOUT.toMillis().toInt())
-        output.exitCode == 1 && output.stdout.contains("usage", ignoreCase = true)
-    }
+    private val hasRpm2Cpio by lazy { hasCommand("rpm2cpio") }
 
     override val id: String = "SSM-Plugin"
     override val displayName: String = "AWS Session Manager Plugin"
-
     override fun supportedVersions(): VersionRange<FourPartVersion> = FourPartVersion(1, 2, 0, 0) until FourPartVersion(2, 0, 0, 0)
 
     override fun determineVersion(path: Path): FourPartVersion {
@@ -110,6 +103,11 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
 
         val intermediateZip = tempDir.resolve("package.zip")
         Decompressor.Zip(intermediateZip).withZipExtensions().extract(destinationDir)
+    }
+
+    private fun hasCommand(cmd: String): Boolean {
+        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), VERSION_TIMEOUT.toMillis().toInt())
+        return output.exitCode == 0
     }
 
     override fun determineLatestVersion(): FourPartVersion = FourPartVersion.parse(getTextFromUrl(VERSION_FILE))
