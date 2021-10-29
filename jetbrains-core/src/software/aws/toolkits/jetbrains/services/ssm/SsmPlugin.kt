@@ -29,9 +29,9 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         output.exitCode == 0
     }
 
-    private val hasRpm by lazy {
-        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("rpm", "--version"), VERSION_TIMEOUT.toMillis().toInt())
-        output.exitCode == 0
+    private val hasRpm2Cpio by lazy {
+        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("rpm2cpio", "--help"), VERSION_TIMEOUT.toMillis().toInt())
+        output.exitCode == 1 && output.stdout.contains("usage", ignoreCase = true)
     }
 
     override val id: String = "SSM-Plugin"
@@ -59,8 +59,8 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
             SystemInfo.isMac -> macUrl(version)
             SystemInfo.isLinux && hasDpkg && SystemInfo.isArm64 -> ubuntuArm64Url(version)
             SystemInfo.isLinux && hasDpkg && SystemInfo.isIntel64 -> ubuntuI64Url(version)
-            SystemInfo.isLinux && hasRpm && SystemInfo.isArm64 -> linuxArm64Url(version)
-            SystemInfo.isLinux && hasRpm && SystemInfo.isIntel64 -> linuxI64Url(version)
+            SystemInfo.isLinux && hasRpm2Cpio && SystemInfo.isArm64 -> linuxArm64Url(version)
+            SystemInfo.isLinux && hasRpm2Cpio && SystemInfo.isIntel64 -> linuxI64Url(version)
             else -> throw IllegalStateException("Failed to find compatible SSM plugin: SystemInfo=${SystemInfo.OS_NAME}, Arch=${SystemInfo.OS_ARCH}")
         }
 
