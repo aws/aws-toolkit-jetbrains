@@ -24,9 +24,16 @@ import java.time.Duration
 import kotlin.streams.asSequence
 
 object SsmPlugin : ManagedToolType<FourPartVersion> {
-    private val isUbuntu by lazy {
-        ExecUtil.execAndGetOutput(GeneralCommandLine("uname", "-a"), VERSION_TIMEOUT.toMillis().toInt()).stdout.contains("Ubuntu", ignoreCase = true)
+    private val hasDpkg by lazy {
+        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("dpkg-deb", "--version"), VERSION_TIMEOUT.toMillis().toInt())
+        output.exitCode == 0
     }
+
+    private val hasRpm by lazy {
+        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("rpm", "--version"), VERSION_TIMEOUT.toMillis().toInt())
+        output.exitCode == 0
+    }
+
     override val id: String = "SSM-Plugin"
     override val displayName: String = "AWS Session Manager Plugin"
 
@@ -50,10 +57,10 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         val downloadUrl = when {
             SystemInfo.isWindows -> windowsUrl(version)
             SystemInfo.isMac -> macUrl(version)
-            SystemInfo.isLinux && isUbuntu && SystemInfo.isArm64 -> ubuntuArm64Url(version)
-            SystemInfo.isLinux && isUbuntu && SystemInfo.isIntel64 -> ubuntuI64Url(version)
-            SystemInfo.isLinux && SystemInfo.isArm64 -> linuxArm64Url(version)
-            SystemInfo.isLinux && SystemInfo.isIntel64 -> linuxI64Url(version)
+            SystemInfo.isLinux && hasDpkg && SystemInfo.isArm64 -> ubuntuArm64Url(version)
+            SystemInfo.isLinux && hasDpkg && SystemInfo.isIntel64 -> ubuntuI64Url(version)
+            SystemInfo.isLinux && hasRpm && SystemInfo.isArm64 -> linuxArm64Url(version)
+            SystemInfo.isLinux && hasRpm && SystemInfo.isIntel64 -> linuxI64Url(version)
             else -> throw IllegalStateException("Failed to find compatible SSM plugin: SystemInfo=${SystemInfo.OS_NAME}, Arch=${SystemInfo.OS_ARCH}")
         }
 
@@ -86,7 +93,7 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         val processOutput = ExecUtil.execAndGetOutput(cmd, INSTALL_TIMEOUT.toMillis().toInt())
 
         if (!processOutput.checkSuccess(LOGGER)) {
-            throw IllegalStateException("Failed to extract $displayName")
+            throw IllegalStateException("Failed to extract $displayName\nSTDOUT:${processOutput.stdout}\nSTDERR:${processOutput.stderr}")
         }
     }
 
