@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.applyToComponent
@@ -19,6 +20,8 @@ import org.jetbrains.plugins.terminal.TerminalView
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalProcess
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalRunner
 import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
@@ -87,7 +90,13 @@ class OpenShellInContainerDialog(
     private fun runExecCommand(task: String) {
         try {
             val commandLine = EcsExecUtils.createCommand(project, connectionSettings, container, task, shell)
-            val ptyProcess = PtyProcess.exec(commandLine.getCommandLineList(null).toTypedArray(), commandLine.effectiveEnvironment, null)
+
+            val cmd = if (SystemInfo.isWindows) {
+                arrayOf("cmd", "/C", commandLine.commandLineString)
+            } else {
+                commandLine.getCommandLineList(null).toTypedArray()
+            }
+            val ptyProcess = PtyProcess.exec(cmd, commandLine.effectiveEnvironment, null)
             val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
             val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
@@ -96,7 +105,11 @@ class OpenShellInContainerDialog(
             }
             EcsTelemetry.runExecuteCommand(project, Result.Succeeded, EcsExecuteCommandType.Shell)
         } catch (e: Exception) {
+            LOG.error(e) { "Failed to start interactive shell" }
             EcsTelemetry.runExecuteCommand(project, Result.Failed, EcsExecuteCommandType.Shell)
         }
+    }
+    companion object {
+        private val LOG = getLogger<OpenShellInContainerDialog>()
     }
 }
