@@ -13,10 +13,10 @@ import com.intellij.database.dataSource.LocalDataSource
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.rds.RdsUtilities
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
 import software.aws.toolkits.jetbrains.datagrip.hostFromJdbcString
@@ -51,7 +51,7 @@ class IamAuth : DatabaseAuthProvider {
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = applicationThreadPoolScope(connection.runConfiguration.project)
+        val scope = projectCoroutineScope(connection.runConfiguration.project)
         return scope.future {
             var result = Result.Succeeded
             try {

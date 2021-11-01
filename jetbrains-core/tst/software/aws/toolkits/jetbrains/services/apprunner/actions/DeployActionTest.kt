@@ -145,7 +145,9 @@ class DeployActionTest : BaseCoroutineTest(30) {
                 appRunnerClient,
                 cloudwatchClient
             )
+        }
 
+        runInEdtAndWait {
             val windows = toolWindow.findPrefix("")
             assertThat(windows.size).isEqualTo(1)
             assertThat(windows.first().displayName).isEqualTo(message("cloudwatch.logs.log_stream_title", "deployment/$operationId"))

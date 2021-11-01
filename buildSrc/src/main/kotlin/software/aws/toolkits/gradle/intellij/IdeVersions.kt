@@ -17,40 +17,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2020.2",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2020.2",
-                plugins = commonPlugins + listOf(
-                    "java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "PythonCore:202.6397.124",
-                    "Docker:202.6397.93"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2020.2",
-                plugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "Pythonid:202.6397.98",
-                    "org.jetbrains.plugins.go:202.6397.20"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2020.2",
-                plugins = commonPlugins + listOf(
-                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-                ),
-                netFrameworkTarget = "net461",
-                rdGenVersion = "0.203.161",
-                nugetVersion = "2020.2.0"
-            )
-        ),
-        Profile(
             name = "2020.3",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
@@ -112,7 +78,7 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2021.1.1",
+                sdkVersion = "2021.1.5",
                 plugins = commonPlugins + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
@@ -125,18 +91,18 @@ object IdeVersions {
             name = "2021.2",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "212.4638.7-EAP-SNAPSHOT",
+                sdkVersion = "2021.2",
                 plugins = commonPlugins + listOf(
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:212.4638.10",
-                    "Docker:212.4638.7"
+                    "PythonCore:212.4746.96",
+                    "Docker:212.4746.92"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "212.4638.7-EAP-SNAPSHOT",
+                sdkVersion = "2021.2",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
@@ -144,20 +110,57 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
-                    "Pythonid:212.4638.7",
-                    "org.jetbrains.plugins.go:212.4638.7"
+                    "Pythonid:212.4746.96",
+                    "org.jetbrains.plugins.go:212.4746.92"
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2021.2-SNAPSHOT",
+                sdkVersion = "2021.2",
                 plugins = commonPlugins + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
                 rdGenVersion = "0.212.315",
-                nugetVersion = "2021.2.0-eap05"
+                nugetVersion = "2021.2.0"
             )
         ),
+        Profile(
+            name = "2021.3",
+            community = ProductProfile(
+                sdkFlavor = IdeFlavor.IC,
+                sdkVersion = "213.4928-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "PythonCore:213.4928.8",
+                    "Docker:213.4928.7"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkFlavor = IdeFlavor.IU,
+                sdkVersion = "213.4928-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "Pythonid:213.4928.7",
+                    "org.jetbrains.plugins.go:213.4928.7"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2021.3-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+                ),
+                netFrameworkTarget = "net472",
+                rdGenVersion = "0.213.394",
+                nugetVersion = "2021.3.0-eap04"
+            )
+        )
     ).associateBy { it.name }
 
     fun ideProfile(project: Project): Profile = ideProfile(project.providers).get()
@@ -166,10 +169,7 @@ object IdeVersions {
         ideProfiles[it] ?: throw IllegalStateException("Can't find profile for $it")
     }
 
-    private fun resolveIdeProfileName(providers: ProviderFactory): Provider<String> =
-        providers.environmentVariable("ALTERNATIVE_IDE_PROFILE_NAME").forUseAtConfigurationTime().orElse(
-            providers.gradleProperty("ideProfileName").forUseAtConfigurationTime()
-        )
+    private fun resolveIdeProfileName(providers: ProviderFactory): Provider<String> = providers.gradleProperty("ideProfileName").forUseAtConfigurationTime()
 }
 
 open class ProductProfile(

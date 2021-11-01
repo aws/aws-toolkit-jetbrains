@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.clouddebug.execution.steps
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.util.execution.ParametersListUtil
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
+import software.aws.toolkits.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.CloudDebugCliStep
 import software.aws.toolkits.jetbrains.services.ecs.execution.EcsServiceCloudDebuggingRunSettings
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
@@ -48,7 +48,7 @@ class StartApplication(
 
     override fun recordTelemetry(context: Context, startTime: Instant, result: Result) {
         ClouddebugTelemetry.startApplication(
-            project = context.project,
+            project = context.getAttribute(Context.PROJECT_ATTRIBUTE),
             result = result,
             workflowToken = context.workflowToken,
             value = Duration.between(startTime, Instant.now()).toMillis().toDouble()

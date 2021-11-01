@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.ui.feedback
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -16,16 +15,16 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeedbackTelemetry
 import software.aws.toolkits.telemetry.Result
 
 class FeedbackDialog(private val project: Project) : DialogWrapper(project) {
-    private val coroutineScope = applicationThreadPoolScope(project)
+    private val coroutineScope = projectCoroutineScope(project)
     val panel = SubmitFeedbackPanel()
 
     init {
@@ -43,7 +42,7 @@ class FeedbackDialog(private val project: Project) : DialogWrapper(project) {
             val sentiment = panel.sentiment ?: throw IllegalStateException("sentiment was null after validation")
             val comment = panel.comment ?: throw IllegalStateException("comment was null after validation")
             coroutineScope.launch {
-                val edtContext = getCoroutineUiContext(ModalityState.stateForComponent(panel.panel))
+                val edtContext = getCoroutineUiContext()
                 try {
                     TelemetryService.getInstance().sendFeedback(sentiment, comment)
                     withContext(edtContext) {

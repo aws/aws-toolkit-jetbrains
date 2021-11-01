@@ -41,8 +41,9 @@ import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.docker.LocalImage
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.services.ecr.DockerRunConfiguration
@@ -55,11 +56,9 @@ import software.aws.toolkits.jetbrains.services.ecr.getDockerLogin
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.ui.installOnParent
 import software.aws.toolkits.jetbrains.utils.ui.selected
-import software.aws.toolkits.jetbrains.utils.ui.visibleIf
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcrDeploySource
 import software.aws.toolkits.telemetry.EcrTelemetry
@@ -71,7 +70,7 @@ class PushToRepositoryAction : EcrDockerAction() {
     override fun actionPerformed(selected: EcrRepositoryNode, e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: EcrClient = project.awsClient()
-        val scope = applicationThreadPoolScope(project)
+        val scope = projectCoroutineScope(project)
         val dialog = PushToEcrDialog(project, selected.repository, scope.dockerServerRuntimeAsync())
         if (!dialog.showAndGet()) {
             // user cancelled; noop
@@ -124,7 +123,7 @@ internal class PushToEcrDialog(
     selectedRepository: Repository,
     private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance>
 ) : DialogWrapper(project, null, false, IdeModalityType.PROJECT) {
-    private val coroutineScope = applicationThreadPoolScope(project)
+    private val coroutineScope = projectCoroutineScope(project)
     private val defaultTag = "latest"
     private var type = BuildType.LocalImage
     private var remoteTag = ""

@@ -9,8 +9,8 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.impl.ToolWindowHeadlessManagerImpl
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -79,8 +79,9 @@ class ViewLogsActionTest {
             }
         }
 
-        runBlocking {
+        val windows = runInEdtAndGet {
             viewLogGroup(node, "service")
+            toolWindowManager.findPrefix("")
         }
 
         val windows = toolWindow.findPrefix("")
@@ -95,9 +96,7 @@ class ViewLogsActionTest {
 
         projectRule.project.messageBus.connect(disposableRule.disposable).subscribe(Notifications.TOPIC, notificationMock)
 
-        runBlocking {
-            viewLogGroup(node, "service")
-        }
+        viewLogGroup(node, "service")
 
         argumentCaptor<Notification>().apply {
             verify(notificationMock).notify(capture())
@@ -120,9 +119,7 @@ class ViewLogsActionTest {
             }
         }
 
-        runBlocking {
-            viewLogGroup(node, "service")
-        }
+        viewLogGroup(node, "service")
 
         argumentCaptor<Notification>().apply {
             verify(notificationMock).notify(capture())

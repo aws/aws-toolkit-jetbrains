@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -15,8 +14,8 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.SqsException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
@@ -29,7 +28,7 @@ class EditAttributesDialog(
     private val queue: Queue,
     private val attributes: Map<QueueAttributeName, String>
 ) : DialogWrapper(project) {
-    private val coroutineScope = applicationThreadPoolScope(project)
+    private val coroutineScope = projectCoroutineScope(project)
     val view = EditAttributesPanel()
 
     init {
@@ -74,7 +73,7 @@ class EditAttributesDialog(
                     content = message("sqs.edit.attributes.updated", queue.queueName)
                 )
                 SqsTelemetry.editQueueParameters(project, Result.Succeeded, queue.telemetryType())
-                withContext(getCoroutineUiContext(ModalityState.any())) {
+                withContext(getCoroutineUiContext()) {
                     close(OK_EXIT_CODE)
                 }
             } catch (e: SqsException) {

@@ -24,6 +24,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
@@ -44,8 +45,8 @@ import software.aws.toolkits.jetbrains.services.lambda.steps.createDeployWorkflo
 import software.aws.toolkits.jetbrains.services.lambda.upload.UploadFunctionContinueDialog
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
+import software.aws.toolkits.jetbrains.utils.execution.steps.BuildViewWorkflowEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
@@ -126,15 +127,19 @@ class DeployServerlessApplicationAction : AnAction(
 
     private fun continueDeployment(project: Project, templateFile: VirtualFile, settings: DeployServerlessApplicationSettings) {
         val stackName = settings.stackName
-        val workflow = StepExecutor(
+        val emitter = BuildViewWorkflowEmitter.createEmitter(
             project,
             message("serverless.application.deploy_in_progress.title", stackName),
+            stackName
+        )
+        val workflow = StepExecutor(
+            project,
             createDeployWorkflow(
                 project,
                 templateFile,
                 settings
             ),
-            stackName
+            emitter
         )
 
         workflow.onSuccess = {
@@ -164,7 +169,7 @@ class DeployServerlessApplicationAction : AnAction(
                     try {
                         cfnClient.executeChangeSetAndWait(stackName, changeSetArn)
                         notifyInfo(
-                            message("cloudformation.execute_change_set.success.title"),
+                            message("cloudformation.service_name"),
                             message("cloudformation.execute_change_set.success", stackName),
                             project
                         )
@@ -184,17 +189,11 @@ class DeployServerlessApplicationAction : AnAction(
                         )
                     }
                 }
-
-                notifyInfo(
-                    project = project,
-                    title = message("lambda.service_name"),
-                    content = message("lambda.function.created.notification", stackName)
-                )
             }
         }
 
         workflow.onError = {
-            it.notifyError(project = project, title = message("lambda.service_name"))
+            it.notifyError(project = project, title = message("cloudformation.service_name"))
             SamTelemetry.deploy(
                 project = project,
                 version = SamCommon.getVersionString(),

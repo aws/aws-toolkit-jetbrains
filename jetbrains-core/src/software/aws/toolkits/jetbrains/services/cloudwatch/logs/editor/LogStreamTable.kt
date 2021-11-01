@@ -17,18 +17,17 @@ import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamFilterActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamListActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundActionGroup
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.bottomReached
 import software.aws.toolkits.jetbrains.utils.ui.topReached
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JTable
-import javax.swing.SortOrder
 
 class LogStreamTable(
     val project: Project,
@@ -37,7 +36,7 @@ class LogStreamTable(
     private val logStream: String,
     type: TableType
 ) : Disposable {
-    private val coroutineScope = ApplicationThreadPoolScope("LogStreamTable", this)
+    private val coroutineScope = disposableCoroutineScope(this)
 
     enum class TableType {
         LIST,
@@ -53,9 +52,6 @@ class LogStreamTable(
         val model = ListTableModel(
             arrayOf(LogStreamDateColumn(), LogStreamMessageColumn()),
             mutableListOf<LogStreamEntry>(),
-            // Don't sort in the model because the requests come sorted
-            -1,
-            SortOrder.UNSORTED
         )
         logsTable = TableView(model).apply {
             autoscrolls = true

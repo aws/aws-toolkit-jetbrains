@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
+import com.intellij.openapi.util.registry.Registry
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -15,7 +16,7 @@ import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
-import software.aws.toolkits.jetbrains.utils.getCoroutineBgContext
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import kotlin.streams.toList
 
 class DefaultTelemetryPublisher(
@@ -88,20 +89,21 @@ class DefaultTelemetryPublisher(
         private const val METADATA_AWS_REGION = "awsRegion"
 
         private fun createDefaultTelemetryClient(): ToolkitTelemetryClient {
+            val region = Region.of(Registry.get("aws.telemetry.region").asString())
             val sdkClient = AwsSdkClient.getInstance()
             return ToolkitClientManager.createNewClient(
                 ToolkitTelemetryClient::class,
                 sdkClient.sharedSdkClient(),
-                Region.US_EAST_1,
+                region,
                 AWSCognitoCredentialsProvider(
-                    "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
+                    Registry.get("aws.telemetry.identityPool").asString(),
                     CognitoIdentityClient.builder()
                         .credentialsProvider(AnonymousCredentialsProvider.create())
-                        .region(Region.US_EAST_1)
+                        .region(region)
                         .httpClient(sdkClient.sharedSdkClient())
                         .build()
                 ),
-                endpointOverride = "https://client-telemetry.us-east-1.amazonaws.com"
+                endpointOverride = Registry.get("aws.telemetry.endpoint").asString()
             )
         }
     }

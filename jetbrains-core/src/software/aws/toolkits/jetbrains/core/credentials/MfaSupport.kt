@@ -4,11 +4,10 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 
 interface MfaRequiredInteractiveCredentials : InteractiveCredential {
@@ -21,7 +20,7 @@ interface MfaRequiredInteractiveCredentials : InteractiveCredential {
 }
 
 fun promptForMfaToken(name: String, mfaSerial: String): String = runBlocking {
-    withContext(getCoroutineUiContext(ModalityState.any())) {
+    withContext(getCoroutineUiContext()) {
         Messages.showInputDialog(
             message("credentials.mfa.message", mfaSerial),
             message("credentials.mfa.title", name),

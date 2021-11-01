@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.iam
 
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.layout.panel
@@ -12,8 +11,8 @@ import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.iam.IamClient
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.JComponent
@@ -27,7 +26,7 @@ class CreateIamServiceRoleDialog(
     name: String = "",
     parent: Component? = null,
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
-    private val coroutineScope = applicationThreadPoolScope(project)
+    private val coroutineScope = projectCoroutineScope(project)
     var name: String = name
         private set
     internal val view = panel {
@@ -64,7 +63,7 @@ class CreateIamServiceRoleDialog(
         coroutineScope.launch {
             try {
                 createIamRole()
-                runBlocking(getCoroutineUiContext(ModalityState.stateForComponent(view))) {
+                runBlocking(getCoroutineUiContext()) {
                     close(OK_EXIT_CODE)
                 }
             } catch (e: Exception) {

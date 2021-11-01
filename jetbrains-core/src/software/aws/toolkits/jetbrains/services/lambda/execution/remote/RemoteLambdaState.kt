@@ -46,12 +46,16 @@ class RemoteLambdaState(
         val console = consoleBuilder.console
         console.attachToProcess(lambdaProcess)
 
-        ApplicationManager.getApplication().executeOnPooledThread { invokeLambda(lambdaProcess) }
-
         return DefaultExecutionResult(console, lambdaProcess)
     }
 
     private inner class LambdaProcess : ProcessHandler() {
+        override fun startNotify() {
+            super.startNotify()
+
+            ApplicationManager.getApplication().executeOnPooledThread { invokeLambda(this) }
+        }
+
         override fun getProcessInput(): OutputStream? = null
 
         override fun detachIsDefault(): Boolean = true

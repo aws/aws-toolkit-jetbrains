@@ -7,9 +7,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
-import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
+import software.aws.toolkits.jetbrains.services.ecs.EcsExecExperiment
 import software.aws.toolkits.jetbrains.services.ecs.EcsServiceNode
 import software.aws.toolkits.jetbrains.services.ecs.EcsUtils
 import software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings
@@ -22,7 +23,7 @@ class DisableEcsExecuteCommand :
         if (!settings.showExecuteCommandWarning ||
             EnableDisableExecuteCommandWarning(selected.nodeProject, enable = false, selected.value.serviceName()).showAndGet()
         ) {
-            val coroutineScope = applicationThreadPoolScope(selected.nodeProject)
+            val coroutineScope = projectCoroutineScope(selected.nodeProject)
             coroutineScope.launch {
                 disableExecuteCommand(selected.nodeProject, selected.value)
             }
@@ -30,7 +31,7 @@ class DisableEcsExecuteCommand :
     }
 
     override fun update(selected: EcsServiceNode, e: AnActionEvent) {
-        e.presentation.isVisible = selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn()) && AwsToolkit.isEcsExecEnabled()
+        e.presentation.isVisible = selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn()) && EcsExecExperiment.isEnabled()
     }
 
     private fun disableExecuteCommand(project: Project, service: Service) {

@@ -19,21 +19,21 @@ import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogGroupActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogGroupSearchActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ExportActionGroup
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import software.aws.toolkits.jetbrains.utils.ui.bottomReached
 import software.aws.toolkits.resources.message
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 import javax.swing.JComponent
+import javax.swing.SortOrder
 
 class LogGroupTable(
     private val project: Project,
@@ -41,7 +41,7 @@ class LogGroupTable(
     private val logGroup: String,
     type: TableType
 ) : Disposable {
-    private val coroutineScope = ApplicationThreadPoolScope("LogGroupTable", this)
+    private val coroutineScope = disposableCoroutineScope(this)
     val component: JComponent
     val channel: Channel<CloudWatchLogsActor.Message>
     private val groupTable: TableView<LogStream>
@@ -53,9 +53,15 @@ class LogGroupTable(
     }
 
     init {
+        val (sortColumn, sortOrder) = when (type) {
+            TableType.LIST -> 1 to SortOrder.DESCENDING // Sort by event time, most recent first
+            TableType.FILTER -> 0 to SortOrder.ASCENDING // Sort by name alphabetically
+        }
         val tableModel = ListTableModel(
-            arrayOf(LogStreamsStreamColumn(), LogStreamsDateColumn()),
-            mutableListOf<LogStream>()
+            arrayOf(LogStreamsStreamColumn(sortable = type == TableType.FILTER), LogStreamsDateColumn(sortable = type == TableType.LIST)),
+            mutableListOf<LogStream>(),
+            sortColumn,
+            sortOrder
         )
         groupTable = TableView(tableModel).apply {
             setPaintBusy(true)
@@ -64,10 +70,6 @@ class LogGroupTable(
             emptyText.text = message("loading_resource.loading")
             tableHeader.reorderingAllowed = false
             tableHeader.resizingAllowed = false
-        }
-        groupTable.rowSorter = when (type) {
-            TableType.LIST -> LogGroupTableSorter(tableModel)
-            TableType.FILTER -> LogGroupFilterTableSorter(tableModel)
         }
         TableSpeedSearch(groupTable)
         addTableMouseListener(groupTable)
@@ -94,8 +96,8 @@ class LogGroupTable(
     private fun addKeyListener(table: JBTable) {
         table.addKeyListener(
             object : KeyAdapter() {
-                override fun keyTyped(e: KeyEvent) = runBlocking {
-                    val logStream = table.getSelectedRowLogStream() ?: return@runBlocking
+                override fun keyTyped(e: KeyEvent) {
+                    val logStream = table.getSelectedRowLogStream() ?: return
                     if (!e.isConsumed && e.keyCode == KeyEvent.VK_ENTER) {
                         e.consume()
                         val window = CloudWatchLogWindow.getInstance(project)
@@ -108,11 +110,11 @@ class LogGroupTable(
 
     private fun addTableMouseListener(table: JBTable) {
         object : DoubleClickListener() {
-            override fun onDoubleClick(e: MouseEvent): Boolean = runBlocking {
-                val logStream = table.getSelectedRowLogStream() ?: return@runBlocking false
+            override fun onDoubleClick(e: MouseEvent): Boolean {
+                val logStream = table.getSelectedRowLogStream() ?: return false
                 val window = CloudWatchLogWindow.getInstance(project)
                 window.showLogStream(logGroup, logStream)
-                return@runBlocking true
+                return true
             }
         }.installOn(table)
     }

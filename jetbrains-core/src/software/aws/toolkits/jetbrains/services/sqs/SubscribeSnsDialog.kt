@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.sqs
 
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
@@ -18,9 +17,9 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
@@ -31,7 +30,7 @@ class SubscribeSnsDialog(
     private val project: Project,
     private val queue: Queue
 ) : DialogWrapper(project) {
-    private val coroutineScope = applicationThreadPoolScope(project)
+    private val coroutineScope = projectCoroutineScope(project)
     private val snsClient: SnsClient = project.awsClient()
     private val sqsClient: SqsClient = project.awsClient()
     private val iamClient: IamClient = project.awsClient()
@@ -77,7 +76,7 @@ class SubscribeSnsDialog(
                 }.attributes()[QueueAttributeName.POLICY]
 
                 if (needToEditPolicy(policy)) {
-                    val continueAdding = withContext(getCoroutineUiContext(ModalityState.any())) {
+                    val continueAdding = withContext(getCoroutineUiContext()) {
                         ConfirmQueuePolicyDialog(project, sqsClient, queue, topicArn, policy, view.component).showAndGet()
                     }
                     if (!continueAdding) {
@@ -87,7 +86,7 @@ class SubscribeSnsDialog(
                     }
                 }
                 subscribe(topicArn)
-                withContext(getCoroutineUiContext(ModalityState.any())) {
+                withContext(getCoroutineUiContext()) {
                     close(OK_EXIT_CODE)
                 }
                 notifyInfo(message("sqs.service_name"), message("sqs.subscribe.sns.success", topicSelected()), project)

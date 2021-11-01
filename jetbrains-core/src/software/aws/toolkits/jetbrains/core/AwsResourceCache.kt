@@ -15,21 +15,22 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.core.SdkClient
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
+import software.aws.toolkits.core.credentials.toEnvironmentVariables
+import software.aws.toolkits.core.getClient
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.Companion.getConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
+import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -150,7 +151,7 @@ interface AwsResourceCache {
  * @param[forceFetch] force the resource to refresh (and update cache) even if a valid cache version exists. Default: false
  */
 fun <T> Project.getResource(resource: Resource<T>, useStale: Boolean = true, forceFetch: Boolean = false): CompletionStage<T> =
-    AwsResourceCache.getInstance().getResource(resource, this.getConnectionSettings(), useStale, forceFetch)
+    AwsResourceCache.getInstance().getResource(resource, this.getConnectionSettingsOrThrow(), useStale, forceFetch)
 
 /**
  * Blocking version of [getResource]
@@ -159,27 +160,35 @@ fun <T> Project.getResource(resource: Resource<T>, useStale: Boolean = true, for
  * @param[forceFetch] force the resource to refresh (and update cache) even if a valid cache version exists. Default: false
  */
 fun <T> Project.getResourceNow(resource: Resource<T>, timeout: Duration = DEFAULT_TIMEOUT, useStale: Boolean = true, forceFetch: Boolean = false): T =
-    AwsResourceCache.getInstance().getResourceNow(resource, this.getConnectionSettings(), timeout, useStale, forceFetch)
+    AwsResourceCache.getInstance().getResourceNow(resource, this.getConnectionSettingsOrThrow(), timeout, useStale, forceFetch)
 
 /**
  * Gets the [resource] if it exists in the cache.
  *
  * @param[useStale] return a cached version if it exists (even if it's expired). Default: true
  */
+fun <T> ConnectionSettings.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = true): T? =
+    AwsResourceCache.getInstance().getResourceIfPresent(resource, this, useStale)
+
+/**
+ * Gets the [resource] if it exists in the cache.
+ *
+ * @see [ConnectionSettings.getResourceIfPresent]
+ */
 fun <T> Project.getResourceIfPresent(resource: Resource<T>, useStale: Boolean = true): T? =
-    AwsResourceCache.getInstance().getResourceIfPresent(resource, this.getConnectionSettings(), useStale)
+    getConnectionSettingsOrThrow().getResourceIfPresent(resource, useStale)
 
 /**
  * Clears the contents of the cache for the specific [resource] type, in the currently active [ConnectionSettings]
  */
 fun Project.clearResourceForCurrentConnection(resource: Resource<*>) =
-    AwsResourceCache.getInstance().clear(resource, this.getConnectionSettings())
+    AwsResourceCache.getInstance().clear(resource, this.getConnectionSettingsOrThrow())
 
 /**
  * Clears the contents of the cache of all resource types for the currently active [ConnectionSettings]
  */
 fun Project.clearResourceForCurrentConnection() =
-    AwsResourceCache.getInstance().clear(this.getConnectionSettings())
+    AwsResourceCache.getInstance().clear(this.getConnectionSettingsOrThrow())
 
 sealed class Resource<T> {
 
@@ -201,17 +210,22 @@ sealed class Resource<T> {
      * in order to return the desired type [Output]. The [transform] result is not cached, [transform]s are re-applied on each fetch - thus should
      * should be relatively cheap.
      */
-    class View<Input, Output>(val underlying: Resource<Input>, private val transform: Input.() -> Output) : Resource<Output>() {
+    class View<Input, Output>(val underlying: Resource<Input>, private val transform: (Input, AwsRegion) -> Output) : Resource<Output>() {
         @Suppress("UNCHECKED_CAST")
-        fun doMap(input: Any) = transform(input as Input)
+        fun doMap(input: Any, region: AwsRegion) = transform(input as Input, region)
+    }
+
+    companion object {
+        fun <Input, Output> view(underlying: Resource<Input>, transform: Input.() -> Output): Resource<Output> =
+            View(underlying) { input, _ -> transform(input) }
     }
 }
 
-fun <Input, Output> Resource<out Iterable<Input>>.map(transform: (Input) -> Output): Resource<List<Output>> = Resource.View(this) { map(transform) }
+fun <Input, Output> Resource<out Iterable<Input>>.map(transform: (Input) -> Output): Resource<List<Output>> = Resource.view(this) { map(transform) }
 
-fun <T> Resource<out Iterable<T>>.filter(predicate: (T) -> Boolean): Resource<List<T>> = Resource.View(this) { filter(predicate) }
+fun <T> Resource<out Iterable<T>>.filter(predicate: (T) -> Boolean): Resource<List<T>> = Resource.view(this) { filter(predicate) }
 
-fun <T> Resource<out Iterable<T>>.find(predicate: (T) -> Boolean): Resource<T?> = Resource.View(this) { find(predicate) }
+fun <T> Resource<out Iterable<T>>.find(predicate: (T) -> Boolean): Resource<T?> = Resource.view(this) { find(predicate) }
 
 class ClientBackedCachedResource<ReturnType, ClientType : SdkClient>(
     private val sdkClientClass: KClass<ClientType>,
@@ -265,7 +279,8 @@ class DefaultAwsResourceCache(
     private val maximumCacheEntries: Int,
     private val maintenanceInterval: Duration
 ) : AwsResourceCache, Disposable, ToolkitCredentialsChangeListener {
-    private val coroutineScope = ApplicationThreadPoolScope("DefaultAwsResourceCache", this)
+    private val coroutineScope = disposableCoroutineScope(this)
+
     @Suppress("unused")
     constructor() : this(Clock.systemDefaultZone(), MAXIMUM_CACHE_ENTRIES, DEFAULT_MAINTENANCE_INTERVAL)
 
@@ -284,7 +299,13 @@ class DefaultAwsResourceCache(
         useStale: Boolean,
         forceFetch: Boolean
     ): CompletionStage<T> = when (resource) {
-        is Resource.View<*, T> -> getResource(resource.underlying, region, credentialProvider, useStale, forceFetch).thenApply { resource.doMap(it as Any) }
+        is Resource.View<*, T> -> getResource(
+            resource.underlying,
+            region,
+            credentialProvider,
+            useStale,
+            forceFetch
+        ).thenApply { resource.doMap(it as Any, region) }
         is Resource.Cached<T> -> Context(resource, region, credentialProvider, useStale, forceFetch).also { getCachedResource(it) }.future
     }
 
@@ -350,7 +371,12 @@ class DefaultAwsResourceCache(
                     else -> null
                 }
             }
-            is Resource.View<*, T> -> getResourceIfPresent(resource.underlying, region, credentialProvider, useStale)?.let { resource.doMap(it) }
+            is Resource.View<*, T> -> getResourceIfPresent(resource.underlying, region, credentialProvider, useStale)?.let {
+                resource.doMap(
+                    it,
+                    region
+                )
+            }
         }
 
     override fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings) {

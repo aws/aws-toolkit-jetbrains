@@ -69,6 +69,7 @@ with what features/services are supported.
     <depends optional="true">org.jetbrains.plugins.gradle</depends>
     <depends optional="true" config-file="ext-terminal.xml">org.jetbrains.plugins.terminal</depends>
     <depends optional="true">com.intellij.modules.externalSystem</depends>
+    <depends optional="true" config-file="ext-yaml.xml">org.jetbrains.plugins.yaml</depends>
     <depends optional="true" config-file="ext-docker.xml">Docker</depends>
     <depends optional="true" config-file="ext-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
@@ -88,6 +89,9 @@ with what features/services are supported.
     <projectListeners>
         <listener class="software.aws.toolkits.jetbrains.core.credentials.CredentialStatusNotification"
                   topic="software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier"/>
+        <listener class="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateChangedNotificationHandler"
+                  topic="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateMutationHandler"/>
+
     </projectListeners>
     <extensionPoints>
         <extensionPoint name="credentialProviderFactory" interface="software.aws.toolkits.core.credentials.CredentialProviderFactory" dynamic="true"/>
@@ -123,10 +127,14 @@ with what features/services are supported.
         <extensionPoint name="explorer.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode" dynamic="true"/>
         <extensionPoint name="explorer.nodeProcessor" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor" dynamic="true"/>
         <extensionPoint name="explorer.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider" dynamic="true"/>
+        <extensionPoint name="sdk.clientCustomizer" interface="software.aws.toolkits.jetbrains.core.AwsClientCustomizer" dynamic="true"/>
+        <extensionPoint name="experiment" interface="software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.ProjectLevelCoroutineScopeTracker"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+
         <!-- Credential Management -->
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider"/>
@@ -146,6 +154,9 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CloudDebugSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
 
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"
+                            serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
+
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.DeploySettings"/>
@@ -157,6 +168,8 @@ with what features/services are supported.
         <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.CredentialsRegionHandler"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialsRegionHandler"
                         testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockCredentialsRegionHandler"/>
+
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler"/>
 
         <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
 
@@ -170,12 +183,21 @@ with what features/services are supported.
                             testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryService" />
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.executables.ExecutableManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.executables.DefaultExecutableManager"/>
+
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.tools.ToolSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.tools.ToolManager"/>
+
         <applicationService serviceInterface="software.aws.toolkits.core.ToolkitClientManager"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.AwsClientManager"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.MockClientManager"/>
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.AwsResourceCache"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.MockResourceCache"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSchemaMapping"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes"/>
+
+        <projectService serviceImplementation = "software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager"/>
@@ -185,6 +207,7 @@ with what features/services are supported.
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow" />
 
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider"/>
+        <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileActionProvider"/>
 
         <toolWindow id="aws.explorer" anchor="left" secondary="true"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerFactory"
@@ -199,11 +222,13 @@ with what features/services are supported.
         <toolWindow id="aws.sqs" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
                     factoryClass="software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindowFactory" icon="AwsIcons.Resources.Sqs.SQS_TOOL_WINDOW"/>
 
-        <projectConfigurable id="aws" groupId="tools" key="aws.settings.title" instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
+        <applicationConfigurable id="aws" groupId="tools" key="aws.settings.title" instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
+        <projectConfigurable id="aws.lambda" parentId="aws" instance="software.aws.toolkits.jetbrains.services.lambda.settings.LambdaSettingsConfigurable"/>
+        <applicationConfigurable parentId="aws" key="aws.settings.dynamic_resources_configurable.title" instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable" />
+        <applicationConfigurable id="aws.experiments" parentId="aws" instance="software.aws.toolkits.jetbrains.core.experiments.ExperimentConfigurable"/>
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>
-        <fileBasedIndex implementation="software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex"/>
 
         <runLineMarkerContributor language="yaml" implementationClass="software.aws.toolkits.jetbrains.services.lambda.execution.template.YamlLambdaRunLineMarkerContributor"/>
         <configurationType implementation="software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType"/>
@@ -212,7 +237,8 @@ with what features/services are supported.
 
         <!-- Min Version Notice -->
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.notification.MinimumVersionChange"/>
-        <!-- TODO: Migrate to this FIX_WHEN_MIN_IS_203 <notificationGroup id="aws.toolkit_deprecation" displayType="STICKY_BALLOON" key="aws.toolkit_deprecation.title"/> -->
+        <notificationGroup id="aws.toolkit_deprecation" displayType="STICKY_BALLOON" key="aws.toolkit_deprecation.title"/>
+        <notificationGroup id="aws.toolkit_telemetry" displayType="STICKY_BALLOON" key="aws.settings.telemetry.prompt.title"/>
 
         <!-- ECS -->
         <configurationType implementation="software.aws.toolkits.jetbrains.services.ecs.execution.EcsCloudDebugRunConfigurationType"/>
@@ -234,18 +260,24 @@ with what features/services are supported.
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditorProvider"/>
         <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbFileIconProvider"/>
 
+        <registryKey key="aws.telemetry.endpoint" description="Endpoint to use for publishing AWS client-side telemetry" defaultValue="https://client-telemetry.us-east-1.amazonaws.com" restartRequired="true"/>
+        <registryKey key="aws.telemetry.identityPool" description="Cognito identity pool to use for publishing AWS client-side telemetry" defaultValue="us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842" restartRequired="true"/>
+        <registryKey key="aws.telemetry.region" description="Region to use for publishing AWS client-side telemetry" defaultValue="us-east-1" restartRequired="true"/>
         <registryKey key="aws.credentialProcess.timeout" description="AWS Credential Process timeout (ms)" restartRequired="false" defaultValue="30000"/>
         <registryKey key="aws.debuggerAttach.timeout" description="Time allowed for debuggers to attach before timing out (ms)" restartRequired="false" defaultValue="60000"/>
         <registryKey key="aws.feature.ecsCloudDebug" description="Enables the Cloud Debug for ECS set of features" restartRequired="false" defaultValue="true"/>
-        <registryKey key="aws.feature.ecsExec" description="Enables the features and actions associated with ECS Execute Command" restartRequired="false" defaultValue="false"/>
+        <registryKey key="aws.toolkit.developerMode" description="Enables features to facilitate development of the toolkit" restartRequired="false" defaultValue="false"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">
         <ProviderFactory implementation="software.aws.toolkits.jetbrains.services.ecs.TaskSchemaProviderFactory"/>
+        <ProviderFactory implementation="software.aws.toolkits.jetbrains.services.dynamic.ResourceSchemaProviderFactory"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
         <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory"/>
+        <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.metadataservice.ContainerCredentialProviderFactory"/>
+        <credentialProviderFactory implementation="software.aws.toolkits.jetbrains.core.credentials.metadataservice.InstanceRoleCredentialProviderFactory"/>
 
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable"/>
@@ -254,23 +286,30 @@ with what features/services are supported.
 
         <explorer.nodeProcessor implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerProcessor" />
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
+        <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceTreeStructureProvider"/>
 
         <!-- Explorer nodes -->
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.AppRunnerExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudWatchRootNode"/>
-        <!-- <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.DynamoDbExplorerRootNode"/> -->
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.DynamoDbExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.LambdaExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.S3ExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.EcrExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.EcsExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.SchemasExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.SqsExplorerRootNode"/>
+        <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.OtherResourcesRootNode"/>
+
+        <!-- Experiments -->
+        <experiment implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.DynamoDbTableViewer"/>
+        <experiment implementation="software.aws.toolkits.jetbrains.services.ecs.EcsCloudDebugExperiment"/>
+        <experiment implementation="software.aws.toolkits.jetbrains.services.ecs.EcsExecExperiment"/>
+        <experiment implementation="software.aws.toolkits.jetbrains.services.dynamic.JsonResourceModificationExperiment"/>
     </extensions>
 
     <actions>
-        <action internal="true" id="aws.toolkit.open.telemetry.viewer"
-                class="software.aws.toolkits.jetbrains.services.telemetry.viewer.OpenTelemetryAction"/>
+        <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
         <action id="aws.settings.refresh"  class="software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction"/>
         <action id="aws.toolkit.showFeedback" class="software.aws.toolkits.jetbrains.ui.feedback.ShowFeedbackDialogAction"/>
         <group id="aws.toolkit.explorer.titleBar" popup="false" compact="true">
@@ -358,7 +397,7 @@ with what features/services are supported.
         </group>
 
         <group id="aws.toolkit.explorer.cloudformation" popup="true" compact="false">
-            <action id="cloudformation.serverless.deploy" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction" />
+            <action id="cloudformation.serverless.deploy" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
         </group>
 
         <group id="aws.toolkit.explorer.cloudformation.stack" popup="true" compact="false">
@@ -367,6 +406,36 @@ with what features/services are supported.
             <separator/>
             <action id="cloudformation.stack.delete"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.actions.DeleteStackAction"/>
+        </group>
+
+
+        <group id="aws.toolkit.explorer.dynamic.resource.type" popup="true" compact="false">
+            <action id="dynamic.resource.type.explorer.createResource" class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CreateResourceAction"/>
+            <action id="dynamic.resource.type.explorer.viewDocumentation" class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.ViewDocumentationAction"/>
+        </group>
+        
+        <group id="aws.toolkit.dynamic.resource.editor">
+            <action id="dynamic.resource.editor.submitResourceCreationRequest" class="software.aws.toolkits.jetbrains.services.dynamic.editor.actions.SubmitResourceCreationRequestAction"/>
+            <action id="dynamic.resource.editor.enableEditingResource" class="software.aws.toolkits.jetbrains.services.dynamic.editor.actions.EnableEditingResourceAction"/>
+            <action id="dynamic.resource.editor.submitResourceUpdateRequest" class="software.aws.toolkits.jetbrains.services.dynamic.editor.actions.SubmitResourceUpdateRequestAction"/>
+        </group>
+
+        <group id="aws.toolkit.explorer.dynamic.more.resources" popup="true" compact="false">
+            <action id="dynamic.resource.addResourcesToExplorerAction"
+                    class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.AddResourcesToExplorerAction"/>
+        </group>
+
+        <group id="aws.toolkit.explorer.dynamic.resource" popup="true" compact="false">
+            <action id="dynamic.resource.explorer.openReadOnlyAction"
+                    class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.OpenReadOnlyFileAction"/>
+            <action id="dynamic.resource.explorer.openFileForUpdateAction"
+                    class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.OpenFileForUpdateAction"/>
+            <separator/>
+            <action id="dynamic.resource.explorer.copy.identifier"
+                    class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CopyIdentifierAction"/>
+            <separator/>
+            <action id="dynamic.resource.explorer.dynamicResourceDeleteResourceAction"
+                    class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.DynamicResourceDeleteResourceAction"/>
         </group>
 
         <group id="aws.toolkit.explorer.logs.group" popup="true" compact="false">
@@ -435,7 +504,7 @@ with what features/services are supported.
             <action id="sqs.delete.queue" class="software.aws.toolkits.jetbrains.services.sqs.actions.DeleteQueueAction"/>
         </group>
 
-        <action class="software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>
+        <action class="software.aws.toolkits.jetbrains.core.credentials.ConfigureAwsConnectionAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>
         <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials" icon="AwsIcons.Logos.AWS"/>
         <action class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction" id="serverless.application.deploy" />
         <action class="software.aws.toolkits.jetbrains.settings.ShowSettingsAction" id="aws.settings.show" icon="AllIcons.General.Settings"/>

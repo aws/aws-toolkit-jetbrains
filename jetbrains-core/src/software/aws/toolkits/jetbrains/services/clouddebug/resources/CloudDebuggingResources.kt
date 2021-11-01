@@ -16,16 +16,16 @@ import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.openapi.util.Key
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
+import software.aws.toolkits.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.ExecutableBackedCacheResource
 import software.aws.toolkits.jetbrains.core.Resource
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable
 import software.aws.toolkits.jetbrains.services.clouddebug.execution.steps.CloudDebugCliValidate
 import software.aws.toolkits.jetbrains.services.ecs.EcsUtils
-import software.aws.toolkits.jetbrains.utils.execution.steps.MessageEmitter
+import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
 import java.util.concurrent.TimeUnit
 
 object CloudDebuggingResources {
@@ -88,7 +88,7 @@ object CloudDebuggingResources {
     }
 
     // Do a best effort shutdown of cloud debug dispatcher
-    fun shutdownCloudDebugDispatcher(messageEmitter: MessageEmitter? = null) {
+    fun shutdownCloudDebugDispatcher(messageEmitter: StepEmitter? = null) {
         val shutdownTask = try {
             CloudDebugCliValidate.validateAndLoadCloudDebugExecutable()
         } catch (e: Exception) {

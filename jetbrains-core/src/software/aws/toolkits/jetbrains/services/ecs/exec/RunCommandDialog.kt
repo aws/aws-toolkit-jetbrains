@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CollectionComboBoxModel
@@ -15,13 +14,13 @@ import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.toEnvironmentVariables
+import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.toEnvironmentVariables
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.ecs.ContainerDetails
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.EcsExecuteCommandType
 import software.aws.toolkits.telemetry.EcsTelemetry
@@ -32,7 +31,7 @@ import javax.swing.plaf.basic.BasicComboBoxEditor
 
 class RunCommandDialog(private val project: Project, private val container: ContainerDetails, private val connectionSettings: ConnectionSettings) :
     DialogWrapper(project) {
-    private val coroutineScope = applicationThreadPoolScope(project)
+    private val coroutineScope = projectCoroutineScope(project)
     private val tasks = ResourceSelector
         .builder()
         .resource(
@@ -94,7 +93,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
             if (taskRoleFound) {
                 runCommand()
             } else {
-                withContext(getCoroutineUiContext(ModalityState.any())) {
+                withContext(getCoroutineUiContext()) {
                     TaskRoleNotFoundWarningDialog(project).show()
                 }
             }
@@ -133,7 +132,7 @@ class RunCommandDialog(private val project: Project, private val container: Cont
                 )
                 .build()
 
-            withContext(getCoroutineUiContext(ModalityState.any())) {
+            withContext(getCoroutineUiContext()) {
                 environment.runner.execute(environment)
             }
 

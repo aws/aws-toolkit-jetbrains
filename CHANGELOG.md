@@ -1,3 +1,36 @@
+# _1.34_ (2021-10-21)
+- **(Bug Fix)** Fix issue in Resources where some S3 Buckets fail to open
+- **(Bug Fix)** Fix null exception when view documentation action executed for types with missing doc urls
+- **(Bug Fix)** Fix uncaught exception when a resource does not support LIST in a certain region.
+
+# _1.33_ (2021-10-14)
+- **(Feature)** Surface read-only support for hundreds of resources under the Resources node in the AWS Explorer
+- **(Feature)** Amazon DynamoDB table viewer
+- **(Bug Fix)** Changed error message 'Command did not exist successfully' to 'Command did not exit successfully'
+- **(Bug Fix)** Fixed spelling and grammar in MessagesBundle.properties
+- **(Bug Fix)** Fix not being able to start Rider debugger against a Lambda running on a host ARM machine
+- **(Bug Fix)** Fix SSO login not being triggered when the auth code is invalid ([#2796](https://github.com/aws/aws-toolkit-jetbrains/issues/2796))
+- **(Removal)** Removed support for 2020.2.x IDEs
+- **(Removal)** Dropped support for the no longer supported Lambda runtime Python 2.7
+- **(Removal)** Dropped support for the no longer supported Lambda runtime Node.js 10.x
+
+# _1.32_ (2021-09-07)
+- **(Bug Fix)** Fix IDE error about context.module being null ([#2776](https://github.com/aws/aws-toolkit-jetbrains/issues/2776))
+- **(Bug Fix)** Fix NullPointerException calling isInTestSourceContent ([#2752](https://github.com/aws/aws-toolkit-jetbrains/issues/2752))
+
+# _1.31_ (2021-08-17)
+- **(Feature)** Add support for Python 3.9 Lambdas
+- **(Bug Fix)** Fix regression in SAM run configurations using file-based input ([#2762](https://github.com/aws/aws-toolkit-jetbrains/issues/2762))
+- **(Bug Fix)** Fix CloudWatch sorting ([#2737](https://github.com/aws/aws-toolkit-jetbrains/issues/2737))
+
+# _1.30_ (2021-08-05)
+- **(Feature)** Add ability to view bucket by entering bucket name/URI
+- **(Bug Fix)** Fix CWL last event sorting ([#2737](https://github.com/aws/aws-toolkit-jetbrains/issues/2737))
+- **(Bug Fix)** Fix Go Lambda handler resolving into Go standard library ([#2730](https://github.com/aws/aws-toolkit-jetbrains/issues/2730))
+- **(Bug Fix)** Fix `ActionPlaces.isPopupPlace` error after opening the AWS connection settings menu ([#2736](https://github.com/aws/aws-toolkit-jetbrains/issues/2736))
+- **(Bug Fix)** Fix some warnings due to slow operations on EDT ([#2735](https://github.com/aws/aws-toolkit-jetbrains/issues/2735))
+- **(Bug Fix)** Fix Java Lambda run marker issues and disable runmarker processing in tests and language-injected text fragments
+
 # _1.29_ (2021-07-20)
 - **(Feature)** When uploading a file to S3, the content type is now set accoriding to the files extension
 - **(Bug Fix)** Fix being unable to update Lambda configuration if the Image packaging type

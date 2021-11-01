@@ -14,13 +14,9 @@ import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ProgramRunner
-import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
-import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.utils.buildList
@@ -36,12 +32,12 @@ import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts
 import software.aws.toolkits.jetbrains.services.lambda.steps.SamRunnerStep
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
+import software.aws.toolkits.jetbrains.utils.execution.steps.BuildViewWorkflowEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.ParallelStep
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
@@ -75,18 +71,12 @@ class SamRunningState(
             }
         )
 
-        runBlocking(getCoroutineUiContext()) {
-            FileDocumentManager.getInstance().saveAllDocuments()
-        }
+        val lambdaBuilder = LambdaBuilder.getInstance(settings.runtimeGroup)
 
-        val samState = environment.state as SamRunningState
-        val lambdaSettings = samState.settings
-        val lambdaBuilder = LambdaBuilder.getInstance(lambdaSettings.runtimeGroup)
+        val buildLambdaRequest = buildBuildLambdaRequest(environment.project, settings)
 
-        val buildLambdaRequest = buildBuildLambdaRequest(environment.project, lambdaSettings)
-
-        samState.pathMappings = createPathMappings(lambdaBuilder, lambdaSettings, buildLambdaRequest)
-        val buildWorkflow = buildWorkflow(environment, settings, samState, buildLambdaRequest, buildView)
+        pathMappings = createPathMappings(lambdaBuilder, settings, buildLambdaRequest)
+        val buildWorkflow = buildWorkflow(environment, settings, this, buildLambdaRequest, buildView)
 
         return DefaultExecutionResult(buildView, buildWorkflow)
     }
@@ -137,7 +127,7 @@ class SamRunningState(
         settings: LocalLambdaRunSettings,
         state: SamRunningState,
         buildRequest: BuildLambdaRequest,
-        emitter: BuildView
+        buildView: BuildView
     ): ProcessHandler {
         val startSam = SamRunnerStep(environment, settings, environment.isDebug())
 
@@ -170,14 +160,17 @@ class SamRunningState(
                 }
             }
         )
-        val executor = StepExecutor(environment.project, message("sam.build.running"), workflow, environment.executionId.toString(), emitter)
+        val emitter = BuildViewWorkflowEmitter.createEmitter(buildView, message("sam.build.running"), environment.executionId.toString())
+        val executor = StepExecutor(environment.project, workflow, emitter)
         executor.onSuccess = {
             reportMetric(settings, Result.Succeeded, environment.isDebug())
         }
         executor.onError = {
             reportMetric(settings, Result.Failed, environment.isDebug())
         }
-        return executor.startExecution()
+
+        // Let run config system start the execution through the process handler
+        return executor.getProcessHandler()
     }
 
     private fun runConfigId() = environment.executionId.toString()
@@ -239,9 +232,6 @@ class SamRunningState(
 
             return BuildLambdaRequest(templatePath, logicalId, buildDir, additionalBuildEnvironmentVariables, samOptions)
         }
-
-        private fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)
-            ?: throw IllegalStateException("Failed to locate module for $psiFile")
 
         private fun LocalLambdaRunSettings.lambdaBuilder() = LambdaBuilder.getInstance(this.runtimeGroup)
 

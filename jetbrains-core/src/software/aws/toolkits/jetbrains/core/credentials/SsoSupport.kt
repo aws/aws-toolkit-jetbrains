@@ -5,14 +5,13 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.credentials.sso.Authorization
 import software.aws.toolkits.core.credentials.sso.DiskCache
 import software.aws.toolkits.core.credentials.sso.SsoCache
 import software.aws.toolkits.core.credentials.sso.SsoLoginCallback
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
@@ -23,7 +22,7 @@ val diskCache by lazy { DiskCache() }
 
 object SsoPrompt : SsoLoginCallback {
     override suspend fun tokenPending(authorization: Authorization) {
-        withContext(getCoroutineUiContext(ModalityState.any())) {
+        withContext(getCoroutineUiContext()) {
             val result = Messages.showOkCancelDialog(
                 message("credentials.sso.login.message", authorization.verificationUri, authorization.userCode),
                 message("credentials.sso.login.title"),

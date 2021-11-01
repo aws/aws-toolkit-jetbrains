@@ -3,21 +3,23 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.DateFormatUtil
+import icons.AwsIcons
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
-import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindowFactory
+import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
+import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
+import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogStream
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.DetailedLogRecord
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryDetails
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryResultList
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryResultPanel
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -27,7 +29,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
     override val toolWindowId = CloudWatchLogsToolWindowFactory.TOOLWINDOW_ID
     private val edtContext = getCoroutineUiContext()
 
-    suspend fun showLogGroup(logGroup: String) {
+    fun showLogGroup(logGroup: String) {
         var result = Result.Succeeded
         try {
             if (showExistingContent(logGroup)) {
@@ -35,7 +37,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
             }
             val group = CloudWatchLogGroup(project, logGroup)
             val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
-            withContext(edtContext) {
+            runInEdt {
                 addTab(title, group.content, activate = true, id = logGroup)
             }
         } catch (e: Exception) {
@@ -47,7 +49,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
         }
     }
 
-    suspend fun showLogStream(
+    fun showLogStream(
         logGroup: String,
         logStream: String,
         previousEvent: LogStreamEntry? = null,
@@ -71,7 +73,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
                 message("cloudwatch.logs.log_stream_title", logStream)
             }
             val stream = CloudWatchLogStream(project, logGroup, logStream, previousEvent, duration, streamLogs)
-            withContext(edtContext) {
+            runInEdt {
                 addTab(title, stream.content, activate = true, id = id)
             }
         } catch (e: Exception) {
@@ -83,29 +85,44 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
         }
     }
 
-    suspend fun showQueryResults(queryDetails: QueryDetails, queryId: String, fields: List<String>) {
+    fun showQueryResults(queryDetails: QueryDetails, queryId: String, fields: List<String>) {
         if (showExistingContent(queryId)) {
             return
         }
 
-        val queryResult = QueryResultList(project, fields, queryId, queryDetails)
+        val panel = QueryResultPanel(project, fields, queryId, queryDetails)
         val title = message("cloudwatch.logs.query_tab_title", queryId)
-        withContext(edtContext) {
-            addTab(title, queryResult.resultsPanel, activate = true, id = queryId)
+        runInEdt {
+            toolWindow.addTab(title, panel, activate = true, id = queryId, disposable = panel)
         }
     }
 
-    suspend fun showDetailedEvent(client: CloudWatchLogsClient, identifier: String) {
+    fun showDetailedEvent(client: CloudWatchLogsClient, identifier: String) {
         if (showExistingContent(identifier)) {
             return
         }
 
         val detailedLogEvent = DetailedLogRecord(project, client, identifier)
-        withContext(edtContext) {
-            addTab(detailedLogEvent.title, detailedLogEvent.getComponent(), activate = true, id = identifier)
+        runInEdt {
+            addTab(detailedLogEvent.title, detailedLogEvent.getComponent(), activate = true, id = identifier, disposable = detailedLogEvent)
         }
     }
 
+    fun closeLogGroup(logGroup: String) {
+        runInEdt {
+            toolWindow.findPrefix(logGroup).forEach {
+                it.dispose()
+            }
+        }
+    }
+
+    private fun showWindow(identifier: String): Boolean {
+        val existingWindow = toolWindow.find(identifier)
+        if (existingWindow != null) {
+            runInEdt {
+                existingWindow.show(refresh = true)
+            }
+            return true
     fun closeLogGroup(logGroup: String) {
         findPrefix(logGroup).forEach {
             removeContent(it)

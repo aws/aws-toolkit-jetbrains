@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.applicationThreadPoolScope
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 
@@ -26,9 +26,9 @@ class RefreshConnectionAction(text: String = message("settings.refresh.descripti
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val scope = project.applicationThreadPoolScope("RefreshConnectionAction")
+        AwsTelemetry.refreshExplorer(project)
+        val scope = projectCoroutineScope(project)
         scope.launch { AwsResourceCache.getInstance().clear() }
         AwsConnectionManager.getInstance(project).refreshConnectionState()
-        AwsTelemetry.refreshExplorer(project)
     }
 }

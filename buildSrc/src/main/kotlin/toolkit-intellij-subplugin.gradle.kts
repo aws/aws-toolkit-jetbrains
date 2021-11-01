@@ -6,8 +6,8 @@ import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
-import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.isCi
 
@@ -100,6 +100,8 @@ tasks.withType<JavaExec> {
 }
 
 tasks.runIde {
+    systemProperty("aws.toolkit.developerMode", true)
+
     val alternativeIde = providers.environmentVariable("ALTERNATIVE_IDE").forUseAtConfigurationTime()
     if (alternativeIde.isPresent) {
         // remove the trailing slash if there is one or else it will not work
@@ -118,21 +120,23 @@ tasks.withType<DownloadRobotServerPluginTask> {
 }
 
 // Enable coverage for the UI test target IDE
-extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<RunIdeForUiTestTask>())
+ciOnly {
+    extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<RunIdeForUiTestTask>())
+}
 tasks.withType<RunIdeForUiTestTask>().all {
     systemProperty("robot-server.port", remoteRobotPort)
     systemProperty("ide.mac.file.chooser.native", "false")
     systemProperty("jb.consents.confirmation.enabled", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-    // This only works on 2020.3+ FIX_WHEN_MIN_IS_203 remove this explanation
     systemProperty("ide.show.tips.on.startup.default.value", false)
 
     systemProperty("aws.telemetry.skip_prompt", "true")
     systemProperty("aws.suppress_deprecation_prompt", true)
 
     // These are experiments to enable for UI tests
-    systemProperty("aws.feature.connectedLocalTerminal", true)
+    systemProperty("aws.experiment.connectedLocalTerminal", true)
+    systemProperty("aws.experiment.dynamoDb", true)
     ciOnly {
         systemProperty("aws.sharedCredentialsFile", "/tmp/.aws/credentials")
     }
@@ -142,8 +146,10 @@ tasks.withType<RunIdeForUiTestTask>().all {
         suspend.set(false)
     }
 
-    configure<JacocoTaskExtension> {
-        includes = listOf("software.aws.toolkits.*")
-        output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
+    ciOnly {
+        configure<JacocoTaskExtension> {
+            includes = listOf("software.aws.toolkits.*")
+            output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
+        }
     }
 }
