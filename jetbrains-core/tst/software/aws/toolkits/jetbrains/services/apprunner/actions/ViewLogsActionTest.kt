@@ -36,8 +36,8 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.toolwindow.Cloud
 import software.aws.toolkits.resources.message
 
 class ViewLogsActionTest {
-    @JvmField
     @Rule
+    @JvmField
     val projectRule = ProjectRule()
 
     @Rule
@@ -81,10 +81,9 @@ class ViewLogsActionTest {
 
         val windows = runInEdtAndGet {
             viewLogGroup(node, "service")
-            toolWindowManager.findPrefix("")
+            toolWindow.findPrefix("")
         }
 
-        val windows = toolWindow.findPrefix("")
         assertThat(windows.size).isEqualTo(1)
         assertThat(windows.first().displayName).isEqualTo(message("cloudwatch.logs.log_group_title", "service"))
     }
