@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.toolwindow
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -21,7 +22,8 @@ interface ToolkitToolWindow {
         title: String,
         component: JComponent,
         activate: Boolean = false,
-        id: String = title
+        id: String = title,
+        disposable: Disposable? = null
     ): Content {
         val toolWindow = toolWindow()
         val contentManager = toolWindow.contentManager
@@ -29,6 +31,10 @@ interface ToolkitToolWindow {
             it.isCloseable = true
             it.isPinnable = true
             it.putUserData(AWS_TOOLKIT_TAB_ID_KEY, id)
+
+            if (disposable != null) {
+                it.setDisposer(disposable)
+            }
         }
 
         contentManager.addContent(content)
