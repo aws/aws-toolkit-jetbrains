@@ -214,10 +214,10 @@ with what features/services are supported.
                     icon="AwsIcons.Logos.AWS"/>
 
         <toolWindow id="aws.cloudformation" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
-                    factoryClass="software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindowFactory" icon="AwsIcons.Resources.Sqs.SQS_TOOL_WINDOW"/>
+                    factoryClass="software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindowFactory" icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
 
         <toolWindow id="aws.cloudwatchlogs" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
-                    factoryClass="software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudWatchLogsToolWindowFactory" icon="AwsIcons.Resources.CloudWatch.LOGS_TOOL_WINDOW"/>
+                    factoryClass="software.aws.toolkits.jetbrains.services.cloudwatch.logs.toolwindow.CloudWatchLogsToolWindowFactory" icon="AwsIcons.Resources.CloudWatch.LOGS_TOOL_WINDOW"/>
 
         <toolWindow id="aws.sqs" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
                     factoryClass="software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindowFactory" icon="AwsIcons.Resources.Sqs.SQS_TOOL_WINDOW"/>
