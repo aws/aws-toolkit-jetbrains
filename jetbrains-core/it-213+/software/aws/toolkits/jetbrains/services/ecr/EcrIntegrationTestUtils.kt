@@ -2,5 +2,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
 object EcrIntegrationTestUtils {
-    fun getImagePrefix(imageId: String) : String = imageId
+    fun getImagePrefix(imageId: String): String = imageId
 }
