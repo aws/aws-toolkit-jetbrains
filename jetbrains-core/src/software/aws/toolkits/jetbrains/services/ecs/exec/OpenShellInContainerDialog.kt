@@ -3,16 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
+import com.intellij.execution.configurations.PtyCommandLine
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
-import com.pty4j.PtyProcess
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.terminal.TerminalTabState
@@ -90,13 +89,7 @@ class OpenShellInContainerDialog(
     private fun runExecCommand(task: String) {
         try {
             val commandLine = EcsExecUtils.createCommand(project, connectionSettings, container, task, shell)
-
-            val cmd = if (SystemInfo.isWindows) {
-                arrayOf("cmd", "/C", commandLine.commandLineString)
-            } else {
-                commandLine.getCommandLineList(null).toTypedArray()
-            }
-            val ptyProcess = PtyProcess.exec(cmd, commandLine.effectiveEnvironment, null)
+            val ptyProcess = PtyCommandLine(commandLine).createProcess()
             val process = CloudTerminalProcess(ptyProcess.outputStream, ptyProcess.inputStream)
             val runner = CloudTerminalRunner(project, container.containerDefinition.name(), process)
 
