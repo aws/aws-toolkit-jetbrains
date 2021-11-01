@@ -62,9 +62,9 @@ class ViewLogsActionTest {
     @After
     fun cleanup() {
         // close tabs we created
-        toolWindow.findPrefix("").forEach {
-            runInEdtAndWait {
-                it.dispose()
+        runInEdtAndWait {
+            toolWindow.findPrefix("").forEach {
+                toolWindow.removeContent(it)
             }
         }
     }
