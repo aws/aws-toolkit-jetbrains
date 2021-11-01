@@ -10,6 +10,7 @@ import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.intellij.openapi.util.Comparing
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.components.ActionLink
@@ -83,8 +84,9 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
         return samTextboxInput != getSavedExecutablePath(samExecutableInstance, false) ||
             cloudDebugTextboxInput != getSavedExecutablePath(cloudDebugExecutableInstance, false) ||
             isModified(enableTelemetry, awsSettings.isTelemetryEnabled) ||
-            isModified(defaultRegionHandling, awsSettings.useDefaultCredentialRegion) ||
-            isModified(profilesNotification, awsSettings.profilesNotification)
+            // isModified for ComboBoxes is removed from 2021.3
+            !Comparing.equal(defaultRegionHandling.selectedItem, awsSettings.useDefaultCredentialRegion) ||
+            !Comparing.equal(profilesNotification.selectedItem, awsSettings.profilesNotification)
     }
 
     override fun apply() {
