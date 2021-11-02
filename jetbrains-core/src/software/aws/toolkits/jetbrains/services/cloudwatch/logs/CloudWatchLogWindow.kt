@@ -34,7 +34,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
             val group = CloudWatchLogGroup(project, logGroup)
             val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
             runInEdt {
-                addTab(title, group.content, activate = true, id = logGroup, disposable = group)
+                addTab(title, group.content, activate = true, id = logGroup, additionalDisposable = group)
             }
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while trying to show log group '$logGroup'" }
@@ -70,7 +70,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
             }
             val stream = CloudWatchLogStream(project, logGroup, logStream, previousEvent, duration, streamLogs)
             runInEdt {
-                addTab(title, stream.content, activate = true, id = id, disposable = stream)
+                addTab(title, stream.content, activate = true, id = id, additionalDisposable = stream)
             }
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while trying to show log group '$logGroup' stream '$logStream'" }
@@ -100,7 +100,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
 
         val detailedLogEvent = DetailedLogRecord(project, client, identifier)
         runInEdt {
-            addTab(detailedLogEvent.title, detailedLogEvent.getComponent(), activate = true, id = identifier, disposable = detailedLogEvent)
+            addTab(detailedLogEvent.title, detailedLogEvent.getComponent(), activate = true, id = identifier, additionalDisposable = detailedLogEvent)
         }
     }
 
