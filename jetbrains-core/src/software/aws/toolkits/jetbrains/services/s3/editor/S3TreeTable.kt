@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.s3.objectActions.uploadObjects
 import software.aws.toolkits.jetbrains.utils.notifyError
