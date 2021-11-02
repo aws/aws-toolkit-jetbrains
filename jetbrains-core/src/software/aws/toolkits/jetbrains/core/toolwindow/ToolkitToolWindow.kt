@@ -18,12 +18,21 @@ interface ToolkitToolWindow {
     fun toolWindow() = ToolWindowManager.getInstance(project).getToolWindow(toolWindowId)
         ?: throw IllegalStateException("Can't find tool window $toolWindowId")
 
+    /**
+     * Adds a new tab to the tool window
+     *
+     * @param title Title of the tab
+     * @param component The JComponent of the tab's content. If [Disposable] will be auto disposed on close
+     * @param activate Show the tab upon adding it
+     * @param id Unique ID to identify the tab
+     * @param additionalDisposable An additional [Disposable] to dispose when the tab is closed
+     */
     fun addTab(
         title: String,
         component: JComponent,
         activate: Boolean = false,
         id: String = title,
-        disposable: Disposable? = null
+        additionalDisposable: Disposable? = null
     ): Content {
         val toolWindow = toolWindow()
         val contentManager = toolWindow.contentManager
@@ -32,8 +41,8 @@ interface ToolkitToolWindow {
             it.isPinnable = true
             it.putUserData(AWS_TOOLKIT_TAB_ID_KEY, id)
 
-            if (disposable != null) {
-                it.setDisposer(disposable)
+            if (additionalDisposable != null) {
+                it.setDisposer(additionalDisposable)
             }
         }
 
