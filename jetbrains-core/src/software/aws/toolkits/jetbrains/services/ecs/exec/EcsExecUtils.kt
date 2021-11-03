@@ -212,8 +212,8 @@ object EcsExecUtils {
             it.cluster(service.clusterArn())
             it.services(service.serviceArn())
         }
-        val serviceStateChangeInProgress = response.services().first().deployments().first().rolloutState() == DeploymentRolloutState.IN_PROGRESS ||
-            response.services().first().deployments().first().status() == "ACTIVE"
+        val deployment = response.services().first().deployments().first()
+        val serviceStateChangeInProgress = deployment.rolloutState() == DeploymentRolloutState.IN_PROGRESS || deployment.status() == "ACTIVE"
         return !serviceStateChangeInProgress
     }
 
