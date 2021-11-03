@@ -10,6 +10,12 @@
             "name": "experimentId",
             "type": "string",
             "description": "The id of the experiment being activated or deactivated"
+        },
+        {
+            "name": "toolId",
+            "type": "string",
+            "description": "The tool being installed",
+            "allowedValues": ["ssm-plugin", "sam-cli"]
         }
     ],
     "metrics": [
@@ -31,6 +37,18 @@
                 },
                 {
                     "type": "experimentState"
+                }
+            ]
+        },
+        {
+            "name": "aws_toolInstallation",
+            "description": "An external tool was installed",
+            "metadata": [
+                {
+                    "type": "toolId"
+                },
+                {
+                    "type": "result"
                 }
             ]
         }
