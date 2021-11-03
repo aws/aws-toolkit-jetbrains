@@ -9,6 +9,14 @@
                     "type": "result"
                 }
             ]
+        },
+        {
+            "name": "aws_helpCredentials",
+            "description": "Open the help page of the profile credentials"
+        },
+        {
+            "name": "aws_saveCredentials",
+            "description": "Save action triggered by user in the credential editor"
         }
     ]
 }
