@@ -32,7 +32,7 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
 
     private val hasRpm2Cpio by lazy { hasCommand("rpm2cpio") }
 
-    override val telemetryId: ToolId = ToolId.SsmPlugin
+    override val telemetryId: ToolId = ToolId.SessionManagerPlugin
     override val displayName: String = "AWS Session Manager Plugin"
 
     override fun supportedVersions(): VersionRange<FourPartVersion> = FourPartVersion(1, 2, 0, 0) until FourPartVersion(2, 0, 0, 0)

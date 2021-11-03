@@ -15,7 +15,7 @@
             "name": "toolId",
             "type": "string",
             "description": "The tool being installed",
-            "allowedValues": ["ssm-plugin", "sam-cli"]
+            "allowedValues": ["session-manager-plugin", "aws-sam-cli"]
         }
     ],
     "metrics": [

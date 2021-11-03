@@ -77,7 +77,7 @@ class DefaultToolManager @NonInjectable internal constructor(private val clock: 
             message("executableCommon.installing", type.displayName),
             cancelable = false
         ) {
-            installTool(type, ProgressManager.getInstance().progressIndicator, project)
+            installTool(project, type, ProgressManager.getInstance().progressIndicator)
         }
     }
 
@@ -183,13 +183,13 @@ class DefaultToolManager @NonInjectable internal constructor(private val clock: 
                 PerformInBackgroundOption.ALWAYS_BACKGROUND
             ) {
                 override fun run(indicator: ProgressIndicator) {
-                    installTool(type, indicator, project)
+                    installTool(project, type, indicator)
                 }
             }
         )
     }
 
-    private fun <V : Version> installTool(type: ManagedToolType<V>, indicator: ProgressIndicator?, project: Project?): Tool<ToolType<V>> {
+    private fun <V : Version> installTool(project: Project?, type: ManagedToolType<V>, indicator: ProgressIndicator?): Tool<ToolType<V>> {
         assertIsNonDispatchThread()
 
         try {
