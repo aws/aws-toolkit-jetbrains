@@ -1,52 +1,10 @@
 {
-    "types": [
-        {
-            "name": "experimentState",
-            "type": "string",
-            "allowedValues": ["activated", "deactivated"],
-            "description": "The experiment action taken action taken"
-        },
-        {
-            "name": "experimentId",
-            "type": "string",
-            "description": "The id of the experiment being activated or deactivated"
-        },
-        {
-            "name": "toolId",
-            "type": "string",
-            "description": "The tool being installed",
-            "allowedValues": ["session-manager-plugin", "aws-sam-cli"]
-        }
-    ],
+    "types": [],
     "metrics": [
         {
             "name": "aws_openLocalTerminal",
             "description": "Open local terminal with aws connection injected",
             "metadata": [
-                {
-                    "type": "result"
-                }
-            ]
-        },
-        {
-            "name": "aws_experimentActivation",
-            "description": "An experiment was activated or deactivated in the toolkit",
-            "metadata": [
-                {
-                    "type": "experimentId"
-                },
-                {
-                    "type": "experimentState"
-                }
-            ]
-        },
-        {
-            "name": "aws_toolInstallation",
-            "description": "An external tool was installed",
-            "metadata": [
-                {
-                    "type": "toolId"
-                },
                 {
                     "type": "result"
                 }
