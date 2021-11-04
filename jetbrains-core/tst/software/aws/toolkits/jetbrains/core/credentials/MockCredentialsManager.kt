@@ -66,6 +66,7 @@ class MockCredentialsManager : CredentialManager() {
         mapOf<String, CredentialProviderFactory>(MockCredentialProviderFactory.id to MockCredentialProviderFactory)
 
     companion object {
+        @Suppress("DEPRECATION")
         fun getInstance(): MockCredentialsManager = ServiceManager.getService(CredentialManager::class.java) as MockCredentialsManager
     }
 
