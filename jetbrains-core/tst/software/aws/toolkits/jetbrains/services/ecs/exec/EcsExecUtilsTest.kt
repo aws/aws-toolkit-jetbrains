@@ -352,7 +352,6 @@ class EcsExecUtilsTest {
         val cluster = aString()
         val taskId = aString()
         val containerName = aString()
-        val containerRuntimeId = aString()
         val command = aString()
         val sessionId = aString()
         val token = aString()
@@ -375,7 +374,6 @@ class EcsExecUtilsTest {
                     Task.builder().containers(
                         Container.builder()
                             .name(containerName)
-                            .runtimeId(containerRuntimeId)
                             .build()
                     ).build()
                 ).build()
@@ -408,9 +406,9 @@ class EcsExecUtilsTest {
             )
 
             val expectedSession = """{\"sessionId\":\"$sessionId\",\"streamUrl\":\"$streamUrl\",\"tokenValue\":\"$token\"}"""
-            val expectedTarget = """{\"Target\": \"ecs:${cluster}_${taskId}_$containerRuntimeId\"}"""
+
             assertThat(cmd.commandLineString).isEqualTo(
-                """${cliPath.toAbsolutePath()} $expectedSession us-east-1 StartSession "" "$expectedTarget" ecs.us-east-1.amazonaws.com"""
+                """${cliPath.toAbsolutePath()} $expectedSession us-east-1 StartSession"""
             )
 
             assertThat(cmd.environment).containsEntry("AWS_REGION", "us-east-1")
