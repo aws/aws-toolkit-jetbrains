@@ -43,7 +43,9 @@ object SamTemplateUtils {
         val globals = at("/Globals/Function/Environment/Variables")
         val variables = function.at("/Properties/Environment/Variables")
         // convertValue can return null (despite being annotated otherwise)
+        @Suppress("USELESS_ELVIS")
         val globalVars = runCatching { MAPPER.convertValue<Map<String, String>>(globals) ?: emptyMap() }.getOrDefault(emptyMap())
+        @Suppress("USELESS_ELVIS")
         val vars = runCatching { MAPPER.convertValue<Map<String, String>>(variables) ?: emptyMap() }.getOrDefault(emptyMap())
         // function vars overwrite global ones if they overlap, so this works as expected
         globalVars + vars
