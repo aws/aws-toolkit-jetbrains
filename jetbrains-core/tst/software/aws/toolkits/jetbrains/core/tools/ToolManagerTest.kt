@@ -29,12 +29,13 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.stubbing.Answer
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.managedToolInstallDir
-import software.aws.toolkits.jetbrains.core.tools.ToolManager.Companion.managedToolMarkerFile
+import software.aws.toolkits.jetbrains.core.tools.DefaultToolManager.Companion.managedToolInstallDir
+import software.aws.toolkits.jetbrains.core.tools.DefaultToolManager.Companion.managedToolMarkerFile
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.ToolId
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -53,7 +54,7 @@ class ToolManagerTest {
     @JvmField
     val tempFolder = TemporaryFolder()
 
-    private lateinit var sut: ToolManager
+    private lateinit var sut: DefaultToolManager
     private lateinit var clock: Clock
 
     @Before
@@ -61,7 +62,7 @@ class ToolManagerTest {
         clock = mock {
             on { instant() } doReturn Instant.MIN
         }
-        sut = ToolManager(clock)
+        sut = DefaultToolManager(clock)
     }
 
     @Test
@@ -529,8 +530,8 @@ class ToolManagerTest {
     private fun createUndetectableMock(toolId: String = aString(), stubBuilder: (KStubbing<ToolType<SemanticVersion>>).() -> Unit = {}) =
         mock<ToolType<SemanticVersion>>()
             .stub {
-                on { id }.thenReturn(toolId)
-                on { displayName }.thenReturn(toolId)
+                on { id } doReturn toolId
+                on { displayName } doReturn toolId
                 stubBuilder(this)
             }
 
@@ -538,15 +539,16 @@ class ToolManagerTest {
         mock<AutoDetectableToolType<SemanticVersion>>()
             .stub {
                 on { id } doReturn toolId
-                on { displayName }.thenReturn(toolId)
+                on { displayName } doReturn toolId
                 stubBuilder(this)
             }
 
     private fun createManagedToolMock(toolId: String = aString(), stubBuilder: (KStubbing<ManagedToolType<SemanticVersion>>).() -> Unit = {}) =
         mock<ManagedToolType<SemanticVersion>>(verboseLogging = true)
             .stub {
-                on { id }.thenReturn(toolId)
-                on { displayName }.thenReturn(toolId)
+                on { id } doReturn toolId
+                on { telemetryId } doReturn ToolId.Unknown
+                on { displayName } doReturn toolId
                 stubBuilder(this)
             }
 }

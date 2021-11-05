@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.region
 
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.ApplicationRule
 import software.amazon.awssdk.regions.Region
@@ -57,10 +56,9 @@ private class MockRegionProvider : ToolkitRegionProvider() {
     override fun defaultRegion(): AwsRegion = US_EAST_1
 
     companion object {
-        private val US_EAST_1 = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")
         private val AWS_CLASSIC = AwsPartition("aws", "AWS Classic", listOf(US_EAST_1))
         private val regions = mapOf(US_EAST_1.id to US_EAST_1)
-        fun getInstance(): MockRegionProvider = ServiceManager.getService(ToolkitRegionProvider::class.java) as MockRegionProvider
+        fun getInstance(): MockRegionProvider = service<ToolkitRegionProvider>() as MockRegionProvider
     }
 }
 
@@ -114,3 +112,5 @@ class MockRegionProviderRule : ApplicationRule() {
 
 // dynamically get the default region from whatever is currently registered
 fun getDefaultRegion() = service<ToolkitRegionProvider>().defaultRegion()
+
+val US_EAST_1 = AwsRegion("us-east-1", "US East (N. Virginia)", "aws")

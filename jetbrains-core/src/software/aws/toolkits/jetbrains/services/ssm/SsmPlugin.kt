@@ -8,8 +8,11 @@ import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.Decompressor
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.getTextFromUrl
+import software.aws.toolkits.jetbrains.core.isArm64
+import software.aws.toolkits.jetbrains.core.isIntel64
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.core.tools.FourPartVersion
 import software.aws.toolkits.jetbrains.core.tools.ManagedToolType
@@ -18,16 +21,18 @@ import software.aws.toolkits.jetbrains.core.tools.ToolType
 import software.aws.toolkits.jetbrains.core.tools.VersionRange
 import software.aws.toolkits.jetbrains.core.tools.until
 import software.aws.toolkits.jetbrains.utils.checkSuccess
+import software.aws.toolkits.telemetry.ToolId
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import kotlin.streams.asSequence
 
 object SsmPlugin : ManagedToolType<FourPartVersion> {
-    private val isUbuntu by lazy {
-        ExecUtil.execAndGetOutput(GeneralCommandLine("uname", "-a"), VERSION_TIMEOUT.toMillis().toInt()).stdout.contains("Ubuntu", ignoreCase = true)
-    }
-    override val id: String = "SSM-Plugin"
+    private val hasDpkg by lazy { hasCommand("dpkg-deb") }
+
+    private val hasRpm2Cpio by lazy { hasCommand("rpm2cpio") }
+
+    override val telemetryId: ToolId = ToolId.SessionManagerPlugin
     override val displayName: String = "AWS Session Manager Plugin"
 
     override fun supportedVersions(): VersionRange<FourPartVersion> = FourPartVersion(1, 2, 0, 0) until FourPartVersion(2, 0, 0, 0)
@@ -50,10 +55,10 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         val downloadUrl = when {
             SystemInfo.isWindows -> windowsUrl(version)
             SystemInfo.isMac -> macUrl(version)
-            SystemInfo.isLinux && isUbuntu && SystemInfo.isArm64 -> ubuntuArm64Url(version)
-            SystemInfo.isLinux && isUbuntu && SystemInfo.isIntel64 -> ubuntuI64Url(version)
-            SystemInfo.isLinux && SystemInfo.isArm64 -> linuxArm64Url(version)
-            SystemInfo.isLinux && SystemInfo.isIntel64 -> linuxI64Url(version)
+            SystemInfo.isLinux && hasDpkg && isArm64() -> ubuntuArm64Url(version)
+            SystemInfo.isLinux && hasDpkg && isIntel64() -> ubuntuI64Url(version)
+            SystemInfo.isLinux && hasRpm2Cpio && isArm64() -> linuxArm64Url(version)
+            SystemInfo.isLinux && hasRpm2Cpio && isIntel64() -> linuxI64Url(version)
             else -> throw IllegalStateException("Failed to find compatible SSM plugin: SystemInfo=${SystemInfo.OS_NAME}, Arch=${SystemInfo.OS_ARCH}")
         }
 
@@ -65,17 +70,22 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         return destination
     }
 
-    // Visible for test
+    @VisibleForTesting
     fun windowsUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/windows/SessionManagerPlugin.zip"
+    @VisibleForTesting
     fun macUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
+    @VisibleForTesting
     fun ubuntuArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
+    @VisibleForTesting
     fun ubuntuI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
+    @VisibleForTesting
     fun linuxArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
+    @VisibleForTesting
     fun linuxI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
 
     override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
-            "zip" -> Decompressor.Zip(downloadArtifact).withZipExtensions().extract(destinationDir)
+            "zip" -> extractZip(downloadArtifact, destinationDir)
             "rpm" -> runInstall(GeneralCommandLine("sh", "-c", """rpm2cpio "$downloadArtifact" | (cd "$destinationDir" && cpio -idmv)"""))
             "deb" -> runInstall(GeneralCommandLine("dpkg-deb", "-x", downloadArtifact.toString(), destinationDir.toString()))
             else -> throw IllegalStateException("Unknown extension $extension")
@@ -86,8 +96,28 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         val processOutput = ExecUtil.execAndGetOutput(cmd, INSTALL_TIMEOUT.toMillis().toInt())
 
         if (!processOutput.checkSuccess(LOGGER)) {
-            throw IllegalStateException("Failed to extract $displayName")
+            throw IllegalStateException("Failed to extract $displayName\nSTDOUT:${processOutput.stdout}\nSTDERR:${processOutput.stderr}")
         }
+    }
+
+    private fun extractZip(downloadArtifact: Path, destinationDir: Path) {
+        val decompressor = Decompressor.Zip(downloadArtifact).withZipExtensions()
+        if (!SystemInfo.isWindows) {
+            decompressor.extract(destinationDir)
+            return
+        }
+
+        // on windows there is a zip inside a zip :(
+        val tempDir = Files.createTempDirectory(id)
+        decompressor.extract(tempDir)
+
+        val intermediateZip = tempDir.resolve("package.zip")
+        Decompressor.Zip(intermediateZip).withZipExtensions().extract(destinationDir)
+    }
+
+    private fun hasCommand(cmd: String): Boolean {
+        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), VERSION_TIMEOUT.toMillis().toInt())
+        return output.exitCode == 0
     }
 
     override fun determineLatestVersion(): FourPartVersion = FourPartVersion.parse(getTextFromUrl(VERSION_FILE))

@@ -10,17 +10,17 @@
         <component>
             <implementation-class>software.aws.toolkits.jetbrains.services.lambda.LambdaPsiHost</implementation-class>
         </component>
-        <component>
-            <implementation-class>software.aws.toolkits.jetbrains.settings.LambdaGutterMarkSettings</implementation-class>
-        </component>
-        <component>
-            <implementation-class>software.aws.toolkits.jetbrains.services.toolwindow.BuildToolWindowRegistrar</implementation-class>
-        </component>
     </project-components>
+
+    <projectListeners>
+        <listener class="software.aws.toolkits.jetbrains.settings.LambdaGutterMarkSettings"
+                  topic="software.aws.toolkits.jetbrains.settings.LambdaSettingsChangeListener"/>
+    </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectProvider" order="last"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.icons.RiderAwsIconsPatcherRegistrar"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.settings.RiderSyncSettings"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit.lambda">
@@ -29,7 +29,6 @@
         <handlerResolver id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandlerResolver"/>
         <handlerCompletion id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.completion.DotNetHandlerCompletion"/>
         <sam.runtimeDebugSupport id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetRuntimeDebugSupport"/>
-        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.Dotnet21ImageDebug"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.Dotnet31ImageDebug"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.Dotnet50ImageDebug"/>
         <sam.projectWizard id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectWizard"/>

@@ -12,7 +12,7 @@ object DotNetRuntimeUtils {
 
     private val logger = getLogger<DotNetRuntimeUtils>()
 
-    private val defaultDotNetCoreRuntime = LambdaRuntime.DOTNETCORE2_1
+    private val defaultDotNetCoreRuntime = LambdaRuntime.DOTNETCORE3_1
 
     /**
      * Get information about current .NET runtime
@@ -37,7 +37,7 @@ object DotNetRuntimeUtils {
             }
             .filterNotNull()
 
-        val version = versions.maxBy { it } ?: return defaultDotNetCoreRuntime
+        val version = versions.maxByOrNull { it } ?: return defaultDotNetCoreRuntime
         // Take the first 2 numbers so `5.0.2` would be `5.0`
         val versionString = version.split('.').take(2).joinToString(".")
 
