@@ -21,7 +21,7 @@ Resources:
       TaskRoleArn: !Ref TaskRole
       ContainerDefinitions:
         - Name: 'ContainerName'
-          Image: "amazoncorretto"
+          Image: "public.ecr.aws/amazoncorretto/amazoncorretto:latest"
           Command:
             - 'tail -f /dev/null'
           EntryPoint:
@@ -50,7 +50,7 @@ Resources:
       TaskRoleArn: !Ref TaskRole
       ContainerDefinitions:
         - Name: 'ContainerName'
-          Image: "node"
+          Image: "public.ecr.aws/lambda/nodejs:latest"
           Command:
             - 'tail -f /dev/null'
           EntryPoint:
