@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.ec2.model.IamInstanceProfile
 import software.amazon.awssdk.services.ec2.model.Instance
 import software.amazon.awssdk.services.ec2.model.Reservation
 import software.amazon.awssdk.services.ecs.EcsClient
-import software.amazon.awssdk.services.ecs.model.Container
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.ContainerInstance
 import software.amazon.awssdk.services.ecs.model.Deployment
@@ -367,18 +366,6 @@ class EcsExecUtilsTest {
         toolManager.registerTool(SsmPlugin, mockTool)
 
         ecsClient.stub {
-            on {
-                describeTasks(DescribeTasksRequest.builder().cluster(cluster).tasks(taskId).build())
-            } doReturn (
-                DescribeTasksResponse.builder().tasks(
-                    Task.builder().containers(
-                        Container.builder()
-                            .name(containerName)
-                            .build()
-                    ).build()
-                ).build()
-                )
-
             on {
                 executeCommand(
                     ExecuteCommandRequest.builder()
