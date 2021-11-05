@@ -9,7 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile
 
 object CloudControlApiResourcesUtils {
     fun getResourceFile(project: Project, dynamicResourceIdentifier: DynamicResourceIdentifier): VirtualFile? =
-        try{
+        try {
             FileEditorManager.getInstance(project).openFiles.first {
                 it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == dynamicResourceIdentifier
             }
