@@ -11,7 +11,6 @@ import com.intellij.openapi.ui.ComponentWithBrowseButton
 import com.intellij.openapi.ui.TextComponentAccessor
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ComboboxWithBrowseButton
-import software.aws.toolkits.core.utils.tryOrNull
 import javax.swing.JComponent
 import javax.swing.JTextField
 
@@ -28,8 +27,7 @@ private class ProjectFileBrowseListener<T : JComponent>(
     component, project, fileChooserDescriptor, textComponentAccessor
 ) {
     override fun getInitialFile(): VirtualFile? {
-        // we use this listener on ComboboxWithBrowseButton, but it will never return valid text since it's not a JTextField
-        val text = tryOrNull { componentText } ?: return null
+        val text = componentText
         if (text.isEmpty()) {
             val file = project?.guessProjectDir()
             if (file != null) {
