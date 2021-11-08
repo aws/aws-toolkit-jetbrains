@@ -44,7 +44,7 @@ class CredentialsFileHelpNotificationProvider : EditorNotifications.Provider<Cre
 
             createActionLabel(message("general.help")) {
                 HelpManager.getInstance().invokeHelp(HelpIds.SETUP_CREDENTIALS.id)
-                AwsTelemetry.helpCredentials(project = project)
+                AwsTelemetry.help(project = project, name = HelpIds.SETUP_CREDENTIALS.id)
             }
 
             text(message("credentials.file.notification"))
