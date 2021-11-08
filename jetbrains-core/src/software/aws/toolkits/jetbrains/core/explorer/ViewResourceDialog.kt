@@ -15,9 +15,9 @@ class ViewResourceDialog(project: Project, val resourceType: String, actionTitle
     private val component by lazy {
         panel {
             row("$resourceType:") {
-                textField(::resourceName).withErrorOnApplyIf("$resourceType must be entered") {
+                textField(::resourceName).growPolicy(GrowPolicy.SHORT_TEXT).withErrorOnApplyIf("$resourceType must be entered") {
                     it.text.isNullOrBlank() || checkResourceNameValidity(it.text)
-                }.constraints(grow).growPolicy(GrowPolicy.SHORT_TEXT)
+                }
             }
         }
     }
