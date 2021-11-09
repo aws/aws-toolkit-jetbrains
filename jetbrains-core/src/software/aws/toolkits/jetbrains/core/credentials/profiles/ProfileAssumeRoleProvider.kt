@@ -20,12 +20,9 @@ class ProfileAssumeRoleProvider(private val stsClient: StsClient, private val pa
 
     init {
         val roleArn = profile.requiredProperty(ProfileProperty.ROLE_ARN)
-        val roleSessionName = profile.property(ProfileProperty.ROLE_SESSION_NAME)
-            .orElseGet { "aws-toolkit-jetbrains-${System.currentTimeMillis()}" }
-        val externalId = profile.property(ProfileProperty.EXTERNAL_ID)
-            .orElse(null)
-        val mfaSerial = profile.property(ProfileProperty.MFA_SERIAL)
-            .orElse(null)
+        val roleSessionName = profile.property(ProfileProperty.ROLE_SESSION_NAME).orElseGet { "aws-toolkit-jetbrains-${System.currentTimeMillis()}" }
+        val externalId = profile.property(ProfileProperty.EXTERNAL_ID).orElse(null)
+        val mfaSerial = profile.property(ProfileProperty.MFA_SERIAL).orElse(null)
 
         // https://docs.aws.amazon.com/sdkref/latest/guide/setting-global-duration_seconds.html
         val durationSecs = profile.property(ProfileProperty.DURATION_SECONDS).map { it.toIntOrNull() }.orElse(null) ?: 3600
