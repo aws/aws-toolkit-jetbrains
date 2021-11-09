@@ -1,8 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
@@ -62,14 +60,6 @@ tasks.processTestResources {
     // TODO how can we remove this. Fails due to:
     // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-}
-
-tasks.withType<Detekt>().configureEach {
-    exclude("**/TelemetryDefinitions.kt")
-}
-
-tasks.withType<DetektCreateBaselineTask>().configureEach {
-    exclude("**/TelemetryDefinitions.kt")
 }
 
 dependencies {

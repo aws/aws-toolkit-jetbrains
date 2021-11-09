@@ -55,16 +55,22 @@ tasks.withType<KotlinCompile>().all {
 tasks.withType<Detekt>().configureEach {
     jvmTarget = "11"
     dependsOn(":detekt-rules:assemble")
+    exclude("build/**")
+    exclude("**/*.Generated.kt")
+    exclude("**/TelemetryDefinitions.kt")
 }
 
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     jvmTarget = "11"
     dependsOn(":detekt-rules:assemble")
+    exclude("build/**")
+    exclude("**/*.Generated.kt")
+    exclude("**/TelemetryDefinitions.kt")
 }
 
 project.afterEvaluate {
     tasks.check {
-        dependsOn(tasks.detekt, tasks.named("detektMain"),  tasks.named("detektTest"))
+        dependsOn(tasks.detekt, tasks.named("detektMain"), tasks.named("detektTest"))
 
         tasks.findByName("detektIntegrationTest")?.let {
             dependsOn(it)

@@ -3,8 +3,6 @@
 
 import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenTask
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
@@ -268,14 +266,6 @@ tasks.compileKotlin {
 tasks.detekt {
     // Make sure kotlin code is generated before we execute detekt
     dependsOn(generateModels)
-}
-
-tasks.withType<Detekt>().configureEach {
-    exclude("**/*.Generated.kt")
-}
-
-tasks.withType<DetektCreateBaselineTask>().configureEach {
-    exclude("**/*.Generated.kt")
 }
 
 tasks.test {
