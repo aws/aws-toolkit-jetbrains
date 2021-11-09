@@ -66,19 +66,12 @@ class DefaultToolManager @NonInjectable internal constructor(private val clock: 
         }
     }
 
-    override fun <V : Version> getOrInstallTool(type: ManagedToolType<V>, project: Project?): Tool<ToolType<V>> {
-        val existingTool = getTool(type)
-        if (existingTool != null) {
-            return existingTool
-        }
-
-        return runUnderProgressIfNeeded(
-            project,
-            message("executableCommon.installing", type.displayName),
-            cancelable = false
-        ) {
-            installTool(project, type, ProgressManager.getInstance().progressIndicator)
-        }
+    override fun <V : Version> getOrInstallTool(type: ManagedToolType<V>, project: Project?): Tool<ToolType<V>> = getTool(type) ?: runUnderProgressIfNeeded(
+        project,
+        message("executableCommon.installing", type.displayName),
+        cancelable = false
+    ) {
+        installTool(project, type, ProgressManager.getInstance().progressIndicator)
     }
 
     /**

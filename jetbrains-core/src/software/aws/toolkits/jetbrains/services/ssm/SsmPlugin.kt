@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.getTextFromUrl
 import software.aws.toolkits.jetbrains.core.isArm64
 import software.aws.toolkits.jetbrains.core.isIntel64
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
+import software.aws.toolkits.jetbrains.core.tools.DocumentedToolType
 import software.aws.toolkits.jetbrains.core.tools.FourPartVersion
 import software.aws.toolkits.jetbrains.core.tools.ManagedToolType
 import software.aws.toolkits.jetbrains.core.tools.Tool
@@ -27,9 +28,8 @@ import java.nio.file.Path
 import java.time.Duration
 import kotlin.streams.asSequence
 
-object SsmPlugin : ManagedToolType<FourPartVersion> {
+object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPartVersion> {
     private val hasDpkg by lazy { hasCommand("dpkg-deb") }
-
     private val hasRpm2Cpio by lazy { hasCommand("rpm2cpio") }
 
     override val telemetryId: ToolId = ToolId.SessionManagerPlugin
@@ -70,19 +70,6 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
         return destination
     }
 
-    @VisibleForTesting
-    fun windowsUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/windows/SessionManagerPlugin.zip"
-    @VisibleForTesting
-    fun macUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
-    @VisibleForTesting
-    fun ubuntuArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
-    @VisibleForTesting
-    fun ubuntuI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
-    @VisibleForTesting
-    fun linuxArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
-    @VisibleForTesting
-    fun linuxI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
-
     override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
             "zip" -> extractZip(downloadArtifact, destinationDir)
@@ -91,6 +78,43 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
             else -> throw IllegalStateException("Unknown extension $extension")
         }
     }
+
+    override fun determineLatestVersion(): FourPartVersion = FourPartVersion.parse(getTextFromUrl(VERSION_FILE))
+
+    override fun toTool(installDir: Path): Tool<ToolType<FourPartVersion>> {
+        val executableName = if (SystemInfo.isWindows) {
+            "session-manager-plugin.exe"
+        } else {
+            "session-manager-plugin"
+        }
+
+        return Files.walk(installDir).use { files ->
+            files.asSequence().filter { it.fileName.toString() == executableName && Files.isExecutable(it) }
+                .map { Tool(this, it) }
+                .firstOrNull()
+        } ?: throw IllegalStateException("Failed to locate $executableName under $installDir")
+    }
+
+    override fun documentationUrl() =
+        "https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html"
+
+    @VisibleForTesting
+    fun windowsUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/windows/SessionManagerPlugin.zip"
+
+    @VisibleForTesting
+    fun macUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
+
+    @VisibleForTesting
+    fun ubuntuArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
+
+    @VisibleForTesting
+    fun ubuntuI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
+
+    @VisibleForTesting
+    fun linuxArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
+
+    @VisibleForTesting
+    fun linuxI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
 
     private fun runInstall(cmd: GeneralCommandLine) {
         val processOutput = ExecUtil.execAndGetOutput(cmd, INSTALL_TIMEOUT.toMillis().toInt())
@@ -118,22 +142,6 @@ object SsmPlugin : ManagedToolType<FourPartVersion> {
     private fun hasCommand(cmd: String): Boolean {
         val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), VERSION_TIMEOUT.toMillis().toInt())
         return output.exitCode == 0
-    }
-
-    override fun determineLatestVersion(): FourPartVersion = FourPartVersion.parse(getTextFromUrl(VERSION_FILE))
-
-    override fun toTool(installDir: Path): Tool<ToolType<FourPartVersion>> {
-        val executableName = if (SystemInfo.isWindows) {
-            "session-manager-plugin.exe"
-        } else {
-            "session-manager-plugin"
-        }
-
-        return Files.walk(installDir).use { files ->
-            files.asSequence().filter { it.fileName.toString() == executableName && Files.isExecutable(it) }
-                .map { Tool(this, it) }
-                .firstOrNull()
-        } ?: throw IllegalStateException("Failed to locate $executableName under $installDir")
     }
 
     private val LOGGER = getLogger<SsmPlugin>()

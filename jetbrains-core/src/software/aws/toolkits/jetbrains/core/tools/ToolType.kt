@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.tools
 
+import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProgressIndicator
 import software.aws.toolkits.telemetry.ToolId
 import java.nio.file.Path
@@ -32,6 +33,17 @@ interface ToolType<VersionScheme : Version> {
      * Returns the [Version] for the executable of this type located at the specified location
      */
     fun determineVersion(path: Path): VersionScheme
+
+    companion object {
+        internal val EP_NAME = ExtensionPointName.create<DocumentedToolType<Version>>("aws.toolkit.tool")
+    }
+}
+
+/**
+ * Used to power the 'Learn more' link in the configurable
+ */
+interface DocumentedToolType<VersionScheme : Version> : ToolType<VersionScheme> {
+    fun documentationUrl(): String
 }
 
 /**
