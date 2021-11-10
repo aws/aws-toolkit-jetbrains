@@ -157,7 +157,7 @@ class ProfileAssumeRoleProviderTest {
     }
 
     @Test
-    fun `resole session name is respected if provided`() {
+    fun `role session name is respected if provided`() {
         val name = aString()
         val profile = profile {
             put(ProfileProperty.ROLE_ARN, aString())

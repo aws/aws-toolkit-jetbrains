@@ -11,8 +11,9 @@ import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.STRING
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Condition
 import org.junit.After
 import org.junit.Before
@@ -145,7 +146,7 @@ class ProfileCredentialProviderFactoryTest {
 
         assertThat(notificationListener.notifications)
             .extracting(Function { t -> t.content })
-            .singleElement(Assertions.STRING)
+            .singleElement(STRING)
             .contains("Expected an '=' sign defining a property on line 2")
     }
 
@@ -177,7 +178,7 @@ class ProfileCredentialProviderFactoryTest {
 
         assertThat(notificationListener.notifications)
             .extracting(Function { t -> t.content })
-            .singleElement(Assertions.STRING)
+            .singleElement(STRING)
             .contains("2 profiles found. Failed to load 1 profile.")
     }
 
@@ -448,7 +449,7 @@ class ProfileCredentialProviderFactoryTest {
 
         mockProfileWatcher.triggerListeners()
 
-        Assertions.assertThatThrownBy {
+        assertThatThrownBy {
             providerFactory.createProvider(validProfile)
         }.isInstanceOf(IllegalStateException::class.java)
 
