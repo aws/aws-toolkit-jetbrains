@@ -28,7 +28,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
@@ -62,13 +61,12 @@ class ProfileCredentialProviderFactoryTest {
     private lateinit var profileFile: File
 
     private val mockProfileWatcher = MockProfileWatcher()
-    private val mockSdkHttpClient = mock<SdkHttpClient>()
     private val profileLoadCallback = mock<CredentialsChangeListener>()
     private val credentialChangeEvent = argumentCaptor<CredentialsChangeEvent>()
 
     @Before
     fun setUp() {
-        reset(mockSdkHttpClient, profileLoadCallback)
+        reset(profileLoadCallback)
 
         val awsFolder = temporaryFolder.newFolder(".aws")
         profileFile = File(awsFolder, "config")
@@ -106,7 +104,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `loading supported profiles are reported as added`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile noRegion]
             aws_access_key_id=BarAccessKey
@@ -135,7 +133,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `failing to load a profile shows a notification`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile bar]
             aws_access_key_id
@@ -152,7 +150,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `an error does not prevent loading of other profiles and is reported`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile role]
             role_arn=arn1
@@ -184,7 +182,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `modifying a profile gets reported as a modification`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -195,7 +193,7 @@ class ProfileCredentialProviderFactoryTest {
 
         createProviderFactory()
 
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey2
@@ -221,7 +219,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `deleting a profile gets reported as a deletion`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -232,7 +230,7 @@ class ProfileCredentialProviderFactoryTest {
 
         createProviderFactory()
 
-        writeProfileFilee("")
+        writeProfileFile("")
 
         mockProfileWatcher.triggerListeners()
 
@@ -251,11 +249,11 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `adding a profile gets reported as an addition`() {
-        writeProfileFilee("")
+        writeProfileFile("")
 
         createProviderFactory()
 
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -281,7 +279,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `modifying a parent credential provider reports modification for it and its children`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -300,7 +298,7 @@ class ProfileCredentialProviderFactoryTest {
 
         createProviderFactory()
 
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -319,7 +317,7 @@ class ProfileCredentialProviderFactoryTest {
 
         mockProfileWatcher.triggerListeners()
 
-        argumentCaptor<CredentialsChangeEvent>().apply {
+        argumentCaptor<CredentialsChangeEvent> {
             verify(profileLoadCallback, times(2)).invoke(capture())
 
             assertThat(firstValue.added).hasSize(3).has(profileName("foo")).has(profileName("bar")).has(profileName("baz"))
@@ -334,7 +332,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `removing a parent credential provider reports removal for it and its children`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -353,7 +351,7 @@ class ProfileCredentialProviderFactoryTest {
 
         createProviderFactory()
 
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -368,7 +366,7 @@ class ProfileCredentialProviderFactoryTest {
 
         mockProfileWatcher.triggerListeners()
 
-        argumentCaptor<CredentialsChangeEvent>().apply {
+        argumentCaptor<CredentialsChangeEvent> {
             verify(profileLoadCallback, times(2)).invoke(capture())
 
             assertThat(firstValue.added).hasSize(3).has(profileName("foo")).has(profileName("bar")).has(profileName("baz"))
@@ -383,7 +381,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `only modified profiles are reported`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -397,7 +395,7 @@ class ProfileCredentialProviderFactoryTest {
 
         createProviderFactory()
 
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey2
@@ -426,7 +424,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `a deleted profile throws error when trying to be retrieved`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile foo]
             aws_access_key_id=FooAccessKey
@@ -453,7 +451,7 @@ class ProfileCredentialProviderFactoryTest {
             providerFactory.createProvider(validProfile)
         }.isInstanceOf(IllegalStateException::class.java)
 
-        argumentCaptor<CredentialsChangeEvent>().apply {
+        argumentCaptor<CredentialsChangeEvent> {
             verify(profileLoadCallback, times(2)).invoke(capture())
 
             assertThat(firstValue.added).hasSize(1).has(profileName("foo"))
@@ -468,7 +466,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `static credentials profile creates a provider`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile static]
             aws_access_key_id=BarAccessKey
@@ -488,7 +486,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `static session credential profile creates a provider`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile staticSession]
             aws_access_key_id=FooAccessKey
@@ -510,7 +508,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `assume role profile creates a provider`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile role]
             role_arn=arn1
@@ -533,7 +531,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `sso profile creates a provider`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile sso]
             sso_start_url=ValidUrl
@@ -552,7 +550,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `credential process profile creates a provider`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile credProcess]
             credential_process=echo
@@ -568,7 +566,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `MFA profiles always require user action`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile role]
             role_arn=arn1
@@ -590,7 +588,7 @@ class ProfileCredentialProviderFactoryTest {
 
     @Test
     fun `sso profiles only need user action if the token is invalid`() {
-        writeProfileFilee(
+        writeProfileFile(
             """
             [profile valid]
             sso_start_url=ValidUrl
@@ -622,7 +620,7 @@ class ProfileCredentialProviderFactoryTest {
         assertThat((findCredentialIdentifier("validChain") as InteractiveCredential).userActionRequired()).isFalse
     }
 
-    private fun writeProfileFilee(content: String) {
+    private fun writeProfileFile(content: String) {
         FileUtil.createIfDoesntExist(profileFile)
         FileUtil.writeToFile(profileFile, content)
     }

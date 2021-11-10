@@ -43,11 +43,11 @@ class ProfileAssumeRoleProviderTest {
 
         stsClient = delegateMock {
             on { assumeRole(any<AssumeRoleRequest>()) } doReturn AssumeRoleResponse.builder()
-                .credentials {
-                    it.accessKeyId(aString())
-                    it.secretAccessKey(aString())
-                    it.sessionToken(aString())
-                    it.expiration(Instant.now().plus(Duration.ofHours(1)))
+                .credentials { c ->
+                    c.accessKeyId(aString())
+                    c.secretAccessKey(aString())
+                    c.sessionToken(aString())
+                    c.expiration(Instant.now().plus(Duration.ofHours(1)))
                 }.build()
         }
 
