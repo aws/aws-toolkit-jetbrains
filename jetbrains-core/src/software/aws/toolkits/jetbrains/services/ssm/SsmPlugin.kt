@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.getTextFromUrl
 import software.aws.toolkits.jetbrains.core.isArm64
 import software.aws.toolkits.jetbrains.core.isIntel64
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
+import software.aws.toolkits.jetbrains.core.tools.BaseToolType
 import software.aws.toolkits.jetbrains.core.tools.DocumentedToolType
 import software.aws.toolkits.jetbrains.core.tools.FourPartVersion
 import software.aws.toolkits.jetbrains.core.tools.ManagedToolType
@@ -28,7 +29,7 @@ import java.nio.file.Path
 import java.time.Duration
 import kotlin.streams.asSequence
 
-object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPartVersion> {
+object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPartVersion>, BaseToolType<FourPartVersion>() {
     private val hasDpkg by lazy { hasCommand("dpkg-deb") }
     private val hasRpm2Cpio by lazy { hasCommand("rpm2cpio") }
 
@@ -36,19 +37,6 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
     override val displayName: String = "AWS Session Manager Plugin"
 
     override fun supportedVersions(): VersionRange<FourPartVersion> = FourPartVersion(1, 2, 0, 0) until FourPartVersion(2, 0, 0, 0)
-
-    override fun determineVersion(path: Path): FourPartVersion {
-        val processOutput = ExecUtil.execAndGetOutput(
-            GeneralCommandLine(path.toString(), "--version"),
-            VERSION_TIMEOUT.toMillis().toInt()
-        )
-
-        if (!processOutput.checkSuccess(LOGGER)) {
-            throw IllegalStateException("Failed to determine version of $displayName")
-        }
-
-        return FourPartVersion.parse(processOutput.stdout.trim())
-    }
 
     override fun downloadVersion(version: FourPartVersion, destinationDir: Path, indicator: ProgressIndicator?): Path {
         // TODO: Move to CpuArch, FIX_WHEN_MIN_IS_211
@@ -79,7 +67,9 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
         }
     }
 
-    override fun determineLatestVersion(): FourPartVersion = FourPartVersion.parse(getTextFromUrl(VERSION_FILE))
+    override fun determineLatestVersion(): FourPartVersion = parseVersion(getTextFromUrl(VERSION_FILE))
+
+    override fun parseVersion(output: String): FourPartVersion = FourPartVersion.parse(output)
 
     override fun toTool(installDir: Path): Tool<ToolType<FourPartVersion>> {
         val executableName = if (SystemInfo.isWindows) {
@@ -140,13 +130,12 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
     }
 
     private fun hasCommand(cmd: String): Boolean {
-        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), VERSION_TIMEOUT.toMillis().toInt())
+        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), EXECUTION_TIMEOUT.toMillis().toInt())
         return output.exitCode == 0
     }
-
     private val LOGGER = getLogger<SsmPlugin>()
     private const val BASE_URL = "https://s3.us-east-1.amazonaws.com/session-manager-downloads/plugin"
     private const val VERSION_FILE = "$BASE_URL/latest/VERSION"
-    private val VERSION_TIMEOUT = Duration.ofSeconds(5)
+    private val EXECUTION_TIMEOUT = Duration.ofSeconds(5)
     private val INSTALL_TIMEOUT = Duration.ofSeconds(30)
 }

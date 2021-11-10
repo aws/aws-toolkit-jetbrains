@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.tools
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
+import com.intellij.openapi.util.ClearableLazyValue
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
@@ -16,15 +17,15 @@ import java.nio.file.Path
 class ToolConfigurable : BoundConfigurable(message("executableCommon.configurable.title")), SearchableConfigurable {
     private val settings = ToolSettings.getInstance()
     private val manager = ToolManager.getInstance()
-    private val panel by lazy {
+    private val panel = ClearableLazyValue.create {
         ValidatingPanel(
-            disposable!!,
+            disposable ?: throw RuntimeException("Should never happen as `createPanel` is called after disposable is assigned"),
             panel {
                 ToolType.EP_NAME.extensionList.forEach { toolType ->
                     row(toolType.displayName) {
                         textFieldWithBrowseButton(
                             getter = { settings.getExecutablePath(toolType) ?: "" },
-                            setter = { settings.setExecutablePath(toolType, it.takeIf { it.isNotBlank() }) },
+                            setter = { settings.setExecutablePath(toolType, it.takeIf { v -> v.isNotBlank() }) },
                             fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                         ).withValidationOnApply {
                             it.textField.text.takeIf { t -> t.isNotBlank() }?.let { path ->
@@ -45,10 +46,14 @@ class ToolConfigurable : BoundConfigurable(message("executableCommon.configurabl
         )
     }
 
-    override fun createPanel() = panel.contentPanel
+    override fun createPanel() = panel.value.contentPanel
 
     override fun apply() {
-        panel.apply()
+        panel.value.apply()
+    }
+
+    override fun disposeUIResources() {
+        panel.drop()
     }
 
     override fun getId(): String = "aws.tools"
