@@ -25,12 +25,13 @@ import kotlin.reflect.KClass
 class MockClientManager : AwsClientManager() {
     private data class Key(
         val clazz: KClass<out SdkClient>,
-        val region: String? = null,
+        val regionId: String? = null,
         val credProviderId: AwsCredentialsProvider? = null
     )
 
     private val mockClients = mutableMapOf<Key, SdkClient>()
 
+    @Suppress("UNCHECKED_CAST")
     override fun <T : SdkClient> constructAwsClient(
         sdkClass: KClass<T>,
         credProvider: AwsCredentialsProvider,
