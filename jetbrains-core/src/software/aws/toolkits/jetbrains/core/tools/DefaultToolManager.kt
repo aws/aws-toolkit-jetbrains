@@ -137,13 +137,10 @@ class DefaultToolManager @NonInjectable internal constructor(private val clock: 
         return Validity.Valid(version)
     }
 
-    private fun detailedMessage(exception: Exception, tool: Tool<ToolType<*>>): String {
-        println("EXCEPTION: $exception (${exception.message})")
-        return when (exception) {
-            is FileNotFoundException, is NoSuchFileException -> message("general.file_not_found", exception.message ?: tool.path)
-            else -> ExceptionUtil.getMessage(exception)
-        } ?: message("general.unknown_error")
-    }
+    private fun detailedMessage(exception: Exception, tool: Tool<ToolType<*>>) = when (exception) {
+        is FileNotFoundException, is NoSuchFileException -> message("general.file_not_found", exception.message ?: tool.path)
+        else -> ExceptionUtil.getMessage(exception)
+    } ?: message("general.unknown_error")
 
     @VisibleForTesting
     internal fun <V : Version> checkForUpdates(type: ManagedToolType<V>, project: Project? = null) {
