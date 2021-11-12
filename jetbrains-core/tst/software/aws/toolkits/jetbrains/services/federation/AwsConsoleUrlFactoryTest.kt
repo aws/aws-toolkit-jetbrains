@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomakehurst.wiremock.matching.MatchResult
 import com.intellij.testFramework.ApplicationRule
+import com.intellij.testFramework.RuleChain
 import org.apache.http.HttpHost
 import org.apache.http.conn.routing.HttpRoute
 import org.apache.http.conn.routing.HttpRoutePlanner
@@ -31,13 +32,17 @@ import software.amazon.awssdk.services.sts.model.GetFederationTokenRequest
 import software.amazon.awssdk.services.sts.model.GetFederationTokenResponse
 import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.region.US_EAST_1
 import java.net.InetAddress
 
 class AwsConsoleUrlFactoryTest {
+    val applicationRule = ApplicationRule()
+    val mockClientManager = MockClientManagerRule()
+
     @Rule
     @JvmField
-    val applicationRule = ApplicationRule()
+    val ruleChain = RuleChain(applicationRule, mockClientManager)
 
     @Rule
     @JvmField
@@ -56,15 +61,13 @@ class AwsConsoleUrlFactoryTest {
         whenever(httpBuilderMock.setUserAgent(any())).thenReturn(httpBuilderMock)
         whenever(httpBuilderMock.build()).thenReturn(httpClient)
 
-        val stsBuilderMock = spy(StsClient.builder())
-        stsMock = delegateMock()
-        whenever(stsBuilderMock.build()).thenReturn(stsMock)
+        stsMock = mockClientManager.create()
 
         wireMock.stubFor(
-            requestMatching {
+            requestMatching { request ->
                 val action = "getSigninToken"
-                val matches = tryOrNull { it.queryParameter("Action").values().any { it == action } }
-                    ?: it.bodyAsString.contains("Action=$action")
+                val matches = tryOrNull { request.queryParameter("Action").values().any { it == action } }
+                    ?: request.bodyAsString.contains("Action=$action")
 
                 MatchResult.of(matches)
             }.willReturn(
@@ -72,7 +75,7 @@ class AwsConsoleUrlFactoryTest {
             )
         )
 
-        sut = AwsConsoleUrlFactory(httpBuilderMock, stsBuilderMock)
+        sut = AwsConsoleUrlFactory(httpBuilderMock)
     }
 
     @After

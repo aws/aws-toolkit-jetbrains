@@ -4,80 +4,89 @@
 package software.aws.toolkits.jetbrains.services.federation
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.util.io.HttpRequests
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.utils.URLEncodedUtils
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.message.BasicNameValuePair
 import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sts.StsClient
-import software.amazon.awssdk.services.sts.StsClientBuilder
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.AwsClientManager.Companion.userAgent
-import software.aws.toolkits.jetbrains.core.AwsSdkClient
 import java.time.Duration
 
 class AwsConsoleUrlFactory(
-    private val httpClientBuilder: HttpClientBuilder = HttpClientBuilder.create(),
-    private val stsClientBuilder: StsClientBuilder = StsClient.builder()
+    private val httpClientBuilder: HttpClientBuilder = HttpClientBuilder.create()
 ) {
+    // FIXME
+    fun federationUrl(region: AwsRegion): String {
+        // https://docs.aws.amazon.com/general/latest/gr/signin-service.html
+        // https://docs.amazonaws.cn/en_us/aws/latest/userguide/endpoints-Beijing.html
+        // TODO: pull this into our endpoints generator somehow
+
+        val signinTld = when (region.partitionId) {
+            // special case cn since signin.amazonaws.com.cn does not resolve
+            "aws-cn" -> "signin.amazonaws.cn"
+            else -> "signin.${consoleTld(region)}"
+        }
+
+        val subdomain = when (region.id) {
+            "us-east-1", "us-gov-west-1", "cn-north-1" -> ""
+            else -> "${region.id}."
+        }
+
+        return "https://$subdomain$signinTld/federation"
+    }
+
     fun consoleTld(region: AwsRegion) = when (region.partitionId) {
-        "aws-cn" -> {
-            "amazonaws.cn"
-        }
-        "aws-gov" -> {
-            "amazonaws-us-gov.com"
-        }
+        // needs to be these; for example, redirecting to "amazonaws.com" is not allowed
         "aws" -> {
             "aws.amazon.com"
+        }
+        "aws-us-gov" -> {
+            "amazonaws-us-gov.com"
+        }
+        "aws-cn" -> {
+            "amazonaws.com.cn"
         }
         else -> throw IllegalStateException("Partition '${region.partitionId}' is not supported")
     }
 
-    fun federationUrl(region: AwsRegion) = "https://signin.${consoleTld(region)}/federation"
-
     fun consoleUrl(fragment: String? = null, region: AwsRegion): String {
-        val regionSubdomain = when (region.id) {
-            // cn-north-1 is not valid, but is the default...
-            "cn-north-1" -> ""
-            else -> "${region.id}."
-        }
-
-        val consoleHome = "https://${regionSubdomain}console.${consoleTld(region)}"
+        val consoleHome = "https://${region.id}.console.${consoleTld(region)}"
 
         return "$consoleHome${fragment ?: "/"}"
     }
 
     fun getSigninToken(credentials: AwsCredentials, region: AwsRegion): String {
         val creds = if (credentials !is AwsSessionCredentials) {
-            val stsClient = stsClientBuilder
-                .httpClient(AwsSdkClient.getInstance().sharedSdkClient())
-                .region(Region.of(region.id))
-                .credentialsProvider { credentials }
-                .overrideConfiguration { configuration ->
-                    userAgent.let { configuration.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, it) }
-                }
-                .build()
+            val stsClient: StsClient = AwsClientManager.getInstance()
+                .createUnmanagedClient(AwsCredentialsProvider { credentials }, Region.of(region.id))
 
-            val tokenResponse = stsClient.use {
-                it.getFederationToken {
+            val tokenResponse = stsClient.use { client ->
+                client.getFederationToken {
                     it.durationSeconds(Duration.ofMinutes(15).toSeconds().toInt())
-                    it.name("FederatedLoginFromAWSToolkit")
+                    it.name("FederationViaAWSJetBrainsToolkit")
                 }
             }
+
             tokenResponse.credentials().let { AwsSessionCredentials.create(it.accessKeyId(), it.secretAccessKey(), it.sessionToken()) }
         } else {
             credentials
         }
 
-        val sessionJson = """
-            {"sessionId":"${creds.accessKeyId()}","sessionKey":"${creds.secretAccessKey()}","sessionToken": "${creds.sessionToken()}"}
-        """.trimIndent()
+        val sessionJson = mapper.writeValueAsString(GetSigninTokenRequest(
+            sessionId = creds.accessKeyId(),
+            sessionKey = creds.secretAccessKey(),
+            sessionToken = creds.sessionToken()
+        ))
 
         val params = mapOf(
             "Action" to "getSigninToken",
@@ -119,8 +128,17 @@ class AwsConsoleUrlFactory(
         return getSigninUrl(getSigninToken(credentials, region), destination, region)
     }
 
-    private val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 }
+
+private data class GetSigninTokenRequest(
+    @JsonProperty("sessionId")
+    val sessionId: String,
+    @JsonProperty("sessionKey")
+    val sessionKey: String,
+    @JsonProperty("sessionToken")
+    val sessionToken: String
+)
 
 private data class GetSigninTokenResponse(
     @JsonProperty("SigninToken")
