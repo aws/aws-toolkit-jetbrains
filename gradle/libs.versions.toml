@@ -1,4 +1,3 @@
-#testNG=""
 [versions]
 apacheCommons = "2.8.0"
 assertJ = "3.20.2" # Upgrading leads to SAM errors: https://youtrack.jetbrains.com/issue/KT-17765
