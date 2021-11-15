@@ -3,13 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.federation
 
-import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.TestApplicationManager
 import com.intellij.util.io.HttpRequests
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume.assumeFalse
-import org.junit.Assume.assumeTrue
-import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized

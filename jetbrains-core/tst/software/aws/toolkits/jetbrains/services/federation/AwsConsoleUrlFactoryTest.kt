@@ -22,7 +22,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -30,7 +29,6 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.services.sts.StsClient
 import software.amazon.awssdk.services.sts.model.GetFederationTokenRequest
 import software.amazon.awssdk.services.sts.model.GetFederationTokenResponse
-import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.region.US_EAST_1

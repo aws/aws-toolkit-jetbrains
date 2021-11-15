@@ -7,10 +7,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.util.io.HttpRequests
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.utils.URLEncodedUtils
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.message.BasicNameValuePair
 import software.amazon.awssdk.auth.credentials.AwsCredentials
@@ -82,11 +80,13 @@ class AwsConsoleUrlFactory(
             credentials
         }
 
-        val sessionJson = mapper.writeValueAsString(GetSigninTokenRequest(
-            sessionId = creds.accessKeyId(),
-            sessionKey = creds.secretAccessKey(),
-            sessionToken = creds.sessionToken()
-        ))
+        val sessionJson = mapper.writeValueAsString(
+            GetSigninTokenRequest(
+                sessionId = creds.accessKeyId(),
+                sessionKey = creds.secretAccessKey(),
+                sessionToken = creds.sessionToken()
+            )
+        )
 
         val params = mapOf(
             "Action" to "getSigninToken",
