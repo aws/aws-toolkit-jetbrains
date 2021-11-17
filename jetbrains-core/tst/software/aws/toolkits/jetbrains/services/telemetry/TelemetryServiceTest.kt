@@ -40,7 +40,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class TelemetryServiceTest {
-    private class TestTelemetryService(publlisher: TelemetryPublisher = NoOpPublisher(), batcher: TelemetryBatcher) : TelemetryService(publlisher, batcher)
+    private class TestTelemetryService(override val publisher: TelemetryPublisher = NoOpPublisher(), override val batcher: TelemetryBatcher) : TelemetryService()
 
     @Rule
     @JvmField
