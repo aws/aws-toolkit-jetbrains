@@ -6,9 +6,13 @@ package software.aws.toolkits.jetbrains.services.telemetry
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.telemetry.DefaultTelemetryBatcher
 import software.aws.toolkits.core.telemetry.MetricEvent
+import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 
-class NoOpTelemetryService() : TelemetryService(NoOpPublisher(), DefaultTelemetryBatcher(NoOpPublisher()))
+class NoOpTelemetryService() : TelemetryService() {
+    override val publisher: TelemetryPublisher by lazy { NoOpPublisher() }
+    override val batcher: TelemetryBatcher by lazy { DefaultTelemetryBatcher(publisher) }
+}
 
 class NoOpPublisher() : TelemetryPublisher {
     override suspend fun publish(metricEvents: Collection<MetricEvent>) {}
