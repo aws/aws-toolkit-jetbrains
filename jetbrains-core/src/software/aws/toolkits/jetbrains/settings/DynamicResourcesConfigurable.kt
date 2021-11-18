@@ -25,7 +25,9 @@ import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupported
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.OtherResourcesNode
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.ui.feedback.FEEDBACK_SOURCE
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.FeedbackTelemetry
 import javax.swing.ListSelectionModel
 
 class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dynamic_resources_configurable.title")) {
@@ -96,7 +98,14 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
 
     private fun submitSuggestion(suggestion: String) {
         coroutineScope.launch(getCoroutineBgContext()) {
-            TelemetryService.getInstance().sendFeedback(Sentiment.NEGATIVE, suggestion, mapOf(FEEDBACK_SOURCE to "Resource Type Suggestions"))
+            try {
+                TelemetryService.getInstance().sendFeedback(Sentiment.NEGATIVE, suggestion, mapOf(FEEDBACK_SOURCE to "Resource Type Suggestions")).also {
+                    FeedbackTelemetry.result(project = null, success = true)
+                }
+            } catch (e: Exception) {
+                e.notifyError(message("feedback.submit_failed", e))
+                FeedbackTelemetry.result(project = null, success = false)
+            }
         }
     }
 
@@ -137,6 +146,7 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
 
     companion object {
         private const val INITIAL_INPUT = "AWS::"
+        private const val MAX_LENGTH = 2000
 
         private fun showTypeSuggestionBox(): String? = MessagesService.getInstance().showMultilineInputDialog(
             project = null,
@@ -150,6 +160,7 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
             }
         )?.takeIf { it.isNotBlank() }
 
-        private fun validateSuggestion(inputString: String?) = inputString != null && inputString.isNotBlank() && inputString != INITIAL_INPUT
+        private fun validateSuggestion(inputString: String?) =
+            inputString != null && inputString.isNotBlank() && inputString != INITIAL_INPUT && inputString.length <= MAX_LENGTH
     }
 }
