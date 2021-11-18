@@ -33,9 +33,7 @@ interface TelemetryListener {
     fun onTelemetryEvent(event: MetricEvent)
 }
 
-abstract class TelemetryService : Disposable {
-    abstract val publisher: TelemetryPublisher
-    abstract val batcher: TelemetryBatcher
+abstract class TelemetryService(private val publisher: TelemetryPublisher, private val batcher: TelemetryBatcher) : Disposable {
     private val isDisposing = AtomicBoolean(false)
     private val listeners = mutableSetOf<TelemetryListener>()
 
@@ -128,7 +126,11 @@ abstract class TelemetryService : Disposable {
     }
 }
 
-class DefaultTelemetryService : TelemetryService() {
-    override val publisher: TelemetryPublisher by lazy { DefaultTelemetryPublisher() }
-    override val batcher: TelemetryBatcher by lazy { DefaultTelemetryBatcher(publisher) }
+class DefaultTelemetryService : TelemetryService {
+    constructor() : super(publisher, batcher)
+
+    private companion object {
+        private val publisher: TelemetryPublisher by lazy { DefaultTelemetryPublisher() }
+        private val batcher: TelemetryBatcher by lazy { DefaultTelemetryBatcher(publisher) }
+    }
 }

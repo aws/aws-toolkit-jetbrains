@@ -9,9 +9,13 @@ import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 
-class NoOpTelemetryService() : TelemetryService() {
-    override val publisher: TelemetryPublisher by lazy { NoOpPublisher() }
-    override val batcher: TelemetryBatcher by lazy { DefaultTelemetryBatcher(publisher) }
+class NoOpTelemetryService : TelemetryService {
+    constructor() : super(publisher, batcher)
+
+    private companion object {
+        private val publisher: TelemetryPublisher by lazy { NoOpPublisher() }
+        private val batcher: TelemetryBatcher by lazy { DefaultTelemetryBatcher(publisher) }
+    }
 }
 
 class NoOpPublisher() : TelemetryPublisher {
