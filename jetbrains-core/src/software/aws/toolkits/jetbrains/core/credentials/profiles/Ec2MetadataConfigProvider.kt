@@ -7,6 +7,11 @@ import software.amazon.awssdk.core.SdkSystemSetting
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileProperty
 
+/**
+ * Retrieves the EC2 metadata endpoint based on profile file, env var, and Java system properties
+ *
+ * https://github.com/aws/aws-sdk-java-v2/blob/5fb447594313ab1ab9b9c0ead0ed7cb906b06e93/core/auth/src/test/java/software/amazon/awssdk/auth/credentials/internal/Ec2MetadataConfigProviderEndpointResolutionTest.java
+ */
 object Ec2MetadataConfigProvider {
     /**
      * Default IPv4 endpoint for the Amazon EC2 Instance Metadata Service.
