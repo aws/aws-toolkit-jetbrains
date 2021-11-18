@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.settings
 
-import com.intellij.ide.ui.fullRow
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.InputValidator
@@ -61,11 +60,13 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
                 updateCheckboxList()
             }
         }
-        fullRow {
-            filter(growX, pushX)
-            link(message("aws.settings.dynamic_resources_configurable.suggest_types.prompt")) {
-                showTypeSuggestionBox()?.let { suggestion ->
-                    submitSuggestion(suggestion)
+        row {
+            cell(isFullWidth = true) {
+                filter(growX, pushX)
+                link(message("aws.settings.dynamic_resources_configurable.suggest_types.prompt")) {
+                    showTypeSuggestionBox()?.let { suggestion ->
+                        submitSuggestion(suggestion)
+                    }
                 }
             }
         }
