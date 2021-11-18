@@ -23,7 +23,6 @@ import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
-import software.aws.toolkits.core.telemetry.DefaultTelemetryBatcher
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
