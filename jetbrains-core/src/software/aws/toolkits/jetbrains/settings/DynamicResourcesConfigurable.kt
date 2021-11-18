@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.ide.ui.fullRow
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.InputValidator
@@ -58,17 +59,12 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
                 updateCheckboxList()
             }
         }
-        row {
+        fullRow {
             filter(growX, pushX)
-            right {
-                link(message("aws.settings.dynamic_resources_configurable.suggest_types.prompt")) {
-                    showTypeSuggestionBox()?.let { suggestion ->
-                        coroutineScope.launch(getCoroutineBgContext()) {
-                            TelemetryService.getInstance()
-                                .sendFeedback(Sentiment.NEGATIVE, suggestion, mapOf(FEEDBACK_SOURCE to "Resource Type Suggestions"))
-                        }
-                    }
-                }.constraints(growX)
+            link(message("aws.settings.dynamic_resources_configurable.suggest_types.prompt")) {
+                showTypeSuggestionBox()?.let { suggestion ->
+                    submitSuggestion(suggestion)
+                }
             }
         }
         row {
@@ -95,6 +91,12 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
                     }.sizeGroup(sizeGroup)
                 }
             }
+        }
+    }
+
+    private fun submitSuggestion(suggestion: String) {
+        coroutineScope.launch(getCoroutineBgContext()) {
+            TelemetryService.getInstance().sendFeedback(Sentiment.NEGATIVE, suggestion, mapOf(FEEDBACK_SOURCE to "Resource Type Suggestions"))
         }
     }
 
