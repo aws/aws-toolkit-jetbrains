@@ -142,7 +142,7 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
             project = null,
             message = message("aws.settings.dynamic_resources_configurable.suggest_types.dialog.message"),
             title = message("aws.settings.dynamic_resources_configurable.suggest_types.dialog.title"),
-            initialValue = "AWS::",
+            initialValue = INITIAL_INPUT,
             icon = Messages.getQuestionIcon(),
             object : InputValidator {
                 override fun checkInput(inputString: String?) = validateSuggestion(inputString)
