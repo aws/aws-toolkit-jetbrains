@@ -13,7 +13,7 @@ class NoOpTelemetryService() : TelemetryService(NoOpPublisher(), DefaultTelemetr
 class NoOpPublisher() : TelemetryPublisher {
     override suspend fun publish(metricEvents: Collection<MetricEvent>) {}
 
-    override suspend fun sendFeedback(sentiment: Sentiment, comment: String) {}
+    override suspend fun sendFeedback(sentiment: Sentiment, comment: String, metadata: Map<String, String>) {}
 
     override fun close() {}
 }
