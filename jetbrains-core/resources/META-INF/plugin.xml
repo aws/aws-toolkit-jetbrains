@@ -125,6 +125,7 @@ with what features/services are supported.
         <extensionPoint name="clouddebug.debuggerSupport" interface="software.aws.toolkits.jetbrains.services.clouddebug.DebuggerSupport" dynamic="true"/>
 
         <extensionPoint name="explorer.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode" dynamic="true"/>
+        <extensionPoint name="explorer.actionContributor" interface="software.aws.toolkits.jetbrains.core.explorer.actions.AwsExplorerActionContributor" dynamic="true"/>
         <extensionPoint name="explorer.nodeProcessor" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor" dynamic="true"/>
         <extensionPoint name="explorer.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider" dynamic="true"/>
         <extensionPoint name="sdk.clientCustomizer" interface="software.aws.toolkits.jetbrains.core.AwsClientCustomizer" dynamic="true"/>
@@ -290,6 +291,11 @@ with what features/services are supported.
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingExplorerTreeStructureProvider"/>
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceTreeStructureProvider"/>
 
+        <!-- Explorer action contributors -->
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNodeContributor"/>
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.actions.CopyArnActionContributor"/>
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.actions.ExplorerActionSorter" order="last"/>
+
         <!-- Explorer nodes -->
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.AppRunnerExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerRootNode"/>
@@ -417,7 +423,7 @@ with what features/services are supported.
             <action id="dynamic.resource.type.explorer.createResource" class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CreateResourceAction"/>
             <action id="dynamic.resource.type.explorer.viewDocumentation" class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.ViewDocumentationAction"/>
         </group>
-        
+
         <group id="aws.toolkit.dynamic.resource.editor">
             <action id="dynamic.resource.editor.submitResourceCreationRequest" class="software.aws.toolkits.jetbrains.services.dynamic.editor.actions.SubmitResourceCreationRequestAction"/>
             <action id="dynamic.resource.editor.enableEditingResource" class="software.aws.toolkits.jetbrains.services.dynamic.editor.actions.EnableEditingResourceAction"/>
