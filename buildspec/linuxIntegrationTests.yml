@@ -27,7 +27,7 @@ phases:
           CODEARTIFACT_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text)
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
-        
+
       - AWS_CONFIG_FILE=`mktemp`
       - |
         >$AWS_CONFIG_FILE echo "[default]

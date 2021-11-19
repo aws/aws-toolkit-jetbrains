@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.utils.rules
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -44,7 +43,6 @@ class RunWithRealCredentials : TestRule {
         this.projectSupplier = { projectRule.project }
     }
 
-    lateinit var disposable: Disposable
     override fun apply(base: Statement, description: Description): Statement = if (description.getAnnotation(RequiresRealCredentials::class.java) == null &&
         description.testClass.getAnnotation(RequiresRealCredentials::class.java) == null
     ) {
