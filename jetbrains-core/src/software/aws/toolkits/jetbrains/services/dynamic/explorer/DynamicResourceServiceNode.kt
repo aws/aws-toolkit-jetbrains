@@ -3,14 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.dynamic.explorer
 
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.intellij.ui.EditorNotifications
 import software.amazon.awssdk.services.cloudcontrol.model.UnsupportedActionException
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
@@ -19,11 +14,11 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource
+import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileManager
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceIdentifier
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager.Companion.isTerminal
-import software.aws.toolkits.jetbrains.services.dynamic.OpenViewEditableDynamicResourceVirtualFile
-import software.aws.toolkits.jetbrains.services.dynamic.ViewEditableDynamicResourceVirtualFile
+import software.aws.toolkits.jetbrains.services.dynamic.OpenResourceMode
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -86,47 +81,12 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     override fun isAlwaysShowPlus(): Boolean = false
     override fun isAlwaysLeaf(): Boolean = true
     override fun getChildren(): List<AwsExplorerNode<*>> = emptyList()
-    override fun onDoubleClick() = openResourceModelInEditor(OpenResourceModelSourceAction.READ)
+    override fun onDoubleClick() = DynamicResourceFileManager.getInstance(nodeProject).openEditor(identifier(), OpenResourceMode.READ)
 
-    fun openResourceModelInEditor(sourceAction: OpenResourceModelSourceAction) {
-        val dynamicResourceIdentifier = DynamicResourceIdentifier(nodeProject.getConnectionSettingsOrThrow(), resource.type.fullName, resource.identifier)
-        val openFiles = FileEditorManager.getInstance(nodeProject).openFiles.filter {
-            it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == dynamicResourceIdentifier
-        }
-        if (openFiles.isEmpty()) {
-            object : Task.Backgroundable(nodeProject, message("dynamic_resources.fetch.indicator_title", resource.identifier), true) {
-                override fun run(indicator: ProgressIndicator) {
-                    indicator.text = message("dynamic_resources.fetch.fetch")
-                    val model = OpenViewEditableDynamicResourceVirtualFile.getResourceModel(
-                        nodeProject,
-                        nodeProject.awsClient(),
-                        resource.type.fullName,
-                        resource.identifier
-                    ) ?: return
-                    val file = ViewEditableDynamicResourceVirtualFile(
-                        dynamicResourceIdentifier,
-                        model
-                    )
-
-                    indicator.text = message("dynamic_resources.fetch.open")
-                    OpenViewEditableDynamicResourceVirtualFile.openFile(nodeProject, file, sourceAction, resource.type.fullName)
-                }
-            }.queue()
-        } else {
-            val openFile = openFiles.first()
-            if (sourceAction == OpenResourceModelSourceAction.EDIT) {
-                openFile.isWritable = true
-            }
-            FileEditorManager.getInstance(nodeProject).openFile(openFile, true)
-            EditorNotifications.getInstance(nodeProject).updateNotifications(openFile)
-        }
-    }
+    fun identifier(): DynamicResourceIdentifier =
+        DynamicResourceIdentifier(nodeProject.getConnectionSettingsOrThrow(), resource.type.fullName, resource.identifier)
 
     private companion object {
         val LOG = getLogger<DynamicResourceNode>()
     }
-}
-
-enum class OpenResourceModelSourceAction {
-    READ, EDIT
 }

@@ -7,16 +7,15 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
+import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileManager
 import software.aws.toolkits.jetbrains.services.dynamic.JsonResourceModificationExperiment
+import software.aws.toolkits.jetbrains.services.dynamic.OpenResourceMode
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceNode
-import software.aws.toolkits.jetbrains.services.dynamic.explorer.OpenResourceModelSourceAction
 import software.aws.toolkits.resources.message
 
-class OpenFileForUpdateAction :
-    SingleExplorerNodeAction<DynamicResourceNode>(message("dynamic_resources.openFileForUpdate_text")),
-    DumbAware {
+class OpenFileForUpdateAction : SingleExplorerNodeAction<DynamicResourceNode>(message("dynamic_resources.openFileForUpdate_text")), DumbAware {
     override fun actionPerformed(selected: DynamicResourceNode, e: AnActionEvent) {
-        selected.openResourceModelInEditor(OpenResourceModelSourceAction.EDIT)
+        DynamicResourceFileManager.getInstance(selected.nodeProject).openEditor(selected.identifier(), OpenResourceMode.EDIT)
     }
 
     override fun update(selected: DynamicResourceNode, e: AnActionEvent) {

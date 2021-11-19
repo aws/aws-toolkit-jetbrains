@@ -11,10 +11,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudcontrol.model.Operation
 import software.amazon.awssdk.services.cloudcontrol.model.OperationStatus
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.services.dynamic.explorer.OpenResourceModelSourceAction
 
 class CreateResourceFileStatusHandler(private val project: Project) : DynamicResourceStateMutationHandler {
+    private val fileManager = DynamicResourceFileManager.getInstance(project)
     private val resourceCreationProgressTracker: MutableMap<String, VirtualFile> = mutableMapOf()
 
     init {
@@ -32,18 +31,7 @@ class CreateResourceFileStatusHandler(private val project: Project) : DynamicRes
                 resourceCreationProgressTracker.remove(state.token)
             }
 
-            val dynamicResourceIdentifier = DynamicResourceIdentifier(state.connectionSettings, state.resourceType, state.resourceIdentifier)
-            val model = OpenViewEditableDynamicResourceVirtualFile.getResourceModel(
-                project,
-                state.connectionSettings.awsClient(),
-                state.resourceType,
-                state.resourceIdentifier
-            ) ?: return
-            val file = ViewEditableDynamicResourceVirtualFile(
-                dynamicResourceIdentifier,
-                model
-            )
-            OpenViewEditableDynamicResourceVirtualFile.openFile(project, file, OpenResourceModelSourceAction.READ, state.resourceType)
+            fileManager.openEditor(DynamicResourceIdentifier(state.connectionSettings, state.resourceType, state.resourceIdentifier), OpenResourceMode.READ)
         }
     }
 
