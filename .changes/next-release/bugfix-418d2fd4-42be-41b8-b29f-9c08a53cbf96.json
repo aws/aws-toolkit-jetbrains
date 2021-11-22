@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix error on plugin installation related to missing IDE registry key"
+}

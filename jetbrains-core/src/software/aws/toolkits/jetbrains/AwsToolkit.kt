@@ -14,5 +14,5 @@ object AwsToolkit {
         PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))?.version ?: "Unknown"
     }
 
-    fun isDeveloperMode() = Registry.`is`("aws.toolkit.developerMode")
+    fun isDeveloperMode() = Registry.`is`("aws.toolkit.developerMode", false)
 }
