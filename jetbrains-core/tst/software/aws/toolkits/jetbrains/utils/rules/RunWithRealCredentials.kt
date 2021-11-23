@@ -65,7 +65,8 @@ class RunWithRealCredentials : TestRule {
 
                     val credentialIdentifier = CredentialManager.getInstance().getCredentialIdentifierById(DEFAULT_PROFILE_ID)
                         ?: throw IllegalStateException("RunWithRealCredentials requires a default AWS profile!")
-                    val region = AwsRegionProvider.getInstance()["us-west-2"] ?: throw IllegalStateException("Can't locate us-west-2")
+                    val regionId = System.getenv().getOrDefault("AWS_DEFAULT_REGION", "us-west-2")
+                    val region = AwsRegionProvider.getInstance()[regionId] ?: throw IllegalStateException("Can't locate us-west-2")
 
                     getLogger<RunWithRealCredentials>().warn { "WARNING! Running test with real AWS credentials!" }
 
