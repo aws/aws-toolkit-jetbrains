@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
+import software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CloudApiResource
 import software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaLocation
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.resources.message
@@ -32,7 +33,8 @@ open class LambdaFunctionNode(
     function,
     AwsIcons.Resources.LAMBDA_FUNCTION
 ),
-    ResourceLocationNode {
+    ResourceLocationNode,
+    CloudApiResource {
 
     override fun resourceType() = "function"
 
@@ -51,4 +53,7 @@ open class LambdaFunctionNode(
         val handler = value.handler ?: return emptyArray()
         return Lambda.findPsiElementsForHandler(nodeProject, runtime, handler)
     }
+
+    override val cloudApiResourceType = "AWS::Lambda::Function"
+    override fun identifier() = value.name
 }

@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
+import software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CloudApiResource
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.resources.message
 
@@ -22,7 +23,8 @@ class S3ServiceNode(project: Project, service: AwsExplorerServiceNode) :
 }
 
 class S3BucketNode(project: Project, val bucket: Bucket) :
-    AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.name(), AwsIcons.Resources.S3_BUCKET) {
+    AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.name(), AwsIcons.Resources.S3_BUCKET),
+    CloudApiResource {
 
     override fun resourceType(): String = "bucket"
 
@@ -35,4 +37,8 @@ class S3BucketNode(project: Project, val bucket: Bucket) :
     }
 
     override fun displayName(): String = bucket.name()
+
+    override val cloudApiResourceType = "AWS::S3::Bucket"
+
+    override fun identifier(): String = bucket.name()
 }

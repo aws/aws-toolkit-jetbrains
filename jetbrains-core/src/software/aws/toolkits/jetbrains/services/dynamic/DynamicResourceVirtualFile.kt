@@ -5,14 +5,18 @@ package software.aws.toolkits.jetbrains.services.dynamic
 
 import com.intellij.json.JsonFileType
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiUtilCore
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.ui.EditorNotifications
 import software.amazon.awssdk.services.cloudcontrol.CloudControlClient
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.jetbrains.services.dynamic.explorer.OpenResourceModelSourceAction
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
@@ -42,27 +46,60 @@ object InitialCreateDynamicResourceContent {
     const val initialContent = "{}"
 }
 
-object OpenViewEditableDynamicResourceVirtualFile {
-    fun openFile(project: Project, file: ViewEditableDynamicResourceVirtualFile, sourceAction: OpenResourceModelSourceAction, resourceType: String) {
+class DynamicResourceFileManager(private val project: Project) {
+    fun openEditor(identifier: DynamicResourceIdentifier, mode: OpenResourceMode = OpenResourceMode.READ) {
+        val openFiles = FileEditorManager.getInstance(project).openFiles.filter {
+            it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == identifier
+        }
+        if (openFiles.isEmpty()) {
+            object : Task.Backgroundable(project, message("dynamic_resources.fetch.indicator_title", identifier.resourceIdentifier), true) {
+                override fun run(indicator: ProgressIndicator) {
+                    indicator.text = message("dynamic_resources.fetch.fetch")
+                    val model = getResourceModel(
+                        project,
+                        identifier.connectionSettings.awsClient(),
+                        identifier.resourceType,
+                        identifier.resourceIdentifier
+                    ) ?: return
+                    val file = ViewEditableDynamicResourceVirtualFile(
+                        identifier,
+                        model
+                    )
+
+                    indicator.text = message("dynamic_resources.fetch.open")
+                    openFile(project, file, mode, identifier.resourceType)
+                }
+            }.queue()
+        } else {
+            val openFile = openFiles.first()
+            if (mode == OpenResourceMode.EDIT) {
+                openFile.isWritable = true
+            }
+            FileEditorManager.getInstance(project).openFile(openFile, true)
+            EditorNotifications.getInstance(project).updateNotifications(openFile)
+        }
+    }
+
+    private fun openFile(project: Project, file: ViewEditableDynamicResourceVirtualFile, sourceAction: OpenResourceMode, resourceType: String) {
         WriteCommandAction.runWriteCommandAction(project) {
             CodeStyleManager.getInstance(project).reformat(PsiUtilCore.getPsiFile(project, file))
-            if (sourceAction == OpenResourceModelSourceAction.READ) {
+            if (sourceAction == OpenResourceMode.READ) {
                 file.isWritable = false
                 DynamicresourceTelemetry.getResource(project, success = true, resourceType = resourceType)
-            } else if (sourceAction == OpenResourceModelSourceAction.EDIT) {
+            } else if (sourceAction == OpenResourceMode.EDIT) {
                 file.isWritable = true
             }
             FileEditorManager.getInstance(project).openFile(file, true)
         }
     }
 
-    fun getResourceModel(project: Project, client: CloudControlClient, resourceType: String, resourceIdentifier: String): String? = try {
-        client.getResource {
-            it.typeName(resourceType)
-            it.identifier(resourceIdentifier)
-        }
+    private fun getResourceModel(project: Project, client: CloudControlClient, resourceType: String, resourceIdentifier: String): String? = try {
+        client.getResource { it.typeName(resourceType).identifier(resourceIdentifier) }
             .resourceDescription()
             .properties()
+            .also {
+                DynamicresourceTelemetry.getResource(project, success = true, resourceType = resourceType)
+            }
     } catch (e: Exception) {
         notifyError(
             project = project,
@@ -72,4 +109,12 @@ object OpenViewEditableDynamicResourceVirtualFile {
         DynamicresourceTelemetry.getResource(project, success = false, resourceType = resourceType)
         null
     }
+
+    companion object {
+        fun getInstance(project: Project): DynamicResourceFileManager = project.service()
+    }
+}
+
+enum class OpenResourceMode {
+    READ, EDIT
 }

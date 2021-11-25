@@ -208,6 +208,7 @@ with what features/services are supported.
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindow" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow" />
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow" />
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileManager"/>
 
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider"/>
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileActionProvider"/>
@@ -294,6 +295,8 @@ with what features/services are supported.
         <!-- Explorer action contributors -->
         <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNodeContributor"/>
         <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.actions.CopyArnActionContributor"/>
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.ViewResourceConfigurationActionContributor"/>
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.services.ecs.EcsTaskDefinitionActionContributor"/>
         <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.actions.ExplorerActionSorter" order="last"/>
 
         <!-- Explorer nodes -->
