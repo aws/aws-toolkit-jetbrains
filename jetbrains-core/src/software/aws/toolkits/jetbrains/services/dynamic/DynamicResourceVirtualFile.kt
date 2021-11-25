@@ -47,7 +47,7 @@ object InitialCreateDynamicResourceContent {
 }
 
 class DynamicResourceFileManager(private val project: Project) {
-    fun openEditor(identifier: DynamicResourceIdentifier, mode: OpenResourceMode) {
+    fun openEditor(identifier: DynamicResourceIdentifier, mode: OpenResourceMode = OpenResourceMode.READ) {
         val openFiles = FileEditorManager.getInstance(project).openFiles.filter {
             it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == identifier
         }

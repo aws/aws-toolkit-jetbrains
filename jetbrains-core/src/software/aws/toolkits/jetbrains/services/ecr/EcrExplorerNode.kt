@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRoo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
+import software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CloudApiResource
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.resources.message
@@ -34,7 +35,8 @@ class EcrRepositoryNode(
         repository.repositoryName,
         AwsIcons.Resources.ECR_REPOSITORY
     ),
-    ResourceParentNode {
+    ResourceParentNode,
+    CloudApiResource {
 
     override fun resourceType(): String = "repository"
 
@@ -47,6 +49,9 @@ class EcrRepositoryNode(
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = nodeProject
         .getResourceNow(EcrResources.listTags(repository.repositoryName))
         .map { EcrTagNode(nodeProject, repository, it) }
+
+    override val cloudApiResourceType = "AWS::ECR::Repository"
+    override fun identifier() = repository.repositoryName
 }
 
 class EcrTagNode(project: Project, val repository: Repository, val tag: String) : AwsExplorerNode<String>(project, tag, null), ResourceActionNode {

@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
+import software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CloudApiResource
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
@@ -29,11 +30,14 @@ class AppRunnerServiceNode(
     AppRunnerClient.SERVICE_NAME,
     service.serviceName(),
     AwsIcons.Resources.APPRUNNER_SERVICE
-) {
+),
+    CloudApiResource {
     override fun resourceType(): String = "service"
     override fun resourceArn(): String = service.serviceArn()
     override fun statusText(): String = service.status().toString().toHumanReadable()
 
     override fun isAlwaysShowPlus(): Boolean = false
     override fun isAlwaysLeaf(): Boolean = true
+    override val cloudApiResourceType: String = "AWS::AppRunner::Service"
+    override fun identifier() = resourceArn()
 }

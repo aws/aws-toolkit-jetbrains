@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
+import software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CloudApiResource
 import software.aws.toolkits.resources.message
 
 class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<LogGroup>(
@@ -32,7 +33,8 @@ class CloudWatchLogsNode(
     CloudWatchLogsClient.SERVICE_NAME,
     logGroupName,
     AwsIcons.Resources.CloudWatch.LOG_GROUP
-) {
+),
+    CloudApiResource {
     override fun resourceType() = "group"
 
     override fun resourceArn() = arn
@@ -42,4 +44,8 @@ class CloudWatchLogsNode(
     override fun onDoubleClick() {
         CloudWatchLogWindow.getInstance(nodeProject).showLogGroup(logGroupName)
     }
+
+    override val typeDisplayName = "Log Group"
+    override val cloudApiResourceType = "AWS::Logs::LogGroup"
+    override fun identifier() = logGroupName
 }
