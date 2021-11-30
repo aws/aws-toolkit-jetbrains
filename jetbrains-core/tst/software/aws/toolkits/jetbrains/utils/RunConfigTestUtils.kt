@@ -260,6 +260,7 @@ fun assumeImageSupport() {
 }
 
 // Extracts the last json structure. Needed since output has all build output and sam cli messages
-fun jsonToMap(data: String) = data.substringAfterLast("{").let {
+// TODO: handle JSON with nested objects
+fun jsonToMap(data: String) = data.substringAfterLast("{").substringBefore("}").let {
     jacksonObjectMapper().readValue<Map<String, String>>("{$it}")
 }

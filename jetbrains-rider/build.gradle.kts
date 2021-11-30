@@ -277,6 +277,7 @@ tasks.test {
 }
 
 tasks.integrationTest {
+    enabled = false
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
