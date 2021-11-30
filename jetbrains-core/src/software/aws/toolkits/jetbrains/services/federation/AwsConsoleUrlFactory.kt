@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpPost
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.message.BasicNameValuePair
 import software.amazon.awssdk.auth.credentials.AwsCredentials
@@ -23,7 +24,6 @@ import java.time.Duration
 class AwsConsoleUrlFactory(
     private val httpClientBuilder: HttpClientBuilder = HttpClientBuilder.create()
 ) {
-    // FIXME
     fun federationUrl(region: AwsRegion): String {
         // https://docs.aws.amazon.com/general/latest/gr/signin-service.html
         // https://docs.amazonaws.cn/en_us/aws/latest/userguide/endpoints-Beijing.html
@@ -48,9 +48,10 @@ class AwsConsoleUrlFactory(
         "aws" -> {
             "aws.amazon.com"
         }
-        "aws-us-gov" -> {
-            "amazonaws-us-gov.com"
-        }
+        // TODO: gov is not supported for POST-based federation yet
+//        "aws-us-gov" -> {
+//            "amazonaws-us-gov.com"
+//        }
         "aws-cn" -> {
             "amazonaws.com.cn"
         }
@@ -94,12 +95,10 @@ class AwsConsoleUrlFactory(
             "Session" to sessionJson
         ).map { BasicNameValuePair(it.key, it.value) }
 
-        // TODO: should really be POST instead of GET, but that is not possible yet
-//        val request = HttpPost(federationUrl(region))
-//            .apply {
-//                entity = UrlEncodedFormEntity(params)
-//            }
-        val request = HttpGet(federationUrl(region) + "?${UrlEncodedFormEntity(params).toUrlEncodedString()}")
+        val request = HttpPost(federationUrl(region))
+            .apply {
+                entity = UrlEncodedFormEntity(params)
+            }
 
         val result = httpClientBuilder
             .setUserAgent(AwsClientManager.userAgent)
