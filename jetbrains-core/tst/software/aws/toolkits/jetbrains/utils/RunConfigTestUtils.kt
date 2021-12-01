@@ -59,7 +59,13 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
             val executionEnvironment = executionEnvironmentBuilder.build()
 
             val listener = object : OutputListener() {
+                override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
+                    println("Received processWillTerminate for ${event.processHandler}")
+                    super.processWillTerminate(event, willBeDestroyed)
+                }
+
                 override fun processTerminated(event: ProcessEvent) {
+                    println("Received processTerminated for ${event.processHandler}")
                     super.processTerminated(event)
                     executionFuture.complete(this.output)
                 }
