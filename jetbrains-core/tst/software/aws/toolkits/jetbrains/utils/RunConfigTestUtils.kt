@@ -74,6 +74,16 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
             runConfiguration.project.messageBus.connect(executionEnvironment).subscribe(
                 ExecutionManager.EXECUTION_TOPIC,
                 object : ExecutionListener {
+                    override fun processTerminating(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+                        println("Execution topic listener called processTerminating for $handler")
+                        super.processTerminating(executorId, env, handler)
+                    }
+
+                    override fun processTerminated(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler, exitCode: Int) {
+                        println("Execution topic listener called processTerminated with exit code $exitCode for $handler")
+                        super.processTerminated(executorId, env, handler, exitCode)
+                    }
+
                     override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
                         handler.addProcessListener(listener)
                     }
