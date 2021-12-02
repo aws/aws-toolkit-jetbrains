@@ -9,7 +9,9 @@ import com.intellij.execution.OutputListener
 import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.application.runInEdt
@@ -40,6 +42,13 @@ private fun executeAndWaitOnAttach(runConfiguration: RunConfiguration): Completa
 
             override fun processStarted(debugProcess: XDebugProcess) {
                 println("Debugger attached: $debugProcess")
+                debugProcess.processHandler.addProcessListener(object : OutputListener() {
+                    override fun processTerminated(event: ProcessEvent) {
+                        println("Debug worker terminated with exit code: ${this.output.exitCode}")
+                        println("Debug worker stdout: ${this.output.stdout}")
+                        println("Debug worker stderr: ${this.output.stderr}")
+                    }
+                })
                 sessionFuture.complete(debugProcess.session)
             }
         }

@@ -8,6 +8,7 @@ import com.intellij.execution.filters.TextConsoleBuilderFactory
 import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.rd.defineNestedLifetime
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.jetbrains.rd.framework.IdKind
@@ -37,6 +38,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.FindDockerContainer.Companion.DOCKER_CONTAINER
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.FindPid.Companion.DOTNET_PID
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
@@ -174,11 +176,21 @@ object DotnetDebugUtils {
     }
 
     private fun startDebugWorker(dockerContainer: String, backendPort: Int, frontendPort: Int): OSProcessHandler {
+        val dockerPrelude = buildList<String> {
+            add("docker")
+            add("exec")
+            add("-i")
+
+            if (ApplicationManager.getApplication().isUnitTestMode) {
+                add("--env")
+                add("RIDER_DEBUGGER_LOG_DIR=/tmp/logs/")
+            }
+
+            add(dockerContainer)
+        }.toTypedArray()
+
         val runDebuggerCommand = GeneralCommandLine(
-            "docker",
-            "exec",
-            "-i",
-            dockerContainer,
+            *dockerPrelude,
             // use dotnet binary bundled with worker since Lambda netcore2.1 image seems to be missing:
             // System.Runtime.CompilerServices.TupleElementNamesAttribute' from assembly 'mscorlib, Version=4.0.0.0
             // and therefore cannot debug netcore2.1 under Rider 2021.2+
@@ -189,7 +201,12 @@ object DotnetDebugUtils {
             "--backend-port=$backendPort"
         )
 
-        LOG.debug { "Starting Rider debug worker for $dockerContainer with backend $backendPort and frontend $frontendPort" }
+        LOG.debug {
+            """
+            Starting Rider debug worker for $dockerContainer with backend $backendPort and frontend $frontendPort
+            Command: ${runDebuggerCommand.commandLineString}
+            """.trimIndent()
+        }
 
         return ProcessHandlerFactory.getInstance().createProcessHandler(runDebuggerCommand)
     }
