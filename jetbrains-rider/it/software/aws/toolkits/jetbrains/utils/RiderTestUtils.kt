@@ -21,6 +21,7 @@ import com.jetbrains.rdclient.util.idea.waitAndPump
 import com.jetbrains.rider.projectView.solutionDirectory
 import com.jetbrains.rider.test.scriptingApi.DebugTestExecutionContext
 import com.jetbrains.rider.test.scriptingApi.debugProgramAfterAttach
+import com.jetbrains.rider.test.scriptingApi.dumpFullCurrentData
 import com.jetbrains.rider.test.scriptingApi.resumeSession
 import com.jetbrains.rider.test.scriptingApi.waitForDotNetDebuggerInitializedOrCanceled
 import com.jetbrains.rider.test.scriptingApi.waitForPause
@@ -50,6 +51,7 @@ private fun executeAndWaitOnAttach(runConfiguration: RunConfiguration): Completa
     // In the real world create and execute runs on EDT
     runInEdt {
         try {
+            @Suppress("UnsafeCallOnNullableType")
             val runner = ProgramRunner.getRunner(executorId, runConfiguration)!!
             val executionEnvironmentBuilder = ExecutionEnvironmentBuilder.create(executor, runConfiguration)
                 .runner(runner)
@@ -89,6 +91,8 @@ fun executeRunConfigurationAndWaitRider(runConfiguration: RunConfiguration, exec
                 executionFuture.complete(this.output)
             }
         })
+        // prints current debugger state for comparison against .gold file
+        dumpFullCurrentData()
         resumeSession()
     }
 
