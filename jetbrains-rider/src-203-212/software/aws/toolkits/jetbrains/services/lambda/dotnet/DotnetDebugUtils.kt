@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
@@ -187,6 +188,8 @@ object DotnetDebugUtils {
             "--frontend-port=$frontendPort",
             "--backend-port=$backendPort"
         )
+
+        LOG.debug { "Starting Rider debug worker for $dockerContainer with backend $backendPort and frontend $frontendPort" }
 
         return ProcessHandlerFactory.getInstance().createProcessHandler(runDebuggerCommand)
     }
