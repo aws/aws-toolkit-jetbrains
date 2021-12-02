@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
-import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider
 import software.aws.toolkits.jetbrains.utils.jsonToMap
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
@@ -72,11 +71,8 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
             handler = handler
         )
 
-        val debuggerIsHit = checkBreakPointHit(project)
-
         val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
         assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(debuggerIsHit.get()).isTrue
     }
 
     @Test
@@ -199,10 +195,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
             isImage = true
         )
 
-        val debuggerIsHit = checkBreakPointHit(project)
-
         val executeLambda = executeRunConfigurationAndWaitRider(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
         assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(debuggerIsHit.get()).isTrue
     }
 }
