@@ -7,6 +7,7 @@ import base.AwsReuseSolutionTestBase
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.ide.util.PropertiesComponent
 import com.jetbrains.rider.projectView.solutionDirectory
+import com.jetbrains.rider.test.scriptingApi.removeAllBreakpoints
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
@@ -147,9 +148,10 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
     }
 
-    @AfterMethod
+    @AfterMethod(alwaysRun = true)
     fun tearDown() {
         PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
+        removeAllBreakpoints(project)
     }
 
     override fun getSolutionDirectoryName(): String = solutionName
