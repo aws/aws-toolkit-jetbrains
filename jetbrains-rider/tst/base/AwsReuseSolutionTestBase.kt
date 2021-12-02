@@ -3,7 +3,6 @@
 
 package base
 
-import com.intellij.diagnostic.DialogAppender
 import com.intellij.ide.GeneralSettings
 import com.intellij.openapi.project.Project
 import com.jetbrains.rider.projectView.solutionDirectory
