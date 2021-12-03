@@ -9,6 +9,7 @@ enum class LambdaRuntime(
     private val runtime: Runtime?,
     val minSamInit: String? = null,
     val minSamDebugging: String? = null,
+    val architectures: List<LambdaArchitecture>? = listOf(LambdaArchitecture.default),
     private val runtimeOverride: String? = null
 ) {
     GO1_X(
@@ -17,15 +18,21 @@ enum class LambdaRuntime(
         // and 1.17.0 broke the arguments
         minSamDebugging = "1.18.1"
     ),
-    NODEJS12_X(Runtime.NODEJS12_X),
-    NODEJS14_X(Runtime.NODEJS14_X, minSamDebugging = "1.17.0", minSamInit = "1.17.0"),
+    NODEJS12_X(Runtime.NODEJS12_X, architectures = listOf(LambdaArchitecture.X86_64, LambdaArchitecture.ARM64)),
+    NODEJS14_X(
+        Runtime.NODEJS14_X, minSamDebugging = "1.17.0", minSamInit = "1.17.0",
+        architectures = listOf(LambdaArchitecture.X86_64, LambdaArchitecture.ARM64)
+    ),
     JAVA8(Runtime.JAVA8),
-    JAVA8_AL2(Runtime.JAVA8_AL2, minSamDebugging = "1.2.0"),
-    JAVA11(Runtime.JAVA11),
+    JAVA8_AL2(Runtime.JAVA8_AL2, minSamDebugging = "1.2.0", architectures = listOf(LambdaArchitecture.X86_64, LambdaArchitecture.ARM64)),
+    JAVA11(Runtime.JAVA11, architectures = listOf(LambdaArchitecture.X86_64, LambdaArchitecture.ARM64)),
     PYTHON3_6(Runtime.PYTHON3_6),
     PYTHON3_7(Runtime.PYTHON3_7),
-    PYTHON3_8(Runtime.PYTHON3_8),
-    PYTHON3_9(Runtime.PYTHON3_9, minSamDebugging = "1.28.0", minSamInit = "1.28.0"),
+    PYTHON3_8(Runtime.PYTHON3_8, architectures = listOf(LambdaArchitecture.X86_64, LambdaArchitecture.ARM64)),
+    PYTHON3_9(
+        Runtime.PYTHON3_9, minSamDebugging = "1.28.0", minSamInit = "1.28.0",
+        architectures = listOf(LambdaArchitecture.X86_64, LambdaArchitecture.ARM64)
+    ),
     DOTNETCORE3_1(Runtime.DOTNETCORE3_1),
     DOTNET5_0(null, minSamInit = "1.16.0", runtimeOverride = "dotnet5.0");
 

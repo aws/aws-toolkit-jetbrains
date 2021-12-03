@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda
 
 import com.intellij.util.text.SemVer
+import software.aws.toolkits.core.lambda.LambdaArchitecture
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 
@@ -12,5 +13,9 @@ fun LambdaRuntime.minSamDebuggingVersion(): SemVer =
         ?: SamExecutable.minVersion
 
 fun LambdaRuntime.minSamInitVersion(): SemVer =
+    minSamInit?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamInitVersion! It should be a semver string!") }
+        ?: SamExecutable.minVersion
+
+fun LambdaArchitecture.minSamInitVersion(): SemVer =
     minSamInit?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamInitVersion! It should be a semver string!") }
         ?: SamExecutable.minVersion
