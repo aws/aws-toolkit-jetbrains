@@ -35,7 +35,7 @@ phases:
         credential_source=EcsContainer"
 
       - chmod +x gradlew
-      - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :jetbrains-rider:cleanIntegrationTest :jetbrains-rider:integrationTest --no-build-cache --info --console plain
+      - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport --info --console plain
       - |
         if [ $(docker ps -q | wc -l) -gt 0 ]; then
             echo 'Docker containers were not completely cleaned up!';
