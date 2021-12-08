@@ -26,5 +26,6 @@ enum class LambdaArchitecture(
         fun fromValue(value: Architecture): LambdaArchitecture? = values().find { it.architecture == value }
 
         val DEFAULT = X86_64
+        val ARM_COMPATIBLE = listOf(X86_64, ARM64)
     }
 }
