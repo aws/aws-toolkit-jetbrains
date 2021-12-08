@@ -48,7 +48,7 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamSettingsRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.TemplateRunSettings
 import software.aws.toolkits.jetbrains.services.lambda.execution.validateSamTemplateDetails
-import software.aws.toolkits.jetbrains.services.lambda.minSamInitVersion
+import software.aws.toolkits.jetbrains.services.lambda.minSamVersion
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
@@ -134,7 +134,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
         val executable = getSam()
 
         SemVer.parseFromText(executable.version)?.let { semVer ->
-            val architectureMinSam = architecture.minSamInitVersion()
+            val architectureMinSam = architecture.minSamVersion()
             if (semVer < architectureMinSam) {
                 throw RuntimeConfigurationError(message("sam.executable.minimum_too_low_architecture", architecture, architectureMinSam))
             }

@@ -64,7 +64,7 @@ class RawSettings(private val project: Project) {
             if (selectedRuntime == lastSelectedRuntime) return@addActionListener
             lastSelectedRuntime = selectedRuntime
             handlerPanel.setRuntime(selectedRuntime.toSdkRuntime())
-            architectureModel.replaceAll(selectedRuntime.architectures?.toMutableList() ?: mutableListOf(LambdaArchitecture.X86_64))
+            architectureModel.replaceAll(selectedRuntime.architectures?.toMutableList() ?: mutableListOf(LambdaArchitecture.DEFAULT))
             architecture.isEnabled = architectureModel.size > 1
         }
         val supportedRuntimes = LambdaBuilder.supportedRuntimeGroups().flatMap { it.supportedRuntimes }.sorted()

@@ -221,7 +221,7 @@ fun GeneralCommandLine.samInitCommand(
             addParameter(parameters.name)
             addParameter("--runtime")
             addParameter(parameters.runtime.toString())
-            if (parameters.architecture != LambdaArchitecture.default) {
+            if (parameters.architecture != LambdaArchitecture.DEFAULT) {
                 addParameter("--architecture")
                 addParameter(parameters.architecture.toString())
             }
@@ -237,7 +237,7 @@ fun GeneralCommandLine.samInitCommand(
             addParameter(parameters.name)
             addParameter("--base-image")
             addParameter(parameters.baseImage)
-            if (parameters.architecture != LambdaArchitecture.default) {
+            if (parameters.architecture != LambdaArchitecture.DEFAULT) {
                 addParameter("--architecture")
                 addParameter(parameters.architecture.toString())
             }

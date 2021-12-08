@@ -16,6 +16,6 @@ fun LambdaRuntime.minSamInitVersion(): SemVer =
     minSamInit?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamInitVersion! It should be a semver string!") }
         ?: SamExecutable.minVersion
 
-fun LambdaArchitecture.minSamInitVersion(): SemVer =
-    minSamInit?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamInitVersion! It should be a semver string!") }
+fun LambdaArchitecture.minSamVersion(): SemVer =
+    minSam?.let { SemVer.parseFromText(it) ?: throw IllegalStateException("$this has bad minSamInitVersion! It should be a semver string!") }
         ?: SamExecutable.minVersion

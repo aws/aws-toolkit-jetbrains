@@ -7,10 +7,10 @@ import software.amazon.awssdk.services.lambda.model.Architecture
 
 enum class LambdaArchitecture(
     private val architecture: Architecture,
-    val minSamInit: String? = null,
+    val minSam: String? = null,
 ) {
     X86_64(Architecture.X86_64),
-    ARM64(Architecture.ARM64, minSamInit = "1.33.0");
+    ARM64(Architecture.ARM64, minSam = "1.33.0");
 
     override fun toString() = architecture.toString()
 
@@ -25,6 +25,6 @@ enum class LambdaArchitecture(
 
         fun fromValue(value: Architecture): LambdaArchitecture? = values().find { it.architecture == value }
 
-        val default = X86_64
+        val DEFAULT = X86_64
     }
 }

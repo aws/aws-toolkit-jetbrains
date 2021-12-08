@@ -19,6 +19,7 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.BadEx
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType.Companion.getExecutable
 import software.aws.toolkits.jetbrains.services.lambda.minSamInitVersion
+import software.aws.toolkits.jetbrains.services.lambda.minSamVersion
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
@@ -200,7 +201,7 @@ class SamInitSelectionPanel(
         }
 
         val selectedArchitecture = architectures.selected ?: return templateComboBox.validationInfo(message("sam.init.error.no.architecture.selected"))
-        val minArchitectureSamVersion = selectedArchitecture.minSamInitVersion()
+        val minArchitectureSamVersion = selectedArchitecture.minSamVersion()
         if (samVersion < minArchitectureSamVersion) {
             return ValidationInfo(message("sam.executable.minimum_too_low_architecture", selectedArchitecture, minArchitectureSamVersion), runtimeComboBox)
         }

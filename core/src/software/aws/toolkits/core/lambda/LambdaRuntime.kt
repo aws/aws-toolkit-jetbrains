@@ -9,7 +9,7 @@ enum class LambdaRuntime(
     private val runtime: Runtime?,
     val minSamInit: String? = null,
     val minSamDebugging: String? = null,
-    val architectures: List<LambdaArchitecture>? = listOf(LambdaArchitecture.default),
+    val architectures: List<LambdaArchitecture>? = listOf(LambdaArchitecture.DEFAULT),
     private val runtimeOverride: String? = null
 ) {
     GO1_X(

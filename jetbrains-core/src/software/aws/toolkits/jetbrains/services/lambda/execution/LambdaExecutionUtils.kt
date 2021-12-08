@@ -96,15 +96,10 @@ fun String?.validateSupportedRuntime(): LambdaRuntime {
     return runtime
 }
 
-fun List<String>?.validateSupportedArchitectures(): LambdaArchitecture {
-    if (this == null || this.isEmpty()) {
-        return LambdaArchitecture.default
-    }
-    return this[0].validateSupportedArchitecture()
-}
+fun List<String>?.validateSupportedArchitectures(): LambdaArchitecture = this?.firstOrNull()?.validateSupportedArchitecture() ?: LambdaArchitecture.DEFAULT
 
 fun String?.validateSupportedArchitecture(): LambdaArchitecture {
-    val architectureString = this.nullize() ?: return LambdaArchitecture.default
+    val architectureString = this.nullize() ?: return LambdaArchitecture.DEFAULT
     return LambdaArchitecture.fromValue(architectureString)
         ?: throw RuntimeConfigurationError(message("lambda.run_configuration.unsupported_architecture", architectureString))
 }
