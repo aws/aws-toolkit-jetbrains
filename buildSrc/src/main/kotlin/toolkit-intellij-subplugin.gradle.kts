@@ -57,6 +57,16 @@ configurations {
         // Exclude dependencies we don't use to make plugin smaller
         exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
     }
+
+    // TODO: https://github.com/gradle/gradle/issues/15383
+    val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+    dependencies {
+        testImplementation(platform(versionCatalog.findDependency("junit5-bom").get()))
+        testImplementation(versionCatalog.findDependency("junit5-jupiterApi").get())
+
+        testRuntimeOnly(versionCatalog.findDependency("junit5-jupiterEngine").get())
+        testRuntimeOnly(versionCatalog.findDependency("junit5-jupiterVintage").get())
+    }
 }
 
 tasks.processResources {
@@ -123,6 +133,8 @@ tasks.buildSearchableOptions {
 tasks.withType<Test>().all {
     systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
+
+    useJUnitPlatform()
 }
 
 tasks.withType<JavaExec> {

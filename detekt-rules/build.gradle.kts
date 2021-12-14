@@ -16,4 +16,10 @@ dependencies {
     testImplementation(libs.detekt.test)
     testImplementation(libs.junit4)
     testImplementation(libs.assertj)
+
+    testRuntimeOnly(libs.junit5.jupiterVintage)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
