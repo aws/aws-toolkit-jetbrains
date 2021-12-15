@@ -5,6 +5,8 @@ package base
 
 import com.intellij.ide.GeneralSettings
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.runInEdtAndWait
+import com.jetbrains.rd.platform.diagnostics.LogTraceScenariosRegistry
 import com.jetbrains.rider.projectView.solutionDirectory
 import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
 import com.jetbrains.rider.test.debugger.XDebuggerTestHelper
@@ -51,6 +53,9 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
 
     @BeforeClass(alwaysRun = true)
     fun enableToolkitDebugLogging() {
+        runInEdtAndWait {
+            LogTraceScenariosRegistry.getInstance().save(listOf("Debugger"))
+        }
         // TODO: output formatting needs to be cleaned up bit it'll do the job for now
         Logger.getLogger("software.aws.toolkits").apply {
             level = Level.DEBUG
