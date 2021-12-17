@@ -10,7 +10,8 @@ object EcsExecExperiment : ToolkitExperiment(
     "ecsExec",
     { message("ecs.execute_command.experiment.title") },
     { message("ecs.execute_command.experiment.description") },
-    default = true
+    default = true,
+    hidden = true
 )
 
 object EcsCloudDebugExperiment : ToolkitExperiment(
