@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.ecs.exec
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.ecs.model.Service
@@ -32,10 +33,16 @@ class EnableEcsExecuteCommand :
     }
 
     override fun update(selected: EcsServiceNode, e: AnActionEvent) {
-        e.presentation.isVisible = !selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn()) && EcsExecExperiment.isEnabled()
+        e.presentation.isVisible = !selected.executeCommandEnabled() && EcsExecExperiment.isEnabled()
     }
 
     private fun enableExecuteCommand(project: Project, service: Service) {
-        EcsExecUtils.updateExecuteCommandFlag(project, service, enabled = true)
+        if (EcsUtils.isInstrumented(service.serviceArn())) {
+            runInEdt {
+                DisableCloudDebugWarning(project).show()
+            }
+        } else {
+            EcsExecUtils.updateExecuteCommandFlag(project, service, enabled = true)
+        }
     }
 }

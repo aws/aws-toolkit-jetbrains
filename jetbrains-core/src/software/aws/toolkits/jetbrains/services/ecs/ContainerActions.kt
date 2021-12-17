@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
 import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
+import software.aws.toolkits.jetbrains.services.ecs.exec.DisableCloudDebugWarning
 import software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecUtils
 import software.aws.toolkits.jetbrains.services.ecs.exec.OpenShellInContainerDialog
 import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog
@@ -140,21 +141,26 @@ class ExecuteCommandAction(
     private val coroutineScope = projectCoroutineScope(project)
     override fun actionPerformed(e: AnActionEvent) {
         coroutineScope.launch {
-            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+            if (EcsUtils.isInstrumented(container.service.serviceArn())) {
                 runInEdt {
-                    project.withAwsConnection {
-                        RunCommandDialog(project, container, it).show()
-                    }
+                    DisableCloudDebugWarning(project).show()
                 }
             } else {
-                notifyWarn(message("ecs.execute_command_run"), message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project)
+                if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+                    runInEdt {
+                        project.withAwsConnection {
+                            RunCommandDialog(project, container, it).show()
+                        }
+                    }
+                } else {
+                    notifyWarn(message("ecs.execute_command_run"), message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project)
+                }
             }
         }
     }
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn()) && EcsExecExperiment.isEnabled()
+        e.presentation.isVisible = container.service.enableExecuteCommand() && EcsExecExperiment.isEnabled()
     }
 }
 
@@ -165,24 +171,29 @@ class ExecuteCommandInShellAction(
     private val coroutineScope = projectCoroutineScope(project)
     override fun actionPerformed(e: AnActionEvent) {
         coroutineScope.launch {
-            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+            if (EcsUtils.isInstrumented(container.service.serviceArn())) {
                 runInEdt {
-                    project.withAwsConnection {
-                        OpenShellInContainerDialog(project, container, it).show()
-                    }
+                    DisableCloudDebugWarning(project).show()
                 }
             } else {
-                notifyWarn(
-                    message("ecs.execute_command_run_command_in_shell"),
-                    message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project
-                )
+                if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+                    runInEdt {
+                        project.withAwsConnection {
+                            OpenShellInContainerDialog(project, container, it).show()
+                        }
+                    }
+                } else {
+                    notifyWarn(
+                        message("ecs.execute_command_run_command_in_shell"),
+                        message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project
+                    )
+                }
             }
         }
     }
 
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn()) &&
             pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal") && EcsExecExperiment.isEnabled()
     }
 }
