@@ -28,7 +28,8 @@ class ArnPsiReferenceContributor : PsiReferenceContributor() {
                     return false
                 }
             },
-            ArnPsiReferenceProvider(), PsiReferenceRegistrar.LOWER_PRIORITY
+            ArnPsiReferenceProvider(),
+            PsiReferenceRegistrar.LOWER_PRIORITY
         )
     }
 }
