@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.utils
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.execution.ExecutionListener
 import com.intellij.execution.ExecutionManager
 import com.intellij.execution.ExecutorRegistry
@@ -57,7 +59,13 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
             val executionEnvironment = executionEnvironmentBuilder.build()
 
             val listener = object : OutputListener() {
+                override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
+                    println("Received processWillTerminate for ${event.processHandler}")
+                    super.processWillTerminate(event, willBeDestroyed)
+                }
+
                 override fun processTerminated(event: ProcessEvent) {
+                    println("Received processTerminated for ${event.processHandler}")
                     super.processTerminated(event)
                     executionFuture.complete(this.output)
                 }
@@ -66,6 +74,16 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
             runConfiguration.project.messageBus.connect(executionEnvironment).subscribe(
                 ExecutionManager.EXECUTION_TOPIC,
                 object : ExecutionListener {
+                    override fun processTerminating(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+                        println("Execution topic listener called processTerminating for $handler")
+                        super.processTerminating(executorId, env, handler)
+                    }
+
+                    override fun processTerminated(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler, exitCode: Int) {
+                        println("Execution topic listener called processTerminated with exit code $exitCode for $handler")
+                        super.processTerminated(executorId, env, handler, exitCode)
+                    }
+
                     override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
                         handler.addProcessListener(listener)
                     }
@@ -255,4 +273,10 @@ fun assumeImageSupport() {
         SemVer.parseFromText(it)
     }
     assumeTrue(samVersion?.isGreaterOrEqualThan(minImageVersion) == true)
+}
+
+// Extracts the last json structure. Needed since output has all build output and sam cli messages
+// TODO: handle JSON with nested objects
+fun jsonToMap(data: String) = data.substringAfterLast("{").substringBefore("}").let {
+    jacksonObjectMapper().readValue<Map<String, String>>("{$it}")
 }
