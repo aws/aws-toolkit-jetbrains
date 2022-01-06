@@ -14,14 +14,12 @@ import io.gitlab.arturbosch.detekt.rules.fqNameOrNull
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.psiUtil.getCallNameExpression
 import org.jetbrains.kotlin.resolve.BindingContext
+import org.jetbrains.kotlin.resolve.calls.callUtil.getReceiverExpression
 import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
 
 @RequiresTypeResolution
 class LazyLogRule : Rule() {
     override val issue = Issue("LazyLog", Severity.Style, "Use lazy logging synatax (e.g. warning {\"abc\"} ) instead of warning(\"abc\")", Debt.FIVE_MINS)
-
-    private val logMethods = setOf("error", "warn", "info", "debug", "trace")
-    private val loggerFQDN = "org.slf4j.Logger"
 
     // UI tests have issues with this TODO see if we want multiple detekt.yml files or disable for certain modules in this rule
     private val optOut = setOf("software.aws.toolkits.jetbrains.uitests")
@@ -38,22 +36,29 @@ class LazyLogRule : Rule() {
             }
 
             if (bindingContext == BindingContext.EMPTY) return
-            val type = it.getResolvedCall(bindingContext)?.extensionReceiver?.type?.fqNameOrNull()?.asString()
-                ?: it.getResolvedCall(bindingContext)?.dispatchReceiver?.type?.fqNameOrNull()?.asString()
+            val resolvedCall = it.getResolvedCall(bindingContext)
+            val type = resolvedCall?.extensionReceiver?.type?.fqNameOrNull()?.asString()
+                ?: resolvedCall?.dispatchReceiver?.type?.fqNameOrNull()?.asString()
 
-            if (type != loggerFQDN) {
+            if (type !in loggers) {
                 return
             }
 
             if (element.lambdaArguments.size != 1) {
+                val receiverName = resolvedCall?.getReceiverExpression()?.text ?: type
                 report(
                     CodeSmell(
                         issue,
                         Entity.from(element),
-                        message = "Use the lambda version of $type.${it.text} instead"
+                        message = "Use the lambda version of $receiverName.${it.text} instead"
                     )
                 )
             }
         }
+    }
+
+    companion object {
+        private val logMethods = setOf("error", "warn", "info", "debug", "trace")
+        val loggers = setOf("org.slf4j.Logger")
     }
 }
