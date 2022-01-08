@@ -1,7 +1,7 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.ssm
+package software.aws.toolkits.jetbrains.services.sam
 
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.ApplicationRule
@@ -11,8 +11,9 @@ import org.assertj.core.api.SoftAssertions
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import software.aws.toolkits.jetbrains.services.ssm.SamCli
 
-class SsmPluginTest {
+class SamCliTest {
     @Rule
     @JvmField
     val application = ApplicationRule()
@@ -23,15 +24,11 @@ class SsmPluginTest {
 
     @Test
     fun `download URLs all work`() {
-        val latest = SsmPlugin.determineLatestVersion()
+        val latest = SamCli.determineLatestVersion()
         SoftAssertions.assertSoftly { softly ->
             listOf(
-                SsmPlugin.windowsUrl(latest),
-                SsmPlugin.linuxArm64Url(latest),
-                SsmPlugin.linuxI64Url(latest),
-                SsmPlugin.ubuntuArm64Url(latest),
-                SsmPlugin.ubuntuI64Url(latest),
-                SsmPlugin.macUrl(latest)
+                SamCli.windowsUrl(latest),
+                SamCli.linuxUrl(latest)
             ).forEach { url ->
                 softly.assertThatCode { HttpRequests.head(url).tryConnect() }.doesNotThrowAnyException()
             }
@@ -41,21 +38,21 @@ class SsmPluginTest {
     @Test
     fun `end to end install works`() {
         val executableName = if (SystemInfo.isWindows) {
-            "session-manager-plugin.exe"
+            "sam.bat"
         } else {
-            "session-manager-plugin"
+            "sam"
         }
 
-        val latest = SsmPlugin.determineLatestVersion()
+        val latest = SamCli.determineLatestVersion()
         val downloadDir = tempFolder.newFolder().toPath()
         val installDir = tempFolder.newFolder().toPath()
 
-        val downloadedFile = SsmPlugin.downloadVersion(latest, downloadDir, null)
-        SsmPlugin.installVersion(latest, downloadedFile, installDir, null)
-        val tool = SsmPlugin.toTool(installDir)
+        val downloadedFile = SamCli.downloadVersion(latest, downloadDir, null)
+        SamCli.installVersion(latest, downloadedFile, installDir, null)
+        val tool = SamCli.toTool(installDir)
         assertThat(tool.path.fileName.toString()).isEqualTo(executableName)
 
-        val reportedLatest = SsmPlugin.determineVersion(tool.path)
+        val reportedLatest = SamCli.determineVersion(tool.path)
         assertThat(reportedLatest).isEqualTo(latest)
     }
 }

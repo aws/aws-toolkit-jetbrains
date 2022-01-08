@@ -14,7 +14,12 @@ fun ProcessOutput.checkSuccess(logger: Logger): Boolean {
         return true
     }
     logger.info { if (isTimeout) "Timed out" else "Exit code $code" }
-    logger.debug { stderr.takeIf { it.isNotEmpty() } ?: stdout }
+    logger.debug {
+        """
+            "stdout: $stdout"
+            "stderr: $stderr"
+        """.trimIndent()
+    }
 
     return false
 }

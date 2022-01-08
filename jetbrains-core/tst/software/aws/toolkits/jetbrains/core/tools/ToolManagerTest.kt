@@ -284,7 +284,7 @@ class ToolManagerTest {
 
         verify(type).determineLatestVersion()
         verify(type).downloadVersion(any(), any(), anyOrNull())
-        verify(type).installVersion(eq(downloadFile), eq(installPath), anyOrNull())
+        verify(type).installVersion(eq(version), eq(downloadFile), eq(installPath), anyOrNull())
         verify(type).toTool(eq(installPath))
     }
 
@@ -328,7 +328,7 @@ class ToolManagerTest {
 
             verify(type).determineLatestVersion()
             verify(type).downloadVersion(any(), any(), anyOrNull())
-            verify(type).installVersion(eq(downloadFile), eq(installPath), anyOrNull())
+            verify(type).installVersion(any(), eq(downloadFile), eq(installPath), anyOrNull())
             verify(type).toTool(eq(installPath))
         }
     }
@@ -376,7 +376,7 @@ class ToolManagerTest {
         val type = createManagedToolMock(toolId) {
             on { determineLatestVersion() } doReturn version
             on { downloadVersion(eq(version), any(), anyOrNull()) } doReturn downloadFile
-            on { installVersion(any(), any(), anyOrNull()) } doThrow error
+            on { installVersion(any(), any(), any(), anyOrNull()) } doThrow error
         }
 
         assertThat(markerFile).doesNotExist()
@@ -388,7 +388,7 @@ class ToolManagerTest {
 
         verify(type).determineLatestVersion()
         verify(type).downloadVersion(any(), any(), anyOrNull())
-        verify(type).installVersion(any(), any(), anyOrNull())
+        verify(type).installVersion(any(), any(), any(), anyOrNull())
     }
 
     @Test
@@ -493,7 +493,7 @@ class ToolManagerTest {
 
         verify(type).determineLatestVersion()
         verify(type, never()).downloadVersion(any(), any(), anyOrNull())
-        verify(type, never()).installVersion(any(), any(), anyOrNull())
+        verify(type, never()).installVersion(any(), any(), any(), anyOrNull())
     }
 
     @Test
@@ -524,7 +524,7 @@ class ToolManagerTest {
 
         verify(type).determineLatestVersion()
         verify(type, never()).downloadVersion(any(), any(), anyOrNull())
-        verify(type, never()).installVersion(any(), any(), anyOrNull())
+        verify(type, never()).installVersion(any(), any(), any(), anyOrNull())
     }
 
     private fun createUndetectableMock(toolId: String = aString(), stubBuilder: (KStubbing<ToolType<SemanticVersion>>).() -> Unit = {}) =

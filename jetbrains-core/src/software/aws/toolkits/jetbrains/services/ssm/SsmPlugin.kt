@@ -7,7 +7,6 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.util.io.Decompressor
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.getTextFromUrl
@@ -21,13 +20,14 @@ import software.aws.toolkits.jetbrains.core.tools.ManagedToolType
 import software.aws.toolkits.jetbrains.core.tools.Tool
 import software.aws.toolkits.jetbrains.core.tools.ToolType
 import software.aws.toolkits.jetbrains.core.tools.VersionRange
+import software.aws.toolkits.jetbrains.core.tools.extractZip
+import software.aws.toolkits.jetbrains.core.tools.findExe
+import software.aws.toolkits.jetbrains.core.tools.hasCommand
 import software.aws.toolkits.jetbrains.core.tools.until
 import software.aws.toolkits.jetbrains.utils.checkSuccess
 import software.aws.toolkits.telemetry.ToolId
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
-import kotlin.streams.asSequence
 
 object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPartVersion>, BaseToolType<FourPartVersion>() {
     private val hasDpkg by lazy { hasCommand("dpkg-deb") }
@@ -58,7 +58,8 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
         return destination
     }
 
-    override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
+    override fun installVersion(version: FourPartVersion, downloadArtifact: Path?, destinationDir: Path, indicator: ProgressIndicator?) {
+        downloadArtifact ?: throw IllegalStateException("Download artifact was not provided")
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
             "zip" -> extractZip(downloadArtifact, destinationDir)
             "rpm" -> runInstall(GeneralCommandLine("sh", "-c", """rpm2cpio "$downloadArtifact" | (cd "$destinationDir" && cpio -idmv)"""))
@@ -78,11 +79,7 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
             "session-manager-plugin"
         }
 
-        return Files.walk(installDir).use { files ->
-            files.asSequence().filter { it.fileName.toString() == executableName && Files.isExecutable(it) }
-                .map { Tool(this, it) }
-                .firstOrNull()
-        } ?: throw IllegalStateException("Failed to locate $executableName under $installDir")
+        return findExe(executableName, installDir)
     }
 
     override fun documentationUrl() =
@@ -114,28 +111,8 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
         }
     }
 
-    private fun extractZip(downloadArtifact: Path, destinationDir: Path) {
-        val decompressor = Decompressor.Zip(downloadArtifact).withZipExtensions()
-        if (!SystemInfo.isWindows) {
-            decompressor.extract(destinationDir)
-            return
-        }
-
-        // on windows there is a zip inside a zip :(
-        val tempDir = Files.createTempDirectory(id)
-        decompressor.extract(tempDir)
-
-        val intermediateZip = tempDir.resolve("package.zip")
-        Decompressor.Zip(intermediateZip).withZipExtensions().extract(destinationDir)
-    }
-
-    private fun hasCommand(cmd: String): Boolean {
-        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), EXECUTION_TIMEOUT.toMillis().toInt())
-        return output.exitCode == 0
-    }
     private val LOGGER = getLogger<SsmPlugin>()
     private const val BASE_URL = "https://s3.us-east-1.amazonaws.com/session-manager-downloads/plugin"
     private const val VERSION_FILE = "$BASE_URL/latest/VERSION"
-    private val EXECUTION_TIMEOUT = Duration.ofSeconds(5)
     private val INSTALL_TIMEOUT = Duration.ofSeconds(30)
 }

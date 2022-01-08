@@ -240,7 +240,7 @@ class DefaultToolManager @NonInjectable internal constructor(private val clock: 
                     if (installLocation.exists()) {
                         installLocation.delete(recursively = true)
                     }
-                    type.installVersion(downloadFile, installLocation, indicator)
+                    type.installVersion(version, downloadFile, installLocation, indicator)
 
                     // Check install before updating marker
                     val tool = type.toTool(installLocation)
