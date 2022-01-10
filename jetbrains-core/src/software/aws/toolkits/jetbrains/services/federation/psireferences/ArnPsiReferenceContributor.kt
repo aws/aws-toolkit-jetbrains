@@ -18,10 +18,8 @@ class ArnPsiReferenceContributor : PsiReferenceContributor() {
             ) {
                 override fun accepts(o: Any?, context: ProcessingContext): Boolean {
                     if (o == null || o !is PsiElement) return false
-                    val manipulator = ElementManipulators.getManipulator(o)
-                    if (manipulator == null) return false
 
-                    if (manipulator.getRangeInElement(o).substring(o.text).contains("arn:")) {
+                    if (o.text.contains("arn:")) {
                         return true
                     }
 
