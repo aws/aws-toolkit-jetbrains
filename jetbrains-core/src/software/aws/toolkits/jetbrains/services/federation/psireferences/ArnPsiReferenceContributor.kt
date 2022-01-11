@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.federation.psireferences
 
 import com.intellij.patterns.PsiElementPattern
-import com.intellij.psi.ElementManipulators
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiReferenceRegistrar
