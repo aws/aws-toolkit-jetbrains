@@ -7,7 +7,7 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master, feature/* ]
-    # PRs only need to run this if the SSM plugin logic has changed
+    # PRs only need to run this if the SAM CLI install logic has changed
     paths:
       - 'jetbrains-core/src/software/aws/toolkits/jetbrains/services/ssm/SsmPlugin.kt'
       - 'jetbrains-core/it/software/aws/toolkits/jetbrains/services/ssm/SsmPluginTest.kt'
