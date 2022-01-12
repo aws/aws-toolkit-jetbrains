@@ -1,6 +1,6 @@
 # This workflow tests the SSM plugin resolution and installation
 
-name: SSM Integration Test
+name: SAM CLI Install Integration Test
 
 on:
   push:
