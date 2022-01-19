@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.core.tools.VersionRange
 import software.aws.toolkits.jetbrains.core.tools.extractZip
 import software.aws.toolkits.jetbrains.core.tools.findExe
 import software.aws.toolkits.jetbrains.core.tools.until
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.utils.checkSuccess
 import software.aws.toolkits.telemetry.ToolId
 import java.nio.file.Files
@@ -99,14 +100,23 @@ object SamCli : ManagedToolType<SemanticVersion>, DocumentedToolType<SemanticVer
         }
     }
 
-    override fun determineLatestVersion(): SemanticVersion = parseVersion(
+    override fun determineLatestVersion(): SemanticVersion = SemanticVersion.parse(
         HttpRequests.head(LATEST_POINTER)
             .connect {
                 it.connection.url.path.substringAfterLast('/').substringAfter('v')
             }
     )
 
-    override fun parseVersion(output: String): SemanticVersion = SemanticVersion.parse(output)
+    override fun versionCommand(baseCmd: GeneralCommandLine) {
+        baseCmd.withParameters("--info")
+    }
+
+    override fun parseVersion(output: String): SemanticVersion =
+        SemanticVersion.parse(
+            SamCommon.mapper.readTree(output)
+                .get(SamCommon.SAM_INFO_VERSION_KEY)
+                .asText()
+        )
 
     override fun toTool(installDir: Path): Tool<ToolType<SemanticVersion>> {
         val executableName = if (SystemInfo.isWindows) {
