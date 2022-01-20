@@ -33,10 +33,9 @@ class ArnReference(element: PsiElement, textRange: TextRange, private val arn: S
                 return
             }
 
-            val (credProvider, region) = connectionSettings
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
-                    BrowserUtil.browse(AwsConsoleUrlFactory().getSigninUrl(credProvider.resolveCredentials(), "/go/view/$arn", region))
+                    BrowserUtil.browse(AwsConsoleUrlFactory.getSigninUrl(connectionSettings, "/go/view/$arn"))
                 } catch (e: Exception) {
                     val message = message("general.open_in_aws_console.error")
                     notifyError(content = message, project = project)
