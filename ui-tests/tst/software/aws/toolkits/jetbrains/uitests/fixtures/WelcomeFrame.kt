@@ -12,6 +12,7 @@ import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import java.nio.file.Path
 import java.time.Duration
 
@@ -37,7 +38,13 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     }
 
     fun selectTab(tabName: String) {
-        jList(byXpath("//div[@accessiblename='Welcome screen categories']")).clickItem(tabName)
+        // TODO: FIX_WHEN_MIN_IS_213
+        try {
+            find<JTreeFixture>(JTreeFixture.byType()).clickRowWithText(tabName, fullMatch = false)
+        } catch (e: WaitForConditionTimeoutException) {
+            // <2021.3
+            jList(byXpath("//div[@accessiblename='Welcome screen categories']")).clickItem(tabName)
+        }
     }
 
     fun openFolder(path: Path) {
