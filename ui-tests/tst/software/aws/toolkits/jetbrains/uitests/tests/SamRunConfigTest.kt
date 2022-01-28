@@ -53,7 +53,7 @@ class SamRunConfigTest {
 
             idea {
                 waitForBackgroundTasks()
-                findAndClick("//div[@class='RunConfigurationsComboBoxButton']")
+                findAndClick("//div[contains(@accessiblename,'Add Configuration')]")
                 step("Create and populate template based run configuration") {
                     addRunConfig()
                     step("Populate run configuration") {
@@ -75,7 +75,7 @@ class SamRunConfigTest {
                 step("Validate template run configuration was saved and loads properly") {
                     step("Reopen the run configuration") {
                         findAndClick("//div[@accessiblename='[Local] SomeFunction']")
-                        find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations...")
+                        find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations", fullMatch = false)
                     }
                     step("Assert the same function is selected") {
                         assertThat(functionModel().selectedText()).isEqualTo("SomeFunction")
@@ -94,7 +94,7 @@ class SamRunConfigTest {
                 step("Setup handler based run configuration") {
                     step("Reopen the run configuration menu") {
                         findAndClick("//div[@accessiblename='[Local] SomeFunction']")
-                        find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations...")
+                        find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations", fullMatch = false)
                     }
                     addRunConfig()
                     find<ComboBoxFixture>(byXpath("(//div[@text='Runtime:']/following-sibling::div[@class='ComboBox'])[1]")).selectItem("java11")
@@ -107,7 +107,7 @@ class SamRunConfigTest {
                 step("Validate handler run configuration was saved and loads properly") {
                     step("Reopen the run configuration") {
                         findAndClick("//div[@accessiblename='[Local] App.handleRequest']")
-                        find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations...")
+                        find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations", fullMatch = false)
                     }
                     step("Assert the same handler is selected") {
                         val fixture = findRunDialog().find<ContainerFixture>(byXpath("//div[@class='HandlerPanel']"))

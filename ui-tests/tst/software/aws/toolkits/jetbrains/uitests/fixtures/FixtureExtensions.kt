@@ -21,7 +21,10 @@ fun ContainerFixture.findAndClick(xPath: String) = findByXpath(xPath).click()
 fun ContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
 
 fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
-    find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).runJs("component.setText('$text')")
+    find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).apply {
+        runJs("robot.focus(component)")
+        this.text = text
+    }
 }
 
 fun ContainerFixture.fillSearchTextField(text: String) = step("Fill search text field with $text") {
