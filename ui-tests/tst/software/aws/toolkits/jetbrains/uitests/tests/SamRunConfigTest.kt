@@ -10,7 +10,6 @@ import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
-import com.intellij.remoterobot.utils.waitFor
 import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
@@ -99,7 +98,10 @@ class SamRunConfigTest {
                         find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations", fullMatch = false)
                     }
                     addRunConfig()
-                    find<ComboBoxFixture>(byXpath("(//div[@text='Runtime:']/following-sibling::div[@class='ComboBox'])[1]"), Duration.ofSeconds(10)).selectItem("java11")
+                    find<ComboBoxFixture>(
+                        byXpath("(//div[@text='Runtime:']/following-sibling::div[@class='ComboBox'])[1]"),
+                        Duration.ofSeconds(10)
+                    ).selectItem("java11")
                     findAndClick("//div[@class='HandlerPanel']")
                     keyboard { enterText("helloworld.App::handleRequest") }
                     findAndClick("//div[@class='MyEditorTextField']")
