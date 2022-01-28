@@ -73,8 +73,8 @@ interface ManagedToolType<VersionScheme : Version> : ToolType<VersionScheme> {
      */
     val telemetryId: ToolId
     fun determineLatestVersion(): VersionScheme
-    fun downloadVersion(version: VersionScheme, destinationDir: Path, indicator: ProgressIndicator?): Path
-    fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?)
+    fun downloadVersion(version: VersionScheme, destinationDir: Path, indicator: ProgressIndicator?): Path?
+    fun installVersion(version: VersionScheme, downloadArtifact: Path?, destinationDir: Path, indicator: ProgressIndicator?)
     fun toTool(installDir: Path): Tool<ToolType<VersionScheme>>
 }
 
