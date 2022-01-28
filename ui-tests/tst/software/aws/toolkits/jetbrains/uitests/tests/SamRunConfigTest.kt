@@ -4,11 +4,13 @@
 package software.aws.toolkits.jetbrains.uitests.tests
 
 import com.intellij.remoterobot.fixtures.ComboBoxFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
+import com.intellij.remoterobot.utils.waitFor
 import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
@@ -97,7 +99,7 @@ class SamRunConfigTest {
                         find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations", fullMatch = false)
                     }
                     addRunConfig()
-                    find<ComboBoxFixture>(byXpath("(//div[@text='Runtime:']/following-sibling::div[@class='ComboBox'])[1]")).selectItem("java11")
+                    find<ComboBoxFixture>(byXpath("(//div[@text='Runtime:']/following-sibling::div[@class='ComboBox'])[1]"), Duration.ofSeconds(10)).selectItem("java11")
                     findAndClick("//div[@class='HandlerPanel']")
                     keyboard { enterText("helloworld.App::handleRequest") }
                     findAndClick("//div[@class='MyEditorTextField']")
@@ -121,15 +123,21 @@ class SamRunConfigTest {
         }
     }
 
-    private fun ContainerFixture.functionModel(): ComboBoxFixture =
-        find(byXpath("//div[@class='TextFieldWithBrowseButton']/following-sibling::div[@class='ComboBox']"))
+    private fun ContainerFixture.waitForConfigurationLoad() = find<ComponentFixture>(byXpath("//div[@text='Configuration']"), Duration.ofSeconds(10))
 
-    private fun ContainerFixture.findRunDialog() = find<DialogFixture>(DialogFixture.byTitleContains("Run"), Duration.ofSeconds(5))
+    private fun ContainerFixture.functionModel(): ComboBoxFixture {
+        waitForConfigurationLoad()
+        return find(byXpath("//div[@class='TextFieldWithBrowseButton']/following-sibling::div[@class='ComboBox']"))
+    }
+
+    private fun ContainerFixture.findRunDialog() = find<DialogFixture>(DialogFixture.byTitleContains("Run"), Duration.ofSeconds(10))
 
     private fun ContainerFixture.addRunConfig() {
         step("Add a local run configuration") {
             findRunDialog().findAndClick("//div[@accessiblename='Add New Configuration']")
             find<JTreeFixture>(byXpath("//div[@accessiblename='WizardTree' and @class='MyTree']")).clickPath("AWS Lambda", "Local")
+            // wait for run config panel to render
+            waitForConfigurationLoad()
         }
     }
 }
