@@ -53,7 +53,7 @@ class SamRunConfigTest {
 
             idea {
                 waitForBackgroundTasks()
-                findAndClick("//div[@accessiblename='Add Configuration...']")
+                findAndClick("//div[@class='RunConfigurationsComboBoxButton']")
                 step("Create and populate template based run configuration") {
                     addRunConfig()
                     step("Populate run configuration") {
