@@ -21,10 +21,13 @@ fun ContainerFixture.findAndClick(xPath: String) = findByXpath(xPath).click()
 fun ContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
 
 fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
-    find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).apply {
-        click()
-        this.text = text
-    }
+    find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).setTextWithoutFocus(text)
+}
+
+// swing robot appears to have issues acquiring focus on MATE desktop with some dialog windows
+// org.assertj.swing.exception.ActionFailedException: Focus change to javax.swing.JTextField[name=null, text='', enabled=true, visible=true, showing=true] failed focus owner: Null Component (js#8)
+fun JTextFieldFixture.setTextWithoutFocus(text: String) = apply {
+    runJs("component.setText('$text')")
 }
 
 fun ContainerFixture.fillSearchTextField(text: String) = step("Fill search text field with $text") {
@@ -49,10 +52,7 @@ fun ContainerFixture.clearSearchTextField() = step("Clear search text field") {
 }
 
 fun ContainerFixture.fillDeletionAndConfirm() = step("Fill in delete me and delete") {
-    find<JTextFieldFixture>(byXpath("//div[@accessiblename='Delete confirmation box']"), Duration.ofSeconds(5)).apply {
-        click()
-        this.text = "delete me"
-    }
+    find<JTextFieldFixture>(byXpath("//div[@accessiblename='Delete confirmation box']"), Duration.ofSeconds(5)).setTextWithoutFocus("deleteme")
     pressOk()
 }
 
