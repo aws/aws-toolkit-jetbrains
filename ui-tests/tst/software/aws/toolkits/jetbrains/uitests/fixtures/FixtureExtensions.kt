@@ -52,7 +52,7 @@ fun ContainerFixture.clearSearchTextField() = step("Clear search text field") {
 }
 
 fun ContainerFixture.fillDeletionAndConfirm() = step("Fill in delete me and delete") {
-    find<JTextFieldFixture>(byXpath("//div[@accessiblename='Delete confirmation box']"), Duration.ofSeconds(5)).setTextWithoutFocus("deleteme")
+    find<JTextFieldFixture>(byXpath("//div[@accessiblename='Delete confirmation box']"), Duration.ofSeconds(5)).setTextWithoutFocus("delete me")
     pressOk()
 }
 
