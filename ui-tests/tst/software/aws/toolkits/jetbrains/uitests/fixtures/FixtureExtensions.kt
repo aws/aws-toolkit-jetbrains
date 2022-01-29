@@ -22,7 +22,7 @@ fun ContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath
 
 fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {
     find<JTextFieldFixture>(byXpath("//div[@class='JTextField']"), Duration.ofSeconds(5)).apply {
-        runJs("robot.focus(component)")
+        click()
         this.text = text
     }
 }
@@ -49,7 +49,10 @@ fun ContainerFixture.clearSearchTextField() = step("Clear search text field") {
 }
 
 fun ContainerFixture.fillDeletionAndConfirm() = step("Fill in delete me and delete") {
-    find<JTextFieldFixture>(byXpath("//div[@accessiblename='Delete confirmation box']"), Duration.ofSeconds(5)).text = "delete me"
+    find<JTextFieldFixture>(byXpath("//div[@accessiblename='Delete confirmation box']"), Duration.ofSeconds(5)).apply {
+        click()
+        this.text = "delete me"
+    }
     pressOk()
 }
 
