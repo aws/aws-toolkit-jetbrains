@@ -11,13 +11,14 @@ import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
+import org.intellij.lang.annotations.Language
 import java.time.Duration
 
 fun ContainerFixture.pressOk() = findAndClick("//div[@text='OK']")
 fun ContainerFixture.pressDelete() = findAndClick("//div[@text='Delete']")
 fun ContainerFixture.pressCancel() = findAndClick("//div[@text='Cancel']")
 
-fun ContainerFixture.findAndClick(xPath: String) = findByXpath(xPath).click()
+fun ContainerFixture.findAndClick(@Language("XPath") xPath: String) = findByXpath(xPath).click()
 fun ContainerFixture.findByXpath(xPath: String) = find<ComponentFixture>(byXpath(xPath), Duration.ofSeconds(5))
 
 fun ContainerFixture.fillSingleTextField(text: String) = step("Fill single text field with $text") {

@@ -112,9 +112,10 @@ class SamRunConfigTest {
                     step("Reopen the run configuration") {
                         findAndClick("//div[@accessiblename='[Local] App.handleRequest']")
                         find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations", fullMatch = false)
+                        waitForConfigurationLoad()
                     }
                     step("Assert the same handler is selected") {
-                        val fixture = findRunDialog().find<ContainerFixture>(byXpath("//div[@class='HandlerPanel']"))
+                        val fixture = find<ContainerFixture>(byXpath("//div[@class='HandlerPanel']"))
                         assertThat(fixture.findAllText().joinToString("") { it.text }).isEqualTo("helloworld.App::handleRequest")
                     }
                     // We might want to assert no errors here in the future. However, since we do not import the project, we don't
