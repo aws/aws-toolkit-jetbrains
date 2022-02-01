@@ -57,12 +57,12 @@ abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : JBD
         super.save(dataSource, copyCredentials)
 
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalJdbcProperties,
+            dataSource.additionalProperties,
             CREDENTIAL_ID_PROPERTY,
             credentialSelector.getSelectedCredentialsProvider()
         )
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalJdbcProperties,
+            dataSource.additionalProperties,
             REGION_ID_PROPERTY,
             regionSelector.selectedRegion?.id
         )
@@ -74,7 +74,7 @@ abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : JBD
         val regionProvider = AwsRegionProvider.getInstance()
         val allRegions = regionProvider.allRegionsForService(serviceId)
         regionSelector.setRegions(allRegions.values.toMutableList())
-        val regionId = dataSource.additionalJdbcProperties[REGION_ID_PROPERTY]?.nullize()
+        val regionId = dataSource.additionalProperties[REGION_ID_PROPERTY]?.nullize()
         regionId?.let {
             allRegions[regionId]?.let {
                 regionSelector.selectedRegion = it
@@ -83,7 +83,7 @@ abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : JBD
 
         val credentialManager = CredentialManager.getInstance()
         credentialSelector.setCredentialsProviders(credentialManager.getCredentialIdentifiers())
-        val credentialId = dataSource.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
+        val credentialId = dataSource.additionalProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
         if (credentialId != null) {
             val credentialIdentifierById = credentialManager.getCredentialIdentifierById(credentialId)
             if (credentialIdentifierById != null) {
