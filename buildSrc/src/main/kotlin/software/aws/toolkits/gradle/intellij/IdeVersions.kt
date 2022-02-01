@@ -126,6 +126,43 @@ object IdeVersions {
                 rdGenVersion = "0.213.394",
                 nugetVersion = "2021.3.0"
             )
+        ),
+        Profile(
+            name = "2022.1",
+            community = ProductProfile(
+                sdkFlavor = IdeFlavor.IC,
+                sdkVersion = "221.3427-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "PythonCore:221.3427.103",
+                    "Docker:221.3427.103"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkFlavor = IdeFlavor.IU,
+                sdkVersion = "221.3427-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "Pythonid:221.3427.103",
+                    "org.jetbrains.plugins.go:221.3427.89"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2022.1-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+                ),
+                netFrameworkTarget = "net472",
+                rdGenVersion = "0.213.394",
+                nugetVersion = "2021.3.0"
+            )
         )
     ).associateBy { it.name }
 
