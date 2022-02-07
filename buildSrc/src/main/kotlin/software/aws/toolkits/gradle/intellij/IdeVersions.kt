@@ -160,8 +160,8 @@ object IdeVersions {
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
-                rdGenVersion = "0.213.394",
-                nugetVersion = "2021.3.0"
+                rdGenVersion = "2022.1.3",
+                nugetVersion = "2022.1.0-eap01"
             )
         )
     ).associateBy { it.name }
