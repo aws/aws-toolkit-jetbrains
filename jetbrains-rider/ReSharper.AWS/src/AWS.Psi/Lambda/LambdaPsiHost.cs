@@ -70,7 +70,8 @@ namespace AWS.Psi.Lambda
 
         private bool IsHandlerExists(Lifetime lifetime, int projectId, string className, string methodName)
         {
-            using (TryReadLockCookie.Create(NullProgressIndicator.Create(), _locks,
+            var indicator = NullProgressIndicator.CreateCancellable(lifetime);
+            using (TryReadLockCookie.Create(indicator, _locks,
                 () => !lifetime.IsAlive || _locks.ContentModelLocks.IsWriteLockRequested))
             {
                 var project = _projectModelViewHost.GetItemById<IProject>(projectId);
@@ -87,7 +88,7 @@ namespace AWS.Psi.Lambda
                         var typeElements = scope.GetElementsByQualifiedName(className).OfType<IClass>();
                         foreach (var typeElement in typeElements)
                         {
-                            InterruptableActivityCookie.CheckAndThrow();
+                            InterruptableActivityCookie.CheckAndThrow(indicator);
                             foreach (var method in typeElement.Methods)
                             {
                                 if (method.ShortName != methodName) continue;
