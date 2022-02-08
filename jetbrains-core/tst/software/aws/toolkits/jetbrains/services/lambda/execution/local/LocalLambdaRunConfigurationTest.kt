@@ -671,7 +671,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration.templateFile()).isNull()
             assertThat(runConfiguration.logicalId()).isNull()
             assertThat(runConfiguration.handler()).isEqualTo("helloworld.App::handleRequest")
-            assertThat(runConfiguration.architecture()).isEqualTo(LambdaArchitecture.ARM64)
+            assertThat(runConfiguration.architecture()).isEqualTo(LambdaArchitecture.ARM64.toString())
             assertThat(runConfiguration.runtime()).isEqualTo(LambdaRuntime.PYTHON3_6)
             assertThat(runConfiguration.environmentVariables()).containsAllEntriesOf(mapOf("Foo" to "Bar"))
             assertThat(runConfiguration.regionId()).isEqualTo("us-west-2")
