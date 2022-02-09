@@ -70,7 +70,11 @@ namespace AWS.Psi.Lambda
 
         private bool IsHandlerExists(Lifetime lifetime, int projectId, string className, string methodName)
         {
+#if (PROFILE_2021_1) // FIX_WHEN_MIN_IS_212
+            var indicator = NullProgressIndicator.Create();
+#else
             var indicator = NullProgressIndicator.CreateCancellable(lifetime);
+#endif
             using (TryReadLockCookie.Create(indicator, _locks,
                 () => !lifetime.IsAlive || _locks.ContentModelLocks.IsWriteLockRequested))
             {
