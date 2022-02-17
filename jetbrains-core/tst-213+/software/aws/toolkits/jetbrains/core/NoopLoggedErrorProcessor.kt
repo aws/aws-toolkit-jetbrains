@@ -20,6 +20,8 @@ class NoopLoggedErrorProcessor : LoggedErrorProcessor() {
                 ret = f()
             }
 
+            // last expression should have set or thrown
+            @Suppress("UnsafeCallOnNullableType")
             return ret!!
         }
     }
