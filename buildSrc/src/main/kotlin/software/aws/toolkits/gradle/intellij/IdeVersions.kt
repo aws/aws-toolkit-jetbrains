@@ -131,18 +131,18 @@ object IdeVersions {
             name = "2022.1",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "221.4165-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "213.6777-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:221.4165.146",
-                    "Docker:221.4165.146"
+                    "PythonCore:213.6777.52",
+                    "Docker:213.6777.42"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "221.4165-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "213.6777-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
@@ -150,8 +150,8 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
-                    "Pythonid:221.4165.146",
-                    "org.jetbrains.plugins.go:221.4165.146"
+                    "Pythonid:213.6777.52",
+                    "org.jetbrains.plugins.go:213.6777.52"
                 )
             ),
             rider = RiderProfile(
@@ -160,8 +160,8 @@ object IdeVersions {
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
-                rdGenVersion = "2022.1.3",
-                nugetVersion = "2022.1.0-eap01"
+                rdGenVersion = "2022.1.4",
+                nugetVersion = "2022.1.0-eap03"
             )
         )
     ).associateBy { it.name }
