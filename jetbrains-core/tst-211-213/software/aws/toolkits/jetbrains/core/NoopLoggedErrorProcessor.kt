@@ -14,13 +14,12 @@ class NoopLoggedErrorProcessor : LoggedErrorProcessor() {
     companion object {
         private val instance by lazy { NoopLoggedErrorProcessor() }
 
-        fun <T> execute(f: () -> T): T {
-            return try {
+        fun <T> execute(f: () -> T): T =
+            try {
                 setNewInstance(instance)
                 f()
             } finally {
                 restoreDefaultProcessor()
             }
-        }
     }
 }
