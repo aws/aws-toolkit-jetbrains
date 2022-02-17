@@ -28,6 +28,7 @@ import org.junit.runner.Description
 import org.mockito.Mockito
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.NoopLoggedErrorProcessor
 import java.nio.file.Paths
 
 /**

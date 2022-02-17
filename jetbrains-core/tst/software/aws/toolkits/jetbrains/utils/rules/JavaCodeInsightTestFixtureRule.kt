@@ -29,6 +29,7 @@ import org.intellij.lang.annotations.Language
 import org.jetbrains.jps.model.java.JavaResourceRootType
 import org.jetbrains.jps.model.java.JavaSourceRootType
 import org.jetbrains.jps.model.module.JpsModuleSourceRootType
+import software.aws.toolkits.jetbrains.core.NoopLoggedErrorProcessor
 import java.io.File
 import java.nio.file.Paths
 
