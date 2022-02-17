@@ -131,18 +131,18 @@ object IdeVersions {
             name = "2022.1",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "213.6777-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "221.4165-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:213.6777.52",
-                    "Docker:213.6777.42"
+                    "PythonCore:221.4165.146",
+                    "Docker:221.4165.146"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "213.6777-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "221.4165-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
@@ -150,8 +150,8 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
-                    "Pythonid:213.6777.52",
-                    "org.jetbrains.plugins.go:213.6777.52"
+                    "Pythonid:221.4165.146",
+                    "org.jetbrains.plugins.go:221.4165.146"
                 )
             ),
             rider = RiderProfile(

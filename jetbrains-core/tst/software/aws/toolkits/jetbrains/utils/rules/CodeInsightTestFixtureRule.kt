@@ -46,7 +46,11 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
     }
 
     protected open fun createTestFixture(): CodeInsightTestFixture {
-        val fixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createLightFixtureBuilder(testDescription)
+        // HACK: 221.4165 snapshot broke binary compatability
+        // remove after https://github.com/JetBrains/intellij-community/commit/0e6212b7b5a07804287050a22bf9ce9d0f7116bd is available
+        val fixtureBuilder = NoopLoggedErrorProcessor.execute {
+            IdeaTestFixtureFactory.getFixtureFactory().createLightFixtureBuilder(testDescription)
+        }
         val newFixture = IdeaTestFixtureFactory.getFixtureFactory()
             .createCodeInsightFixture(fixtureBuilder.fixture, LightTempDirTestFixtureImpl(true))
         newFixture.setUp()
