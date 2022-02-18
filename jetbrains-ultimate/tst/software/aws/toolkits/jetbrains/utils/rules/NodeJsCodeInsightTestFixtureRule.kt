@@ -25,8 +25,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.text.SemVer
 import com.intellij.xdebugger.XDebuggerUtil
 import org.intellij.lang.annotations.Language
-import java.io.File
-import java.nio.file.Paths
 
 /**
  * JUnit test Rule that will create a Light [Project] and [CodeInsightTestFixture] with NodeJs support. Projects are
