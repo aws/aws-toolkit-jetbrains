@@ -7,8 +7,6 @@
     </extensions>
     <extensions defaultExtensionNs="Pythonid">
         <runConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionExtension"/>
-        <pythonCommandLineTargetEnvironmentProvider
-            implementation="software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionCommandLineTargetEnvironmentProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
