@@ -171,6 +171,7 @@ tasks.withType<RunIdeForUiTestTask>().all {
 
     systemProperty("aws.telemetry.skip_prompt", "true")
     systemProperty("aws.suppress_deprecation_prompt", true)
+    systemProperty("idea.trust.all.projects", "true")
 
     // These are experiments to enable for UI tests
     systemProperty("aws.experiment.connectedLocalTerminal", true)
