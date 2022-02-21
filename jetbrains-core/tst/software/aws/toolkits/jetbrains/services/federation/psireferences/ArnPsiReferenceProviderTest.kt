@@ -124,4 +124,35 @@ class ArnPsiReferenceProviderTest {
             }
         }
     }
+
+    @Test
+    fun `attaches single reference when multiple PSI elements are applicable`() {
+        // we assume that ElementManipulators do the correct thing for us
+        // language=YAML
+        val contents = """
+            Hello:
+              Some:
+                Nesting: arn:aws:lambda::123456789012:function
+        """.trimIndent()
+
+        val file = runInEdtAndGet {
+            projectRule.fixture.configureByText("yaml.yaml", contents)
+        }.virtualFile
+
+        val elements = mutableListOf<ArnReference>()
+        runReadAction {
+            PsiTreeUtil.processElements(
+                file.toPsi(projectRule.project),
+                PsiElementProcessor { child ->
+                    elements.addAll(child.references.filterIsInstance<ArnReference>())
+
+                    return@PsiElementProcessor true
+                }
+            )
+
+            assertThat(elements).hasSize(1).allSatisfy {
+                assertThat(it).isInstanceOf(ArnReference::class.java)
+            }
+        }
+    }
 }
