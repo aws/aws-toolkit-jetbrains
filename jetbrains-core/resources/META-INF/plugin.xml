@@ -270,7 +270,7 @@ with what features/services are supported.
         <!-- Open in Console -->
         <referenceProviderType key="commentsReferenceProvider"
                                implementationClass="software.aws.toolkits.jetbrains.services.federation.psireferences.ArnPsiReferenceProvider"/>
-        <psi.referenceContributor id="arnContributor" implementation="software.aws.toolkits.jetbrains.services.federation.psireferences.d"/>
+        <psi.referenceContributor id="arnContributor" implementation="software.aws.toolkits.jetbrains.services.federation.psireferences.ArnPsiReferenceContributor"/>
         <documentationProvider implementation="software.aws.toolkits.jetbrains.services.federation.psireferences.ArnReferenceDocumentationProvider"/>
 
         <registryKey key="aws.telemetry.endpoint" description="Endpoint to use for publishing AWS client-side telemetry" defaultValue="https://client-telemetry.us-east-1.amazonaws.com" restartRequired="true"/>

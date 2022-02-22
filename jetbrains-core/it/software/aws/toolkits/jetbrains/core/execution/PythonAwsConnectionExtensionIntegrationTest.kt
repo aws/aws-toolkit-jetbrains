@@ -52,11 +52,6 @@ class PythonAwsConnectionExtensionIntegrationTest {
     @JvmField
     val disposableRule = DisposableRule()
 
-//    @Rule
-//    @JvmField
-//    // TODO: fix connected exeuction when under targets api
-//    val registryRule = RegistryRule("python.use.targets.api", false)
-
     @Test
     fun happyPathPythonConnectionInjection() {
         val file = projectRule.fixture.addFileToProject(
