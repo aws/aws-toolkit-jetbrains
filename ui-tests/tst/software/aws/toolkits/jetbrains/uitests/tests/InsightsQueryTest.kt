@@ -157,11 +157,7 @@ class InsightsQueryTest {
                 }
 
                 step("Verify new result tab selected") {
-                    // close the old one
-                    currentTab.rightClick()
-                    this@uiTest.find<ComponentFixture>(byXpath("//div[@text='Close Tab']")).click()
-
-                    find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and @visible_text!='$currentQueryId']")).click()
+                    find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and @visible_text!='Query: $currentQueryId']")).click()
                 }
 
                 val logResults = find<JTreeFixture>(byXpath("//div[@class='TableView']"), Duration.ofSeconds(5))
