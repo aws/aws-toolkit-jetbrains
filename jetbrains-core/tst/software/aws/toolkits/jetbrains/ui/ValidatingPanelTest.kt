@@ -136,6 +136,14 @@ class ValidatingPanelTest {
                         textFieldComponent = this
                     }
             }
+        }.apply {
+            // HACK: 221.4501 broke validation on input. delete this entire `apply` block when compile fails
+            // trick the registration logic
+            contentPanel.componentValidationsOnApply = contentPanel.componentValidations
+            // and reregister the validator
+            contentPanel.registerValidators(disposableRule.disposable) { map ->
+                updateActionButtons(map.isEmpty())
+            }
         }
 
         private fun JBTextField.validateText() = if (this.text.length < 5) ValidationInfo("Test Error, '${this.text}'.length() < 5", this) else null
@@ -153,6 +161,6 @@ class ValidatingPanelTest {
         }
 
         val textFieldValidator: ComponentValidator?
-            get() = ComponentValidator.getInstance(textFieldComponent).orElseGet(null)
+            get() = ComponentValidator.getInstance(textFieldComponent).orElse(null)
     }
 }
