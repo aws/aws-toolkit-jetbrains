@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.ui
 
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.ui.ComponentValidator
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.testFramework.ApplicationRule
@@ -137,12 +138,23 @@ class ValidatingPanelTest {
                     }
             }
         }.apply {
-            // HACK: 221.4501 broke validation on input. delete this entire `apply` block when compile fails
+            // HACK: 221.4501 broke validation on input. delete this entire `apply` block when on a later snapshot
             // trick the registration logic
-            contentPanel.componentValidationsOnApply = contentPanel.componentValidations
-            // and reregister the validator
-            contentPanel.registerValidators(disposableRule.disposable) { map ->
-                updateActionButtons(map.isEmpty())
+            val info = ApplicationInfo.getInstance()
+            if (info.majorVersion == "2022" && info.minorVersionMainPart == "1") {
+                if (info.build.asStringWithoutProductCodeAndSnapshot() > "221.4501.171") {
+                    throw RuntimeException("Delete validating panel test hack")
+                }
+
+                // reflection so it's easier to delete the hack later
+                val clazz = contentPanel::class.java
+                val componentValidations = clazz.getMethod("getComponentValidations")
+                val setComponentValidationsOnApply = clazz.getMethod("setComponentValidationsOnApply", Map::class.java)
+                setComponentValidationsOnApply.invoke(contentPanel, componentValidations.invoke(contentPanel))
+                // and reregister the validator
+                contentPanel.registerValidators(disposableRule.disposable) { map ->
+                    updateActionButtons(map.isEmpty())
+                }
             }
         }
 
