@@ -159,7 +159,7 @@ class InsightsQueryTest {
                 step("Verify new result tab selected") {
                     // close the old one
                     currentTab.rightClick()
-                    find<ComponentFixture>(byXpath("//div[@text='Close Tab']")).click()
+                    this@uiTest.find<ComponentFixture>(byXpath("//div[@text='Close Tab']")).click()
 
                     find<JLabelFixture>(byXpath("//div[@class='ContentTabLabel' and @visible_text!='$currentQueryId']")).click()
                 }
