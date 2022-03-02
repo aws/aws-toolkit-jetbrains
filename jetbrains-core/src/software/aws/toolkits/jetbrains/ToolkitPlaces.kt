@@ -6,5 +6,4 @@ package software.aws.toolkits.jetbrains
 object ToolkitPlaces {
     const val EXPLORER_TOOL_WINDOW = "ExplorerToolWindow"
     const val EDITOR_PSI_REFERENCE = "Editor"
-    const val INTENTION_ACTION = "IntentionAction"
 }
