@@ -26,6 +26,8 @@ import java.nio.file.Files
 
 class Dotnet31LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda3X", LambdaRuntime.DOTNETCORE3_1)
 
+class Dotnet60LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda6X", LambdaRuntime.DOTNET6_0)
+
 class Dotnet31LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda3X", LambdaRuntime.DOTNETCORE3_1)
 
