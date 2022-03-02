@@ -17,40 +17,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2020.3",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2020.3",
-                plugins = commonPlugins + listOf(
-                    "java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "PythonCore:203.5981.165",
-                    "Docker:203.5981.155"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2020.3",
-                plugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "Pythonid:203.5981.165",
-                    "org.jetbrains.plugins.go:203.5981.114"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2020.3.2",
-                plugins = commonPlugins + listOf(
-                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-                ),
-                netFrameworkTarget = "net461",
-                rdGenVersion = "0.203.161",
-                nugetVersion = "2020.3.0"
-            )
-        ),
-        Profile(
             name = "2021.1",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
@@ -159,6 +125,43 @@ object IdeVersions {
                 netFrameworkTarget = "net472",
                 rdGenVersion = "0.213.394",
                 nugetVersion = "2021.3.0"
+            )
+        ),
+        Profile(
+            name = "2022.1",
+            community = ProductProfile(
+                sdkFlavor = IdeFlavor.IC,
+                sdkVersion = "221.4501-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "PythonCore:221.4501.155",
+                    "Docker:221.4501.155"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkFlavor = IdeFlavor.IU,
+                sdkVersion = "221.4501-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "Pythonid:221.4501.155",
+                    "org.jetbrains.plugins.go:221.4501.155"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2022.1-EAP3-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+                ),
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2022.1.3",
+                nugetVersion = "2022.1.0-eap03"
             )
         )
     ).associateBy { it.name }
