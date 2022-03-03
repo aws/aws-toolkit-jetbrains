@@ -58,8 +58,10 @@ class ArnPsiReferenceProviderTest {
     fun `matches subset if arn is partially valid`() {
         val pairs = listOf(
             "arn:arn:aws:lambda::123456789012:function:ad\"sfadfsa" to "arn:aws:lambda::123456789012:function:ad",
-            "arn:aws:iam::123456789012:user/Development/product_1234/*" to "arn:aws:iam::123456789012:user/Development/product_1234/",
-            "arn:aws:s3:::my_corporate_bucket/Development/*" to "arn:aws:s3:::my_corporate_bucket/Development/"
+            "arn:arn:aws:lambda::123456789012:function:ad   adsfa\"sfadfsa" to "arn:aws:lambda::123456789012:function:ad",
+            "arn:aws:iam::123456789012:user/Development/product_1234/*" to "arn:aws:iam::123456789012:user/Development/product_1234/*",
+            "arn:aws:s3:::my_corporate_bucket/Development/*" to "arn:aws:s3:::my_corporate_bucket/Development/*",
+            "arn:aws:s3:::my_corporate_bucket/Development/dasfa " to "arn:aws:s3:::my_corporate_bucket/Development/dasfa"
         )
 
         pairs.forEach { pair ->
@@ -81,7 +83,6 @@ class ArnPsiReferenceProviderTest {
         val contents = """
             class TestClass {
                 // an amazing comment with arn: $expected
-                String multiple = "$expected adsfasdfdaf some filler $expected";
                 /*
                 * a C-style $expected comment
                 */
@@ -117,7 +118,7 @@ class ArnPsiReferenceProviderTest {
                 }
             )
 
-            assertThat(elements).hasSize(7).allSatisfy {
+            assertThat(elements).hasSize(5).allSatisfy {
                 assertThat(it.value)
                     .withFailMessage { "Expected ArnReference with value of '$expected' from PsiElement: $it" }
                     .isEqualTo(expected)
