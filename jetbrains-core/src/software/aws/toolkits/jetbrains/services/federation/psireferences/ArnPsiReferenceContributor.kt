@@ -9,6 +9,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiReferenceRegistrar
 import com.intellij.util.ProcessingContext
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 
 class ArnPsiReferenceContributor : PsiReferenceContributor() {
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
@@ -22,10 +25,17 @@ class ArnPsiReferenceContributor : PsiReferenceContributor() {
                     if (manipulator == null) return false
 
                     try {
-                        if (manipulator.getRangeInElement(o).substring(o.text).contains("arn:")) {
+                        val text = o.text
+                        val range = manipulator.getRangeInElement(o)
+                        if (range.length > text.length || range.endOffset > text.length) {
+                            LOG.debug { "Manipulator range: $range doesn't fit in PsiElement text: $text" }
+                            return false
+                        }
+                        if (range.substring(text).contains("arn:")) {
                             return true
                         }
                     } catch (e: Exception) {
+                        LOG.error(e) { "Error while checking PsiElement" }
                         return false
                     }
 
@@ -35,5 +45,9 @@ class ArnPsiReferenceContributor : PsiReferenceContributor() {
             ArnPsiReferenceProvider(),
             PsiReferenceRegistrar.LOWER_PRIORITY
         )
+    }
+
+    companion object {
+        private val LOG = getLogger<ArnPsiReferenceContributor>()
     }
 }
