@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix issue when running typescript lamda in windows where paths aren't being escaped"
+}
