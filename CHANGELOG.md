@@ -1,3 +1,18 @@
+# _1.40_ (2022-03-07)
+- **(Bug Fix)** Fix logged error due to ARN contributor taking too long ([#3085](https://github.com/aws/aws-toolkit-jetbrains/issues/3085))
+
+# _1.39_ (2022-03-03)
+- **(Feature)** Added in 1.37: The toolkit will now offer to open ARNs present in your code editor in your browser
+- **(Feature)** Added support for .NET 6 runtime for creating and debugging SAM functions
+- **(Bug Fix)** Fix issue where console federation with long-term credentails results in session with no permissions
+
+# _1.38_ (2022-02-17)
+- **(Bug Fix)** Fix StringIndexOutOfBoundsException ([#3025](https://github.com/aws/aws-toolkit-jetbrains/issues/3025))
+- **(Bug Fix)** Fix regression preventing ECR repository creation
+- **(Bug Fix)** Fix Lambda run configuration exception while setting handler architecture
+- **(Bug Fix)** Fix image-based Lambda debugging for Python 3.6
+- **(Removal)** Removed support for 2020.3.x IDEs
+
 # _1.37_ (2022-01-06)
 - **(Feature)** Add SAM Lambda ARM support
 - **(Bug Fix)** Fix plugin deprecation warning in DynamoDB viewer ([#2987](https://github.com/aws/aws-toolkit-jetbrains/issues/2987))
