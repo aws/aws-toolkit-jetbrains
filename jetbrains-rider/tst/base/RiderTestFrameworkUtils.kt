@@ -31,17 +31,19 @@ val dotNetSdk by lazy {
     val version = ApplicationInfo.getInstance().build.baselineVersion
 
     val sdk = when {
-        // FIX_WHEN_MIN_IS_221: .NET 6.0 requires at least 221
-        version < 221 ->
+        // FIX_WHEN_MIN_IS_212: Rider is not aware of .NET 6.0 until 212
+        version < 212 ->
             versions.firstOrNull { it.first.major < 6 }
                 ?: throw RuntimeException("Current IDE profile '$version' requires .NET < 6, but only found: $versions")
         // otherwise use latest
         else -> versions.first()
     }
 
-    val (sdkVersion, sdkPath) = sdk
+    val (sdkVersion, sdkRoot) = sdk
+    val sdkVersionFolder = sdkVersion.rawVersion
+    val sdkPath = Paths.get(sdkRoot, sdkVersionFolder).toAbsolutePath().toString()
 
-    println("Using .NET SDK '${sdkVersion.rawVersion}' at path: '$sdkPath'")
+    println("Using .NET SDK '$sdkVersionFolder' at path: '$sdkPath'")
 
     return@lazy sdkPath
 }
