@@ -5,24 +5,49 @@ package base
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
+import com.intellij.util.text.SemVer
 import com.jetbrains.rider.test.base.PrepareTestEnvironment
 import java.io.File
+import java.nio.file.Paths
 
-val dotNetSdk by lazy {
-    val output = ExecUtil.execAndGetOutput(GeneralCommandLine("dotnet", "--version"))
-    if (output.exitCode == 0) {
-        "C:\\Program Files\\dotnet\\sdk\\${output.stdout.trim()}".also {
-            println("Using dotnet SDK at $it")
-        }
-    } else {
+val versions by lazy {
+    // would be nice if this were json https://github.com/dotnet/runtime/issues/3049
+    val output = ExecUtil.execAndGetOutput(GeneralCommandLine("dotnet", "--list-sdks"))
+    if (output.exitCode != 0) {
         throw IllegalStateException("Failed to locate dotnet version: ${output.stderr}")
     }
+
+    output.stdout.lines().map {
+        val (version, path) = it.split(' ', limit = 1)
+        val sdkSemVer = SemVer.parseFromText(version) ?: throw RuntimeException("Could not parse .NET SDK version as SemVar: $version")
+        sdkSemVer to path.trim('[', ']')
+    }.sortedByDescending { it.first }
+}
+
+val dotNetSdk by lazy {
+    val version = ApplicationInfo.getInstance().build.baselineVersion
+
+    val sdk = when {
+        // FIX_WHEN_MIN_IS_221: .NET 6.0 requires at least 221
+        version < 221 ->
+            versions.firstOrNull { it.first.major < 6 }
+                ?: throw RuntimeException("Current IDE profile '$version' requires .NET < 6, but only found: $versions")
+        // otherwise use latest
+        else -> versions.first()
+    }
+
+    val (sdkVersion, sdkPath) = sdk
+
+    println("Using .NET SDK '${sdkVersion.rawVersion}' at path: '$sdkPath'")
+
+    return@lazy sdkPath
 }
 
 val msBuild by lazy {
-    "${dotNetSdk}\\MSBuild.dll"
+    Paths.get(dotNetSdk, "MSBuild.dll").toAbsolutePath().toString()
 }
 
 // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_212
