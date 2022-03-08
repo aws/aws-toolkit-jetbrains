@@ -15,7 +15,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
@@ -29,6 +29,10 @@ class IamAuthWidgetTest {
     @Rule
     val regionProvider = MockRegionProviderRule()
 
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
+
     private lateinit var widget: IamAuthWidget
     private val credentialId = RuleUtils.randomName()
     private val defaultRegion = RuleUtils.randomName()
@@ -38,7 +42,7 @@ class IamAuthWidgetTest {
     @Before
     fun setUp() {
         widget = IamAuthWidget()
-        MockCredentialsManager.getInstance().addCredentials(credentialId, mockCreds)
+        credentialManagerRule.addCredentials(credentialId, mockCreds)
         regionProvider.addRegion(regionProvider.createAwsRegion(defaultRegion))
     }
 

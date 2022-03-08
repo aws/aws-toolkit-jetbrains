@@ -10,13 +10,12 @@ import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.Element
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 import software.aws.toolkits.jetbrains.utils.rules.ExperimentRule
@@ -39,12 +38,11 @@ class JavaAwsConnectionExtensionTest {
     @JvmField
     val registryRule = ExperimentRule(JavaAwsConnectionExperiment)
 
-    private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
 
-    @Before
-    fun setUp() {
-        MockCredentialsManager.getInstance().addCredentials("MockCredentials", mockCreds)
-    }
+    private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     @Test
     fun `Round trip persistence`() {

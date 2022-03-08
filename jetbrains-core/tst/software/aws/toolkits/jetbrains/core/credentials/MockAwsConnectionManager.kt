@@ -101,6 +101,7 @@ fun <T> runUnderRealCredentials(project: Project, block: () -> T): T {
     val credentials = DefaultCredentialsProvider.create().resolveCredentials()
 
     val manager = MockAwsConnectionManager.getInstance(project)
+    @Suppress("DEPRECATION")
     val credentialsManager = MockCredentialsManager.getInstance()
     val oldActive = manager.connectionSettings()?.credentials
     val realCredentialsProvider = credentialsManager.addCredentials("RealCredentials", credentials)

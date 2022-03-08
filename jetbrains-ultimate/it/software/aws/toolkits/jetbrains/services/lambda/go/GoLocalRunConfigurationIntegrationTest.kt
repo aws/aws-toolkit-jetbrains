@@ -27,7 +27,6 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.utils.UltimateTestUtils
@@ -138,7 +137,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
         val mockSessionId = "mockSessionId"
         val mockSessionCreds = AwsSessionCredentials.create("access", "secret", "session")
 
-        MockCredentialsManager.getInstance().addCredentials(mockSessionId, mockSessionCreds)
+        credentialManager.addCredentials(mockSessionId, mockSessionCreds)
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,

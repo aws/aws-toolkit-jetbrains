@@ -16,7 +16,7 @@ import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
 import software.aws.toolkits.jetbrains.utils.addBreakpoint
@@ -46,6 +46,10 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     @Rule
     @JvmField
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
+
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
@@ -84,13 +88,12 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             fixture.openFileInEditor(psiClass.containingFile.virtualFile)
         }
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+        credentialManagerRule.addCredentials(mockId, mockCreds)
     }
 
     @After
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
-        MockCredentialsManager.getInstance().reset()
     }
 
     @Test
