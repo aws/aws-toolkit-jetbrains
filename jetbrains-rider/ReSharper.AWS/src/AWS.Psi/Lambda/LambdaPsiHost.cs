@@ -14,7 +14,7 @@ using JetBrains.ReSharper.Psi.Modules;
 using JetBrains.ReSharper.Resources.Shell;
 using JetBrains.Util;
 
-#if (PROFILE_2020_2 || PROFILE_2020_3 || PROFILE_2021_1) // TODO: Remove preprocessor conditions FIX_WHEN_MIN_IS_212
+#if (PROFILE_2021_1) // TODO: Remove preprocessor conditions FIX_WHEN_MIN_IS_212
 using JetBrains.ReSharper.Host.Features;
 using JetBrains.ReSharper.Host.Features.ProjectModel.View;
 using JetBrains.ReSharper.Host.Platform.Icons;
@@ -70,7 +70,12 @@ namespace AWS.Psi.Lambda
 
         private bool IsHandlerExists(Lifetime lifetime, int projectId, string className, string methodName)
         {
-            using (TryReadLockCookie.Create(NullProgressIndicator.Create(), _locks,
+#if (PROFILE_2021_1) // FIX_WHEN_MIN_IS_212
+            var indicator = NullProgressIndicator.Create();
+#else
+            var indicator = NullProgressIndicator.CreateCancellable(lifetime);
+#endif
+            using (TryReadLockCookie.Create(indicator, _locks,
                 () => !lifetime.IsAlive || _locks.ContentModelLocks.IsWriteLockRequested))
             {
                 var project = _projectModelViewHost.GetItemById<IProject>(projectId);
@@ -87,7 +92,7 @@ namespace AWS.Psi.Lambda
                         var typeElements = scope.GetElementsByQualifiedName(className).OfType<IClass>();
                         foreach (var typeElement in typeElements)
                         {
-                            InterruptableActivityCookie.CheckAndThrow();
+                            InterruptableActivityCookie.CheckAndThrow(indicator);
                             foreach (var method in typeElement.Methods)
                             {
                                 if (method.ShortName != methodName) continue;

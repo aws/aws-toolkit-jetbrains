@@ -4,8 +4,6 @@
 import software.aws.toolkits.gradle.sdk.GenerateSdk
 import software.aws.toolkits.gradle.sdk.GenerateSdkExtension
 
-val awsSdkVersion: String by project
-
 val sdkGenerator = project.extensions.create<GenerateSdkExtension>("sdkGenerator")
 
 plugins {
@@ -27,8 +25,8 @@ sourceSets {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 tasks.withType<JavaCompile>().configureEach {

@@ -74,6 +74,10 @@ with what features/services are supported.
     <depends optional="true" config-file="ext-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
 
+    <xi:include href="/META-INF/IC-221.xml" xpointer="xpointer(/idea-plugin/*)">
+        <xi:fallback/>
+    </xi:include>
+
     <xi:include href="/META-INF/IU.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
     </xi:include>
@@ -263,6 +267,12 @@ with what features/services are supported.
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditorProvider"/>
         <fileIconProvider order="first" implementation="software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbFileIconProvider"/>
 
+        <!-- Open in Console -->
+        <referenceProviderType key="commentsReferenceProvider"
+                               implementationClass="software.aws.toolkits.jetbrains.services.federation.psireferences.ArnPsiReferenceProvider"/>
+        <psi.referenceContributor id="arnContributor" implementation="software.aws.toolkits.jetbrains.services.federation.psireferences.ArnPsiReferenceContributor"/>
+        <documentationProvider implementation="software.aws.toolkits.jetbrains.services.federation.psireferences.ArnReferenceDocumentationProvider"/>
+
         <registryKey key="aws.telemetry.endpoint" description="Endpoint to use for publishing AWS client-side telemetry" defaultValue="https://client-telemetry.us-east-1.amazonaws.com" restartRequired="true"/>
         <registryKey key="aws.telemetry.identityPool" description="Cognito identity pool to use for publishing AWS client-side telemetry" defaultValue="us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842" restartRequired="true"/>
         <registryKey key="aws.telemetry.region" description="Region to use for publishing AWS client-side telemetry" defaultValue="us-east-1" restartRequired="true"/>
@@ -315,6 +325,10 @@ with what features/services are supported.
         <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
         <action id="aws.settings.refresh"  class="software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction"/>
         <action id="aws.toolkit.showFeedback" class="software.aws.toolkits.jetbrains.ui.feedback.ShowFeedbackDialogAction"/>
+        <action id="aws.toolkit.open.arn.browser" class="software.aws.toolkits.jetbrains.services.federation.OpenArnInConsoleEditorPopupAction">
+            <add-to-group group-id="EditorPopupMenu"/>
+        </action>
+        
         <group id="aws.toolkit.explorer.titleBar" popup="false" compact="true">
             <reference id="aws.settings.refresh"/>
             <separator/>
