@@ -7,7 +7,6 @@ import com.intellij.execution.Location
 import com.intellij.execution.actions.ConfigurationContext
 import com.intellij.execution.actions.ConfigurationFromContext
 import com.intellij.execution.actions.RunConfigurationProducer
-import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.testFramework.MapDataContext
 import com.intellij.testFramework.ProjectRule
@@ -57,6 +56,6 @@ class EcsCloudDebugRunConfigurationProducerTest {
     private fun createContext(service: Service, dataContext: MapDataContext): ConfigurationContext {
         dataContext.put(CommonDataKeys.PROJECT, projectRule.project)
         dataContext.put(Location.DATA_KEY, EcsCloudDebugLocation(projectRule.project, service))
-        return ConfigurationContext.getFromContext(dataContext, ActionPlaces.UNKNOWN)
+        return ConfigurationContext.getFromContext(dataContext)
     }
 }
