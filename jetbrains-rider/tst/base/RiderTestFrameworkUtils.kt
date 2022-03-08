@@ -20,7 +20,7 @@ val versions by lazy {
         throw IllegalStateException("Failed to locate dotnet version: ${output.stderr}")
     }
 
-    output.stdout.lines().map {
+    output.stdout.trim().lines().map {
         val (version, path) = it.split(' ', limit = 2)
         val sdkSemVer = SemVer.parseFromText(version) ?: throw RuntimeException("Could not parse .NET SDK version as SemVar: $version")
         sdkSemVer to path.trim('[', ']')
