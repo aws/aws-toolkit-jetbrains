@@ -11,10 +11,10 @@ import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
 import com.jetbrains.rider.test.debugger.XDebuggerTestHelper
 import com.jetbrains.rider.test.protocol.testProtocolHost
 import com.jetbrains.rider.test.scriptingApi.getVirtualFileFromPath
-import com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
+import setUpCustomToolset
 import java.io.File
 
 /**

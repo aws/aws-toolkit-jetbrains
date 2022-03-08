@@ -21,7 +21,7 @@ val versions by lazy {
     }
 
     output.stdout.lines().map {
-        val (version, path) = it.split(' ', limit = 1)
+        val (version, path) = it.split(' ', limit = 2)
         val sdkSemVer = SemVer.parseFromText(version) ?: throw RuntimeException("Could not parse .NET SDK version as SemVar: $version")
         sdkSemVer to path.trim('[', ']')
     }.sortedByDescending { it.first }
