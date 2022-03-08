@@ -4,16 +4,10 @@
 package base
 
 import org.testng.annotations.AfterClass
-import org.testng.annotations.BeforeClass
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 
 interface TestWithMockCredentials {
-    var credentialManagerRule: MockCredentialManagerRule
-
-    @BeforeClass
-    fun initializeRule() {
-        credentialManagerRule = MockCredentialManagerRule()
-    }
+    val credentialManagerRule: MockCredentialManagerRule
 
     @AfterClass
     fun cleanUp() {
@@ -22,5 +16,7 @@ interface TestWithMockCredentials {
 }
 
 class TestWithMockCredentialsDelegate : TestWithMockCredentials {
-    override lateinit var credentialManagerRule: MockCredentialManagerRule
+    override val credentialManagerRule by lazy {
+        MockCredentialManagerRule()
+    }
 }

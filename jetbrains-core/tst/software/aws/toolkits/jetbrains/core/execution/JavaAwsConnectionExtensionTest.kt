@@ -10,6 +10,7 @@ import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.Element
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.doAnswer
@@ -43,6 +44,11 @@ class JavaAwsConnectionExtensionTest {
     val credentialManagerRule = MockCredentialManagerRule()
 
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+
+    @Before
+    fun setUp() {
+        credentialManagerRule.addCredentials("MockCredentials", mockCreds)
+    }
 
     @Test
     fun `Round trip persistence`() {
