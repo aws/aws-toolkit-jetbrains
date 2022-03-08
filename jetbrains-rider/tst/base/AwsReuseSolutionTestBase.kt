@@ -14,7 +14,6 @@ import com.jetbrains.rider.test.scriptingApi.getVirtualFileFromPath
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
-import setUpCustomToolset
 import java.io.File
 
 /**

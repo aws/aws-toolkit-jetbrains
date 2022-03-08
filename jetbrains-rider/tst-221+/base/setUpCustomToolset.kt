@@ -3,5 +3,8 @@
 
 package base
 
+import com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
+
 // FIX_WHEN_MIN_IS_221: signature changed in 221
-typealias setUpCustomToolset = com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
+fun setUpCustomToolset(path: String, host: com.jetbrains.rdclient.protocol.IProtocolHost) =
+    setUpCustomToolset(path, host)
