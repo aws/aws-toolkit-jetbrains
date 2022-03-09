@@ -65,6 +65,47 @@ tasks.withType<Test>().all {
         // don't instrument sdk, icons, etc.
         includes = listOf("software.aws.toolkits.*")
     }
+
+    // https://github.com/JetBrains/intellij-community/blob/8c9301405d1ac014f121eda8b5c371c41f6f2b95/plugins/devkit/devkit-core/src/run/OpenedPackages.txt
+    listOf(
+        "java.base/java.lang=ALL-UNNAMED",
+        "java.base/java.lang.reflect=ALL-UNNAMED",
+        "java.base/java.text=ALL-UNNAMED",
+        "java.base/java.time=ALL-UNNAMED",
+        "java.base/java.util=ALL-UNNAMED",
+        "java.base/java.util.concurrent=ALL-UNNAMED",
+        "java.base/java.io=ALL-UNNAMED",
+        "java.base/java.net=ALL-UNNAMED",
+        "java.base/java.nio.charset=ALL-UNNAMED",
+        "java.base/jdk.internal.vm=ALL-UNNAMED",
+        "java.base/sun.nio.ch=ALL-UNNAMED",
+        "java.desktop/java.awt=ALL-UNNAMED",
+        "java.desktop/java.awt.dnd.peer=ALL-UNNAMED",
+        "java.desktop/java.awt.event=ALL-UNNAMED",
+        "java.desktop/java.awt.image=ALL-UNNAMED",
+        "java.desktop/java.awt.peer=ALL-UNNAMED",
+        "java.desktop/javax.swing=ALL-UNNAMED",
+        "java.desktop/javax.swing.plaf.basic=ALL-UNNAMED",
+        "java.desktop/javax.swing.text.html=ALL-UNNAMED",
+        "java.desktop/sun.awt=ALL-UNNAMED",
+        "java.desktop/sun.awt.datatransfer=ALL-UNNAMED",
+        "java.desktop/sun.awt.image=ALL-UNNAMED",
+        "java.desktop/sun.awt.windows=ALL-UNNAMED",
+        "java.desktop/sun.awt.X11=ALL-UNNAMED",
+        "java.desktop/sun.font=ALL-UNNAMED",
+        "java.desktop/sun.java2d=ALL-UNNAMED",
+        "java.desktop/sun.lwawt=ALL-UNNAMED",
+        "java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
+        "java.desktop/sun.swing=ALL-UNNAMED",
+        "java.desktop/com.apple.eawt=ALL-UNNAMED",
+        "java.desktop/com.apple.eawt.event=ALL-UNNAMED",
+        "java.desktop/com.apple.laf=ALL-UNNAMED",
+        "jdk.attach/sun.tools.attach=ALL-UNNAMED",
+        "jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED",
+        "jdk.jdi/com.sun.tools.jdi=ALL-UNNAMED",
+    ).forEach {
+        jvmArgs("--add-opens=$it")
+    }
 }
 
 // Jacoco configs taken from official Gradle docs: https://docs.gradle.org/current/userguide/structuring_software_products.html
