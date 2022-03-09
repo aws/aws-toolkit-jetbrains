@@ -6,16 +6,14 @@ env:
     LOCAL_ENV_RUN: true
 
 phases:
-  install:
-    runtime-versions:
-      java: openjdk11
-
     commands:
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             choco install -y --no-progress codecov
         }
       - dotnet --list-sdks
+      - WMIC Product Where "Name Like 'Amazon Corretto%'" Call uninstall
+      - choco install -y correttojdk
 
   build:
     commands:
