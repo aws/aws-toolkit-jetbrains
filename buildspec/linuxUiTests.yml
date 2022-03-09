@@ -22,7 +22,7 @@ phases:
       dotnet: 3.1
 
     commands:
-      - yum uninstall -y java-11-amazon-corretto
+      - yum remove -y java-11-amazon-corretto
       - yum install -y java-17-amazon-corretto
       - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
       - startDesktop.sh

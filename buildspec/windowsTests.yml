@@ -6,6 +6,7 @@ env:
     LOCAL_ENV_RUN: true
 
 phases:
+  install:
     commands:
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
