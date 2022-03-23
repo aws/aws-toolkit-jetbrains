@@ -3,15 +3,24 @@
 
 import org.eclipse.jgit.api.Git
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
+import org.gradle.util.internal.JarUtil
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
+import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
+import proguard.ClassPath
+import proguard.Configuration
+import proguard.ConfigurationParser
+import proguard.ProGuard
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.isCi
+import java.io.FileOutputStream
 import java.io.IOException
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
 
 val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
 
@@ -199,5 +208,101 @@ tasks.withType<RunIdeForUiTestTask>().all {
             includes = listOf("software.aws.toolkits.*")
             output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
         }
+    }
+}
+
+val artifactType = Attribute.of("artifactType", String::class.java)
+val minified = Attribute.of("minified", Boolean::class.javaObjectType)
+
+dependencies {
+    attributesSchema {
+        attribute(minified)
+    }
+    artifactTypes.getByName("jar") {
+        attributes.attribute(minified, false)
+    }
+
+    registerTransform(Minify::class) {
+        from.attribute(minified, false).attribute(artifactType, "jar")
+        to.attribute(minified, true).attribute(artifactType, "jar")
+    }
+}
+
+configurations.compileClasspath {
+    afterEvaluate {
+        if (isCanBeResolved) {
+            attributes.attribute(minified, true)
+        }
+    }
+}
+
+configurations.runtimeClasspath {
+    afterEvaluate {
+        if (isCanBeResolved) {
+            attributes.attribute(minified, true)
+        }
+    }
+}
+
+@CacheableTransform
+abstract class Minify @Inject constructor(): TransformAction<TransformParameters.None> {
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    @get:InputArtifact
+    abstract val inputArtifact: Provider<FileSystemLocation>
+
+    @get:Classpath
+    @get:InputArtifactDependencies
+    abstract val runtimeClasspath: FileCollection
+
+    override
+    fun transform(outputs: TransformOutputs) {
+        val file = inputArtifact.get().asFile
+        val fileName = file.name
+        val nameWithoutExtension = fileName.substring(0, fileName.length - 4)
+        if (file.absolutePath.contains("software.amazon.awssdk") && fileName !in listOf("annotations-2.17.138.jar", "third-party-jackson-core-2.17.138.jar", "aws-query-protocol-2.17.138.jar")) {
+            minify(file, outputs.file("${nameWithoutExtension}-min.jar"))
+            return
+        }
+        println("Nothing to minify - using ${fileName} unchanged")
+        outputs.file(inputArtifact)
+    }
+
+    private fun minify(artifact: File, jarFile: File) {
+        println("Minifying ${artifact.name}")
+        println(jarFile)
+        val pgc = Configuration()
+
+        val args = arrayOf(
+            "-injars ${artifact}",
+            "-outjars ${jarFile}",
+            "-libraryjars <java.home>/jmods/java.base.jmod(!**.jar;!module-info.class)",
+            "-libraryjars <java.home>/jmods/java.desktop.jmod(!**.jar;!module-info.class)",
+            "-libraryjars ${runtimeClasspath.asFileTree.joinToString(separator = File.pathSeparator)}",
+            "-dontobfuscate",
+            "-dontwarn org.slf4j.**",
+            "-keepattributes *",
+            "-keep class !**.paginators.**,!**.*Async*,!software.amazon.awssdk.services.ec2.** { *; }",
+            "-keep interface !**.*Async*,!software.amazon.awssdk.services.ec2.** { *; }"
+            "-keep class software.amazon.awssdk.services.ec2.model.DescribeInstances*",
+            "-keep class software.amazon.awssdk.services.ec2.*Ec2BaseClientBuilder { *; }",
+            """
+                -keep interface software.amazon.awssdk.services.ec2.Ec2Client* {
+                    <init>(...);
+                    <fields>;
+                    *** describeInstances*(...);
+                }
+            """.trimIndent(),
+            """
+                -keep class * implements software.amazon.awssdk.services.ec2.Ec2Client* {
+                    <init>(...);
+                    <fields>;
+                    *** describeInstances*(...);
+                }
+            """.trimIndent()
+        )
+        println(args)
+        ConfigurationParser(args, System.getProperties()).parse(pgc)
+        val pg = ProGuard(pgc)
+        pg.execute()
     }
 }
