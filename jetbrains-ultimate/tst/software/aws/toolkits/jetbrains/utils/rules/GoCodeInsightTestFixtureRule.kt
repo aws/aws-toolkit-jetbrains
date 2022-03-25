@@ -120,7 +120,7 @@ fun CodeInsightTestFixture.ensureCorrectGoVersion(disposable: Disposable) {
     }
 
     val goVersionOverride = compatibleGoForIde()
-    goVersionOverride?.let {
+    goVersionOverride.let {
         val overrideLocation = this.tempDirPath
 
         installGoSdk(overrideLocation, it)
