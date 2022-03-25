@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.clouddebug
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.RuleChain
 import org.junit.After
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.mockito.kotlin.mock
@@ -61,6 +62,7 @@ abstract class CloudDebugTestCase(private val taskDefName: String) {
 
     @Before
     open fun setUp() {
+        assumeTrue(false)
         // does not validate that a SSM session is successfully created
         val region = AwsRegion("us-west-2", "US West 2", "aws")
         mockRegionProvider.addRegion(region)
