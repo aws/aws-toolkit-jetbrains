@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.ui
 
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.ui.ComponentValidator
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.testFramework.ApplicationRule
