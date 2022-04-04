@@ -136,8 +136,8 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:221.5080.57",
-                    "Docker:221.5080.36"
+                    "PythonCore:221.5080.106",
+                    "Docker:221.5080.106"
                 )
             ),
             ultimate = ProductProfile(
@@ -150,18 +150,18 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
-                    "Pythonid:221.5080.56",
-                    "org.jetbrains.plugins.go:221.5080.56"
+                    "Pythonid:221.5080.93",
+                    "org.jetbrains.plugins.go:221.5080.93"
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2022.1-EAP7-SNAPSHOT",
+                sdkVersion = "2022.1-EAP9-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2022.1.3",
-                nugetVersion = "2022.1.0-eap07"
+                nugetVersion = "2022.1.0-eap09"
             )
         )
     ).associateBy { it.name }
