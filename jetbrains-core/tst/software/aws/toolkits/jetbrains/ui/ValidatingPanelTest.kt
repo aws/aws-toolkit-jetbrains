@@ -137,25 +137,6 @@ class ValidatingPanelTest {
                         textFieldComponent = this
                     }
             }
-        }.apply {
-            // HACK: 221.4501 broke validation on input. delete this entire `apply` block when on a later snapshot
-            // trick the registration logic
-            val info = ApplicationInfo.getInstance()
-            if (info.majorVersion == "2022" && info.minorVersionMainPart == "1") {
-                if (info.build.asStringWithoutProductCodeAndSnapshot() > "221.4501.171") {
-                    throw RuntimeException("Delete validating panel test hack")
-                }
-
-                // reflection so it's easier to delete the hack later
-                val clazz = contentPanel::class.java
-                val componentValidations = clazz.getMethod("getComponentValidations")
-                val setComponentValidationsOnApply = clazz.getMethod("setComponentValidationsOnApply", Map::class.java)
-                setComponentValidationsOnApply.invoke(contentPanel, componentValidations.invoke(contentPanel))
-                // and reregister the validator
-                contentPanel.registerValidators(disposableRule.disposable) { map ->
-                    updateActionButtons(map.isEmpty())
-                }
-            }
         }
 
         private fun JBTextField.validateText() = if (this.text.length < 5) ValidationInfo("Test Error, '${this.text}'.length() < 5", this) else null
