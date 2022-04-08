@@ -4,7 +4,6 @@
 import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
-import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
