@@ -6,12 +6,14 @@ package software.aws.toolkits.jetbrains.services.lambda.go
 import com.goide.sdk.GoSdkService
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.utils.rules.GoCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.createMockSdk
 
+@Ignore("Setting the Go SDK causes some weird behavior to occur after the project rule is disposed")
 class GoRuntimeGroupTest {
     @Rule
     @JvmField
