@@ -3,4 +3,4 @@
 
 package software.aws.toolkits.jetbrains.ui
 
-abstract class AwsAuthWidget(userFieldEnabled: Boolean = true) : AwsAuthWidgetBase(userFieldEnabled)
+abstract class AwsAuthWidget(userFieldEnabled: Boolean = true) : @Suppress("DEPRECATION") AwsAuthWidgetBase(userFieldEnabled)

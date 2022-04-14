@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.ui
 import com.intellij.database.dataSource.DatabaseConnectionConfig
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 
-abstract class AwsAuthWidget(userFieldEnabled: Boolean = true) : AwsAuthWidgetBase(userFieldEnabled) {
+abstract class AwsAuthWidget(userFieldEnabled: Boolean = true) : @Suppress("DEPRECATION") AwsAuthWidgetBase(userFieldEnabled) {
     override fun save(config: DatabaseConnectionConfig, copyCredentials: Boolean) {
         super.save(config, copyCredentials)
         save(config.dataSource, copyCredentials)

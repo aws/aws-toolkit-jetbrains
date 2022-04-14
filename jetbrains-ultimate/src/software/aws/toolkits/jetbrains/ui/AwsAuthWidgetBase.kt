@@ -21,6 +21,7 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 
+@Deprecated("Use AwsAuthWidget shim instead") // FIX_WHEN_MIN_IS_221
 abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : JBDBCredsAuthProviderUserWidget() {
     private val credentialSelector = CredentialProviderSelector()
     private val regionSelector = RegionSelector()
