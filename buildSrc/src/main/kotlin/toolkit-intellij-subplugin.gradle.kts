@@ -282,7 +282,7 @@ abstract class Minify @Inject constructor(): TransformAction<TransformParameters
             "-dontwarn org.slf4j.**",
             "-keepattributes *",
             "-keep class !**.paginators.**,!**.*Async*,!software.amazon.awssdk.services.ec2.** { *; }",
-            "-keep interface !**.*Async*,!software.amazon.awssdk.services.ec2.** { *; }"
+            "-keep interface !**.*Async*,!software.amazon.awssdk.services.ec2.** { *; }",
             "-keep class software.amazon.awssdk.services.ec2.model.DescribeInstances*",
             "-keep class software.amazon.awssdk.services.ec2.*Ec2BaseClientBuilder { *; }",
             """
