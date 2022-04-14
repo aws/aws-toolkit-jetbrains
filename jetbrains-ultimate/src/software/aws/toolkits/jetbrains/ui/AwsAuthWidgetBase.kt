@@ -21,7 +21,7 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 
-abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : JBDBCredsAuthProviderUserWidget() {
+abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : JBDBCredsAuthProviderUserWidget() {
     private val credentialSelector = CredentialProviderSelector()
     private val regionSelector = RegionSelector()
 
