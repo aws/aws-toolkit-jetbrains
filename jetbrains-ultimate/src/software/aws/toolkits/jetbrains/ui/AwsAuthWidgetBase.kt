@@ -76,8 +76,8 @@ abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : JBDBCr
         regionSelector.setRegions(allRegions.values.toMutableList())
         val regionId = dataSource.additionalProperties[REGION_ID_PROPERTY]?.nullize()
         regionId?.let {
-            allRegions[regionId]?.let {
-                regionSelector.selectedRegion = it
+            allRegions[regionId]?.let { region ->
+                regionSelector.selectedRegion = region
             }
         }
 
