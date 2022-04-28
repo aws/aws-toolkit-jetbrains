@@ -4,7 +4,6 @@
 import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
-import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
@@ -37,6 +36,10 @@ plugins {
 
 intellijToolkit {
     ideFlavor.set(IdeFlavor.RD)
+}
+
+intellij {
+    type.set("RD")
 }
 
 sourceSets {
@@ -287,11 +290,4 @@ tasks.integrationTest {
     // test detection is broken for tests inheriting from JB test framework: https://youtrack.jetbrains.com/issue/IDEA-278926
     setScanForTestClasses(false)
     include("**/*Test.class")
-
-    ciOnly {
-        // disable retries so that logs aren't overwritten
-        retry {
-            maxRetries.set(0)
-        }
-    }
 }

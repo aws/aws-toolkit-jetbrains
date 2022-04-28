@@ -21,7 +21,8 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
 
-abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : JBDBCredsAuthProviderUserWidget() {
+@Deprecated("Use AwsAuthWidget shim instead") // FIX_WHEN_MIN_IS_221
+abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : JBDBCredsAuthProviderUserWidget() {
     private val credentialSelector = CredentialProviderSelector()
     private val regionSelector = RegionSelector()
 
@@ -56,12 +57,12 @@ abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : JBD
         super.save(dataSource, copyCredentials)
 
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalJdbcProperties,
+            dataSource.additionalProperties,
             CREDENTIAL_ID_PROPERTY,
             credentialSelector.getSelectedCredentialsProvider()
         )
         DataSourceUiUtil.putOrRemove(
-            dataSource.additionalJdbcProperties,
+            dataSource.additionalProperties,
             REGION_ID_PROPERTY,
             regionSelector.selectedRegion?.id
         )
@@ -73,16 +74,16 @@ abstract class AwsAuthWidget(private val userFieldEnabled: Boolean = true) : JBD
         val regionProvider = AwsRegionProvider.getInstance()
         val allRegions = regionProvider.allRegionsForService(serviceId)
         regionSelector.setRegions(allRegions.values.toMutableList())
-        val regionId = dataSource.additionalJdbcProperties[REGION_ID_PROPERTY]?.nullize()
+        val regionId = dataSource.additionalProperties[REGION_ID_PROPERTY]?.nullize()
         regionId?.let {
-            allRegions[regionId]?.let {
-                regionSelector.selectedRegion = it
+            allRegions[regionId]?.let { region ->
+                regionSelector.selectedRegion = region
             }
         }
 
         val credentialManager = CredentialManager.getInstance()
         credentialSelector.setCredentialsProviders(credentialManager.getCredentialIdentifiers())
-        val credentialId = dataSource.additionalJdbcProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
+        val credentialId = dataSource.additionalProperties[CREDENTIAL_ID_PROPERTY]?.nullize()
         if (credentialId != null) {
             val credentialIdentifierById = credentialManager.getCredentialIdentifierById(credentialId)
             if (credentialIdentifierById != null) {

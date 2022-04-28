@@ -64,8 +64,6 @@ formatting:
   EnumEntryNameCase:
     active: false
     autoCorrect: true
-  ExpressionBodySyntax:
-    includeLineWrapping: true
   Filename:
     active: true
   FinalNewline:
@@ -130,7 +128,8 @@ formatting:
     active: true
     autoCorrect: true
   ParameterListWrapping:
-    active: false
+    active: true
+    autoCorrect: true
   SpacingAroundAngleBrackets:
     active: false
     autoCorrect: true
@@ -171,6 +170,9 @@ formatting:
     autoCorrect: true
     excludes: [ '**/icons/**' ]
   StringTemplate:
+    active: true
+    autoCorrect: true
+  Wrapping:
     active: true
     autoCorrect: true
 
@@ -283,3 +285,24 @@ potential-bugs:
     active: false
   WrongEqualsTypeParameter:
     active: true
+
+style:
+  EqualsNullCall:
+    active: true
+  ExpressionBodySyntax:
+    active: true
+    includeLineWrapping: true
+  MayBeConst:
+    active: true
+  ModifierOrder:
+    active: true
+  NoTabs:
+    active: true
+  OptionalAbstractKeyword:
+    active: true
+  SafeCast:
+    active: true
+  UnusedPrivateClass:
+    active: true
+  VarCouldBeVal:
+    active: false
