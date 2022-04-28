@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.core.utils.buildList
+import software.aws.toolkits.jetbrains.utils.hasCauseWithMessage
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
@@ -121,7 +122,7 @@ class AwsResourceCacheTest {
     @Test
     fun exceptionsAreBubbledWhenNoEntry() {
         doAnswer { throw Throwable("Bang!") }.whenever(mockResource).fetch(any(), any())
-        assertThat(sut.getResource(mockResource, connectionSettings)).hasException.withFailMessage("Bang!")
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Bang!")
     }
 
     @Test
@@ -429,7 +430,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("boom"))
         assertThatThrownBy { sut.getResourceNow(mockResource, connectionSettings, timeout = Duration.ofSeconds(1)) }
             .isInstanceOf(RuntimeException::class.java)
-            .withFailMessage("boom")
+            .hasMessage("boom")
     }
 
     @Test
@@ -491,8 +492,8 @@ class AwsResourceCacheTest {
         val first = sut.getResource(mockResource, connectionSettings)
         val second = sut.getResource(mockResource, connectionSettings)
         latch.countDown()
-        assertThat(first).wait().hasException.withFailMessage { "" }
-        assertThat(second).wait().hasException.withFailMessage { "" }
+        assertThatThrownBy { first.value }.hasCauseWithMessage("Boom")
+        assertThatThrownBy { second.value }.hasCauseWithMessage("Boom")
     }
 
     @Test
@@ -505,12 +506,8 @@ class AwsResourceCacheTest {
     @Test
     fun retriesReturnTheMostRecentException() {
         whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("Boom"), RuntimeException("Ouch"))
-        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.satisfies {
-            assertThat(it.cause).hasMessage("Boom").isInstanceOf<RuntimeException>()
-        }
-        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.satisfies {
-            assertThat(it.cause).hasMessage("Ouch").isInstanceOf<RuntimeException>()
-        }
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Boom")
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Ouch")
     }
 
     @Test
@@ -520,7 +517,7 @@ class AwsResourceCacheTest {
 
         with(sut as DefaultAwsResourceCache) {
             doRunCacheMaintenance()
-            assertThat(hasCacheEntry(mockResource.id)).isFalse()
+            assertThat(hasCacheEntry(mockResource.id)).isFalse
         }
     }
 
