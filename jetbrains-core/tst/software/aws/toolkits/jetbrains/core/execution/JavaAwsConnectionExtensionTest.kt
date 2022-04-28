@@ -66,7 +66,7 @@ class JavaAwsConnectionExtensionTest {
         deserialized.readExternal(element)
 
         assertThat(deserialized.mainClassName).isEqualTo("com.bla.Boop")
-        assertThat(deserialized.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)).isEqualToComparingFieldByField(data)
+        assertThat(deserialized.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)).usingRecursiveComparison().isEqualTo(data)
     }
 
     @Test
@@ -89,6 +89,16 @@ class JavaAwsConnectionExtensionTest {
         val runManager = RunManager.getInstance(projectRule.project)
         val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
         assertThat(configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)).isNull()
+    }
+
+    @Test
+    fun `Does not throw on default options`() {
+        val runManager = RunManager.getInstance(projectRule.project)
+        val configuration = runManager.createConfiguration("test", ApplicationConfigurationType::class.java).configuration as ApplicationConfiguration
+        configuration.putCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY, AwsCredentialInjectionOptions.DEFAULT_OPTIONS)
+        val extension = JavaAwsConnectionExtension()
+        val map = mutableMapOf<String, String>()
+        extension.updateJavaParameters(configuration, mock { on { env } doAnswer { map } }, null)
     }
 
     @Test

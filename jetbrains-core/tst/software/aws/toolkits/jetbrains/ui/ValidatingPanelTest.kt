@@ -153,6 +153,6 @@ class ValidatingPanelTest {
         }
 
         val textFieldValidator: ComponentValidator?
-            get() = ComponentValidator.getInstance(textFieldComponent).orElseGet(null)
+            get() = ComponentValidator.getInstance(textFieldComponent).orElse(null)
     }
 }

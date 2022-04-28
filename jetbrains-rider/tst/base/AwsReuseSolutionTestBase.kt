@@ -4,16 +4,14 @@
 package base
 
 import com.intellij.ide.GeneralSettings
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.jetbrains.rider.projectView.solutionDirectory
 import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
 import com.jetbrains.rider.test.debugger.XDebuggerTestHelper
+import com.jetbrains.rider.test.protocol.testProtocolHost
 import com.jetbrains.rider.test.scriptingApi.getVirtualFileFromPath
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
-import org.apache.log4j.ConsoleAppender
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
-import org.apache.log4j.PatternLayout
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
 import java.io.File
@@ -43,23 +41,16 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     override val testCaseNameToTempDir: String
         get() = getSolutionDirectoryName()
 
-    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_211
+    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_212
     @BeforeClass
     fun allowDotnetRoots() {
         allowCustomDotnetRoots()
     }
 
     @BeforeClass(alwaysRun = true)
-    fun enableToolkitDebugLogging() {
-        // TODO: output formatting needs to be cleaned up bit it'll do the job for now
-        Logger.getLogger("software.aws.toolkits").apply {
-            level = Level.DEBUG
-            addAppender(ConsoleAppender(PatternLayout("%-5p | %-30c{1} | %m%n")).also { it.threshold = Level.DEBUG })
-        }
-    }
-
-    @BeforeClass(alwaysRun = true)
     fun setUpClassSolution() {
+        val host = ApplicationManager.getApplication().testProtocolHost
+        setUpCustomToolset(msBuild, host)
         openSolution(getSolutionDirectoryName())
     }
 

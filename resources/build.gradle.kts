@@ -4,8 +4,6 @@
 import de.undercouch.gradle.tasks.download.Download
 import software.aws.toolkits.gradle.resources.ValidateMessages
 
-val junitVersion: String by project
-
 plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
@@ -20,6 +18,11 @@ sourceSets {
 
 dependencies {
     testImplementation(libs.junit4)
+    testRuntimeOnly(libs.junit5.jupiterVintage)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 val download = tasks.register<Download>("downloadResources") {
