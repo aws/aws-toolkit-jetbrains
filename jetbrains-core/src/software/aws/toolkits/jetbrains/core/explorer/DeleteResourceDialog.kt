@@ -36,7 +36,7 @@ class DeleteResourceDialog(
             }
             createNoteOrCommentRow(
                 ComponentPanelBuilder.createCommentComponent(
-                    message("sqs.delete.warning_text"),
+                    message("resource.delete.warning_text", resourceType),
                     true,
                     -1,
                     true
