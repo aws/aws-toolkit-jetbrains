@@ -34,7 +34,14 @@ class DeleteResourceDialog(
             row {
                 deleteResourceConfirmation(grow)
             }
-            createNoteOrCommentRow(ComponentPanelBuilder.createCommentComponent(message("sqs.delete.warning_text"), true, -1, true)).visible = resourceType == "queue"
+            createNoteOrCommentRow(
+                ComponentPanelBuilder.createCommentComponent(
+                    message("sqs.delete.warning_text"),
+                    true,
+                    -1,
+                    true
+                )
+            ).visible = resourceType == "queue"
         }
     }
 
