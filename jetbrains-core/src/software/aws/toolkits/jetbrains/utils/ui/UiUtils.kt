@@ -24,6 +24,7 @@ import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.ui.layout.PropertyBinding
 import com.intellij.ui.layout.Row
+import com.intellij.ui.layout.RowBuilder
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.toBinding
 import com.intellij.ui.paint.LinePainter2D
@@ -264,11 +265,6 @@ fun CellBuilder<DialogPanel>.installOnParent(applies: () -> Boolean = { true }):
 fun Row.visibleIf(predicate: ComponentPredicate): Row {
     visible = predicate()
     predicate.addListener { visible = it }
-    return this
-}
-
-fun JBLabel.visibleIf(visible: Boolean): JBLabel {
-    isVisible = visible
     return this
 }
 
