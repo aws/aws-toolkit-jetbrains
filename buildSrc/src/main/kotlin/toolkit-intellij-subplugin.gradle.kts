@@ -57,6 +57,16 @@ configurations {
         // Exclude dependencies we don't use to make plugin smaller
         exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
     }
+
+    // TODO: https://github.com/gradle/gradle/issues/15383
+    val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+    dependencies {
+        testImplementation(platform(versionCatalog.findDependency("junit5-bom").get()))
+        testImplementation(versionCatalog.findDependency("junit5-jupiterApi").get())
+
+        testRuntimeOnly(versionCatalog.findDependency("junit5-jupiterEngine").get())
+        testRuntimeOnly(versionCatalog.findDependency("junit5-jupiterVintage").get())
+    }
 }
 
 tasks.processResources {
@@ -123,6 +133,12 @@ tasks.buildSearchableOptions {
 tasks.withType<Test>().all {
     systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
+    val jetbrainsCoreTestResources = project(":jetbrains-core").projectDir.resolve("tst-resources")
+    // FIX_WHEN_MIN_IS_221: log4j 1.2 removed in 221
+    systemProperty("log4j.configuration", jetbrainsCoreTestResources.resolve("log4j.xml"))
+    systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
+
+    useJUnitPlatform()
 }
 
 tasks.withType<JavaExec> {
@@ -167,6 +183,7 @@ tasks.withType<RunIdeForUiTestTask>().all {
 
     systemProperty("aws.telemetry.skip_prompt", "true")
     systemProperty("aws.suppress_deprecation_prompt", true)
+    systemProperty("idea.trust.all.projects", "true")
 
     // These are experiments to enable for UI tests
     systemProperty("aws.experiment.connectedLocalTerminal", true)

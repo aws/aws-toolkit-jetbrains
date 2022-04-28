@@ -3,13 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.rds.auth
 
+import DatabaseAuthProviderCompatabilityAdapter
 import com.intellij.credentialStore.Credentials
 import com.intellij.database.access.DatabaseCredentials
-import com.intellij.database.dataSource.DatabaseAuthProvider
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.future.future
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.rds.RdsUtilities
@@ -37,14 +38,15 @@ data class RdsAuth(
 )
 
 // [DatabaseAuthProvider] is marked as internal, but JetBrains advised this was a correct usage
-class IamAuth : DatabaseAuthProvider {
+class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
     private val rdsUtilities = RdsUtilities.builder().build()
 
     override fun getId(): String = providerId
     override fun getDisplayName(): String = message("rds.iam_connection_display_name")
 
     override fun isApplicable(dataSource: LocalDataSource): Boolean = iamIsApplicable(dataSource)
-    override fun createWidget(credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
+
+    override fun createWidget(project: Project?, credentials: DatabaseCredentials, dataSource: LocalDataSource): AuthWidget? = IamAuthWidget()
 
     override fun intercept(
         connection: ProtoConnection,
@@ -68,10 +70,10 @@ class IamAuth : DatabaseAuthProvider {
 
     internal fun getAuthInformation(connection: ProtoConnection): RdsAuth {
         validateIamConfiguration(connection)
-        val signingUrl = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_HOST_PROPERTY]
+        val signingUrl = connection.connectionPoint.additionalProperties[RDS_SIGNING_HOST_PROPERTY]
             ?: connection.connectionPoint.url.hostFromJdbcString()
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_host"))
-        val signingPort = connection.connectionPoint.additionalJdbcProperties[RDS_SIGNING_PORT_PROPERTY]?.toIntOrNull()
+        val signingPort = connection.connectionPoint.additionalProperties[RDS_SIGNING_PORT_PROPERTY]?.toIntOrNull()
             ?: connection.connectionPoint.url.portFromJdbcString()?.toIntOrNull()
             ?: throw IllegalArgumentException(message("rds.validation.no_instance_port"))
         val user = connection.connectionPoint.dataSource.username

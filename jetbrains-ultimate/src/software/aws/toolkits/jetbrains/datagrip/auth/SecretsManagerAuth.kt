@@ -3,12 +3,12 @@
 
 package software.aws.toolkits.jetbrains.datagrip.auth
 
+import DatabaseAuthProviderCompatabilityAdapter
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.credentialStore.Credentials
 import com.intellij.database.access.DatabaseCredentials
-import com.intellij.database.dataSource.DatabaseAuthProvider
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
@@ -36,7 +36,7 @@ data class SecretsManagerConfiguration(
     val secretId: String
 )
 
-class SecretsManagerAuth : DatabaseAuthProvider {
+class SecretsManagerAuth : DatabaseAuthProviderCompatabilityAdapter {
     private val objectMapper = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
     override fun getId(): String = providerId
@@ -61,7 +61,7 @@ class SecretsManagerAuth : DatabaseAuthProvider {
                 val dbSecret = getDbSecret(connectionSettings)
                 if (
                     connection.connectionPoint.dataSource.sshConfiguration?.isEnabled != true &&
-                    connection.connectionPoint.additionalJdbcProperties[GET_URL_FROM_SECRET]?.toBoolean() == true
+                    connection.connectionPoint.additionalProperties[GET_URL_FROM_SECRET]?.toBoolean() == true
                 ) {
                     dbSecret.host ?: throw IllegalArgumentException(message("datagrip.secretsmanager.validation.no_host", connectionSettings.secretId))
                     dbSecret.port ?: throw IllegalArgumentException(message("datagrip.secretsmanager.validation.no_port", connectionSettings.secretId))
@@ -93,7 +93,7 @@ class SecretsManagerAuth : DatabaseAuthProvider {
 
     private fun getConfiguration(connection: ProtoConnection): SecretsManagerConfiguration {
         val connectionSettings = connection.getAwsConnectionSettings()
-        val secretId = connection.connectionPoint.additionalJdbcProperties[SECRET_ID_PROPERTY]
+        val secretId = connection.connectionPoint.additionalProperties[SECRET_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("datagrip.secretsmanager.validation.no_secret"))
         return SecretsManagerConfiguration(
             connectionSettings,
