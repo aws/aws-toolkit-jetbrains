@@ -32,7 +32,7 @@ class DeleteResourceDialog(
             }
             row {
                 deleteResourceConfirmation(grow)
-            }
+            }.commentRow("Deletion of the queue may take more than a minute to be reflected")
         }
     }
 

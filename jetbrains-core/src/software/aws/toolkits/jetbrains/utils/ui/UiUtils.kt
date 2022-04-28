@@ -267,6 +267,11 @@ fun Row.visibleIf(predicate: ComponentPredicate): Row {
     return this
 }
 
+fun JBLabel.visibleIf(visible: Boolean): JBLabel {
+    isVisible = visible
+    return this
+}
+
 /**
  * Add a contextual help icon component
  */
