@@ -13,6 +13,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
@@ -35,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
+import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.value
 import software.aws.toolkits.jetbrains.utils.wait
 import java.time.Clock
@@ -42,6 +44,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -83,8 +86,10 @@ class AwsResourceCacheTest {
 
         connectionSettings = ConnectionSettings(credentialsManager.createCredentialProvider(), regionProvider.createAwsRegion())
 
+        if (this::sut.isInitialized) {
+            (sut as DefaultAwsResourceCache).dispose()
+        }
         sut = DefaultAwsResourceCache(mockClock, 1000, Duration.ofMinutes(1))
-        runBlocking { sut.clear() }
 
         reset(mockClock, mockResource)
         whenever(mockResource.expiry()).thenReturn(DEFAULT_EXPIRY)
@@ -473,6 +478,50 @@ class AwsResourceCacheTest {
         sut.getResource(mockResource, connectionSettings).value
 
         assertThat(sut.getResourceIfPresent(mockResource, connectionSettings)).isEqualTo("hello")
+    }
+
+    @Test
+    fun concurrentlyRunningExceptionalResourcesGetTheSameException() {
+        val latch = CountDownLatch(1)
+        whenever(mockResource.fetch(any(), any())).then {
+            latch.await(500, TimeUnit.MILLISECONDS)
+            throw RuntimeException("Boom")
+        }
+
+        val first = sut.getResource(mockResource, connectionSettings)
+        val second = sut.getResource(mockResource, connectionSettings)
+        latch.countDown()
+        assertThat(first).wait().hasException.withFailMessage { "" }
+        assertThat(second).wait().hasException.withFailMessage { "" }
+    }
+
+    @Test
+    fun canRecoverFromACachedException() {
+        whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("Boom")).thenReturn("Success!")
+        assertThrows<ExecutionException> { sut.getResource(mockResource, connectionSettings).value }
+        assertThat(sut.getResource(mockResource, connectionSettings).value).isEqualTo("Success!")
+    }
+
+    @Test
+    fun retriesReturnTheMostRecentException() {
+        whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("Boom"), RuntimeException("Ouch"))
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.satisfies {
+            assertThat(it.cause).hasMessage("Boom").isInstanceOf<RuntimeException>()
+        }
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.satisfies {
+            assertThat(it.cause).hasMessage("Ouch").isInstanceOf<RuntimeException>()
+        }
+    }
+
+    @Test
+    fun exceptionalEntriesAreRemovedFromTheCache() {
+        whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("Boom"))
+        assertThrows<ExecutionException> { sut.getResource(mockResource, connectionSettings).value }
+
+        with(sut as DefaultAwsResourceCache) {
+            doRunCacheMaintenance()
+            assertThat(hasCacheEntry(mockResource.id)).isFalse()
+        }
     }
 
     private fun getAllRegionAndCredPermutations() {
