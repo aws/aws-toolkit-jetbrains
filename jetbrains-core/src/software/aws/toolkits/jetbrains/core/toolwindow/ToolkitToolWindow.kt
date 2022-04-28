@@ -61,8 +61,10 @@ interface ToolkitToolWindow {
 
     fun show(content: Content) {
         val toolWindow = toolWindow()
-        toolWindow.activate(null, true)
-        toolWindow.contentManager.setSelectedContent(content)
+        runInEdt {
+            toolWindow.activate(null, true)
+            toolWindow.contentManager.setSelectedContent(content)
+        }
     }
 
     fun showExistingContent(id: String): Boolean {
@@ -70,9 +72,10 @@ interface ToolkitToolWindow {
 
         val content = find(id)
         if (content != null) {
-            toolWindow.activate(null, true)
-            toolWindow.contentManager.setSelectedContent(content)
-
+            runInEdt {
+                toolWindow.activate(null, true)
+                toolWindow.contentManager.setSelectedContent(content)
+            }
             return true
         }
 
