@@ -15,7 +15,6 @@ import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
 import java.io.File
-import java.time.Duration
 
 /**
  * Base test class that uses the same solution per test class.
