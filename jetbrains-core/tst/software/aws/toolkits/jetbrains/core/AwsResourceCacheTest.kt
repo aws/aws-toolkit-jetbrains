@@ -494,6 +494,7 @@ class AwsResourceCacheTest {
         latch.countDown()
         assertThatThrownBy { first.value }.hasCauseWithMessage("Boom")
         assertThatThrownBy { second.value }.hasCauseWithMessage("Boom")
+        verifyResourceCalled(1, mockResource)
     }
 
     @Test
