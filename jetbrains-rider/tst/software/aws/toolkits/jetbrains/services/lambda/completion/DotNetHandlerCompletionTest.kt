@@ -15,8 +15,7 @@ import org.testng.annotations.Test
 import java.time.Duration
 
 class DotNetHandlerCompletionTest : BaseTestWithSolution() {
-
-    override val backendShellLoadTimeout: Duration = backendStartTimeout
+    override val backendLoadedTimeout: Duration = backendStartTimeout
 
     override fun getSolutionDirectoryName(): String = ""
 

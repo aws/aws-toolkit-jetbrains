@@ -18,7 +18,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
         private const val LAMBDA_RUN_MARKER_ATTRIBUTE_ID = "AWS Lambda Run Method Gutter Mark"
     }
 
-    override val backendShellLoadTimeout: Duration = backendStartTimeout
+    override val backendLoadedTimeout: Duration = backendStartTimeout
 
     override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
 

@@ -39,8 +39,6 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     protected open fun getCustomSolutionFileName(): String? = null
     protected open fun preprocessTempDirectory(tempDir: File) {}
 
-    override val backendShellLoadTimeout: Duration = backendStartTimeout
-
     override val testCaseNameToTempDir: String
         get() = getSolutionDirectoryName()
 
@@ -79,6 +77,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
         GeneralSettings.getInstance().isConfirmExit = false
 
         val params = OpenSolutionParams()
+        params.backendLoadedTimeout = backendStartTimeout
         params.customSolutionName = getCustomSolutionFileName()
         params.preprocessTempDirectory = { preprocessTempDirectory(it) }
         params.persistCaches = persistCaches
