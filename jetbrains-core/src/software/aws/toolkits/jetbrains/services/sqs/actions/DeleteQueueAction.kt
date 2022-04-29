@@ -23,4 +23,6 @@ class DeleteQueueAction : DeleteResourceAction<SqsQueueNode>(message("sqs.delete
         client.deleteQueue { it.queueUrl(selected.queueUrl) }
         project.refreshAwsTree(SqsResources.LIST_QUEUE_URLS)
     }
+
+    override val displayLongDelayWarning: Boolean = true
 }

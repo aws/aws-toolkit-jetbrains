@@ -18,7 +18,8 @@ import javax.swing.event.DocumentEvent
 class DeleteResourceDialog(
     project: Project,
     private val resourceType: String,
-    private val resourceName: String
+    private val resourceName: String,
+    private val displayLongDelayWarning: Boolean = false
 ) : DialogWrapper(project) {
     private val deleteResourceConfirmation = JBTextField().apply {
         emptyText.text = message("delete_resource.confirmation_text")
@@ -41,7 +42,7 @@ class DeleteResourceDialog(
                     -1,
                     true
                 )
-            ).visible = resourceType == "queue"
+            ).visible = displayLongDelayWarning
         }
     }
 
