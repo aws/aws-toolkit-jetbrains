@@ -14,6 +14,8 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.utils.deserializeState
 import software.aws.toolkits.jetbrains.utils.rules.RegistryRule
 import software.aws.toolkits.jetbrains.utils.serializeState
+import java.time.Duration
+import java.time.Instant
 
 class ToolkitExperimentManagerTest {
 
@@ -157,17 +159,74 @@ class ToolkitExperimentManagerTest {
     @Test
     fun `it correctly persists`() {
         val experiment = DummyExperiment()
+        val permanentlySuppressed = DummyExperiment()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        val now = Instant.now()
+
+        val sut = ToolkitExperimentManager.getInstance()
+
+        sut.shouldPrompt(experiment, now)
+        sut.neverPrompt(permanentlySuppressed)
+        experiment.setState(true)
+        val serialized = serializeState("experiments", sut)
+        println(serialized)
+        deserializeState(serialized, sut)
+
+        assertThat(experiment.isEnabled()).isTrue
+        assertThat(sut.shouldPrompt(experiment)).isFalse
+        assertThat(sut.shouldPrompt(experiment, now.minusMillis(5))).isFalse
+    }
+
+    @Test
+    fun `experiment prompts - experiment never seen before will prompt`() {
+        val experiment = DummyExperiment()
         ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
 
         val sut = ToolkitExperimentManager.getInstance()
 
-        experiment.setState(true)
-        val serialized = serializeState("experiments", sut)
-        deserializeState(serialized, sut)
+        assertThat(sut.shouldPrompt(experiment)).isTrue
+    }
 
-        assertThat(experiment.isEnabled()).isTrue
+    @Test
+    fun `experiment prompts - when experiment enabled return false`() {
+        val experiment = DummyExperiment()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+
+        val sut = ToolkitExperimentManager.getInstance()
+        experiment.setState(true)
+
+        assertThat(sut.shouldPrompt(experiment)).isFalse
+    }
+
+    @Test
+    fun `experiment prompts - prompts are snoozed for the specified duration`() {
+        val experiment = DummyExperiment()
+        val now = Instant.now()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+
+        val sut = ToolkitExperimentManager.getInstance()
+
+        assertThat(sut.shouldPrompt(experiment, now)).isTrue
+        assertThat(sut.shouldPrompt(experiment, now)).isFalse
+        assertThat(sut.shouldPrompt(experiment, now.plusMillis(2))).isTrue
+    }
+
+    @Test
+    fun `experiment prompts - can be permanently snoozed`() {
+        val experiment = DummyExperiment()
+        val now = Instant.now()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+
+        val sut = ToolkitExperimentManager.getInstance()
+
+        sut.neverPrompt(experiment)
+        assertThat(sut.shouldPrompt(experiment, now.plusMillis(2))).isFalse
     }
 }
 
-class DummyExperiment(id: String = aString(), hidden: Boolean = false, default: Boolean = false) :
-    ToolkitExperiment(id, { "Dummy ($id)" }, { "Dummy Description" }, hidden, default)
+class DummyExperiment(
+    id: String = aString(),
+    hidden: Boolean = false,
+    default: Boolean = false,
+    suggestionSnooze: Duration = Duration.ofMillis(1)
+) : ToolkitExperiment(id, { "Dummy ($id)" }, { "Dummy Description" }, hidden, default, suggestionSnooze)
