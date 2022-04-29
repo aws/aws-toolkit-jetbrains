@@ -20,12 +20,13 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>> : SingleR
     constructor() : super()
     constructor(text: String) : super(text, icon = AllIcons.Actions.Cancel)
 
-    open val displayLongDelayWarning: Boolean = false
+    open val displayComment: Boolean = false
+    open val comment: String = ""
 
     final override fun actionPerformed(selected: T, e: AnActionEvent) {
         val resourceType = selected.resourceType()
         val resourceName = selected.displayName()
-        val response = DeleteResourceDialog(selected.nodeProject, resourceType, resourceName, this.displayLongDelayWarning).showAndGet()
+        val response = DeleteResourceDialog(selected.nodeProject, resourceType, resourceName, this.displayComment, comment).showAndGet()
         if (!response) {
             AwsTelemetry.deleteResource(selected.project, selected.serviceId, Result.Cancelled)
         } else {

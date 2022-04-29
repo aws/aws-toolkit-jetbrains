@@ -19,7 +19,8 @@ class DeleteResourceDialog(
     project: Project,
     private val resourceType: String,
     private val resourceName: String,
-    private val displayLongDelayWarning: Boolean = false
+    private val displayComment: Boolean = false,
+    private val comment: String = ""
 ) : DialogWrapper(project) {
     private val deleteResourceConfirmation = JBTextField().apply {
         emptyText.text = message("delete_resource.confirmation_text")
@@ -37,12 +38,12 @@ class DeleteResourceDialog(
             }
             createNoteOrCommentRow(
                 ComponentPanelBuilder.createCommentComponent(
-                    message("resource.delete.warning_text", resourceType),
+                    comment,
                     true,
                     -1,
                     true
                 )
-            ).visible = displayLongDelayWarning
+            ).visible = displayComment
         }
     }
 
