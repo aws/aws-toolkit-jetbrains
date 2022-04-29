@@ -33,6 +33,7 @@ class LocalLambdaRunConfigurationProducerTest {
 
     @Test
     fun validRunConfigurationIsCreated() {
+        projectRule.fixture.addModule("main")
         val psiClass = projectRule.fixture.openClass(
             """
             package com.example;
@@ -135,6 +136,7 @@ Resources:
 
     @Test
     fun invalidLambdaIsNotCreated() {
+        projectRule.fixture.addModule("main")
         val psiClass = projectRule.fixture.openClass(
             """
             package com.example;
