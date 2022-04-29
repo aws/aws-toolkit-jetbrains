@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.experiments
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
@@ -11,6 +12,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
@@ -99,6 +101,9 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
         EP_NAME.extensionList.contains(experiment) && enabledState.getOrDefault(experiment.id, getDefault(experiment))
 
     fun setState(experiment: ToolkitExperiment, enabled: Boolean) {
+        if (enabled != isEnabled(experiment)) {
+            ApplicationManager.getApplication().messageBus.syncPublisher(EXPERIMENT_CHANGED).enableSettingsStateChanged(experiment)
+        }
         if (enabled == getDefault(experiment)) {
             enabledState.remove(experiment.id)
         } else {
@@ -149,6 +154,7 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
 
     companion object {
         internal val EP_NAME = ExtensionPointName.create<ToolkitExperiment>("aws.toolkit.experiment")
+        internal val EXPERIMENT_CHANGED = Topic.create("experiment service enable state changed", ToolkitExperimentStateChangedListener::class.java)
         internal fun getInstance(): ToolkitExperimentManager = service()
         internal fun visibleExperiments(): List<ToolkitExperiment> = EP_NAME.extensionList.filterNot { it.hidden }
     }
@@ -163,4 +169,8 @@ internal class ExperimentState : BaseState() {
 
     @get:Property
     val nextSuggestion by map<String, Long>()
+}
+
+interface ToolkitExperimentStateChangedListener {
+    fun enableSettingsStateChanged(toolkitExperiment: ToolkitExperiment)
 }

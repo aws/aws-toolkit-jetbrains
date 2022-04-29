@@ -3,12 +3,17 @@
 
 package software.aws.toolkits.jetbrains.core.experiments
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ExtensionTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import software.aws.toolkits.core.rules.SystemPropertyHelper
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.utils.deserializeState
@@ -175,6 +180,73 @@ class ToolkitExperimentManagerTest {
         assertThat(experiment.isEnabled()).isTrue
         assertThat(sut.shouldPrompt(experiment)).isFalse
         assertThat(sut.shouldPrompt(experiment, now.minusMillis(5))).isFalse
+    }
+
+    @Test
+    fun `event publishing - enabling experiments will emit event`() {
+        val anExperiment = DummyExperiment()
+        assertThat(anExperiment.isEnabled()).isFalse
+        val mockListener: ToolkitExperimentStateChangedListener = mock()
+        val conn = ApplicationManager.getApplication().messageBus.connect()
+        conn.subscribe(ToolkitExperimentManager.EXPERIMENT_CHANGED, mockListener)
+        anExperiment.setState(true)
+
+        argumentCaptor<ToolkitExperiment>().apply {
+            verify(mockListener).enableSettingsStateChanged(capture())
+            assertThat(allValues).hasSize(1)
+            assertThat(firstValue.id).isEqualTo(anExperiment.id)
+        }
+
+        conn.dispose()
+    }
+
+    @Test
+    fun `event publishing - disabling experiments will emit event`() {
+        val experiment = DummyExperiment(default = true)
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        assertThat(experiment.isEnabled()).isTrue
+        val mockListener: ToolkitExperimentStateChangedListener = mock()
+        val conn = ApplicationManager.getApplication().messageBus.connect()
+        conn.subscribe(ToolkitExperimentManager.EXPERIMENT_CHANGED, mockListener)
+        experiment.setState(false)
+
+        argumentCaptor<ToolkitExperiment>().apply {
+            verify(mockListener).enableSettingsStateChanged(capture())
+            assertThat(allValues).hasSize(1)
+            assertThat(firstValue.id).isEqualTo(experiment.id)
+        }
+
+        conn.dispose()
+    }
+
+    @Test
+    fun `event publishing - setting experiments ineffectively will not emit message - true`() {
+        val experiment = DummyExperiment(default = true)
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        assertThat(experiment.isEnabled()).isTrue
+        val mockListener: ToolkitExperimentStateChangedListener = mock()
+        val conn = ApplicationManager.getApplication().messageBus.connect()
+        conn.subscribe(ToolkitExperimentManager.EXPERIMENT_CHANGED, mockListener)
+
+        experiment.setState(true)
+        verifyNoInteractions(mockListener)
+
+        conn.dispose()
+    }
+
+    @Test
+    fun `event publishing - setting experiments ineffectively will not emit message - false`() {
+        val experiment = DummyExperiment(default = false)
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
+        assertThat(experiment.isEnabled()).isFalse
+        val mockListener: ToolkitExperimentStateChangedListener = mock()
+        val conn = ApplicationManager.getApplication().messageBus.connect()
+        conn.subscribe(ToolkitExperimentManager.EXPERIMENT_CHANGED, mockListener)
+
+        experiment.setState(false)
+        verifyNoInteractions(mockListener)
+
+        conn.dispose()
     }
 
     @Test
