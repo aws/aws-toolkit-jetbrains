@@ -71,8 +71,8 @@ class ToolkitExperimentManagerTest {
         val sut = ToolkitExperimentManager.getInstance()
         ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(registered), disposableRule.disposable)
 
-        sut.setState(registered, enabled = true)
-        sut.setState(notRegistred, enabled = true)
+        sut.setState(registered, enabled = true, null)
+        sut.setState(notRegistred, enabled = true, null)
 
         assertThat(registered.isEnabled()).isTrue
         assertThat(notRegistred.isEnabled()).isFalse

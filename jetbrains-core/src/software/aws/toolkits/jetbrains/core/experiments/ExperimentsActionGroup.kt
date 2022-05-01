@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.project.DumbAware
+import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
 import software.aws.toolkits.resources.message
 
 class ExperimentsActionGroup : DefaultActionGroup(message("aws.toolkit.experimental.title"), true), DumbAware {
@@ -21,5 +22,5 @@ class ExperimentsActionGroup : DefaultActionGroup(message("aws.toolkit.experimen
 
 class EnableExperimentAction(private val experiment: ToolkitExperiment) : ToggleAction(experiment.title, experiment.description, null), DumbAware {
     override fun isSelected(e: AnActionEvent): Boolean = experiment.isEnabled()
-    override fun setSelected(e: AnActionEvent, state: Boolean) = experiment.setState(state)
+    override fun setSelected(e: AnActionEvent, state: Boolean) = experiment.setState(state, e.project?.getConnectionSettings())
 }

@@ -10,6 +10,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.util.xmlb.annotations.Property
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.ExperimentState.Activated
@@ -49,7 +50,8 @@ abstract class ToolkitExperiment(
 }
 
 fun ToolkitExperiment.isEnabled(): Boolean = ToolkitExperimentManager.getInstance().isEnabled(this)
-internal fun ToolkitExperiment.setState(enabled: Boolean) = ToolkitExperimentManager.getInstance().setState(this, enabled)
+internal fun ToolkitExperiment.setState(enabled: Boolean, connection: ConnectionSettings? = null) =
+    ToolkitExperimentManager.getInstance().setState(this, enabled, connection)
 
 @State(name = "experiments", storages = [Storage("aws.xml")])
 internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentState> {
@@ -57,13 +59,14 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
     fun isEnabled(experiment: ToolkitExperiment): Boolean =
         EP_NAME.extensionList.contains(experiment) && enabledState.getOrDefault(experiment.id, getDefault(experiment))
 
-    fun setState(experiment: ToolkitExperiment, enabled: Boolean) {
+    fun setState(experiment: ToolkitExperiment, enabled: Boolean, connection: ConnectionSettings?) {
         if (enabled == getDefault(experiment)) {
             enabledState.remove(experiment.id)
         } else {
             enabledState[experiment.id] = enabled
         }
         AwsTelemetry.experimentActivation(
+            connectionSettings = connection,
             experimentId = experiment.id,
             experimentState = if (enabled) {
                 Activated
