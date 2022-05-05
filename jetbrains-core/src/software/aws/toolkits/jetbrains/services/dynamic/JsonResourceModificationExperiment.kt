@@ -27,7 +27,7 @@ class SuggestEditExperimentListener : FileEditorManagerListener {
     }
 }
 
-class UpdateOnExperimentState(private val project: Project): ToolkitExperimentStateChangedListener {
+class UpdateOnExperimentState(private val project: Project) : ToolkitExperimentStateChangedListener {
     override fun enableSettingsStateChanged(toolkitExperiment: ToolkitExperiment) {
         if (toolkitExperiment is JsonResourceModificationExperiment) {
             with(EditorNotifications.getInstance(project)) {

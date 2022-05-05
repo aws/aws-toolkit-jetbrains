@@ -141,7 +141,7 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
         if (experiment.isEnabled()) {
             return false
         }
-        val should = state.nextSuggestion[experiment.id]?.let { it > 0 && now.isAfter(Instant.ofEpochMilli(it)) } ?: true
+        val should = state.nextSuggestion[experiment.id]?.let { now.isAfter(Instant.ofEpochMilli(it)) } ?: true
         if (should) {
             state.nextSuggestion[experiment.id] = now.plus(experiment.suggestionSnooze).toEpochMilli()
         }
@@ -149,7 +149,7 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
     }
 
     internal fun neverPrompt(experiment: ToolkitExperiment) {
-        state.nextSuggestion[experiment.id] = -1
+        state.nextSuggestion[experiment.id] = Long.MAX_VALUE // This is ~240 years in the future, effectively "never".
     }
 
     companion object {
