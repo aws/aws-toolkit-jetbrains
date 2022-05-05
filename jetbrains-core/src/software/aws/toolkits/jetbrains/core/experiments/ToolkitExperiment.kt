@@ -14,6 +14,7 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.annotations.Property
+import software.aws.toolkits.core.utils.replace
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.utils.createNotificationExpiringAction
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -121,11 +122,9 @@ internal class ToolkitExperimentManager : PersistentStateComponent<ExperimentSta
 
     override fun getState(): ExperimentState = state
 
-    override fun loadState(state: ExperimentState) {
-        state.value.clear()
-        state.value.putAll(state.value)
-        state.nextSuggestion.clear()
-        state.nextSuggestion.putAll(state.nextSuggestion)
+    override fun loadState(loadedState: ExperimentState) {
+        state.value.replace(loadedState.value)
+        state.nextSuggestion.replace(loadedState.nextSuggestion)
     }
 
     private fun getDefault(experiment: ToolkitExperiment): Boolean {

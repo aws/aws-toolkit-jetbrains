@@ -174,11 +174,13 @@ class ToolkitExperimentManagerTest {
         sut.neverPrompt(permanentlySuppressed)
         experiment.setState(true)
         val serialized = serializeState("experiments", sut)
-        deserializeState(serialized, sut)
 
-        assertThat(experiment.isEnabled()).isTrue
-        assertThat(sut.shouldPrompt(experiment)).isFalse
-        assertThat(sut.shouldPrompt(experiment, now.minusMillis(5))).isFalse
+        val other = ToolkitExperimentManager()
+        deserializeState(serialized, other)
+
+        assertThat(other.isEnabled(experiment)).isTrue
+        assertThat(other.shouldPrompt(experiment)).isFalse
+        assertThat(other.shouldPrompt(experiment, now.minusMillis(5))).isFalse
     }
 
     @Test
