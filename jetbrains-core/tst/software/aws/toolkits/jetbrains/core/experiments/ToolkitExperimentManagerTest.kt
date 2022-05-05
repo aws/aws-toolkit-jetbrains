@@ -174,7 +174,6 @@ class ToolkitExperimentManagerTest {
         sut.neverPrompt(permanentlySuppressed)
         experiment.setState(true)
         val serialized = serializeState("experiments", sut)
-        println(serialized)
         deserializeState(serialized, sut)
 
         assertThat(experiment.isEnabled()).isTrue
