@@ -73,6 +73,7 @@ with what features/services are supported.
     <depends optional="true" config-file="ext-docker.xml">Docker</depends>
     <depends optional="true" config-file="ext-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
+    <depends optional="true" config-file="ext-json.xml">com.intellij.modules.json</depends>
 
     <xi:include href="/META-INF/IC-221.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
@@ -95,7 +96,10 @@ with what features/services are supported.
                   topic="software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier"/>
         <listener class="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateChangedNotificationHandler"
                   topic="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateMutationHandler"/>
-
+        <listener class="software.aws.toolkits.jetbrains.services.dynamic.SuggestEditExperimentListener"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+        <listener class="software.aws.toolkits.jetbrains.services.dynamic.UpdateOnExperimentState"
+                  topic="software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentStateChangedListener"/>
     </projectListeners>
     <extensionPoints>
         <extensionPoint name="credentialProviderFactory" interface="software.aws.toolkits.core.credentials.CredentialProviderFactory" dynamic="true"/>
