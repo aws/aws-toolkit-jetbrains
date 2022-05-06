@@ -19,7 +19,6 @@ class DeleteResourceDialog(
     project: Project,
     private val resourceType: String,
     private val resourceName: String,
-    private val displayComment: Boolean = false,
     private val comment: String = ""
 ) : DialogWrapper(project) {
     private val deleteResourceConfirmation = JBTextField().apply {
@@ -43,7 +42,7 @@ class DeleteResourceDialog(
                     -1,
                     true
                 )
-            ).visible = displayComment
+            ).visible = !comment.isNullOrEmpty()
         }
     }
 
