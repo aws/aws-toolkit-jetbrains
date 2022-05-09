@@ -12,6 +12,8 @@ dependencies {
     testImplementation(libs.detekt.test)
     testImplementation(libs.junit4)
     testImplementation(libs.assertj)
+    // used for testing type-dependent linters on usages of the AWS SDK
+    testImplementation(libs.aws.lambda)
 
     testRuntimeOnly(libs.slf4j.api)
     testRuntimeOnly(libs.junit5.jupiterVintage)

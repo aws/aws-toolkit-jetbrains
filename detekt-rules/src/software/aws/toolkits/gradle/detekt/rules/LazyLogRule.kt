@@ -24,14 +24,14 @@ class LazyLogRule : Rule() {
     // UI tests have issues with this TODO see if we want multiple detekt.yml files or disable for certain modules in this rule
     private val optOut = setOf("software.aws.toolkits.jetbrains.uitests")
 
-    override fun visitCallExpression(element: KtCallExpression) {
-        super.visitCallExpression(element)
-        element.getCallNameExpression()?.let {
+    override fun visitCallExpression(expression: KtCallExpression) {
+        super.visitCallExpression(expression)
+        expression.getCallNameExpression()?.let {
             if (!logMethods.contains(it.text)) {
                 return
             }
 
-            if (optOut.any { name -> element.containingKtFile.packageFqName.asString().startsWith(name) }) {
+            if (optOut.any { name -> expression.containingKtFile.packageFqName.asString().startsWith(name) }) {
                 return
             }
 
@@ -44,12 +44,12 @@ class LazyLogRule : Rule() {
                 return
             }
 
-            if (element.lambdaArguments.size != 1) {
+            if (expression.lambdaArguments.size != 1) {
                 val receiverName = resolvedCall?.getReceiverExpression()?.text ?: type
                 report(
                     CodeSmell(
                         issue,
-                        Entity.from(element),
+                        Entity.from(expression),
                         message = "Use the lambda version of $receiverName.${it.text} instead"
                     )
                 )

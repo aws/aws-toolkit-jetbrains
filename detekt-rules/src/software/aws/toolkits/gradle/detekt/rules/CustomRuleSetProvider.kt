@@ -15,7 +15,8 @@ class CustomRuleSetProvider : RuleSetProvider {
             BannedPatternRule(BannedPatternRule.DEFAULT_PATTERNS),
             LazyLogRule(),
             DialogModalityRule(),
-            BannedImportsRule()
+            BannedImportsRule(),
+            UseSdkPaginatorRule()
         )
     )
 }
