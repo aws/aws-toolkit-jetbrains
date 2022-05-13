@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix .NET debugger regression in 2022.1.1"
+}
