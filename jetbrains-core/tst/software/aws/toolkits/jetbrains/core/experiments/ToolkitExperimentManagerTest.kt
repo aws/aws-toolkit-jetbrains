@@ -221,6 +221,23 @@ class ToolkitExperimentManagerTest {
     }
 
     @Test
+    fun `updated experiment state is reflected when event is consumed`() {
+        val anExperiment = DummyExperiment()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(anExperiment), disposableRule.disposable)
+        val conn = ApplicationManager.getApplication().messageBus.connect()
+        conn.subscribe(
+            ToolkitExperimentManager.EXPERIMENT_CHANGED,
+            object : ToolkitExperimentStateChangedListener {
+                override fun enableSettingsStateChanged(toolkitExperiment: ToolkitExperiment) {
+                    assertThat(toolkitExperiment.isEnabled()).isTrue
+                }
+            }
+        )
+        anExperiment.setState(true)
+        conn.dispose()
+    }
+
+    @Test
     fun `event publishing - setting experiments ineffectively will not emit message - true`() {
         val experiment = DummyExperiment(default = true)
         ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(experiment), disposableRule.disposable)
