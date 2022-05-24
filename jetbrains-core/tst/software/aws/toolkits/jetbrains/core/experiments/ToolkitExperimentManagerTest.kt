@@ -219,12 +219,7 @@ class ToolkitExperimentManagerTest {
     fun `updated experiment state is reflected when event is consumed`() {
         val anExperiment = DummyExperiment()
         ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(anExperiment), disposableRule.disposable)
-        subscribeToTopic(object : ToolkitExperimentStateChangedListener {
-            override fun enableSettingsStateChanged(toolkitExperiment: ToolkitExperiment) {
-                assertThat(toolkitExperiment.isEnabled()).isTrue
-            }
-        }
-        )
+        subscribeToTopic { toolkitExperiment -> assertThat(toolkitExperiment.isEnabled()).isTrue }
         anExperiment.setState(true)
     }
 

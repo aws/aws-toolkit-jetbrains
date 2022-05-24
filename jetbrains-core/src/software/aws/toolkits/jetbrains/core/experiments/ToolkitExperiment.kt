@@ -171,6 +171,6 @@ internal class ExperimentState : BaseState() {
     val nextSuggestion by map<String, Long>()
 }
 
-interface ToolkitExperimentStateChangedListener {
+fun interface ToolkitExperimentStateChangedListener {
     fun enableSettingsStateChanged(toolkitExperiment: ToolkitExperiment)
 }
