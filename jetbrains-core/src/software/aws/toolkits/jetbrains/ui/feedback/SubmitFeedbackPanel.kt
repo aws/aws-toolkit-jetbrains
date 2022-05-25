@@ -59,6 +59,14 @@ class SubmitFeedbackPanel(initialSentiment: Sentiment? = null) {
         textArea.document.addUndoableEditListener { onTextAreaUpdate() }
     }
 
+    @TestOnly
+    internal fun setSentimentForTest(sentiment: Sentiment) {
+        when (sentiment) {
+            Sentiment.POSITIVE -> smileButton.isSelected = true
+            else -> sadButton.isSelected = true
+        }
+    }
+
     init {
         // runs after $$$setupUI$$$
         // null out placeholder text
