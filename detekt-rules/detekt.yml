@@ -128,7 +128,8 @@ formatting:
     active: true
     autoCorrect: true
   ParameterListWrapping:
-    active: false
+    active: true
+    autoCorrect: true
   SpacingAroundAngleBrackets:
     active: false
     autoCorrect: true
@@ -169,6 +170,9 @@ formatting:
     autoCorrect: true
     excludes: [ '**/icons/**' ]
   StringTemplate:
+    active: true
+    autoCorrect: true
+  Wrapping:
     active: true
     autoCorrect: true
 
@@ -301,4 +305,4 @@ style:
   UnusedPrivateClass:
     active: true
   VarCouldBeVal:
-    active: true
+    active: false
