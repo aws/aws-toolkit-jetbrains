@@ -268,11 +268,6 @@ dependencies {
     artifactTypes.getByName("jar") {
         attributes.attribute(minified, false)
     }
-
-    registerTransform(Minify::class) {
-        from.attribute(minified, false).attribute(artifactType, "jar")
-        to.attribute(minified, true).attribute(artifactType, "jar")
-    }
 }
 
 configurations.compileClasspath {
@@ -291,6 +286,13 @@ configurations.runtimeClasspath {
     }
 }
 
+dependencies {
+    registerTransform(Minify::class) {
+        from.attribute(minified, false).attribute(artifactType, "jar")
+        to.attribute(minified, true).attribute(artifactType, "jar")
+    }
+}
+
 @CacheableTransform
 abstract class Minify @Inject constructor(): TransformAction<TransformParameters.None> {
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
@@ -304,13 +306,11 @@ abstract class Minify @Inject constructor(): TransformAction<TransformParameters
     override
     fun transform(outputs: TransformOutputs) {
         val file = inputArtifact.get().asFile
-        val fileName = file.name
-        val nameWithoutExtension = fileName.substring(0, fileName.length - 4)
-        if (file.absolutePath.contains("software.amazon.awssdk") && fileName !in listOf("annotations-2.17.138.jar", "third-party-jackson-core-2.17.138.jar", "aws-query-protocol-2.17.138.jar")) {
-            minify(file, outputs.file("${nameWithoutExtension}-min.jar"))
+        val fileName = file.nameWithoutExtension
+        if (file.absolutePath.contains("software.amazon.awssdk") && fileName.startsWith("ec2-")) {
+            minify(file, outputs.file("$fileName-min.jar"))
             return
         }
-        println("Nothing to minify - using ${fileName} unchanged")
         outputs.file(inputArtifact)
     }
 
@@ -328,10 +328,11 @@ abstract class Minify @Inject constructor(): TransformAction<TransformParameters
             "-dontobfuscate",
             "-dontwarn org.slf4j.**",
             "-keepattributes *",
-            "-keep class !**.paginators.**,!**.*Async*,!software.amazon.awssdk.services.ec2.** { *; }",
-            "-keep interface !**.*Async*,!software.amazon.awssdk.services.ec2.** { *; }",
-            "-keep class software.amazon.awssdk.services.ec2.model.DescribeInstances*",
-            "-keep class software.amazon.awssdk.services.ec2.*Ec2BaseClientBuilder { *; }",
+            "-keep class software.amazon.awssdk.services.ec2.model.Ec2* { *; }",
+            "-keep class software.amazon.awssdk.services.ec2.model.DescribeInstances* { *; }",
+            "-keep class software.amazon.awssdk.services.ec2.model.Reservation* { *; }",
+            "-keep class software.amazon.awssdk.services.ec2.model.Instance* { *; }",
+            "-keep class software.amazon.awssdk.services.ec2.model.IamInstanceProfile* { *; }",
             """
                 -keep interface software.amazon.awssdk.services.ec2.Ec2Client* {
                     <init>(...);
