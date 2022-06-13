@@ -131,7 +131,7 @@ object IdeVersions {
             name = "2022.2",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "222-EAP-SNAPSHOT",
+                sdkVersion = "222.2889-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "java",
                     "com.intellij.gradle",
@@ -142,7 +142,7 @@ object IdeVersions {
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "222-EAP-SNAPSHOT",
+                sdkVersion = "222.2889-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
