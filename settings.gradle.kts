@@ -28,6 +28,11 @@ gradleEnterprise {
         }
     }
 }
+buildCache {
+    local {
+        directory = gradle.gradleUserHomeDir.resolve("caches").absoluteFile
+    }
+}
 
 val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION").forUseAtConfigurationTime()
 val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET").forUseAtConfigurationTime()
