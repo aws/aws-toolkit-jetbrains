@@ -54,7 +54,7 @@ class SamRunConfigTest {
 
             idea {
                 waitForBackgroundTasks()
-                findAndClick("//div[contains(@accessiblename,'Add Configuration')]")
+                menuBar.select("Run", "Edit Configurations...")
                 step("Create and populate template based run configuration") {
                     addRunConfig()
                     step("Populate run configuration") {
