@@ -54,7 +54,12 @@ class SamRunConfigTest {
 
             idea {
                 waitForBackgroundTasks()
-                menuBar.select("Run", "Edit Configurations...")
+                // JB can't decide if they want ellipsis or not
+                try {
+                    menuBar.select("Run", "Edit Configurations...")
+                } catch (e: Exception) {
+                    menuBar.select("Run", "Edit Configurations…")
+                }
                 step("Create and populate template based run configuration") {
                     addRunConfig()
                     step("Populate run configuration") {
