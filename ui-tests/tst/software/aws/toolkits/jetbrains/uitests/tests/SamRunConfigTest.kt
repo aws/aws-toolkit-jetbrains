@@ -58,6 +58,7 @@ class SamRunConfigTest {
                 try {
                     menuBar.select("Run", "Edit Configurations...")
                 } catch (e: Exception) {
+                    findAndClick("//div[@class='IdeRootPane']")
                     menuBar.select("Run", "Edit Configurations…")
                 }
                 step("Create and populate template based run configuration") {
