@@ -23,7 +23,7 @@
     <PackageReference Include="Amazon.Lambda.SimpleEmailEvents" Version="1.1.0" />
     <PackageReference Include="Amazon.Lambda.SNSEvents" Version="1.1.0" />
     <PackageReference Include="Amazon.Lambda.SQSEvents" Version="1.1.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
   
 </Project>
