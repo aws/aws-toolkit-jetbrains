@@ -11,7 +11,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -23,7 +22,7 @@ import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
@@ -53,6 +52,10 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
     @Rule
     @JvmField
     val projectRule = PythonCodeInsightTestFixtureRule()
+
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
@@ -93,12 +96,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
             fixture.openFileInEditor(lambdaClass.virtualFile)
         }
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
-    }
-
-    @After
-    fun tearDown() {
-        MockCredentialsManager.getInstance().reset()
+        credentialManagerRule.addCredentials(mockId, mockCreds)
     }
 
     @Test
@@ -225,7 +223,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         val mockSessionId = "mockSessionId"
         val mockSessionCreds = AwsSessionCredentials.create("access", "secret", "session")
 
-        MockCredentialsManager.getInstance().addCredentials(mockSessionId, mockSessionCreds)
+        credentialManagerRule.addCredentials(mockSessionId, mockSessionCreds)
 
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,

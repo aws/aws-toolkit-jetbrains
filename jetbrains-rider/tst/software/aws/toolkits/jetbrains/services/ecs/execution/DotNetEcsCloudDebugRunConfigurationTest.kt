@@ -4,23 +4,23 @@
 package software.aws.toolkits.jetbrains.services.ecs.execution
 
 import base.AwsReuseSolutionTestBase
+import base.TestWithMockCredentials
+import base.TestWithMockCredentialsDelegate
 import com.intellij.execution.BeforeRunTask
 import com.intellij.execution.configurations.RuntimeConfigurationError
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.mockito.Mockito
 import org.testng.annotations.Test
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.Service
 import software.amazon.awssdk.services.ecs.model.TaskDefinition
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.jetbrains.core.MockResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebuggingPlatform
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.resources.message
 
-class DotNetEcsCloudDebugRunConfigurationTest : AwsReuseSolutionTestBase() {
+class DotNetEcsCloudDebugRunConfigurationTest : AwsReuseSolutionTestBase(), TestWithMockCredentials by TestWithMockCredentialsDelegate() {
 
     private val containerOptionsKey = "111"
     private val defaultClusterArn = "arn"
@@ -97,9 +97,7 @@ class DotNetEcsCloudDebugRunConfigurationTest : AwsReuseSolutionTestBase() {
         resourceCache.addEntry(EcsResources.describeTaskDefinition(taskDefinitionName).id, regionId, credentialsIdentifier.id, fakeTaskDefinition)
     }
 
-    private val mockCredentials: CredentialIdentifier
-        get() = MockCredentialsManager.getInstance().addCredentials(
-            "mockCreds",
-            AwsBasicCredentials.create("foo", "bar")
-        )
+    private val mockCredentials: CredentialIdentifier by lazy {
+        credentialManagerRule.addCredentials("mockCreds")
+    }
 }

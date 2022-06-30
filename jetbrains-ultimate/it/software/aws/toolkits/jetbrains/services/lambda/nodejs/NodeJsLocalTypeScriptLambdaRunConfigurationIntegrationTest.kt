@@ -9,7 +9,6 @@ import com.intellij.openapi.module.ModuleType
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.After
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
@@ -20,7 +19,7 @@ import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.RuleUtils
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.UltimateTestUtils.ensureBuiltInServerStarted
@@ -59,6 +58,10 @@ class NodeJsLocalTypeScriptLambdaRunConfigurationIntegrationTest(private val run
     @JvmField
     val projectRule = HeavyNodeJsCodeInsightTestFixtureRule()
 
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
+
     private val input = RuleUtils.randomName()
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
@@ -90,13 +93,8 @@ class NodeJsLocalTypeScriptLambdaRunConfigurationIntegrationTest(private val run
             fixture.openFileInEditor(psiFile.virtualFile)
         }
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+        credentialManagerRule.addCredentials(mockId, mockCreds)
         ensureBuiltInServerStarted()
-    }
-
-    @After
-    fun tearDown() {
-        MockCredentialsManager.getInstance().reset()
     }
 
     @Test

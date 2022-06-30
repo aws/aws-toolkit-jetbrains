@@ -16,7 +16,7 @@ import org.junit.Test
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 import software.aws.toolkits.jetbrains.utils.rules.ExperimentRule
@@ -39,11 +39,15 @@ class JavaAwsConnectionExtensionTest {
     @JvmField
     val registryRule = ExperimentRule(JavaAwsConnectionExperiment)
 
+    @Rule
+    @JvmField
+    val credentialManagerRule = MockCredentialManagerRule()
+
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     @Before
     fun setUp() {
-        MockCredentialsManager.getInstance().addCredentials("MockCredentials", mockCreds)
+        credentialManagerRule.addCredentials("MockCredentials", mockCreds)
     }
 
     @Test

@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.AwsReuseSolutionTestBase
+import base.TestWithMockCredentials
+import base.TestWithMockCredentialsDelegate
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.ide.util.PropertiesComponent
 import com.jetbrains.rider.projectView.solutionDirectory
@@ -15,7 +17,6 @@ import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
@@ -33,7 +34,7 @@ class Dotnet50LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda5X", LambdaRuntime.DOTNET5_0)
 
 abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: LambdaRuntime) :
-    AwsReuseSolutionTestBase() {
+    AwsReuseSolutionTestBase(), TestWithMockCredentials by TestWithMockCredentialsDelegate() {
 
     override val waitForCaches = false
 
@@ -51,7 +52,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
         setSamExecutableFromEnvironment()
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+        credentialManagerRule.addCredentials(mockId, mockCreds)
     }
 
     @AfterMethod
@@ -128,7 +129,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 }
 
 abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: LambdaRuntime) :
-    AwsReuseSolutionTestBase() {
+    AwsReuseSolutionTestBase(), TestWithMockCredentials by TestWithMockCredentialsDelegate() {
 
     override val waitForCaches = false
 
@@ -145,7 +146,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
 
         setSamExecutableFromEnvironment()
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+        credentialManagerRule.addCredentials(mockId, mockCreds)
     }
 
     @AfterMethod(alwaysRun = true)

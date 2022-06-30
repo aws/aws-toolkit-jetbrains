@@ -4,23 +4,23 @@
 package software.aws.toolkits.jetbrains.services.lambda.execution.local
 
 import base.AwsReuseSolutionTestBase
+import base.TestWithMockCredentials
+import base.TestWithMockCredentialsDelegate
 import com.intellij.execution.configurations.RuntimeConfigurationError
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.resources.message
 
-class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
+class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase(), TestWithMockCredentials by TestWithMockCredentialsDelegate() {
     override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
 
     override val waitForCaches = true
@@ -34,12 +34,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
         preWarmSamVersionCache(validSam.toString())
         ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam)
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
-    }
-
-    @AfterMethod
-    fun tearDown() {
-        MockCredentialsManager.getInstance().reset()
+        credentialManagerRule.addCredentials(mockId, mockCreds)
     }
 
     @Test
