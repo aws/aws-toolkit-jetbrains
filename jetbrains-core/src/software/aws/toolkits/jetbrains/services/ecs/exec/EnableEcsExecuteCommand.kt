@@ -32,7 +32,7 @@ class EnableEcsExecuteCommand :
     }
 
     override fun update(selected: EcsServiceNode, e: AnActionEvent) {
-        e.presentation.isVisible = !selected.executeCommandEnabled() && !EcsUtils.isInstrumented(selected.value.serviceArn()) && EcsExecExperiment.isEnabled()
+        e.presentation.isVisible = !selected.executeCommandEnabled() && EcsExecExperiment.isEnabled()
     }
 
     private fun enableExecuteCommand(project: Project, service: Service) {
