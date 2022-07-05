@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.Execu
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.services.clouddebug.CloudDebugExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.resources.message
 import java.nio.file.Files
@@ -36,7 +35,6 @@ import javax.swing.JPanel
 class AwsSettingsConfigurable() : SearchableConfigurable {
     private lateinit var panel: JPanel
     private lateinit var samHelp: JComponent
-    private lateinit var cloudDebugHelp: JComponent
     private lateinit var serverlessSettings: JPanel
     private lateinit var remoteDebugSettings: JPanel
     private lateinit var applicationLevelSettings: JPanel
@@ -46,22 +44,14 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
         private set
     lateinit var enableTelemetry: JBCheckBox
         private set
-    lateinit var cloudDebugExecutablePath: TextFieldWithBrowseButton
-        private set
-    private val cloudDebugExecutableInstance: CloudDebugExecutable
-        get() = ExecutableType.getExecutable(CloudDebugExecutable::class.java)
     private val samExecutableInstance: SamExecutable
         get() = ExecutableType.getExecutable(SamExecutable::class.java)
     private val samTextboxInput: String?
         get() = StringUtil.nullize(samExecutablePath.text.trim { it <= ' ' })
-    private val cloudDebugTextboxInput: String?
-        get() = StringUtil.nullize(cloudDebugExecutablePath.text.trim { it <= ' ' })
 
     override fun createComponent(): JComponent = panel
 
     private fun createUIComponents() {
-        cloudDebugHelp = createHelpLink(HelpIds.CLOUD_DEBUG_ENABLE)
-        cloudDebugExecutablePath = createCliConfigurationElement(cloudDebugExecutableInstance, CLOUDDEBUG)
         samHelp = createHelpLink(HelpIds.SAM_CLI_INSTALL)
         samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
         defaultRegionHandling = ComboBox(UseAwsCredentialRegion.values())
@@ -73,7 +63,6 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
         serverlessSettings.border = IdeBorderFactory.createTitledBorder(message("aws.settings.serverless_label"))
         remoteDebugSettings.border = IdeBorderFactory.createTitledBorder(message("aws.settings.remote_debug_label"))
         SwingHelper.setPreferredWidth(samExecutablePath, panel.width)
-        SwingHelper.setPreferredWidth(cloudDebugExecutablePath, panel.width)
     }
 
     override fun getId(): String = "aws"
@@ -82,7 +71,6 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
     override fun isModified(): Boolean {
         val awsSettings = AwsSettings.getInstance()
         return samTextboxInput != getSavedExecutablePath(samExecutableInstance, false) ||
-            cloudDebugTextboxInput != getSavedExecutablePath(cloudDebugExecutableInstance, false) ||
             isModified(enableTelemetry, awsSettings.isTelemetryEnabled) ||
             // isModified for ComboBoxes is removed from 2021.3
             !Comparing.equal(defaultRegionHandling.selectedItem, awsSettings.useDefaultCredentialRegion) ||
@@ -97,20 +85,12 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
             getSavedExecutablePath(samExecutableInstance, false),
             samTextboxInput
         )
-        validateAndSaveCliSettings(
-            cloudDebugExecutablePath.textField as JBTextField,
-            "cloud-debug",
-            cloudDebugExecutableInstance,
-            getSavedExecutablePath(cloudDebugExecutableInstance, false),
-            cloudDebugTextboxInput
-        )
         saveAwsSettings()
     }
 
     override fun reset() {
         val awsSettings = AwsSettings.getInstance()
         samExecutablePath.setText(getSavedExecutablePath(samExecutableInstance, false))
-        cloudDebugExecutablePath.setText(getSavedExecutablePath(cloudDebugExecutableInstance, false))
         enableTelemetry.isSelected = awsSettings.isTelemetryEnabled
         defaultRegionHandling.selectedItem = awsSettings.useDefaultCredentialRegion
         profilesNotification.selectedItem = awsSettings.profilesNotification
@@ -120,10 +100,10 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
 
     private fun createCliConfigurationElement(executableType: ExecutableType<*>, cliName: String): TextFieldWithBrowseButton {
         val autoDetectPath = getSavedExecutablePath(executableType, true)
-        val cloudDebugExecutableTextField = JBTextField()
-        val field = TextFieldWithBrowseButton(cloudDebugExecutableTextField)
+        val executablePathField = JBTextField()
+        val field = TextFieldWithBrowseButton(executablePathField)
         if (autoDetectPath != null) {
-            cloudDebugExecutableTextField.emptyText.setText(autoDetectPath)
+            executablePathField.emptyText.setText(autoDetectPath)
         }
         field.addBrowseFolderListener(
             message("aws.settings.find.title", cliName),
@@ -214,7 +194,6 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
     }
 
     companion object {
-        private const val CLOUDDEBUG = "clouddebug"
         private const val SAM = "sam"
     }
 }
