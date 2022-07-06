@@ -2,6 +2,28 @@
 // SPDX-License-Identifier: Apache-2.0
 enableFeaturePreview("VERSION_CATALOGS")
 
+val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+
+dependencyResolutionManagement {
+    // only allow repositories to be declared in settings.gradle.kts
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
+            maven {
+                url = uri(codeArtifactUrl.get())
+                credentials {
+                    username = "aws"
+                    password = codeArtifactToken.get()
+                }
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = "aws-toolkit-jetbrains"
 
 include("resources")
