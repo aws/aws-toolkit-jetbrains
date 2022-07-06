@@ -2,25 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 enableFeaturePreview("VERSION_CATALOGS")
 
-buildscript {
-    pluginManagement {
-        // would be nice to dedupe from build.gradle.kts
-        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
-        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+pluginManagement {
+    // would be nice to dedupe from build.gradle.kts
+    val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+    val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
 
-        repositories {
-            if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
-                println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
-                maven {
-                    url = uri(codeArtifactUrl.get())
-                    credentials {
-                        username = "aws"
-                        password = codeArtifactToken.get()
-                    }
+    repositories {
+        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
+            maven {
+                isAllowInsecureProtocol = true
+                url = uri(codeArtifactUrl.get())
+                credentials {
+                    username = "aws"
+                    password = codeArtifactToken.get()
                 }
             }
-            gradlePluginPortal()
         }
+        gradlePluginPortal()
     }
 }
 

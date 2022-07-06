@@ -3,6 +3,21 @@
 val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL").forUseAtConfigurationTime()
 val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN").forUseAtConfigurationTime()
 
+if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+    pluginManagement {
+        repositories {
+            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
+            maven {
+                url = uri(codeArtifactUrl.get())
+                credentials {
+                    username = "aws"
+                    password = codeArtifactToken.get()
+                }
+            }
+        }
+    }
+}
+
 dependencyResolutionManagement {
     versionCatalogs {
         // TODO: Using "libs" seems to confuse Intellij?
