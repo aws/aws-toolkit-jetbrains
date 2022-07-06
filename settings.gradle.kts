@@ -2,24 +2,25 @@
 // SPDX-License-Identifier: Apache-2.0
 enableFeaturePreview("VERSION_CATALOGS")
 
-dependencyResolutionManagement {
-    // duplicated from build.gradle.kts because settings are evaluated before buildSrc and otherwise we can't make rdgen work
-    // TODO: FIX_WHEN_MIN_IS_221, try to make this work
-    val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
-    val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+buildscript {
+    pluginManagement {
+        // would be nice to dedupe from build.gradle.kts
+        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
 
-    repositories {
-        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
-            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
-            maven {
-                url = uri(codeArtifactUrl.get())
-                credentials {
-                    username = "aws"
-                    password = codeArtifactToken.get()
+        repositories {
+            if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+                println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
+                maven {
+                    url = uri(codeArtifactUrl.get())
+                    credentials {
+                        username = "aws"
+                        password = codeArtifactToken.get()
+                    }
                 }
             }
+            gradlePluginPortal()
         }
-        gradlePluginPortal()
     }
 }
 
