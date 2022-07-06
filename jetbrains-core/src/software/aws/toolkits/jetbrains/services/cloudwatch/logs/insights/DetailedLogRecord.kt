@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
 import com.intellij.ui.table.TableView
@@ -61,8 +62,11 @@ class DetailedLogRecord(
         coroutineScope.launch {
             val record = recordLoadTask.await()
             val items = record.map { it.key to it.value }
-            tableView.listTableModel.items = items
-            tableView.setPaintBusy(false)
+            runInEdtAndWait {
+                tableView.listTableModel.items = items
+                tableView.setPaintBusy(false)
+            }
+
 
             if (items.isNotEmpty()) {
                 val logGroup = record["@log"] ?: return@launch
