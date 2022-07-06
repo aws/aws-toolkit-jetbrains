@@ -36,7 +36,6 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
     private lateinit var panel: JPanel
     private lateinit var samHelp: JComponent
     private lateinit var serverlessSettings: JPanel
-    private lateinit var remoteDebugSettings: JPanel
     private lateinit var applicationLevelSettings: JPanel
     private lateinit var defaultRegionHandling: ComboBox<UseAwsCredentialRegion>
     private lateinit var profilesNotification: ComboBox<ProfilesNotification>
@@ -61,7 +60,6 @@ class AwsSettingsConfigurable() : SearchableConfigurable {
     init {
         applicationLevelSettings.border = IdeBorderFactory.createTitledBorder(message("aws.settings.global_label"))
         serverlessSettings.border = IdeBorderFactory.createTitledBorder(message("aws.settings.serverless_label"))
-        remoteDebugSettings.border = IdeBorderFactory.createTitledBorder(message("aws.settings.remote_debug_label"))
         SwingHelper.setPreferredWidth(samExecutablePath, panel.width)
     }
 
