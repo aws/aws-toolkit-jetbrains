@@ -151,7 +151,9 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "Pythonid:222.3345.16",
-                    "org.jetbrains.plugins.go:222.3345.16"
+                    "org.jetbrains.plugins.go:222.3345.16",
+                    // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
+                    "org.intellij.intelliLang"
                 )
             ),
             rider = RiderProfile(
