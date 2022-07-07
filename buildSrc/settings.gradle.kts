@@ -10,8 +10,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     versionCatalogs {
-        // TODO: Using "libs" seems to confuse Intellij?
-        create("deps") {
+        create("libs") {
             from(files("../gradle/libs.versions.toml"))
         }
     }
