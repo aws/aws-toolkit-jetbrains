@@ -6,11 +6,14 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
+import com.intellij.openapi.actionSystem.AnAction.ACTIONS_KEY
+import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_BACKSPACE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
+import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.service
@@ -22,6 +25,8 @@ import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import com.intellij.openapi.project.Project
@@ -395,6 +400,20 @@ class CodeWhispererPopupManager {
             ACTION_EDITOR_BACKSPACE,
             CodeWhispererPopupBackspaceHandler(actionManager.getActionHandler(ACTION_EDITOR_BACKSPACE), states)
         )
+
+        val actions = ComponentUtil.getClientProperty(states.requestContext.editor.component, ACTIONS_KEY) ?: return
+        actions.forEach {
+            val shortcutSet = it.shortcutSet
+            val shortcuts = shortcutSet.shortcuts
+            if (shortcuts.isEmpty() || shortcuts[0] !is KeyboardShortcut) return@forEach
+            if ((shortcuts[0] as KeyboardShortcut).firstKeyStroke.keyCode == 9) {
+                it.registerCustomShortcutSet(CustomShortcutSet.EMPTY, states.requestContext.editor.component)
+                Disposer.register(states) {
+                    it.registerCustomShortcutSet(shortcutSet, states.requestContext.editor.component)
+                }
+                return
+            }
+        }
     }
 
     private fun setPopupTypedHandler(newHandler: CodeWhispererPopupTypedHandler) {
@@ -419,6 +438,16 @@ class CodeWhispererPopupManager {
         }
         editor.selectionModel.addSelectionListener(codewhispererSelectionListener)
         Disposer.register(states) { editor.selectionModel.removeSelectionListener(codewhispererSelectionListener) }
+
+        val codewhispererDocumentListener: DocumentListener = object : DocumentListener {
+            override fun documentChanged(event: DocumentEvent) {
+                if (shouldListenerCancelPopup) {
+                    cancelPopup(states.popup)
+                }
+                super.documentChanged(event)
+            }
+        }
+        editor.document.addDocumentListener(codewhispererDocumentListener, states)
 
         val codewhispererCaretListener: CaretListener = object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
