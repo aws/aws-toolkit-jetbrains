@@ -15,13 +15,24 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
     } else {
         null
     }
-}.also {
-    pluginManagement {
-        repositories {
-            // janky because we need to apply to plugins in this file, but val falls out of scope
-            it()
-            gradlePluginPortal()
+}
+
+pluginManagement {
+    repositories {
+        // duplicated because can't figure out how to make this work
+        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
+            maven {
+                url = uri(codeArtifactUrl.get())
+                credentials {
+                    username = "aws"
+                    password = codeArtifactToken.get()
+                }
+            }
         }
+        gradlePluginPortal()
     }
 }
 
