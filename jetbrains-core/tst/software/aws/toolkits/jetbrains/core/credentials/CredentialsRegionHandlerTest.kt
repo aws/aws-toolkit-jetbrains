@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.notification.Notification
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestDataProvider
