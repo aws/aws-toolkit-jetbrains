@@ -7,6 +7,7 @@ import com.intellij.notification.Notification
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.TestDataProvider
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -174,7 +175,7 @@ class CredentialsRegionHandlerTest {
         val notification = getOnlyNotification()
 
         runInEdtAndWait {
-            Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, DataContext { projectRule.project })
+            Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, TestDataProvider(projectRule.project)::getData)
         }
 
         assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Always)
