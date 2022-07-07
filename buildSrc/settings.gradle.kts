@@ -1,20 +1,10 @@
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL").forUseAtConfigurationTime()
-val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN").forUseAtConfigurationTime()
-
-if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
-    pluginManagement {
-        repositories {
-            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
-            maven {
-                url = uri(codeArtifactUrl.get())
-                credentials {
-                    username = "aws"
-                    password = codeArtifactToken.get()
-                }
-            }
-        }
+pluginManagement {
+    repositories {
+        val codeArtifactMavenRepo: ((RepositoryHandler) -> Unit)? by extra
+        codeArtifactMavenRepo?.invoke(this)
+        gradlePluginPortal()
     }
 }
 
@@ -27,16 +17,8 @@ dependencyResolutionManagement {
     }
 
     repositories {
-        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
-            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
-            maven {
-                url = uri(codeArtifactUrl.get())
-                credentials {
-                    username = "aws"
-                    password = codeArtifactToken.get()
-                }
-            }
-        }
+        val codeArtifactMavenRepo: ((RepositoryHandler) -> Unit)? by extra
+        codeArtifactMavenRepo?.invoke(this)
         mavenCentral()
         gradlePluginPortal()
         maven {

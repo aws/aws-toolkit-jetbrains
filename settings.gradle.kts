@@ -1,27 +1,32 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 enableFeaturePreview("VERSION_CATALOGS")
-
-pluginManagement {
-    // would be nice to dedupe from build.gradle.kts
+val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
     val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
     val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
-
-    repositories {
-        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
-            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
-            maven {
-                isAllowInsecureProtocol = true
-                url = uri(codeArtifactUrl.get())
-                credentials {
-                    username = "aws"
-                    password = codeArtifactToken.get()
-                }
+    return if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+        println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
+        maven {
+            url = uri(codeArtifactUrl.get())
+            credentials {
+                username = "aws"
+                password = codeArtifactToken.get()
             }
         }
-        gradlePluginPortal()
+    } else {
+        null
+    }
+}.also {
+    pluginManagement {
+        repositories {
+            // janky because we need to apply to plugins in this file, but val falls out of scope
+            it()
+            gradlePluginPortal()
+        }
     }
 }
+
+extra["codeArtifactMavenRepo"] = codeArtifactMavenRepo
 
 rootProject.name = "aws-toolkit-jetbrains"
 
