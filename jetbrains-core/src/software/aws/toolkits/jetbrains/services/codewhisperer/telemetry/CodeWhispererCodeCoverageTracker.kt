@@ -24,7 +24,7 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
-abstract class CodeWhispererCodeCoverageTracker(private val project: Project, protected val timeWindowInSec: Long): Disposable {
+abstract class CodeWhispererCodeCoverageTracker(private val project: Project, protected val timeWindowInSec: Long) : Disposable {
     private val alarm: Alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val acceptedToken: StringBuilder = StringBuilder()
     private val totalTokens: StringBuilder = StringBuilder()
@@ -36,7 +36,7 @@ abstract class CodeWhispererCodeCoverageTracker(private val project: Project, pr
         val conn = ApplicationManager.getApplication().messageBus.connect()
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
-            object: CodeWhispererUserActionListener {
+            object : CodeWhispererUserActionListener {
                 override fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {
                     val (_, _, recommendationContext) = states
                     val selectedIndex = sessionContext.selectedIndex
@@ -53,7 +53,7 @@ abstract class CodeWhispererCodeCoverageTracker(private val project: Project, pr
         )
         conn.subscribe(
             CodeWhispererEditorListener.CODEWHISPERER_DOCUMENT_CHANGE,
-            object: CodeWhispererDocumentChangedListener {
+            object : CodeWhispererDocumentChangedListener {
                 override fun documentChanged(event: DocumentEvent) {
                     pushTotalTokens(event.newFragment)
                 }
@@ -129,4 +129,4 @@ abstract class CodeWhispererCodeCoverageTracker(private val project: Project, pr
     }
 }
 
-class DefaultCodeWhispererCodeCoverageTracker(project: Project): CodeWhispererCodeCoverageTracker(project, 300) {}
+class DefaultCodeWhispererCodeCoverageTracker(project: Project) : CodeWhispererCodeCoverageTracker(project, 300)

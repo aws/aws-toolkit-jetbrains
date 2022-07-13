@@ -515,7 +515,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         document.insertString(currentOffset, string)
         caretModel.moveToOffset(currentOffset + string.length)
         PsiDocumentManager.getInstance(projectRule.project).commitDocument(document)
-
     }
 
     @After
