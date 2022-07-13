@@ -381,16 +381,20 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test codePercentage`() {
+    fun `test codePercentage metric is correct`() {
         val project = projectRule.project
         val fixture = projectRule.fixture
         val anotherFile = fixture.addFileToProject("/anotherFile.py", "")
+        // simulate users typing behavior of the following
+        // def addTwoNumbers(
         runInEdtAndWait {
             fixture.openFileInEditor(anotherFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
                 fixture.editor.appendString(pythonTestLeftContext)
             }
         }
+        // simulate users accepting the recommendation
+        // (x, y):\n    return x + y
         withCodeWhispererServiceInvokedAndWait {
             runInEdtAndWait {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
@@ -412,11 +416,11 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test codePercentage - will initialize every new `() {
+    fun `test codePercentage - will reset token count in every new time window`() {
         val project = projectRule.project
         val fixture = projectRule.fixture
         val anotherFile = fixture.addFileToProject("/anotherFile.py", "")
-        // 1
+        // first telemetry event sent
         runInEdtAndWait {
             fixture.openFileInEditor(anotherFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
@@ -429,7 +433,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 sleep(Duration.ofSeconds(1L).toMillis())
             }
         }
-        // 2
+        // second event sent
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
                 fixture.editor.appendString("\ndef add(")
