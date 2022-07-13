@@ -5,6 +5,10 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
@@ -26,6 +30,7 @@ import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testCodeWhispererException
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testRequestId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testRequestIdForCodeWhispererException
@@ -35,7 +40,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.AcceptedSuggestionEntry
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTracker
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -46,12 +52,16 @@ import software.aws.toolkits.telemetry.CodewhispererRuntime
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
+import java.lang.Thread.sleep
+import java.time.Duration
 import java.time.Instant
 
 class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val userDecision = "codewhisperer_userDecision"
     private val userModification = "codewhisperer_userModification"
     private val serviceInvocation = "codewhisperer_serviceInvocation"
+    private val codePercentage = "codewhisperer_codePercentage"
+
     private val codewhispererSuggestionState = "codewhispererSuggestionState"
 
     private class TestTelemetryService(
@@ -59,10 +69,13 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         batcher: TelemetryBatcher
     ) : TelemetryService(publisher, batcher)
 
+    private class TestCodePercentageTracker(project: Project) : CodeWhispererCodeCoverageTracker(project, 1)
+
     private lateinit var telemetryService: TelemetryService
     private lateinit var batcher: TelemetryBatcher
     private lateinit var telemetryServiceSpy: TelemetryService
     private var isTelemetryEnabledDefault: Boolean = false
+    private lateinit var codePercentageTracker: TestCodePercentageTracker
 
     @Before
     override fun setUp() {
@@ -73,6 +86,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
         AwsSettings.getInstance().isTelemetryEnabled = true
+        codePercentageTracker = TestCodePercentageTracker(projectRule.project)
+        projectRule.project.replaceService(CodeWhispererCodeCoverageTracker::class.java, codePercentageTracker, disposableRule.disposable)
     }
 
     @Test
@@ -96,8 +111,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test accepting recommendation will send user modification events with 1 accepted other unseen`() {
-        val trackerSpy = spy(CodeWhispererTracker(projectRule.project))
-        projectRule.project.replaceService(CodeWhispererTracker::class.java, trackerSpy, disposableRule.disposable)
+        val trackerSpy = spy(CodeWhispererUserModificationTracker(projectRule.project))
+        projectRule.project.replaceService(CodeWhispererUserModificationTracker::class.java, trackerSpy, disposableRule.disposable)
 
         runInEdtAndWait {
             val fakeSuggestionEntry = AcceptedSuggestionEntry(
@@ -365,6 +380,108 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         )
     }
 
+    @Test
+    fun `test codePercentage`() {
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val anotherFile = fixture.addFileToProject("/anotherFile.py", "")
+        runInEdtAndWait {
+            fixture.openFileInEditor(anotherFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString(pythonTestLeftContext)
+            }
+        }
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                popupManagerSpy.popupComponents.acceptButton.doClick()
+                CodeWhispererCodeCoverageTracker.getInstance(project).dispose()
+            }
+        }
+        val acceptedTokens = pythonResponse.recommendations()[0].content()
+        val totalTokens = pythonTestLeftContext + acceptedTokens
+
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            codePercentage,
+            1,
+            "codewhispererAcceptedTokens" to acceptedTokens.length.toString(),
+            "codewhispererTotalTokens" to totalTokens.length.toString()
+        )
+    }
+
+    @Test
+    fun `test codePercentage - will initialize every new `() {
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val anotherFile = fixture.addFileToProject("/anotherFile.py", "")
+        // 1
+        runInEdtAndWait {
+            fixture.openFileInEditor(anotherFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString(pythonTestLeftContext)
+            }
+        }
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                popupManagerSpy.popupComponents.acceptButton.doClick()
+                sleep(Duration.ofSeconds(1L).toMillis())
+            }
+        }
+        // 2
+        runInEdtAndWait {
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString("\ndef add(")
+            }
+        }
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                popupManagerSpy.popupComponents.acceptButton.doClick()
+                CodeWhispererCodeCoverageTracker.getInstance(project).dispose()
+            }
+        }
+
+        var acceptedTokens = pythonResponse.recommendations()[0].content()
+        var totalTokens = pythonTestLeftContext + acceptedTokens
+
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            codePercentage,
+            1,
+            "codewhispererAcceptedTokens" to acceptedTokens.length.toString(),
+            "codewhispererTotalTokens" to totalTokens.length.toString()
+        )
+
+        totalTokens = "\ndef add(" + acceptedTokens
+
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            codePercentage,
+            1,
+            "codewhispererAcceptedTokens" to acceptedTokens.length.toString(),
+            "codewhispererTotalTokens" to totalTokens.length.toString()
+        )
+    }
+
+    @Test
+    fun `test codePercentage - schedule`() {
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                sleep(Duration.ofSeconds(2).toMillis())
+            }
+        }
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues, codePercentage,
+            2,
+            "codewhispererPercentage" to "0"
+        )
+    }
+
     private fun assertEventsContainsFieldsAndCount(
         events: Collection<MetricEvent>,
         name: String,
@@ -391,6 +508,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             if (!flag) return false
         }
         return true
+    }
+
+    private fun Editor.appendString(string: String) {
+        val currentOffset = caretModel.primaryCaret.offset
+        document.insertString(currentOffset, string)
+        caretModel.moveToOffset(currentOffset + string.length)
+        PsiDocumentManager.getInstance(projectRule.project).commitDocument(document)
+
     }
 
     @After
