@@ -594,5 +594,5 @@ interface CodeWhispererUserActionListener {
     fun navigatePrevious(states: InvocationContext) {}
     fun navigateNext(states: InvocationContext) {}
     fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {}
-    fun afterAccept(states: InvocationContext, sessionContext: SessionContext) {}
+    fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {}
 }

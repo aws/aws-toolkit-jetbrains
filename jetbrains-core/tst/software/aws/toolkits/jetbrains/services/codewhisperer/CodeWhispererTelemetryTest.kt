@@ -61,7 +61,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val userModification = "codewhisperer_userModification"
     private val serviceInvocation = "codewhisperer_serviceInvocation"
     private val codePercentage = "codewhisperer_codePercentage"
-
     private val codewhispererSuggestionState = "codewhispererSuggestionState"
 
     private class TestTelemetryService(
@@ -69,14 +68,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         batcher: TelemetryBatcher
     ) : TelemetryService(publisher, batcher)
 
-    private class TestCodePercentageTracker(project: Project) : CodeWhispererCodeCoverageTracker(project, 1)
+    private class TestCodePercentageTracker(project: Project) :
+        CodeWhispererCodeCoverageTracker(project, 1, StringBuilder(), StringBuilder())
 
     private lateinit var telemetryService: TelemetryService
     private lateinit var batcher: TelemetryBatcher
     private lateinit var telemetryServiceSpy: TelemetryService
     private var isTelemetryEnabledDefault: Boolean = false
     private lateinit var codePercentageTracker: TestCodePercentageTracker
-
     @Before
     override fun setUp() {
         super.setUp()
@@ -486,34 +485,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         )
     }
 
-    private fun assertEventsContainsFieldsAndCount(
-        events: Collection<MetricEvent>,
-        name: String,
-        count: Int,
-        vararg keyValues: Pair<String, String>,
-        atLeast: Boolean = false
-    ) {
-        assertThat(events).filteredOn { event ->
-            event.data.any {
-                it.name == name && isThisMapContains(it.metadata, *keyValues)
-            }
-        }.apply {
-            if (atLeast) {
-                hasSizeGreaterThanOrEqualTo(count)
-            } else {
-                hasSize(count)
-            }
-        }
-    }
-
-    private fun isThisMapContains(map: Map<String, String>, vararg keyValues: Pair<String, String>): Boolean {
-        keyValues.forEach {
-            val flag = (map.containsKey(it.first) && map[it.first] == it.second)
-            if (!flag) return false
-        }
-        return true
-    }
-
     private fun Editor.appendString(string: String) {
         val currentOffset = caretModel.primaryCaret.offset
         document.insertString(currentOffset, string)
@@ -526,5 +497,35 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         super.tearDown()
         telemetryService.dispose()
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
+    }
+
+    companion object {
+        fun assertEventsContainsFieldsAndCount(
+            events: Collection<MetricEvent>,
+            name: String,
+            count: Int,
+            vararg keyValues: Pair<String, String>,
+            atLeast: Boolean = false
+        ) {
+            assertThat(events).filteredOn { event ->
+                event.data.any {
+                    it.name == name && isThisMapContains(it.metadata, *keyValues)
+                }
+            }.apply {
+                if (atLeast) {
+                    hasSizeGreaterThanOrEqualTo(count)
+                } else {
+                    hasSize(count)
+                }
+            }
+        }
+
+        private fun isThisMapContains(map: Map<String, String>, vararg keyValues: Pair<String, String>): Boolean {
+            keyValues.forEach {
+                val flag = (map.containsKey(it.first) && map[it.first] == it.second)
+                if (!flag) return false
+            }
+            return true
+        }
     }
 }

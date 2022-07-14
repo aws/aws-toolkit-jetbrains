@@ -24,10 +24,17 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
-abstract class CodeWhispererCodeCoverageTracker(private val project: Project, protected val timeWindowInSec: Long) : Disposable {
-    private val alarm: Alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
-    private val acceptedToken: StringBuilder = StringBuilder()
-    private val totalTokens: StringBuilder = StringBuilder()
+abstract class CodeWhispererCodeCoverageTracker(
+    private val project: Project,
+    private val timeWindowInSec: Long,
+    private val acceptedTokensBuffer: StringBuilder,
+    private val totalTokensBuffer: StringBuilder
+) : Disposable {
+    val acceptedTokens: String
+        get() = acceptedTokensBuffer.toString()
+    val totalTokens: String
+        get() = totalTokensBuffer.toString()
+    private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val isShuttingDown = AtomicBoolean(false)
     private var language: CodewhispererLanguage = CodewhispererLanguage.Unknown
     private var startTime: Instant = Instant.now()
@@ -49,6 +56,11 @@ abstract class CodeWhispererCodeCoverageTracker(private val project: Project, pr
 
                     pushAcceptedTokens(remainingRecommendation)
                 }
+
+                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {
+                    println(remainingRecomm)
+                    pushAcceptedTokens(remainingRecomm)
+                }
             }
         )
         conn.subscribe(
@@ -59,27 +71,10 @@ abstract class CodeWhispererCodeCoverageTracker(private val project: Project, pr
                 }
             }
         )
-
         scheduleCodeWhispererTracker()
     }
 
-    private fun scheduleCodeWhispererTracker() {
-        if (!alarm.isDisposed && !isShuttingDown.get()) {
-            alarm.addRequest({ flush() }, Duration.ofSeconds(timeWindowInSec).toMillis())
-        }
-    }
-
-    fun pushAcceptedTokens(chars: CharSequence) {
-        if (!isTelemetryEnabled()) return
-        acceptedToken.append(chars)
-    }
-
-    fun pushTotalTokens(chars: CharSequence) {
-        if (!isTelemetryEnabled()) return
-        totalTokens.append(chars)
-    }
-
-    private fun flush() {
+    fun flush() {
         try {
             if (!isTelemetryEnabled()) {
                 init()
@@ -92,20 +87,32 @@ abstract class CodeWhispererCodeCoverageTracker(private val project: Project, pr
         }
     }
 
+    internal fun scheduleCodeWhispererTracker() {
+        if (!alarm.isDisposed && !isShuttingDown.get()) {
+            alarm.addRequest({ flush() }, Duration.ofSeconds(timeWindowInSec).toMillis())
+        }
+    }
+
+    private fun pushAcceptedTokens(chars: CharSequence) {
+        if (!isTelemetryEnabled()) return
+        acceptedTokensBuffer.append(chars)
+    }
+
+    private fun pushTotalTokens(chars: CharSequence) {
+        if (!isTelemetryEnabled()) return
+        totalTokensBuffer.append(chars)
+    }
+
     private fun init() {
-        acceptedToken.clear()
-        totalTokens.clear()
+        acceptedTokensBuffer.clear()
+        totalTokensBuffer.clear()
         startTime = Instant.now()
     }
 
     private fun emitCodeWhispererCodeContribution() {
-        val acceptedTokenSize = acceptedToken.length
-        val totalTokensSize = totalTokens.length
+        val acceptedTokenSize = acceptedTokensBuffer.length
+        val totalTokensSize = totalTokensBuffer.length
         val percentage = if (totalTokensSize != 0) (acceptedTokenSize.toDouble() / totalTokensSize * 100).roundToInt() else 0
-        // TODO
-        println("accpetedTokens: $acceptedToken")
-        println("totalTokens: $totalTokens")
-        println("acceptedTokenSize = $acceptedTokenSize, totalTokenSize = $totalTokensSize, percentage = $percentage")
         CodewhispererTelemetry.codePercentage(
             project = project,
             acceptedTokenSize,
@@ -129,4 +136,10 @@ abstract class CodeWhispererCodeCoverageTracker(private val project: Project, pr
     }
 }
 
-class DefaultCodeWhispererCodeCoverageTracker(project: Project) : CodeWhispererCodeCoverageTracker(project, 300)
+class DefaultCodeWhispererCodeCoverageTracker(project: Project) :
+    CodeWhispererCodeCoverageTracker(
+        project,
+        300,
+        StringBuilder(),
+        StringBuilder()
+    )
