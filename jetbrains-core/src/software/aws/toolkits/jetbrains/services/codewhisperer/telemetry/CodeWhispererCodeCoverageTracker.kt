@@ -122,10 +122,13 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 }
 
-class DefaultCodeWhispererCodeCoverageTracker(project: Project) :
-    CodeWhispererCodeCoverageTracker(
-        project,
-        300,
-        StringBuilder(),
-        StringBuilder()
-    )
+class DefaultCodeWhispererCodeCoverageTracker(project: Project) : CodeWhispererCodeCoverageTracker(
+    project,
+    FIVE_MINS_IN_SECS,
+    StringBuilder(),
+    StringBuilder()
+) {
+    companion object {
+        const val FIVE_MINS_IN_SECS = 300L
+    }
+}
