@@ -58,7 +58,6 @@ abstract class CodeWhispererCodeCoverageTracker(
                 }
 
                 override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {
-                    println(remainingRecomm)
                     pushAcceptedTokens(remainingRecomm)
                 }
             }
