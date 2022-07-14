@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.replaceService
@@ -28,6 +29,7 @@ import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testCodeWhispererException
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testRequestId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testRequestIdForCodeWhispererException
@@ -369,6 +371,47 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             metricCaptor.allValues, userDecision, states.recommendationContext.details.size,
             "codewhispererSessionId" to states.responseContext.sessionId,
             "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
+        )
+    }
+
+    @Test
+    fun `test codePercentage metric is correct`() {
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val anotherFile = fixture.addFileToProject("/anotherFile.py", "")
+        // simulate users typing behavior of the following
+        // def addTwoNumbers(
+        runInEdtAndWait {
+            fixture.openFileInEditor(anotherFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString(pythonTestLeftContext)
+            }
+        }
+        // simulate users accepting the recommendation
+        // (x, y):\n    return x + y
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                popupManagerSpy.popupComponents.acceptButton.doClick()
+                CodeWhispererCodeCoverageTracker.getInstance(project).dispose()
+            }
+        }
+        val acceptedTokens = pythonResponse.recommendations()[0].content()
+        val totalTokens = pythonTestLeftContext + acceptedTokens
+
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            codePercentage,
+            1,
+            "codewhispererAcceptedTokens" to acceptedTokens.length.toString(),
+            "codewhispererTotalTokens" to totalTokens.length.toString()
+        )
+
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            codePercentage,
+            1,
         )
     }
 

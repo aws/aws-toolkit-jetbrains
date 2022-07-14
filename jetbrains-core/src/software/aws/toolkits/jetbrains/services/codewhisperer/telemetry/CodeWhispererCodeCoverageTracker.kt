@@ -44,19 +44,6 @@ abstract class CodeWhispererCodeCoverageTracker(
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
-                override fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {
-                    val (_, _, recommendationContext) = states
-                    val selectedIndex = sessionContext.selectedIndex
-                    val typeahead = sessionContext.typeahead
-                    val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
-                        recommendationContext.details[selectedIndex], recommendationContext.userInputSinceInvocation
-                    )
-                    var remainingRecommendation = reformatted.substring(typeahead.length)
-                    language = states.requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage()
-
-                    pushAcceptedTokens(remainingRecommendation)
-                }
-
                 override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {
                     pushAcceptedTokens(remainingRecomm)
                 }
