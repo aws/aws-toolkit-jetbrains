@@ -117,6 +117,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     companion object {
+        const val FIVE_MINS_IN_SECS = 300L
         private val logger = getLogger<CodeWhispererCodeCoverageTracker>()
         fun getInstance(project: Project) = project.service<CodeWhispererCodeCoverageTracker>()
     }
@@ -127,8 +128,4 @@ class DefaultCodeWhispererCodeCoverageTracker(project: Project) : CodeWhispererC
     FIVE_MINS_IN_SECS,
     StringBuilder(),
     StringBuilder()
-) {
-    companion object {
-        const val FIVE_MINS_IN_SECS = 300L
-    }
-}
+)

@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker.Companion.FIVE_MINS_IN_SECS
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -89,7 +90,7 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         batcher = mock()
         telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
-        trackerSpy = spy(TestCodePercentageTracker(project, 1, StringBuilder(), StringBuilder()))
+        trackerSpy = spy(TestCodePercentageTracker(project, FIVE_MINS_IN_SECS, StringBuilder(), StringBuilder()))
 
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
         project.replaceService(CodeWhispererCodeCoverageTracker::class.java, trackerSpy, disposableRule.disposable)
