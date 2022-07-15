@@ -16,6 +16,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.internal.verification.Times
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doNothing
@@ -34,12 +35,14 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.Recommendati
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import kotlin.math.roundToInt
 
 class CodeWhispererCodeCoverageTrackerTest {
@@ -74,8 +77,6 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     private lateinit var invocationContext: InvocationContext
     private lateinit var sessionContext: SessionContext
-    private lateinit var requestContext: RequestContext
-    private lateinit var recommendationContext: RecommendationContext
 
     @Before
     fun setup() {
@@ -94,23 +95,15 @@ class CodeWhispererCodeCoverageTrackerTest {
         project.replaceService(CodeWhispererCodeCoverageTracker::class.java, trackerSpy, disposableRule.disposable)
         project.replaceService(CodeWhispererCodeReferenceManager::class.java, mock(), disposableRule.disposable)
 
-        requestContext = RequestContext(
-            project,
-            fixture.editor,
-            mock(),
-            mock(),
-            mock(),
-            mock()
-        )
-
-        recommendationContext = RecommendationContext(
+        val requestContext = RequestContext(project, fixture.editor, mock(), mock(), mock(), mock())
+        val responseContext = ResponseContext("sessionId", CodewhispererCompletionType.Block)
+        val recommendationContext = RecommendationContext(
             listOf(DetailContext("requestId", pythonResponse.recommendations()[0], pythonResponse.recommendations()[0], false)),
             "x, y",
             "x, y",
             mock()
         )
-
-        invocationContext = InvocationContext(requestContext, mock(), recommendationContext, mock())
+        invocationContext = InvocationContext(requestContext, responseContext, recommendationContext, mock())
         sessionContext = SessionContext()
     }
 
@@ -189,6 +182,13 @@ class CodeWhispererCodeCoverageTrackerTest {
         doNothing().`when`(trackerSpy).scheduleCodeWhispererTracker()
         trackerSpy.flush()
         verify(trackerSpy, Times(1)).scheduleCodeWhispererTracker()
+    }
+
+    @Test
+    fun `test flush() won't emit telemetry when users not enabling telemetry service`() {
+        AwsSettings.getInstance().isTelemetryEnabled = false
+        trackerSpy.flush()
+        verify(batcher, Times(0)).enqueue(any())
     }
 
     private fun Editor.appendString(string: String) {
