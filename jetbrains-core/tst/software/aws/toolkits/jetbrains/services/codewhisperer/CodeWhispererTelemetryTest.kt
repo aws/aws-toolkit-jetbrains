@@ -41,7 +41,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.AcceptedSuggestionEntry
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.DefaultCodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -53,6 +52,7 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
+import kotlin.math.roundToInt
 
 class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val userDecision = "codewhisperer_userDecision"
@@ -80,8 +80,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
         AwsSettings.getInstance().isTelemetryEnabled = true
-        codePercentageTracker = DefaultCodeWhispererCodeCoverageTracker(projectRule.project)
-        projectRule.project.replaceService(CodeWhispererCodeCoverageTracker::class.java, codePercentageTracker, disposableRule.disposable)
     }
 
     @Test
@@ -375,14 +373,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test codePercentage metric is correct`() {
+    fun `test codePercentage metric is correct - 1`() {
         val project = projectRule.project
         val fixture = projectRule.fixture
-        val anotherFile = fixture.addFileToProject("/anotherFile.py", "")
+        val emptyFile = fixture.addFileToProject("/anotherFile.py", "")
         // simulate users typing behavior of the following
         // def addTwoNumbers(
         runInEdtAndWait {
-            fixture.openFileInEditor(anotherFile.virtualFile)
+            fixture.openFileInEditor(emptyFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
                 fixture.editor.appendString(pythonTestLeftContext)
             }
@@ -392,11 +390,13 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         withCodeWhispererServiceInvokedAndWait {
             runInEdtAndWait {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
-                CodeWhispererCodeCoverageTracker.getInstance(project).dispose()
             }
         }
-        val acceptedTokens = pythonResponse.recommendations()[0].content()
-        val totalTokens = pythonTestLeftContext + acceptedTokens
+
+        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+
+        val acceptedTokensSize = pythonResponse.recommendations()[0].content().length
+        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -404,14 +404,51 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             metricCaptor.allValues,
             codePercentage,
             1,
-            "codewhispererAcceptedTokens" to acceptedTokens.length.toString(),
-            "codewhispererTotalTokens" to totalTokens.length.toString()
+            "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
+            "codewhispererTotalTokens" to totalTokensSize.toString(),
+            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
         )
+    }
 
+    @Test
+    fun `test codePercentage metric is correct - 2`() {
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val emptyFile = fixture.addFileToProject("/anotherFile.py", "")
+        // simulate users typing behavior of the following
+        // def addTwoNumbers(
+        runInEdtAndWait {
+            fixture.openFileInEditor(emptyFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString(pythonTestLeftContext)
+            }
+        }
+        // simulate users accepting the recommendation
+        // (x, y):\n    return x + y
+        val anotherCodeSnippet = "\ndef functionWritenByMyself():\n\tpass()"
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                popupManagerSpy.popupComponents.acceptButton.doClick()
+                WriteCommandAction.runWriteCommandAction(project) {
+                    fixture.editor.appendString(anotherCodeSnippet)
+                }
+                // use dispose() to froce tracker to emit telemetry
+                CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+            }
+        }
+
+        val acceptedTokensSize = pythonResponse.recommendations()[0].content().length
+        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length + anotherCodeSnippet.length
+
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
         assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
             codePercentage,
             1,
+            "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
+            "codewhispererTotalTokens" to totalTokensSize.toString(),
+            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
         )
     }
 
@@ -427,6 +464,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         super.tearDown()
         telemetryService.dispose()
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
+        CodeWhispererCodeCoverageTracker.instances.clear()
     }
 
     companion object {

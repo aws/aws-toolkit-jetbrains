@@ -249,8 +249,6 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererLicenseInfoManager"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientManager"/>
-        <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker"
-            serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.DefaultCodeWhispererCodeCoverageTracker"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow"/>

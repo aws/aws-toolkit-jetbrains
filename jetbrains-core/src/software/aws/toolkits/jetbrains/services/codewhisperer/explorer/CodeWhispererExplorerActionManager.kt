@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWin
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.TokenDialog
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import java.net.URI
@@ -112,7 +111,6 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
             setAutoEnabled(true)
             setHasAcceptedTermsOfService(true)
             // Trigger the tracker to schedule telemetry sending in the background on users' acceptance of CodeWhisperer terms of service
-            CodeWhispererCodeCoverageTracker.getInstance(project)
             refreshCodeWhispererNode(project)
         }
     }

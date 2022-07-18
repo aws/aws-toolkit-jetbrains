@@ -3,14 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.editor
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.editor.event.EditorFactoryEvent
 import com.intellij.openapi.editor.event.EditorFactoryListener
 import com.intellij.openapi.editor.impl.EditorImpl
-import com.intellij.util.messages.Topic
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
+import software.aws.toolkits.telemetry.CodewhispererLanguage
 
 class CodeWhispererEditorListener : EditorFactoryListener {
     override fun editorCreated(event: EditorFactoryEvent) {
@@ -21,21 +22,18 @@ class CodeWhispererEditorListener : EditorFactoryListener {
                 override fun documentChanged(event: DocumentEvent) {
                     CodeWhispererInvocationStatus.getInstance().documentChanged()
                     if (!event.isWholeTextReplaced) {
-                        ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_DOCUMENT_CHANGE).documentChanged(event)
+                        val file = FileDocumentManager.getInstance().getFile(event.document)
+                        val lang = when (file?.extension) {
+                            "py" -> CodewhispererLanguage.Python
+                            "java" -> CodewhispererLanguage.Java
+                            "js" -> CodewhispererLanguage.Javascript
+                            else -> CodewhispererLanguage.Unknown
+                        }
+                        CodeWhispererCodeCoverageTracker.getInstance(lang).documentChanged(event)
                     }
                 }
             },
             editor.disposable
         )
     }
-
-    companion object {
-        val CODEWHISPERER_DOCUMENT_CHANGE = Topic.create("document changes", CodeWhispererDocumentChangedListener::class.java)
-    }
-}
-
-interface CodeWhispererDocumentChangedListener {
-    fun documentChanged(event: DocumentEvent) {}
-
-    fun documentChanged2(chars: CharSequence) {}
 }

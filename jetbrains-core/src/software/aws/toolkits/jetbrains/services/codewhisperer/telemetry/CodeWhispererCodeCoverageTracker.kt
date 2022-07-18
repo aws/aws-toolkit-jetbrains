@@ -5,14 +5,10 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.project.Project
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererDocumentChangedListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorListener
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -22,21 +18,23 @@ import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToInt
 
 abstract class CodeWhispererCodeCoverageTracker(
-    private val project: Project,
     private val timeWindowInSec: Long,
-    private val acceptedTokensBuffer: StringBuilder,
-    private val totalTokensBuffer: StringBuilder
+    private val language: CodewhispererLanguage,
+    acceptedTokensSize: AtomicInteger,
+    totalTokensSize: AtomicInteger
 ) : Disposable {
-    val acceptedTokens: String
-        get() = acceptedTokensBuffer.toString()
-    val totalTokens: String
-        get() = totalTokensBuffer.toString()
+    val percentage: Int
+        get() = if (totalTokensSize.get() != 0) (acceptedTokensSize.get().toDouble() / totalTokensSize.get() * 100).roundToInt() else 0
+    var acceptedTokensSize = acceptedTokensSize
+        private set
+    var totalTokensSize = totalTokensSize
+        private set
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val isShuttingDown = AtomicBoolean(false)
-    private var language: CodewhispererLanguage = CodewhispererLanguage.Unknown
     private var startTime: Instant = Instant.now()
 
     init {
@@ -45,22 +43,19 @@ abstract class CodeWhispererCodeCoverageTracker(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
                 override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {
+                    if (states.requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage() != language) return
                     pushAcceptedTokens(remainingRecomm)
-                }
-            }
-        )
-        conn.subscribe(
-            CodeWhispererEditorListener.CODEWHISPERER_DOCUMENT_CHANGE,
-            object : CodeWhispererDocumentChangedListener {
-                override fun documentChanged(event: DocumentEvent) {
-                    pushTotalTokens(event.newFragment)
                 }
             }
         )
         scheduleCodeWhispererTracker()
     }
 
-    fun flush() {
+    fun documentChanged(event: DocumentEvent) {
+        pushTotalTokens(event.newFragment)
+    }
+
+    private fun flush() {
         try {
             if (!isTelemetryEnabled()) {
                 init()
@@ -73,7 +68,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
     }
 
-    internal fun scheduleCodeWhispererTracker() {
+    private fun scheduleCodeWhispererTracker() {
         if (!alarm.isDisposed && !isShuttingDown.get()) {
             alarm.addRequest({ flush() }, Duration.ofSeconds(timeWindowInSec).toMillis())
         }
@@ -81,33 +76,38 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     private fun pushAcceptedTokens(chars: CharSequence) {
         if (!isTelemetryEnabled()) return
-        acceptedTokensBuffer.append(chars)
+        acceptedTokensSize.addAndGet(chars.length)
     }
 
     private fun pushTotalTokens(chars: CharSequence) {
         if (!isTelemetryEnabled()) return
-        totalTokensBuffer.append(chars)
+        totalTokensSize.addAndGet(chars.length)
     }
 
     private fun init() {
-        acceptedTokensBuffer.clear()
-        totalTokensBuffer.clear()
         startTime = Instant.now()
+        totalTokensSize.set(0)
+        acceptedTokensSize.set(0)
     }
 
     private fun emitCodeWhispererCodeContribution() {
-        val acceptedTokenSize = acceptedTokensBuffer.length
-        val totalTokensSize = totalTokensBuffer.length
-        val percentage = if (totalTokensSize != 0) (acceptedTokenSize.toDouble() / totalTokensSize * 100).roundToInt() else 0
         CodewhispererTelemetry.codePercentage(
-            project = project,
-            acceptedTokenSize,
+            project = null,
+            acceptedTokensSize.get(),
             language,
             percentage,
             startTime.toString(),
-            totalTokensSize
+            totalTokensSize.get()
         )
     }
+
+    @TestOnly
+    fun forceTrackerFlush() {
+        alarm.drainRequestsInTest()
+    }
+
+    @TestOnly
+    fun activeRequestCount() = alarm.activeRequestCount
 
     override fun dispose() {
         if (isShuttingDown.getAndSet(true)) {
@@ -118,14 +118,21 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     companion object {
         const val FIVE_MINS_IN_SECS = 300L
-        private val logger = getLogger<CodeWhispererCodeCoverageTracker>()
-        fun getInstance(project: Project) = project.service<CodeWhispererCodeCoverageTracker>()
+        internal val instances: MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
+
+        fun getInstance(language: CodewhispererLanguage): CodeWhispererCodeCoverageTracker = if (instances.containsKey(language)) {
+            instances[language] ?: throw Exception("Shouldn't be here")
+        } else {
+            val newTracker = DefaultCodeWhispererCodeCoverageTracker(language)
+            instances[language] = newTracker
+            newTracker
+        }
     }
 }
 
-class DefaultCodeWhispererCodeCoverageTracker(project: Project) : CodeWhispererCodeCoverageTracker(
-    project,
+class DefaultCodeWhispererCodeCoverageTracker(language: CodewhispererLanguage) : CodeWhispererCodeCoverageTracker(
     FIVE_MINS_IN_SECS,
-    StringBuilder(),
-    StringBuilder()
+    language,
+    acceptedTokensSize = AtomicInteger(0),
+    totalTokensSize = AtomicInteger(0)
 )
