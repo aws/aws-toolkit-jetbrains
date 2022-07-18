@@ -110,7 +110,6 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
             setManualEnabled(true)
             setAutoEnabled(true)
             setHasAcceptedTermsOfService(true)
-            // Trigger the tracker to schedule telemetry sending in the background on users' acceptance of CodeWhisperer terms of service
             refreshCodeWhispererNode(project)
         }
     }
