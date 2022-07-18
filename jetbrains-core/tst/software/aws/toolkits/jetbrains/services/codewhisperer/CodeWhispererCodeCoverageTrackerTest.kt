@@ -260,6 +260,6 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     companion object {
         const val CODE_PERCENTAGE = "codewhisperer_codePercentage"
-        const val TWO_SECONDS = 20L
+        const val TWO_SECONDS = 2L
     }
 }
