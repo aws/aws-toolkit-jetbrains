@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
@@ -42,6 +43,17 @@ abstract class CodeWhispererCodeCoverageTracker(
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
+                override fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {
+                    // Should remove right paranthesis added by IDE
+                    val editor = states.requestContext.editor
+                    val typeahead = sessionContext.typeahead
+                    val originalOffset = editor.caretModel.primaryCaret.offset - typeahead.length
+                    val codewhispererMetadata = editor.getUserData(CodeWhispererService.KEY_CODEWHISPERER_METADATA)
+                    val endOffsetToReplace = codewhispererMetadata?.insertEnd ?: editor.caretModel.primaryCaret.offset
+                    val rightParanthesis = endOffsetToReplace - originalOffset
+                    totalTokensSize.addAndGet(-rightParanthesis)
+                }
+
                 override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {
                     if (states.requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage() != language) return
                     pushAcceptedTokens(remainingRecomm)

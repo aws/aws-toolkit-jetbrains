@@ -11,6 +11,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
+import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -24,7 +25,11 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
+import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsRequest
+import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsResponse
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
@@ -416,7 +421,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val fixture = projectRule.fixture
         val emptyFile = fixture.addFileToProject("/anotherFile.py", "")
         // simulate users typing behavior of the following
-        // def addTwoNumbers(
+        // def addTwoNumbers
         runInEdtAndWait {
             fixture.openFileInEditor(emptyFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
@@ -442,6 +447,59 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            codePercentage,
+            1,
+            "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
+            "codewhispererTotalTokens" to totalTokensSize.toString(),
+            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
+        )
+    }
+
+    @Test
+    fun `test codePercentage metric is correct - simulate IDE adding right closing paren`() {
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val emptyFile = fixture.addFileToProject("/anotherFile.py", "")
+        // simulate users typing behavior of the following
+        // def addTwoNumbers(
+        whenever(mockClient.listRecommendations(any<ListRecommendationsRequest>())).thenReturn(
+            ListRecommendationsResponse.builder()
+                .recommendations(
+                    CodeWhispererTestUtil.generateMockRecommendationDetail("x, y):\n    return x + y"),
+                    CodeWhispererTestUtil.generateMockRecommendationDetail("a, b):\n    return a + b"),
+                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 3"),
+                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 4"),
+                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 5")
+                )
+                .nextToken("")
+                .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+                .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
+                .build() as ListRecommendationsResponse
+        )
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(emptyFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString("$pythonTestLeftContext(")
+                // add closing paren but not move the caret position, simulating IDE's behavior
+                fixture.editor.document.insertString(fixture.editor.caretModel.offset, ")")
+            }
+        }
+
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                popupManagerSpy.popupComponents.acceptButton.doClick()
+            }
+        }
+        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+
+        val acceptedTokensSize = "x, y):\n    return x + y".length
+        val totalTokensSize = "$pythonTestLeftContext(".length + acceptedTokensSize
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        metricCaptor.allValues.forEach { println(it) }
         assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
             codePercentage,
