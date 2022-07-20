@@ -121,33 +121,33 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     @After
     fun tearDown() {
-        CodeWhispererCodeCoverageTracker.instances.clear()
+        CodeWhispererCodeCoverageTracker.getInstancesMap().clear()
     }
 
     @Test
     fun `test getInstance()`() {
-        assertThat(CodeWhispererCodeCoverageTracker.instances).hasSize(0)
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
         val javaInstance = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Java)
-        assertThat(CodeWhispererCodeCoverageTracker.instances).hasSize(1)
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(1)
         assertThat(javaInstance).notNull
 
         val javaInstance2 = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Java)
-        assertThat(CodeWhispererCodeCoverageTracker.instances).hasSize(1)
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(1)
         assertThat(javaInstance == javaInstance2).isTrue
 
         val pythonInstance = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)
-        assertThat(CodeWhispererCodeCoverageTracker.instances).hasSize(2)
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(2)
         val pythonInstance2 = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)
         assertThat(pythonInstance == pythonInstance2).isTrue
 
         CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Javascript)
-        assertThat(CodeWhispererCodeCoverageTracker.instances).hasSize(3)
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(3)
     }
 
     @Test
     fun `test tracker is listening to document changes and increment totalTokens - add new code`() {
         val pythonTracker = spy(TestCodePercentageTracker(TWO_SECONDS, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(0)))
-        CodeWhispererCodeCoverageTracker.instances[CodewhispererLanguage.Python] = pythonTracker
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
 
         fixture.configureByText(pythonFileName, pythonTestLeftContext)
         runInEdtAndWait {
@@ -172,14 +172,14 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     @Test
     fun `test event CODEWHISPERER_USER_ACTION_PERFORMED will increment acceptedTokensSize in the correct tracker`() {
-        assertThat(CodeWhispererCodeCoverageTracker.instances.size).isEqualTo(0)
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap().size).isEqualTo(0)
         val pythonTracker = TestCodePercentageTracker(TWO_SECONDS, language = CodewhispererLanguage.Python)
         val javaTracker = TestCodePercentageTracker(TWO_SECONDS, language = CodewhispererLanguage.Java)
         val javascriptTracker = TestCodePercentageTracker(TWO_SECONDS, language = CodewhispererLanguage.Javascript)
 
-        CodeWhispererCodeCoverageTracker.instances[CodewhispererLanguage.Python] = pythonTracker
-        CodeWhispererCodeCoverageTracker.instances[CodewhispererLanguage.Java] = javaTracker
-        CodeWhispererCodeCoverageTracker.instances[CodewhispererLanguage.Javascript] = javascriptTracker
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Java] = javaTracker
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Javascript] = javascriptTracker
 
         fixture.configureByText("test.py", pythonTestLeftContext)
         val remainingRecomm = "(x, y):\n\treturn x + y"
@@ -197,7 +197,7 @@ class CodeWhispererCodeCoverageTrackerTest {
     fun `test 0 token will return 0%`() {
         fixture.configureByText("/emptyFile.java", "")
         val javaTracker = spy(TestCodePercentageTracker(TWO_SECONDS, language = CodewhispererLanguage.Java))
-        CodeWhispererCodeCoverageTracker.instances[CodewhispererLanguage.Java] = javaTracker
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Java] = javaTracker
         assertThat(javaTracker.percentage).isEqualTo(0)
     }
 

@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
@@ -43,58 +43,45 @@ abstract class CodeWhispererCodeCoverageTracker(
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
-                override fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {
-                    // Should remove right paranthesis added by IDE
-                    val editor = states.requestContext.editor
-                    val typeahead = sessionContext.typeahead
-                    val originalOffset = editor.caretModel.primaryCaret.offset - typeahead.length
-                    val codewhispererMetadata = editor.getUserData(CodeWhispererService.KEY_CODEWHISPERER_METADATA)
-                    val endOffsetToReplace = codewhispererMetadata?.insertEnd ?: editor.caretModel.primaryCaret.offset
-                    val rightParanthesis = endOffsetToReplace - originalOffset
-                    totalTokensSize.addAndGet(-rightParanthesis)
-                }
-
                 override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {
                     if (states.requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage() != language) return
-                    pushAcceptedTokens(remainingRecomm)
+                    addAndGetAcceptedTokens(remainingRecomm.length)
                 }
             }
         )
-        scheduleCodeWhispererTracker()
+        scheduleCodeWhispererCodeCoverageTracker()
     }
 
     fun documentChanged(event: DocumentEvent) {
-        pushTotalTokens(event.newFragment)
+        addAndGetTotalTokens(event.newLength - event.oldLength)
     }
 
     private fun flush() {
         try {
-            if (!isTelemetryEnabled()) {
-                init()
-                return
-            }
-            emitCodeWhispererCodeContribution()
+            if (isTelemetryEnabled()) emitCodeWhispererCodeContribution()
         } finally {
+            scheduleCodeWhispererCodeCoverageTracker()
             init()
-            scheduleCodeWhispererTracker()
         }
     }
 
-    private fun scheduleCodeWhispererTracker() {
+    private fun scheduleCodeWhispererCodeCoverageTracker() {
         if (!alarm.isDisposed && !isShuttingDown.get()) {
             alarm.addRequest({ flush() }, Duration.ofSeconds(timeWindowInSec).toMillis())
         }
     }
 
-    private fun pushAcceptedTokens(chars: CharSequence) {
-        if (!isTelemetryEnabled()) return
-        acceptedTokensSize.addAndGet(chars.length)
-    }
+    private fun addAndGetAcceptedTokens(delta: Int): Int =
+        if (!isTelemetryEnabled()) acceptedTokensSize.get()
+        else acceptedTokensSize.addAndGet(delta)
 
-    private fun pushTotalTokens(chars: CharSequence) {
-        if (!isTelemetryEnabled()) return
-        totalTokensSize.addAndGet(chars.length)
-    }
+    private fun addAndGetTotalTokens(delta: Int): Int =
+        if (!isTelemetryEnabled()) totalTokensSize.get()
+        else {
+            val result = totalTokensSize.addAndGet(delta)
+            if (result < 0) totalTokensSize.set(0)
+            result
+        }
 
     private fun init() {
         startTime = Instant.now()
@@ -129,21 +116,27 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     companion object {
-        const val FIVE_MINS_IN_SECS = 300L
-        internal val instances: MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
+        private val instances: MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
-        fun getInstance(language: CodewhispererLanguage): CodeWhispererCodeCoverageTracker = if (instances.containsKey(language)) {
-            instances[language] ?: throw Exception("Shouldn't be here")
-        } else {
-            val newTracker = DefaultCodeWhispererCodeCoverageTracker(language)
-            instances[language] = newTracker
-            newTracker
+        fun getInstance(language: CodewhispererLanguage): CodeWhispererCodeCoverageTracker = when (val instance = instances[language]) {
+            null -> {
+                val newTracker = DefaultCodeWhispererCodeCoverageTracker(language)
+                instances[language] = newTracker
+                newTracker
+            }
+            else -> instance
+        }
+
+        @TestOnly
+        fun getInstancesMap(): MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> {
+            assert(ApplicationManager.getApplication().isUnitTestMode)
+            return instances
         }
     }
 }
 
 class DefaultCodeWhispererCodeCoverageTracker(language: CodewhispererLanguage) : CodeWhispererCodeCoverageTracker(
-    FIVE_MINS_IN_SECS,
+    5 * TOTAL_SECONDS_IN_MINUTE,
     language,
     acceptedTokensSize = AtomicInteger(0),
     totalTokensSize = AtomicInteger(0)

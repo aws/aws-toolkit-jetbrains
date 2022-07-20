@@ -508,6 +508,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             "codewhispererTotalTokens" to totalTokensSize.toString(),
             "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
         )
+
+        metricCaptor.allValues.forEach { println(it) }
     }
 
     private fun Editor.appendString(string: String) {
@@ -522,7 +524,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         super.tearDown()
         telemetryService.dispose()
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
-        CodeWhispererCodeCoverageTracker.instances.clear()
+        CodeWhispererCodeCoverageTracker.getInstancesMap().clear()
     }
 
     companion object {
