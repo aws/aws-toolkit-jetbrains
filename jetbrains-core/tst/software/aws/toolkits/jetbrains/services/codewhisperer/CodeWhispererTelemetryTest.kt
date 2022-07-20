@@ -75,7 +75,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private lateinit var batcher: TelemetryBatcher
     private lateinit var telemetryServiceSpy: TelemetryService
     private var isTelemetryEnabledDefault: Boolean = false
-    private lateinit var codePercentageTracker: CodeWhispererCodeCoverageTracker
     @Before
     override fun setUp() {
         super.setUp()
