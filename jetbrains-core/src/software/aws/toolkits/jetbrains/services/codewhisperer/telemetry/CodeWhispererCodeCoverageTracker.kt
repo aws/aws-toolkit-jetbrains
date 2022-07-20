@@ -60,8 +60,8 @@ abstract class CodeWhispererCodeCoverageTracker(
         try {
             if (isTelemetryEnabled()) emitCodeWhispererCodeContribution()
         } finally {
-            scheduleCodeWhispererCodeCoverageTracker()
             init()
+            scheduleCodeWhispererCodeCoverageTracker()
         }
     }
 
