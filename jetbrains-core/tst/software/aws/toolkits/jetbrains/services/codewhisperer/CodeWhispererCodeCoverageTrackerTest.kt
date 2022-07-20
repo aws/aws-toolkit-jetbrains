@@ -149,7 +149,7 @@ class CodeWhispererCodeCoverageTrackerTest {
         val pythonTracker = spy(TestCodePercentageTracker(TWO_SECONDS, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(0)))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
 
-        fixture.configureByText(pythonFileName, pythonTestLeftContext)
+        fixture.configureByText(pythonFileName, "")
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
                 fixture.editor.appendString(pythonTestLeftContext)
@@ -168,6 +168,24 @@ class CodeWhispererCodeCoverageTrackerTest {
             }
         }
         assertThat(pythonTracker.totalTokensSize.get()).isEqualTo(oldSize + anotherCode.length)
+    }
+
+    @Test
+    fun `test tracker is listening to document changes and increment totalTokens - delete code`() {
+        val pythonTracker =
+            spy(TestCodePercentageTracker(TWO_SECONDS, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(pythonTestLeftContext.length)))
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        assertThat(pythonTracker.totalTokensSize.get()).isEqualTo(pythonTestLeftContext.length)
+
+        fixture.configureByText(pythonFileName, pythonTestLeftContext)
+        runInEdtAndWait {
+            fixture.editor.caretModel.primaryCaret.moveToOffset(fixture.editor.document.textLength)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.document.deleteString(fixture.editor.caretModel.offset - 3, fixture.editor.caretModel.offset)
+            }
+        }
+
+        assertThat(pythonTracker.totalTokensSize.get()).isEqualTo(pythonTestLeftContext.length - 3)
     }
 
     @Test
