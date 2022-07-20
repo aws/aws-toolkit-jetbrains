@@ -436,6 +436,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
                 WriteCommandAction.runWriteCommandAction(project) {
                     fixture.editor.appendString(anotherCodeSnippet)
+                    val currentOffset = fixture.editor.caretModel.offset
+                    // delete 1 char
+                    fixture.editor.document.deleteString(currentOffset - 1, currentOffset)
                 }
                 // use dispose() to froce tracker to emit telemetry
                 CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
@@ -443,7 +446,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
 
         val acceptedTokensSize = pythonResponse.recommendations()[0].content().length
-        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length + anotherCodeSnippet.length
+        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length + anotherCodeSnippet.length - 1
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
