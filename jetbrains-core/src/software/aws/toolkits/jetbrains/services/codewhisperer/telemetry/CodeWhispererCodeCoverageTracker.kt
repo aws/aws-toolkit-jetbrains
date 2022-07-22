@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
@@ -26,13 +27,16 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val timeWindowInSec: Long,
     private val language: CodewhispererLanguage,
     acceptedTokensSize: AtomicInteger,
-    totalTokensSize: AtomicInteger
+    totalTokensSize: AtomicInteger,
+    rangeMarker: RangeMarker? = null
 ) : Disposable {
     val percentage: Int
         get() = if (totalTokensSize.get() != 0) (acceptedTokensSize.get().toDouble() / totalTokensSize.get() * 100).roundToInt() else 0
     var acceptedTokensSize = acceptedTokensSize
         private set
     var totalTokensSize = totalTokensSize
+        private set
+    var myRangeMarker: RangeMarker? = rangeMarker
         private set
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val isShuttingDown = AtomicBoolean(false)
@@ -43,8 +47,9 @@ abstract class CodeWhispererCodeCoverageTracker(
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
-                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String) {
+                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String, rangeMarker: RangeMarker?) {
                     if (states.requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage() != language) return
+                    myRangeMarker = rangeMarker
                     addAndGetAcceptedTokens(remainingRecomm.length)
                 }
             }
@@ -87,9 +92,17 @@ abstract class CodeWhispererCodeCoverageTracker(
         startTime = Instant.now()
         totalTokensSize.set(0)
         acceptedTokensSize.set(0)
+        myRangeMarker = null
     }
 
     private fun emitCodeWhispererCodeContribution() {
+        myRangeMarker?.let {
+            if (!it.isValid) {
+                acceptedTokensSize.set(0)
+            } else {
+                acceptedTokensSize.set(it.endOffset - it.startOffset)
+            }
+        }
         CodewhispererTelemetry.codePercentage(
             project = null,
             acceptedTokensSize.get(),

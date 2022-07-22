@@ -377,6 +377,15 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
+    fun `test`() {
+        val string = "def add(x, y) = x + y"
+        val res = string.replaceFirst("x, y".toRegex(), "a, b")
+        assertThat(res).isEqualTo("def add(a, b) = x + y")
+
+        string.find { it == 'x' }
+    }
+
+    @Test
     fun `test codePercentage metric is correct - 1`() {
         val project = projectRule.project
         val fixture = projectRule.fixture
@@ -389,18 +398,24 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 fixture.editor.appendString(pythonTestLeftContext)
             }
         }
-        // simulate users accepting the recommendation
+        // simulate users accepting the recommendation and delete part of the recommendation
         // (x, y):\n    return x + y
+        val deletedTokenByUser = 4
         withCodeWhispererServiceInvokedAndWait {
             runInEdtAndWait {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
+                val offset = fixture.caretOffset
+                WriteCommandAction.runWriteCommandAction(project) {
+                    fixture.editor.document.deleteString(offset - deletedTokenByUser, offset)
+                    fixture.editor.caretModel.moveToOffset(fixture.editor.document.textLength)
+                }
             }
         }
 
         CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
 
-        val acceptedTokensSize = pythonResponse.recommendations()[0].content().length
-        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length
+        val acceptedTokensSize = pythonResponse.recommendations()[0].content().length - deletedTokenByUser
+        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length - deletedTokenByUser
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
