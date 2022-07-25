@@ -4,7 +4,9 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
 import com.intellij.util.ExceptionUtil
@@ -256,11 +258,18 @@ class LogStreamFilterActor(
     }
 
     private fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> {
-        val response = client.filterLogEvents(request)
-        val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
-        nextForwardToken = response.nextToken()
+        return try {
+            val response = client.filterLogEvents(request)
+            val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
+            nextForwardToken = response.nextToken()
 
-        return events
+            events
+        } catch (e: Exception) {
+            runInEdt {
+                Messages.showErrorDialog(project, e.localizedMessage, message("cloudwatch.logs.failed_to_load_stream", logStream))
+            }
+            listOf()
+        }
     }
 }
 
