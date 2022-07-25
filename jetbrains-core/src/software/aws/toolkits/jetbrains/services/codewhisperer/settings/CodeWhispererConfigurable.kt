@@ -9,6 +9,7 @@ import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.ui.layout.panel
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererActivationChangedListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.resources.message
 
@@ -20,9 +21,12 @@ class CodeWhispererConfigurable :
 
     override fun getId() = "aws.codewhisperer"
 
+    // TODO:: check if we need pass method ref or value
     override fun createPanel() = panel {
         val connect = ApplicationManager.getApplication().messageBus.connect()
-        val invoke = CodeWhispererExplorerActionManager.getInstance()::hasAcceptedTermsOfService
+        val invoke: () -> Boolean = {
+            CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices)
+        }
         row {
             label(message("aws.settings.codewhisperer.warning")).apply {
                 component.icon = AllIcons.General.Warning

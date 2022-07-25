@@ -23,6 +23,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -93,12 +94,12 @@ class TokenDialog(private val project: Project) : DialogWrapper(project), Dispos
                     if (!isActive) return@withContext
 
                     close(OK_EXIT_CODE)
-                    CodeWhispererExplorerActionManager.getInstance().refreshCodeWhispererNode(project)
+                    DevToolsToolWindow.getInstance(project).redrawTree()
                     notifyInfo("Amazon CodeWhisperer", message("codewhisperer.explorer.token.success"), project)
 
                     // Modal change
                     ApplicationManager.getApplication().invokeLater {
-                        CodeWhispererExplorerActionManager.getInstance().enableCodeWhisperer(project)
+                        CodeWhispererExplorerActionManager.getInstance().performAction(project, CodeWhispererExplorerActionManager.ACTION_ENABLE_CODEWHISPERER)
                     }
                 }
             } catch (e: CodeWhispererException) {

@@ -104,16 +104,16 @@ class CodeWhispererServiceNode(
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
         val codewhispererActions = mutableListOf<CodeWhispererActionNode>()
         val manager = CodeWhispererExplorerActionManager.getInstance()
-        if (!manager.isAuthorized()) {
+        if (!manager.getCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAuthorized)) {
             codewhispererActions.add(whatIsCodeWhispererNode)
             codewhispererActions.add(requestAccessTokenNode)
             codewhispererActions.add(enterAccessTokenNode)
         } else {
-            if (!manager.hasAcceptedTermsOfService()) {
+            if (!manager.getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices)) {
                 codewhispererActions.add(whatIsCodeWhispererNode)
                 codewhispererActions.add(enableCodeWhispererNode)
             } else {
-                if (manager.isAutoEnabled()) {
+                if (manager.getCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled)) {
                     codewhispererActions.add(pauseCodeWhispererNode)
                 } else {
                     codewhispererActions.add(resumeCodeWhispererNode)

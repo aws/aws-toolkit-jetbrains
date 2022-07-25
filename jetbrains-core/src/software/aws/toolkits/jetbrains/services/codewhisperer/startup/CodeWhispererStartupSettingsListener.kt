@@ -11,6 +11,7 @@ import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererActivationChangedListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory
@@ -34,7 +35,7 @@ class CodeWhispererStartupSettingsListener(private val project: Project) :
     override fun toolWindowShown(toolWindow: ToolWindow) {
         super.toolWindowShown(toolWindow)
         if (toolWindow.id != ProblemsView.ID) return
-        if (!CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()) return
+        if (!CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices)) return
         CodeWhispererCodeScanManager.getInstance(project).addCodeScanUI()
     }
 }

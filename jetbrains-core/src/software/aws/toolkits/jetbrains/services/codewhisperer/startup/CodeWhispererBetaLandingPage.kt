@@ -15,6 +15,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.util.ResourceUtil
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import java.net.URL
@@ -22,7 +23,7 @@ import java.net.URL
 class CodeWhispererBetaLandingPage : StartupActivity.DumbAware {
     override fun runActivity(project: Project) {
         if (ApplicationManager.getApplication().isUnitTestMode) return
-        if (!CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()) return
+        if (!CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices)) return
         val url: URL = ResourceUtil.getResource(javaClass, "codewhisperer", "WelcomeToCodeWhisperer.md")
         VfsUtil.findFileByURL(url)?.let { readme ->
             readme.putUserData(DEFAULT_LAYOUT_FOR_FILE, TextEditorWithPreview.Layout.SHOW_PREVIEW)

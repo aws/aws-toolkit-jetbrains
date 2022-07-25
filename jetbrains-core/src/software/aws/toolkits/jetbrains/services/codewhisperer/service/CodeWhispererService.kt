@@ -39,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getFileContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
@@ -559,11 +560,16 @@ class CodeWhispererService {
     }
 
     fun canDoInvocation(editor: Editor, type: CodewhispererTriggerType): Boolean {
-        if (type == CodewhispererTriggerType.AutoTrigger && !CodeWhispererExplorerActionManager.getInstance().isAutoEnabled()) {
+        if (type == CodewhispererTriggerType.AutoTrigger && !CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(
+                CodeWhispererExploreStateType.IsAutoEnabled
+            )
+        ) {
             LOG.debug { "CodeWhisperer auto-trigger is disabled, not invoking service" }
             return false
         }
-        if (type == CodewhispererTriggerType.OnDemand && !CodeWhispererExplorerActionManager.getInstance().isManualEnabled()) {
+        if (type == CodewhispererTriggerType.OnDemand &&
+            !CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(CodeWhispererExploreStateType.IsManualEnabled)
+        ) {
             LOG.debug { "CodeWhisperer manual-trigger is disabled, not invoking service" }
             return false
         }

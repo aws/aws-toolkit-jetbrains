@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.impl.status.widget.StatusBarEditorBasedWidgetFactory
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.resources.message
 
@@ -16,7 +17,7 @@ class CodeWhispererStatusBarWidgetFactory : StatusBarEditorBasedWidgetFactory() 
     override fun getDisplayName(): String = message("codewhisperer.statusbar.display_name")
 
     override fun isAvailable(project: Project): Boolean =
-        CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()
+        CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices)
 
     override fun createWidget(project: Project): StatusBarWidget = CodeWhispererStatusBarWidget(project)
 

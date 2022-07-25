@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.explorer
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
@@ -14,6 +13,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.annotations.Property
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
@@ -34,13 +34,13 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
                 showWhatIsCodeWhisperer()
             }
             ACTION_ENABLE_CODEWHISPERER -> {
-                enableCodeWhisperer(project)
+                enableAndShowCodeWhispererToS(project)
             }
             ACTION_PAUSE_CODEWHISPERER -> {
-                setAutoSuggestion(project, false)
+                setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled, false) { DevToolsToolWindow.getInstance(project).redrawTree() }
             }
             ACTION_RESUME_CODEWHISPERER -> {
-                setAutoSuggestion(project, true)
+                setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled, true) { DevToolsToolWindow.getInstance(project).redrawTree() }
             }
             ACTION_OPEN_CODE_REFERENCE_PANEL -> {
                 showCodeReferencePanel(project)
@@ -57,37 +57,43 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         }
     }
 
-    fun showCodeReferencePanel(project: Project) {
-        CodeWhispererCodeReferenceManager.getInstance(project).showCodeReferencePanel()
+    fun isEnabled(): Boolean =
+        getCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled) &&
+            getCodeWhispererExplorerState(CodeWhispererExploreStateType.IsManualEnabled)
+
+    fun getCodeWhispererExplorerState(exploreStateType: CodeWhispererExploreStateType): Boolean = when (exploreStateType) {
+        CodeWhispererExploreStateType.IsAutoEnabled -> actionState.value.getOrDefault(CodeWhispererExploreStateType.IsAutoEnabled, false)
+        CodeWhispererExploreStateType.IsManualEnabled -> actionState.value.getOrDefault(CodeWhispererExploreStateType.IsManualEnabled, false)
+        CodeWhispererExploreStateType.IsAuthorized -> actionState.token != null
+        CodeWhispererExploreStateType.HasAcceptedTermsOfServices -> actionState.value.getOrDefault(
+            CodeWhispererExploreStateType.HasAcceptedTermsOfServices,
+            false
+        )
     }
 
-    fun isAutoEnabled(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsAutoEnabled, false)
-
-    fun setAutoEnabled(isAutoEnabled: Boolean) {
-        actionState.value[CodeWhispererExploreStateType.IsAutoEnabled] = isAutoEnabled
-    }
-
-    fun isManualEnabled(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsManualEnabled, false)
-
-    fun setManualEnabled(isManualEnabled: Boolean) {
-        actionState.value[CodeWhispererExploreStateType.IsManualEnabled] = isManualEnabled
-    }
-
-    fun isEnabled(): Boolean = isAutoEnabled() && isManualEnabled()
-
-    fun hasAcceptedTermsOfService(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.HasAcceptedTermsOfServices, false)
-
-    fun setHasAcceptedTermsOfService(hasAcceptedTermsOfService: Boolean) {
-        actionState.value[CodeWhispererExploreStateType.HasAcceptedTermsOfServices] = hasAcceptedTermsOfService
-        ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_ACTIVATION_CHANGED)
-            .activationChanged(hasAcceptedTermsOfService)
-    }
-
-    fun isAuthorized(): Boolean = actionState.token != null
-
-    @Synchronized
-    fun setAuthorized(token: String?) {
-        actionState.token = token
+    fun setCodeWhispererExplorerState(exploreStateType: CodeWhispererExploreStateType, valueToSet: Any, runnable: () -> Unit = {}) {
+        val oldStamp = actionState.modificationCount
+        when (exploreStateType) {
+            CodeWhispererExploreStateType.IsAuthorized -> {
+                (valueToSet as? String)?.let {
+                    actionState.token = valueToSet
+                } ?: throw (IllegalArgumentException())
+            }
+            else -> {
+                (valueToSet as? Boolean)?.let {
+                    actionState.value[exploreStateType] = it
+                } ?: throw (IllegalArgumentException())
+            }
+        }
+        val newStamp = actionState.modificationCount
+        // only execute task if update succeed
+        if (oldStamp != newStamp) {
+            runnable()
+        }
+        if (exploreStateType == CodeWhispererExploreStateType.HasAcceptedTermsOfServices && newStamp != oldStamp) {
+            ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_ACTIVATION_CHANGED)
+                .activationChanged(getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices))
+        }
     }
 
     fun showWhatIsCodeWhisperer() {
@@ -95,40 +101,30 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         BrowserUtil.browse(uri)
     }
 
-    fun showTokenRegistrationPage() {
+    private fun showTokenRegistrationPage() {
         val uri = URI(CodeWhispererConstants.CODEWHISPERER_TOKEN_REQUEST_LINK)
         BrowserUtil.browse(uri)
     }
 
-    fun enableCodeWhisperer(project: Project) {
-        showCodeWhispererToS(project)
-    }
-
-    private fun showCodeWhispererToS(project: Project) {
+    private fun enableAndShowCodeWhispererToS(project: Project) {
         val dialog = CodeWhispererTermsOfServiceDialog(project)
         if (dialog.showAndGet()) {
-            setManualEnabled(true)
-            setAutoEnabled(true)
-            setHasAcceptedTermsOfService(true)
-
-            refreshCodeWhispererNode(project)
+            setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsManualEnabled, true)
+            setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled, true)
+            setCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices, true) {
+                ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_ACTIVATION_CHANGED)
+                    .activationChanged(true)
+            }
+            DevToolsToolWindow.getInstance(project).redrawTree()
         }
+    }
+
+    private fun showCodeReferencePanel(project: Project) {
+        CodeWhispererCodeReferenceManager.getInstance(project).showCodeReferencePanel()
     }
 
     private fun showTokenDialog(project: Project) {
         TokenDialog(project).showAndGet()
-    }
-
-    private fun setAutoSuggestion(project: Project, isAutoEnabled: Boolean) {
-        setAutoEnabled(isAutoEnabled)
-        refreshCodeWhispererNode(project)
-    }
-
-    fun refreshCodeWhispererNode(project: Project) {
-        runInEdt {
-            val explorer = DevToolsToolWindow.getInstance(project)
-            explorer.redrawTree()
-        }
     }
 
     private fun runCodeScan(project: Project) {
@@ -140,7 +136,9 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
      * Caller (e.x. CodeWhispererService) should take care if null value returned, popup a notification/hint window or dialog etc.
      */
     fun resolveAccessToken(): String? {
-        if (actionState.token == null) { LOG.warn { "Logical Error: Try to get access token before token initialization" } }
+        if (actionState.token == null) {
+            LOG.warn { "Logical Error: Try to get access token before token initialization" }
+        }
         return actionState.token
     }
 
@@ -151,7 +149,7 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         val codewhispererClient = CodeWhispererClientManager.getInstance().getClient()
         val response = codewhispererClient.getAccessToken { it.identityToken(identityToken) }
 
-        setAuthorized(response.accessToken())
+        setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAuthorized, response.accessToken())
     }
 
     override fun getState(): CodeWhispererExploreActionState = CodeWhispererExploreActionState().apply {
@@ -172,9 +170,15 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
     }
 
     fun reset() {
-        setManualEnabled(false)
-        setAutoEnabled(false)
-        setHasAcceptedTermsOfService(false)
+        setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsManualEnabled, false)
+        setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled, false)
+        setCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices, false)
+    }
+
+    @TestOnly
+    internal fun getExplorerState(): CodeWhispererExploreActionState {
+        assert(ApplicationManager.getApplication().isUnitTestMode)
+        return actionState
     }
 
     companion object {
@@ -206,6 +210,7 @@ internal class CodeWhispererExploreActionState : BaseState() {
 
 internal enum class CodeWhispererExploreStateType {
     IsAutoEnabled,
+    IsAuthorized,
     IsManualEnabled,
     HasAcceptedTermsOfServices,
 }

@@ -40,11 +40,11 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanEditorMouseMotionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.overlaps
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
@@ -283,7 +283,7 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun beforeCodeScan() {
         // Refresh CodeWhisperer Explorer tree node to reflect scan in progress.
-        CodeWhispererExplorerActionManager.getInstance().refreshCodeWhispererNode(project)
+        DevToolsToolWindow.getInstance(project).redrawTree()
         addCodeScanUI(setSelected = true)
         // Show in progress indicator
         codeScanResultsPanel.showInProgressIndicator()
@@ -292,7 +292,7 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun afterCodeScan() {
         isCodeScanInProgress.set(false)
-        CodeWhispererExplorerActionManager.getInstance().refreshCodeWhispererNode(project)
+        DevToolsToolWindow.getInstance(project).redrawTree()
     }
 
     /**

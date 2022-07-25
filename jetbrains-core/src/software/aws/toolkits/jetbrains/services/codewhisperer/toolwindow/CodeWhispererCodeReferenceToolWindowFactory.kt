@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBScrollPane
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 
 class CodeWhispererCodeReferenceToolWindowFactory : ToolWindowFactory, DumbAware {
@@ -22,7 +23,7 @@ class CodeWhispererCodeReferenceToolWindowFactory : ToolWindowFactory, DumbAware
     }
 
     override fun shouldBeAvailable(project: Project): Boolean =
-        CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()
+        CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices)
 
     companion object {
         const val id = "aws.codewhisperer.codereference"

@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerFactory
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.services.codewhisperer.experiment.CodeWhispererExperiment
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfiguration
@@ -92,16 +93,16 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
 
     @Test
     fun `test disable manual trigger should make user not able to trigger CodeWhisperer manually`() {
-        stateManager.setManualEnabled(false)
-        assertThat(stateManager.isManualEnabled()).isFalse
+        stateManager.setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsManualEnabled, false)
+        assertThat(stateManager.getCodeWhispererExplorerState(CodeWhispererExploreStateType.IsManualEnabled)).isFalse
         invokeCodeWhispererService()
         verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any())
     }
 
     @Test
     fun `test disable auto trigger should make user not able to trigger CodeWhisperer automatically`() {
-        stateManager.setAutoEnabled(false)
-        assertThat(stateManager.isAutoEnabled()).isFalse
+        stateManager.setCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled, false)
+        assertThat(stateManager.getCodeWhispererExplorerState(CodeWhispererExploreStateType.IsAutoEnabled)).isFalse
         runInEdtAndWait {
             projectRule.fixture.type(':')
             verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any())
@@ -176,8 +177,8 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
             CodeWhispererStatusBarWidget.ID
         ) ?: fail("CodeWhisperer status bar widget not found")
         val originalIsIncludeCodeWithReference = settingsManager.isIncludeCodeWithReference()
-        runInEdt {
-            CodeWhispererExplorerActionManager.getInstance().setHasAcceptedTermsOfService(false)
+        runInEdtAndWait {
+            CodeWhispererExplorerActionManager.getInstance().setCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices, false)
         }
 
         runInEdtAndWait {
@@ -188,7 +189,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         }
 
         runInEdt {
-            CodeWhispererExplorerActionManager.getInstance().setHasAcceptedTermsOfService(true)
+            CodeWhispererExplorerActionManager.getInstance().setCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices, true)
         }
 
         runInEdtAndWait {

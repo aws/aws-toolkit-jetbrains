@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.resources.message
 
@@ -17,7 +18,7 @@ class CodeWhispererCodeScanRunAction : DumbAwareAction(
 ) {
     override fun update(event: AnActionEvent) {
         event.presentation.isEnabledAndVisible =
-            CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()
+            CodeWhispererExplorerActionManager.getInstance().getCodeWhispererExplorerState(CodeWhispererExploreStateType.HasAcceptedTermsOfServices)
         val project = event.project ?: return
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         event.presentation.icon = scanManager.getActionButtonIcon()
