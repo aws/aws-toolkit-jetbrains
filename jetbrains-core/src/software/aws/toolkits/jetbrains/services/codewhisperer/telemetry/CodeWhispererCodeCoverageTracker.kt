@@ -65,7 +65,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         try {
             if (isTelemetryEnabled()) emitCodeWhispererCodeContribution()
         } finally {
-            init()
+            reset()
             scheduleCodeWhispererCodeCoverageTracker()
         }
     }
@@ -88,7 +88,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             result
         }
 
-    private fun init() {
+    private fun reset() {
         startTime = Instant.now()
         totalTokensSize.set(0)
         acceptedTokensSize.set(0)
