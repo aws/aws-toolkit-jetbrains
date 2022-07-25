@@ -26,18 +26,18 @@ import kotlin.math.roundToInt
 abstract class CodeWhispererCodeCoverageTracker(
     private val timeWindowInSec: Long,
     private val language: CodewhispererLanguage,
-    acceptedTokensSize: AtomicInteger,
-    totalTokensSize: AtomicInteger,
-    rangeMarker: RangeMarker? = null
+    private val acceptedTokens: AtomicInteger,
+    private val totalTokens: AtomicInteger,
+    private val rangeMarkers: MutableList<RangeMarker>
 ) : Disposable {
     val percentage: Int
-        get() = if (totalTokensSize.get() != 0) (acceptedTokensSize.get().toDouble() / totalTokensSize.get() * 100).roundToInt() else 0
-    var acceptedTokensSize = acceptedTokensSize
-        private set
-    var totalTokensSize = totalTokensSize
-        private set
-    var myRangeMarker: RangeMarker? = rangeMarker
-        private set
+        get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else 0
+    val acceptedTokensSize: Int
+        get() = acceptedTokens.get()
+    val totalTokensSize: Int
+        get() = totalTokens.get()
+    val acceptedRecommendationsCount: Int
+        get() = rangeMarkers.size
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val isShuttingDown = AtomicBoolean(false)
     private var startTime: Instant = Instant.now()
@@ -47,10 +47,9 @@ abstract class CodeWhispererCodeCoverageTracker(
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
-                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String, rangeMarker: RangeMarker?) {
+                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
                     if (states.requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage() != language) return
-                    myRangeMarker = rangeMarker
-                    addAndGetAcceptedTokens(remainingRecomm.length)
+                    rangeMarkers.add(rangeMarker)
                 }
             }
         )
@@ -58,6 +57,9 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     fun documentChanged(event: DocumentEvent) {
+        // When open a file for the first time, IDE will also emit DocumentEvent for loading with `isWholeTextReplaced = true`
+        // Added this condition to filter out those events
+        if (event.isWholeTextReplaced) return
         addAndGetTotalTokens(event.newLength - event.oldLength)
     }
 
@@ -77,39 +79,37 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     private fun addAndGetAcceptedTokens(delta: Int): Int =
-        if (!isTelemetryEnabled()) acceptedTokensSize.get()
-        else acceptedTokensSize.addAndGet(delta)
+        if (!isTelemetryEnabled()) acceptedTokensSize
+        else acceptedTokens.addAndGet(delta)
 
     private fun addAndGetTotalTokens(delta: Int): Int =
-        if (!isTelemetryEnabled()) totalTokensSize.get()
+        if (!isTelemetryEnabled()) totalTokensSize
         else {
-            val result = totalTokensSize.addAndGet(delta)
-            if (result < 0) totalTokensSize.set(0)
+            val result = totalTokens.addAndGet(delta)
+            if (result < 0) totalTokens.set(0)
             result
         }
 
     private fun reset() {
         startTime = Instant.now()
-        totalTokensSize.set(0)
-        acceptedTokensSize.set(0)
-        myRangeMarker = null
+        totalTokens.set(0)
+        acceptedTokens.set(0)
+        rangeMarkers.clear()
     }
 
     private fun emitCodeWhispererCodeContribution() {
-        myRangeMarker?.let {
-            if (!it.isValid) {
-                acceptedTokensSize.set(0)
-            } else {
-                acceptedTokensSize.set(it.endOffset - it.startOffset)
-            }
+        rangeMarkers.forEach {
+            if (!it.isValid) return@forEach
+            addAndGetAcceptedTokens(it.endOffset - it.startOffset)
         }
+
         CodewhispererTelemetry.codePercentage(
             project = null,
-            acceptedTokensSize.get(),
+            acceptedTokensSize,
             language,
             percentage,
             startTime.toString(),
-            totalTokensSize.get()
+            totalTokensSize
         )
     }
 
@@ -131,6 +131,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     companion object {
         private val instances: MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
+        fun calculatePercentage(acceptedTokens: Int, totalTokens: Int): Int = ((acceptedTokens.toDouble() * 100) / totalTokens).roundToInt()
         fun getInstance(language: CodewhispererLanguage): CodeWhispererCodeCoverageTracker = when (val instance = instances[language]) {
             null -> {
                 val newTracker = DefaultCodeWhispererCodeCoverageTracker(language)
@@ -151,6 +152,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 class DefaultCodeWhispererCodeCoverageTracker(language: CodewhispererLanguage) : CodeWhispererCodeCoverageTracker(
     5 * TOTAL_SECONDS_IN_MINUTE,
     language,
-    acceptedTokensSize = AtomicInteger(0),
-    totalTokensSize = AtomicInteger(0)
+    acceptedTokens = AtomicInteger(0),
+    totalTokens = AtomicInteger(0),
+    mutableListOf()
 )

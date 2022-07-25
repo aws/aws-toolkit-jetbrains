@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
 
 class CodeWhispererCodeReferenceActionListener : CodeWhispererUserActionListener {
-    override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, remainingRecomm: String, rangeMarker: RangeMarker?) {
+    override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
         val (project, editor) = states.requestContext
         val manager = CodeWhispererCodeReferenceManager.getInstance(project)
         manager.insertCodeReference(states, sessionContext.selectedIndex)
