@@ -21,7 +21,6 @@ class CodeWhispererConfigurable :
 
     override fun getId() = "aws.codewhisperer"
 
-    // TODO:: check if we need pass method ref or value
     override fun createPanel() = panel {
         val connect = ApplicationManager.getApplication().messageBus.connect()
         val invoke: () -> Boolean = {

@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
@@ -251,6 +252,7 @@ class CodeWhispererExplorerActionManagerTest {
     fun `test getNewAccessTokenAndPersist()`() {
         val clientManagerMock: CodeWhispererClientManager = mock()
         val tokenCaptor = argumentCaptor<GetAccessTokenRequest>()
+        ApplicationManager.getApplication().replaceService(CodeWhispererClientManager::class.java, clientManagerMock, disposableRule.disposable)
         whenever(clientManagerMock.getClient()).thenReturn(clientMock)
         whenever(clientMock.getAccessToken(any<GetAccessTokenRequest>())).thenReturn(GetAccessTokenResponse.builder().accessToken("bar").build())
         doNothing().`when`(explorerManager).setCodeWhispererExplorerState(any(), any(), any())
