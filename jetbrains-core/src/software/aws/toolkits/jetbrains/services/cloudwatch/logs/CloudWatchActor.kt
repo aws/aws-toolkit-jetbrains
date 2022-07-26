@@ -257,19 +257,17 @@ class LogStreamFilterActor(
         return getSearchLogEvents(request)
     }
 
-    private fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> {
-        return try {
-            val response = client.filterLogEvents(request)
-            val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
-            nextForwardToken = response.nextToken()
+    private fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> = try {
+        val response = client.filterLogEvents(request)
+        val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
+        nextForwardToken = response.nextToken()
 
-            events
-        } catch (e: Exception) {
-            runInEdt {
-                Messages.showErrorDialog(project, e.localizedMessage, message("cloudwatch.logs.failed_to_load_stream", logStream))
-            }
-            listOf()
+        events
+    } catch (e: Exception) {
+        runInEdt {
+            Messages.showErrorDialog(project, e.localizedMessage, message("cloudwatch.logs.failed_to_load_stream", logStream))
         }
+        listOf()
     }
 }
 
