@@ -377,15 +377,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test`() {
-        val string = "def add(x, y) = x + y"
-        val res = string.replaceFirst("x, y".toRegex(), "a, b")
-        assertThat(res).isEqualTo("def add(a, b) = x + y")
-
-        string.find { it == 'x' }
-    }
-
-    @Test
     fun `test codePercentage metric is correct - 1`() {
         val project = projectRule.project
         val fixture = projectRule.fixture
