@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.editor.impl.event.DocumentEventImpl
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import org.jetbrains.annotations.TestOnly
