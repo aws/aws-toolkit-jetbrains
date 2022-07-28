@@ -4,9 +4,9 @@ assertJ = "3.20.2" # Upgrading leads to SAM errors: https://youtrack.jetbrains.c
 awsSdk = "2.17.219"
 commonmark = "0.17.1"
 detekt = "1.20.0"
-intellijGradle = "1.7.0-20220613.010908-17"
+intellijGradle = "1.7.0"
 intellijRemoteRobot = "0.11.14"
-jackson = "2.11.1"
+jackson = "2.13.3"
 jacoco = "0.8.8"
 jgit = "5.11.0.202103091610-r"
 junit4 = "4.13.2"
@@ -18,11 +18,11 @@ kotlin = "1.6.21"
 kotlinCoroutines = "1.5.0"
 mockito = "4.6.1"
 mockitoKotlin = "4.0.0"
-telemetryGenerator = "1.0.53"
+telemetryGenerator = "1.0.58"
 testLogger = "3.1.0"
 testRetry = "1.2.1"
 slf4j = "1.7.36"
-wiremock = "2.27.2"
+wiremock = "2.33.2"
 zjsonpatch = "0.4.11"
 
 [libraries]
@@ -86,7 +86,7 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 telemetryGenerator = { module = "software.aws.toolkits:telemetry-generator", version.ref = "telemetryGenerator" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
-wiremock = { module = "com.github.tomakehurst:wiremock", version.ref = "wiremock" }
+wiremock = { module = "com.github.tomakehurst:wiremock-jre8", version.ref = "wiremock" }
 zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjsonpatch" }
 
 [bundles]
