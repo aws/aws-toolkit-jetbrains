@@ -110,6 +110,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     private fun emitCodeWhispererCodeContribution() {
         rangeMarkers.forEach { rangeMarker ->
             if (!rangeMarker.isValid) return@forEach
+            // if users add more code upon the recommendation generated from CodeWhisperer, we consider those added part as userToken but not CwsprTokens
             val originalRecommendationLength = rangeMarker.getUserData(key)
             originalRecommendationLength?.let {
                 addAndGetAcceptedTokens((rangeMarker.endOffset - rangeMarker.startOffset).coerceAtMost(originalRecommendationLength))
