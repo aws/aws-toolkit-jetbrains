@@ -170,7 +170,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 }
 
 class DefaultCodeWhispererCodeCoverageTracker(language: CodewhispererLanguage) : CodeWhispererCodeCoverageTracker(
-    1 * TOTAL_SECONDS_IN_MINUTE,
+    5 * TOTAL_SECONDS_IN_MINUTE,
     language,
     acceptedTokens = AtomicInteger(0),
     totalTokens = AtomicInteger(0),
