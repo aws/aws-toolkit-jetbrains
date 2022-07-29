@@ -112,7 +112,6 @@ abstract class CodeWhispererCodeCoverageTracker(
             if (!rangeMarker.isValid) return@forEach
             val originalRecommendationLength = rangeMarker.getUserData(key)
             originalRecommendationLength?.let {
-                val test = (rangeMarker.endOffset - rangeMarker.startOffset).coerceAtMost(originalRecommendationLength)
                 addAndGetAcceptedTokens((rangeMarker.endOffset - rangeMarker.startOffset).coerceAtMost(originalRecommendationLength))
             } ?: run {
                 LOG.debug { "Failed to get original recommendation size when incrementing acceptedTokens" }
