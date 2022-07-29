@@ -111,7 +111,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             addAndGetAcceptedTokens(it.endOffset - it.startOffset)
         }
 
-        percentage?.let {percentage ->
+        percentage?.let { percentage ->
             CodewhispererTelemetry.codePercentage(
                 project = null,
                 acceptedTokensSize,
