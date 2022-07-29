@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.impl.event.DocumentEventImpl
+import com.intellij.openapi.util.Key
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import org.jetbrains.annotations.TestOnly
@@ -53,6 +54,7 @@ abstract class CodeWhispererCodeCoverageTracker(
                 override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
                     if (states.requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage() != language) return
                     rangeMarkers.add(rangeMarker)
+                    rangeMarker.putUserData(key, rangeMarker.endOffset - rangeMarker.startOffset)
                 }
             }
         )
@@ -106,9 +108,16 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     private fun emitCodeWhispererCodeContribution() {
-        rangeMarkers.forEach {
-            if (!it.isValid) return@forEach
-            addAndGetAcceptedTokens(it.endOffset - it.startOffset)
+        rangeMarkers.forEach { rangeMarker ->
+            if (!rangeMarker.isValid) return@forEach
+            val originalRecommendationLength = rangeMarker.getUserData(key)
+            originalRecommendationLength?.let {
+                val test = (rangeMarker.endOffset - rangeMarker.startOffset).coerceAtMost(originalRecommendationLength)
+                addAndGetAcceptedTokens((rangeMarker.endOffset - rangeMarker.startOffset).coerceAtMost(originalRecommendationLength))
+            } ?: run {
+                LOG.debug { "Failed to get original recommendation size when incrementing acceptedTokens" }
+                addAndGetTotalTokens(rangeMarker.endOffset - rangeMarker.startOffset)
+            }
         }
 
         CodewhispererTelemetry.codePercentage(
@@ -137,6 +146,8 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     companion object {
+        private const val REMAINING_RECOMMENDATION_LENGTH = "remainingRecommendationLength"
+        private val key = Key<Int>(REMAINING_RECOMMENDATION_LENGTH)
         private val LOG = getLogger<CodeWhispererCodeCoverageTracker>()
         private val instances: MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
@@ -159,7 +170,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 }
 
 class DefaultCodeWhispererCodeCoverageTracker(language: CodewhispererLanguage) : CodeWhispererCodeCoverageTracker(
-    5 * TOTAL_SECONDS_IN_MINUTE,
+    1 * TOTAL_SECONDS_IN_MINUTE,
     language,
     acceptedTokens = AtomicInteger(0),
     totalTokens = AtomicInteger(0),
