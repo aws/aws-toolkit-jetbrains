@@ -33,8 +33,8 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val totalTokens: AtomicInteger,
     private val rangeMarkers: MutableList<RangeMarker>
 ) : Disposable {
-    val percentage: Int
-        get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else 0
+    val percentage: Int?
+        get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else null
     val acceptedTokensSize: Int
         get() = acceptedTokens.get()
     val totalTokensSize: Int
@@ -111,14 +111,16 @@ abstract class CodeWhispererCodeCoverageTracker(
             addAndGetAcceptedTokens(it.endOffset - it.startOffset)
         }
 
-        CodewhispererTelemetry.codePercentage(
-            project = null,
-            acceptedTokensSize,
-            language,
-            percentage,
-            startTime.toString(),
-            totalTokensSize
-        )
+        percentage?.let {percentage ->
+            CodewhispererTelemetry.codePercentage(
+                project = null,
+                acceptedTokensSize,
+                language,
+                percentage,
+                startTime.toString(),
+                totalTokensSize
+            )
+        }
     }
 
     @TestOnly
