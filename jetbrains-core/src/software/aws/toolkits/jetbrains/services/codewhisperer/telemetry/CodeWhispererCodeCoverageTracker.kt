@@ -111,6 +111,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             addAndGetAcceptedTokens(it.endOffset - it.startOffset)
         }
 
+        // percentage == 0 means totalTokens == 0 and users are not editing the document, thus we shouldn't emit telemetry for this
         percentage?.let { percentage ->
             CodewhispererTelemetry.codePercentage(
                 project = null,
