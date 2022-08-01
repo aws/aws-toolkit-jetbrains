@@ -284,11 +284,11 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     @Test
     fun `test flush() will emit correct telemetry event`() {
-        // original recommendation was of length 10 but get deleted by user to be of length 2
-        // should increment acceptedToken by 4
+        // original recommendation was of length 10 but get deleted by user to be of length 4
+        // should increment acceptedToken by 4 (6 tokens are removed by users)
         val rangeMarkerMock1 = getRangerMarkerMock(start = 0, end = 4, isValid = true, recommendationLength = 10)
-        // original recommendation was of length 10 but get added by user to be of length 8
-        // should only increment acceptedToken by 6
+        // original recommendation was of length 6 but get added by user to be of length 8
+        // should only increment acceptedToken by 6 (2 tokens are considered as UserTokens)
         val rangeMarkerMock2 = getRangerMarkerMock(start = 0, end = 8, isValid = true, recommendationLength = 6)
 
         val pythonTracker = TestCodePercentageTracker(
