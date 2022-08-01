@@ -105,6 +105,7 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
                     DataManager.getInstance().getDataContext(projectRule.fixture.editor.contentComponent)
                 )
                 assertThat(newActions[0]).isEqualTo(codeWhispererAction)
+                popupManagerSpy.popupComponents.acceptButton.doClick()
             }
         }
     }
