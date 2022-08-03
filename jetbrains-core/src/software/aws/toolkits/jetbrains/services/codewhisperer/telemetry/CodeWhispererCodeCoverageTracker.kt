@@ -71,7 +71,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         scheduleCodeWhispererCodeCoverageTracker()
     }
 
-    fun documentChanged(event: DocumentEvent) {
+    internal fun documentChanged(event: DocumentEvent) {
         // When open a file for the first time, IDE will also emit DocumentEvent for loading with `isWholeTextReplaced = true`
         // Added this condition to filter out those events
         if (event.isWholeTextReplaced) {
@@ -83,13 +83,11 @@ abstract class CodeWhispererCodeCoverageTracker(
         addAndGetTotalTokens(event.newLength - event.oldLength)
     }
 
-    protected open fun getEditDistance(modifiedString: String, originalString: String): Double = levenshteinChecker.distance(modifiedString, originalString)
-
-    fun extractRangeMarkerString(rangeMarker: RangeMarker?): String? = runReadAction {
+    internal fun extractRangeMarkerString(rangeMarker: RangeMarker?): String? = runReadAction {
         rangeMarker?.range?.let { myRange -> rangeMarker.document.getText(myRange) }
     }
 
-    fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
+    internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
         val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
         val originalRecommendationLength = originalRecommendation.length
         val modifiedRecommendationLength = modifiedRecommendation.length
@@ -102,6 +100,8 @@ abstract class CodeWhispererCodeCoverageTracker(
             else -> originalRecommendationLength - editDistance
         }
     }
+
+    protected open fun getEditDistance(modifiedString: String, originalString: String): Double = levenshteinChecker.distance(modifiedString, originalString)
 
     private fun flush() {
         try {
