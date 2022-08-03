@@ -197,6 +197,7 @@ class CodeWhispererCodeCoverageTrackerTest {
         assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length - 3)
     }
 
+    // TODO: investigate what cause this test throw NPE when running whole test suite and enable test case
     @Ignore
     @Test
     fun `test msg CODEWHISPERER_USER_ACTION_PERFORMED will add rangeMarker in the list`() {
