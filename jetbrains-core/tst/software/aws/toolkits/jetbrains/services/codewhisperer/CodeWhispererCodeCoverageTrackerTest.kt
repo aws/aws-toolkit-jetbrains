@@ -17,12 +17,14 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.internal.verification.Times
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
@@ -45,7 +47,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker.Companion.calculatePercentage
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
@@ -154,6 +155,7 @@ class CodeWhispererCodeCoverageTrackerTest {
     fun `test tracker is listening to document changes and increment totalTokens - add new code`() {
         val pythonTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(0)))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        pythonTracker.activateTracker()
 
         fixture.configureByText(pythonFileName, "")
         runInEdtAndWait {
@@ -178,12 +180,13 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     @Test
     fun `test tracker is listening to document changes and increment totalTokens - delete code`() {
+        fixture.configureByText(pythonFileName, pythonTestLeftContext)
         val pythonTracker =
             spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(pythonTestLeftContext.length)))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        pythonTracker.activateTracker()
         assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
 
-        fixture.configureByText(pythonFileName, pythonTestLeftContext)
         runInEdtAndWait {
             fixture.editor.caretModel.primaryCaret.moveToOffset(fixture.editor.document.textLength)
             WriteCommandAction.runWriteCommandAction(project) {
@@ -194,21 +197,20 @@ class CodeWhispererCodeCoverageTrackerTest {
         assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length - 3)
     }
 
+    @Ignore
     @Test
-    fun `test event CODEWHISPERER_USER_ACTION_PERFORMED will add rangeMarker in the list`() {
-        val pythonTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Python)
-        val javaTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Java)
-        val javascriptTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Javascript)
+    fun `test msg CODEWHISPERER_USER_ACTION_PERFORMED will add rangeMarker in the list`() {
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
 
-        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap().size).isEqualTo(0)
-        assertThat(pythonTracker.acceptedRecommendationsCount).isEqualTo(0)
-
+        val pythonTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Python)) {
+            on { extractRangeMarkerString(any()) } doReturn "foo"
+        }
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
-        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Java] = javaTracker
-        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Javascript] = javascriptTracker
+        pythonTracker.activateTracker()
+        val rangeMarkerMock = mock<RangeMarker>() {
+            on { isValid } doReturn true
+        }
 
-        fixture.configureByText("test.py", pythonTestLeftContext)
-        val rangeMarkerMock = getRangerMarkerMock(start = 0, end = 100, isValid = true, recommendationLength = 80)
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_USER_ACTION_PERFORMED).afterAccept(
             invocationContext,
             mock(),
@@ -216,16 +218,13 @@ class CodeWhispererCodeCoverageTrackerTest {
         )
 
         assertThat(pythonTracker.acceptedRecommendationsCount).isEqualTo(1)
-        assertThat(javascriptTracker.acceptedTokensSize).isEqualTo(0)
-        assertThat(javaTracker.acceptedTokensSize).isEqualTo(0)
-        val argumentCaptor = argumentCaptor<Int>()
-        verify(rangeMarkerMock, atLeastOnce()).putUserData(any<Key<Int>>(), argumentCaptor.capture())
-        assertThat(argumentCaptor.firstValue).isEqualTo(100 - 0)
+        val argumentCaptor = argumentCaptor<String>()
+        verify(rangeMarkerMock, atLeastOnce()).putUserData(any<Key<String>>(), argumentCaptor.capture())
+        assertThat(argumentCaptor.firstValue).isEqualTo("foo")
     }
 
     @Test
     fun `test 0 token will return 0%`() {
-        fixture.configureByText("/emptyFile.java", "")
         val javaTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Java))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Java] = javaTracker
         assertThat(javaTracker.percentage).isEqualTo(0)
@@ -233,19 +232,18 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     @Test
     fun `test flush() will reset tokens and reschedule next telemetry sending`() {
-        val acceptedTokens = "bar"
-        val totalTokens = "foo bar"
         val pythonTracker = spy(
             TestCodePercentageTracker(
                 TOTAL_SECONDS_IN_MINUTE,
                 CodewhispererLanguage.Python,
-                AtomicInteger(acceptedTokens.length),
-                AtomicInteger(totalTokens.length)
+                AtomicInteger("bar".length),
+                AtomicInteger("foobar".length)
             )
         )
+        pythonTracker.activateTracker()
         assertThat(pythonTracker.activeRequestCount()).isEqualTo(1)
-        assertThat(pythonTracker.totalTokensSize).isEqualTo(totalTokens.length)
-        assertThat(pythonTracker.acceptedTokensSize).isEqualTo(acceptedTokens.length)
+        assertThat(pythonTracker.acceptedTokensSize).isEqualTo("bar".length)
+        assertThat(pythonTracker.totalTokensSize).isEqualTo("foobar".length)
 
         pythonTracker.forceTrackerFlush()
 
@@ -256,16 +254,18 @@ class CodeWhispererCodeCoverageTrackerTest {
 
     @Test
     fun `test flush() will emit correct telemetry event -- user delete whole accepted reommendation`() {
+        // when user delete whole recommendation, rangeMarker will be isValid = false
         val rangeMarkerMock: RangeMarker = mock()
         whenever(rangeMarkerMock.isValid).thenReturn(false)
 
         val pythonTracker = TestCodePercentageTracker(
             TOTAL_SECONDS_IN_MINUTE,
             CodewhispererLanguage.Python,
-            AtomicInteger(0),
-            AtomicInteger(20),
+            acceptedTokens = AtomicInteger(0),
+            totalTokens = AtomicInteger(20),
             mutableListOf(rangeMarkerMock)
         )
+        pythonTracker.activateTracker()
 
         pythonTracker.forceTrackerFlush()
 
@@ -283,33 +283,32 @@ class CodeWhispererCodeCoverageTrackerTest {
     }
 
     @Test
-    fun `test flush() will emit correct telemetry event`() {
-        // original recommendation was of length 10 but get deleted by user to be of length 4
-        // should increment acceptedToken by 4 (6 tokens are removed by users)
-        val rangeMarkerMock1 = getRangerMarkerMock(start = 0, end = 4, isValid = true, recommendationLength = 10)
-        // original recommendation was of length 6 but get added by user to be of length 8
-        // should only increment acceptedToken by 6 (2 tokens are considered as UserTokens)
-        val rangeMarkerMock2 = getRangerMarkerMock(start = 0, end = 8, isValid = true, recommendationLength = 6)
+    fun `test flush() will emit telemetry event`() {
+        val rangeMarkerMock1 = mock<RangeMarker> {
+            on { isValid } doReturn true
+            on { getUserData(any<Key<String>>()) } doReturn "foo"
+        }
 
-        val pythonTracker = TestCodePercentageTracker(
-            TOTAL_SECONDS_IN_MINUTE,
-            CodewhispererLanguage.Python,
-            AtomicInteger(0),
-            AtomicInteger(100),
-            mutableListOf(rangeMarkerMock1, rangeMarkerMock2)
-        )
+        val pythonTracker = spy(
+            TestCodePercentageTracker(
+                TOTAL_SECONDS_IN_MINUTE,
+                CodewhispererLanguage.Python,
+                AtomicInteger(0),
+                AtomicInteger(0),
+                mutableListOf(rangeMarkerMock1)
+            )
+        ) {
+            on { extractRangeMarkerString(any()) } doReturn "fou"
+        }
+
+        pythonTracker.activateTracker()
         pythonTracker.forceTrackerFlush()
-        val acceptedTokens = 4 + 6
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, Times(1)).enqueue(metricCaptor.capture())
         CodeWhispererTelemetryTest.assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
             CODE_PERCENTAGE,
             1,
-            "codewhispererPercentage" to calculatePercentage(acceptedTokens, 100).toString(),
-            "codewhispererLanguage" to CodewhispererLanguage.Python.toString(),
-            "codewhispererAcceptedTokens" to acceptedTokens.toString(),
-            "codewhispererTotalTokens" to "100"
         )
     }
 
@@ -325,15 +324,6 @@ class CodeWhispererCodeCoverageTrackerTest {
         val currentOffset = caretModel.primaryCaret.offset
         document.insertString(currentOffset, string)
         caretModel.moveToOffset(currentOffset + string.length)
-    }
-
-    private fun getRangerMarkerMock(start: Int, end: Int, isValid: Boolean, recommendationLength: Int): RangeMarker {
-        val rangeMarkerMock: RangeMarker = mock()
-        whenever(rangeMarkerMock.startOffset).thenReturn(start)
-        whenever(rangeMarkerMock.endOffset).thenReturn(end)
-        whenever(rangeMarkerMock.isValid).thenReturn(isValid)
-        whenever(rangeMarkerMock.getUserData(any<Key<Int>>())).thenReturn(recommendationLength)
-        return rangeMarkerMock
     }
 
     private companion object {

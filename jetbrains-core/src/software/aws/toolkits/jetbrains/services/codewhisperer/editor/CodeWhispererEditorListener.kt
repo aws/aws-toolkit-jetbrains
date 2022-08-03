@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.toCodeWhispererLanguage
 
 class CodeWhispererEditorListener : EditorFactoryListener {
@@ -26,7 +27,10 @@ class CodeWhispererEditorListener : EditorFactoryListener {
                     editor.project?.let { project ->
                         PsiDocumentManager.getInstance(project).getPsiFile(editor.document)?.toProgrammingLanguage() ?. let { languageName ->
                             val language = ProgrammingLanguage(languageName).toCodeWhispererLanguage()
-                            CodeWhispererCodeCoverageTracker.getInstance(language).documentChanged(event)
+                            CodeWhispererCodeCoverageTracker.getInstance(language).apply {
+                                if (!isActive && isTelemetryEnabled()) activateTracker()
+                                documentChanged(event)
+                            }
                         }
                     }
                 }

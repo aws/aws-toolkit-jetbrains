@@ -57,7 +57,6 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
-import kotlin.math.roundToInt
 
 class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val userDecision = "codewhisperer_userDecision"
@@ -416,7 +415,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             1,
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
-            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString()
         )
     }
 
@@ -461,7 +460,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             1,
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
-            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString()
         )
     }
 
@@ -477,9 +476,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 .recommendations(
                     CodeWhispererTestUtil.generateMockRecommendationDetail("x, y):\n    return x + y"),
                     CodeWhispererTestUtil.generateMockRecommendationDetail("a, b):\n    return a + b"),
-                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 3"),
-                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 4"),
-                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 5")
                 )
                 .nextToken("")
                 .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
@@ -514,10 +510,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             1,
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
-            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString()
         )
-
-        metricCaptor.allValues.forEach { println(it) }
     }
 
     private fun Editor.appendString(string: String) {
