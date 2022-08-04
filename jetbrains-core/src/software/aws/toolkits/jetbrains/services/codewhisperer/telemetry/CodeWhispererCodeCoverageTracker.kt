@@ -40,8 +40,8 @@ abstract class CodeWhispererCodeCoverageTracker(
 ) : Disposable {
     var isActive: Boolean = false
         private set
-    val percentage: Int
-        get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else 0
+    val percentage: Int?
+        get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else null
     val acceptedTokensSize: Int
         get() = acceptedTokens.get()
     val totalTokensSize: Int
@@ -77,9 +77,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         // Added this condition to filter out those events
         if (event.isWholeTextReplaced) {
             LOG.debug { "event with isWholeTextReplaced flag: $event" }
-            (event as? DocumentEventImpl)?.let {
-                if (it.initialStartOffset == 0 && it.initialOldLength == event.document.textLength) return
-            }
+            if (event.oldTimeStamp == 0L) return
         }
         addAndGetTotalTokens(event.newLength - event.oldLength)
     }
@@ -153,14 +151,17 @@ abstract class CodeWhispererCodeCoverageTracker(
             addAndGetAcceptedTokens(delta)
         }
 
-        CodewhispererTelemetry.codePercentage(
-            project = null,
-            acceptedTokensSize,
-            language,
-            percentage,
-            startTime.toString(),
-            totalTokensSize
-        )
+        // percentage == null means totalTokens == 0 and users are not editing the document, thus we shouldn't emit telemetry for this
+        percentage?.let { percentage ->
+            CodewhispererTelemetry.codePercentage(
+                project = null,
+                acceptedTokensSize,
+                language,
+                percentage,
+                startTime.toString(),
+                totalTokensSize
+            )
+        }
     }
 
     @TestOnly

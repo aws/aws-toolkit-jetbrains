@@ -225,7 +225,7 @@ class CodeWhispererCodeCoverageTrackerTest {
     fun `test 0 token will return 0%`() {
         val javaTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Java))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Java] = javaTracker
-        assertThat(javaTracker.percentage).isEqualTo(0)
+        assertThat(javaTracker.percentage).isNull()
     }
 
     @Test
@@ -361,6 +361,14 @@ class CodeWhispererCodeCoverageTrackerTest {
         modifiedRecommendation = "x, y):\n$pythonCommentAddedByUser\treturn x + y"
         delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
         assertThat(delta).isEqualTo(originalRecommendation.length)
+    }
+
+    @Test
+    fun `test flush() won't emit telemetry when users are not editing the document`() {
+        val pythonTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(0))
+        assertThat(pythonTracker.activeRequestCount()).isEqualTo(1)
+        pythonTracker.forceTrackerFlush()
+        verify(batcher, Times(0)).enqueue(any())
     }
 
     private fun Editor.appendString(string: String) {
