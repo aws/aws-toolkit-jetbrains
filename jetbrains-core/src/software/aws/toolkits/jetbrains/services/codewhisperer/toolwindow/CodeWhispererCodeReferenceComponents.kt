@@ -64,8 +64,9 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         BrowserUtil.browse(CodeWhispererLicenseInfoManager.getInstance().getLicenseLink(licenseName))
     }.asCodeReferencePanelFont()
 
-    private fun acceptRecommendationSuffixText(repo: String, path: String?, line: String) = JLabel().apply {
+    private fun acceptRecommendationSuffixText(repoName: String, path: String?, line: String, url: String) = JLabel().apply {
         val choice = if (path != null) 1 else 0
+        val repo = if (url.isEmpty()) repoName else message("codewhisperer.toolwindow.entry.urlLink", repoName, url)
         text = message("codewhisperer.toolwindow.entry.suffix", repo, path ?: "", choice, line)
     }.asCodeReferencePanelFont()
 
@@ -75,7 +76,7 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         add(acceptRecommendationPrefixText, inlineLabelConstraints)
         add(licenseNameLink(ref.licenseName()), inlineLabelConstraints)
         add(JLabel(" ").asCodeReferencePanelFont(), inlineLabelConstraints)
-        add(acceptRecommendationSuffixText(ref.repository(), relativePath, lineNums), inlineLabelConstraints)
+        add(acceptRecommendationSuffixText(ref.repository(), relativePath, lineNums, ref.url()), inlineLabelConstraints)
         addHorizontalGlue()
     }
 
