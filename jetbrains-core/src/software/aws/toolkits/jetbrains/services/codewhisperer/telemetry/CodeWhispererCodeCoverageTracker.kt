@@ -89,19 +89,18 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
         val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        val originalRecommendationLength = originalRecommendation.length
-        val modifiedRecommendationLength = modifiedRecommendation.length
         return when {
-            originalRecommendationLength < modifiedRecommendationLength ->
-                (modifiedRecommendationLength - editDistance).coerceAtMost(originalRecommendationLength)
+            originalRecommendation.length < modifiedRecommendation.length ->
+                (modifiedRecommendation.length - editDistance).coerceAtMost(originalRecommendation.length)
 
-            originalRecommendationLength > modifiedRecommendationLength -> originalRecommendationLength - editDistance
+            originalRecommendation.length > modifiedRecommendation.length -> originalRecommendation.length - editDistance
 
-            else -> originalRecommendationLength - editDistance
+            else -> originalRecommendation.length - editDistance
         }
     }
 
-    protected open fun getEditDistance(modifiedString: String, originalString: String): Double = levenshteinChecker.distance(modifiedString, originalString)
+    protected open fun getEditDistance(modifiedString: String, originalString: String): Double =
+        levenshteinChecker.distance(modifiedString, originalString)
 
     private fun flush() {
         try {
@@ -149,7 +148,7 @@ abstract class CodeWhispererCodeCoverageTracker(
                         "OriginalRecommendation is null: ${originalRecommendation == null}; " +
                         "ModifiedRecommendation is null: ${modifiedRecommendation == null}"
                 }
-                return
+                return@forEach
             }
             val delta = getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
             addAndGetAcceptedTokens(delta)
