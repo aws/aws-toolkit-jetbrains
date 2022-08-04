@@ -87,14 +87,16 @@ abstract class CodeWhispererCodeCoverageTracker(
         rangeMarker?.range?.let { myRange -> rangeMarker.document.getText(myRange) }
     }
 
+    // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
+    // and thus the unmodified part of recommendation length can be deducted/approximated
     internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
         val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
         return when {
+            // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
+            // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
+            // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
             originalRecommendation.length < modifiedRecommendation.length ->
                 (modifiedRecommendation.length - editDistance).coerceAtMost(originalRecommendation.length)
-
-            originalRecommendation.length > modifiedRecommendation.length -> originalRecommendation.length - editDistance
-
             else -> originalRecommendation.length - editDistance
         }
     }
