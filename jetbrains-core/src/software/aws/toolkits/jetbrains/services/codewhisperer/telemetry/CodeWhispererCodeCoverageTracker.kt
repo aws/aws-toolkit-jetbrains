@@ -62,7 +62,7 @@ abstract class CodeWhispererCodeCoverageTracker(
                     rangeMarkers.add(rangeMarker)
                     val originalRecommendation = extractRangeMarkerString(rangeMarker)
                     originalRecommendation?.let {
-                        rangeMarker.putUserData(remainingRecommendationKey, it)
+                        rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, it)
                     }
                 }
             }
@@ -90,11 +90,11 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
     // and thus the unmodified part of recommendation length can be deducted/approximated
+    // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
+    // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
+    // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
     internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
         val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
-        // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
-        // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
         return max(originalRecommendation.length, modifiedRecommendation.length) - editDistance
     }
 
@@ -139,7 +139,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         rangeMarkers.forEach { rangeMarker ->
             if (!rangeMarker.isValid) return@forEach
             // if users add more code upon the recommendation generated from CodeWhisperer, we consider those added part as userToken but not CwsprTokens
-            val originalRecommendation = rangeMarker.getUserData(remainingRecommendationKey)
+            val originalRecommendation = rangeMarker.getUserData(KEY_REMAINING_RECOMMENDATION)
             val modifiedRecommendation = extractRangeMarkerString(rangeMarker)
             if (originalRecommendation == null || modifiedRecommendation == null) {
                 LOG.debug {
@@ -182,7 +182,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         @JvmStatic
         protected val levenshteinChecker = Levenshtein()
         private const val REMAINING_RECOMMENDATION = "remainingRecommendation"
-        private val remainingRecommendationKey = Key<String>(REMAINING_RECOMMENDATION)
+        private val KEY_REMAINING_RECOMMENDATION = Key<String>(REMAINING_RECOMMENDATION)
         private val LOG = getLogger<CodeWhispererCodeCoverageTracker>()
         private val instances: MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
