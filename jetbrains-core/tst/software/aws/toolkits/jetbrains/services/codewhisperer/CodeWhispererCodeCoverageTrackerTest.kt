@@ -13,11 +13,11 @@ import com.intellij.openapi.util.Key
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.replaceService
+import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.internal.verification.Times
@@ -198,18 +198,15 @@ class CodeWhispererCodeCoverageTrackerTest {
     }
 
     // TODO: investigate what cause this test throw NPE when running whole test suite and enable test case
-    @Ignore
+//    @Ignore
     @Test
     fun `test msg CODEWHISPERER_USER_ACTION_PERFORMED will add rangeMarker in the list`() {
-        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
-
-        val pythonTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Python)) {
-            on { extractRangeMarkerString(any()) } doReturn "foo"
-        }
-        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        val pythonTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Python))
         pythonTracker.activateTracker()
-        val rangeMarkerMock = mock<RangeMarker>() {
-            on { isValid } doReturn true
+        val rangeMarkerMock = runInEdtAndGet {
+            spy(fixture.editor.document.createRangeMarker(0, 3)) {
+                on { isValid } doReturn true
+            }
         }
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_USER_ACTION_PERFORMED).afterAccept(
@@ -221,7 +218,7 @@ class CodeWhispererCodeCoverageTrackerTest {
         assertThat(pythonTracker.acceptedRecommendationsCount).isEqualTo(1)
         val argumentCaptor = argumentCaptor<String>()
         verify(rangeMarkerMock, atLeastOnce()).putUserData(any<Key<String>>(), argumentCaptor.capture())
-        assertThat(argumentCaptor.firstValue).isEqualTo("foo")
+        assertThat(argumentCaptor.firstValue).isEqualTo(pythonTestLeftContext.substring(0, 3))
     }
 
     @Test
