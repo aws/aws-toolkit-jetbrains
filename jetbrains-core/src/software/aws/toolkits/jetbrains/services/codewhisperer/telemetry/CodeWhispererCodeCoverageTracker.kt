@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.editor.impl.event.DocumentEventImpl
 import com.intellij.openapi.util.Key
 import com.intellij.refactoring.suggested.range
 import com.intellij.util.Alarm
