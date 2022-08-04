@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
+import java.lang.Integer.max
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -83,22 +84,18 @@ abstract class CodeWhispererCodeCoverageTracker(
         addAndGetTotalTokens(event.newLength - event.oldLength)
     }
 
-    internal fun extractRangeMarkerString(rangeMarker: RangeMarker?): String? = runReadAction {
-        rangeMarker?.range?.let { myRange -> rangeMarker.document.getText(myRange) }
+    internal fun extractRangeMarkerString(rangeMarker: RangeMarker): String? = runReadAction {
+        rangeMarker.range?.let { myRange -> rangeMarker.document.getText(myRange) }
     }
 
     // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
     // and thus the unmodified part of recommendation length can be deducted/approximated
     internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
         val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        return when {
-            // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
-            // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
-            // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
-            originalRecommendation.length < modifiedRecommendation.length ->
-                (modifiedRecommendation.length - editDistance).coerceAtMost(originalRecommendation.length)
-            else -> originalRecommendation.length - editDistance
-        }
+        // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
+        // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
+        // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
+        return max(originalRecommendation.length, modifiedRecommendation.length) - editDistance
     }
 
     protected open fun getEditDistance(modifiedString: String, originalString: String): Double =
