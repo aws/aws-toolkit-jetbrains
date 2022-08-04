@@ -74,7 +74,13 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         background = EditorColorsManager.getInstance().globalScheme.defaultBackground
         border = BorderFactory.createEmptyBorder(5, 0, 0, 0)
         add(acceptRecommendationPrefixText, inlineLabelConstraints)
-        add(licenseNameLink(ref.licenseName()), inlineLabelConstraints)
+        if (ref.url().isEmpty()) {
+            // if url to source package/repo is missing, we still present the hyperlink to SPDX from the license name
+            add(licenseNameLink(ref.licenseName()), inlineLabelConstraints)
+        } else {
+            // if url to source package/repo is present, the url pointing to the source will be present and remove the hyperlink to SPDX
+            add(JLabel(ref.licenseName()).asCodeReferencePanelFont(), inlineLabelConstraints)
+        }
         add(JLabel(" ").asCodeReferencePanelFont(), inlineLabelConstraints)
         add(acceptRecommendationSuffixText(ref.repository(), relativePath, lineNums, ref.url()), inlineLabelConstraints)
         addHorizontalGlue()
