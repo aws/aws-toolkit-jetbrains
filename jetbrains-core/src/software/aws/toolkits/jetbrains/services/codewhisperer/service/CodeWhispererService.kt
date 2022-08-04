@@ -464,7 +464,7 @@ class CodeWhispererService {
         // remove the incorrect references.
         val validatedRecommendations = response.recommendations().map {
             val validReferences = it.hasReferences() && it.references().isNotEmpty() &&
-                !it.references().any { reference ->
+                it.references().none { reference ->
                     val span = reference.recommendationContentSpan()
                     span.start() > span.end() || span.start() < 0 || span.end() > it.content().length
                 }
