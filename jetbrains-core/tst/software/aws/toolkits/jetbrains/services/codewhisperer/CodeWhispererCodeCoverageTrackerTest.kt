@@ -155,7 +155,7 @@ class CodeWhispererCodeCoverageTrackerTest {
     fun `test tracker is listening to document changes and increment totalTokens - add new code`() {
         val pythonTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(0)))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
-        pythonTracker.activateTracker()
+        pythonTracker.activateTrackerIfNotActive()
 
         fixture.configureByText(pythonFileName, "")
         runInEdtAndWait {
@@ -184,7 +184,7 @@ class CodeWhispererCodeCoverageTrackerTest {
         val pythonTracker =
             spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(pythonTestLeftContext.length)))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
-        pythonTracker.activateTracker()
+        pythonTracker.activateTrackerIfNotActive()
         assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
 
         runInEdtAndWait {
@@ -202,7 +202,7 @@ class CodeWhispererCodeCoverageTrackerTest {
     @Test
     fun `test msg CODEWHISPERER_USER_ACTION_PERFORMED will add rangeMarker in the list`() {
         val pythonTracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, language = CodewhispererLanguage.Python))
-        pythonTracker.activateTracker()
+        pythonTracker.activateTrackerIfNotActive()
         val rangeMarkerMock = runInEdtAndGet {
             spy(fixture.editor.document.createRangeMarker(0, 3)) {
                 on { isValid } doReturn true
@@ -238,7 +238,7 @@ class CodeWhispererCodeCoverageTrackerTest {
                 AtomicInteger("foobar".length)
             )
         )
-        pythonTracker.activateTracker()
+        pythonTracker.activateTrackerIfNotActive()
         assertThat(pythonTracker.activeRequestCount()).isEqualTo(1)
         assertThat(pythonTracker.acceptedTokensSize).isEqualTo("bar".length)
         assertThat(pythonTracker.totalTokensSize).isEqualTo("foobar".length)
@@ -263,7 +263,7 @@ class CodeWhispererCodeCoverageTrackerTest {
             totalTokens = AtomicInteger(20),
             mutableListOf(rangeMarkerMock)
         )
-        pythonTracker.activateTracker()
+        pythonTracker.activateTrackerIfNotActive()
 
         pythonTracker.forceTrackerFlush()
 
@@ -299,7 +299,7 @@ class CodeWhispererCodeCoverageTrackerTest {
             onGeneric { extractRangeMarkerString(any()) } doReturn "fou"
         }
 
-        pythonTracker.activateTracker()
+        pythonTracker.activateTrackerIfNotActive()
         pythonTracker.forceTrackerFlush()
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, Times(1)).enqueue(metricCaptor.capture())
@@ -366,7 +366,7 @@ class CodeWhispererCodeCoverageTrackerTest {
     @Test
     fun `test flush() won't emit telemetry when users are not editing the document`() {
         val pythonTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(0))
-        pythonTracker.activateTracker()
+        pythonTracker.activateTrackerIfNotActive()
         assertThat(pythonTracker.activeRequestCount()).isEqualTo(1)
         pythonTracker.forceTrackerFlush()
         verify(batcher, Times(0)).enqueue(any())

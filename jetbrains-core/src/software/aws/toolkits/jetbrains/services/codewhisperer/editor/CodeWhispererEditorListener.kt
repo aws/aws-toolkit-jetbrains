@@ -28,7 +28,7 @@ class CodeWhispererEditorListener : EditorFactoryListener {
                         PsiDocumentManager.getInstance(project).getPsiFile(editor.document)?.toProgrammingLanguage() ?. let { languageName ->
                             val language = ProgrammingLanguage(languageName).toCodeWhispererLanguage()
                             CodeWhispererCodeCoverageTracker.getInstance(language).apply {
-                                if (!isActive && isTelemetryEnabled()) activateTracker()
+                                activateTrackerIfNotActive()
                                 documentChanged(event)
                             }
                         }

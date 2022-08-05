@@ -37,8 +37,6 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val totalTokens: AtomicInteger,
     private val rangeMarkers: MutableList<RangeMarker>
 ) : Disposable {
-    var isActive: Boolean = false
-        private set
     val percentage: Int?
         get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else null
     val acceptedTokensSize: Int
@@ -47,11 +45,13 @@ abstract class CodeWhispererCodeCoverageTracker(
         get() = totalTokens.get()
     val acceptedRecommendationsCount: Int
         get() = rangeMarkers.size
+    private val isActive: AtomicBoolean = AtomicBoolean(false)
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val isShuttingDown = AtomicBoolean(false)
     private var startTime: Instant = Instant.now()
 
-    fun activateTracker() {
+    fun activateTrackerIfNotActive() {
+        if (!isTelemetryEnabled() || isActive.get()) return
         val conn = ApplicationManager.getApplication().messageBus.connect()
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
@@ -67,7 +67,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             }
         )
         startTime = Instant.now()
-        isActive = true
+        isActive.set(true)
         scheduleCodeWhispererCodeCoverageTracker()
     }
 
