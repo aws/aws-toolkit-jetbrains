@@ -291,8 +291,8 @@ class CodeWhispererCodeCoverageTrackerTest {
             TestCodePercentageTracker(
                 TOTAL_SECONDS_IN_MINUTE,
                 CodewhispererLanguage.Python,
-                AtomicInteger(0),
-                AtomicInteger(0),
+                AtomicInteger(10),
+                AtomicInteger(100),
                 mutableListOf(rangeMarkerMock1)
             )
         ) {
@@ -366,6 +366,7 @@ class CodeWhispererCodeCoverageTrackerTest {
     @Test
     fun `test flush() won't emit telemetry when users are not editing the document`() {
         val pythonTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python, AtomicInteger(0), AtomicInteger(0))
+        pythonTracker.activateTracker()
         assertThat(pythonTracker.activeRequestCount()).isEqualTo(1)
         pythonTracker.forceTrackerFlush()
         verify(batcher, Times(0)).enqueue(any())
