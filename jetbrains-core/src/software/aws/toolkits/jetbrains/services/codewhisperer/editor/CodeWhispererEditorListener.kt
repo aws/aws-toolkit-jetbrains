@@ -13,7 +13,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.toCodeWhispererLanguage
 
 class CodeWhispererEditorListener : EditorFactoryListener {
