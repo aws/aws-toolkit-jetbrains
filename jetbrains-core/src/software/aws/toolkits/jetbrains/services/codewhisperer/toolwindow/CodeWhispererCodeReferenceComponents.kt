@@ -64,25 +64,33 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         BrowserUtil.browse(CodeWhispererLicenseInfoManager.getInstance().getLicenseLink(licenseName))
     }.asCodeReferencePanelFont()
 
-    private fun acceptRecommendationSuffixText(repoName: String, path: String?, line: String, url: String) = JLabel().apply {
+    private fun repoNameLink(repo: String, url: String) = ActionLink(repo) {
+        BrowserUtil.browse(url)
+    }.asCodeReferencePanelFont()
+
+    private fun acceptRecommendationSuffixText(repo: String, path: String?, line: String) = JLabel().apply {
         val choice = if (path != null) 1 else 0
-        val repo = if (url.isEmpty()) repoName else message("codewhisperer.toolwindow.entry.urlLink", repoName, url)
-        text = message("codewhisperer.toolwindow.entry.suffix", repo, path ?: "", choice, line)
+        text = message("codewhisperer.toolwindow.entry.suffix", path ?: "", choice, line)
     }.asCodeReferencePanelFont()
 
     fun codeReferenceRecordPanel(ref: Reference, relativePath: String?, lineNums: String) = JPanel(GridBagLayout()).apply {
         background = EditorColorsManager.getInstance().globalScheme.defaultBackground
         border = BorderFactory.createEmptyBorder(5, 0, 0, 0)
         add(acceptRecommendationPrefixText, inlineLabelConstraints)
-        if (ref.url().isEmpty()) {
-            // if url to source package/repo is missing, we still present the hyperlink to SPDX from the license name
+
+        // if url to source package/repo is missing, the UX remains the same as we have for now
+        // if url to source package/repo is present, the url pointing to the source will be present and remove the hyperlink to SPDX
+        if (ref.url().isNullOrEmpty()) {
             add(licenseNameLink(ref.licenseName()), inlineLabelConstraints)
+            add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
+            add(JLabel(ref.repository()), inlineLabelConstraints)
         } else {
-            // if url to source package/repo is present, the url pointing to the source will be present and remove the hyperlink to SPDX
-            add(JLabel(ref.licenseName()).asCodeReferencePanelFont(), inlineLabelConstraints)
+            add(JLabel(ref.licenseName()), inlineLabelConstraints)
+            add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
+            add(repoNameLink(ref.repository(), ref.url()), inlineLabelConstraints)
         }
-        add(JLabel(" ").asCodeReferencePanelFont(), inlineLabelConstraints)
-        add(acceptRecommendationSuffixText(ref.repository(), relativePath, lineNums, ref.url()), inlineLabelConstraints)
+
+        add(acceptRecommendationSuffixText(ref.repository(), relativePath, lineNums), inlineLabelConstraints)
         addHorizontalGlue()
     }
 
