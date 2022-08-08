@@ -104,7 +104,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase() {
 
     @Test
     fun `test mapToCodeScanIssues`() {
-        val recommendations = listOf(getFakeRecommendations(psifile.virtualFile), getFakeRecommendationsOnNonExistentFile())
+        val recommendations = listOf(defaultCodeScanFindings(psifile.virtualFile), getFakeRecommendationsOnNonExistentFile())
         val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations)
         assertThat(res).hasSize(2)
     }

@@ -5,12 +5,17 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
+import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.RegisterToolWindowTask
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
+import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.Before
 import org.junit.Rule
@@ -32,9 +37,12 @@ import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsR
 import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientManager
+import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
+import kotlin.test.assertNotNull
 
 open class CodeWhispererCodeScanTestBase {
     @Rule
@@ -177,31 +185,6 @@ open class CodeWhispererCodeScanTestBase {
             .build() as GetCodeScanResponse
     }
 
-    protected fun getFakeRecommendations(file: VirtualFile) = """
-        [
-            {
-                "filePath": "${file.path}",
-                "startLine": 1,
-                "endLine": 2,
-                "title": "test",
-                "description": {
-                    "text": "global variable",
-                    "markdown": "### global variable"
-                }                    
-            },
-            {
-                "filePath": "${file.path}",
-                "startLine": 1,
-                "endLine": 2,
-                "title": "test",
-                "description": {
-                    "text": "global variable",
-                    "markdown": "### global variable"
-                }                    
-            }
-        ]
-    """
-
     protected fun getFakeRecommendationsOnNonExistentFile() = """
         [
             {
@@ -216,6 +199,43 @@ open class CodeWhispererCodeScanTestBase {
             }
         ]                
     """
+
+    internal fun assertE2ERunsSuccessfully(
+        sessionConfigSpy: CodeScanSessionConfig,
+        project: Project,
+        expectedTotalLines: Long,
+        expectedTotalFiles: Int,
+        expectedTotalSize: Long,
+        expectedTotalIssues: Int
+    ) {
+        val codeScanContext = CodeScanSessionContext(project, sessionConfigSpy)
+        val sessionMock = spy(CodeWhispererCodeScanSession(codeScanContext))
+
+        doNothing().`when`(sessionMock).uploadArtifactTOS3(any(), any(), any())
+        doNothing().`when`(sessionMock).sleepThread()
+
+        ToolWindowManager.getInstance(project).registerToolWindow(
+            RegisterToolWindowTask(
+                id = ProblemsView.ID
+            )
+        )
+
+        runBlocking {
+            val codeScanResponse = sessionMock.run()
+            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Success>()
+            assertThat(codeScanResponse.issues).hasSize(expectedTotalIssues)
+            assertThat(codeScanResponse.responseContext.codeScanJobId).isEqualTo("jobId")
+            val payloadContext = codeScanResponse.responseContext.payloadContext
+            assertThat(payloadContext.totalLines).isEqualTo(expectedTotalLines)
+            assertThat(payloadContext.totalFiles).isEqualTo(expectedTotalFiles)
+            assertThat(payloadContext.srcPayloadSize).isEqualTo(expectedTotalSize)
+            scanManagerSpy.testRenderResponseOnUIThread(codeScanResponse.issues)
+            assertNotNull(scanManagerSpy.getScanTree().model)
+            val treeModel = scanManagerSpy.getScanTree().model as? CodeWhispererCodeScanTreeModel
+            assertNotNull(treeModel)
+            assertThat(treeModel.getTotalIssuesCount()).isEqualTo(expectedTotalIssues)
+        }
+    }
 
     companion object {
         const val UPLOAD_ID = "uploadId"

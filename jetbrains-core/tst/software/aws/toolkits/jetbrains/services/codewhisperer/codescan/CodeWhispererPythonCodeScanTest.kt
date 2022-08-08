@@ -3,22 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
-import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.wm.RegisterToolWindowTask
-import com.intellij.openapi.wm.ToolWindowManager
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PythonCodeScanSessionConfig
-import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.BufferedInputStream
 import java.util.zip.ZipInputStream
@@ -133,35 +126,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase() {
 
     @Test
     fun `e2e happy path integration test`() {
-        val payload = sessionConfigSpy.createPayload()
-        assertNotNull(payload)
-        val codeScanContext = CodeScanSessionContext(project, sessionConfigSpy)
-        val sessionMock = spy(CodeWhispererCodeScanSession(codeScanContext))
-
-        doNothing().`when`(sessionMock).uploadArtifactTOS3(any(), any(), any())
-        doNothing().`when`(sessionMock).sleepThread()
-
-        ToolWindowManager.getInstance(pythonProjectRule.project).registerToolWindow(
-            RegisterToolWindowTask(
-                id = ProblemsView.ID
-            )
-        )
-
-        runBlocking {
-            val codeScanResponse = sessionMock.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Success>()
-            assertThat(codeScanResponse.issues).hasSize(2)
-            assertThat(codeScanResponse.responseContext.codeScanJobId).isEqualTo("jobId")
-            val payloadContext = codeScanResponse.responseContext.payloadContext
-            assertThat(payloadContext.totalLines).isEqualTo(totalLines)
-            assertThat(payloadContext.totalFiles).isEqualTo(3)
-            assertThat(payloadContext.srcPayloadSize).isEqualTo(totalSize)
-            scanManagerSpy.testRenderResponseOnUIThread(codeScanResponse.issues)
-            assertNotNull(scanManagerSpy.getScanTree().model)
-            val treeModel = scanManagerSpy.getScanTree().model as? CodeWhispererCodeScanTreeModel
-            assertNotNull(treeModel)
-            assertThat(treeModel.getTotalIssuesCount()).isEqualTo(2)
-        }
+        assertE2ERunsSuccessfully(sessionConfigSpy, pythonProjectRule.project, totalLines, 3, totalSize, 2)
     }
 
     private fun setupPythonProject() {
