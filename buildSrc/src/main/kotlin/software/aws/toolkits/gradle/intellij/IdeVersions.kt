@@ -17,43 +17,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2021.1",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2021.1",
-                plugins = commonPlugins + listOf(
-                    "java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "PythonCore:211.6693.119",
-                    "Docker:211.6693.111"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2021.1",
-                plugins = commonPlugins + listOf(
-                    "JavaScript",
-                    // Transitive dependency needed for javascript
-                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
-                    "com.intellij.css",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "Pythonid:211.6693.115",
-                    "org.jetbrains.plugins.go:211.6693.111"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2021.1.5",
-                plugins = commonPlugins + listOf(
-                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-                ),
-                netFrameworkTarget = "net461",
-                rdGenVersion = "0.211.234",
-                nugetVersion = "2021.1.0"
-            )
-        ),
-        Profile(
             name = "2021.2",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
@@ -163,7 +126,47 @@ object IdeVersions {
                 rdGenVersion = "2022.1.3",
                 nugetVersion = "2022.1.0"
             )
+        ),
+        Profile(
+            name = "2022.2",
+            community = ProductProfile(
+                sdkFlavor = IdeFlavor.IC,
+                sdkVersion = "2022.2",
+                plugins = commonPlugins + listOf(
+                    "java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "PythonCore:222.3345.118",
+                    "Docker:222.3345.118"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkFlavor = IdeFlavor.IU,
+                sdkVersion = "2022.2",
+                plugins = commonPlugins + listOf(
+                    "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "Pythonid:222.3345.118",
+                    "org.jetbrains.plugins.go:222.3345.118",
+                    // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
+                    "org.intellij.intelliLang"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2022.2-EAP8-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+                ),
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2022.2.4",
+                nugetVersion = "2022.2.0-eap08"
+            )
         )
+
     ).associateBy { it.name }
 
     fun ideProfile(project: Project): Profile = ideProfile(project.providers).get()
@@ -172,7 +175,7 @@ object IdeVersions {
         ideProfiles[it] ?: throw IllegalStateException("Can't find profile for $it")
     }
 
-    private fun resolveIdeProfileName(providers: ProviderFactory): Provider<String> = providers.gradleProperty("ideProfileName").forUseAtConfigurationTime()
+    private fun resolveIdeProfileName(providers: ProviderFactory): Provider<String> = providers.gradleProperty("ideProfileName")
 }
 
 open class ProductProfile(

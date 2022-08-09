@@ -16,22 +16,23 @@ plugins {
 
 dependencies {
     implementation("com.guardsquare:proguard-gradle:7.2.1")
-    compileOnly(deps.jacoco)
-    implementation(deps.aws.codeGen)
-    implementation(deps.bundles.jackson)
-    implementation(deps.commonmark)
-    implementation(deps.gradlePlugin.detekt)
-    implementation(deps.gradlePlugin.intellij)
-    implementation(deps.gradlePlugin.kotlin)
-    implementation(deps.gradlePlugin.testLogger)
-    implementation(deps.gradlePlugin.testRetry)
-    implementation(deps.jgit)
 
-    testImplementation(deps.assertj)
-    testImplementation(deps.junit4)
-    testImplementation(deps.bundles.mockito)
+    compileOnly(libs.jacoco)
+    implementation(libs.aws.codeGen)
+    implementation(libs.bundles.jackson)
+    implementation(libs.commonmark)
+    implementation(libs.gradlePlugin.detekt)
+    implementation(libs.gradlePlugin.intellij)
+    implementation(libs.gradlePlugin.kotlin)
+    implementation(libs.gradlePlugin.testLogger)
+    implementation(libs.gradlePlugin.testRetry)
+    implementation(libs.jgit)
 
-    testRuntimeOnly(deps.junit5.jupiterVintage)
+    testImplementation(libs.assertj)
+    testImplementation(libs.junit4)
+    testImplementation(libs.bundles.mockito)
+
+    testRuntimeOnly(libs.junit5.jupiterVintage)
 }
 
 tasks.test {
