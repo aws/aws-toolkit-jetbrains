@@ -71,6 +71,10 @@ val minified = Attribute.of("minified", Boolean::class.javaObjectType)
 
 allprojects {
     plugins.withType<JavaPlugin>() {
+        if (project.name == "sdk-codegen") {
+            return@withType
+        }
+
         dependencies {
             attributesSchema {
                 attribute(minified)
