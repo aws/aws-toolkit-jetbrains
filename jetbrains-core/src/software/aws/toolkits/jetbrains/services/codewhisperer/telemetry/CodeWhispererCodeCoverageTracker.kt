@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
-import java.lang.Integer.max
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -50,6 +49,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val isShuttingDown = AtomicBoolean(false)
     private var startTime: Instant = Instant.now()
 
+    @Synchronized
     fun activateTrackerIfNotActive() {
         if (!isTelemetryEnabled() || isActive.get()) return
         val conn = ApplicationManager.getApplication().messageBus.connect()
@@ -92,7 +92,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
     internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
         val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        return max(originalRecommendation.length, modifiedRecommendation.length) - editDistance
+        return maxOf(originalRecommendation.length, modifiedRecommendation.length) - editDistance
     }
 
     protected open fun getEditDistance(modifiedString: String, originalString: String): Double =
