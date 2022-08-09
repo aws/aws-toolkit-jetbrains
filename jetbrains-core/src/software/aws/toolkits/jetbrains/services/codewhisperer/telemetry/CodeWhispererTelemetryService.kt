@@ -11,8 +11,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.toCodeWhispererLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.ProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
@@ -75,7 +75,7 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    private fun sendUserDecisionEvent(
+    fun sendUserDecisionEvent(
         requestId: String,
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -185,7 +185,8 @@ class CodeWhispererTelemetryService {
                 sessionContext.seen.contains(index),
                 hasUserAccepted,
                 isDiscarded,
-                detail.hasReferences()
+                detail.hasReferences(),
+                detail.content().isEmpty()
             )
             sendUserDecisionEvent(requestId, requestContext, responseContext, detail, index, suggestionState, detailContexts.size)
         }
@@ -197,9 +198,12 @@ class CodeWhispererTelemetryService {
         hasSeen: Boolean,
         hasUserAccepted: Boolean,
         isDiscarded: Boolean,
-        hasReference: Boolean
+        hasReference: Boolean,
+        isEmpty: Boolean
     ): CodewhispererSuggestionState =
-        if (!CodeWhispererSettings.getInstance().isIncludeCodeWithReference() && hasReference) {
+        if (isEmpty) {
+            CodewhispererSuggestionState.Empty
+        } else if (!CodeWhispererSettings.getInstance().isIncludeCodeWithReference() && hasReference) {
             CodewhispererSuggestionState.Filter
         } else if (isDiscarded) {
             CodewhispererSuggestionState.Discard
@@ -214,14 +218,6 @@ class CodeWhispererTelemetryService {
         } else {
             CodewhispererSuggestionState.Reject
         }
-}
-
-fun ProgrammingLanguage.toCodeWhispererLanguage() = when (languageName) {
-    CodewhispererLanguage.Python.toString() -> CodewhispererLanguage.Python
-    CodewhispererLanguage.Java.toString() -> CodewhispererLanguage.Java
-    CodewhispererLanguage.Javascript.toString() -> CodewhispererLanguage.Javascript
-    "plain_text" -> CodewhispererLanguage.Plaintext
-    else -> CodewhispererLanguage.Unknown
 }
 
 fun isTelemetryEnabled(): Boolean = AwsSettings.getInstance().isTelemetryEnabled
