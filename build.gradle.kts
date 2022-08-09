@@ -69,35 +69,39 @@ fun ProjectSettings.taskTriggers(action: TaskTriggersConfig.() -> Unit, ) = (thi
 val artifactType = Attribute.of("artifactType", String::class.java)
 val minified = Attribute.of("minified", Boolean::class.javaObjectType)
 
-dependencies {
-    attributesSchema {
-        attribute(minified)
-    }
-    artifactTypes.getByName("jar") {
-        attributes.attribute(minified, false)
-    }
-}
-
-configurations.compileClasspath {
-    afterEvaluate {
-        if (isCanBeResolved) {
-            attributes.attribute(minified, true)
+allprojects {
+    plugins.withType<JavaPlugin>() {
+        dependencies {
+            attributesSchema {
+                attribute(minified)
+            }
+            artifactTypes.getByName("jar") {
+                attributes.attribute(minified, false)
+            }
         }
-    }
-}
 
-configurations.runtimeClasspath {
-    afterEvaluate {
-        if (isCanBeResolved) {
-            attributes.attribute(minified, true)
+        configurations.compileClasspath {
+            afterEvaluate {
+                if (isCanBeResolved) {
+                    attributes.attribute(minified, true)
+                }
+            }
         }
-    }
-}
 
-dependencies {
-    registerTransform(Minify::class) {
-        from.attribute(minified, false).attribute(artifactType, "jar")
-        to.attribute(minified, true).attribute(artifactType, "jar")
+        configurations.runtimeClasspath {
+            afterEvaluate {
+                if (isCanBeResolved) {
+                    attributes.attribute(minified, true)
+                }
+            }
+        }
+
+        dependencies {
+            registerTransform(Minify::class) {
+                from.attribute(minified, false).attribute(artifactType, "jar")
+                to.attribute(minified, true).attribute(artifactType, "jar")
+            }
+        }
     }
 }
 
