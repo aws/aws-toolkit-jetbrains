@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.editor
 
+import com.intellij.codeInsight.editorActions.EnterHandler
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
@@ -12,7 +13,7 @@ import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
 class CodeWhispererEnterHandler(private val originalHandler: EditorActionHandler) :
-    EditorActionHandler(),
+    EnterHandler(originalHandler),
     CodeWhispererAutoTriggerHandler {
     override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?) =
         originalHandler.isEnabled(editor, caret, dataContext)
@@ -20,10 +21,8 @@ class CodeWhispererEnterHandler(private val originalHandler: EditorActionHandler
     override fun executeInCommand(editor: Editor, dataContext: DataContext?) =
         originalHandler.executeInCommand(editor, dataContext)
 
-    override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-        if (originalHandler.isEnabled(editor, caret, dataContext)) {
-            originalHandler.execute(editor, caret, dataContext)
-        }
+    override fun executeWriteAction(editor: Editor, caret: Caret?, dataContext: DataContext?) {
+        super.executeWriteAction(editor, caret, dataContext)
         if (!CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)) {
             return
         }
