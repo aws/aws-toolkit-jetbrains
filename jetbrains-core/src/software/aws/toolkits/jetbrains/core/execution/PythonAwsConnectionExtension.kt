@@ -45,5 +45,5 @@ class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
         delegate.validateConfiguration(configuration, isExecution)
     }
 
-    private fun isEnabled() = PythonAwsConnectionExperiment.isEnabled() && !Registry.`is`("python.use.targets.api", false)
+    private fun isEnabled() = PythonAwsConnectionExperiment.isEnabled()
 }
