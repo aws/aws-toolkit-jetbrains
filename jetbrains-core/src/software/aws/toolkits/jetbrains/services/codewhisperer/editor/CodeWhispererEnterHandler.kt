@@ -15,9 +15,6 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 class CodeWhispererEnterHandler(originalHandler: EditorActionHandler) :
     EnterHandler(originalHandler),
     CodeWhispererAutoTriggerHandler {
-    override fun executeInCommand(editor: Editor, dataContext: DataContext?) =
-        originalHandler.executeInCommand(editor, dataContext)
-
     override fun executeWriteAction(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         super.executeWriteAction(editor, caret, dataContext)
         if (!CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)) {
