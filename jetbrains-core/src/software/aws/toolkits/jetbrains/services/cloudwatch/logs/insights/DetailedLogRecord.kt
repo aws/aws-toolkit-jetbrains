@@ -66,7 +66,7 @@ class DetailedLogRecord(
                 tableView.listTableModel.items = items
                 tableView.setPaintBusy(false)
             }
-            
+
             if (items.isNotEmpty()) {
                 val logGroup = record["@log"] ?: return@launch
                 val logStream = record["@logStream"] ?: return@launch
