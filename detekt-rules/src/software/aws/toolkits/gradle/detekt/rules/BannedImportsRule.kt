@@ -39,7 +39,7 @@ class BannedImportsRule : Rule() {
             }
 
             if (importedFqName?.startsWith("kotlin.test.assert") == true &&
-                importedFqName?.startsWith("kotlin.test.assertNotNull") == false
+                importedFqName.startsWith("kotlin.test.assertNotNull") == false
             ) {
                 report(
                     CodeSmell(
