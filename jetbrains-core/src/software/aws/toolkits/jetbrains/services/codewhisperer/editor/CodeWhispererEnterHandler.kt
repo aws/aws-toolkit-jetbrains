@@ -15,9 +15,6 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 class CodeWhispererEnterHandler(private val originalHandler: EditorActionHandler) :
     EnterHandler(originalHandler),
     CodeWhispererAutoTriggerHandler {
-    override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?) =
-        originalHandler.isEnabled(editor, caret, dataContext)
-
     override fun executeInCommand(editor: Editor, dataContext: DataContext?) =
         originalHandler.executeInCommand(editor, dataContext)
 
