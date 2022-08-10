@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
-class CodeWhispererEnterHandler(private val originalHandler: EditorActionHandler) :
+class CodeWhispererEnterHandler(originalHandler: EditorActionHandler) :
     EnterHandler(originalHandler),
     CodeWhispererAutoTriggerHandler {
     override fun executeInCommand(editor: Editor, dataContext: DataContext?) =
