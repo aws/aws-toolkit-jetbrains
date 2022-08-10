@@ -70,13 +70,13 @@ class DeployServerlessApplicationDialog(
     private val templateFile: VirtualFile,
     private val loadResourcesOnCreate: Boolean = true
 ) : DialogWrapper(project) {
-    private var useContainer: Boolean = false
-    private var newStackName: String = ""
-    private var requireReview: Boolean = false
-    private var deployType: DeployType = DeployType.CREATE
-    private var templateParameters: Map<String, String> = emptyMap()
-    private var tags: Map<String, String> = emptyMap()
-    private var showImageOptions: Boolean = false
+    var useContainer: Boolean = false
+    var newStackName: String = ""
+    var requireReview: Boolean = false
+    var deployType: DeployType = DeployType.CREATE
+    var templateParameters: Map<String, String> = emptyMap()
+    var tags: Map<String, String> = emptyMap()
+    var showImageOptions: Boolean = false
 
     // non-dsl components
     private val stackSelector = ResourceSelector.builder()
@@ -186,7 +186,10 @@ class DeployServerlessApplicationDialog(
                     ).toolTipText(message("serverless.application.deploy.tooltip.createStack"))
 
                     createStackButton.selected.addListener {
-                        refreshTemplateParametersAndTags()
+                        if (it && deployType != DeployType.CREATE) {
+                            deployType = DeployType.CREATE
+                            refreshTemplateParametersAndTags()
+                        }
                     }
 
                     textField(::newStackName)
@@ -211,7 +214,10 @@ class DeployServerlessApplicationDialog(
                     ).toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
 
                     updateStackButton.selected.addListener {
-                        refreshTemplateParametersAndTags()
+                        if (it && deployType != DeployType.UPDATE) {
+                            deployType = DeployType.UPDATE
+                            refreshTemplateParametersAndTags()
+                        }
                     }
 
                     stackSelector()
@@ -528,7 +534,7 @@ class DeployServerlessApplicationDialog(
         }
     }
 
-    private enum class DeployType {
+    enum class DeployType {
         CREATE,
         UPDATE
     }
