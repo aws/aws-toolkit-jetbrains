@@ -1,6 +1,6 @@
-<?xml version="1.0" ?>
+<?xml version='1.0' encoding='UTF-8'?>
 <SmellBaseline>
-  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>AbsentOrWrongFileLicense:AwsConnectionSettings.kt$software.aws.toolkits.jetbrains.ui.connection.AwsConnectionSettings.kt</ID>
     <ID>AbsentOrWrongFileLicense:AwsSettingsConfigurable.kt$software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable.kt</ID>
@@ -31,7 +31,6 @@
     <ID>AbsentOrWrongFileLicense:OutputsTableViewTest.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.OutputsTableViewTest.kt</ID>
     <ID>AbsentOrWrongFileLicense:PageButtons.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.PageButtons.kt</ID>
     <ID>AbsentOrWrongFileLicense:PageButtonsTest.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.PageButtonsTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:PerContainerSettings.kt$software.aws.toolkits.jetbrains.services.ecs.execution.PerContainerSettings.kt</ID>
     <ID>AbsentOrWrongFileLicense:QueryEditor.kt$software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryEditor.kt</ID>
     <ID>AbsentOrWrongFileLicense:RenameObjectAction.kt$software.aws.toolkits.jetbrains.services.s3.objectActions.RenameObjectAction.kt</ID>
     <ID>AbsentOrWrongFileLicense:RetrieveSavedQueryDialog.kt$software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.RetrieveSavedQueryDialog.kt</ID>
@@ -63,6 +62,33 @@
     <ID>AbsentOrWrongFileLicense:UploadObjectAction.kt$software.aws.toolkits.jetbrains.services.s3.objectActions.UploadObjectAction.kt</ID>
     <ID>AbsentOrWrongFileLicense:View.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.View.kt</ID>
     <ID>AbsentOrWrongFileLicense:ViewObjectVersionAction.kt$software.aws.toolkits.jetbrains.services.s3.objectActions.ViewObjectVersionAction.kt</ID>
+    <ID>BannedImports:CodeWhispererConfigurable.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:CodeWhispererTermsOfServiceDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:CreateEcrRepoDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:CreateIamServiceRoleDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:CreationPanel.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:DeleteResourceDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:DeployServerlessApplicationDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:DynamicResourcesConfigurable.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:EnableDisableExecuteCommandWarning.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:ExperimentConfigurable.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:LambdaSettingsConfigurable.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:OpenShellInContainerDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:PauseServiceAction.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:PullFromRepositoryAction.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:PushToRepositoryAction.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:ResumeServiceAction.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:RunCommandDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:SamInitSelectionPanel.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:SchemaSelectionPanel.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:SdkSelectionPanel.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:SearchPanel.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:TaskRoleNotFoundWarningDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:TokenDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:ToolConfigurable.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:UploadFunctionContinueDialog.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:ValidatingPanel.kt$import com.intellij.ui.layout.panel</ID>
+    <ID>BannedImports:ViewResourceDialog.kt$import com.intellij.ui.layout.panel</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_fail_autodetectBadSam_andManuallySetToBadSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectBadSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectValidSam()</ID>
@@ -71,10 +97,6 @@
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_setSamEmpty()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_setValidSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test(expected = ConfigurationException::class) fun validate_fail_setBadSam()</ID>
-    <ID>FunctionNaming:CliOutputParserTest.kt$CliOutputParserTest$@Test fun parseLogEntries_canHandleMultiLineEvents()</ID>
-    <ID>FunctionNaming:CliOutputParserTest.kt$CliOutputParserTest$@Test fun parseLogEntries_colorCodesAreIgnored()</ID>
-    <ID>FunctionNaming:CliOutputParserTest.kt$CliOutputParserTest$@Test fun parseLogEntries_handlesDifferentLevels()</ID>
-    <ID>FunctionNaming:CliOutputParserTest.kt$CliOutputParserTest$@Test fun parseLogEntries_unexpectedStringIsHandled()</ID>
     <ID>FunctionNaming:CloudFormationParametersTest.kt$CloudFormationParametersTest$@Test fun mergeParameters_emptyRemote()</ID>
     <ID>FunctionNaming:CloudFormationParametersTest.kt$CloudFormationParametersTest$@Test fun mergeParameters_emptyTemplate()</ID>
     <ID>FunctionNaming:CloudFormationParametersTest.kt$CloudFormationParametersTest$@Test fun mergeParameters_withOverlap()</ID>
