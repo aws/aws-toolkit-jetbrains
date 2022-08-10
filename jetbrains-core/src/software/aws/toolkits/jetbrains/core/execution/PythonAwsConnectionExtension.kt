@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.execution
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.configurations.RunnerSettings
 import com.intellij.openapi.options.SettingsEditor
-import com.intellij.openapi.util.registry.Registry
 import com.jetbrains.python.run.AbstractPythonRunConfiguration
 import com.jetbrains.python.run.PythonRunConfigurationExtension
 import org.jdom.Element
