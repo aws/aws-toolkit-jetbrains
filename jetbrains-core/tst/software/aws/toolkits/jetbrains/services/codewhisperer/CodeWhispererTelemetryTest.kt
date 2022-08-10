@@ -45,6 +45,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testRequestIdForCodeWhispererException
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testSessionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager.Companion.ACTION_PAUSE_CODEWHISPERER
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager.Companion.ACTION_RESUME_CODEWHISPERER
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
@@ -55,6 +57,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.telemetry.AutoSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererRuntime
@@ -68,6 +71,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val userModification = "codewhisperer_userModification"
     private val serviceInvocation = "codewhisperer_serviceInvocation"
     private val codePercentage = "codewhisperer_codePercentage"
+    private val autoSuggestionActivation = "codewhisperer_autoSuggestionActivation"
     private val codewhispererSuggestionState = "codewhispererSuggestionState"
 
     private class TestTelemetryService(
@@ -549,6 +553,28 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     @Test
     fun `test a mix of empty and non-empty recommendations should send empty user decision events accordingly`() {
         testSendEmptyUserDecisionEventForEmptyRecommendations(listOfMixedEmptyAndNonEmptyRecommendationResponse)
+    }
+
+    @Test
+    fun `test toggle autoSugestion will emit autoSuggestionActivation telemetry`() {
+        stateManager.performAction(projectRule.project, ACTION_PAUSE_CODEWHISPERER)
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            autoSuggestionActivation,
+            1,
+            "autoSuggestionState" to AutoSuggestionState.Deactivated.toString()
+        )
+
+        stateManager.performAction(projectRule.project, ACTION_RESUME_CODEWHISPERER)
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            autoSuggestionActivation,
+            1,
+            "autoSuggestionState" to AutoSuggestionState.Activated.toString()
+        )
     }
 
     private fun testSendEmptyUserDecisionEventForEmptyRecommendations(response: ListRecommendationsResponse) {
