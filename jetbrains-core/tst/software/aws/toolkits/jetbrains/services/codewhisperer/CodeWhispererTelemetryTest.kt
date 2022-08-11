@@ -21,6 +21,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
@@ -54,10 +55,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.Accepted
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.telemetry.AutoSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererRuntime
@@ -71,7 +72,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val userModification = "codewhisperer_userModification"
     private val serviceInvocation = "codewhisperer_serviceInvocation"
     private val codePercentage = "codewhisperer_codePercentage"
-    private val autoSuggestionActivation = "codewhisperer_autoSuggestionActivation"
+    private val awsModifySetting = "aws_modifySetting"
     private val codewhispererSuggestionState = "codewhispererSuggestionState"
 
     private class TestTelemetryService(
@@ -557,23 +558,30 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test toggle autoSugestion will emit autoSuggestionActivation telemetry`() {
-        stateManager.performAction(projectRule.project, ACTION_PAUSE_CODEWHISPERER)
         val metricCaptor = argumentCaptor<MetricEvent>()
-        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        doNothing().`when`(batcher).enqueue(metricCaptor.capture())
+
+        stateManager.performAction(projectRule.project, ACTION_PAUSE_CODEWHISPERER)
         assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
-            autoSuggestionActivation,
+            awsModifySetting,
             1,
-            "autoSuggestionState" to AutoSuggestionState.Deactivated.toString()
+            "settingId" to CodeWhispererConstants.AutoSuggestion.SETTING_ID,
+            "settingState" to CodeWhispererConstants.AutoSuggestion.DEACTIVATED
         )
 
         stateManager.performAction(projectRule.project, ACTION_RESUME_CODEWHISPERER)
-        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
         assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
-            autoSuggestionActivation,
+            awsModifySetting,
             1,
-            "autoSuggestionState" to AutoSuggestionState.Activated.toString()
+            "settingId" to CodeWhispererConstants.AutoSuggestion.SETTING_ID,
+            "settingState" to CodeWhispererConstants.AutoSuggestion.ACTIVATED
+        )
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            awsModifySetting,
+            2,
         )
     }
 
