@@ -2,15 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>AbsentOrWrongFileLicense:DeleteBucketTest.kt$software.aws.toolkits.jetbrains.services.s3.DeleteBucketTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:EventsFetcherTest.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.EventsFetcherTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:EventsTableTest.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.EventsTableTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:Mocks.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.Mocks.kt</ID>
-    <ID>AbsentOrWrongFileLicense:OutputsTableViewTest.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.OutputsTableViewTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:PageButtonsTest.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.PageButtonsTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:S3ServiceNodeTest.kt$software.aws.toolkits.jetbrains.services.s3.S3ServiceNodeTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:S3VirtualBucketTest.kt$software.aws.toolkits.jetbrains.services.s3.S3VirtualBucketTest.kt</ID>
-    <ID>AbsentOrWrongFileLicense:UpdaterTest.kt$software.aws.toolkits.jetbrains.services.cloudformation.stack.UpdaterTest.kt</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_fail_autodetectBadSam_andManuallySetToBadSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectBadSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectValidSam()</ID>
