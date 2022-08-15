@@ -60,6 +60,7 @@
     <ID>UnsafeCallOnNullableType:PullFromRepositoryAction.kt$PullFromRepositoryDialog$imageSelector.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:PullFromRepositoryAction.kt$PullFromRepositoryDialog$repoSelector.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:SchemaResourceSelector.kt$SchemaResourceSelector$awsConnection!!</ID>
+    <ID>UnsafeCallOnNullableType:TreeView.kt$TreeViewImpl$(userObject as StackNodeDescriptor).icon!!</ID>
     <ID>UnsafeCallOnNullableType:UpdateFunctionConfigDialog.kt$UpdateFunctionConfigDialog$view.configSettings.iamRole.selected()!!</ID>
   </CurrentIssues>
 </SmellBaseline>
