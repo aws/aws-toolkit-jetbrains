@@ -381,6 +381,36 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
+    fun `test showing IntelliSense after triggering CodeWhisperer will send userDecision events of state Discard`() {
+        val codewhispererServiceSpy = spy(codewhispererService)
+        codewhispererServiceSpy.stub {
+            onGeneric {
+                canDoInvocation(any(), any())
+            } doAnswer {
+                true
+            }
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
+        popupManagerSpy.stub {
+            onGeneric {
+                hasConflictingPopups(any())
+            } doAnswer {
+                true
+            }
+        }
+        invokeCodeWhispererService()
+
+        runInEdtAndWait {
+            val metricCaptor = argumentCaptor<MetricEvent>()
+            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+            assertEventsContainsFieldsAndCount(
+                metricCaptor.allValues, userDecision, pythonResponse.recommendations().size,
+                codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString(),
+            )
+        }
+    }
+
+    @Test
     fun `test codePercentage metric is correct - 1`() {
         val project = projectRule.project
         val fixture = projectRule.fixture
