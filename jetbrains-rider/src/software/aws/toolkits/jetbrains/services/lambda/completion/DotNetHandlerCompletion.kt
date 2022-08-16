@@ -22,7 +22,7 @@ class DotNetHandlerCompletion : HandlerCompletion {
         return completionItems.map { completionItem ->
             LookupElementBuilder.create(completionItem.handler).let { element ->
                 if (completionItem.iconId != null) {
-                    element.withIcon(iconId.toIdeaIcon(project))
+                    element.withIcon(completionItem.iconId.toIdeaIcon(project))
                 } else {
                     element
                 }

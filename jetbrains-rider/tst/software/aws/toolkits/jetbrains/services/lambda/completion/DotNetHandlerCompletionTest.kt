@@ -71,7 +71,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     @Suppress("SameParameterValue")
     private fun assertIconPath(iconModel: IconModel?, expectedPath: String) {
         assertThat(iconModel).isNotNull
-        val ideaIconSecond = iconModel?.let { iconId.toIdeaIcon(project) as? IconLoader.CachedImageIcon }
+        val ideaIconSecond = iconModel?.let { iconModel.toIdeaIcon(project) as? IconLoader.CachedImageIcon }
         assertThat(ideaIconSecond).isNotNull
         assertThat(ideaIconSecond?.url?.path).endsWith(expectedPath.trimStart('/'))
     }
