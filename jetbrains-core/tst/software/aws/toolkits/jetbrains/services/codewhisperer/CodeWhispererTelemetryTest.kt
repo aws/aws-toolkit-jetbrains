@@ -425,7 +425,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             }
         }
 
-        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)?.dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
 
         val acceptedTokensSize = pythonResponse.recommendations()[0].content().length - deletedTokenByUser
         val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length - deletedTokenByUser
@@ -468,7 +468,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                     fixture.editor.document.deleteString(currentOffset - 1, currentOffset)
                 }
                 // use dispose() to froce tracker to emit telemetry
-                CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)?.dispose()
+                CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
             }
         }
 
@@ -520,7 +520,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
             }
         }
-        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)?.dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
 
         val acceptedTokensSize = "x, y):\n    return x + y".length
         val totalTokensSize = "$pythonTestLeftContext(".length + acceptedTokensSize
