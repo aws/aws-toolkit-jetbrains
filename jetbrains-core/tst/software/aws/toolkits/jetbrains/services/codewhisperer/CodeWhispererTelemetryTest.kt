@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.utils.rules.openFile
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererRuntime
@@ -381,6 +382,24 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
+    fun `test codePercentage tracker will not be initialized with unsupportedLanguage `() {
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val plainTxtFile = fixture.addFileToProject("/notSupported.txt", "")
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(plainTxtFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString("random txt string")
+            }
+        }
+
+        // document changes in unsupported files will not trigger initialization of tracker
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
+    }
+
+    @Test
     fun `test codePercentage metric is correct - 1`() {
         val project = projectRule.project
         val fixture = projectRule.fixture
@@ -407,7 +426,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             }
         }
 
-        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)?.dispose()
 
         val acceptedTokensSize = pythonResponse.recommendations()[0].content().length - deletedTokenByUser
         val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length - deletedTokenByUser
@@ -450,7 +469,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                     fixture.editor.document.deleteString(currentOffset - 1, currentOffset)
                 }
                 // use dispose() to froce tracker to emit telemetry
-                CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+                CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)?.dispose()
             }
         }
 
@@ -502,7 +521,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
             }
         }
-        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)?.dispose()
 
         val acceptedTokensSize = "x, y):\n    return x + y".length
         val totalTokensSize = "$pythonTestLeftContext(".length + acceptedTokensSize
