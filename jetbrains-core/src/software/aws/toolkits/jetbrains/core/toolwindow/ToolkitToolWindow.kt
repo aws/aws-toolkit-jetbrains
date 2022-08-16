@@ -70,11 +70,8 @@ interface ToolkitToolWindow {
 
         val content = find(id)
         if (content != null) {
-            runInEdt {
-                toolWindow.activate(null, true)
-                toolWindow.contentManager.setSelectedContent(content)
-            }
-
+            toolWindow.activate(null, true)
+            toolWindow.contentManager.setSelectedContent(content)
             return true
         }
 
