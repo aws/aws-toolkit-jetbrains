@@ -1,4 +1,4 @@
-// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
@@ -187,7 +187,7 @@ class DotNetSamProjectGenerator(
         // Create solution file
         val projectFiles =
             File(solutionDirectory, "src").walk().filter { it.extension == CsprojFileType.defaultExtension } +
-                File(solutionDirectory, "test").walk().filter { it.extension == CsprojFileType.defaultExtension }
+                File(solutionDirectory, "").walk().filter { it.extension == CsprojFileType.defaultExtension }
 
         // Get the rest of generated files and copy to "SolutionItems" default folder in project structure
         val solutionFiles = solutionDirectory.listFiles()?.filter { it.isFile }?.toList() ?: emptyList()
