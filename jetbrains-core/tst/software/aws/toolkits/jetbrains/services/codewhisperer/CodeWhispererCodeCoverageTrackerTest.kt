@@ -149,12 +149,6 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Javascript)
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(3)
-
-        val plainTextTracker = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Plaintext)
-        assertThat(plainTextTracker).isNull()
-
-        val unknownTracker = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Unknown)
-        assertThat(unknownTracker).isNull()
     }
 
     @Test

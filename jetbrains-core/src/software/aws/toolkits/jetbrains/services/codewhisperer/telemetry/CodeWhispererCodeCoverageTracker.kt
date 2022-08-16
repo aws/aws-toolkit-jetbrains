@@ -17,7 +17,6 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.toCodeWhispererLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -190,15 +189,11 @@ abstract class CodeWhispererCodeCoverageTracker(
         private val instances: MutableMap<CodewhispererLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
         fun calculatePercentage(acceptedTokens: Int, totalTokens: Int): Int = ((acceptedTokens.toDouble() * 100) / totalTokens).roundToInt()
-        fun getInstance(language: CodewhispererLanguage): CodeWhispererCodeCoverageTracker? = when (val instance = instances[language]) {
+        fun getInstance(language: CodewhispererLanguage): CodeWhispererCodeCoverageTracker = when (val instance = instances[language]) {
             null -> {
-                if (CodeWhispererLanguageManager.getInstance().isLanguageSupported(language.toString())) {
-                    val newTracker = DefaultCodeWhispererCodeCoverageTracker(language)
-                    instances[language] = newTracker
-                    newTracker
-                } else {
-                    null
-                }
+                val newTracker = DefaultCodeWhispererCodeCoverageTracker(language)
+                instances[language] = newTracker
+                newTracker
             }
             else -> instance
         }
