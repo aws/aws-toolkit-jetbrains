@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
@@ -21,6 +22,7 @@ import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
@@ -33,6 +35,9 @@ import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsRe
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.emptyListResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.listOfEmptyRecommendationResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.listOfMixedEmptyAndNonEmptyRecommendationResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testCodeWhispererException
@@ -57,7 +62,6 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
-import kotlin.math.roundToInt
 
 class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val userDecision = "codewhisperer_userDecision"
@@ -416,7 +420,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             1,
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
-            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString()
         )
     }
 
@@ -461,7 +465,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             1,
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
-            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString()
         )
     }
 
@@ -477,9 +481,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 .recommendations(
                     CodeWhispererTestUtil.generateMockRecommendationDetail("x, y):\n    return x + y"),
                     CodeWhispererTestUtil.generateMockRecommendationDetail("a, b):\n    return a + b"),
-                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 3"),
-                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 4"),
-                    CodeWhispererTestUtil.generateMockRecommendationDetail("test recommendation 5")
                 )
                 .nextToken("")
                 .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
@@ -514,10 +515,72 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             1,
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
-            "codewhispererPercentage" to (acceptedTokensSize.toDouble() / totalTokensSize * 100).roundToInt().toString()
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString()
         )
+    }
 
-        metricCaptor.allValues.forEach { println(it) }
+    @Test
+    fun `test empty list of recommendations should sent 1 empty userDecision event and no popup shown`() {
+        mockClient.stub {
+            on {
+                mockClient.listRecommendations(any<ListRecommendationsRequest>())
+            } doAnswer {
+                emptyListResponse
+            }
+        }
+        invokeCodeWhispererService()
+
+        verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any(), any(), any(), any())
+        runInEdtAndWait {
+            val metricCaptor = argumentCaptor<MetricEvent>()
+            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+            assertEventsContainsFieldsAndCount(
+                metricCaptor.allValues, userDecision, 1,
+                "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString()
+            )
+        }
+    }
+
+    @Test
+    fun `test empty recommendations should send empty user decision events`() {
+        testSendEmptyUserDecisionEventForEmptyRecommendations(listOfEmptyRecommendationResponse)
+    }
+
+    @Test
+    fun `test a mix of empty and non-empty recommendations should send empty user decision events accordingly`() {
+        testSendEmptyUserDecisionEventForEmptyRecommendations(listOfMixedEmptyAndNonEmptyRecommendationResponse)
+    }
+
+    private fun testSendEmptyUserDecisionEventForEmptyRecommendations(response: ListRecommendationsResponse) {
+        mockClient.stub {
+            on {
+                mockClient.listRecommendations(any<ListRecommendationsRequest>())
+            } doAnswer {
+                response
+            }
+        }
+
+        invokeCodeWhispererService()
+
+        val numOfEmptyRecommendations = response.recommendations().filter { it.content().isEmpty() }.size
+        if (numOfEmptyRecommendations == response.recommendations().size) {
+            verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any(), any(), any(), any())
+        } else {
+            val popupCaptor = argumentCaptor<JBPopup>()
+            verify(popupManagerSpy, timeout(5000))
+                .showPopup(any(), any(), any(), any(), any(), popupCaptor.capture(), any(), any())
+            runInEdtAndWait {
+                popupManagerSpy.closePopup(popupCaptor.lastValue)
+            }
+        }
+        runInEdtAndWait {
+            val metricCaptor = argumentCaptor<MetricEvent>()
+            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+            assertEventsContainsFieldsAndCount(
+                metricCaptor.allValues, userDecision, numOfEmptyRecommendations,
+                "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString()
+            )
+        }
     }
 
     private fun Editor.appendString(string: String) {
