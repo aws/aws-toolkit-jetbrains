@@ -381,7 +381,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test codePercentage tracker will not be initialized with unsupportedLanguage `() {
+    fun `test codePercentage tracker will not be initialized with unsupportedLanguage`() {
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
         val project = projectRule.project
         val fixture = projectRule.fixture
