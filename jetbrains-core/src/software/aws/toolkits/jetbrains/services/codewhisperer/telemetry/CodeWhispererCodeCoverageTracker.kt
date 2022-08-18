@@ -88,7 +88,6 @@ abstract class CodeWhispererCodeCoverageTracker(
             if (event.oldTimeStamp == 0L) return
         }
         addAndGetTotalTokens(event.document, event.newLength - event.oldLength)
-        println()
     }
 
     internal fun extractRangeMarkerString(rangeMarker: RangeMarker): String? = runReadAction {
