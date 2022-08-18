@@ -16,31 +16,6 @@ import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
-// class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private val project: Project) : FragmentedSettingsEditor<T>(null) {
-//    override fun createFragments(): List<SettingsEditorFragment<T, *>> {
-//        return listOf(AwsConnectionSettingsFragment(project))
-//    }
-// }
-//
-// class AwsConnectionSettingsFragment<T : RunConfigurationBase<*>?>(private val project: Project, private val view: AwsConnectionExtensionSettingsEditor<T> = AwsConnectionExtensionSettingsEditor(project)) : SettingsEditorFragment<T, JComponent>(
-//    "aaaaaaa",
-//    "name",
-//    "group",
-//    view.view.panel,
-//    300,
-//    null,
-//    null,
-//    { true }
-// ) {
-//    override fun resetEditorFrom(s: T) {
-//        view.resetEditorFrom(s)
-//    }
-//
-//    override fun applyEditorTo(s: T) {
-//        view.applyEditorTo(s)
-//    }
-// }
-
 class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>>(private val project: Project, private val showHeader: Boolean) : SettingsEditor<T>() {
     internal val view = AwsConnectionExtensionSettingsPanel()
     private val regionProvider = AwsRegionProvider.getInstance()
