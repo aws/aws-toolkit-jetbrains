@@ -6,17 +6,46 @@ package software.aws.toolkits.jetbrains.core.execution
 import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
+import com.intellij.ui.dsl.builder.CollapsibleRow
+import com.intellij.ui.dsl.builder.panel
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
+import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
-class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private val project: Project) : SettingsEditor<T>() {
+// class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private val project: Project) : FragmentedSettingsEditor<T>(null) {
+//    override fun createFragments(): List<SettingsEditorFragment<T, *>> {
+//        return listOf(AwsConnectionSettingsFragment(project))
+//    }
+// }
+//
+// class AwsConnectionSettingsFragment<T : RunConfigurationBase<*>?>(private val project: Project, private val view: AwsConnectionExtensionSettingsEditor<T> = AwsConnectionExtensionSettingsEditor(project)) : SettingsEditorFragment<T, JComponent>(
+//    "aaaaaaa",
+//    "name",
+//    "group",
+//    view.view.panel,
+//    300,
+//    null,
+//    null,
+//    { true }
+// ) {
+//    override fun resetEditorFrom(s: T) {
+//        view.resetEditorFrom(s)
+//    }
+//
+//    override fun applyEditorTo(s: T) {
+//        view.applyEditorTo(s)
+//    }
+// }
+
+class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>>(private val project: Project, private val showHeader: Boolean) : SettingsEditor<T>() {
     internal val view = AwsConnectionExtensionSettingsPanel()
     private val regionProvider = AwsRegionProvider.getInstance()
     private val credentialManager = CredentialManager.getInstance()
+    private var groupHeader: CollapsibleRow? = null
 
     init {
         view.manuallyConfiguredConnection.addActionListener { updateComponents() }
@@ -25,7 +54,7 @@ class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private
     }
 
     override fun resetEditorFrom(configuration: T) {
-        configuration?.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)?.let { config ->
+        configuration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)?.let { config ->
             view.region.isEnabled = false
             view.credentialProvider.isEnabled = false
             when {
@@ -47,15 +76,28 @@ class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>?>(private
                 }
                 else -> {
                     view.none.isSelected = true
+                    groupHeader?.expanded = false
                 }
             }
         }
     }
 
-    override fun createEditor(): JComponent = view.panel
+    override fun createEditor(): JComponent = if (showHeader) {
+        panel {
+            groupHeader = collapsibleGroup(message("aws_connection.tab.label")) {
+                row {
+                    cell(view.panel)
+                }
+            }.apply {
+                expanded = true
+            }
+        }
+    } else {
+        view.panel
+    }
 
-    override fun applyEditorTo(configuration: T) {
-        configuration?.putCopyableUserData(
+    public override fun applyEditorTo(configuration: T) {
+        configuration.putCopyableUserData(
             AWS_CONNECTION_RUN_CONFIGURATION_KEY,
             AwsCredentialInjectionOptions().also {
                 when {
