@@ -493,7 +493,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         withCodeWhispererServiceInvokedAndWait {
             runInEdtAndWait {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
-                val v = fixture.editor.document.text
             }
         }
 
