@@ -42,7 +42,7 @@ class DetailedLogRecord(
     lateinit var tableView: TableView<LogRecordFieldPair>
         private set
     private val recordLoadTask: Deferred<LogRecord>
-    
+
     private fun createUIComponents() {
         val model = ListTableModel<LogRecordFieldPair>(
             LogRecordFieldColumn(),
