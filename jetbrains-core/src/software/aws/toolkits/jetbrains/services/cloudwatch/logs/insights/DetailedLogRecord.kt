@@ -42,6 +42,8 @@ class DetailedLogRecord(
     lateinit var tableView: TableView<LogRecordFieldPair>
         private set
     private val recordLoadTask: Deferred<LogRecord>
+    var a = false
+    var b = false
 
     private fun createUIComponents() {
         val model = ListTableModel<LogRecordFieldPair>(
@@ -62,6 +64,7 @@ class DetailedLogRecord(
         coroutineScope.launch {
             val record = recordLoadTask.await()
             val items = record.map { it.key to it.value }
+
             runInEdt {
                 tableView.listTableModel.items = items
                 tableView.setPaintBusy(false)
