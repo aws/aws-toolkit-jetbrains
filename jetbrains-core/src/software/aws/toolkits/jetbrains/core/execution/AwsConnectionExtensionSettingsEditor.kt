@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.execution
 import com.intellij.execution.configurations.RunConfigurationBase
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
-import com.intellij.ui.dsl.builder.CollapsibleRow
+import com.intellij.ui.dsl.builder.CollapsiblePanel
 import com.intellij.ui.dsl.builder.panel
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
@@ -20,7 +20,7 @@ class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>>(private 
     internal val view = AwsConnectionExtensionSettingsPanel()
     private val regionProvider = AwsRegionProvider.getInstance()
     private val credentialManager = CredentialManager.getInstance()
-    private var groupHeader: CollapsibleRow? = null
+    private var groupHeader: CollapsiblePanel? = null
 
     init {
         view.manuallyConfiguredConnection.addActionListener { updateComponents() }
