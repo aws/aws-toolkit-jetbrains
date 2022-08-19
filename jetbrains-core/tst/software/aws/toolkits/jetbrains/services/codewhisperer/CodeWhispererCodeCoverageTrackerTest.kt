@@ -37,7 +37,6 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
@@ -104,11 +103,7 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         batcher = mock()
         telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
-        val explorerActionManager = mock<CodeWhispererExplorerActionManager> {
-            on { hasAcceptedTermsOfService() } doReturn true
-        }
 
-        ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, explorerActionManager, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
         project.replaceService(CodeWhispererCodeReferenceManager::class.java, mock(), disposableRule.disposable)
 
@@ -154,18 +149,6 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Javascript)
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(3)
-    }
-
-    @Test
-    fun `test codeCoverageTracker will not be activated if user doesn't accept cwspr terms of service`() {
-        val exploreActionManager = mock<CodeWhispererExplorerActionManager> {
-            on { hasAcceptedTermsOfService() } doReturn false
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreActionManager, disposableRule.disposable)
-        val tracker = spy(TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python))
-        assertThat(tracker.isTrackerActive()).isFalse
-        tracker.activateTrackerIfNotActive()
-        assertThat(tracker.isTrackerActive()).isFalse
     }
 
     @Test

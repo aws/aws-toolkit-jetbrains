@@ -17,7 +17,6 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.toCodeWhispererLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -53,7 +52,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     @Synchronized
     fun activateTrackerIfNotActive() {
-        if (!isTelemetryEnabled() || !CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService() || isActive.get()) return
+        if (!isTelemetryEnabled() || isTrackerActive()) return
         val conn = ApplicationManager.getApplication().messageBus.connect()
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,

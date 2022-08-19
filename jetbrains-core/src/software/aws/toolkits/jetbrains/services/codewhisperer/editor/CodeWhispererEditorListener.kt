@@ -10,13 +10,14 @@ import com.intellij.openapi.editor.event.EditorFactoryListener
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.psi.PsiDocumentManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.codeWhispererLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 
 class CodeWhispererEditorListener : EditorFactoryListener {
     override fun editorCreated(event: EditorFactoryEvent) {
         val editor = (event.editor as? EditorImpl) ?: return
-
+        if (!CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()) return
         editor.document.addDocumentListener(
             object : DocumentListener {
                 override fun documentChanged(event: DocumentEvent) {
