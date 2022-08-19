@@ -17,10 +17,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 class CodeWhispererEditorListener : EditorFactoryListener {
     override fun editorCreated(event: EditorFactoryEvent) {
         val editor = (event.editor as? EditorImpl) ?: return
-        if (!CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()) return
         editor.document.addDocumentListener(
             object : DocumentListener {
                 override fun documentChanged(event: DocumentEvent) {
+                    if (!CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()) return
                     CodeWhispererInvocationStatus.getInstance().documentChanged()
                     editor.project?.let { project ->
                         PsiDocumentManager.getInstance(project).getPsiFile(editor.document)?.codeWhispererLanguage ?. let { language ->
