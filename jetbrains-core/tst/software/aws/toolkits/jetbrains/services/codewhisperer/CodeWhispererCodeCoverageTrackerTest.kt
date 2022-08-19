@@ -104,7 +104,11 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         batcher = mock()
         telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
+        val explorerActionManager = mock<CodeWhispererExplorerActionManager>{
+            on { hasAcceptedTermsOfService() } doReturn true
+        }
 
+        ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, explorerActionManager, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
         project.replaceService(CodeWhispererCodeReferenceManager::class.java, mock(), disposableRule.disposable)
 
