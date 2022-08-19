@@ -59,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.checkEmptyRecommendations
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
+import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
@@ -150,42 +151,6 @@ class CodeWhispererService {
                         latency,
                         null
                     )
-
-                    if (emptyRecommendations) {
-                        // In case the server returns a response with empty recommendations, client-side should not
-                        // show them. They will not be added to the worker queue or appear in any of the user decision.
-                        // So we should continue to the next one or stop if there's no next one.
-                        LOG.debug { "Received 0 recommendation from response, requestId: $requestId" }
-                        if (response.nextToken().isNotEmpty()) {
-                            // If job is cancelled before we do another request, don't bother making
-                            // another API call to save resources
-                            if (!isActive) {
-                                LOG.debug { "Skipping sending remaining requests on CodeWhisperer session exit" }
-                                break
-                            }
-                            continue
-                        }
-
-                        // At this point, the current recommendation is empty and there's no next request,
-                        // We should choose to display the "no recommendations" hint when it's a manual trigger and
-                        // There's no active CodeWhisperer popup, and we should do these in EDT.
-                        runInEdt {
-                            CodeWhispererInvocationStatus.getInstance().finishInvocation()
-                            if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
-                                states?.let {
-                                    CodeWhispererPopupManager.getInstance().updatePopupPanel(
-                                        it,
-                                        CodeWhispererPopupManager.getInstance().sessionContext
-                                    )
-                                }
-                                return@runInEdt
-                            }
-                            CodeWhispererPopupManager.getInstance().cancelPopup(popup)
-                            if (requestContext.triggerTypeInfo.triggerType != CodewhispererTriggerType.OnDemand) return@runInEdt
-                            showCodeWhispererInfoHint(requestContext.editor, message("codewhisperer.popup.no_recommendations"))
-                        }
-                        break
-                    }
 
                     val validatedResponse = validateResponse(response)
 
@@ -294,13 +259,14 @@ class CodeWhispererService {
         val responseContext = workerContext.responseContext
         val response = workerContext.response
         val popup = workerContext.popup
+        val requestId = response.responseMetadata().requestId()
 
         // At this point when we are in EDT, the state of the popup will be thread-safe
         // across this thread execution, so if popup is disposed, we will stop here.
         // This extra check is needed because there's a time between when we get the response and
         // when we enter the EDT.
         if (popup.isDisposed) {
-            LOG.debug { "Stop showing CodeWhisperer recommendations on CodeWhisperer session exit" }
+            LOG.debug { "Stop showing CodeWhisperer recommendations on CodeWhisperer session exit. RequestId: $requestId" }
             return null
         }
 
@@ -312,35 +278,50 @@ class CodeWhispererService {
             requestContext.editor,
             requestContext.caretPosition
         )
-        val popupIsShowing: Boolean
+        val isPopupShowing: Boolean
         val nextStates: InvocationContext?
         if (currStates == null) {
             // first response
             nextStates = initStates(requestContext, responseContext, response, caretMovement, popup)
-            popupIsShowing = true
+            isPopupShowing = false
 
             // receiving a null state means caret has moved backward or there's a conflict with
             // Intellisense popup, so we are going to cancel the job
             if (nextStates == null) {
-                LOG.debug { "Cancelling popup and exiting CodeWhisperer session" }
+                LOG.debug { "Cancelling popup and exiting CodeWhisperer session. RequestId: $requestId" }
                 CodeWhispererPopupManager.getInstance().cancelPopup(popup)
                 return null
             }
         } else {
             // subsequent responses
             nextStates = updateStates(currStates, response)
-            popupIsShowing = checkRecommendationsValidity(currStates, false)
+            isPopupShowing = checkRecommendationsValidity(currStates, false)
         }
 
         val hasAtLeastOneValid = checkRecommendationsValidity(nextStates, response.nextToken().isEmpty())
+
+        // If there are no recommendations in this response, we need to manually send the user decision event here
+        // since it won't be sent automatically later
+        if (response.recommendations().isEmpty()) {
+            LOG.debug { "Received an empty list from response, requestId: $requestId" }
+            CodeWhispererTelemetryService.getInstance().sendUserDecisionEvent(
+                requestId,
+                requestContext,
+                responseContext,
+                Recommendation.builder().build(),
+                -1,
+                CodewhispererSuggestionState.Empty,
+                nextStates.recommendationContext.details.size
+            )
+        }
         if (!hasAtLeastOneValid) {
             if (response.nextToken().isEmpty()) {
                 LOG.debug { "None of the recommendations are valid, exiting CodeWhisperer session" }
                 CodeWhispererPopupManager.getInstance().cancelPopup(popup)
                 return null
             }
-        } else {
-            updateCodeWhisperer(nextStates, !popupIsShowing)
+        } else if (response.recommendations().isNotEmpty()) {
+            updateCodeWhisperer(nextStates, isPopupShowing)
         }
         return nextStates
     }
@@ -358,16 +339,12 @@ class CodeWhispererService {
 
         if (CodeWhispererPopupManager.getInstance().hasConflictingPopups(requestContext.editor)) {
             LOG.debug { "Detect conflicting popup window with CodeWhisperer popup, not showing CodeWhisperer popup" }
+            sendDiscardedUserDecisionEventForAll(requestContext, responseContext, recommendations)
             return null
         }
         if (caretMovement == CaretMovement.MOVE_BACKWARD) {
             LOG.debug { "Caret moved backward, discarding all of the recommendations. Request ID: $requestId" }
-            val detailContexts = recommendations.map { DetailContext("", it, it, true) }
-            val recommendationContext = RecommendationContext(detailContexts, "", "", VisualPosition(0, 0))
-
-            CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
-                requestContext, responseContext, recommendationContext, SessionContext(), false
-            )
+            sendDiscardedUserDecisionEventForAll(requestContext, responseContext, recommendations)
             return null
         }
         val userInputOriginal = CodeWhispererEditorManager.getInstance().getUserInputSinceInvocation(
@@ -426,22 +403,42 @@ class CodeWhispererService {
                 !CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
         }
 
-        // set to true when at least one is not discarded
-        val hasAtLeastOneValid = details.any { !it.isDiscarded }
+        // set to true when at least one is not discarded or empty
+        val hasAtLeastOneValid = details.any { !it.isDiscarded && it.recommendation.content().isNotEmpty() }
 
-        // show popup hint when non is valid and at least one is discarded by reference filter
-        if (!hasAtLeastOneValid && hasAtLeastOneDiscardedByReferenceFilter && showHint) {
-            HintManager.getInstance().showInformationHint(
-                states.requestContext.editor,
-                message("codewhisperer.popup.reference.filter"),
-                HintManager.UNDER
-            )
+        if (!hasAtLeastOneValid && showHint) {
+            if (hasAtLeastOneDiscardedByReferenceFilter) {
+                // show popup hint for filter when none is valid and at least one is discarded by reference filter
+                showCodeWhispererInfoHint(
+                    states.requestContext.editor,
+                    message("codewhisperer.popup.reference.filter")
+                )
+            } else if (states.requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
+                // show popup hint for no recommendation when none is valid and no one is discarded by reference filter
+                showCodeWhispererInfoHint(
+                    states.requestContext.editor,
+                    message("codewhisperer.popup.no_recommendations")
+                )
+            }
         }
         return hasAtLeastOneValid
     }
 
     private fun updateCodeWhisperer(states: InvocationContext, recommendationAdded: Boolean) {
         CodeWhispererPopupManager.getInstance().changeStates(states, 0, "", true, recommendationAdded)
+    }
+
+    private fun sendDiscardedUserDecisionEventForAll(
+        requestContext: RequestContext,
+        responseContext: ResponseContext,
+        recommendations: List<Recommendation>
+    ) {
+        val detailContexts = recommendations.map { DetailContext("", it, it, true) }
+        val recommendationContext = RecommendationContext(detailContexts, "", "", VisualPosition(0, 0))
+
+        CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
+            requestContext, responseContext, recommendationContext, SessionContext(), false
+        )
     }
 
     fun getRequestContext(
@@ -463,9 +460,12 @@ class CodeWhispererService {
         // If contentSpans in reference are not consistent with content(recommendations),
         // remove the incorrect references.
         val validatedRecommendations = response.recommendations().map {
-            val validReference = it.hasReferences() && it.references().isNotEmpty() &&
-                it.content().length == it.references().last().recommendationContentSpan().end()
-            if (validReference) {
+            val validReferences = it.hasReferences() && it.references().isNotEmpty() &&
+                it.references().none { reference ->
+                    val span = reference.recommendationContentSpan()
+                    span.start() > span.end() || span.start() < 0 || span.end() > it.content().length
+                }
+            if (validReferences) {
                 it
             } else {
                 it.toBuilder().references(DefaultSdkAutoConstructList.getInstance()).build()
@@ -498,8 +498,6 @@ class CodeWhispererService {
         recommendationContext: RecommendationContext,
         popup: JBPopup
     ): InvocationContext {
-        val popupManager = CodeWhispererPopupManager.getInstance()
-
         addPopupChildDisposables(popup, requestContext.editor)
 
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
@@ -509,7 +507,7 @@ class CodeWhispererService {
         // state update.
         val states = InvocationContext(requestContext, responseContext, recommendationContext, popup)
         Disposer.register(popup, states)
-        popupManager.initPopupListener(states)
+        CodeWhispererPopupManager.getInstance().initPopupListener(states)
         return states
     }
 
@@ -523,10 +521,6 @@ class CodeWhispererService {
         CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = false
         Disposer.register(popup) {
             CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = originalAutoPopupCompletionLookup
-        }
-        editor.putUserData(KEY_CODEWHISPERER_METADATA, CodeWhispererMetadata())
-        Disposer.register(popup) {
-            editor.putUserData(KEY_CODEWHISPERER_METADATA, null)
         }
         Disposer.register(popup) {
             CodeWhispererPopupManager.getInstance().reset()

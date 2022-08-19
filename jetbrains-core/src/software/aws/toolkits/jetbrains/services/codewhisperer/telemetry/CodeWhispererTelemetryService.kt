@@ -11,8 +11,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.toCodeWhispererLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.ProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
@@ -75,7 +75,7 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    private fun sendUserDecisionEvent(
+    fun sendUserDecisionEvent(
         requestId: String,
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -110,26 +110,38 @@ class CodeWhispererTelemetryService {
     }
 
     fun sendSecurityScanEvent(codeScanEvent: CodeScanTelemetryEvent, project: Project? = null) {
-        val (jobId, language, payloadSize, codeScanLines, codeScanIssues, reason) = codeScanEvent.codeScanResponseContext
+        val (payloadContext, serviceInvocationContext, codeScanJobId, totalIssues, reason) = codeScanEvent.codeScanResponseContext
 
         LOG.debug {
-            "Recording code security scan event. " +
-                "Security scan job id: $jobId, " +
-                "Language: $language, " +
-                "Payload size: $payloadSize, " +
-                "Total number of lines scanned: $codeScanLines, " +
-                "Total number of security scan issues found: $codeScanIssues " +
-                "Total duration of the security scan job: ${codeScanEvent.duration} " +
-                "Reason: $reason"
+            "Recording code security scan event. \n" +
+                "Security scan job id: $codeScanJobId, \n" +
+                "Total number of security scan issues found: $totalIssues, \n" +
+                "Language: ${payloadContext.language}, \n" +
+                "Uncompressed source payload size in bytes: ${payloadContext.srcPayloadSize}, \n" +
+                "Uncompressed build payload size in bytes: ${payloadContext.buildPayloadSize}, \n" +
+                "Compressed source zip file size in bytes: ${payloadContext.srcZipFileSize}, \n" +
+                "Compressed build zip file size in bytes: ${payloadContext.buildZipFileSize}, \n" +
+                "Total duration of the security scan job in milliseconds: ${codeScanEvent.duration}, \n" +
+                "Context truncation duration in milliseconds: ${payloadContext.totalTimeInMilliseconds}, \n" +
+                "Artifacts upload duration in milliseconds: ${serviceInvocationContext.artifactsUploadDuration}, \n" +
+                "Service invocation duration in milliseconds: ${serviceInvocationContext.serviceInvocationDuration}, \n" +
+                "Total number of lines scanned: ${payloadContext.totalLines}, \n" +
+                "Reason: $reason \n"
         }
         CodewhispererTelemetry.securityScan(
             project = project,
-            codewhispererCodeScanLines = codeScanLines.toInt(),
-            codewhispererCodeScanJobId = jobId,
-            codewhispererCodeScanPayloadBytes = payloadSize.toInt(),
-            codewhispererCodeScanTotalIssues = codeScanIssues,
-            codewhispererLanguage = language,
+            codewhispererCodeScanLines = payloadContext.totalLines.toInt(),
+            codewhispererCodeScanJobId = codeScanJobId,
+            codewhispererCodeScanSrcPayloadBytes = payloadContext.srcPayloadSize.toInt(),
+            codewhispererCodeScanBuildPayloadBytes = payloadContext.buildPayloadSize?.toInt(),
+            codewhispererCodeScanSrcZipFileBytes = payloadContext.srcZipFileSize.toInt(),
+            codewhispererCodeScanBuildZipFileBytes = payloadContext.buildZipFileSize?.toInt(),
+            codewhispererCodeScanTotalIssues = totalIssues,
+            codewhispererLanguage = payloadContext.language,
             duration = codeScanEvent.duration,
+            contextTruncationDuration = payloadContext.totalTimeInMilliseconds.toInt(),
+            artifactsUploadDuration = serviceInvocationContext.artifactsUploadDuration.toInt(),
+            codeScanServiceInvocationsDuration = serviceInvocationContext.serviceInvocationDuration.toInt(),
             reason = reason,
             result = codeScanEvent.result
         )
@@ -173,7 +185,8 @@ class CodeWhispererTelemetryService {
                 sessionContext.seen.contains(index),
                 hasUserAccepted,
                 isDiscarded,
-                detail.hasReferences()
+                detail.hasReferences(),
+                detail.content().isEmpty()
             )
             sendUserDecisionEvent(requestId, requestContext, responseContext, detail, index, suggestionState, detailContexts.size)
         }
@@ -185,9 +198,12 @@ class CodeWhispererTelemetryService {
         hasSeen: Boolean,
         hasUserAccepted: Boolean,
         isDiscarded: Boolean,
-        hasReference: Boolean
+        hasReference: Boolean,
+        isEmpty: Boolean
     ): CodewhispererSuggestionState =
-        if (!CodeWhispererSettings.getInstance().isIncludeCodeWithReference() && hasReference) {
+        if (isEmpty) {
+            CodewhispererSuggestionState.Empty
+        } else if (!CodeWhispererSettings.getInstance().isIncludeCodeWithReference() && hasReference) {
             CodewhispererSuggestionState.Filter
         } else if (isDiscarded) {
             CodewhispererSuggestionState.Discard
@@ -202,14 +218,6 @@ class CodeWhispererTelemetryService {
         } else {
             CodewhispererSuggestionState.Reject
         }
-}
-
-fun ProgrammingLanguage.toCodeWhispererLanguage() = when (languageName) {
-    CodewhispererLanguage.Python.toString() -> CodewhispererLanguage.Python
-    CodewhispererLanguage.Java.toString() -> CodewhispererLanguage.Java
-    CodewhispererLanguage.Javascript.toString() -> CodewhispererLanguage.Javascript
-    "plain_text" -> CodewhispererLanguage.Plaintext
-    else -> CodewhispererLanguage.Unknown
 }
 
 fun isTelemetryEnabled(): Boolean = AwsSettings.getInstance().isTelemetryEnabled
