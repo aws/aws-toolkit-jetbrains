@@ -109,7 +109,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeastOnce()).enqueue(capture())
             assertEventsContainsFieldsAndCount(
-                allValues, serviceInvocation, 1,
+                allValues,
+                serviceInvocation,
+                1,
                 "result" to Result.Failed.toString()
             )
         }
@@ -157,15 +159,21 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             verify(batcher, atLeast(2 + count)).enqueue(capture())
             assertEventsContainsFieldsAndCount(allValues, serviceInvocation, 1)
             assertEventsContainsFieldsAndCount(
-                allValues, userModification, 1,
+                allValues,
+                userModification,
+                1,
                 "codewhispererSessionId" to testSessionId
             )
             assertEventsContainsFieldsAndCount(
-                allValues, userDecision, 1,
+                allValues,
+                userDecision,
+                1,
                 codewhispererSuggestionState to CodewhispererSuggestionState.Accept.toString()
             )
             assertEventsContainsFieldsAndCount(
-                allValues, userDecision, count - 1,
+                allValues,
+                userDecision,
+                count - 1,
                 codewhispererSuggestionState to CodewhispererSuggestionState.Unseen.toString()
             )
         }
@@ -186,15 +194,21 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeast(1 + count)).enqueue(capture())
                 assertEventsContainsFieldsAndCount(
-                    allValues, serviceInvocation, 1,
+                    allValues,
+                    serviceInvocation,
+                    1,
                     "result" to Result.Succeeded.toString()
                 )
                 assertEventsContainsFieldsAndCount(
-                    allValues, userDecision, 1,
+                    allValues,
+                    userDecision,
+                    1,
                     codewhispererSuggestionState to CodewhispererSuggestionState.Reject.toString()
                 )
                 assertEventsContainsFieldsAndCount(
-                    allValues, userDecision, count - 1,
+                    allValues,
+                    userDecision,
+                    count - 1,
                     codewhispererSuggestionState to CodewhispererSuggestionState.Unseen.toString()
                 )
             }
@@ -207,7 +221,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
                 assertEventsContainsFieldsAndCount(
-                    allValues, serviceInvocation, 1,
+                    allValues,
+                    serviceInvocation,
+                    1,
                     "result" to Result.Succeeded.toString()
                 )
             }
@@ -233,11 +249,15 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeast(1 + count)).enqueue(capture())
                 assertEventsContainsFieldsAndCount(
-                    allValues, serviceInvocation, 1,
+                    allValues,
+                    serviceInvocation,
+                    1,
                     "result" to Result.Succeeded.toString()
                 )
                 assertEventsContainsFieldsAndCount(
-                    allValues, userDecision, count,
+                    allValues,
+                    userDecision,
+                    count,
                     codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString()
                 )
             }
@@ -269,11 +289,15 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeast(1 + prefixNotMatchCount)).enqueue(capture())
             assertEventsContainsFieldsAndCount(
-                allValues, serviceInvocation, 1,
+                allValues,
+                serviceInvocation,
+                1,
                 "result" to Result.Succeeded.toString()
             )
             assertEventsContainsFieldsAndCount(
-                allValues, userDecision, prefixNotMatchCount,
+                allValues,
+                userDecision,
+                prefixNotMatchCount,
                 codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString()
             )
         }
@@ -294,7 +318,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeastOnce()).enqueue(capture())
             assertEventsContainsFieldsAndCount(
-                allValues, serviceInvocation, 1,
+                allValues,
+                serviceInvocation,
+                1,
                 "codewhispererRequestId" to "",
                 "result" to Result.Failed.toString()
             )
@@ -316,7 +342,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeastOnce()).enqueue(capture())
             assertEventsContainsFieldsAndCount(
-                allValues, serviceInvocation, 1,
+                allValues,
+                serviceInvocation,
+                1,
                 "codewhispererRequestId" to testRequestIdForCodeWhispererException,
                 "result" to Result.Failed.toString()
             )
@@ -333,7 +361,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeast(1 + pythonResponse.recommendations().size)).enqueue(capture())
             assertEventsContainsFieldsAndCount(
-                allValues, userDecision, pythonResponse.recommendations().size,
+                allValues,
+                userDecision,
+                pythonResponse.recommendations().size,
                 "codewhispererSuggestionState" to CodewhispererSuggestionState.Filter.toString()
             )
         }
@@ -346,7 +376,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             verify(batcher, atLeastOnce()).enqueue(capture())
             pythonResponse.recommendations().forEach {
                 assertEventsContainsFieldsAndCount(
-                    allValues, userDecision, 1,
+                    allValues,
+                    userDecision,
+                    1,
                     "codewhispererSuggestionReferences" to Gson().toJson(it.references().map { ref -> ref.licenseName() }.toSet()),
                     "codewhispererSuggestionReferenceCount" to it.references().size.toString(),
                     atLeast = true
@@ -364,7 +396,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
             assertEventsContainsFieldsAndCount(
-                metricCaptor.allValues, serviceInvocation, 1,
+                metricCaptor.allValues,
+                serviceInvocation,
+                1,
                 "codewhispererSessionId" to states.responseContext.sessionId,
                 "codewhispererRequestId" to states.recommendationContext.details[0].requestId
             )
@@ -380,10 +414,62 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
         assertEventsContainsFieldsAndCount(
-            metricCaptor.allValues, userDecision, states.recommendationContext.details.size,
+            metricCaptor.allValues,
+            userDecision,
+            states.recommendationContext.details.size,
             "codewhispererSessionId" to states.responseContext.sessionId,
             "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
         )
+    }
+
+    @Test
+    fun `test showing IntelliSense after triggering CodeWhisperer will send userDecision events of state Discard`() {
+        val codewhispererServiceSpy = spy(codewhispererService)
+        codewhispererServiceSpy.stub {
+            onGeneric {
+                canDoInvocation(any(), any())
+            } doAnswer {
+                true
+            }
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
+        popupManagerSpy.stub {
+            onGeneric {
+                hasConflictingPopups(any())
+            } doAnswer {
+                true
+            }
+        }
+        invokeCodeWhispererService()
+
+        runInEdtAndWait {
+            val metricCaptor = argumentCaptor<MetricEvent>()
+            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+            assertEventsContainsFieldsAndCount(
+                metricCaptor.allValues,
+                userDecision,
+                pythonResponse.recommendations().size,
+                codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString(),
+            )
+        }
+    }
+
+    @Test
+    fun `test codePercentage tracker will not be initialized with unsupportedLanguage`() {
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val plainTxtFile = fixture.addFileToProject("/notSupported.txt", "")
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(plainTxtFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString("random txt string")
+            }
+        }
+
+        // document changes in unsupported files will not trigger initialization of tracker
+        assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
     }
 
     @Test
@@ -585,7 +671,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
             assertEventsContainsFieldsAndCount(
-                metricCaptor.allValues, userDecision, 1,
+                metricCaptor.allValues,
+                userDecision,
+                1,
                 "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString()
             )
         }
@@ -656,7 +744,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
             assertEventsContainsFieldsAndCount(
-                metricCaptor.allValues, userDecision, numOfEmptyRecommendations,
+                metricCaptor.allValues,
+                userDecision,
+                numOfEmptyRecommendations,
                 "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString()
             )
         }
