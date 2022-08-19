@@ -104,7 +104,7 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         batcher = mock()
         telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
-        val explorerActionManager = mock<CodeWhispererExplorerActionManager>{
+        val explorerActionManager = mock<CodeWhispererExplorerActionManager> {
             on { hasAcceptedTermsOfService() } doReturn true
         }
 
