@@ -89,7 +89,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             LOG.debug { "event with isWholeTextReplaced flag: $event" }
             if (event.oldTimeStamp == 0L) return
         }
-        addAndGetTotalTokens(event.document, event.newLength - event.oldLength)
+        incrementTotalTokens(event.document, event.newLength - event.oldLength)
     }
 
     internal fun extractRangeMarkerString(rangeMarker: RangeMarker): String? = runReadAction {
@@ -124,7 +124,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
     }
 
-    private fun addAndGetAcceptedTokens(document: Document, delta: Int) {
+    private fun incrementAcceptedTokens(document: Document, delta: Int) {
         var tokens = fileToTokens[document]
         if (tokens == null) {
             tokens = CodeCoverageTokens()
@@ -135,7 +135,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
     }
 
-    private fun addAndGetTotalTokens(document: Document, delta: Int) {
+    private fun incrementTotalTokens(document: Document, delta: Int) {
         var tokens = fileToTokens[document]
         if (tokens == null) {
             tokens = CodeCoverageTokens()
@@ -169,7 +169,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             }
             val delta = getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
             runReadAction {
-                addAndGetAcceptedTokens(rangeMarker.document, delta)
+                incrementAcceptedTokens(rangeMarker.document, delta)
             }
         }
 
