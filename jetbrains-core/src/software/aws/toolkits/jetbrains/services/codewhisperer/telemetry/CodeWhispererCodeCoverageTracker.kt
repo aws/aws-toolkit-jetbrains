@@ -17,6 +17,7 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.toCodeWhispererLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -52,7 +53,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     @Synchronized
     fun activateTrackerIfNotActive() {
-        if (!isTelemetryEnabled() || isActive.get()) return
+        if (!isTelemetryEnabled() || !CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService() || isActive.get()) return
         val conn = ApplicationManager.getApplication().messageBus.connect()
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
@@ -71,6 +72,8 @@ abstract class CodeWhispererCodeCoverageTracker(
         isActive.set(true)
         scheduleCodeWhispererCodeCoverageTracker()
     }
+
+    fun isTrackerActive() = isActive.get()
 
     internal fun documentChanged(event: DocumentEvent) {
         // When open a file for the first time, IDE will also emit DocumentEvent for loading with `isWholeTextReplaced = true`
@@ -206,7 +209,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 }
 
 class DefaultCodeWhispererCodeCoverageTracker(language: CodewhispererLanguage) : CodeWhispererCodeCoverageTracker(
-    5 * TOTAL_SECONDS_IN_MINUTE,
+    TOTAL_SECONDS_IN_MINUTE,
     language,
     acceptedTokens = AtomicInteger(0),
     totalTokens = AtomicInteger(0),
