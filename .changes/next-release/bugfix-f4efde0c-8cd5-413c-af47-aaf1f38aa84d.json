@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix hitting enter inside braces will produce an extra newline"
+  "description" : "Fix hitting enter inside braces will produce an extra newline (#3270)"
 }
