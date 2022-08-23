@@ -24,8 +24,8 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.awt.RelativePoint
 import software.amazon.awssdk.services.codewhisperer.model.Reference
+import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getPopupPositionAboveText
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getRelativePathToContentRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.EDITOR_CODE_REFERENCE_HOVER
@@ -68,7 +68,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         val (_, detail, reformattedDetail) = recommendationContext.details[selectedIndex]
         val userInput = recommendationContext.userInputSinceInvocation
         val startOffset = caretPosition.offset
-        val relativePath = getRelativePathToContentRoot(editor)
+        val absolutePath = CodeWhispererEditorUtil.getFileAbsolutePath(editor)
         reformattedDetail.references().forEachIndexed { i, reference ->
             // start and end could intersect with the userInput, we do not want to show reference for the
             // userInput part, so we truncate the range to exclude userInput here if there's an overlap.
@@ -97,7 +97,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
 
             codeReferenceComponents.contentPanel.apply {
                 add(
-                    codeReferenceComponents.codeReferenceRecordPanel(reference, relativePath, lineNums),
+                    codeReferenceComponents.codeReferenceRecordPanel(reference, absolutePath, lineNums),
                     horizontalPanelConstraints, components.size - 1
                 )
 

@@ -101,6 +101,8 @@ object CodeWhispererEditorUtil {
             }
         }
 
+    fun getFileAbsolutePath(editor: Editor): String? = FileDocumentManager.getInstance().getFile(editor.document)?.path
+
     fun getPopupPositionAboveText(editor: Editor, popup: JBPopup, offset: Int): Point {
         val textAbsolutePosition = editor.offsetToXY(offset)
         val editorLocation = editor.component.locationOnScreen
