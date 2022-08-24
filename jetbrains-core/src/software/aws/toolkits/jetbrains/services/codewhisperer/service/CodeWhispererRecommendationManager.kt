@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.RangeMarker
@@ -71,12 +72,19 @@ class CodeWhispererRecommendationManager {
         val reformattedReferences = rangeMarkers.map {
             val currentRange = it.key
             val originalReference = it.value
+            var spanEndOffset = currentRange.endOffset
+            var lastChar = runReadAction { currentRange.document.getText(TextRange(spanEndOffset - 1, spanEndOffset)) }
+            while (lastChar == "\n") {
+                spanEndOffset -= 1
+                lastChar = runReadAction { currentRange.document.getText(TextRange(spanEndOffset - 1, spanEndOffset)) }
+            }
+//            val endOffset = if (lastChar == "\n") currentRange.endOffset - 1 else currentRange.endOffset
             originalReference
                 .toBuilder()
                 .recommendationContentSpan(
                     Span.builder()
                         .start(currentRange.startOffset - invocationStartOffset)
-                        .end(currentRange.endOffset - invocationStartOffset)
+                        .end(spanEndOffset - invocationStartOffset)
                         .build()
                 )
                 .build()
