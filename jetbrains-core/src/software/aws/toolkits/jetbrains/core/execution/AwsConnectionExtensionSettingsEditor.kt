@@ -60,8 +60,8 @@ class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>>(private 
                 row {
                     cell(view.panel)
                 }
-            }.apply {
-                expanded = true
+            }.also {
+                it.expanded = true
             }
         }
     } else {
