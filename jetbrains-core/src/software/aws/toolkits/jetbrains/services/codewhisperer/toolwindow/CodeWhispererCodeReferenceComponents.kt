@@ -68,7 +68,7 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         BrowserUtil.browse(url)
     }.asCodeReferencePanelFont()
 
-    private fun acceptRecommendationSuffixText(repo: String, path: String?, line: String) = JLabel().apply {
+    private fun acceptRecommendationSuffixText(path: String?, line: String) = JLabel().apply {
         val choice = if (path != null) 1 else 0
         text = message("codewhisperer.toolwindow.entry.suffix", path ?: "", choice, line)
     }.asCodeReferencePanelFont()
@@ -81,16 +81,26 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         // if url to source package/repo is missing, the UX remains the same as we have for now
         // if url to source package/repo is present, the url pointing to the source will be present and remove the hyperlink to SPDX
         if (ref.url().isNullOrEmpty()) {
-            add(licenseNameLink(ref.licenseName()), inlineLabelConstraints)
+            add(
+                licenseNameLink(ref.licenseName()).apply {
+                    font = font.deriveFont(Font.ITALIC + Font.BOLD)
+                },
+                inlineLabelConstraints
+            )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
             add(JLabel(ref.repository()), inlineLabelConstraints)
         } else {
-            add(JLabel(ref.licenseName()), inlineLabelConstraints)
+            add(
+                JLabel(ref.licenseName()).apply {
+                    font = font.deriveFont(Font.ITALIC + Font.BOLD)
+                },
+                inlineLabelConstraints
+            )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
             add(repoNameLink(ref.repository(), ref.url()), inlineLabelConstraints)
         }
 
-        add(acceptRecommendationSuffixText(ref.repository(), relativePath, lineNums), inlineLabelConstraints)
+        add(acceptRecommendationSuffixText(relativePath, lineNums), inlineLabelConstraints)
         addHorizontalGlue()
     }
 

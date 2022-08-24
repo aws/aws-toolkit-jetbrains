@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopup
@@ -22,6 +23,7 @@ import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
@@ -46,6 +48,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testRequestIdForCodeWhispererException
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testSessionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager.Companion.ACTION_PAUSE_CODEWHISPERER
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager.Companion.ACTION_RESUME_CODEWHISPERER
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
@@ -84,6 +87,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private lateinit var batcher: TelemetryBatcher
     private lateinit var telemetryServiceSpy: TelemetryService
     private var isTelemetryEnabledDefault: Boolean = false
+
     @Before
     override fun setUp() {
         super.setUp()
@@ -454,6 +458,24 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
+    fun `test codePercentage tracker will not be activated if CWSPR terms of service is not accepted`() {
+        val exploreManagerMock = mock<CodeWhispererExplorerActionManager> {
+            on { hasAcceptedTermsOfService() } doReturn false
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreManagerMock, disposableRule.disposable)
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        val tracker = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)
+        assertThat(tracker.isTrackerActive()).isFalse
+        runInEdtAndWait {
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString("arbitrary string to trigger documentChanged")
+            }
+        }
+        assertThat(tracker.isTrackerActive()).isFalse
+    }
+
+    @Test
     fun `test codePercentage tracker will not be initialized with unsupportedLanguage`() {
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
         val project = projectRule.project
@@ -540,7 +562,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                     // delete 1 char
                     fixture.editor.document.deleteString(currentOffset - 1, currentOffset)
                 }
-                // use dispose() to froce tracker to emit telemetry
+                // use dispose() to force tracker to emit telemetry
                 CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
             }
         }
@@ -557,6 +579,50 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
             "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString()
+        )
+    }
+
+    /**
+     * When user accept recommendation in file1, then switch and delete code in file2, if the deletion code in file2 is on pre-existing code,
+     * we should not decrement totalTokens by the length of the code deleted
+     */
+    @Test
+    fun `test codePercentage metric - switching files and delete tokens`() {
+        val project = projectRule.project
+        val fixture = projectRule.fixture
+        fixture.configureByText("/file1.py", pythonTestLeftContext)
+        runInEdt {
+            fixture.editor.caretModel.moveToOffset(fixture.editor.document.textLength)
+        }
+        val file2 = fixture.addFileToProject("./file2.py", "Pre-existing string")
+
+        // accept recommendation in file1.py
+        withCodeWhispererServiceInvokedAndWait {
+            runInEdtAndWait {
+                popupManagerSpy.popupComponents.acceptButton.doClick()
+            }
+        }
+
+        // switch to file2.py and delete code there
+        runInEdtAndWait {
+            fixture.openFileInEditor(file2.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.document.deleteString(0, file2.textLength)
+            }
+        }
+
+        // use dispose() to force tracker to emit telemetry
+        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            codePercentage,
+            1,
+            "codewhispererAcceptedTokens" to pythonResponse.recommendations()[0].content().length.toString(),
+            "codewhispererTotalTokens" to pythonResponse.recommendations()[0].content().length.toString(),
+            "codewhispererPercentage" to "100"
         )
     }
 
