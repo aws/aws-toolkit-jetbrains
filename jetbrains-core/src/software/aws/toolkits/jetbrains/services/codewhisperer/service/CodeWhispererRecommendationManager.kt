@@ -78,7 +78,6 @@ class CodeWhispererRecommendationManager {
                 spanEndOffset -= 1
                 lastChar = runReadAction { currentRange.document.getText(TextRange(spanEndOffset - 1, spanEndOffset)) }
             }
-//            val endOffset = if (lastChar == "\n") currentRange.endOffset - 1 else currentRange.endOffset
             originalReference
                 .toBuilder()
                 .recommendationContentSpan(
