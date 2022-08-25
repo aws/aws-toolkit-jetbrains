@@ -110,6 +110,7 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
         var codeScanStatus: Result = Result.Failed
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
+        var projectSize = 0L
         try {
             val file = FileEditorManager.getInstance(project).selectedEditor?.file
                 ?: noFileOpenError()
@@ -133,6 +134,7 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
                 }
                 LOG.info { "Security scan completed." }
             }
+            projectSize = codeScanSessionConfig.getTotalProjectSizeInBytes()
         } catch (e: Exception) {
             isCodeScanInProgress.set(false)
             val errorMessage = handleException(e)
@@ -142,7 +144,7 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
             afterCodeScan()
             val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
             CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
-                CodeScanTelemetryEvent(codeScanResponseContext, duration, codeScanStatus)
+                CodeScanTelemetryEvent(codeScanResponseContext, duration, codeScanStatus, projectSize.toDouble())
             )
         }
     }

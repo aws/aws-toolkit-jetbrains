@@ -116,6 +116,13 @@ internal sealed class CodeScanSessionConfig(
         false -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
     }
 
+    open fun getTotalProjectSizeInBytes(): Long {
+        fun getDirSize(file: VirtualFile): Long = file.children.fold(0L) { acc, next ->
+            acc + if (next.isDirectory) getDirSize(next) else next.length
+        }
+        return getDirSize(projectRoot)
+    }
+
     protected fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             LOG.debug { "Selected file for truncation: $file" }
