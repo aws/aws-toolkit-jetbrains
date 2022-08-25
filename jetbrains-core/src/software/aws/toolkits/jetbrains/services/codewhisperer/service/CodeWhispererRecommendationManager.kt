@@ -67,31 +67,38 @@ class CodeWhispererRecommendationManager {
 
         val reformattedRecommendation = tempDocument.getText(TextRange(tempRangeMarker.startOffset, tempRangeMarker.endOffset))
 
-        // Build new reference with updated contentSpan(start and end). Since it's reformatted, take the new
-        // start and end from the rangeMarker which automatically tracks the range after reformatting
-        val reformattedReferences = rangeMarkers.map {
-            val currentRange = it.key
-            val originalReference = it.value
-            var spanEndOffset = currentRange.endOffset
-            var lastChar = runReadAction { currentRange.document.getText(TextRange(spanEndOffset - 1, spanEndOffset)) }
-            while (lastChar == "\n") {
-                spanEndOffset -= 1
-                lastChar = runReadAction { currentRange.document.getText(TextRange(spanEndOffset - 1, spanEndOffset)) }
-            }
-            originalReference
-                .toBuilder()
-                .recommendationContentSpan(
-                    Span.builder()
-                        .start(currentRange.startOffset - invocationStartOffset)
-                        .end(spanEndOffset - invocationStartOffset)
-                        .build()
-                )
-                .build()
+        val reformattedReferences = rangeMarkers.map { (rangeMarker, reference) ->
+            reformatReference(reference, rangeMarker, invocationStartOffset)
         }
         return Recommendation.builder()
             .content(reformattedRecommendation)
             .references(reformattedReferences)
             .build()
+    }
+
+    /**
+     * Build new reference with updated contentSpan(start and end). Since it's reformatted, take the new start and
+     * end from the rangeMarker which automatically tracks the range after reformatting
+     */
+    fun reformatReference(originalReference: Reference, rangeMarker: RangeMarker, invocationStartOffset: Int): Reference {
+        rangeMarker.apply {
+            val documentContent = runReadAction { document.charsSequence }
+            var spanEndOffset = endOffset
+            var lastChar = documentContent.subSequence(spanEndOffset - 1, spanEndOffset).toString()
+            while (lastChar == "\n") {
+                spanEndOffset -= 1
+                lastChar = documentContent.subSequence(spanEndOffset - 1, spanEndOffset).toString()
+            }
+            return originalReference
+                .toBuilder()
+                .recommendationContentSpan(
+                    Span.builder()
+                        .start(startOffset - invocationStartOffset)
+                        .end(spanEndOffset - invocationStartOffset)
+                        .build()
+                )
+                .build()
+        }
     }
 
     fun buildRecommendationChunks(
