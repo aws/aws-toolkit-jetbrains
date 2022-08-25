@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -394,18 +393,6 @@ class CodeWhispererCodeCoverageTrackerTest {
         assertThat(pythonTracker.activeRequestCount()).isEqualTo(1)
         pythonTracker.forceTrackerFlush()
         verify(batcher, Times(0)).enqueue(any())
-    }
-
-    @Test
-    fun `test`() {
-        fixture.configureByText("test.py", "abcde")
-        runInEdtAndWait {
-            fixture.editor.caretModel.moveToOffset(4)
-            val offset = fixture.editor.caretModel.offset
-            assertThat(offset).isEqualTo(4)
-            val c = runInEdtAndGet { runReadAction { fixture.editor.document.charsSequence.subSequence(offset, offset + 1) } }
-            println(c)
-        }
     }
 
     private fun Editor.appendString(string: String) {
