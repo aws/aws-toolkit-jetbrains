@@ -83,12 +83,9 @@ class CodeWhispererRecommendationManager {
     fun reformatReference(originalReference: Reference, rangeMarker: RangeMarker, invocationStartOffset: Int): Reference {
         rangeMarker.apply {
             val documentContent = runReadAction { document.charsSequence }
-            var spanEndOffset = endOffset
-            var lastChar = documentContent.subSequence(spanEndOffset - 1, spanEndOffset).toString()
-            while (lastChar == "\n") {
-                spanEndOffset -= 1
-                lastChar = documentContent.subSequence(spanEndOffset - 1, spanEndOffset).toString()
-            }
+
+            // has to plus 1 because right boundary is exclusive
+            val spanEndOffset = documentContent.subSequence(0, endOffset).indexOfLast { char -> char != '\n' } + 1
             return originalReference
                 .toBuilder()
                 .recommendationContentSpan(
