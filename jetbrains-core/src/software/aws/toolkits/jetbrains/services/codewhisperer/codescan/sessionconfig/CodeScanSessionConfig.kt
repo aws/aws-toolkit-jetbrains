@@ -116,11 +116,10 @@ internal sealed class CodeScanSessionConfig(
         false -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
     }
 
-    open fun getTotalProjectSizeInBytes(): Long {
-        fun getDirSize(file: VirtualFile): Long = file.children.fold(0L) { acc, next ->
-            acc + if (next.isDirectory) getDirSize(next) else next.length
-        }
-        return getDirSize(projectRoot)
+    open fun getTotalProjectSizeInBytes(): Long = VfsUtil.collectChildrenRecursively(projectRoot).filter {
+        !it.isDirectory && it.path.endsWith(sourceExt)
+    }.fold(0L) { acc, next ->
+        acc + next.length
     }
 
     protected fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
