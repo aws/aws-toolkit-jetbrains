@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionc
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VFileProperty
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.core.utils.createTemporaryZipFile
@@ -117,7 +118,7 @@ internal sealed class CodeScanSessionConfig(
     }
 
     open fun getTotalProjectSizeInBytes(): Long = VfsUtil.collectChildrenRecursively(projectRoot).filter {
-        !it.isDirectory && it.path.endsWith(sourceExt)
+        !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && it.path.endsWith(sourceExt)
     }.fold(0L) { acc, next ->
         acc + next.length
     }

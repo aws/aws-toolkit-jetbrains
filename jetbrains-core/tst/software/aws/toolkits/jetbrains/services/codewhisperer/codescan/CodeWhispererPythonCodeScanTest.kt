@@ -92,6 +92,11 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase() {
     }
 
     @Test
+    fun `test getTotalProjectSizeInBytes()`() {
+        assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
+    }
+
+    @Test
     fun `selected file larger than payload limit throws exception`() {
         sessionConfigSpy.stub {
             onGeneric { getPayloadLimitInBytes() }.thenReturn(100)
