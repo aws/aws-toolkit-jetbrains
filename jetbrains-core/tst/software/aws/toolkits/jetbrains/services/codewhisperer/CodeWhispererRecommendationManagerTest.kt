@@ -46,15 +46,15 @@ class CodeWhispererRecommendationManagerTest {
     }
 
     @Test
-    fun `test reformatReference() should generate new a new reference with span based on rangeMarker and no surfix newline char`() {
+    fun `test reformatReference() should generate a new reference with span based on rangeMarker and no surfix newline char`() {
         // invocationOffset and markerStartOffset is of our choice as long as invocationOffset <= markerStartOffset
         val recommendationManager = CodeWhispererRecommendationManager()
-        testReforMatReferenceUtil(recommendationManager, documentContentSurfix = "", invocationOffset = 2, markerStartOffset = 5)
-        testReforMatReferenceUtil(recommendationManager, documentContentSurfix = "\n", invocationOffset = 2, markerStartOffset = 5)
-        testReforMatReferenceUtil(recommendationManager, documentContentSurfix = "\n\n", invocationOffset = 1, markerStartOffset = 4)
+        testReformatReferenceUtil(recommendationManager, documentContentSurfix = "", invocationOffset = 2, markerStartOffset = 5)
+        testReformatReferenceUtil(recommendationManager, documentContentSurfix = "\n", invocationOffset = 2, markerStartOffset = 5)
+        testReformatReferenceUtil(recommendationManager, documentContentSurfix = "\n\n", invocationOffset = 1, markerStartOffset = 4)
     }
 
-    private fun testReforMatReferenceUtil(
+    private fun testReformatReferenceUtil(
         recommendationManager: CodeWhispererRecommendationManager,
         documentContentSurfix: String,
         invocationOffset: Int,

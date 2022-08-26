@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.RangeMarker
@@ -82,7 +81,7 @@ class CodeWhispererRecommendationManager {
      */
     fun reformatReference(originalReference: Reference, rangeMarker: RangeMarker, invocationStartOffset: Int): Reference {
         rangeMarker.apply {
-            val documentContent = runReadAction { document.charsSequence }
+            val documentContent = document.charsSequence
 
             // has to plus 1 because right boundary is exclusive
             val spanEndOffset = documentContent.subSequence(0, endOffset).indexOfLast { char -> char != '\n' } + 1
