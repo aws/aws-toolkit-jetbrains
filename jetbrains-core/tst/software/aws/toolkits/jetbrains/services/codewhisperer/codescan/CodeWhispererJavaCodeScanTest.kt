@@ -21,6 +21,7 @@ import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -111,7 +112,9 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase() {
 
     @Test
     fun `test getTotalProjectSizeInBytes()`() {
-        assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
+        runBlocking {
+            assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
+        }
     }
 
     @Test

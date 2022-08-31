@@ -9,6 +9,8 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VFileProperty
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -23,6 +25,7 @@ import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 
 internal sealed class CodeScanSessionConfig(
@@ -117,10 +120,21 @@ internal sealed class CodeScanSessionConfig(
         false -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
     }
 
-    open fun getTotalProjectSizeInBytes(): Long = VfsUtil.collectChildrenRecursively(projectRoot).filter {
-        !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && it.path.endsWith(sourceExt)
-    }.fold(0L) { acc, next ->
-        acc + next.length
+    open suspend fun getTotalProjectSizeInBytes(): Long {
+        var totalSize = 0L
+        try {
+            withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
+                VfsUtil.collectChildrenRecursively(projectRoot).filter {
+                    !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && it.path.endsWith(sourceExt)
+                }.fold(0L) { acc, next ->
+                    totalSize = acc + next.length
+                    totalSize
+                }
+            }
+        } catch (e: TimeoutCancellationException) {
+            // Do nothing
+        }
+        return totalSize
     }
 
     protected fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
@@ -158,6 +172,7 @@ internal sealed class CodeScanSessionConfig(
 
     companion object {
         private val LOG = getLogger<CodeScanSessionConfig>()
+        private const val TELEMETRY_TIMEOUT_IN_SECONDS: Long = 10
         const val FILE_SEPARATOR = '/'
         fun create(file: VirtualFile, project: Project): CodeScanSessionConfig = when (file.codeWhispererLanguage) {
             CodewhispererLanguage.Java -> JavaCodeScanSessionConfig(file, project)
