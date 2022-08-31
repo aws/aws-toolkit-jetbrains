@@ -15,7 +15,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.ui.popup.AbstractPopup
 import software.amazon.awssdk.utils.StringUtils.lowerCase
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.toCodeWhispererLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.toProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -35,9 +34,6 @@ object CodeWhispererEditorUtil {
         val caretContext = extractCaretContext(editor)
         val fileName = getFileName(psiFile)
         var programmingLanguage = psiFile.programmingLanguage
-        if (programmingLanguage.languageName.contains("jsx")) {
-            programmingLanguage = CodewhispererLanguage.Javascript.toProgrammingLanguage()
-        }
         return FileContextInfo(caretContext, fileName, programmingLanguage)
     }
 
