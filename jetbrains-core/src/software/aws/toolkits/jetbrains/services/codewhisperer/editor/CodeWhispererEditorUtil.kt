@@ -33,13 +33,13 @@ object CodeWhispererEditorUtil {
     fun getFileContextInfo(editor: Editor, psiFile: PsiFile): FileContextInfo {
         val caretContext = extractCaretContext(editor)
         val fileName = getFileName(psiFile)
-        var programmingLanguage = psiFile.programmingLanguage
+        val programmingLanguage = psiFile.programmingLanguage
         return FileContextInfo(caretContext, fileName, programmingLanguage)
     }
 
     val PsiFile.programmingLanguage: ProgrammingLanguage
         get() {
-            var fileTypeName = lowerCase(this.fileType.name)
+            val fileTypeName = lowerCase(this.fileType.name)
             return when {
                 fileTypeName.contains("jsx") -> ProgrammingLanguage(CodewhispererLanguage.Javascript)
                 else -> ProgrammingLanguage(fileTypeName)
