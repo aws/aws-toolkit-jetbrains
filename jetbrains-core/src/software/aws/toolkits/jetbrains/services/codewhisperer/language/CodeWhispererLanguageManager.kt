@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.language
 
 import com.intellij.openapi.components.service
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.ProgrammingLanguage
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 
 class CodeWhispererLanguageManager {
@@ -16,3 +17,13 @@ class CodeWhispererLanguageManager {
         fun getInstance(): CodeWhispererLanguageManager = service()
     }
 }
+
+fun ProgrammingLanguage.toCodeWhispererLanguage() = when (languageName) {
+    CodewhispererLanguage.Python.toString() -> CodewhispererLanguage.Python
+    CodewhispererLanguage.Java.toString() -> CodewhispererLanguage.Java
+    CodewhispererLanguage.Javascript.toString() -> CodewhispererLanguage.Javascript
+    "plain_text" -> CodewhispererLanguage.Plaintext
+    else -> CodewhispererLanguage.Unknown
+}
+
+fun CodewhispererLanguage.toProgrammingLanguage() = ProgrammingLanguage(this.toString())

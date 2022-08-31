@@ -14,6 +14,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.ui.popup.AbstractPopup
 import software.amazon.awssdk.utils.StringUtils.lowerCase
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.toCodeWhispererLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.toProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -32,20 +34,21 @@ object CodeWhispererEditorUtil {
     fun getFileContextInfo(editor: Editor, psiFile: PsiFile): FileContextInfo {
         val caretContext = extractCaretContext(editor)
         val fileName = getFileName(psiFile)
-        val programmingLanguage = psiFile.programmingLanguage
+        var programmingLanguage = psiFile.programmingLanguage
+        if (programmingLanguage.languageName.contains("jsx")) {
+            programmingLanguage = CodewhispererLanguage.Javascript.toProgrammingLanguage()
+        }
         return FileContextInfo(caretContext, fileName, programmingLanguage)
     }
 
-    fun ProgrammingLanguage.toCodeWhispererLanguage() = when (languageName) {
-        CodewhispererLanguage.Python.toString() -> CodewhispererLanguage.Python
-        CodewhispererLanguage.Java.toString() -> CodewhispererLanguage.Java
-        CodewhispererLanguage.Javascript.toString() -> CodewhispererLanguage.Javascript
-        "plain_text" -> CodewhispererLanguage.Plaintext
-        else -> CodewhispererLanguage.Unknown
-    }
-
     val PsiFile.programmingLanguage: ProgrammingLanguage
-        get() = ProgrammingLanguage(lowerCase(this.fileType.name))
+        get() {
+            var fileTypeName = lowerCase(this.fileType.name)
+            return when {
+                fileTypeName.contains("jsx") -> ProgrammingLanguage(CodewhispererLanguage.Javascript)
+                else -> ProgrammingLanguage(fileTypeName)
+            }
+        }
 
     val PsiFile.codeWhispererLanguage: CodewhispererLanguage
         get() = this.programmingLanguage.toCodeWhispererLanguage()
@@ -53,7 +56,7 @@ object CodeWhispererEditorUtil {
     val VirtualFile.codeWhispererLanguage: CodewhispererLanguage
         get() = ProgrammingLanguage(fileType.name.lowercase()).toCodeWhispererLanguage()
 
-    private fun extractCaretContext(editor: Editor): CaretContext {
+    fun extractCaretContext(editor: Editor): CaretContext {
         val document = editor.document
         val caretOffset = editor.caretModel.primaryCaret.offset
         val totalCharLength = editor.document.textLength
