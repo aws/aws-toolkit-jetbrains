@@ -36,12 +36,12 @@ class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
 
     override fun getEditorTitle() = message("aws_connection.tab.label")
 
-    override fun <P : AbstractPythonRunConfiguration<*>?> createEditor(configuration: P): SettingsEditor<P>? = connectionSettingsEditor(
+    override fun <P : AbstractPythonRunConfiguration<*>> createEditor(configuration: P): SettingsEditor<P>? = connectionSettingsEditor(
         configuration
     )
 
     override fun validateConfiguration(configuration: AbstractPythonRunConfiguration<*>, isExecution: Boolean) {
-        delegate.validateConfiguration(configuration, isExecution)
+        delegate.validateConfiguration(configuration)
     }
 
     private fun isEnabled() = PythonAwsConnectionExperiment.isEnabled()

@@ -58,7 +58,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
         }
     }
 
-    fun validateConfiguration(runConfiguration: T, isExecution: Boolean) {
+    fun validateConfiguration(runConfiguration: T) {
         val credentialConfiguration = runConfiguration.getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY) ?: return
         if (credentialConfiguration == DEFAULT_OPTIONS) return
 
@@ -115,8 +115,8 @@ fun <T : RunConfigurationBase<*>> AwsConnectionRunConfigurationExtension<T>.addE
     runtimeString: () -> String? = { null }
 ) = addEnvironmentVariables(configuration, cmdLine.environment, runtimeString)
 
-fun <T : RunConfigurationBase<*>?> connectionSettingsEditor(configuration: T): AwsConnectionExtensionSettingsEditor<T>? =
-    configuration?.getProject()?.let { AwsConnectionExtensionSettingsEditor(it) }
+fun <T : RunConfigurationBase<*>> connectionSettingsEditor(configuration: T): AwsConnectionExtensionSettingsEditor<T>? =
+    configuration.getProject().let { AwsConnectionExtensionSettingsEditor(it, false) }
 
 val AWS_CONNECTION_RUN_CONFIGURATION_KEY =
     Key.create<AwsCredentialInjectionOptions>(
