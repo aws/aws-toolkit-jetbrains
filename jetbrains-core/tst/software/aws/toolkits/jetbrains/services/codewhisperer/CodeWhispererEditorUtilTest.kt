@@ -48,18 +48,6 @@ class CodeWhispererEditorUtilTest {
     }
 
     @Test
-    fun `test psiFile_programmingLanguage - jsx`() {
-        val fileTypeMock = mock<FileType> {
-            on { name } doReturn "JSX Harmony"
-        }
-        val psiFile = mock<PsiFile> {
-            on { fileType } doReturn fileTypeMock
-        }
-        val programmingLanguage = psiFile.programmingLanguage
-        assertThat(programmingLanguage.languageName).isEqualTo("javascript")
-    }
-
-    @Test
     fun `test getFileContextInfo`() {
         val psiFile = fixture.configureByText(pythonFileName, pythonTestLeftContext)
         val fileContext = runInEdtAndGet {
