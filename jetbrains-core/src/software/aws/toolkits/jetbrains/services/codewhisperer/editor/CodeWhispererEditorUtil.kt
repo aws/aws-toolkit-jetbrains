@@ -38,13 +38,7 @@ object CodeWhispererEditorUtil {
     }
 
     val PsiFile.programmingLanguage: ProgrammingLanguage
-        get() {
-            val fileTypeName = lowerCase(this.fileType.name)
-            return when {
-                fileTypeName.contains("jsx") -> ProgrammingLanguage(CodewhispererLanguage.Javascript)
-                else -> ProgrammingLanguage(fileTypeName)
-            }
-        }
+        get() = ProgrammingLanguage(lowerCase(this.fileType.name))
 
     val PsiFile.codeWhispererLanguage: CodewhispererLanguage
         get() = this.programmingLanguage.toCodeWhispererLanguage()

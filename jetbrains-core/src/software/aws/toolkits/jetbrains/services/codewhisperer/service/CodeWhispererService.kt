@@ -474,24 +474,6 @@ class CodeWhispererService {
         return response.toBuilder().recommendations(validatedRecommendations).build()
     }
 
-    private fun buildCodeWhispererRequest(
-        fileContextInfo: FileContextInfo
-    ): ListRecommendationsRequest {
-        val programmingLanguage = ProgrammingLanguage.builder()
-            .languageName(fileContextInfo.programmingLanguage.languageName)
-            .build()
-        val fileContext = FileContext.builder()
-            .leftFileContent(fileContextInfo.caretContext.leftFileContext)
-            .rightFileContent(fileContextInfo.caretContext.rightFileContext)
-            .filename(fileContextInfo.filename)
-            .programmingLanguage(programmingLanguage)
-            .build()
-
-        return ListRecommendationsRequest.builder()
-            .fileContext(fileContext)
-            .build()
-    }
-
     private fun buildInvocationContext(
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -585,6 +567,24 @@ class CodeWhispererService {
         val KEY_CODEWHISPERER_METADATA: Key<CodeWhispererMetadata> = Key.create("codewhisperer.metadata")
         fun getInstance(): CodeWhispererService = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"
+
+        internal fun buildCodeWhispererRequest(
+            fileContextInfo: FileContextInfo
+        ): ListRecommendationsRequest {
+            val programmingLanguage = ProgrammingLanguage.builder()
+                .languageName(CodeWhispererLanguageManager.getInstance().mapProgrammingLanguage(fileContextInfo.programmingLanguage).languageName)
+                .build()
+            val fileContext = FileContext.builder()
+                .leftFileContent(fileContextInfo.caretContext.leftFileContext)
+                .rightFileContent(fileContextInfo.caretContext.rightFileContext)
+                .filename(fileContextInfo.filename)
+                .programmingLanguage(programmingLanguage)
+                .build()
+
+            return ListRecommendationsRequest.builder()
+                .fileContext(fileContext)
+                .build()
+        }
     }
 }
 

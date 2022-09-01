@@ -13,6 +13,16 @@ class CodeWhispererLanguageManager {
             language == CodewhispererLanguage.Python.toString() ||
             language == CodewhispererLanguage.Javascript.toString()
 
+    /**
+     * This should only be called inside CodeWhispererService.buildCodeWhispererRequest.
+     * e.g. JSX -> JavaScript, TypeScript -> JavaScript etc.
+     */
+    internal fun mapProgrammingLanguage(language: ProgrammingLanguage): ProgrammingLanguage =
+        when {
+            language.languageName.contains("jsx") -> ProgrammingLanguage(CodewhispererLanguage.Javascript)
+            else -> language
+        }
+
     companion object {
         fun getInstance(): CodeWhispererLanguageManager = service()
     }
