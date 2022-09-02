@@ -26,7 +26,7 @@ import software.aws.toolkits.telemetry.AwsTelemetry
 import java.net.URI
 
 @State(name = "codewhispererStates", storages = [Storage("aws.xml")])
-internal class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispererExploreActionState> {
+class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispererExploreActionState> {
     private val actionState = CodeWhispererExploreActionState()
 
     fun performAction(project: Project, actionId: String) {
@@ -198,7 +198,7 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
     }
 }
 
-internal class CodeWhispererExploreActionState : BaseState() {
+class CodeWhispererExploreActionState : BaseState() {
     @get:Property
     val value by map<CodeWhispererExploreStateType, Boolean>()
 
@@ -206,7 +206,7 @@ internal class CodeWhispererExploreActionState : BaseState() {
     var token by string()
 }
 
-internal enum class CodeWhispererExploreStateType {
+enum class CodeWhispererExploreStateType {
     IsAutoEnabled,
     IsManualEnabled,
     HasAcceptedTermsOfServices,
