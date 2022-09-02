@@ -62,7 +62,7 @@ import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureR
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 
-open class CodeWhispererCodeCoverageTrackerTestBase {
+internal open class CodeWhispererCodeCoverageTrackerTestBase {
     protected class TestCodePercentageTracker(
         timeWindowInSec: Long,
         language: CodewhispererLanguage,
@@ -124,7 +124,7 @@ open class CodeWhispererCodeCoverageTrackerTestBase {
     }
 }
 
-class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCoverageTrackerTestBase() {
+internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCoverageTrackerTestBase() {
     private lateinit var invocationContext: InvocationContext
     private lateinit var sessionContext: SessionContext
     @Before
@@ -443,7 +443,7 @@ class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCoverageTrac
     }
 }
 
-class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCoverageTrackerTestBase() {
+internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCoverageTrackerTestBase() {
     @Before
     override fun setup() {
         super.setup()
