@@ -86,7 +86,7 @@ class CodeWhispererService {
 
         val language = requestContext.fileContextInfo.programmingLanguage
         if (!CodeWhispererLanguageManager.getInstance().isLanguageSupported(language)) {
-            LOG.debug { "Programming language ${language.languageName} is not supported by CodeWhisperer" }
+            LOG.debug { "Programming language ${language} is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                 showCodeWhispererInfoHint(
                     requestContext.editor,
