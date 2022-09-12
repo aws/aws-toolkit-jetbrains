@@ -39,7 +39,7 @@ fun ProgrammingLanguage.toCodeWhispererLanguage() = when {
     languageName.contains("javascript") -> CodewhispererLanguage.Javascript
     languageName.contains("java") -> CodewhispererLanguage.Java
     languageName.contains("jsx") -> CodewhispererLanguage.Jsx
-    languageName.contains("""plain.*text""".toRegex()) -> CodewhispererLanguage.Plaintext
+    languageName.contains("plain_text") -> CodewhispererLanguage.Plaintext
     else -> CodewhispererLanguage.Unknown
 }
 
