@@ -481,9 +481,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Java] = tracker
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
-                println(fixture.editor.document.text)
                 CodeStyleManager.getInstance(project).reformatText(file, 0, fixture.editor.document.textLength)
-                println(fixture.editor.document.text)
             }
         }
         // reformat should fire documentChanged events, but tracker should not update token from these events
