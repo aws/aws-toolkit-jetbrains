@@ -57,12 +57,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 
-internal open class CodeWhispererCodeCoverageTrackerTestBase {
+internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: CodeInsightTestFixtureRule) {
     protected class TestCodePercentageTracker(
         timeWindowInSec: Long,
         language: CodewhispererLanguage,
@@ -74,14 +75,9 @@ internal open class CodeWhispererCodeCoverageTrackerTestBase {
         publisher: TelemetryPublisher = NoOpPublisher(),
         batcher: TelemetryBatcher
     ) : TelemetryService(publisher, batcher)
-
     @Rule
     @JvmField
-    val pythonProjectRule = PythonCodeInsightTestFixtureRule()
-
-    @Rule
-    @JvmField
-    val javaProjectRule = JavaCodeInsightTestFixtureRule()
+    val projectRule: CodeInsightTestFixtureRule
 
     @Rule
     @JvmField
@@ -97,8 +93,13 @@ internal open class CodeWhispererCodeCoverageTrackerTestBase {
     protected lateinit var batcher: TelemetryBatcher
     protected lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
 
-    @Before
+    init {
+        this.projectRule = myProjectRule
+    }
+
     open fun setup() {
+        this.project = projectRule.project
+        this.fixture = projectRule.fixture
         AwsSettings.getInstance().isTelemetryEnabled = true
         batcher = mock()
         telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
@@ -124,17 +125,15 @@ internal open class CodeWhispererCodeCoverageTrackerTestBase {
     }
 }
 
-internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCoverageTrackerTestBase() {
+internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCoverageTrackerTestBase(PythonCodeInsightTestFixtureRule()) {
     private lateinit var invocationContext: InvocationContext
     private lateinit var sessionContext: SessionContext
     @Before
     override fun setup() {
         super.setup()
-        project = pythonProjectRule.project
-        fixture = pythonProjectRule.fixture
         fixture.configureByText(pythonFileName, pythonTestLeftContext)
         runInEdtAndWait {
-            pythonProjectRule.fixture.editor.caretModel.primaryCaret.moveToOffset(pythonProjectRule.fixture.editor.document.textLength)
+            projectRule.fixture.editor.caretModel.primaryCaret.moveToOffset(projectRule.fixture.editor.document.textLength)
         }
 
         val requestContext = RequestContext(
@@ -443,12 +442,10 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
     }
 }
 
-internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCoverageTrackerTestBase() {
+internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCoverageTrackerTestBase(JavaCodeInsightTestFixtureRule()) {
     @Before
     override fun setup() {
         super.setup()
-        project = javaProjectRule.project
-        fixture = javaProjectRule.fixture
     }
 
     @Test
