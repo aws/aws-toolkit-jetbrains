@@ -322,8 +322,6 @@ class CodeWhispererService {
             }
         } else if (response.recommendations().isNotEmpty()) {
             updateCodeWhisperer(nextStates, isPopupShowing)
-            val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
-            CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(requestId, requestContext, responseContext, perceivedLatency)
         }
         return nextStates
     }
