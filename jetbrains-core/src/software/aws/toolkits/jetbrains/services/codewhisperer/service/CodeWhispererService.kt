@@ -131,6 +131,7 @@ class CodeWhispererService {
         coroutineScope.launch {
             try {
                 var startTime = System.nanoTime()
+                CodeWhispererInvocationStatus.getInstance().setInvocationStart()
                 for (response in responseIterable.stream()) {
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()

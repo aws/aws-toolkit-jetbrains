@@ -22,7 +22,7 @@ object CodeWhispererConstants {
     const val POPUP_BUTTON_TEXT_SIZE = 12f
     const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
-    const val IDLE_TIME_TRIGGER_THRESHOLD: Long = 1500
+    const val IDLE_TIME_TRIGGER_THRESHOLD: Long = 0
 
     const val CODEWHISPERER_LEARN_MORE_URI = "https://aws.amazon.com/codewhisperer"
     const val CODEWHISPERER_TOKEN_REQUEST_LINK = "https://pages.awscloud.com/codewhisperer-sign-up-form.html"

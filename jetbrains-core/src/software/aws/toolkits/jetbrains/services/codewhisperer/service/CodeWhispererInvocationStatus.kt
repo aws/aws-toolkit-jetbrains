@@ -9,8 +9,6 @@ import com.intellij.util.messages.Topic
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.INVOCATION_KEY_INTERVAL_THRESHOLD
-import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -20,6 +18,7 @@ class CodeWhispererInvocationStatus {
     private var timeAtLastInvocationComplete: Instant? = null
     private var timeAtLastDocumentChanged: Instant? = null
     private var isPopupActive: Boolean = false
+    private var timeAtLastInvocationStart: Instant? = null
 
     fun checkExistingInvocationAndSet(): Boolean =
         if (isInvokingCodeWhisperer.getAndSet(true)) {
@@ -40,27 +39,13 @@ class CodeWhispererInvocationStatus {
         }
     }
 
-    fun incrementKeyStrokeCount() {
-        keyStrokeCount++
-    }
-
     fun resetKeyStrokeCount() {
         keyStrokeCount = 0
     }
 
-    fun checkKeyStrokeCountMeetThreshold(): Boolean = keyStrokeCount == INVOCATION_KEY_INTERVAL_THRESHOLD
-
     fun setInvocationComplete() {
         timeAtLastInvocationComplete = Instant.now()
     }
-
-    fun hasMetInvocationTimeThreshold(): Boolean {
-        if (!hasEverInvoked()) return true
-        val timeSinceLastInvocationComplete = Duration.between(timeAtLastInvocationComplete, Instant.now())
-        return timeSinceLastInvocationComplete.seconds > CodeWhispererConstants.INVOCATION_TIME_INTERVAL_THRESHOLD
-    }
-
-    private fun hasEverInvoked(): Boolean = timeAtLastInvocationComplete != null
 
     fun documentChanged() {
         timeAtLastDocumentChanged = Instant.now()
@@ -75,6 +60,17 @@ class CodeWhispererInvocationStatus {
 
     fun setPopupActive(value: Boolean) {
         isPopupActive = value
+    }
+
+    fun setInvocationStart() {
+        timeAtLastInvocationStart = Instant.now()
+    }
+
+    fun hasEnoughDelayToInvokeCodeWhisperer(): Boolean {
+        // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
+        // avoid ThrottlingException as much as possible.
+        val timeCanShowCodeWhisperer = timeAtLastInvocationStart?.plusMillis(2050) ?: return true
+        return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
     companion object {
