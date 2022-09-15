@@ -153,6 +153,22 @@ class CodeWhispererProgrammingLanguageTest {
         assertThat(instance1).isEqualTo(instance2)
     }
 
+    @Test
+    fun `test hashCode`() {
+        val set = mutableSetOf<CodeWhispererProgrammingLanguage>()
+        val instance1 = CodeWhispererJava.INSTANCE
+        val instance2: CodeWhispererProgrammingLanguage
+        CodeWhispererJava::class.apply {
+            val constructor = primaryConstructor
+            constructor?.isAccessible = true
+            instance2 = this.createInstance()
+        }
+
+        set.add(instance1)
+        val flag = set.contains(instance2)
+        assertThat(flag).isTrue
+    }
+
     private companion object {
         val EP_NAME = ExtensionPointName<CodeWhispererProgrammingLanguage>("aws.toolkit.codewhisperer.programmingLanguage")
     }

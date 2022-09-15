@@ -21,5 +21,9 @@ abstract class CodeWhispererProgrammingLanguage {
         return this.languageId == other.languageId
     }
 
-    override fun hashCode(): Int = this.languageId.toInt()
+    /**
+     * we want to force CodeWhispererProgrammingLanguage(any language implement it) be singleton,
+     * override hashCode is the backup plan if another object is being created
+     */
+    override fun hashCode(): Int = this.languageId.hashCode()
 }
