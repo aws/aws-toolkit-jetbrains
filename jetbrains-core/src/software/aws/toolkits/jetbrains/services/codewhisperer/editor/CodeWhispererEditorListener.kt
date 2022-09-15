@@ -20,7 +20,7 @@ class CodeWhispererEditorListener : EditorFactoryListener {
         editor.project?.let { project ->
             PsiDocumentManager.getInstance(project).getPsiFile(editor.document)?.programmingLanguage() ?. let { language ->
                 // If language is not supported by CodeWhisperer, no action needed
-                if (!language.isAutoCompletionSupported()) return
+                if (!language.isCodeCompletionSupported()) return
                 // If language is supported, install document listener for CodeWhisperer service
                 editor.document.addDocumentListener(
                     object : DocumentListener {

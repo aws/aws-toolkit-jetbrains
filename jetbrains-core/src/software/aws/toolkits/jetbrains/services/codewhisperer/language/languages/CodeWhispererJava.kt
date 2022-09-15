@@ -11,7 +11,7 @@ class CodeWhispererJava private constructor() : CodeWhispererProgrammingLanguage
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Java
 
-    override fun isAutoCompletionSupported(): Boolean = true
+    override fun isCodeCompletionSupported(): Boolean = true
 
     override fun isSecurityScanSupported(): Boolean = true
 

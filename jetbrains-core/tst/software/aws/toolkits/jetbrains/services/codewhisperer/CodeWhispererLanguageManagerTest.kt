@@ -119,7 +119,7 @@ class CodeWhispererProgrammingLanguageTest {
                 else -> false
             }
 
-            assertThat(language.isAutoCompletionSupported()).isEqualTo(shouldSupportAutoCompletion)
+            assertThat(language.isCodeCompletionSupported()).isEqualTo(shouldSupportAutoCompletion)
             assertThat(language.isSecurityScanSupported()).isEqualTo(shouldSupportSecurityScan)
         }
     }

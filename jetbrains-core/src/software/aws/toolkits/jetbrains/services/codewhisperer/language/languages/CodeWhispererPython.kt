@@ -11,7 +11,7 @@ class CodeWhispererPython private constructor() : CodeWhispererProgrammingLangua
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Python
 
-    override fun isAutoCompletionSupported(): Boolean = true
+    override fun isCodeCompletionSupported(): Boolean = true
 
     override fun isSecurityScanSupported(): Boolean = true
 

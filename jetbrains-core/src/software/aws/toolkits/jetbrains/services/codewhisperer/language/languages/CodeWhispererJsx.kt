@@ -11,7 +11,7 @@ class CodeWhispererJsx private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Jsx
 
-    override fun isAutoCompletionSupported(): Boolean = true
+    override fun isCodeCompletionSupported(): Boolean = true
 
     override fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = CodeWhispererJavaScript.INSTANCE
 

@@ -10,7 +10,7 @@ abstract class CodeWhispererProgrammingLanguage {
 
     abstract fun toTelemetryType(): CodewhispererLanguage
 
-    open fun isAutoCompletionSupported(): Boolean = false
+    open fun isCodeCompletionSupported(): Boolean = false
 
     open fun isSecurityScanSupported(): Boolean = false
 

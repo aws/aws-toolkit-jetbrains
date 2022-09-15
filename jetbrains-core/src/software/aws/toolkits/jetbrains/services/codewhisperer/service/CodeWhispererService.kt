@@ -84,7 +84,7 @@ class CodeWhispererService {
         }
 
         val language = requestContext.fileContextInfo.programmingLanguage
-        if (!language.isAutoCompletionSupported()) {
+        if (!language.isCodeCompletionSupported()) {
             LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                 showCodeWhispererInfoHint(
