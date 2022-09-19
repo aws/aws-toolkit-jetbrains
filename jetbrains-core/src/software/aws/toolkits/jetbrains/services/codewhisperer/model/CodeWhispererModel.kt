@@ -23,20 +23,6 @@ data class FileContextInfo(
     val filename: String,
     val programmingLanguage: CodeWhispererProgrammingLanguage
 )
-
-// data class ProgrammingLanguage(private val myLanguageName: String) {
-//    // case-insensitive
-//    val languageName get() = myLanguageName.lowercase()
-//    constructor(codewhispererLanguage: CodewhispererLanguage) : this(codewhispererLanguage.toString())
-//
-//    override fun equals(other: Any?): Boolean {
-//        if (other !is ProgrammingLanguage) return false
-//        return other.languageName == this.languageName
-//    }
-//
-//    override fun toString(): String = languageName
-// }
-
 data class RecommendationContext(
     val details: List<DetailContext>,
     val userInputOriginal: String,

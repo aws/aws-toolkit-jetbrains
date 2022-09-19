@@ -40,7 +40,7 @@ class CodeWhispererLanguageManagerTest {
     @JvmField
     val disposableRule = DisposableRule()
 
-    val manager = CodeWhispererLanguageManager()
+    val manager = CodeWhispererLanguageManager.getInstance()
 
     @Test
     fun `test CodeWhispererProgrammingLanguage should be singleton`() {
@@ -120,7 +120,7 @@ class CodeWhispererProgrammingLanguageTest {
             }
 
             assertThat(language.isCodeCompletionSupported()).isEqualTo(shouldSupportAutoCompletion)
-            assertThat(language.isSecurityScanSupported()).isEqualTo(shouldSupportSecurityScan)
+            assertThat(language.isCodeScanSupported()).isEqualTo(shouldSupportSecurityScan)
         }
     }
 

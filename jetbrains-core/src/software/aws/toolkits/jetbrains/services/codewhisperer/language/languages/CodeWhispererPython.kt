@@ -13,7 +13,7 @@ class CodeWhispererPython private constructor() : CodeWhispererProgrammingLangua
 
     override fun isCodeCompletionSupported(): Boolean = true
 
-    override fun isSecurityScanSupported(): Boolean = true
+    override fun isCodeScanSupported(): Boolean = true
 
     companion object {
         const val ID = "python"

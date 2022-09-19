@@ -12,7 +12,7 @@ abstract class CodeWhispererProgrammingLanguage {
 
     open fun isCodeCompletionSupported(): Boolean = false
 
-    open fun isSecurityScanSupported(): Boolean = false
+    open fun isCodeScanSupported(): Boolean = false
 
     open fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = this
 
