@@ -110,7 +110,6 @@ class CodeWhispererService {
             return
         }
 
-        invocationStatus.resetKeyStrokeCount()
         invokeCodeWhispererInBackground(requestContext)
     }
 

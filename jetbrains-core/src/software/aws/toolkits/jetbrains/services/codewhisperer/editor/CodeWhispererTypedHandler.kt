@@ -26,15 +26,21 @@ class CodeWhispererTypedHandler : TypedHandlerDelegate(), CodeWhispererAutoTrigg
         if (!CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)) {
             return Result.CONTINUE
         }
-
+        if (CodeWhispererConstants.SPECIAL_CHARACTERS_LIST.contains(c.toString())) {
+            performAutomatedTriggerAction(editor, CodewhispererAutomatedTriggerType.SpecialCharacters)
+            return Result.CONTINUE
+        }
         triggerOnIdle = projectCoroutineScope(project).launch {
-            while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToInvokeCodeWhisperer()) {
+            while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToInvokeCodeWhisperer() ||
+                CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()
+            ) {
                 if (!isActive) return@launch
-                delay(CodeWhispererConstants.POPUP_DELAY_CHECK_INTERVAL)
+                delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
             }
             runInEdt {
                 if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) return@runInEdt
-                performAutomatedTriggerAction(editor, CodewhispererAutomatedTriggerType.KeyStrokeCount)
+                performAutomatedTriggerAction(editor, CodewhispererAutomatedTriggerType.IdleTime)
+                triggerOnIdle?.cancel()
             }
         }
 

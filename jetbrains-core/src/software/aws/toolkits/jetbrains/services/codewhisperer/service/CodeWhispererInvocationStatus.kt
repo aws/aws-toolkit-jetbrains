@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class CodeWhispererInvocationStatus {
     private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
-    private var keyStrokeCount: Int = 0
     private var timeAtLastInvocationComplete: Instant? = null
     private var timeAtLastDocumentChanged: Instant? = null
     private var isPopupActive: Boolean = false
@@ -37,10 +36,6 @@ class CodeWhispererInvocationStatus {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(false)
             LOG.debug { "Ending CodeWhisperer invocation" }
         }
-    }
-
-    fun resetKeyStrokeCount() {
-        keyStrokeCount = 0
     }
 
     fun setInvocationComplete() {

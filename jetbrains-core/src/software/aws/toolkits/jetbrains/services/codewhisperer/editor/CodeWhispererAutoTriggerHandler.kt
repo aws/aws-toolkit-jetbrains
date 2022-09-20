@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.editor
 
 import com.intellij.openapi.editor.Editor
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
@@ -14,9 +13,5 @@ interface CodeWhispererAutoTriggerHandler {
     fun performAutomatedTriggerAction(editor: Editor, automatedTriggerType: CodewhispererAutomatedTriggerType) {
         val triggerTypeInfo = TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, automatedTriggerType)
         CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerTypeInfo)
-    }
-
-    companion object {
-        private val LOG = getLogger<CodeWhispererAutoTriggerHandler>()
     }
 }
