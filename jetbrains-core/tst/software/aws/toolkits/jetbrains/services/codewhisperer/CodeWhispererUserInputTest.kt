@@ -49,7 +49,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         withCodeWhispererServiceInvokedAndWait {
             val statesCaptor = argumentCaptor<InvocationContext>()
             verify(popupManagerSpy).render(statesCaptor.capture(), any(), any())
-            val states = statesCaptor.lastValuec
+            val states = statesCaptor.lastValue
             val actualRecommendations = states.recommendationContext.details.map { it.recommendation.content() }
             assertThat(actualRecommendations).isEqualTo(expectedRecommendations)
             states.recommendationContext.details.forEachIndexed { index, context ->
