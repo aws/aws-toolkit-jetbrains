@@ -31,6 +31,8 @@ class CodeWhispererTypedHandler : TypedHandlerDelegate(), CodeWhispererAutoTrigg
             return Result.CONTINUE
         }
         triggerOnIdle = projectCoroutineScope(project).launch {
+            // TODO: potential race condition between hasExistingInvocation and entering edt
+            // but in that case we will just return in performAutomatedTriggerAction
             while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToInvokeCodeWhisperer() ||
                 CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()
             ) {
@@ -40,7 +42,6 @@ class CodeWhispererTypedHandler : TypedHandlerDelegate(), CodeWhispererAutoTrigg
             runInEdt {
                 if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) return@runInEdt
                 performAutomatedTriggerAction(editor, CodewhispererAutomatedTriggerType.IdleTime)
-                triggerOnIdle?.cancel()
             }
         }
 
