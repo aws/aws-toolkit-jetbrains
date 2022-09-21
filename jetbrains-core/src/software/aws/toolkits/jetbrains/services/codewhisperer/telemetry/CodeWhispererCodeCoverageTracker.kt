@@ -85,7 +85,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 
         conn.subscribe(
             CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED,
-            object: CodeWhispererCodeCompletionServiceListener {
+            object : CodeWhispererCodeCompletionServiceListener {
                 override fun onSuccess() {
                     myServiceInvocationCount.getAndIncrement()
                 }
