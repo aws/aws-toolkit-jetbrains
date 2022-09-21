@@ -611,5 +611,4 @@ data class ResponseContext(
 
 interface CodeWhispererCodeCompletionServiceListener {
     fun onSuccess() {}
-    fun onFailure() {}
 }
