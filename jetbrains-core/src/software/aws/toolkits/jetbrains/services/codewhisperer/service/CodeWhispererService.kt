@@ -144,7 +144,8 @@ class CodeWhispererService {
                     val responseContext = ResponseContext(sessionId, completionType)
                     logServiceInvocation(requestId, requestContext, responseContext, response.recommendations(), latency, null)
                     lastRecommendationIndex += response.recommendations().size
-                    ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED).onSuccess()
+                    ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
+                        .onSuccess(requestContext.fileContextInfo)
                     CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
                         requestId,
                         requestContext,
@@ -610,5 +611,5 @@ data class ResponseContext(
 )
 
 interface CodeWhispererCodeCompletionServiceListener {
-    fun onSuccess() {}
+    fun onSuccess(fileContextInfo: FileContextInfo) {}
 }

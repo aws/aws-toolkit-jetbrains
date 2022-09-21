@@ -18,12 +18,14 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.toCodeWhispererLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererCodeCompletionServiceListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
@@ -86,8 +88,10 @@ abstract class CodeWhispererCodeCoverageTracker(
         conn.subscribe(
             CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED,
             object : CodeWhispererCodeCompletionServiceListener {
-                override fun onSuccess() {
-                    myServiceInvocationCount.getAndIncrement()
+                override fun onSuccess(fileContextInfo: FileContextInfo) {
+                    if (language == fileContextInfo.programmingLanguage.toCodeWhispererLanguage()) {
+                        myServiceInvocationCount.getAndIncrement()
+                    }
                 }
             }
         )

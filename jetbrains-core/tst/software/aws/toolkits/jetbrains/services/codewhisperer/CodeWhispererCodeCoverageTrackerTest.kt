@@ -183,12 +183,17 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
     @Test
     fun `test tracker is listening to cwspr recommendation service invocation`() {
         val pythonTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python)
+        val jsxTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Jsx)
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Jsx] = jsxTracker
         pythonTracker.activateTrackerIfNotActive()
         assertThat(pythonTracker.serviceInvocationCount).isEqualTo(0)
+        assertThat(jsxTracker.serviceInvocationCount).isEqualTo(0)
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED).onSuccess()
+        val fileContextInfo = mock<FileContextInfo> { on { programmingLanguage } doReturn ProgrammingLanguage(CodewhispererLanguage.Python) }
+        ApplicationManager.getApplication().messageBus.syncPublisher(CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED).onSuccess(fileContextInfo)
         assertThat(pythonTracker.serviceInvocationCount).isEqualTo(1)
+        assertThat(jsxTracker.serviceInvocationCount).isEqualTo(0)
     }
 
     @Test
