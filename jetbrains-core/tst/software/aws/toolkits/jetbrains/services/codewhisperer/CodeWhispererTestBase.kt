@@ -139,6 +139,7 @@ open class CodeWhispererTestBase {
                 value[CodeWhispererConfigurationType.IsIncludeCodeWithReference] = true
             }
         )
+        stateManager.setAutoEnabled(false)
     }
 
     @After
