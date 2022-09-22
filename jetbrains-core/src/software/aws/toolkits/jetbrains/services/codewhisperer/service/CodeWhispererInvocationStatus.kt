@@ -16,7 +16,7 @@ class CodeWhispererInvocationStatus {
     private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
     private var timeAtLastInvocationComplete: Instant? = null
     private var timeAtLastDocumentChanged: Instant? = null
-    private var isPopupActive: Boolean = false
+    private var isPopupActive: AtomicBoolean = AtomicBoolean(false)
     private var timeAtLastInvocationStart: Instant? = null
 
     fun checkExistingInvocationAndSet(): Boolean =
@@ -51,10 +51,10 @@ class CodeWhispererInvocationStatus {
         return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
-    fun isPopupActive(): Boolean = isPopupActive
+    fun isPopupActive(): Boolean = isPopupActive.get()
 
     fun setPopupActive(value: Boolean) {
-        isPopupActive = value
+        isPopupActive.set(value)
     }
 
     fun setInvocationStart() {
