@@ -9,6 +9,7 @@ import com.intellij.util.messages.Topic
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -44,6 +45,12 @@ class CodeWhispererInvocationStatus {
 
     fun documentChanged() {
         timeAtLastDocumentChanged = Instant.now()
+    }
+
+    fun getTimeSinceDocumentChanged(): Double {
+        val timeSinceDocumentChanged = Duration.between(timeAtLastInvocationComplete, Instant.now())
+        val timeInDouble = timeSinceDocumentChanged.toMillis().toDouble()
+        return timeInDouble
     }
 
     fun hasEnoughDelayToShowCodeWhisperer(): Boolean {
