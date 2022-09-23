@@ -11,7 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.toCodeWhispererLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.toCodeWhispererLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
@@ -121,6 +121,7 @@ class CodeWhispererTelemetryService {
                 "Uncompressed build payload size in bytes: ${payloadContext.buildPayloadSize}, \n" +
                 "Compressed source zip file size in bytes: ${payloadContext.srcZipFileSize}, \n" +
                 "Compressed build zip file size in bytes: ${payloadContext.buildZipFileSize}, \n" +
+                "Total project size in bytes: ${codeScanEvent.totalProjectSizeInBytes}, \n" +
                 "Total duration of the security scan job in milliseconds: ${codeScanEvent.duration}, \n" +
                 "Context truncation duration in milliseconds: ${payloadContext.totalTimeInMilliseconds}, \n" +
                 "Artifacts upload duration in milliseconds: ${serviceInvocationContext.artifactsUploadDuration}, \n" +
@@ -132,6 +133,7 @@ class CodeWhispererTelemetryService {
             project = project,
             codewhispererCodeScanLines = payloadContext.totalLines.toInt(),
             codewhispererCodeScanJobId = codeScanJobId,
+            codewhispererCodeScanProjectBytes = codeScanEvent.totalProjectSizeInBytes,
             codewhispererCodeScanSrcPayloadBytes = payloadContext.srcPayloadSize.toInt(),
             codewhispererCodeScanBuildPayloadBytes = payloadContext.buildPayloadSize?.toInt(),
             codewhispererCodeScanSrcZipFileBytes = payloadContext.srcZipFileSize.toInt(),
@@ -190,6 +192,26 @@ class CodeWhispererTelemetryService {
             )
             sendUserDecisionEvent(requestId, requestContext, responseContext, detail, index, suggestionState, detailContexts.size)
         }
+    }
+
+    fun sendPerceivedLatencyEvent(
+        requestId: String,
+        requestContext: RequestContext,
+        responseContext: ResponseContext,
+        latency: Double,
+    ) {
+        val (project, _, triggerTypeInfo) = requestContext
+        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage()
+        CodewhispererTelemetry.perceivedLatency(
+            project = project,
+            codewhispererCompletionType = responseContext.completionType,
+            codewhispererLanguage = codewhispererLanguage,
+            codewhispererRequestId = requestId,
+            codewhispererSessionId = responseContext.sessionId,
+            codewhispererTriggerType = triggerTypeInfo.triggerType,
+            duration = latency,
+            passive = true
+        )
     }
 
     private fun recordSuggestionState(

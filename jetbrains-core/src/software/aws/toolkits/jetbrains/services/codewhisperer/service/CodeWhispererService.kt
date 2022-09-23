@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -17,6 +18,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.messages.Topic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -84,7 +86,7 @@ class CodeWhispererService {
             return
         }
 
-        val language = requestContext.fileContextInfo.programmingLanguage.languageName
+        val language = requestContext.fileContextInfo.programmingLanguage
         if (!CodeWhispererLanguageManager.getInstance().isLanguageSupported(language)) {
             LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
@@ -142,6 +144,8 @@ class CodeWhispererService {
                     val responseContext = ResponseContext(sessionId, completionType)
                     logServiceInvocation(requestId, requestContext, responseContext, response.recommendations(), latency, null)
                     lastRecommendationIndex += response.recommendations().size
+                    ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
+                        .onSuccess(requestContext.fileContextInfo)
                     CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
                         requestId,
                         requestContext,
@@ -474,24 +478,6 @@ class CodeWhispererService {
         return response.toBuilder().recommendations(validatedRecommendations).build()
     }
 
-    private fun buildCodeWhispererRequest(
-        fileContextInfo: FileContextInfo
-    ): ListRecommendationsRequest {
-        val programmingLanguage = ProgrammingLanguage.builder()
-            .languageName(fileContextInfo.programmingLanguage.languageName)
-            .build()
-        val fileContext = FileContext.builder()
-            .leftFileContent(fileContextInfo.caretContext.leftFileContext)
-            .rightFileContent(fileContextInfo.caretContext.rightFileContext)
-            .filename(fileContextInfo.filename)
-            .programmingLanguage(programmingLanguage)
-            .build()
-
-        return ListRecommendationsRequest.builder()
-            .fileContext(fileContext)
-            .build()
-    }
-
     private fun buildInvocationContext(
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -582,9 +568,31 @@ class CodeWhispererService {
 
     companion object {
         private val LOG = getLogger<CodeWhispererService>()
+        val CODEWHISPERER_CODE_COMPLETION_PERFORMED: Topic<CodeWhispererCodeCompletionServiceListener> = Topic.create(
+            "CodeWhisperer code completion service invoked",
+            CodeWhispererCodeCompletionServiceListener::class.java
+        )
         val KEY_CODEWHISPERER_METADATA: Key<CodeWhispererMetadata> = Key.create("codewhisperer.metadata")
         fun getInstance(): CodeWhispererService = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"
+
+        internal fun buildCodeWhispererRequest(
+            fileContextInfo: FileContextInfo
+        ): ListRecommendationsRequest {
+            val programmingLanguage = ProgrammingLanguage.builder()
+                .languageName(CodeWhispererLanguageManager.getInstance().getParentLanguage(fileContextInfo.programmingLanguage).languageName)
+                .build()
+            val fileContext = FileContext.builder()
+                .leftFileContent(fileContextInfo.caretContext.leftFileContext)
+                .rightFileContent(fileContextInfo.caretContext.rightFileContext)
+                .filename(fileContextInfo.filename)
+                .programmingLanguage(programmingLanguage)
+                .build()
+
+            return ListRecommendationsRequest.builder()
+                .fileContext(fileContext)
+                .build()
+        }
     }
 }
 
@@ -601,3 +609,7 @@ data class ResponseContext(
     val sessionId: String,
     val completionType: CodewhispererCompletionType
 )
+
+interface CodeWhispererCodeCompletionServiceListener {
+    fun onSuccess(fileContextInfo: FileContextInfo) {}
+}
