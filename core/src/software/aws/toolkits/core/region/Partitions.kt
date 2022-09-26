@@ -59,5 +59,6 @@ object ServiceEndpointResource : RemoteResource {
     override val name: String = "service-endpoints.json"
     override val ttl: Duration? = Duration.ofHours(24)
     override val initialValue: (() -> InputStream)? = { BundledResources.ENDPOINTS_FILE }
+    //added
     override val remoteResolveParser: BasicJsonValidator = BasicJsonValidator
 }
