@@ -11,6 +11,7 @@ import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.replaceService
@@ -50,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeCoverageTokens
@@ -59,53 +61,51 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
+import software.aws.toolkits.telemetry.CodewhispererLanguage
+import java.util.concurrent.atomic.AtomicInteger
 
-class CodeWhispererCodeCoverageTrackerTest {
-    private class TestCodePercentageTracker(
+internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: CodeInsightTestFixtureRule) {
+    protected class TestCodePercentageTracker(
         timeWindowInSec: Long,
         language: CodeWhispererProgrammingLanguage,
         rangeMarkers: MutableList<RangeMarker> = mutableListOf(),
         codeCoverageTokens: MutableMap<Document, CodeCoverageTokens> = mutableMapOf()
-    ) : CodeWhispererCodeCoverageTracker(timeWindowInSec, language, rangeMarkers, codeCoverageTokens)
+    ) : CodeWhispererCodeCoverageTracker(timeWindowInSec, language, rangeMarkers, codeCoverageTokens, AtomicInteger(0))
 
-    private class TestTelemetryService(
+    protected class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
         batcher: TelemetryBatcher
     ) : TelemetryService(publisher, batcher)
-
     @Rule
     @JvmField
-    var projectRule = PythonCodeInsightTestFixtureRule()
-
-    @Rule
-    @JvmField
-    val mockClientManagerRule = MockClientManagerRule()
+    val projectRule: CodeInsightTestFixtureRule
 
     @Rule
     @JvmField
     val disposableRule = DisposableRule()
 
-    private lateinit var project: Project
-    private lateinit var fixture: CodeInsightTestFixture
-    private lateinit var telemetryServiceSpy: TelemetryService
-    private lateinit var batcher: TelemetryBatcher
-    private lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
+    @Rule
+    @JvmField
+    val mockClientManagerRule = MockClientManagerRule()
 
-    private lateinit var invocationContext: InvocationContext
-    private lateinit var sessionContext: SessionContext
+    protected lateinit var project: Project
+    protected lateinit var fixture: CodeInsightTestFixture
+    protected lateinit var telemetryServiceSpy: TelemetryService
+    protected lateinit var batcher: TelemetryBatcher
+    protected lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
 
-    @Before
-    fun setup() {
+    init {
+        this.projectRule = myProjectRule
+    }
+
+    open fun setup() {
+        this.project = projectRule.project
+        this.fixture = projectRule.fixture
         AwsSettings.getInstance().isTelemetryEnabled = true
-        project = projectRule.project
-        fixture = projectRule.fixture
-        fixture.configureByText(pythonFileName, pythonTestLeftContext)
-        runInEdtAndWait {
-            projectRule.fixture.editor.caretModel.primaryCaret.moveToOffset(projectRule.fixture.editor.document.textLength)
-        }
-
         batcher = mock()
         telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
         exploreActionManagerMock = mock {
@@ -114,7 +114,32 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreActionManagerMock, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
-        project.replaceService(CodeWhispererCodeReferenceManager::class.java, mock(), disposableRule.disposable)
+    }
+
+    @After
+    fun tearDown() {
+        CodeWhispererCodeCoverageTracker.getInstancesMap().clear()
+    }
+
+    protected companion object {
+        const val CODE_PERCENTAGE = "codewhisperer_codePercentage"
+        const val CWSPR_PERCENTAGE = "codewhispererPercentage"
+        const val CWSPR_Language = "codewhispererLanguage"
+        const val CWSPR_ACCEPTED_TOKENS = "codewhispererAcceptedTokens"
+        const val CWSPR_TOTAL_TOKENS = "codewhispererTotalTokens"
+    }
+}
+
+internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCoverageTrackerTestBase(PythonCodeInsightTestFixtureRule()) {
+    private lateinit var invocationContext: InvocationContext
+    private lateinit var sessionContext: SessionContext
+    @Before
+    override fun setup() {
+        super.setup()
+        fixture.configureByText(pythonFileName, pythonTestLeftContext)
+        runInEdtAndWait {
+            projectRule.fixture.editor.caretModel.primaryCaret.moveToOffset(projectRule.fixture.editor.document.textLength)
+        }
 
         val requestContext = RequestContext(
             project,
@@ -133,11 +158,9 @@ class CodeWhispererCodeCoverageTrackerTest {
         )
         invocationContext = InvocationContext(requestContext, responseContext, recommendationContext, mock())
         sessionContext = SessionContext()
-    }
 
-    @After
-    fun tearDown() {
-        CodeWhispererCodeCoverageTracker.getInstancesMap().clear()
+        // it is needed because referenceManager is listening to CODEWHISPERER_USER_ACTION_PERFORMED topic
+        project.replaceService(CodeWhispererCodeReferenceManager::class.java, mock(), disposableRule.disposable)
     }
 
     @Test
@@ -158,6 +181,22 @@ class CodeWhispererCodeCoverageTrackerTest {
 
         CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererJavaScript.INSTANCE)
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(3)
+    }
+
+    @Test
+    fun `test tracker is listening to cwspr recommendation service invocation`() {
+        val pythonTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Python)
+        val jsxTracker = TestCodePercentageTracker(TOTAL_SECONDS_IN_MINUTE, CodewhispererLanguage.Jsx)
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Jsx] = jsxTracker
+        pythonTracker.activateTrackerIfNotActive()
+        assertThat(pythonTracker.serviceInvocationCount).isEqualTo(0)
+        assertThat(jsxTracker.serviceInvocationCount).isEqualTo(0)
+
+        val fileContextInfo = mock<FileContextInfo> { on { programmingLanguage } doReturn ProgrammingLanguage(CodewhispererLanguage.Python) }
+        ApplicationManager.getApplication().messageBus.syncPublisher(CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED).onSuccess(fileContextInfo)
+        assertThat(pythonTracker.serviceInvocationCount).isEqualTo(1)
+        assertThat(jsxTracker.serviceInvocationCount).isEqualTo(0)
     }
 
     @Test
@@ -207,6 +246,26 @@ class CodeWhispererCodeCoverageTrackerTest {
         }
 
         assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length - 3)
+    }
+
+    @Test
+    fun `test tracker documentChanged - will not increment tokens on blank string of length greater than 1`() {
+        val pythonTracker = TestCodePercentageTracker(
+            TOTAL_SECONDS_IN_MINUTE,
+            CodewhispererLanguage.Python,
+            codeCoverageTokens = mutableMapOf(fixture.editor.document to CodeCoverageTokens(pythonTestLeftContext.length, 0))
+        )
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Python] = pythonTracker
+        pythonTracker.activateTrackerIfNotActive()
+        assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+
+        runInEdtAndWait {
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.document.insertString(fixture.editor.caretModel.offset, "\t")
+            }
+        }
+
+        assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
     }
 
     @Test
@@ -402,12 +461,68 @@ class CodeWhispererCodeCoverageTrackerTest {
         document.insertString(currentOffset, string)
         caretModel.moveToOffset(currentOffset + string.length)
     }
+}
 
-    private companion object {
-        const val CODE_PERCENTAGE = "codewhisperer_codePercentage"
-        const val CWSPR_PERCENTAGE = "codewhispererPercentage"
-        const val CWSPR_Language = "codewhispererLanguage"
-        const val CWSPR_ACCEPTED_TOKENS = "codewhispererAcceptedTokens"
-        const val CWSPR_TOTAL_TOKENS = "codewhispererTotalTokens"
+internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCoverageTrackerTestBase(JavaCodeInsightTestFixtureRule()) {
+    @Before
+    override fun setup() {
+        super.setup()
+    }
+
+    @Test
+    fun `tracker should not update totalTokens if documentChanged events are fired by code reformatting`() {
+        val codeNeedToBeReformatted = """
+            class Answer {
+                private int knapsack(int[] w, int[] v, int c) {
+                int[][] dp = new int[w.length + 1][c + 1];
+                    for (int i = 0; i < w.length; i++) {for (int j = 0; j <= c; j++) {
+                                   if (j < w[i]) {
+                                dp[i + 1][j] = dp[i][j];
+                        } 
+                            else {
+                      dp[i + 1][j] = Math.max(dp[i][j], dp[i][j - w[i]] + v[i]);
+                            }
+                        }
+                                 }
+                    return                  dp[w.length][c];
+                }
+            }            
+        """.trimIndent()
+        val file = fixture.configureByText("test.java", codeNeedToBeReformatted)
+        val tracker = spy(
+            TestCodePercentageTracker(
+                TOTAL_SECONDS_IN_MINUTE,
+                language = CodewhispererLanguage.Java,
+                codeCoverageTokens = mutableMapOf(fixture.editor.document to CodeCoverageTokens(totalTokens = codeNeedToBeReformatted.length))
+            )
+        )
+        CodeWhispererCodeCoverageTracker.getInstancesMap()[CodewhispererLanguage.Java] = tracker
+        runInEdtAndWait {
+            WriteCommandAction.runWriteCommandAction(project) {
+                CodeStyleManager.getInstance(project).reformatText(file, 0, fixture.editor.document.textLength)
+            }
+        }
+        // reformat should fire documentChanged events, but tracker should not update token from these events
+        verify(tracker, atLeastOnce()).documentChanged(any())
+        assertThat(tracker.totalTokensSize).isEqualTo(codeNeedToBeReformatted.length)
+
+        val formatted = """
+            class Answer {
+                private int knapsack(int[] w, int[] v, int c) {
+                    int[][] dp = new int[w.length + 1][c + 1];
+                    for (int i = 0; i < w.length; i++) {
+                        for (int j = 0; j <= c; j++) {
+                            if (j < w[i]) {
+                                dp[i + 1][j] = dp[i][j];
+                            } else {
+                                dp[i + 1][j] = Math.max(dp[i][j], dp[i][j - w[i]] + v[i]);
+                            }
+                        }
+                    }
+                    return dp[w.length][c];
+                }
+            }
+        """.trimIndent()
+        assertThat(fixture.editor.document.text.trimEnd()).isEqualTo(formatted)
     }
 }

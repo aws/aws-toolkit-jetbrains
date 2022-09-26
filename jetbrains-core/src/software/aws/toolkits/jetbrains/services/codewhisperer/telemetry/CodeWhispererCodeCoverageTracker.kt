@@ -18,10 +18,14 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.toCodeWhispererLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererCodeCompletionServiceListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
@@ -34,7 +38,8 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val timeWindowInSec: Long,
     private val language: CodeWhispererProgrammingLanguage,
     private val rangeMarkers: MutableList<RangeMarker>,
-    private val fileToTokens: MutableMap<Document, CodeCoverageTokens>
+    private val fileToTokens: MutableMap<Document, CodeCoverageTokens>,
+    private val myServiceInvocationCount: AtomicInteger
 ) : Disposable {
     val percentage: Int?
         get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else null
@@ -52,6 +57,8 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
     val acceptedRecommendationsCount: Int
         get() = rangeMarkers.size
+    val serviceInvocationCount: Int
+        get() = myServiceInvocationCount.get()
     private val isActive: AtomicBoolean = AtomicBoolean(false)
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val isShuttingDown = AtomicBoolean(false)
@@ -76,6 +83,17 @@ abstract class CodeWhispererCodeCoverageTracker(
                 }
             }
         )
+
+        conn.subscribe(
+            CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED,
+            object : CodeWhispererCodeCompletionServiceListener {
+                override fun onSuccess(fileContextInfo: FileContextInfo) {
+                    if (language == fileContextInfo.programmingLanguage.toCodeWhispererLanguage()) {
+                        myServiceInvocationCount.getAndIncrement()
+                    }
+                }
+            }
+        )
         startTime = Instant.now()
         isActive.set(true)
         scheduleCodeWhispererCodeCoverageTracker()
@@ -90,6 +108,8 @@ abstract class CodeWhispererCodeCoverageTracker(
             LOG.debug { "event with isWholeTextReplaced flag: $event" }
             if (event.oldTimeStamp == 0L) return
         }
+        // This case capture IDE reformatting the document, which will be blank string
+        if (isDocumentEventFromReformatting(event)) return
         incrementTotalTokens(event.document, event.newLength - event.oldLength)
     }
 
@@ -146,10 +166,14 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
     }
 
+    private fun isDocumentEventFromReformatting(event: DocumentEvent): Boolean =
+        (event.newFragment.toString().isBlank() && event.oldFragment.toString().isBlank()) && (event.oldLength == 0 || event.newLength == 0)
+
     private fun reset() {
         startTime = Instant.now()
         rangeMarkers.clear()
         fileToTokens.clear()
+        myServiceInvocationCount.set(0)
     }
 
     internal fun emitCodeWhispererCodeContribution() {
@@ -179,7 +203,8 @@ abstract class CodeWhispererCodeCoverageTracker(
                 acceptedTokensSize,
                 language.toTelemetryType(),
                 percentage,
-                totalTokensSize
+                totalTokensSize,
+                successCount = myServiceInvocationCount.get()
             )
         }
     }
@@ -229,7 +254,8 @@ class DefaultCodeWhispererCodeCoverageTracker(language: CodeWhispererProgramming
     5 * TOTAL_SECONDS_IN_MINUTE,
     language,
     mutableListOf(),
-    mutableMapOf()
+    mutableMapOf(),
+    AtomicInteger(0)
 )
 
 class CodeCoverageTokens(totalTokens: Int = 0, acceptedTokens: Int = 0) {
