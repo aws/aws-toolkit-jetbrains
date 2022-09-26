@@ -18,7 +18,6 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.toCodeWhispererLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
@@ -88,7 +87,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED,
             object : CodeWhispererCodeCompletionServiceListener {
                 override fun onSuccess(fileContextInfo: FileContextInfo) {
-                    if (language == fileContextInfo.programmingLanguage.toCodeWhispererLanguage()) {
+                    if (language == fileContextInfo.programmingLanguage) {
                         myServiceInvocationCount.getAndIncrement()
                     }
                 }

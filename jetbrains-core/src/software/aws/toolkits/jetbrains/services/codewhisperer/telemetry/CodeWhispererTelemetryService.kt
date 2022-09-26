@@ -200,7 +200,7 @@ class CodeWhispererTelemetryService {
         latency: Double,
     ) {
         val (project, _, triggerTypeInfo) = requestContext
-        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toCodeWhispererLanguage()
+        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
         CodewhispererTelemetry.perceivedLatency(
             project = project,
             codewhispererCompletionType = responseContext.completionType,
