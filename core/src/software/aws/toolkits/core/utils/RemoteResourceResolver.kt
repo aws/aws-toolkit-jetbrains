@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.core.utils
 
+
+import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -15,6 +17,9 @@ import java.util.concurrent.CompletionStage
 
 interface RemoteResourceResolver {
     fun resolve(resource: RemoteResource): CompletionStage<Path>
+}
+interface RemoteResolveParser {
+    fun canBeParsed(data: InputStream): Boolean
 }
 
 class DefaultRemoteResourceResolver(
@@ -61,7 +66,11 @@ class DefaultRemoteResourceResolver(
         when {
             downloaded != null -> {
                 LOG.debug { "Downloaded new file $downloaded, replacing old file $expectedLocation" }
-                Files.move(downloaded, expectedLocation, StandardCopyOption.REPLACE_EXISTING)
+                val fileStream = FileInputStream(downloaded.toFile())
+                val isParsingSuccess = resource.remoteResolveParser?.canBeParsed(fileStream) ?: true
+                if (isParsingSuccess) {
+                    Files.move(downloaded, expectedLocation, StandardCopyOption.REPLACE_EXISTING)
+                }
             }
             current != null -> LOG.debug { "No new file available - re-using current file $current" }
             initialValue != null -> {
@@ -105,4 +114,5 @@ interface RemoteResource {
     val name: String
     val ttl: Duration? get() = null
     val initialValue: (() -> InputStream)? get() = null
+    val remoteResolveParser: RemoteResolveParser? get() = null
 }
