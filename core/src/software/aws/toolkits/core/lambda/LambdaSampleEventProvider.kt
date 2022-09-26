@@ -27,7 +27,7 @@ class LambdaSampleEventProvider(private val resourceResolver: RemoteResourceReso
 
     private val manifest = AtomicReference<List<LambdaSampleEvent>?>(null)
 
-    fun get(): CompletionStage<List<LambdaSampleEvent>>{
+    fun get(): CompletionStage<List<LambdaSampleEvent>> {
         val value = manifest.get()
         if (value != null) {
             return CompletableFuture.completedFuture(value)

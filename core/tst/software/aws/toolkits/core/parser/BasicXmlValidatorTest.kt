@@ -11,7 +11,7 @@ import java.io.FileInputStream
 
 class BasicXmlValidatorTest {
 
-    //private val xmlParse = XmlParser()
+    // private val xmlParse = XmlParser()
     @Test
     fun isXmlParsing() {
         val fileText = FileInputStream("./tst-resources/xmlSampleSuccess.xml")

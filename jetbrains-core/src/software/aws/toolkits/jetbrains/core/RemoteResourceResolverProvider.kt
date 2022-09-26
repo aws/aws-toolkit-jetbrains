@@ -10,7 +10,6 @@ import com.intellij.util.io.createDirectories
 import software.aws.toolkits.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkits.core.utils.RemoteResourceResolver
 import software.aws.toolkits.core.utils.UrlFetcher
-import java.io.InputStream
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -22,7 +21,6 @@ interface RemoteResourceResolverProvider {
         fun getInstance(): RemoteResourceResolverProvider = service()
     }
 }
-
 
 class DefaultRemoteResourceResolverProvider : RemoteResourceResolverProvider {
     override fun get() = RESOLVER_INSTANCE
