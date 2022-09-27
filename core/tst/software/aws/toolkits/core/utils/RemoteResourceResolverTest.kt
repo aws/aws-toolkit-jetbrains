@@ -14,7 +14,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import software.aws.toolkits.core.lambda.BasicXmlValidator
+import software.aws.toolkits.core.lambda.LambdaManifestValidator
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,7 +22,6 @@ import java.time.Duration
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
-import kotlin.streams.toList
 
 class RemoteResourceResolverTest {
 
@@ -163,13 +162,13 @@ class RemoteResourceResolverTest {
             urls: List<String> = listOf(PRIMARY_URL),
             ttl: Duration? = Duration.ofMillis(1000),
             initialValue: InputStream? = null,
-            remoteResolveParser: RemoteResolveParser? = BasicXmlValidator
+            remoteResolveParser: RemoteResolveParser? = LambdaManifestValidator
         ) = object : RemoteResource {
             override val urls: List<String> = urls
             override val name: String = name
             override val ttl: Duration? = ttl
             override val initialValue = initialValue?.let { { it } }
-            override val remoteResolveParser: RemoteResolveParser = remoteResolveParser as BasicXmlValidator
+            override val remoteResolveParser: RemoteResolveParser = remoteResolveParser as LambdaManifestValidator
         }
 
         fun writeDataToFile(data: String): (InvocationOnMock) -> Unit = { invocation ->

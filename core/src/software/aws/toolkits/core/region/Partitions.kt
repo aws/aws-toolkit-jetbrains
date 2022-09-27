@@ -48,7 +48,7 @@ object PartitionParser {
         mapper.readValue(inputStream, Partitions::class.java)
     }
 }
-object BasicJsonValidator : RemoteResolveParser {
+object LambdaEventJsonValidator : RemoteResolveParser {
     override fun canBeParsed(data: InputStream): Boolean {
         return PartitionParser.parse(data)?.partitions?.isNotEmpty() ?: return false
     }
@@ -59,7 +59,5 @@ object ServiceEndpointResource : RemoteResource {
     override val name: String = "service-endpoints.json"
     override val ttl: Duration? = Duration.ofHours(24)
     override val initialValue: (() -> InputStream)? = { BundledResources.ENDPOINTS_FILE }
-
-    // added
-    override val remoteResolveParser: BasicJsonValidator = BasicJsonValidator
+    override val remoteResolveParser: LambdaEventJsonValidator = LambdaEventJsonValidator
 }

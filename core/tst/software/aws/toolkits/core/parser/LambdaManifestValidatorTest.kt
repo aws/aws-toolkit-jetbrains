@@ -6,20 +6,19 @@ package software.aws.toolkits.core.parser
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
-import software.aws.toolkits.core.lambda.BasicXmlValidator
+import software.aws.toolkits.core.lambda.LambdaManifestValidator
 import java.io.FileInputStream
 
-class BasicXmlValidatorTest {
+class LambdaManifestValidatorTest {
 
-    // private val xmlParse = XmlParser()
     @Test
     fun isXmlParsing() {
         val fileText = FileInputStream("./tst-resources/xmlSampleSuccess.xml")
-        assertTrue(BasicXmlValidator.canBeParsed(fileText))
+        assertTrue(LambdaManifestValidator.canBeParsed(fileText))
     }
     @Test
     fun isXmlParseFail() {
         val fileText = FileInputStream("./tst-resources/xmlSampleFailure.xml")
-        assertFalse(BasicXmlValidator.canBeParsed(fileText))
+        assertFalse(LambdaManifestValidator.canBeParsed(fileText))
     }
 }

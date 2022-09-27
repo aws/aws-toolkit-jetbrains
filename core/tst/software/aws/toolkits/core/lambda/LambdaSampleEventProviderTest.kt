@@ -58,8 +58,8 @@ class LambdaSampleEventProviderTest {
 
         val resourceResolver = mock<RemoteResourceResolver> {
             on { resolve(LambdaSampleEventManifestResource) }.thenReturn(CompletableFuture.completedFuture(manifestFile.toPath()))
-            on { resolve(LambdaSampleEventResource("first.json")) }.thenReturn(CompletableFuture.completedFuture(firstFile.toPath()))
-            on { resolve(LambdaSampleEventResource("second.json")) }.thenReturn(CompletableFuture.completedFuture(secondFile.toPath()))
+            on { resolve(LambdaSampleEventResource("first.json", "json")) }.thenReturn(CompletableFuture.completedFuture(firstFile.toPath()))
+            on { resolve(LambdaSampleEventResource("second.json", "json")) }.thenReturn(CompletableFuture.completedFuture(secondFile.toPath()))
         }
         val sut = LambdaSampleEventProvider(resourceResolver)
 

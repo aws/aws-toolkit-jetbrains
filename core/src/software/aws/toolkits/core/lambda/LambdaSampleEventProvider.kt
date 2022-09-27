@@ -10,12 +10,14 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.slf4j.LoggerFactory
+import software.aws.toolkits.core.region.LambdaEventJsonValidator
 import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.RemoteResourceResolver
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.core.utils.tryOrNull
+import java.io.File
 import java.io.InputStream
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
@@ -34,7 +36,10 @@ class LambdaSampleEventProvider(private val resourceResolver: RemoteResourceReso
         } else {
             return resourceResolver.resolve(LambdaSampleEventManifestResource).thenApply { resource ->
                 val resolved = mapper.readValue<LambdaSampleEventManifest>(resource.inputStream()).requests.map { request ->
-                    LambdaSampleEvent(request.name) { resourceResolver.resolve(LambdaSampleEventResource(request.filename)).thenApply { it?.readText() } }
+                    LambdaSampleEvent(request.name) {
+                        resourceResolver.resolve(LambdaSampleEventResource(request.filename, File(request.filename).extension))
+                            .thenApply { it?.readText() }
+                    }
                 }
                 manifest.set(resolved)
                 resolved
@@ -59,25 +64,32 @@ data class LambdaSampleEventRequest(
     val name: String
 )
 
-internal val LambdaSampleEventManifestResource = LambdaSampleEventResource("manifest.xml")
-object BasicXmlValidator : RemoteResolveParser {
+internal val LambdaSampleEventManifestResource = LambdaSampleEventResource("manifest.xml", "xml")
+object LambdaManifestValidator : RemoteResolveParser {
 
-    private val LOG = LoggerFactory.getLogger(BasicXmlValidator::class.java)
+    private val LOG = LoggerFactory.getLogger(LambdaManifestValidator::class.java)
     override fun canBeParsed(data: InputStream): Boolean {
         val mapper = XmlMapper().registerKotlinModule().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        val result = LOG.tryOrNull("Failed to parse Partitions") {
+        val result = LOG.tryOrNull("Failed to parse Requests") {
             mapper.readValue<LambdaSampleEventManifest>(data)
         }
 
         return result?.requests?.isNotEmpty() ?: false
     }
 }
-internal data class LambdaSampleEventResource(val filename: String) : RemoteResource {
+internal data class LambdaSampleEventResource(val filename: String, val fileType: String) : RemoteResource {
     override val urls: List<String> = listOf(
         "https://aws-vs-toolkit.s3.amazonaws.com/LambdaSampleFunctions/SampleRequests/$filename"
     )
 
     override val name: String = "lambda-sample-event-$filename"
     override val ttl: Duration = Duration.ofDays(7)
-    override val remoteResolveParser: BasicXmlValidator = BasicXmlValidator
+    override val remoteResolveParser: RemoteResolveParser? = resolveParserForGivenFile(fileType)
 }
+
+fun resolveParserForGivenFile(fileType: String): RemoteResolveParser? =
+    when (fileType) {
+        "xml" -> LambdaManifestValidator
+        "json" -> LambdaEventJsonValidator
+        else -> null
+    }
