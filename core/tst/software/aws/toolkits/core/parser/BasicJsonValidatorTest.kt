@@ -10,7 +10,6 @@ import software.aws.toolkits.core.region.BasicJsonValidator
 import java.io.FileInputStream
 
 class BasicJsonValidatorTest {
-    // val jsonUtilParser = BasicJsonValidator
     @Test
     fun isJsonParse() {
         val fileText = FileInputStream("./tst-resources/jsonSampleSuccess.json")
