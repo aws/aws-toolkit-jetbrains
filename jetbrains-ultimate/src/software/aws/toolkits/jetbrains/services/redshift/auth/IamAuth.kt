@@ -40,10 +40,10 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
 
     override fun intercept(connection: ProtoConnection, silent: Boolean): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = projectCoroutineScope(connection.runConfiguration.project)
+        val scope = projectCoroutineScope(connection.project)
         return scope.future {
             var result = Result.Succeeded
-            val project = connection.runConfiguration.project
+            val project = connection.project
             try {
                 val auth = validateConnection(connection)
                 val client = AwsClientManager.getInstance().getClient<RedshiftClient>(

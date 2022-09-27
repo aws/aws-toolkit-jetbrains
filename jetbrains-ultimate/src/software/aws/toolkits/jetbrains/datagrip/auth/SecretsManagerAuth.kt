@@ -52,10 +52,10 @@ class SecretsManagerAuth : DatabaseAuthProviderCompatabilityAdapter {
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = projectCoroutineScope(connection.runConfiguration.project)
+        val scope = projectCoroutineScope(connection.project)
         return scope.future {
             var result = Result.Succeeded
-            val project = connection.runConfiguration.project
+            val project = connection.project
             try {
                 val connectionSettings = getConfiguration(connection)
                 val dbSecret = getDbSecret(connectionSettings)

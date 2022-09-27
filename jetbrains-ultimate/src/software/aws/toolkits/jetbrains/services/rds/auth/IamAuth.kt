@@ -53,7 +53,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = projectCoroutineScope(connection.runConfiguration.project)
+        val scope = projectCoroutineScope(connection.project)
         return scope.future {
             var result = Result.Succeeded
             try {
@@ -63,7 +63,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
                 result = Result.Failed
                 throw e
             } finally {
-                RdsTelemetry.getCredentials(connection.runConfiguration.project, result, IAM, connection.getDatabaseEngine())
+                RdsTelemetry.getCredentials(connection.project, result, IAM, connection.getDatabaseEngine())
             }
         }
     }
