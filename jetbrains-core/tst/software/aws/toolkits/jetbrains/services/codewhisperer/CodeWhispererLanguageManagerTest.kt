@@ -81,8 +81,8 @@ class CodeWhispererLanguageManagerTest {
         assertThat(ProgrammingLanguage("javascript").toCodeWhispererLanguage()).isEqualTo(CodewhispererLanguage.Javascript)
         assertThat(ProgrammingLanguage("JavaScript").toCodeWhispererLanguage()).isEqualTo(CodewhispererLanguage.Javascript)
 
-        assertThat(ProgrammingLanguage("jsx").toCodeWhispererLanguage()).isEqualTo(CodewhispererLanguage.Jsx)
-        assertThat(ProgrammingLanguage("JSX").toCodeWhispererLanguage()).isEqualTo(CodewhispererLanguage.Jsx)
+        assertThat(ProgrammingLanguage("Jsx harmony").toCodeWhispererLanguage()).isEqualTo(CodewhispererLanguage.Jsx)
+        assertThat(ProgrammingLanguage("JSX").toCodeWhispererLanguage()).isEqualTo(CodewhispererLanguage.Unknown)
     }
 
     @Test

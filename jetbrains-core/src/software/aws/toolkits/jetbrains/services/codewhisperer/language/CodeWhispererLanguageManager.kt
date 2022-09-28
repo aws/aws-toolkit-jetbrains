@@ -8,14 +8,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.ProgrammingL
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 
 class CodeWhispererLanguageManager {
-    private val supportedLanguage = setOf(
-        CodewhispererLanguage.Java.toString(),
-        CodewhispererLanguage.Python.toString(),
-        CodewhispererLanguage.Javascript.toString(),
-        "jsx harmony"
-    )
-
-    fun isLanguageSupported(language: ProgrammingLanguage): Boolean = supportedLanguage.contains(language.languageName)
+    fun isLanguageSupported(language: ProgrammingLanguage): Boolean {
+        val cwsprLanguage = language.toCodeWhispererLanguage()
+        return cwsprLanguage != CodewhispererLanguage.Unknown && cwsprLanguage != CodewhispererLanguage.Plaintext
+    }
 
     /**
      * This should be called to map some language dialect to their mother language
@@ -36,7 +32,7 @@ fun ProgrammingLanguage.toCodeWhispererLanguage() = when {
     languageName.contains("python") -> CodewhispererLanguage.Python
     languageName.contains("javascript") -> CodewhispererLanguage.Javascript
     languageName.contains("java") -> CodewhispererLanguage.Java
-    languageName.contains("jsx") -> CodewhispererLanguage.Jsx
+    languageName.contains("jsx harmony") -> CodewhispererLanguage.Jsx
     languageName.contains("plain_text") -> CodewhispererLanguage.Plaintext
     else -> CodewhispererLanguage.Unknown
 }
