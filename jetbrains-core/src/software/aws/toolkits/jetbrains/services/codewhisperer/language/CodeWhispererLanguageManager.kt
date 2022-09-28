@@ -16,6 +16,7 @@ class CodeWhispererLanguageManager {
     )
 
     fun isLanguageSupported(language: ProgrammingLanguage): Boolean = supportedLanguage.contains(language.languageName)
+
     /**
      * This should be called to map some language dialect to their mother language
      * e.g. JSX -> JavaScript, TypeScript -> JavaScript etc.
