@@ -55,8 +55,8 @@ class CodeWhispererLanguageManagerTest {
         assertThat(manager.isLanguageSupported(ProgrammingLanguage("python"))).isTrue
         assertThat(manager.isLanguageSupported(ProgrammingLanguage("Python"))).isTrue
 
-        assertThat(manager.isLanguageSupported(ProgrammingLanguage("jsx"))).isTrue
-        assertThat(manager.isLanguageSupported(ProgrammingLanguage("JSX"))).isTrue
+        assertThat(manager.isLanguageSupported(ProgrammingLanguage("jsx harmony"))).isTrue
+        assertThat(manager.isLanguageSupported(ProgrammingLanguage("JSX harmony"))).isTrue
 
         assertThat(manager.isLanguageSupported(ProgrammingLanguage("javascript"))).isTrue
         assertThat(manager.isLanguageSupported(ProgrammingLanguage("JavaScript"))).isTrue
@@ -66,6 +66,8 @@ class CodeWhispererLanguageManagerTest {
 
         assertThat(manager.isLanguageSupported(ProgrammingLanguage("cpp"))).isFalse
         assertThat(manager.isLanguageSupported(ProgrammingLanguage("unknown"))).isFalse
+
+        assertThat(manager.isLanguageSupported(ProgrammingLanguage("typescript jsx"))).isFalse
     }
 
     @Test

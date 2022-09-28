@@ -11,14 +11,11 @@ class CodeWhispererLanguageManager {
     private val supportedLanguage = setOf(
         CodewhispererLanguage.Java.toString(),
         CodewhispererLanguage.Python.toString(),
-        CodewhispererLanguage.Javascript.toString()
+        CodewhispererLanguage.Javascript.toString(),
+        "jsx harmony"
     )
 
-    fun isLanguageSupported(language: ProgrammingLanguage): Boolean {
-        val mappedLanguage = getParentLanguage(language)
-        return supportedLanguage.contains(mappedLanguage.languageName)
-    }
-
+    fun isLanguageSupported(language: ProgrammingLanguage): Boolean = supportedLanguage.contains(language.languageName)
     /**
      * This should be called to map some language dialect to their mother language
      * e.g. JSX -> JavaScript, TypeScript -> JavaScript etc.
