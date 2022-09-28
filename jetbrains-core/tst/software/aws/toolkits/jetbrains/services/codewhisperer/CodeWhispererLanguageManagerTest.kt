@@ -113,7 +113,7 @@ class CodeWhispererLanguageManagerTest {
         val javaLang = ProgrammingLanguage(CodewhispererLanguage.Java)
         val pythonLang = ProgrammingLanguage(CodewhispererLanguage.Python)
         val javascriptLang = ProgrammingLanguage(CodewhispererLanguage.Javascript)
-        val jsxLang = ProgrammingLanguage(CodewhispererLanguage.Jsx)
+        val jsxLang = ProgrammingLanguage("Jsx harmony")
         val plainText = ProgrammingLanguage(CodewhispererLanguage.Plaintext)
         val unknown = ProgrammingLanguage(CodewhispererLanguage.Unknown)
 
