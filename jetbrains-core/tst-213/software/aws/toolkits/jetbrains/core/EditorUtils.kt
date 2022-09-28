@@ -12,7 +12,12 @@ import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotifications
 
 @Suppress("UNUSED_PARAMETER")
-fun <T : EditorNotifications.Provider<*>, U : EditorNotificationPanel> getEditorNotifications(project: Project, editor: FileEditor, provider: Class<T>, key: Key<U>): U? {
+fun <T : EditorNotifications.Provider<*>, U : EditorNotificationPanel> getEditorNotifications(
+    project: Project,
+    editor: FileEditor,
+    provider: Class<T>,
+    key: Key<U>
+): U? {
     PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
     NonBlockingReadActionImpl.waitForAsyncTaskCompletion()
     return editor.getUserData(key)

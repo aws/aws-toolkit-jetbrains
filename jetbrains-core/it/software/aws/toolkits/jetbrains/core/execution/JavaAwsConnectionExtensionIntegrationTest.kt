@@ -7,11 +7,7 @@ import com.intellij.compiler.CompilerTestUtil
 import com.intellij.execution.RunManager
 import com.intellij.execution.application.ApplicationConfiguration
 import com.intellij.execution.application.ApplicationConfigurationType
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.compiler.CompileContext
-import com.intellij.openapi.compiler.CompilerManager
-import com.intellij.openapi.compiler.CompilerMessageCategory
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.projectRoots.JavaSdk
@@ -37,8 +33,6 @@ import software.aws.toolkits.jetbrains.utils.rules.ExperimentRule
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 
 class JavaAwsConnectionExtensionIntegrationTest {
 
