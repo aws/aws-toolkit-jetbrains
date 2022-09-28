@@ -242,11 +242,7 @@ class SecretsManagerAuthTest {
                 null
             }
             on { connectionPoint } doReturn dbConnectionPoint
-            on { runConfiguration } doAnswer {
-                mock {
-                    on { project } doAnswer { projectRule.project }
-                }
-            }
+            on { project } doAnswer { projectRule.project }
             on { connectionProperties } doReturn m
             on { getUrl() } doAnswer {
                 u

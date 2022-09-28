@@ -7,6 +7,7 @@ import com.intellij.compiler.CompilerTestUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.compiler.CompileContext
+import com.intellij.openapi.compiler.CompileStatusNotification
 import com.intellij.openapi.compiler.CompilerManager
 import com.intellij.openapi.compiler.CompilerMessageCategory
 import com.intellij.openapi.module.ModuleManager
@@ -28,6 +29,7 @@ import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
+import software.aws.toolkits.jetbrains.core.compileProjectAndWait
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.JavaCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.utils.rules.addClass
@@ -165,21 +167,7 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase() {
 
     private fun compileProject() {
         setUpCompiler()
-        val compileFuture = CompletableFuture<CompileContext>()
-        ApplicationManager.getApplication().invokeAndWait {
-            CompilerManager.getInstance(javaProjectRule.project).rebuild { aborted, errors, _, context ->
-                if (!aborted && errors == 0) {
-                    compileFuture.complete(context)
-                } else {
-                    compileFuture.completeExceptionally(
-                        RuntimeException(
-                            "Compilation error: ${context.getMessages(CompilerMessageCategory.ERROR).map { it.message }}"
-                        )
-                    )
-                }
-            }
-        }
-        compileFuture.get(30, TimeUnit.SECONDS)
+        compileProjectAndWait(javaProjectRule.project)
     }
 
     private fun setUpCompiler() {

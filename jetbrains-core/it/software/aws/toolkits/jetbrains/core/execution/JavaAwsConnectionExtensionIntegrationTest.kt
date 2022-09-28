@@ -29,6 +29,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.jetbrains.core.compileProjectAndWait
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
@@ -106,21 +107,7 @@ class JavaAwsConnectionExtensionIntegrationTest {
 
     private fun compileModule(module: Module) {
         setUpCompiler()
-        val compileFuture = CompletableFuture<CompileContext>()
-        ApplicationManager.getApplication().invokeAndWait {
-            CompilerManager.getInstance(module.project).rebuild { aborted, errors, _, context ->
-                if (!aborted && errors == 0) {
-                    compileFuture.complete(context)
-                } else {
-                    compileFuture.completeExceptionally(
-                        RuntimeException(
-                            "Compilation error: ${context.getMessages(CompilerMessageCategory.ERROR).map { it.message }}"
-                        )
-                    )
-                }
-            }
-        }
-        compileFuture.get(30, TimeUnit.SECONDS)
+        compileProjectAndWait(module.project)
     }
 
     private fun setUpCompiler() {

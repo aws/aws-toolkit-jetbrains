@@ -9,11 +9,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.ui.EditorNotificationPanel
+import com.intellij.ui.EditorNotificationProvider
 import com.intellij.ui.EditorNotifications
+import com.intellij.ui.EditorNotificationsImpl
 
 @Suppress("UNUSED_PARAMETER")
-fun <T : EditorNotifications.Provider<*>, U : EditorNotificationPanel> getEditorNotifications(project: Project, editor: FileEditor, provider: Class<T>, key: Key<U>): U? {
+fun <T : EditorNotificationProvider, U : EditorNotificationPanel> getEditorNotifications(project: Project, editor: FileEditor, provider: Class<T>, key: Key<U>): U? {
     PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
     NonBlockingReadActionImpl.waitForAsyncTaskCompletion()
-    return editor.getUserData(key)
+
+    @Suppress("UNCHECKED_CAST")
+    return (EditorNotifications.getInstance(project) as EditorNotificationsImpl).getNotificationPanels(editor)[provider] as? U
 }

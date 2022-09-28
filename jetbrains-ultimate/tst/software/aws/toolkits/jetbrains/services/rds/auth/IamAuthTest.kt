@@ -203,11 +203,7 @@ class IamAuthTest {
         return mock {
             val m = mutableMapOf<String, String>()
             on { connectionPoint } doReturn dbConnectionPoint
-            on { runConfiguration } doAnswer {
-                mock {
-                    on { project } doAnswer { projectRule.project }
-                }
-            }
+            on { project } doAnswer { projectRule.project }
             on { connectionProperties } doReturn m
         }
     }
