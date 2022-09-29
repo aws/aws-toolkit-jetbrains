@@ -16,7 +16,7 @@ abstract class CodeWhispererProgrammingLanguage {
 
     open fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = this
 
-    override fun equals(other: Any?): Boolean {
+    final override fun equals(other: Any?): Boolean {
         if (other !is CodeWhispererProgrammingLanguage) return false
         return this.languageId == other.languageId
     }
@@ -25,5 +25,5 @@ abstract class CodeWhispererProgrammingLanguage {
      * we want to force CodeWhispererProgrammingLanguage(any language implement it) be singleton,
      * override hashCode is the backup plan if another object is being created
      */
-    override fun hashCode(): Int = this.languageId.hashCode()
+    final override fun hashCode(): Int = this.languageId.hashCode()
 }
