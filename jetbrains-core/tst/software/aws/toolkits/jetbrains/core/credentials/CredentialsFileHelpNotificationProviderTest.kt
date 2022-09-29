@@ -72,6 +72,6 @@ class CredentialsFileHelpNotificationProviderTest {
     private fun openEditor(file: VirtualFile): FileEditor = FileEditorManagerEx.getInstanceEx(projectRule.project).openFile(file, true).single()
 
     private fun getEditorNotifications(editor: FileEditor): CredentialFileNotificationPanel? =
-        getEditorNotifications(projectRule.project, editor, CredentialsFileHelpNotificationProvider::class.java)
+        getEditorNotifications(projectRule.project, editor, CredentialsFileHelpNotificationProvider::class.java, CredentialsFileHelpNotificationProvider.KEY)
             as CredentialFileNotificationPanel?
 }
