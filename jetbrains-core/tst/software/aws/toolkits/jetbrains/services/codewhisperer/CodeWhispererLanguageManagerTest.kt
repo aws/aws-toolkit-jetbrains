@@ -40,7 +40,7 @@ class CodeWhispererLanguageManagerTest {
     @JvmField
     val disposableRule = DisposableRule()
 
-    val manager = CodeWhispererLanguageManager.getInstance()
+    val manager = CodeWhispererLanguageManager()
 
     @Test
     fun `test CodeWhispererProgrammingLanguage should be singleton`() {
@@ -61,20 +61,15 @@ class CodeWhispererLanguageManagerTest {
     fun `test getProgrammingLanguage`() {
         testGetProgrammingLanguageUtil("java", CodeWhispererJava::class.java)
         testGetProgrammingLanguageUtil("Java", CodeWhispererJava::class.java)
-        testGetProgrammingLanguageUtil("Java 1.8", CodeWhispererJava::class.java)
         testGetProgrammingLanguageUtil("JAVA", CodeWhispererJava::class.java)
-        testGetProgrammingLanguageUtil("amazon correto java", CodeWhispererJava::class.java)
 
         testGetProgrammingLanguageUtil("python", CodeWhispererPython::class.java)
         testGetProgrammingLanguageUtil("Python", CodeWhispererPython::class.java)
-        testGetProgrammingLanguageUtil("PYTHON", CodeWhispererPython::class.java)
 
         testGetProgrammingLanguageUtil("javascript", CodeWhispererJavaScript::class.java)
         testGetProgrammingLanguageUtil("JavaScript", CodeWhispererJavaScript::class.java)
 
         testGetProgrammingLanguageUtil("jsx harmony", CodeWhispererJsx::class.java)
-        testGetProgrammingLanguageUtil("jsx", CodeWhispererJsx::class.java)
-        testGetProgrammingLanguageUtil("JSX", CodeWhispererJsx::class.java)
 
         testGetProgrammingLanguageUtil("plain_text", CodeWhispererPlainText::class.java)
 

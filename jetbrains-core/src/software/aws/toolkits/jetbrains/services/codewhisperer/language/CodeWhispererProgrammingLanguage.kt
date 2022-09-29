@@ -5,6 +5,9 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.language
 
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 
+/**
+ * Any subclass of CodeWhispererProgrammingLanguage should have private constructor
+ */
 abstract class CodeWhispererProgrammingLanguage {
     abstract val languageId: String
 
