@@ -13,9 +13,8 @@ junit4 = "4.13.2"
 junit5 = "5.8.2"
 # https://plugins.jetbrains.com/docs/intellij/kotlin.html#adding-kotlin-support
 # https://kotlinlang.org/docs/releases.html#release-details
-# TODO: 221+ seems to have binary compat issues with 1.7.0
-kotlin = "1.6.21"
-kotlinCoroutines = "1.5.0"
+kotlin = "1.7.20"
+kotlinCoroutines = "1.6.4"
 mockito = "4.6.1"
 mockitoKotlin = "4.0.0"
 telemetryGenerator = "1.0.72"

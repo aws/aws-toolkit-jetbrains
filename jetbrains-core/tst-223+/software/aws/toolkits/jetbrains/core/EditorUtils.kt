@@ -12,6 +12,7 @@ import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotificationProvider
 import com.intellij.ui.EditorNotifications
 import com.intellij.ui.EditorNotificationsImpl
+import javax.swing.JComponent
 
 @Suppress("UNUSED_PARAMETER")
 fun <T : EditorNotificationProvider, U : EditorNotificationPanel> getEditorNotifications(
@@ -19,10 +20,12 @@ fun <T : EditorNotificationProvider, U : EditorNotificationPanel> getEditorNotif
     editor: FileEditor,
     provider: Class<T>,
     key: Key<U>
-): U? {
+): JComponent? {
     PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
     NonBlockingReadActionImpl.waitForAsyncTaskCompletion()
 
-    @Suppress("UNCHECKED_CAST")
-    return (EditorNotifications.getInstance(project) as EditorNotificationsImpl).getNotificationPanels(editor)[provider] as? U
+    val editorNotifications = EditorNotifications.getInstance(project) as EditorNotificationsImpl
+    editorNotifications.completeAsyncTasks()
+
+    return editorNotifications.getNotificationPanels(editor)[provider]
 }
