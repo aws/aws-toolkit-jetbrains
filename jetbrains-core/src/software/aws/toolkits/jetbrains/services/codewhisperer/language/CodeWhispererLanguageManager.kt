@@ -20,7 +20,7 @@ class CodeWhispererLanguageManager {
             fileTypeName.contains("python") -> CodeWhispererPython.INSTANCE
             fileTypeName.contains("javascript") -> CodeWhispererJavaScript.INSTANCE
             fileTypeName.contains("java") -> CodeWhispererJava.INSTANCE
-            fileTypeName.contains("jsx") -> CodeWhispererJsx.INSTANCE
+            fileTypeName.contains("jsx harmony") -> CodeWhispererJsx.INSTANCE
             fileTypeName.contains("plain_text") -> CodeWhispererPlainText.INSTANCE
             else -> CodeWhispererUnknownLanguage.INSTANCE
         }
