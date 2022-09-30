@@ -37,7 +37,7 @@ class LambdaSampleEventProvider(private val resourceResolver: RemoteResourceReso
             return resourceResolver.resolve(LambdaSampleEventManifestResource).thenApply { resource ->
                 val resolved = mapper.readValue<LambdaSampleEventManifest>(resource.inputStream()).requests.map { request ->
                     LambdaSampleEvent(request.name) {
-                        resourceResolver.resolve(LambdaSampleEventResource(request.filename, File(request.filename).extension))
+                        resourceResolver.resolve(LambdaSampleEventResource(request.filename, request.fileType))
                             .thenApply { it?.readText() }
                     }
                 }
@@ -61,7 +61,8 @@ data class LambdaSampleEventManifest(
 
 data class LambdaSampleEventRequest(
     val filename: String,
-    val name: String
+    val name: String,
+    val fileType: String = File(filename).extension
 )
 
 internal val LambdaSampleEventManifestResource = LambdaSampleEventResource("manifest.xml", "xml")

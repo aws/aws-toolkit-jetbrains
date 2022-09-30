@@ -22,6 +22,7 @@ import java.time.Duration
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import kotlin.streams.toList
 
 class RemoteResourceResolverTest {
 
