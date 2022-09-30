@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.rds.auth
 
-import DatabaseAuthProviderCompatabilityAdapter
 import com.intellij.credentialStore.Credentials
 import com.intellij.database.access.DatabaseCredentials
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
@@ -18,6 +17,7 @@ import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.datagrip.auth.compatability.DatabaseAuthProviderCompatabilityAdapter
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
 import software.aws.toolkits.jetbrains.datagrip.hostFromJdbcString
@@ -53,7 +53,8 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = projectCoroutineScope(connection.project)
+        val project = connection.project
+        val scope = projectCoroutineScope(project)
         return scope.future {
             var result = Result.Succeeded
             try {
@@ -63,7 +64,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
                 result = Result.Failed
                 throw e
             } finally {
-                RdsTelemetry.getCredentials(connection.project, result, IAM, connection.getDatabaseEngine())
+                RdsTelemetry.getCredentials(project, result, IAM, connection.getDatabaseEngine())
             }
         }
     }

@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.sqs.toolwindow
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
@@ -28,7 +29,11 @@ class PollMessageUtilsTest {
                 )
             )
             .build()
-        val table = MessagesTable().apply { tableModel.addRow(message) }
+        val table = MessagesTable().apply {
+            runInEdt {
+                tableModel.addRow(message)
+            }
+        }
 
         assertThat(table.tableModel.items.size).isOne()
         assertThat(table.tableModel.items.first().body()).isEqualTo(message.body())

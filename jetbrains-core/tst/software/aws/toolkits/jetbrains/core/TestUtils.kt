@@ -130,6 +130,7 @@ fun makeMockList(clusterArn: String): Resource.Cached<List<String>> = mock {
 fun compileProjectAndWait(project: Project) {
     val compileFuture = CompletableFuture<CompileContext>()
     ApplicationManager.getApplication().invokeAndWait {
+        @Suppress("ObjectLiteralToLambda")
         CompilerManager.getInstance(project).rebuild(
             object : CompileStatusNotification {
                 override fun finished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext) {
