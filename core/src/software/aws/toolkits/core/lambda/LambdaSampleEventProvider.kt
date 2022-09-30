@@ -17,7 +17,6 @@ import software.aws.toolkits.core.utils.RemoteResourceResolver
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.core.utils.tryOrNull
-import java.io.File
 import java.io.InputStream
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
@@ -62,7 +61,7 @@ data class LambdaSampleEventManifest(
 data class LambdaSampleEventRequest(
     val filename: String,
     val name: String,
-    val fileType: String = File(filename).extension
+    val fileType: String = filename.split(".").last()
 )
 
 internal val LambdaSampleEventManifestResource = LambdaSampleEventResource("manifest.xml", "xml")
