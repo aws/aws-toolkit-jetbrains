@@ -17,6 +17,7 @@ kotlin = "1.7.20"
 kotlinCoroutines = "1.6.4"
 mockito = "4.6.1"
 mockitoKotlin = "4.0.0"
+mockk = "1.13.2"
 telemetryGenerator = "1.0.72"
 testLogger = "3.1.0"
 testRetry = "1.2.1"
@@ -83,6 +84,7 @@ kotlin-stdLibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", versio
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
+mockk = { module = "io.mockk:mockk", version.ref="mockk" }
 telemetryGenerator = { module = "software.aws.toolkits:telemetry-generator", version.ref = "telemetryGenerator" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 wiremock = { module = "com.github.tomakehurst:wiremock-jre8", version.ref = "wiremock" }

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.datagrip.auth.compatability
 
 import com.intellij.database.dataSource.DatabaseAuthProvider
+import com.intellij.database.dataSource.DatabaseConnectionInterceptor
 import com.intellij.database.dataSource.LocalDataSource
 
 interface DatabaseAuthProviderCompatabilityAdapter : DatabaseAuthProvider {
@@ -12,3 +13,5 @@ interface DatabaseAuthProviderCompatabilityAdapter : DatabaseAuthProvider {
 
     fun isApplicable(dataSource: LocalDataSource): Boolean
 }
+
+fun DatabaseConnectionInterceptor.ProtoConnection.project() = project

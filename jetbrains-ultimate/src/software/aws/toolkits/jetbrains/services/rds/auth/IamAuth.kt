@@ -18,6 +18,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.datagrip.auth.compatability.DatabaseAuthProviderCompatabilityAdapter
+import software.aws.toolkits.jetbrains.datagrip.auth.compatability.project
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
 import software.aws.toolkits.jetbrains.datagrip.hostFromJdbcString
@@ -53,7 +54,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val project = connection.project
+        val project = connection.project()
         val scope = projectCoroutineScope(project)
         return scope.future {
             var result = Result.Succeeded
