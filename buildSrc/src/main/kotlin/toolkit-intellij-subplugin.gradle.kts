@@ -178,7 +178,12 @@ ciOnly {
 }
 tasks.withType<RunIdeForUiTestTask>().all {
     systemProperty("robot-server.port", remoteRobotPort)
+    // mac magic
+    systemProperty("ide.mac.message.dialogs.as.sheets", "false")
+    systemProperty("jbScreenMenuBar.enabled", "false")
+    systemProperty("apple.laf.useScreenMenuBar", "false")
     systemProperty("ide.mac.file.chooser.native", "false")
+
     systemProperty("jb.consents.confirmation.enabled", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")

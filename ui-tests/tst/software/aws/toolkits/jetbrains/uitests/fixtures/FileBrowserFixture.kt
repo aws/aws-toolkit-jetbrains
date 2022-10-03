@@ -5,11 +5,13 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.assertj.swing.timing.Pause
 import java.io.File
@@ -50,7 +52,13 @@ class FileBrowserFixture(
                 waitForIgnoringError(duration = Duration.ofSeconds(30), interval = Duration.ofSeconds(10)) {
                     setFilePath(absolutePath)
                     findAndClick("//div[@accessiblename='Refresh']")
-                    tree.collectSelectedPaths().any { it == absolutePath.toParts() }
+
+                    // FIX_WHEN_MIN_IS_223: no longer needed
+                    if (findAll<ComponentFixture>(byXpath("//div[@class='FileChooserPanelImpl']")).firstOrNull() == null) {
+                        tree.collectSelectedPaths().any { it == absolutePath.toParts() }
+                    } else {
+                        true
+                    }
                 }
             }
 
@@ -76,6 +84,8 @@ class FileBrowserFixture(
                     Pause.pause(100)
                 }
             }
+
+            pathBox.remoteRobot.keyboard { enter() }
         }
     }
 
