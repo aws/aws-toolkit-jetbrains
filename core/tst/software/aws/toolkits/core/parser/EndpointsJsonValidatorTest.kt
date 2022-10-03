@@ -6,18 +6,18 @@ package software.aws.toolkits.core.parser
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
-import software.aws.toolkits.core.region.LambdaEventJsonValidator
+import software.aws.toolkits.core.region.EndpointsJsonValidator
 import java.io.FileInputStream
 
-class LambdaEventJsonValidatorTest {
+class EndpointsJsonValidatorTest {
     @Test
     fun isJsonParse() {
         val fileText = FileInputStream("./tst-resources/jsonSampleSuccess.json")
-        assertTrue(LambdaEventJsonValidator.canBeParsed(fileText))
+        assertTrue(EndpointsJsonValidator.canBeParsed(fileText))
     }
     @Test
     fun isJsonParseFail() {
         val fileText = FileInputStream("./tst-resources/jsonSampleFailure.json")
-        assertFalse(LambdaEventJsonValidator.canBeParsed(fileText))
+        assertFalse(EndpointsJsonValidator.canBeParsed(fileText))
     }
 }
