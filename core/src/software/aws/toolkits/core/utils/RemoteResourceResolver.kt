@@ -67,6 +67,7 @@ class DefaultRemoteResourceResolver(
                 LOG.debug { "Downloaded new file $downloaded, replacing old file $expectedLocation" }
                 val fileStream = FileInputStream(downloaded.toFile())
                 val isParsingSuccess = resource.remoteResolveParser?.canBeParsed(fileStream) ?: true
+                fileStream.close()
                 if (isParsingSuccess) {
                     Files.move(downloaded, expectedLocation, StandardCopyOption.REPLACE_EXISTING)
                 }
