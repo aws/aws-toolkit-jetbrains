@@ -78,8 +78,6 @@ class FileBrowserFixture(
                     Pause.pause(100)
                 }
             }
-
-            pathBox.remoteRobot.keyboard { enter() }
         }
     }
 
