@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
-import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
