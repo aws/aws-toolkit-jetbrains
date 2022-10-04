@@ -52,14 +52,8 @@ class FileBrowserFixture(
             step("Refresh file explorer to make sure the file ${path.fileName} is loaded") {
                 waitForIgnoringError(duration = Duration.ofSeconds(30), interval = Duration.ofSeconds(10)) {
                     setFilePath(absolutePath)
-
-                    // FIX_WHEN_MIN_IS_223: no longer needed
-                    if (remoteRobot.ideMajorVersion() < 223) {
-                        findAndClick("//div[@accessiblename='Refresh']")
-                        tree.collectSelectedPaths().any { it == absolutePath.toParts() }
-                    } else {
-                        true
-                    }
+                    findAndClick("//div[@accessiblename='Refresh']")
+                    tree.collectSelectedPaths().any { it == absolutePath.toParts() }
                 }
             }
 
