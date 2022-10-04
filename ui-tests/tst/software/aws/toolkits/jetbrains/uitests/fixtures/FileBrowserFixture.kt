@@ -54,7 +54,7 @@ class FileBrowserFixture(
                     setFilePath(absolutePath)
 
                     // FIX_WHEN_MIN_IS_223: no longer needed
-                    if (findAll<ComponentFixture>(treeXpath).none()) {
+                    if (remoteRobot.ideMajorVersion() < 223) {
                         findAndClick("//div[@accessiblename='Refresh']")
                         tree.collectSelectedPaths().any { it == absolutePath.toParts() }
                     } else {
