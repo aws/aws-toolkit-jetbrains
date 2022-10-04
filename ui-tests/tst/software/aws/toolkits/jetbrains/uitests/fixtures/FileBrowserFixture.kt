@@ -51,10 +51,10 @@ class FileBrowserFixture(
             step("Refresh file explorer to make sure the file ${path.fileName} is loaded") {
                 waitForIgnoringError(duration = Duration.ofSeconds(30), interval = Duration.ofSeconds(10)) {
                     setFilePath(absolutePath)
-                    findAndClick("//div[@accessiblename='Refresh']")
 
                     // FIX_WHEN_MIN_IS_223: no longer needed
                     if (findAll<ComponentFixture>(byXpath("//div[@class='FileChooserPanelImpl']")).none()) {
+                        findAndClick("//div[@accessiblename='Refresh']")
                         tree.collectSelectedPaths().any { it == absolutePath.toParts() }
                     } else {
                         true
