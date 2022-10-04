@@ -26,12 +26,10 @@ class CodeWhispererLanguageManager {
         }
     }
 
-    fun getLanguage(psiFile: PsiFile): CodeWhispererProgrammingLanguage {
-        return psiFile.virtualFile?.let {
-            getLanguage(psiFile.virtualFile)
-        } ?: run {
-            CodeWhispererUnknownLanguage.INSTANCE
-        }
+    fun getLanguage(psiFile: PsiFile): CodeWhispererProgrammingLanguage = psiFile.virtualFile?.let {
+        getLanguage(psiFile.virtualFile)
+    } ?: run {
+        CodeWhispererUnknownLanguage.INSTANCE
     }
 
     companion object {
