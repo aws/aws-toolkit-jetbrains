@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.Git
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
+import org.jetbrains.intellij.utils.OpenedPackages
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -130,6 +131,12 @@ tasks.buildSearchableOptions {
     enabled = false
 }
 
+// https://github.com/JetBrains/gradle-intellij-plugin/blob/829786d5d196ab942d7e6eb3e472ac0af776d3fa/src/main/kotlin/org/jetbrains/intellij/tasks/RunIdeBase.kt#L315
+val openedPackages = OpenedPackages + listOf(
+    // very noisy in UI tests
+    "--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED",
+)
+
 tasks.withType<Test>().all {
     systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
@@ -138,8 +145,7 @@ tasks.withType<Test>().all {
     systemProperty("log4j.configuration", jetbrainsCoreTestResources.resolve("log4j.xml"))
     systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
 
-    // https://github.com/JetBrains/gradle-intellij-plugin/blob/829786d5d196ab942d7e6eb3e472ac0af776d3fa/src/main/kotlin/org/jetbrains/intellij/tasks/RunIdeBase.kt#L315
-    jvmArgs(org.jetbrains.intellij.utils.OpenedPackages)
+    jvmArgs(openedPackages)
 
     useJUnitPlatform()
 }
@@ -201,6 +207,8 @@ tasks.withType<RunIdeForUiTestTask>().all {
         enabled.set(true)
         suspend.set(false)
     }
+
+    jvmArgs(openedPackages)
 
     ciOnly {
         configure<JacocoTaskExtension> {

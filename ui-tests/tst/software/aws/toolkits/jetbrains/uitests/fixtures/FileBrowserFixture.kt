@@ -54,7 +54,7 @@ class FileBrowserFixture(
                     findAndClick("//div[@accessiblename='Refresh']")
 
                     // FIX_WHEN_MIN_IS_223: no longer needed
-                    if (findAll<ComponentFixture>(byXpath("//div[@class='FileChooserPanelImpl']")).firstOrNull() == null) {
+                    if (findAll<ComponentFixture>(byXpath("//div[@class='FileChooserPanelImpl']")).none()) {
                         tree.collectSelectedPaths().any { it == absolutePath.toParts() }
                     } else {
                         true
