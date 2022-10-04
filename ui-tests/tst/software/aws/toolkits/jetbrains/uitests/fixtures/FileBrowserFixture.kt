@@ -41,8 +41,9 @@ class FileBrowserFixture(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : DialogFixture(remoteRobot, remoteComponent) {
+    private val treeXpath = byXpath("//div[@class='Tree']")
     private val tree by lazy {
-        find<JTreeFixture>(byXpath("//div[@class='Tree']"), Duration.ofSeconds(10))
+        find<JTreeFixture>(treeXpath, Duration.ofSeconds(10))
     }
 
     fun selectFile(path: Path) {
@@ -53,7 +54,7 @@ class FileBrowserFixture(
                     setFilePath(absolutePath)
 
                     // FIX_WHEN_MIN_IS_223: no longer needed
-                    if (findAll<ComponentFixture>(byXpath("//div[@class='FileChooserPanelImpl']")).none()) {
+                    if (findAll<ComponentFixture>(treeXpath).none()) {
                         findAndClick("//div[@accessiblename='Refresh']")
                         tree.collectSelectedPaths().any { it == absolutePath.toParts() }
                     } else {
