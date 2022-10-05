@@ -5,11 +5,13 @@ package software.aws.toolkits.jetbrains.uitests.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.assertj.swing.timing.Pause
 import java.io.File
@@ -50,12 +52,20 @@ class FileBrowserFixture(
             step("Refresh file explorer to make sure the file ${path.fileName} is loaded") {
                 waitForIgnoringError(duration = Duration.ofSeconds(30), interval = Duration.ofSeconds(10)) {
                     setFilePath(absolutePath)
-                    findAndClick("//div[@accessiblename='Refresh']")
-                    tree.collectSelectedPaths().any { it == absolutePath.toParts() }
+
+                    if (findAll<ComponentFixture>(treeXpath).isNotEmpty()) {
+                        findAndClick("//div[@accessiblename='Refresh']")
+                        tree.collectSelectedPaths().any { it == absolutePath.toParts() }
+                        pressOk()
+                        true
+                    } else {
+                        keyboard {
+                            enter()
+                        }
+                        true
+                    }
                 }
             }
-
-            pressOk()
         }
     }
 
