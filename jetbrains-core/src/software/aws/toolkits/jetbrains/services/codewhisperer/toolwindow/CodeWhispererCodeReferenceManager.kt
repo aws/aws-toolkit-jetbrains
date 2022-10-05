@@ -66,17 +66,11 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         val (requestContext, _, recommendationContext) = states
         val (_, editor, _, caretPosition) = requestContext
         val (_, detail, reformattedDetail) = recommendationContext.details[selectedIndex]
-        val userInput = recommendationContext.userInputSinceInvocation
         val startOffset = caretPosition.offset
         val relativePath = getRelativePathToContentRoot(editor)
         reformattedDetail.references().forEachIndexed { i, reference ->
-            // start and end could intersect with the userInput, we do not want to show reference for the
-            // userInput part, so we truncate the range to exclude userInput here if there's an overlap.
-            if (reference.recommendationContentSpan().end() <= userInput.length) return@forEachIndexed
 
-            // Now there's at least some valid range, truncate start if applicable
-            val spanStartExcludeUserInput = maxOf(reference.recommendationContentSpan().start(), userInput.length)
-            val start = startOffset + spanStartExcludeUserInput
+            val start = startOffset + reference.recommendationContentSpan().start()
             val end = startOffset + reference.recommendationContentSpan().end()
             val startLine = editor.document.getLineNumber(start)
             val endLine = editor.document.getLineNumber(end)
@@ -91,9 +85,9 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
             // There is an unformatted recommendation(directly from response) and reformatted one. We want to get
             // the line number, start/end offset of the reformatted one because it's the one inserted to the editor.
             // However, the one that shows in the tool window record should show the original recommendation, as below.
-            val originalContentLines = detail.content().substring(
-                maxOf(originalSpan.start(), userInput.length), originalSpan.end()
-            ).split("\n")
+            val originalContentLines = detail.content()
+                .substring(originalSpan.start(), originalSpan.end())
+                .split("\n")
 
             codeReferenceComponents.contentPanel.apply {
                 add(
