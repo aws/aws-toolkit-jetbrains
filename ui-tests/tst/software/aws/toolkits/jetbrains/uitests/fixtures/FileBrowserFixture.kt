@@ -56,8 +56,6 @@ class FileBrowserFixture(
                     if (findAll<ComponentFixture>(treeXpath).isNotEmpty()) {
                         findAndClick("//div[@accessiblename='Refresh']")
                         tree.collectSelectedPaths().any { it == absolutePath.toParts() }
-                        pressOk()
-                        true
                     } else {
                         keyboard {
                             enter()
@@ -66,6 +64,8 @@ class FileBrowserFixture(
                     }
                 }
             }
+
+            pressOk()
         }
     }
 
