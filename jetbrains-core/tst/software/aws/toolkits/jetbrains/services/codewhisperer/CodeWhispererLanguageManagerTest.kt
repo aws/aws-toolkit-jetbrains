@@ -81,7 +81,7 @@ class CodeWhispererLanguageManagerTest {
     }
 
     @Test
-    fun `test getProgrammingLanguage(psiFile)`() {
+    fun `psiFile passed to getProgrammingLanguage(psiFile) returns null`() {
         // psiFile.virtualFile potentially will return null if virtualFile only exist in the memory instead of the disk
         val psiFileMock = mock<PsiFile> {
             on { virtualFile } doReturn null
