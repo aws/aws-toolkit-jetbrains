@@ -20,7 +20,7 @@ env:
 phases:
   install:
     commands:
-      - yum remove java-11-amazon-corretto java-11-amazon-corretto-headless
+      - yum remove -y java-11-amazon-corretto java-11-amazon-corretto-headless
       - alternatives --set java ${JAVA_HOME}/bin/java
       - alternatives --set javac ${JAVA_HOME}/bin/javac
       - startDesktop.sh
