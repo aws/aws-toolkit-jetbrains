@@ -17,6 +17,8 @@ env:
     SCREEN_DEPTH: 24
 
     JAVA_HOME: /usr/lib/jvm/java-17-amazon-corretto.x86_64
+    JDK_HOME: /usr/lib/jvm/java-17-amazon-corretto.x86_64
+    JRE_HOME: /usr/lib/jvm/java-17-amazon-corretto.x86_64
 phases:
   install:
     commands:
