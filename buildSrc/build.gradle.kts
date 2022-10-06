@@ -15,6 +15,8 @@ plugins {
 // Note: We can't use our standard source layout due to https://github.com/gradle/gradle/issues/14310
 
 dependencies {
+    implementation("com.guardsquare:proguard-gradle:7.2.1")
+
     compileOnly(libs.jacoco)
     implementation(libs.aws.codeGen)
     implementation(libs.bundles.jackson)

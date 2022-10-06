@@ -3,15 +3,24 @@
 
 import org.eclipse.jgit.api.Git
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
+import org.gradle.util.internal.JarUtil
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
+import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
+import proguard.ClassPath
+import proguard.Configuration
+import proguard.ConfigurationParser
+import proguard.ProGuard
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.isCi
+import java.io.FileOutputStream
 import java.io.IOException
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
 
 val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
 
