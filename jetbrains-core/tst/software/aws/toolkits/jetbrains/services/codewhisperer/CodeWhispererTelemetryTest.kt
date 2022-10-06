@@ -707,9 +707,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         mockClient.stub {
             on {
                 mockClient.listRecommendations(any<ListRecommendationsRequest>())
-            } doReturnConsecutively(
-                listOf(pythonResponseWithToken, emptyListResponse)
-            )
+            } doReturnConsecutively(listOf(pythonResponseWithToken, emptyListResponse))
         }
 
         withCodeWhispererServiceInvokedAndWait { }
