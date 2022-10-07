@@ -12,7 +12,8 @@ enum class IdeFlavor { IC, IU, RD }
 object IdeVersions {
     private val commonPlugins = arrayOf(
         "org.jetbrains.plugins.terminal",
-        "org.jetbrains.plugins.yaml"
+        "org.jetbrains.plugins.yaml",
+        "AWSCloudFormation",
     )
 
     private val ideProfiles = listOf(
