@@ -23,6 +23,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.awt.RelativePoint
+import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.amazon.awssdk.services.codewhisperer.model.Reference
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getPopupPositionAboveText
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getRelativePathToContentRoot
@@ -69,25 +70,14 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         val startOffset = caretPosition.offset
         val relativePath = getRelativePathToContentRoot(editor)
         reformattedDetail.references().forEachIndexed { i, reference ->
-
             val start = startOffset + reference.recommendationContentSpan().start()
             val end = startOffset + reference.recommendationContentSpan().end()
-            val startLine = editor.document.getLineNumber(start)
-            val endLine = editor.document.getLineNumber(end)
-            val lineNums = if (startLine == endLine) {
-                (startLine + 1).toString()
-            } else {
-                "${startLine + 1} to ${endLine + 1}"
-            }
-
-            val originalSpan = detail.references()[i].recommendationContentSpan()
+            val lineNums = getReferenceLineNums(editor, start, end)
 
             // There is an unformatted recommendation(directly from response) and reformatted one. We want to get
             // the line number, start/end offset of the reformatted one because it's the one inserted to the editor.
             // However, the one that shows in the tool window record should show the original recommendation, as below.
-            val originalContentLines = detail.content()
-                .substring(originalSpan.start(), originalSpan.end())
-                .split("\n")
+            val originalContentLines = getOriginalContentLines(detail, i)
 
             codeReferenceComponents.contentPanel.apply {
                 add(
@@ -107,6 +97,24 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
 
             insertHighLightContext(editor, start, end, reference)
         }
+    }
+
+    fun getReferenceLineNums(editor: Editor, start: Int, end: Int): String {
+        val startLine = editor.document.getLineNumber(start)
+        val endLine = editor.document.getLineNumber(end)
+        val lineNums = if (startLine == endLine) {
+            (startLine + 1).toString()
+        } else {
+            "${startLine + 1} to ${endLine + 1}"
+        }
+        return lineNums
+    }
+
+    fun getOriginalContentLines(detail: Recommendation, i: Int): List<String> {
+        val originalSpan = detail.references()[i].recommendationContentSpan()
+        return detail.content()
+            .substring(originalSpan.start(), originalSpan.end())
+            .split("\n")
     }
 
     private fun insertHighLightContext(editor: Editor, start: Int, end: Int, reference: Reference) {
