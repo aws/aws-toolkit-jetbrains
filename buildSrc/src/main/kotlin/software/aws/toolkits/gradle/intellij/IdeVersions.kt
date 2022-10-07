@@ -13,7 +13,6 @@ object IdeVersions {
     private val commonPlugins = arrayOf(
         "org.jetbrains.plugins.terminal",
         "org.jetbrains.plugins.yaml",
-        "AWSCloudFormation",
     )
 
     private val ideProfiles = listOf(
@@ -26,6 +25,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:213.5744.122",
                     "PythonCore:213.5744.248",
                     "Docker:213.5744.202"
                 )
@@ -63,6 +63,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:221.5080.126",
                     "PythonCore:221.5080.216",
                     "Docker:221.5080.126"
                 )
@@ -100,6 +101,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:222.3345.108",
                     "PythonCore:222.3345.118",
                     "Docker:222.3345.118"
                 )
