@@ -40,6 +40,7 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
+                    "AWSCloudFormation:213.5744.122",
                     "Pythonid:213.5744.248",
                     "org.jetbrains.plugins.go:213.5744.223"
                 )
@@ -78,6 +79,7 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
+                    "AWSCloudFormation:221.5080.126",
                     "Pythonid:221.5080.212",
                     "org.jetbrains.plugins.go:221.5080.210"
                 )
@@ -116,6 +118,7 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
+                    "AWSCloudFormation:222.3345.108",
                     "Pythonid:222.3345.118",
                     "org.jetbrains.plugins.go:222.3345.118",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
