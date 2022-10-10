@@ -48,6 +48,7 @@ object IdeVersions {
             rider = RiderProfile(
                 sdkVersion = "2021.3",
                 plugins = commonPlugins + listOf(
+                    "AWSCloudFormation:213.5744.122",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
@@ -87,6 +88,7 @@ object IdeVersions {
             rider = RiderProfile(
                 sdkVersion = "2022.1",
                 plugins = commonPlugins + listOf(
+                    "AWSCloudFormation:221.5080.126",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
@@ -128,6 +130,7 @@ object IdeVersions {
             rider = RiderProfile(
                 sdkVersion = "2022.2-EAP8-SNAPSHOT",
                 plugins = commonPlugins + listOf(
+                    "AWSCloudFormation:222.3345.108",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
