@@ -54,7 +54,7 @@ class CodeWhispererReferenceManagerTest {
     }
 
     @Test
-    fun `test getReferenceLineNums return expected line numbers `() {
+    fun `test getReferenceLineNums return expected line numbers`() {
         val referenceManager = CodeWhispererCodeReferenceManager(project)
         assertThat(referenceManager.getReferenceLineNums(fixture.editor, 0, 1)).isEqualTo("1")
         assertThat(referenceManager.getReferenceLineNums(fixture.editor, 0, 10)).isEqualTo("1 to 2")
