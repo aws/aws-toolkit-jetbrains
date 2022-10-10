@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
 import software.aws.toolkits.resources.message
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -56,6 +57,15 @@ class NodeJsLambdaBuilder : LambdaBuilder() {
                         Files.createFile(tsConfig)
                     }
 
+
+                    fun checkAddSlashes (path: String): String {
+                        var newPath = path;
+                        if(File.separator.equals("\\")) {
+                            newPath = newPath.replace("\\", "\\\\");
+                        }
+                        return newPath;
+                    }
+
                     // TODO: if there's an existing tsconfig file, should we use it as a base?
                     tsConfig.writeText(
                         // language=JSON
@@ -63,16 +73,16 @@ class NodeJsLambdaBuilder : LambdaBuilder() {
                         {
                             "compilerOptions": {
                                 "${TypeScriptConfig.TYPE_ROOTS}": [
-                                  "${sourceRoot.resolve(TypeScriptConfig.DEFAULT_TYPES_DIRECTORY)}"
+                                  "${checkAddSlashes(sourceRoot.resolve(TypeScriptConfig.DEFAULT_TYPES_DIRECTORY).toString())}"
                                 ],
                                 "${TypeScriptConfig.TYPES}": [
                                   "node"
                                 ],
                                 "${TypeScriptConfig.TARGET_OPTION}": "${TypeScriptConfig.LanguageTarget.ES6.libName}",
                                 "${TypeScriptConfig.MODULE}": "${TypeScriptConfig.MODULE_COMMON_JS}",
-                                "${TypeScriptConfig.OUT_DIR}": "$tsOutput",
+                                "${TypeScriptConfig.OUT_DIR}": "${checkAddSlashes(tsOutput)}",
                                 "${TypeScriptConfig.ROOT_DIR}": ".",
-                                "sourceRoot": "$sourceRoot",
+                                "sourceRoot": "${checkAddSlashes(sourceRoot.toString())}",
                                 "${TypeScriptConfig.SOURCE_MAP}": true
                             }
                         }
