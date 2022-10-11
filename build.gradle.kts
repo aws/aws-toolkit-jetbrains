@@ -55,6 +55,7 @@ if (idea.project != null) { // may be null during script compilation
                 taskTriggers {
                     afterSync(":sdk-codegen:generateSdks")
                     afterSync(":jetbrains-core:generateTelemetry")
+                    afterSync(":jetbrains-rider:resharperDllsDir")
                 }
             }
         }

@@ -3,7 +3,6 @@
 
 import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenTask
-import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
@@ -189,7 +188,7 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
 val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     group = backendGroup
     description = "Builds the full ReSharper backend plugin solution"
-    dependsOn(generateModels, prepareBuildProps, prepareNuGetConfig)
+    dependsOn(generateModels, prepareBuildProps)
 
     inputs.dir(resharperPluginPath)
     outputs.dir(resharperBuildPath)
@@ -259,14 +258,21 @@ tasks.clean {
 // `runIde` depends on `prepareSandbox` task and then executes IJ inside the sandbox dir
 // `prepareSandbox` depends on the standard Java `jar` and then copies everything into the sandbox dir
 
-tasks.withType<PrepareSandboxTask>().all {
-    dependsOn(resharperDllsDir)
+//tasks.withType<PrepareSandboxTask>().all {
+//    dependsOn(resharperDllsDir)
+//
+//    from(resharperDllsDir) {
+//        into("aws-toolkit-jetbrains/dotnet")
+//    }
+//}
 
+tasks.jar {
+    dependsOn(resharperDllsDir)
+    archiveBaseName.set("aws-toolkit-jetbrains/dotnet")
     from(resharperDllsDir) {
-        into("aws-toolkit-jetbrains/dotnet")
+        into("META-INF")
     }
 }
-
 tasks.compileKotlin {
     dependsOn(generateModels)
 }
