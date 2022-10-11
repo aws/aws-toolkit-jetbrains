@@ -68,6 +68,7 @@ with what features/services are supported.
         See PluginManagerCore#mergeOptionalConfigs -->
     <depends>com.intellij.modules.lang</depends>
     <depends>org.jetbrains.plugins.yaml</depends>
+    <depends>AWSCloudFormation</depends>
 
     <depends optional="true">org.jetbrains.idea.maven</depends>
     <depends optional="true">org.jetbrains.plugins.gradle</depends>
