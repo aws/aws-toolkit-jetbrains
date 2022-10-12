@@ -24,6 +24,7 @@ import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doReturnConsecutively
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
@@ -42,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.listOfEmptyRecommendationResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.listOfMixedEmptyAndNonEmptyRecommendationResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponseWithToken
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testCodeWhispererException
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testRequestId
@@ -51,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager.Companion.ACTION_PAUSE_CODEWHISPERER
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager.Companion.ACTION_RESUME_CODEWHISPERER
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
@@ -465,7 +468,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreManagerMock, disposableRule.disposable)
         val project = projectRule.project
         val fixture = projectRule.fixture
-        val tracker = CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python)
+        val tracker = CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE)
         assertThat(tracker.isTrackerActive()).isFalse
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
@@ -520,7 +523,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             }
         }
 
-        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
 
         val acceptedTokensSize = pythonResponse.recommendations()[0].content().length - deletedTokenByUser
         val totalTokensSize = pythonTestLeftContext.length + pythonResponse.recommendations()[0].content().length - deletedTokenByUser
@@ -563,7 +566,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                     fixture.editor.document.deleteString(currentOffset - 1, currentOffset)
                 }
                 // use dispose() to force tracker to emit telemetry
-                CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+                CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
             }
         }
 
@@ -612,7 +615,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
 
         // use dispose() to force tracker to emit telemetry
-        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -659,13 +662,12 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 popupManagerSpy.popupComponents.acceptButton.doClick()
             }
         }
-        CodeWhispererCodeCoverageTracker.getInstance(CodewhispererLanguage.Python).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
 
         val acceptedTokensSize = "x, y):\n    return x + y".length
         val totalTokensSize = "$pythonTestLeftContext(".length + acceptedTokensSize
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
-        metricCaptor.allValues.forEach { println(it) }
         assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
             codePercentage,
@@ -687,7 +689,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
         invokeCodeWhispererService()
 
-        verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any(), any(), any(), any())
+        verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any())
         runInEdtAndWait {
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -696,6 +698,41 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 userDecision,
                 1,
                 "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString()
+            )
+        }
+    }
+
+    @Test
+    fun `test getting some recommendations and a final empty list of recommendations at session end should not sent empty userDecision events`() {
+        mockClient.stub {
+            on {
+                mockClient.listRecommendations(any<ListRecommendationsRequest>())
+            } doReturnConsecutively(listOf(pythonResponseWithToken, emptyListResponse))
+        }
+
+        withCodeWhispererServiceInvokedAndWait { }
+
+        runInEdtAndWait {
+            val metricCaptor = argumentCaptor<MetricEvent>()
+            // 2 serviceInvocation + 5 userDecision
+            verify(batcher, atLeast(pythonResponseWithToken.recommendations().size + 2)).enqueue(metricCaptor.capture())
+            assertEventsContainsFieldsAndCount(
+                metricCaptor.allValues,
+                userDecision,
+                0,
+                "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString()
+            )
+            assertEventsContainsFieldsAndCount(
+                metricCaptor.allValues,
+                userDecision,
+                1,
+                "codewhispererSuggestionState" to CodewhispererSuggestionState.Accept.toString()
+            )
+            assertEventsContainsFieldsAndCount(
+                metricCaptor.allValues,
+                userDecision,
+                4,
+                "codewhispererSuggestionState" to CodewhispererSuggestionState.Unseen.toString()
             )
         }
     }
@@ -752,11 +789,11 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
         val numOfEmptyRecommendations = response.recommendations().filter { it.content().isEmpty() }.size
         if (numOfEmptyRecommendations == response.recommendations().size) {
-            verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any(), any(), any(), any())
+            verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any())
         } else {
             val popupCaptor = argumentCaptor<JBPopup>()
             verify(popupManagerSpy, timeout(5000))
-                .showPopup(any(), any(), any(), any(), any(), popupCaptor.capture(), any(), any())
+                .showPopup(any(), any(), popupCaptor.capture(), any(), any())
             runInEdtAndWait {
                 popupManagerSpy.closePopup(popupCaptor.lastValue)
             }
