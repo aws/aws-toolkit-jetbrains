@@ -17,6 +17,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileFormatNotSupported
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
@@ -60,7 +61,7 @@ internal sealed class CodeScanSessionConfig(
         // Copy all the included source files to the source zip
         val srcZip = zipFiles(includedSourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
-            selectedFile.programmingLanguage().toTelemetryType(),
+            selectedFile.programmingLanguage(),
             totalLines,
             includedSourceFiles.size,
             Instant.now().toEpochMilli() - start,
@@ -189,7 +190,7 @@ data class Payload(
 )
 
 data class PayloadContext(
-    val language: CodewhispererLanguage,
+    val language: CodeWhispererProgrammingLanguage,
     val totalLines: Long,
     val totalFiles: Int,
     val totalTimeInMilliseconds: Long,

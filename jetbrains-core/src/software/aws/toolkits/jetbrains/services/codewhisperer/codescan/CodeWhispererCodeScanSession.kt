@@ -31,13 +31,13 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanServiceInvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_POLLING_INTERVAL_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
-import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -83,7 +83,7 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
                     "Total number of lines scanned: ${payloadContext.totalLines} \n" +
                     "Total number of files included in payload: ${payloadContext.totalFiles} \n" +
                     "Total time taken for creating payload: ${payloadContext.totalTimeInMilliseconds * 1.0 / TOTAL_MILLIS_IN_SECOND} seconds\n" +
-                    "Payload context language: ${payloadContext.language}"
+                    "Payload context language: ${payloadContext.language.languageId}"
             }
             codeScanResponseContext = codeScanResponseContext.copy(payloadContext = payloadContext)
 
@@ -113,9 +113,9 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
             )
 
             // 4. Call createCodeScan to start a code scan
-            LOG.debug { "Requesting security scan for the uploaded artifacts, language: ${payloadContext.language}" }
+            LOG.debug { "Requesting security scan for the uploaded artifacts, language: ${payloadContext.language.languageId}" }
             val serviceInvocationStartTime = now()
-            val createCodeScanResponse = createCodeScan(payloadContext.language.toString())
+            val createCodeScanResponse = createCodeScan(payloadContext.language.languageId)
             LOG.debug {
                 "Successfully created security scan with " +
                     "status: ${createCodeScanResponse.status()} " +
@@ -346,7 +346,7 @@ internal data class CodeScanSessionContext(
     val sessionConfig: CodeScanSessionConfig
 )
 
-internal fun defaultPayloadContext() = PayloadContext(CodewhispererLanguage.Unknown, 0, 0, 0, 0, 0)
+internal fun defaultPayloadContext() = PayloadContext(CodeWhispererUnknownLanguage.INSTANCE, 0, 0, 0, 0, 0)
 
 internal fun defaultServiceInvocationContext() = CodeScanServiceInvocationContext(0, 0)
 
