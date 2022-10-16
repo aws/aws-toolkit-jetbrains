@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.Payload
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PythonCodeScanSessionConfig
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -41,7 +42,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase() {
     internal lateinit var psifile: PsiFile
     internal lateinit var file: File
     private lateinit var sessionConfigSpy: PythonCodeScanSessionConfig
-    private val payloadContext = PayloadContext(CodewhispererLanguage.Python, 1, 1, 10, 600, 200)
+    private val payloadContext = PayloadContext(CodeWhispererPython.INSTANCE, 1, 1, 10, 600, 200)
     private lateinit var codeScanSessionContext: CodeScanSessionContext
     private lateinit var codeScanSessionSpy: CodeWhispererCodeScanSession
 

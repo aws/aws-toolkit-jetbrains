@@ -138,7 +138,7 @@ class CodeWhispererTelemetryService {
             codewhispererCodeScanSrcZipFileBytes = payloadContext.srcZipFileSize.toInt(),
             codewhispererCodeScanBuildZipFileBytes = payloadContext.buildZipFileSize?.toInt(),
             codewhispererCodeScanTotalIssues = totalIssues,
-            codewhispererLanguage = payloadContext.language,
+            codewhispererLanguage = payloadContext.language.toTelemetryType(),
             duration = codeScanEvent.duration,
             contextTruncationDuration = payloadContext.totalTimeInMilliseconds.toInt(),
             artifactsUploadDuration = serviceInvocationContext.artifactsUploadDuration.toInt(),

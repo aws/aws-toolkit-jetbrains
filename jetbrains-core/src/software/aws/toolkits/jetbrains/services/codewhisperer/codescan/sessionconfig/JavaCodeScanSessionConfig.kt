@@ -18,6 +18,7 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindBuildArtifacts
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.resources.message
@@ -80,7 +81,7 @@ internal class JavaCodeScanSessionConfig(
         val buildZip = zipFiles(buildFiles)
 
         val payloadContext = PayloadContext(
-            CodewhispererLanguage.Java,
+            CodeWhispererJava.INSTANCE,
             totalLines,
             sourceFiles.size,
             Instant.now().toEpochMilli() - start,
