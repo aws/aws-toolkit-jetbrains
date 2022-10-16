@@ -22,7 +22,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.IOException
 import java.lang.IndexOutOfBoundsException
 import java.nio.file.Files
