@@ -33,6 +33,7 @@ import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.region.Endpoint
 import software.aws.toolkits.core.region.Service
 import software.aws.toolkits.core.region.anAwsRegion
@@ -97,13 +98,13 @@ class AwsClientManagerTest {
         sut.getClient<DummyServiceClient>(credentialProvider, anAwsRegion())
 
         assertThat(sut.cachedClients().keys).anySatisfy {
-            assertThat(it.credentialProviderId).isEqualTo("profile:admin")
+            assertThat(it.providerId).isEqualTo("profile:admin")
         }
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(credentialsIdentifier)
 
         assertThat(sut.cachedClients().keys).noneSatisfy {
-            assertThat(it.credentialProviderId).isEqualTo("profile:admin")
+            assertThat(it.providerId).isEqualTo("profile:admin")
         }
     }
 
@@ -199,7 +200,7 @@ class AwsClientManagerTest {
         wireMockRule.stubFor(any(anyUrl()).willReturn(aResponse().withStatus(200)))
 
         val aConnection = ConnectionSettings(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
-        val customizer = AwsClientCustomizer { credentialProvider, region, builder ->
+        val customizer = ToolkitClientCustomizer { credentialProvider, _, region, builder, _ ->
             assertThat(credentialProvider).isEqualTo(aConnection.credentials)
             assertThat(region).isEqualTo(aConnection.region.id)
 
@@ -219,7 +220,7 @@ class AwsClientManagerTest {
         wireMockRule.stubFor(any(anyUrl()).willReturn(aResponse().withStatus(200)))
 
         val aConnection = ConnectionSettings(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
-        val customizer = AwsClientCustomizer { credentialProvider, region, builder ->
+        val customizer = ToolkitClientCustomizer { credentialProvider, _, region, builder, _ ->
             assertThat(credentialProvider).isEqualTo(aConnection.credentials)
             assertThat(region).isEqualTo(aConnection.region.id)
 
@@ -239,7 +240,7 @@ class AwsClientManagerTest {
         wireMockRule.stubFor(any(anyUrl()).willReturn(aResponse().withStatus(200)))
 
         val aConnection = ConnectionSettings(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
-        val customizer = AwsClientCustomizer { _, _, builder ->
+        val customizer = ToolkitClientCustomizer { _, _, _, builder, _ ->
             builder.endpointOverride(URI.create(wireMockRule.baseUrl()))
         }
         ExtensionTestUtil.maskExtensions(CUSTOMIZER_EP, listOf(customizer), disposableRule.disposable)
@@ -256,7 +257,7 @@ class AwsClientManagerTest {
         wireMockRule.stubFor(any(anyUrl()).willReturn(aResponse().withStatus(200)))
 
         val aConnection = ConnectionSettings(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion())
-        val customizer = AwsClientCustomizer { _, _, builder ->
+        val customizer = ToolkitClientCustomizer { _, _, _, builder, _ ->
             builder.endpointOverride(URI.create(wireMockRule.baseUrl()))
         }
         ExtensionTestUtil.maskExtensions(CUSTOMIZER_EP, listOf(customizer), disposableRule.disposable)

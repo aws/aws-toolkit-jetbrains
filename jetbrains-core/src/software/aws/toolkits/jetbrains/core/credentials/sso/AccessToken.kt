@@ -19,3 +19,12 @@ data class AccessToken(
     val refreshToken: String? = null,
     val expiresAt: Instant
 )
+
+// diverging from SDK/CLI impl here since they do: sha1sum(sessionName ?: startUrl)
+// which isn't good enough for us
+// only used in scoped case
+data class AccessTokenCacheKey(
+    val connectionId: String,
+    val startUrl: String,
+    val scopes: List<String>
+)
