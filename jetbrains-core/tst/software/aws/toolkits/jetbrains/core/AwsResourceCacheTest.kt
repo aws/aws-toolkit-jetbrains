@@ -148,8 +148,7 @@ class AwsResourceCacheTest {
     @Test
     fun cacheEntriesAreSeparatedByRegionAndCredentials() {
         whenever(mockResource.fetch(any())).thenAnswer {
-            val region = it.getArgument<AwsRegion>(0)
-            val cred = it.getArgument<ToolkitCredentialsProvider>(1)
+            val (cred, region) = it.getArgument<ConnectionSettings>(0)
             "${region.id}-${cred.id}"
         }
 
@@ -196,8 +195,7 @@ class AwsResourceCacheTest {
     fun cacheCanBeClearedByKeyAndConnection() {
         val incrementer = AtomicInteger(0)
         whenever(mockResource.fetch(any())).thenAnswer {
-            val region = it.getArgument<AwsRegion>(0)
-            val cred = it.getArgument<ToolkitCredentialsProvider>(1)
+            val (cred, region) = it.getArgument<ConnectionSettings>(0)
             "${region.id}-${cred.id}-${incrementer.getAndIncrement()}"
         }
 

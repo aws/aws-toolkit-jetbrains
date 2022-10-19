@@ -166,7 +166,7 @@ class SsoAccessTokenProvider(
     }
 
     private fun loadClientRegistration(): ClientRegistration? = if (scopes.isEmpty()) {
-        cache.loadClientRegistration(ssoUrl)?.let {
+        cache.loadClientRegistration(ssoRegion)?.let {
             return it
         }
     } else {
@@ -177,7 +177,7 @@ class SsoAccessTokenProvider(
 
     private fun saveClientRegistration(registration: ClientRegistration) {
         if (scopes.isEmpty()) {
-            cache.saveClientRegistration(ssoUrl, registration)
+            cache.saveClientRegistration(ssoRegion, registration)
         } else {
             cache.saveClientRegistration(clientRegistrationCacheKey, registration)
         }
@@ -185,7 +185,7 @@ class SsoAccessTokenProvider(
 
     private fun invalidateClientRegistration() {
         if (scopes.isEmpty()) {
-            cache.invalidateClientRegistration(ssoUrl)
+            cache.invalidateClientRegistration(ssoRegion)
         } else {
             cache.invalidateClientRegistration(clientRegistrationCacheKey)
         }
