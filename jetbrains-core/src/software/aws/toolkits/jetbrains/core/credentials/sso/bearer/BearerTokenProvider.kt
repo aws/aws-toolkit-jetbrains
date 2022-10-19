@@ -28,9 +28,7 @@ import java.time.Instant
 import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 
-internal interface BearerTokenLogoutSupport {
-    fun invalidate()
-}
+internal interface BearerTokenLogoutSupport
 
 interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable {
     val providerId: String
@@ -53,6 +51,10 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable {
     }
 
     open fun supportsLogout() = this is BearerTokenLogoutSupport
+
+    open fun invalidate() {
+        throw UnsupportedOperationException("Provider is not interactive and cannot be invalidated")
+    }
 
     companion object {
         private fun tokenExpired(accessToken: AccessToken) = Instant.now().isAfter(accessToken.expiresAt)
