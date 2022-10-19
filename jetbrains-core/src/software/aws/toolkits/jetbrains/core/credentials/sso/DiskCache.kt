@@ -141,7 +141,7 @@ class DiskCache(
     }
 
     private fun accessTokenCache(cacheKey: AccessTokenCacheKey): Path {
-        val fileName = "${sha1(cacheNameMapper.writeValueAsString(cacheKey))}.json"
+        val fileName = "${sha1(cacheNameMapper.writeValueAsString(cacheKey.copy(scopes = cacheKey.scopes.sorted())))}.json"
         return cacheDir.resolve(fileName)
     }
 

@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvid
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoLoginCallback
 import java.time.Duration
 import java.time.Instant
-import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 
 internal interface BearerTokenLogoutSupport
@@ -59,7 +58,7 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable {
     companion object {
         private fun tokenExpired(accessToken: AccessToken) = Instant.now().isAfter(accessToken.expiresAt)
 
-        private fun state(accessToken: AccessToken?) = when {
+        internal fun state(accessToken: AccessToken?) = when {
             accessToken == null -> BearerTokenAuthState.NOT_AUTHENTICATED
             tokenExpired(accessToken) -> {
                 if (accessToken.refreshToken != null) {
@@ -109,7 +108,7 @@ class InteractiveBearerTokenProvider(
             }
         }
 
-        return RefreshResult.builder(BearerToken(token))
+        return RefreshResult.builder(token)
             .staleTime(token.expiresAt.minus(DEFAULT_STALE_DURATION))
             .prefetchTime(token.expiresAt.minus(DEFAULT_PREFETCH_DURATION))
             .build()
@@ -138,12 +137,6 @@ class InteractiveBearerTokenProvider(
             BearerTokenProviderListener.notifyCredUpdate(providerId)
         }
     }
-}
-
-class BearerToken(private val delegate: AccessToken) : SdkToken {
-    override fun token(): String = delegate.accessToken
-
-    override fun expirationTime() = Optional.of(delegate.expiresAt)
 }
 
 public enum class BearerTokenAuthState {
