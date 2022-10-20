@@ -20,4 +20,10 @@
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript"/>
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx"/>
     </extensions>
+    <extensions defaultExtensionNs="JavaScript">
+        <nodeRunConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionRunConfigurationExtension"/>
+    </extensions>
+    <extensions defaultExtensionNs="aws.toolkit">
+        <experiment implementation="software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionExperiment"/>
+    </extensions>
 </idea-plugin>
