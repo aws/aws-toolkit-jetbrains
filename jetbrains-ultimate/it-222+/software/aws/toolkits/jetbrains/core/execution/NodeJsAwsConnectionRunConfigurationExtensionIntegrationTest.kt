@@ -62,7 +62,7 @@ class NodeJsAwsConnectionRunConfigurationExtensionIntegrationTest {
         val psiFile = fixture.addFileToProject("test/app.js", jsFunction)
 
         val runManager = RunManager.getInstance(projectRule.project)
-        val runConfigurationType = runManager.createConfiguration("test", NodeJsRunConfigurationType::class.java)
+        val runConfigurationType = runManager.createConfiguration("", NodeJsRunConfigurationType::class.java)
         val runConfiguration = runConfigurationType.configuration as NodeJsRunConfiguration
 
         val mockRegion = regionProviderRule.createAwsRegion()
@@ -95,7 +95,7 @@ class NodeJsAwsConnectionRunConfigurationExtensionIntegrationTest {
         while (true) {
             val timer = delayQueue.peek() ?: return
             val delay = timer.getDelay(TimeUnit.MILLISECONDS)
-            val getTimer = ReflectionUtil.getDeclaredMethod(timer.javaClass, "getTimer")!!
+            val getTimer = ReflectionUtil.getDeclaredMethod(timer.javaClass, "getTimer") ?: throw NullPointerException()
             val swingTimer = getTimer.invoke(timer) as Timer
             println("Not disposed javax.swing.Timer: (listeners: ${listOf(*swingTimer.actionListeners)}) (delayed for ${delay}ms)")
             swingTimer.stop()

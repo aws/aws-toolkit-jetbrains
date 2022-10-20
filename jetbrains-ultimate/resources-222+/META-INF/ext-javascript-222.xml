@@ -1,0 +1,11 @@
+<!-- Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<idea-plugin>
+    <extensions defaultExtensionNs="JavaScript">
+        <nodeRunConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionRunConfigurationExtension"/>
+    </extensions>
+    <extensions defaultExtensionNs="aws.toolkit">
+        <experiment implementation="software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionExperiment"/>
+    </extensions>
+</idea-plugin>
