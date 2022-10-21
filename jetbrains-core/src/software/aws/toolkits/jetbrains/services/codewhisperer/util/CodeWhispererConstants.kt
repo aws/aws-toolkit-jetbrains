@@ -49,6 +49,6 @@ object CodeWhispererConstants {
     object Config {
         const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/"
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
-        val REGION: Region = Region.US_EAST_1
+        val REGION = Region.US_EAST_1
     }
 }
