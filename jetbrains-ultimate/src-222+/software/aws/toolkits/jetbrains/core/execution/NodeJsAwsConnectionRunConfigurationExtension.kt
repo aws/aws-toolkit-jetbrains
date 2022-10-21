@@ -10,9 +10,11 @@ import com.intellij.javascript.nodejs.execution.runConfiguration.AbstractNodeRun
 import com.intellij.javascript.nodejs.execution.runConfiguration.NodeRunConfigurationLaunchSession
 import com.intellij.openapi.options.SettingsEditor
 import org.jdom.Element
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.resources.message
+import java.util.concurrent.TimeUnit
 
 class NodeJsAwsConnectionRunConfigurationExtension : AbstractNodeRunConfigurationExtension() {
     private val delegate = AwsConnectionRunConfigurationExtension<AbstractNodeTargetRunProfile>()
@@ -32,7 +34,15 @@ class NodeJsAwsConnectionRunConfigurationExtension : AbstractNodeRunConfiguratio
     private inner class SessionThing(private val configuration: AbstractNodeTargetRunProfile) : NodeRunConfigurationLaunchSession() {
         override fun addNodeOptionsTo(targetRun: NodeTargetRun) {
             if (NodeJsAwsConnectionExperiment.isEnabled()) {
-                delegate.addToTargetCommandLineBuilder(configuration, targetRun.commandLineBuilder)
+                delegate.addToTargetCommandLineBuilder(
+                    configuration,
+                    targetRun.commandLineBuilder,
+                    runtimeString = {
+                        tryOrNull {
+                            configuration.interpreter?.provideCachedVersionOrFetch()?.blockingGet(500, TimeUnit.MILLISECONDS)?.let { "Node $it" }
+                        }
+                    }
+                )
             }
         }
     }
