@@ -233,9 +233,11 @@ fun readProject(
             "template.yaml" -> {
                 acc.first to virtualFile
             }
+
             sourceFileName -> {
                 virtualFile to acc.second
             }
+
             else -> {
                 acc
             }
