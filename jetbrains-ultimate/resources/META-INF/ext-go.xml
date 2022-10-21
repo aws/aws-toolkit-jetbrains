@@ -19,4 +19,7 @@
     <extensions defaultExtensionNs="com.goide">
         <runConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.GoAwsConnectionRunConfigurationExtension"/>
     </extensions>
+    <extensions defaultExtensionNs="aws.toolkit">
+        <experiment implementation="software.aws.toolkits.jetbrains.core.execution.GoAwsConnectionExperiment"/>
+    </extensions>
 </idea-plugin>

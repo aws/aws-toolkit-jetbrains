@@ -12,14 +12,16 @@ import com.intellij.execution.target.TargetedCommandLineBuilder
 import com.intellij.openapi.options.SettingsEditor
 import org.jdom.Element
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
+import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.resources.message
 
 class GoAwsConnectionRunConfigurationExtension : GoRunConfigurationExtension() {
     private val delegate = AwsConnectionRunConfigurationExtension<GoRunConfigurationBase<*>>()
 
-    override fun isApplicableFor(configuration: GoRunConfigurationBase<*>) = true
+    override fun isApplicableFor(configuration: GoRunConfigurationBase<*>) = GoAwsConnectionExperiment.isEnabled()
 
-    override fun isEnabledFor(configuration: GoRunConfigurationBase<*>, settings: RunnerSettings?) = true
+    override fun isEnabledFor(configuration: GoRunConfigurationBase<*>, settings: RunnerSettings?) = GoAwsConnectionExperiment.isEnabled()
 
     override fun <P : GoRunConfigurationBase<*>> createEditor(configuration: P): SettingsEditor<P> = connectionSettingsEditor(configuration)
 
@@ -37,10 +39,19 @@ class GoAwsConnectionRunConfigurationExtension : GoRunConfigurationExtension() {
         state: GoRunningState<out GoRunConfigurationBase<*>>,
         commandLineType: GoRunningState.CommandLineType
     ) {
-        delegate.addToTargetCommandLineBuilder(configuration, cmdLine, runtimeString = { determineGoVersion(configuration) })
+        if (GoAwsConnectionExperiment.isEnabled()) {
+            delegate.addToTargetCommandLineBuilder(configuration, cmdLine, runtimeString = { determineGoVersion(configuration) })
+        }
     }
 
     private fun determineGoVersion(configuration: GoRunConfigurationBase<*>): String? = tryOrNull {
         GoSdkService.getInstance(configuration.getProject()).getSdk(configuration.getDefaultModule()).majorVersion.toString()
     }?.let { "Go $it" }
 }
+
+object GoAwsConnectionExperiment : ToolkitExperiment(
+    "goRunConfigurationExtension",
+    { message("run_configuration_extension.feature.go.title") },
+    { message("run_configuration_extension.feature.go.description") },
+    default = true
+)
