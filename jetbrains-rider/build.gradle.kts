@@ -16,6 +16,7 @@ buildscript {
     println("Using rd-gen: $rdversion")
 
     repositories {
+
         maven("https://www.myget.org/F/rd-snapshots/maven/")
         mavenCentral()
     }
@@ -137,7 +138,7 @@ val cleanGenerateModels = tasks.register<Delete>("cleanGenerateModels") {
 
 // Backend
 val backendGroup = "backend"
-
+val codeArtifactNugetUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_NUGET_URL")
 val prepareBuildProps = tasks.register("prepareBuildProps") {
     val riderSdkVersionPropsPath = File(resharperPluginPath, "RiderSdkPackageVersion.props")
     group = backendGroup
@@ -177,6 +178,17 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
         val configText = """<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
+ 
+  ${
+        if (codeArtifactNugetUrl.isPresent) {
+"""
+        <clear />
+        <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get() + "/v3/index.json"}" />
+""".trimIndent()
+        } else {
+            ""
+        }
+        }
     <add key="resharper-sdk" value="$nugetPath" />
   </packageSources>
 </configuration>
