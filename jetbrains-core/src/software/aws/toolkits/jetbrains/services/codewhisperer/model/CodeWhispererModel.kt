@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.popup.JBPopup
 import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsResponse
 import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
@@ -20,11 +21,8 @@ data class CaretContext(val leftFileContext: String, val rightFileContext: Strin
 data class FileContextInfo(
     val caretContext: CaretContext,
     val filename: String,
-    val programmingLanguage: ProgrammingLanguage
+    val programmingLanguage: CodeWhispererProgrammingLanguage
 )
-
-data class ProgrammingLanguage(val languageName: String)
-
 data class RecommendationContext(
     val details: List<DetailContext>,
     val userInputOriginal: String,
@@ -75,7 +73,8 @@ data class WorkerContext(
 data class CodeScanTelemetryEvent(
     val codeScanResponseContext: CodeScanResponseContext,
     val duration: Double,
-    val result: Result
+    val result: Result,
+    val totalProjectSizeInBytes: Double?
 )
 
 data class CodeScanServiceInvocationContext(

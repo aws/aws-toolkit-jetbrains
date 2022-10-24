@@ -4,11 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.intellij.compiler.CompilerTestUtil
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.compiler.CompileContext
-import com.intellij.openapi.compiler.CompilerManager
-import com.intellij.openapi.compiler.CompilerMessageCategory
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.projectRoots.ProjectJdkTable
@@ -21,20 +17,20 @@ import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
+import software.aws.toolkits.jetbrains.core.compileProjectAndWait
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.JavaCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.BufferedInputStream
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 import kotlin.test.assertNotNull
 
@@ -110,6 +106,13 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase() {
     }
 
     @Test
+    fun `test getTotalProjectSizeInBytes()`() {
+        runBlocking {
+            assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
+        }
+    }
+
+    @Test
     fun `selected file larger than payload limit throws exception`() {
         sessionConfigSpy.stub {
             onGeneric { getPayloadLimitInBytes() }.thenReturn(100)
@@ -157,21 +160,7 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase() {
 
     private fun compileProject() {
         setUpCompiler()
-        val compileFuture = CompletableFuture<CompileContext>()
-        ApplicationManager.getApplication().invokeAndWait {
-            CompilerManager.getInstance(javaProjectRule.project).rebuild { aborted, errors, _, context ->
-                if (!aborted && errors == 0) {
-                    compileFuture.complete(context)
-                } else {
-                    compileFuture.completeExceptionally(
-                        RuntimeException(
-                            "Compilation error: ${context.getMessages(CompilerMessageCategory.ERROR).map { it.message }}"
-                        )
-                    )
-                }
-            }
-        }
-        compileFuture.get(30, TimeUnit.SECONDS)
+        compileProjectAndWait(javaProjectRule.project)
     }
 
     private fun setUpCompiler() {
