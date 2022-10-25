@@ -181,7 +181,7 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
  
   ${
         if (codeArtifactNugetUrl.isPresent) {
-"""     <clear />
+"""  <clear />
      <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get() + "v3/index.json"}" />
 """.trimIndent()
         } else {
