@@ -181,15 +181,14 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
  
   ${
         if (codeArtifactNugetUrl.isPresent) {
-"""
-        <clear />
-        <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get() + "/v3/index.json"}" />
+"""     <clear />
+     <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get() + "v3/index.json"}" />
 """.trimIndent()
         } else {
             ""
         }
         }
-    <add key="resharper-sdk" value="$nugetPath" />
+     <add key="resharper-sdk" value="$nugetPath" />
   </packageSources>
 </configuration>
 """
