@@ -13,7 +13,6 @@ import software.amazon.awssdk.core.interceptor.ExecutionAttributes
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor
 import software.amazon.awssdk.core.retry.RetryPolicy
 import software.amazon.awssdk.http.SdkHttpRequest
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhisperer.CodeWhispererClientBuilder
 import software.amazon.awssdk.services.cognitoidentity.CognitoIdentityClient
 import software.aws.toolkits.core.ToolkitClientCustomizer
@@ -53,13 +52,13 @@ class CodeWhispererEndpointCustomizer : ToolkitClientCustomizer {
             )
             clientOverrideConfiguration.retryPolicy(RetryPolicy.none())
 
-            builder.region(Region.US_EAST_1)
+            builder.region(CodeWhispererConstants.Config.REGION)
                 .credentialsProvider(
                     AwsCognitoCredentialsProvider(
-                        CodeWhispererConstants.CODEWHISPERER_IDPOOL_ID,
+                        CodeWhispererConstants.Config.CODEWHISPERER_IDPOOL_ID,
                         CognitoIdentityClient.builder()
                             .credentialsProvider(AnonymousCredentialsProvider.create())
-                            .region(Region.US_EAST_1)
+                            .region(CodeWhispererConstants.Config.REGION)
                             .httpClient(AwsSdkClient.getInstance().sharedSdkClient())
                             .build()
                     )
