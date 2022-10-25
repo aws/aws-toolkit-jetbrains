@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -14,9 +13,7 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.ui.components.BorderLayoutPanel
-import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
-import software.aws.toolkits.jetbrains.core.credentials.ProjectLevelSettingSelector
-import software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorComboBoxAction
+import software.aws.toolkits.jetbrains.core.credentials.CredsComboBoxActionGroup
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.services.codewhisperer.experiment.CodeWhispererExperiment
@@ -35,10 +32,7 @@ class AwsToolkitExplorerToolWindow(private val project: Project) : SimpleToolWin
         runInEdt {
             val content = BorderLayoutPanel()
             setContent(content)
-            val group = DefaultActionGroup(
-                SettingsSelectorComboBoxAction(ProjectLevelSettingSelector(project, ChangeSettingsMode.CREDENTIALS)),
-                SettingsSelectorComboBoxAction(ProjectLevelSettingSelector(project, ChangeSettingsMode.REGIONS))
-            )
+            val group = CredsComboBoxActionGroup(project)
 
             toolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
                 layoutPolicy = ActionToolbar.WRAP_LAYOUT_POLICY
