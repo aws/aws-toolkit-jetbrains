@@ -19,7 +19,6 @@ import software.aws.toolkits.resources.message
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.helpId = HelpIds.EXPLORER_WINDOW.id
-        toolWindow.installWatcher(toolWindow.contentManager)
 
         if (toolWindow is ToolWindowEx) {
             val actionManager = ActionManager.getInstance()
