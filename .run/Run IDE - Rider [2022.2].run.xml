@@ -2,11 +2,6 @@
   <configuration default="false" name="Run IDE - Rider [2022.2]" type="GradleRunConfiguration" factoryName="Gradle" folderName="2022.2">
     <log_file alias="idea.log" path="$PROJECT_DIR$/jetbrains-rider/build/idea-sandbox/system/log/idea.log" />
     <ExternalSystemSettings>
-      <option name="env">
-        <map>
-          <entry key="CODEARTIFACT_NUGET_URL" value="https://my-domain-255356604037.d.codeartifact.us-west-2.amazonaws.com/nuget/my-repository/v3/index.json" />
-        </map>
-      </option>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$/jetbrains-rider" />
       <option name="externalSystemIdString" value="GRADLE" />

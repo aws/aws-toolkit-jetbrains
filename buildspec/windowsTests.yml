@@ -62,7 +62,6 @@ phases:
             copyFolder $root "build/idea-sandbox/system-test/log/" $script:TEST_ARTIFACTS
             copyFolder $root "build/test-results/test/" $script:TEST_REPORTS
         }
-
         copyArtifacts "."  
         Get-ChildItem -Directory | ForEach-Object { copyArtifacts $_.Name }
 
