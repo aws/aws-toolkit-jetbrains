@@ -3,19 +3,27 @@
 
 package software.aws.toolkits.jetbrains.core.explorer
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.ui.components.BorderLayoutPanel
+import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
+import software.aws.toolkits.jetbrains.core.credentials.ProjectLevelSettingSelector
+import software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorComboBoxAction
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.services.codewhisperer.experiment.CodeWhispererExperiment
 import software.aws.toolkits.resources.message
 import java.awt.Component
 
-class AwsToolkitExplorerToolWindow(private val project: Project) : BorderLayoutPanel() {
+class AwsToolkitExplorerToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true) {
     private val tabPane = JBTabbedPane()
 
     private val tabComponents = mapOf<String, () -> Component>(
@@ -25,10 +33,23 @@ class AwsToolkitExplorerToolWindow(private val project: Project) : BorderLayoutP
 
     init {
         runInEdt {
-            val toolWindow = toolWindow(project)
+            val content = BorderLayoutPanel()
+            setContent(content)
+            val group = DefaultActionGroup(
+                SettingsSelectorComboBoxAction(ProjectLevelSettingSelector(project, ChangeSettingsMode.CREDENTIALS)),
+                SettingsSelectorComboBoxAction(ProjectLevelSettingSelector(project, ChangeSettingsMode.REGIONS))
+            )
+
+            toolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
+                layoutPolicy = ActionToolbar.WRAP_LAYOUT_POLICY
+                setTargetComponent(this@AwsToolkitExplorerToolWindow)
+            }.component
+
+            // main content
             tabComponents.forEach { name, contentProvider ->
                 tabPane.addTab(name, contentProvider())
             }
+            content.addToCenter(tabPane)
 
             val toolkitToolWindowListener = ToolkitToolWindowListener(project)
             val onTabChange = {
@@ -43,15 +64,6 @@ class AwsToolkitExplorerToolWindow(private val project: Project) : BorderLayoutP
             // We can do this since CodeWhisperer is the only node in Dev Tool pane for now.
             if (!CodeWhispererExperiment.isEnabled()) {
                 setDevToolsTabVisible(false)
-            }
-
-            toolWindow.contentManager.apply {
-                addContent(
-                    factory.createContent(tabPane, null, false).also {
-                        it.isCloseable = true
-                        it.isPinnable = true
-                    }
-                )
             }
         }
     }
