@@ -17,7 +17,6 @@ import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.resources.message
 
 class GoAwsConnectionRunConfigurationExtension : GoRunConfigurationExtension() {
-    private val delegate = AwsConnectionRunConfigurationExtension<GoRunConfigurationBase<*>>()
 
     override fun isApplicableFor(configuration: GoRunConfigurationBase<*>) = GoAwsConnectionExperiment.isEnabled()
 
@@ -44,9 +43,12 @@ class GoAwsConnectionRunConfigurationExtension : GoRunConfigurationExtension() {
         }
     }
 
-    private fun determineGoVersion(configuration: GoRunConfigurationBase<*>): String? = tryOrNull {
-        GoSdkService.getInstance(configuration.getProject()).getSdk(configuration.getDefaultModule()).majorVersion.toString()
-    }?.let { "Go $it" }
+    companion object {
+        private val delegate = AwsConnectionRunConfigurationExtension<GoRunConfigurationBase<*>>()
+        private fun determineGoVersion(configuration: GoRunConfigurationBase<*>): String? = tryOrNull {
+            GoSdkService.getInstance(configuration.getProject()).getSdk(configuration.getDefaultModule()).majorVersion.toString()
+        }?.let { "Go $it" }
+    }
 }
 
 object GoAwsConnectionExperiment : ToolkitExperiment(
