@@ -172,11 +172,12 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
         val configText = """<?xml version="1.0" encoding="utf-8"?>
   <configuration>
     <packageSources> 
-  ${
+    ${
         if (codeArtifactNugetUrl.isPresent) {
-            """<clear />
-       <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get()}v3/index.json" />
-            """.trimIndent()
+            """
+       |   <clear /> 
+   |       <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get()}v3/index.json" />
+        """.trimMargin("|")
         } else {
             ""
         }
