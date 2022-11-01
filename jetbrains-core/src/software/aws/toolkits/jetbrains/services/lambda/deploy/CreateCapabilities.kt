@@ -12,7 +12,7 @@ enum class CreateCapabilities(val capability: String, val text: String, val tool
         Capability.CAPABILITY_IAM.toString(),
         message("cloudformation.capabilities.iam"),
         message("cloudformation.capabilities.iam.toolTipText"),
-        true
+        false
     ),
     NAMED_IAM(
         Capability.CAPABILITY_NAMED_IAM.toString(),
@@ -24,7 +24,7 @@ enum class CreateCapabilities(val capability: String, val text: String, val tool
         Capability.CAPABILITY_AUTO_EXPAND.toString(),
         message("cloudformation.capabilities.auto_expand"),
         message("cloudformation.capabilities.auto_expand.toolTipText"),
-        false
+        true
     );
 }
 

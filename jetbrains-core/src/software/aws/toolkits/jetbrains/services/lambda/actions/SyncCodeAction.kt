@@ -25,6 +25,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
@@ -33,6 +34,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.pty4j.PtyProcess
+import icons.AwsIcons
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.gradle.api.reporting.Report.OutputType
@@ -49,25 +51,36 @@ import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecUtils
 import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandRunProfile
 import software.aws.toolkits.jetbrains.services.lambda.SyncCodeWarningDialog
+import software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationDialog
+import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings
 import java.nio.charset.Charset
 import java.nio.file.Path
 import javax.swing.Icon
 
-class SyncCodeAction: AnAction("SAM Sync Code") {
+class SyncCodeAction: AnAction("Sync Serverless Application Code(Skip infra)","", AwsIcons.Resources.SERVERLESS_APP) {
     private val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
     override fun actionPerformed(e: AnActionEvent) {
         try {
             val project = e.project
             if(project != null){
-                val devMode = SyncCodeWarningDialog(project).showAndGet()
+
+                val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
+                val devMode = if(warningSettings.showDevModeWarning) SyncCodeWarningDialog(project).showAndGet() else true
                 if(devMode) {
+                    val templateFile = getSamTemplateFile(e)
+                    if (templateFile != null) {
+                        //DeployServerlessApplicationDialog(project, templateFile).show()
+                        SyncServerlessApplicationDialog(project, templateFile).show()
+                    }
+
                     val connectionSettings = project.getConnectionSettingsOrThrow()
                     val templatePath = getSamTemplateFile(e)?.toNioPath() ?: throw Exception("Empty")
                     val environment = ExecutionEnvironmentBuilder.create(
                         project,
                         DefaultRunExecutor.getRunExecutorInstance(),
-                        SyncCodeRunProfile(project, "sam-app", project.getConnectionSettingsOrThrow(), templatePath)
+                        SyncCodeRunProfile(project, "sam-app", project.getConnectionSettingsOrThrow(), templatePath, true)
                     ).build()
 
                     runInEdt {
@@ -143,7 +156,8 @@ class SyncCodeRunProfile(
     private val project: Project,
     private val stackName: String,
     private val connection: ConnectionSettings,
-    private val templatePath: Path
+    private val templatePath: Path,
+    private val syncOnlyCode: Boolean
 ) : RunProfile {
     override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState= SyncCodeRunProfileState(environment)
 
@@ -153,14 +167,25 @@ class SyncCodeRunProfile(
 
     inner class SyncCodeRunProfileState(environment: ExecutionEnvironment) : CommandLineState(environment) {
         override fun startProcess(): ProcessHandler {
-            val a = getClis().apply {
-                withEnvironment(connection.toEnvironmentVariables())
-                withWorkDirectory(templatePath.toAbsolutePath().parent.toString())
-                addParameter("sync")
-                addParameter("--stack-name")
-                addParameter(stackName)
-                addParameter("--code")
+            val a = if(syncOnlyCode) {
+                getClis().apply {
+                    withEnvironment(connection.toEnvironmentVariables())
+                    withWorkDirectory(templatePath.toAbsolutePath().parent.toString())
+                    addParameter("sync")
+                    addParameter("--stack-name")
+                    addParameter(stackName)
+                    addParameter("--code")
+                }
+            } else {
+                getClis().apply {
+                    withEnvironment(connection.toEnvironmentVariables())
+                    withWorkDirectory(templatePath.toAbsolutePath().parent.toString())
+                    addParameter("sync")
+                    addParameter("--stack-name")
+                    addParameter(stackName)
+                }
             }
+
 
 
             val processHandler = ColoredProcessHandler(a)
@@ -171,16 +196,28 @@ class SyncCodeRunProfile(
 
         override fun execute(executor: Executor, runner: ProgramRunner<*>) = super.execute(executor, runner).apply {
             processHandler?.addProcessListener(object : ProcessAdapter() {
+                override fun startNotified(event: ProcessEvent) {
+                    super.startNotified(event)
+                    ApplicationManager.getApplication().executeOnPooledThread {
+                        while(true){
+                        processHandler.processInput?.write("Y\n".toByteArray(Charset.defaultCharset()))
+                        }
+
+                    }
+
+                }
+
+                override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
+                    super.processWillTerminate(event, willBeDestroyed)
+                    println(event.exitCode)
+                }
 
 
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     if (outputType === ProcessOutputTypes.STDOUT ||
                         outputType === ProcessOutputTypes.STDERR
                     ) {
-                        if(event.text == "[Y/n]:"){
-                            //processHandler.processInput?.write("Y".toByteArray(Charset.defaultCharset()))
-                            println("okayyyyyyy")
-                        }
+
                         //RunContentManager.getInstance(project).
                         runInEdt {
                             //RunContentManager.getInstance(project).
@@ -190,6 +227,8 @@ class SyncCodeRunProfile(
                     }
                 }
             })
+
+
         }
 
         private fun getClis(): GeneralCommandLine {
