@@ -5,10 +5,8 @@ import org.eclipse.jgit.api.Git
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
-import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
 import org.jetbrains.intellij.utils.OpenedPackages
-import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -88,23 +86,40 @@ intellij {
     plugins.set(toolkitIntelliJ.productProfile().map { it.plugins.toMutableList() })
 
     downloadSources.set(toolkitIntelliJ.ideFlavor.map { it == IdeFlavor.IC && !project.isCi() })
-    instrumentCode.set(toolkitIntelliJ.ideFlavor.map { it == IdeFlavor.IC || it == IdeFlavor.IU })
+    instrumentCode.set(toolkitIntelliJ.ideFlavor.map { it != IdeFlavor.RD })
 }
 
 tasks.jar {
     archiveBaseName.set(toolkitIntelliJ.ideFlavor.map { "aws-toolkit-jetbrains-$it" })
 }
 
-tasks.withType<PatchPluginXmlTask>().all {
+tasks.patchPluginXml {
     sinceBuild.set(toolkitIntelliJ.ideProfile().map { it.sinceVersion })
     untilBuild.set(toolkitIntelliJ.ideProfile().map { it.untilVersion })
 }
 
 // attach the current commit hash on local builds
 if (!project.isCi()){
-    val buildMetadata = buildMetadata()
-    tasks.withType<PatchPluginXmlTask>().all {
-        version.set(intellij.version.map { "$it+$buildMetadata" })
+    val buildMetadata = try {
+        val git = Git.open(project.rootDir)
+        val currentShortHash = git.repository.findRef("HEAD").objectId.abbreviate(7).name()
+        val isDirty = git.status().call().hasUncommittedChanges()
+
+        buildString {
+            append(currentShortHash)
+
+            if (isDirty) {
+                append(".modified")
+            }
+        }
+    } catch(e: IOException) {
+        logger.warn("Could not determine current commit", e)
+
+        "unknownCommit"
+    }
+
+    tasks.patchPluginXml {
+        version.set("${version.get()}+$buildMetadata")
     }
 
     tasks.buildPlugin {
