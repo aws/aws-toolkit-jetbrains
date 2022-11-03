@@ -10,7 +10,8 @@ import java.nio.file.Path
 
 buildscript {
     // Cannot be removed or else it will fail to compile
-    @Suppress("RemoveRedundantQualifierName") val rdversion = software.aws.toolkits.gradle.intellij.IdeVersions.ideProfile(project).rider.rdGenVersion
+    @Suppress("RemoveRedundantQualifierName")
+    val rdversion = software.aws.toolkits.gradle.intellij.IdeVersions.ideProfile(project).rider.rdGenVersion
 
     println("Using rd-gen: $rdversion")
 
@@ -63,7 +64,11 @@ val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
 
 val resharperParts = listOf(
-    "AWS.Daemon", "AWS.Localization", "AWS.Project", "AWS.Psi", "AWS.Settings"
+    "AWS.Daemon",
+    "AWS.Localization",
+    "AWS.Project",
+    "AWS.Psi",
+    "AWS.Settings"
 )
 
 val buildConfiguration = project.extra.properties["BuildConfiguration"] ?: "Debug" // TODO: Do we ever want to make a release build?
@@ -174,9 +179,9 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
     <packageSources> 
     ${
         if (codeArtifactNugetUrl.isPresent) {
-            """
+                """
        |   <clear /> 
-   |       <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get()}v3/index.json" />
+       |   <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get()}v3/index.json" />
         """.trimMargin("|")
         } else {
             ""
@@ -201,7 +206,10 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
 
     doLast {
         val arguments = listOf(
-            "build", "--verbosity", "normal", "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
+            "build",
+            "--verbosity",
+            "normal",
+            "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
         )
         exec {
             executable = "dotnet"
