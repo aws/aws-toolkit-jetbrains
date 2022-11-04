@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
@@ -263,7 +262,7 @@ class SettingsSelectorComboLabel(private val selectorLogic: SettingsSelectorLogi
     }
 }
 
-class CredsComboBoxActionGroup(private val project: Project) : ActionGroup("group", false) {
+class CredsComboBoxActionGroup(private val project: Project) : DefaultActionGroup() {
     private val toolkitConnectionAction = ToolkitConnectionComboBoxAction(project)
     private val profileRegionSelectorGroup: Array<AnAction> by lazy {
         arrayOf(
