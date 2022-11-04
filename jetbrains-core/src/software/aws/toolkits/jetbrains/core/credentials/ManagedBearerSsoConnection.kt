@@ -11,11 +11,11 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 class ManagedBearerSsoConnection(
     val startUrl: String,
     val region: String,
-    private val prompt: SsoPrompt = SsoPrompt,
-    override val scopes: List<String>
+    override val scopes: List<String>,
+    private val prompt: SsoPrompt = SsoPrompt
 ) : BearerSsoConnection {
-    override val id: String = "sso;$startUrl"
-    override val label: String = "SSO ($startUrl)"
+    override val id: String = ToolkitBearerTokenProvider.identifier(startUrl)
+    override val label: String = ToolkitBearerTokenProvider.displayName(startUrl)
 
     override fun getConnectionSettings(): TokenConnectionSettings =
         TokenConnectionSettings(

@@ -14,8 +14,8 @@ import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.runner.Description
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
-import software.aws.toolkits.core.credentials.ToolkitAuthenticationProvider
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkits.core.credentials.ToolkitConnectionIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
@@ -80,7 +80,7 @@ class MockResourceCache : AwsResourceCache {
     private fun <T> mockResourceIfPresent(
         resource: Resource.Cached<T>,
         region: AwsRegion,
-        credentials: ToolkitAuthenticationProvider
+        credentials: ToolkitConnectionIdentifier
     ): T? = when (val value = map[CacheKey(resource.id, region.id, credentials.id)]) {
         is CompletableFuture<*> -> if (value.isDone) value.get() as T else null
         else -> value as? T?
@@ -89,7 +89,7 @@ class MockResourceCache : AwsResourceCache {
     private fun <T> mockResource(
         resource: Resource.Cached<T>,
         region: AwsRegion,
-        credentials: ToolkitAuthenticationProvider
+        credentials: ToolkitConnectionIdentifier
     ) = when (val value = map[CacheKey(resource.id, region.id, credentials.id)]) {
         is CompletableFuture<*> -> value as CompletionStage<T>
         else -> {

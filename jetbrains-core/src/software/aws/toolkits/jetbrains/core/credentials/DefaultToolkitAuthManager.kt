@@ -3,20 +3,19 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.components.service
-import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 
 // TODO: unify with CredentialManager
 @State(name = "authManager", storages = [Storage("aws.xml")])
 class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<ToolkitAuthManagerState> {
-    private val state = ToolkitAuthManagerState()
-    private val connections = mutableListOf<BearerSsoConnection>()
+    private var state = ToolkitAuthManagerState()
+    private val connections = mutableListOf<ToolkitConnection>(
+        ManagedBearerSsoConnection("start", "region", listOf("scope"))
+    )
 
     override fun listConnections(): List<ToolkitConnection> = connections.toList()
 
@@ -35,7 +34,7 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         connections.removeAll { it.id == connectionId }
     }
 
-    override fun getConnection(connectionId: String) = null
+    override fun getConnection(connectionId: String) = connections.firstOrNull { it.id == connectionId }
 
     override fun getState(): ToolkitAuthManagerState? {
         val data = connections.mapNotNull {
@@ -55,15 +54,14 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
             }
         }
 
-        state.connections.clear()
-        state.connections.addAll(data)
+        state.ssoProfiles = data
 
         return state
     }
 
     override fun loadState(state: ToolkitAuthManagerState) {
-        this.state.copyFrom(state)
-        val newConnections = state.connections.map {
+        this.state = state
+        val newConnections = state.ssoProfiles.filterNotNull().map {
             connectionFromProfile(it)
         }
 
@@ -83,12 +81,10 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 
     companion object {
         private val LOG = getLogger<DefaultToolkitAuthManager>()
-
-        fun getInstance() = service<ToolkitAuthManager>()
     }
 }
 
-class ToolkitAuthManagerState : BaseState() {
-    @get:Property
-    val connections by list<AuthProfile>()
-}
+data class ToolkitAuthManagerState(
+    // TODO: can't figure out how to make this polymorphic
+    var ssoProfiles: List<ManagedSsoProfile> = emptyList()
+)

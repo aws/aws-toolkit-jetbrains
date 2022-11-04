@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
@@ -33,8 +35,8 @@ data class ManagedSsoProfile(
     var startUrl: String,
     var scopes: List<String>
 ) : AuthProfile {
-    // only used for serializer
-    constructor() : this("", "", emptyList())
+    // only used for deserialization
+    internal constructor() : this("", "", emptyList())
 }
 
 interface ToolkitAuthManager {
@@ -46,10 +48,18 @@ interface ToolkitAuthManager {
     fun deleteConnection(connectionId: String)
 
     fun getConnection(connectionId: String): ToolkitConnection?
+
+    companion object {
+        fun getInstance() = service<ToolkitAuthManager>()
+    }
 }
 
 interface ToolkitConnectionManager {
     fun activeConnection(): ToolkitConnection?
 
     fun switchConnection(connection: ToolkitConnection)
+
+    companion object {
+        fun getInstance(project: Project) = project.service<ToolkitConnectionManager>()
+    }
 }

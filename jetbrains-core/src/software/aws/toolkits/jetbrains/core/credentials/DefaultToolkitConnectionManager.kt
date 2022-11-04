@@ -6,16 +6,20 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 
 // TODO: unify with AwsConnectionManager
 @State(name = "connectionManager", storages = [Storage("aws.xml")])
 class DefaultToolkitConnectionManager(private val project: Project) : ToolkitConnectionManager, PersistentStateComponent<ToolkitConnectionManagerState> {
     private var connection: ToolkitConnection? = null
-    private val defaultConnection by lazy {
-        AwsConnectionManagerConnection(project)
-    }
+    private val defaultConnection: ToolkitConnection?
+        get() {
+            if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
+                return AwsConnectionManagerConnection(project)
+            }
+
+            return null
+        }
 
     override fun activeConnection() = connection ?: defaultConnection
 
@@ -25,7 +29,7 @@ class DefaultToolkitConnectionManager(private val project: Project) : ToolkitCon
 
     override fun loadState(state: ToolkitConnectionManagerState) {
         state.activeConnectionId?.let {
-            connection = DefaultToolkitAuthManager.getInstance().getConnection(it)
+            connection = ToolkitAuthManager.getInstance().getConnection(it)
         }
     }
 
@@ -34,10 +38,6 @@ class DefaultToolkitConnectionManager(private val project: Project) : ToolkitCon
             this.connection = connection
             project.messageBus.syncPublisher(ToolkitConnectionManagerListener.TOPIC).activeConnectionChanged(connection)
         }
-    }
-
-    companion object {
-        fun getInstance(project: Project) = project.service<ToolkitConnectionManager>()
     }
 }
 

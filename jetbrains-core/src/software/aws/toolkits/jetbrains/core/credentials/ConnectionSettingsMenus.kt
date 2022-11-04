@@ -161,7 +161,7 @@ open class ProjectLevelSettingSelector(private val project: Project, settingsMod
 class ToolkitConnectionComboBoxAction(private val project: Project) : ComboBoxAction(), DumbAware {
     private val logic = object : ProjectLevelSettingSelector(project, CREDENTIALS) {
         override fun currentCredentials(): CredentialIdentifier? {
-            val active = DefaultToolkitConnectionManager.getInstance(project).activeConnection()
+            val active = ToolkitConnectionManager.getInstance(project).activeConnection()
             if (active is AwsConnectionManagerConnection) {
                 return super.currentCredentials()
             }
@@ -171,17 +171,17 @@ class ToolkitConnectionComboBoxAction(private val project: Project) : ComboBoxAc
 
         override fun onCredentialChange(identifier: CredentialIdentifier) {
             super.onCredentialChange(identifier)
-            val connectionManager = DefaultToolkitConnectionManager.getInstance(project)
+            val connectionManager = ToolkitConnectionManager.getInstance(project)
             connectionManager.switchConnection(AwsConnectionManagerConnection(project))
         }
     }
 
     override fun createPopupActionGroup(button: JComponent?): DefaultActionGroup {
-        val connectionManager = DefaultToolkitConnectionManager.getInstance(project)
+        val connectionManager = ToolkitConnectionManager.getInstance(project)
         val group = DefaultActionGroup()
         group.add(Separator.create(message("settings.credentials.individual_identity_sub_menu")))
         group.addAll(
-            DefaultToolkitAuthManager.getInstance().listConnections().map {
+            ToolkitAuthManager.getInstance().listConnections().map {
                 object : DumbAwareToggleAction(it.label) {
                     val connection = it
                     override fun isSelected(e: AnActionEvent): Boolean {
@@ -205,7 +205,7 @@ class ToolkitConnectionComboBoxAction(private val project: Project) : ComboBoxAc
     }
 
     override fun update(e: AnActionEvent) {
-        val active = DefaultToolkitConnectionManager.getInstance(project).activeConnection()
+        val active = ToolkitConnectionManager.getInstance(project).activeConnection()
         if (active is AwsConnectionManagerConnection) {
             e.presentation.text = logic.displayValue()
             e.presentation.description = logic.tooltip()
@@ -278,10 +278,20 @@ class CredsComboBoxActionGroup(private val project: Project) : ActionGroup("grou
         )
     }
 
-    override fun getChildren(e: AnActionEvent?): Array<AnAction> =
-        if (DefaultToolkitConnectionManager.getInstance(project).activeConnection() is AwsBearerTokenConnection) {
+    override fun getChildren(e: AnActionEvent?): Array<AnAction> {
+        val activeConnection = ToolkitConnectionManager.getInstance(project).activeConnection()
+
+        return if (activeConnection is AwsBearerTokenConnection) {
             ssoSelectorGroup
-        } else {
+        }
+        // TODO: uncomment to enable action
+//        else if (activeConnection == null) {
+//            arrayOf(
+//                ActionManager.getInstance().getAction("aws.toolkit.toolwindow.explorer.newConnection")
+//            )
+//        }
+        else {
             profileRegionSelectorGroup
         }
+    }
 }
