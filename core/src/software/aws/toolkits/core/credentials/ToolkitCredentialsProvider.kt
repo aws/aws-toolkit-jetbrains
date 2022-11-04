@@ -81,7 +81,7 @@ abstract class CredentialIdentifierBase(override val credentialType: CredentialT
     final override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
-interface ToolkitConnectionIdentifier {
+interface ToolkitAuthenticationProvider {
     val id: String
     val displayName: String
 }
@@ -89,7 +89,7 @@ interface ToolkitConnectionIdentifier {
 class ToolkitCredentialsProvider(
     val identifier: CredentialIdentifier,
     delegate: AwsCredentialsProvider
-) : ToolkitConnectionIdentifier, AwsCredentialsProvider by delegate {
+) : ToolkitAuthenticationProvider, AwsCredentialsProvider by delegate {
     override val id: String = identifier.id
     override val displayName = identifier.displayName
     val shortName = identifier.shortName
@@ -110,9 +110,9 @@ class ToolkitCredentialsProvider(
     override fun toString(): String = "${this::class.simpleName}(identifier='$identifier')"
 }
 
-interface ToolkitBearerTokenProviderDelegate : SdkTokenProvider, ToolkitConnectionIdentifier
+interface ToolkitBearerTokenProviderDelegate : SdkTokenProvider, ToolkitAuthenticationProvider
 
-class ToolkitBearerTokenProvider(delegate: ToolkitBearerTokenProviderDelegate) : SdkTokenProvider by delegate, ToolkitConnectionIdentifier by delegate {
+class ToolkitBearerTokenProvider(delegate: ToolkitBearerTokenProviderDelegate) : SdkTokenProvider by delegate, ToolkitAuthenticationProvider by delegate {
     companion object {
         fun identifier(startUrl: String) = "sso;$startUrl"
         fun displayName(startUrl: String) = "SSO ($startUrl)"
