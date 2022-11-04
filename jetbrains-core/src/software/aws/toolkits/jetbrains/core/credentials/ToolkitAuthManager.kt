@@ -36,7 +36,7 @@ data class ManagedSsoProfile(
     var scopes: List<String>
 ) : AuthProfile {
     // only used for deserialization
-    internal constructor() : this("", "", emptyList())
+    constructor() : this("", "", emptyList())
 }
 
 interface ToolkitAuthManager {

@@ -13,9 +13,7 @@ import software.aws.toolkits.core.utils.getLogger
 @State(name = "authManager", storages = [Storage("aws.xml")])
 class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<ToolkitAuthManagerState> {
     private var state = ToolkitAuthManagerState()
-    private val connections = mutableListOf<ToolkitConnection>(
-        ManagedBearerSsoConnection("start", "region", listOf("scope"))
-    )
+    private val connections = mutableListOf<ToolkitConnection>()
 
     override fun listConnections(): List<ToolkitConnection> = connections.toList()
 
@@ -85,6 +83,6 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 }
 
 data class ToolkitAuthManagerState(
-    // TODO: can't figure out how to make this polymorphic
+    // TODO: can't figure out how to make deserializer work with polymorphic types
     var ssoProfiles: List<ManagedSsoProfile> = emptyList()
 )
