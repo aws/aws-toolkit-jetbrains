@@ -105,7 +105,7 @@ class InteractiveBearerTokenProvider(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun invalidate(providerId: String) {
-                    if (providerId == providerId) {
+                    if (id == providerId) {
                         invalidate()
                     }
                 }
