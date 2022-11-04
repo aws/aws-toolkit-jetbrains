@@ -179,7 +179,7 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
     <packageSources> 
     ${
         if (codeArtifactNugetUrl.isPresent) {
-                """
+            """
        |   <clear /> 
        |   <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get()}v3/index.json" />
         """.trimMargin("|")
