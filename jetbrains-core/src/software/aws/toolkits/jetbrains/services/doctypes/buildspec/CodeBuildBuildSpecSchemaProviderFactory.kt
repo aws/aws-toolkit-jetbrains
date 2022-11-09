@@ -24,7 +24,6 @@ class CodeBuildBuildSpecSchemaProviderFactory : JsonSchemaProviderFactory {
 
             override fun getName() = "AWS CodeBuild Build Specificiation"
 
-            // TODO: use prod distribution
             override fun getSchemaFile() = JsonFileResolver.urlToFile("https://d3rrggjwfhwld2.cloudfront.net/CodeBuild/buildspec/buildspec-standalone.schema.json")
 
             override fun getSchemaVersion(): JsonSchemaVersion = JsonSchemaVersion.SCHEMA_7
