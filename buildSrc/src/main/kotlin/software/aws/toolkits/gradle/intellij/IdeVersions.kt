@@ -128,14 +128,53 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2022.2-EAP8-SNAPSHOT",
+                sdkVersion = "2022.2",
                 plugins = commonPlugins + listOf(
                     "AWSCloudFormation:222.3345.108",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2022.2.4",
-                nugetVersion = "2022.2.0-eap08"
+                nugetVersion = "2022.2.0"
+            )
+        ),
+        Profile(
+            name = "2022.3",
+            community = ProductProfile(
+                sdkFlavor = IdeFlavor.IC,
+                sdkVersion = "223.7255-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "PythonCore:223.7255.1",
+                    "Docker:223.7255.83"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkFlavor = IdeFlavor.IU,
+                sdkVersion = "223.7255-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "Pythonid:223.7255.1",
+                    "org.jetbrains.plugins.go:223.7255.1",
+                    // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
+                    "org.intellij.intelliLang"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2022.3-EAP6-SNAPSHOT",
+                plugins = commonPlugins + listOf(
+                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+                ),
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2022.3.4",
+                nugetVersion = "2022.3.0-eap06"
             )
         )
 

@@ -9,7 +9,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.core.utils.writeText
 import java.nio.file.Files
@@ -31,7 +30,8 @@ class DiskCacheTest {
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
 
     private val ssoUrl = "https://123456.awsapps.com/start"
-    private val ssoRegion = aRegionId()
+    private val ssoRegion = "us-fake-1"
+    private val scopes = listOf("scope1", "scope2")
 
     private lateinit var cacheLocation: Path
     private lateinit var sut: DiskCache
@@ -71,13 +71,13 @@ class DiskCacheTest {
 
     @Test
     fun clientRegistrationExpiringSoonIsTreatedAsExpired() {
-        val expiationTime = now.plus(14, ChronoUnit.MINUTES)
+        val expirationTime = now.plus(14, ChronoUnit.MINUTES)
         cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json").writeText(
             """
             {
                 "clientId": "DummyId", 
                 "clientSecret": "DummySecret", 
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
             }
             """.trimIndent()
         )
@@ -87,13 +87,13 @@ class DiskCacheTest {
 
     @Test
     fun validClientRegistrationReturnsCorrectly() {
-        val expiationTime = now.plus(20, ChronoUnit.MINUTES)
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json").writeText(
             """
             {
                 "clientId": "DummyId", 
                 "clientSecret": "DummySecret", 
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
             }
             """.trimIndent()
         )
@@ -104,7 +104,37 @@ class DiskCacheTest {
                 ClientRegistration(
                     "DummyId",
                     "DummySecret",
-                    expiationTime
+                    expirationTime
+                )
+            )
+    }
+
+    @Test
+    fun `valid scoped client registration loads correctly`() {
+        val key = ClientRegistrationCacheKey(
+            startUrl = ssoUrl,
+            scopes = scopes
+        )
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
+        cacheLocation.resolve("a0e13839876dcf0cc23a629a1139a3ccb3b9a9e6.json").writeText(
+            """
+            {
+                "clientId": "DummyId", 
+                "clientSecret": "DummySecret", 
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}",
+                "scopes": ["scope1","scope2"]
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadClientRegistration(key))
+            .usingRecursiveComparison()
+            .isEqualTo(
+                ClientRegistration(
+                    "DummyId",
+                    "DummySecret",
+                    expirationTime,
+                    scopes
                 )
             )
     }
@@ -138,24 +168,85 @@ class DiskCacheTest {
     }
 
     @Test
+    fun `scoped client registration saves correctly`() {
+        val key = ClientRegistrationCacheKey(
+            startUrl = ssoUrl,
+            scopes = scopes
+        )
+        val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
+        sut.saveClientRegistration(
+            key,
+            ClientRegistration(
+                "DummyId",
+                "DummySecret",
+                Instant.from(expirationTime),
+                scopes
+            )
+        )
+
+        val clientRegistration = cacheLocation.resolve("a0e13839876dcf0cc23a629a1139a3ccb3b9a9e6.json")
+        if (SystemInfo.isUnix) {
+            assertThat(Files.getPosixFilePermissions(clientRegistration)).containsOnly(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
+        }
+        assertThat(clientRegistration.readText())
+            .isEqualToIgnoringWhitespace(
+                """
+                {
+                    "clientId": "DummyId", 
+                    "clientSecret": "DummySecret", 
+                    "expiresAt": "2020-04-07T21:31:33Z",
+                    "scopes": ["scope1","scope2"]
+                }       
+                """.trimIndent()
+            )
+    }
+
+    @Test
     fun invalidateClientRegistrationDeletesTheFile() {
-        val expiationTime = now.plus(20, ChronoUnit.MINUTES)
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         val cacheFile = cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
         cacheFile.writeText(
             """
             {
                 "clientId": "DummyId", 
                 "clientSecret": "DummySecret", 
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
             }
             """.trimIndent()
         )
 
-        assertThat(sut.loadClientRegistration(ssoRegion)).isNotNull
+        assertThat(sut.loadClientRegistration(ssoRegion)).isNotNull()
 
         sut.invalidateClientRegistration(ssoRegion)
 
         assertThat(sut.loadClientRegistration(ssoRegion)).isNull()
+        assertThat(cacheFile).doesNotExist()
+    }
+
+    @Test
+    fun `invalidate scoped client registration deletes the file`() {
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
+        val cacheFile = cacheLocation.resolve("a0e13839876dcf0cc23a629a1139a3ccb3b9a9e6.json")
+        cacheFile.writeText(
+            """
+            {
+                "clientId": "DummyId", 
+                "clientSecret": "DummySecret", 
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
+            }
+            """.trimIndent()
+        )
+
+        val key = ClientRegistrationCacheKey(
+            startUrl = ssoUrl,
+            scopes = scopes
+        )
+
+        assertThat(sut.loadClientRegistration(key)).isNotNull()
+
+        sut.invalidateClientRegistration(key)
+
+        assertThat(sut.loadClientRegistration(key)).isNull()
         assertThat(cacheFile).doesNotExist()
     }
 
@@ -172,13 +263,13 @@ class DiskCacheTest {
     }
 
     @Test
-    fun expiredAccessTokenReturnsNull() {
+    fun `expired access token is not loaded`() {
         cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
             """
             {
-                "clientId": "$ssoUrl", 
-                "clientSecret": "$ssoRegion",
-                "clientSecret": "DummyAccessToken",
+                "startUrl": "$ssoUrl", 
+                "region": "$ssoRegion",
+                "accessToken": "DummyAccessToken",
                 "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(now.minusSeconds(100))}"
             }
             """.trimIndent()
@@ -188,15 +279,32 @@ class DiskCacheTest {
     }
 
     @Test
-    fun accessTokenExpiringSoonIsTreatedAsExpired() {
-        val expiationTime = now.plus(14, ChronoUnit.MINUTES)
+    fun `expired access token is loaded if it has a refresh token`() {
         cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
             """
             {
                 "startUrl": "$ssoUrl", 
                 "region": "$ssoRegion",
                 "accessToken": "DummyAccessToken",
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+                "refreshToken": "ARefreshToken",
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(now.minusSeconds(100))}"
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadAccessToken(ssoUrl)).isNotNull()
+    }
+
+    @Test
+    fun accessTokenExpiringSoonIsTreatedAsExpired() {
+        val expirationTime = now.plus(14, ChronoUnit.MINUTES)
+        cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
+            """
+            {
+                "startUrl": "$ssoUrl", 
+                "region": "$ssoRegion",
+                "accessToken": "DummyAccessToken",
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
             }
             """.trimIndent()
         )
@@ -206,14 +314,14 @@ class DiskCacheTest {
 
     @Test
     fun validAccessTokenReturnsCorrectly() {
-        val expiationTime = now.plus(20, ChronoUnit.MINUTES)
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json").writeText(
             """
             {
                 "startUrl": "$ssoUrl", 
                 "region": "$ssoRegion",
                 "accessToken": "DummyAccessToken",
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
             }
             """.trimIndent()
         )
@@ -225,7 +333,7 @@ class DiskCacheTest {
                     ssoUrl,
                     ssoRegion,
                     "DummyAccessToken",
-                    expiationTime
+                    expiresAt = expirationTime
                 )
             )
     }
@@ -250,7 +358,7 @@ class DiskCacheTest {
                     ssoUrl,
                     ssoRegion,
                     "DummyAccessToken",
-                    ZonedDateTime.of(2999, 6, 10, 0, 50, 40, 0, ZoneOffset.UTC).toInstant()
+                    expiresAt = ZonedDateTime.of(2999, 6, 10, 0, 50, 40, 0, ZoneOffset.UTC).toInstant()
                 )
             )
     }
@@ -264,7 +372,7 @@ class DiskCacheTest {
                 ssoUrl,
                 ssoRegion,
                 "DummyAccessToken",
-                Instant.from(expirationTime)
+                expiresAt = Instant.from(expirationTime)
             )
         )
 
@@ -287,8 +395,42 @@ class DiskCacheTest {
     }
 
     @Test
+    fun `scoped access token saves correctly`() {
+        val key = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
+        val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
+        sut.saveAccessToken(
+            key,
+            AccessToken(
+                ssoUrl,
+                ssoRegion,
+                "DummyAccessToken",
+                "RefreshToken",
+                Instant.from(expirationTime)
+            )
+        )
+
+        val accessTokenCache = cacheLocation.resolve("72286fb950f12c77c840239851fd64ac60275c5c.json")
+        if (SystemInfo.isUnix) {
+            assertThat(Files.getPosixFilePermissions(accessTokenCache)).containsOnly(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
+        }
+
+        assertThat(accessTokenCache.readText())
+            .isEqualToIgnoringWhitespace(
+                """
+                {
+                    "startUrl": "$ssoUrl", 
+                    "region": "$ssoRegion",
+                    "accessToken": "DummyAccessToken",
+                    "refreshToken": "RefreshToken",
+                    "expiresAt": "2020-04-07T21:31:33Z"
+                }       
+                """.trimIndent()
+            )
+    }
+
+    @Test
     fun accessTokenInvalidationDeletesFile() {
-        val expiationTime = now.plus(20, ChronoUnit.MINUTES)
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         val cacheFile = cacheLocation.resolve("c1ac99f782ad92755c6de8647b510ec247330ad1.json")
         cacheFile.writeText(
             """
@@ -296,16 +438,63 @@ class DiskCacheTest {
                 "startUrl": "$ssoUrl", 
                 "region": "$ssoRegion",
                 "accessToken": "DummyAccessToken",
-                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expiationTime)}"
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
             }
             """.trimIndent()
         )
 
-        assertThat(sut.loadAccessToken(ssoUrl)).isNotNull
+        assertThat(sut.loadAccessToken(ssoUrl)).isNotNull()
 
         sut.invalidateAccessToken(ssoUrl)
 
         assertThat(sut.loadAccessToken(ssoUrl)).isNull()
         assertThat(cacheFile).doesNotExist()
+    }
+
+    @Test
+    fun `invalidate scoped access token deletes file`() {
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
+        val cacheFile = cacheLocation.resolve("72286fb950f12c77c840239851fd64ac60275c5c.json")
+        val key = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
+
+        cacheFile.writeText(
+            """
+            {
+                "startUrl": "$ssoUrl", 
+                "region": "$ssoRegion",
+                "accessToken": "DummyAccessToken",
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadAccessToken(key)).isNotNull()
+
+        sut.invalidateAccessToken(key)
+
+        assertThat(sut.loadAccessToken(key)).isNull()
+        assertThat(cacheFile).doesNotExist()
+    }
+
+    @Test
+    fun `scope order does not matter for scoped access token cache`() {
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
+        val cacheFile = cacheLocation.resolve("72286fb950f12c77c840239851fd64ac60275c5c.json")
+        val key1 = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
+        val key2 = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope2", "scope1"))
+
+        cacheFile.writeText(
+            """
+            {
+                "startUrl": "$ssoUrl", 
+                "region": "$ssoRegion",
+                "accessToken": "DummyAccessToken",
+                "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}"
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadAccessToken(key1)).isNotNull()
+        assertThat(sut.loadAccessToken(key2)).isNotNull()
     }
 }
