@@ -21,7 +21,7 @@ phases:
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
       - DOTNET_ROOT="/root/.dotnet" /usr/local/bin/dotnet-install.sh --channel 6.0
-
+      - dotnet codeartifact-creds install
   build:
     commands:
       - |
@@ -30,8 +30,7 @@ phases:
           CODEARTIFACT_NUGET_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text)
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
-      - dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
-      - dotnet codeartifact-creds install
+
       - AWS_CONFIG_FILE=`mktemp`
       - |
         >$AWS_CONFIG_FILE echo "[default]
