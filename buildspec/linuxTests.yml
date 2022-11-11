@@ -11,11 +11,6 @@ env:
     LOCAL_ENV_RUN: true
 
 phases:
-  install:
-    commands:
-      - dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
-      - dotnet codeartifact-creds install
-
   build:
     commands:
       - |
@@ -24,7 +19,8 @@ phases:
           CODEARTIFACT_NUGET_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text)
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
-
+      - dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
+      - dotnet codeartifact-creds install
       - chmod +x gradlew
       - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME check coverageReport --info --console plain
       - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME buildPlugin
