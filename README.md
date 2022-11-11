@@ -104,6 +104,7 @@ Please note that experimental features may be disabled / removed at any time.
 
 ## Licensing
 
+
 The plugin is distributed according to the terms outlined in our [LICENSE](LICENSE).
 
 [lambda-icon]: jetbrains-core/resources/icons/resources/LambdaFunction.svg
