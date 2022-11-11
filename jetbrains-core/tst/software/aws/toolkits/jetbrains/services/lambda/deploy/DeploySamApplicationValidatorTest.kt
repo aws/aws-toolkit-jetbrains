@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
+import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.nio.file.Files
@@ -133,7 +134,7 @@ class DeploySamApplicationValidatorTest {
 
     @Test
     fun invalidStackName_TooLong() {
-        val maxLength = DeployServerlessApplicationDialog.MAX_STACK_NAME_LENGTH
+        val maxLength = ValidateSamParameters.MAX_STACK_NAME_LENGTH
         sut.forceUi(sutPanel, isCreateStack = true, stackName = "x".repeat(maxLength + 1))
 
         assertThat(validateAll()).singleElement()

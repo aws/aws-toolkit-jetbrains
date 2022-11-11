@@ -3,68 +3,36 @@
 
 package software.aws.toolkits.jetbrains.services.lambda
 
-import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.actionListener
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.selected
-import com.intellij.ui.layout.toBinding
-import com.intellij.util.text.nullize
-import org.jetbrains.annotations.TestOnly
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
-import software.amazon.awssdk.services.cloudformation.model.Tag
-import software.amazon.awssdk.services.ecr.EcrClient
-import software.amazon.awssdk.services.lambda.model.PackageType
-import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
-import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
-import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
-import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
-import software.aws.toolkits.jetbrains.services.cloudformation.mergeRemoteParameters
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
-import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CapabilitiesEnumCheckBoxes
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
-import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationSettings
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
-import software.aws.toolkits.jetbrains.settings.DeploySettings
-import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.ui.bindValueToProperty
-import software.aws.toolkits.jetbrains.utils.ui.find
-import software.aws.toolkits.jetbrains.utils.ui.installOnParent
 import software.aws.toolkits.jetbrains.utils.ui.selected
-import software.aws.toolkits.jetbrains.utils.ui.toolTipText
-import software.aws.toolkits.jetbrains.utils.ui.validationInfo
-import software.aws.toolkits.jetbrains.utils.ui.withBinding
 import software.aws.toolkits.resources.message
 import java.awt.Component
-import java.util.regex.PatternSyntaxException
 import javax.swing.JComponent
 
-class SyncServerlessApplicationDialog(project: Project, private val templateFile: VirtualFile,): DialogWrapper(project) {
+class SyncServerlessApplicationDialog(project: Project, private val templateFile: VirtualFile) : DialogWrapper(project) {
     private var stackName = ""
     private var newStack = false
     private val stackName2 = JBTextField().apply {
@@ -106,10 +74,10 @@ class SyncServerlessApplicationDialog(project: Project, private val templateFile
     private val parametersField = KeyValueTextField()
 
     private val component by lazy {
-        panel{
+        panel {
             buttonsGroup {
                 row {
-                    radioButton("Create Stack  ").applyToComponent {
+                    radioButton("Create Stack").applyToComponent {
                         isSelected = newStack == true
                     }.bindSelected(
                         { newStack },
@@ -122,9 +90,8 @@ class SyncServerlessApplicationDialog(project: Project, private val templateFile
                     cell(stackName2).apply {
                         this.horizontalAlign(HorizontalAlign.FILL)
                     }
-
                 }
-                row{
+                row {
                     radioButton("Update Stack ").applyToComponent {
                         isSelected = true
                     }.bindSelected(
@@ -133,14 +100,13 @@ class SyncServerlessApplicationDialog(project: Project, private val templateFile
                             if (it) newStack = false
                         }
                     ).actionListener { event, component ->
-
                     }
                     stackSelector.selectedItem {
                         it.stackName() == "sam-app"
                     }
                     cell(stackSelector).apply {
                         this.horizontalAlign(HorizontalAlign.FILL)
-                    }//comboBox(listOf("sam-app"))
+                    } // comboBox(listOf("sam-app"))
                 }
             }
             /*row("ECR Repository") {
@@ -156,12 +122,11 @@ class SyncServerlessApplicationDialog(project: Project, private val templateFile
                 cell(parametersField).apply {
                     this.horizontalAlign(HorizontalAlign.FILL)
                 }
-
             }
 
-            row("S3 Bucket"){
+            row("S3 Bucket") {
                 cell(s3BucketSelector)
-                button("Create"){
+                button("Create") {
                     val bucketDialog = CreateS3BucketDialog(
                         project = project,
                         s3Client = project.awsClient(),
@@ -183,8 +148,6 @@ class SyncServerlessApplicationDialog(project: Project, private val templateFile
                     cell(it)
                 }
             }
-
-
         }
     }
     override fun createCenterPanel(): JComponent? = component

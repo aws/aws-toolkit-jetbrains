@@ -4,15 +4,18 @@
 package software.aws.toolkits.jetbrains.services.lambda
 
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
+import software.aws.toolkits.resources.message
 
-object SyncServerlessApplicationExperiment: ToolkitExperiment (
+object SyncServerlessApplicationExperiment : ToolkitExperiment(
     "syncServerlessApplication",
-    { "Sync Serverless Application" },
-    {"Enables Sync applications instead of deploy"}
-    )
+    { message("serverless.application.sync") },
+    { "Enables Sync applications instead of deploy" },
+    default = true
+)
 
-object SyncServerlessApplicationCodeExperiment: ToolkitExperiment (
+object SyncServerlessApplicationCodeExperiment : ToolkitExperiment(
     "syncServerlessApplicationCode",
-    { "Sync Serverless Application Code(skip infra)" },
-    {"Enables Sync applications instead of deploy"}
+    { message("serverless.application.sync.code") },
+    { "Enables Sync applications instead of deploy" },
+    default = false
 )

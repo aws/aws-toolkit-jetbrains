@@ -30,12 +30,14 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
+import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
 import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
+import software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationExperiment
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationSettings
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
@@ -207,17 +209,18 @@ class DeployServerlessApplicationAction : AnAction(
     override fun update(e: AnActionEvent) {
         super.update(e)
 
-        // If there are no supported runtime groups, it will never succeed so don't show it
-        /*e.presentation.isVisible = if (LambdaHandlerResolver.supportedRuntimeGroups().isEmpty()) {
-            false
-        } else {
-            if (e.place == ToolkitPlaces.EXPLORER_TOOL_WINDOW) {
-                true
+        e.presentation.isVisible = if (!SyncServerlessApplicationExperiment.isEnabled()) {
+            // If there are no supported runtime groups, it will never succeed so don't show it
+            if (LambdaHandlerResolver.supportedRuntimeGroups().isEmpty()) {
+                false
             } else {
-                getSamTemplateFile(e) != null
+                if (e.place == ToolkitPlaces.EXPLORER_TOOL_WINDOW) {
+                    true
+                } else {
+                    getSamTemplateFile(e) != null
+                }
             }
-        }*/
-        e.presentation.isVisible = false
+        } else false
     }
 
     /**
