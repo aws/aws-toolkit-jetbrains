@@ -33,14 +33,12 @@ import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.resources.message
 import java.util.regex.PatternSyntaxException
 
-private val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
-
-/**
- * Determines the relevant Sam Template, returns null if one can't be found.
- */
-
 object SamTemplateFileUtils {
+    /**
+     * Determines the relevant Sam Template, returns null if one can't be found.
+     */
     fun getSamTemplateFile(e: AnActionEvent): VirtualFile? = runReadAction {
+        val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
         val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return@runReadAction null
         val virtualFile = virtualFiles.singleOrNull() ?: return@runReadAction null
 
@@ -108,7 +106,7 @@ fun getSamCli(): GeneralCommandLine {
 
 object ValidateSamParameters {
     // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-parameters.html
-//  A stack name can contain only alphanumeric characters (case-sensitive) and hyphens. It must start with an alphabetic character and can't be longer than 128 characters.
+    //  A stack name can contain only alphanumeric characters (case-sensitive) and hyphens. It must start with an alphabetic character and can't be longer than 128 characters.
     private val STACK_NAME_PATTERN = "[a-zA-Z][a-zA-Z0-9-]*".toRegex()
     const val MAX_STACK_NAME_LENGTH = 128
     fun validateStackName(name: String?, availableStacks: ResourceSelector<StackSummary>): String? {
