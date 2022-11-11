@@ -1,7 +1,7 @@
 // Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.lambda.wizard
+package software.aws.toolkits.jetbrains.services.lambda.sam.sync
 
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
@@ -24,6 +24,7 @@ import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.cloudformation.model.Tag
 import software.amazon.awssdk.services.ecr.EcrClient
@@ -66,7 +67,7 @@ data class SyncServerlessApplicationSettings(
     val capabilities: List<CreateCapabilities>
 )
 
-class SyncServerlessApplicationDialog2(
+class SyncServerlessApplicationDialog(
     private val project: Project,
     private val templateFile: VirtualFile,
     private val loadResourcesOnCreate: Boolean = true
@@ -152,7 +153,6 @@ class SyncServerlessApplicationDialog2(
 
     private val component by lazy {
         panel {
-
             buttonsGroup {
                 row {
                     val createStackButton = radioButton(message("serverless.application.sync.label.stack.new"), true).applyToComponent {
@@ -266,7 +266,7 @@ class SyncServerlessApplicationDialog2(
                 cell(ecrRepoSelector).apply {
                     this.horizontalAlign(HorizontalAlign.FILL)
                     this.errorOnApply(message("serverless.application.sync.validation.ecr.repo.empty")) {
-                        it.isLoading || it.selected() == null
+                        it.isVisible && (it.isLoading || it.selected() == null)
                     }
                 }.applyToComponent {
                     this.toolTipText = message("serverless.application.sync.tooltip.ecrRepo")
@@ -290,7 +290,7 @@ class SyncServerlessApplicationDialog2(
                 label(message("cloudformation.capabilities")).applyToComponent {
                     this.toolTipText = message("cloudformation.capabilities.toolTipText")
                 }
-                capabilitiesSelector.selected = CreateCapabilities.values().filter { it.defaultEnabled }
+
                 capabilitiesSelector.checkboxes.forEach {
                     cell(it)
                 }
@@ -301,7 +301,6 @@ class SyncServerlessApplicationDialog2(
                     this.toolTipText = message("lambda.sam.buildInContainer.tooltip")
                 }.bindSelected(::useContainer)
             }
-
         }
     }
 
@@ -322,8 +321,10 @@ class SyncServerlessApplicationDialog2(
         s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
         useContainer = (settings?.samUseContainer(samPath) ?: false)
         capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)
-            ?: CreateCapabilities.values().filter { it.defaultEnabled }
-
+            ?: CreateCapabilities.values().filter {
+                it.capability == Capability.CAPABILITY_NAMED_IAM.toString() ||
+                    it.capability == Capability.CAPABILITY_AUTO_EXPAND.toString()
+            }
     }
 
     private fun refreshTemplateParametersAndTags(stackName: String? = null) {
@@ -355,6 +356,9 @@ class SyncServerlessApplicationDialog2(
     }
 
     @TestOnly
+    fun getParameterDialog(): DialogPanel = component
+
+    @TestOnly
     fun forceUi(
         panel: DialogPanel,
         isCreateStack: Boolean? = null,
@@ -368,7 +372,6 @@ class SyncServerlessApplicationDialog2(
         bucket: String? = null,
         forceEcrRepo: Boolean = false,
         ecrRepo: String? = null,
-        autoExecute: Boolean? = null,
         useContainer: Boolean? = null
     ) {
         if (stacks != null) {
@@ -378,8 +381,12 @@ class SyncServerlessApplicationDialog2(
 
         if (isCreateStack == true) {
             syncType = SyncType.CREATE
+            stackNameField.isEnabled = true
+            stackSelector.isEnabled = false
         } else if (isCreateStack == false) {
             syncType = SyncType.UPDATE
+            stackNameField.isEnabled = false
+            stackSelector.isEnabled = true
         }
 
         if (forceStackName || stackName != null) {
@@ -404,17 +411,13 @@ class SyncServerlessApplicationDialog2(
             ecrRepoSelector.forceLoaded()
         }
 
-        if (forceEcrRepo || ecrRepo != null) {
-            ecrRepoSelector.selectedItem = ecrRepo
-        }
-
         if (hasImageFunctions != null) {
             showImageOptions = hasImageFunctions
         }
 
-        /*if (autoExecute != null) {
-            requireReview = autoExecute
-        }*/
+        if (forceEcrRepo || ecrRepo != null) {
+            ecrRepoSelector.selectedItem = ecrRepo
+        }
 
         if (useContainer != null) {
             this.useContainer = useContainer

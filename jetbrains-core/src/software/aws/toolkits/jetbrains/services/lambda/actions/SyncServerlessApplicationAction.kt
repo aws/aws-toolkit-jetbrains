@@ -8,8 +8,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationExperiment
-import software.aws.toolkits.jetbrains.services.lambda.sam.getSamTemplateFile
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateFileUtils.getSamTemplateFile
+import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationExperiment
 
 class SyncServerlessApplicationAction : AnAction({ "Sync Serverless Application" }, AwsIcons.Resources.SERVERLESS_APP) {
     override fun actionPerformed(e: AnActionEvent) {

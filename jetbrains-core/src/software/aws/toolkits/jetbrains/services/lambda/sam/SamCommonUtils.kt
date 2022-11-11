@@ -8,46 +8,88 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
+import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
+import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
 import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.ui.find
 import software.aws.toolkits.resources.message
 import java.util.regex.PatternSyntaxException
 
 private val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
 
-fun getSamTemplateFile(e: AnActionEvent): VirtualFile? = runReadAction {
-    val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return@runReadAction null
-    val virtualFile = virtualFiles.singleOrNull() ?: return@runReadAction null
+/**
+ * Determines the relevant Sam Template, returns null if one can't be found.
+ */
 
-    if (templateYamlRegex.matches(virtualFile.name)) {
-        return@runReadAction virtualFile
-    }
+object SamTemplateFileUtils {
+    fun getSamTemplateFile(e: AnActionEvent): VirtualFile? = runReadAction {
+        val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return@runReadAction null
+        val virtualFile = virtualFiles.singleOrNull() ?: return@runReadAction null
 
-    // If the module node was selected, see if there is a template file in the top level folder
-    val module = e.getData(LangDataKeys.MODULE_CONTEXT)
-    if (module != null) {
-        // It is only acceptable if one template file is found
-        val childTemplateFiles = ModuleRootManager.getInstance(module).contentRoots.flatMap { root ->
-            root.children.filter { child -> templateYamlRegex.matches(child.name) }
+        if (templateYamlRegex.matches(virtualFile.name)) {
+            return@runReadAction virtualFile
         }
 
-        if (childTemplateFiles.size == 1) {
-            return@runReadAction childTemplateFiles.single()
+        // If the module node was selected, see if there is a template file in the top level folder
+        val module = e.getData(LangDataKeys.MODULE_CONTEXT)
+        if (module != null) {
+            // It is only acceptable if one template file is found
+            val childTemplateFiles = ModuleRootManager.getInstance(module).contentRoots.flatMap { root ->
+                root.children.filter { child -> templateYamlRegex.matches(child.name) }
+            }
+
+            if (childTemplateFiles.size == 1) {
+                return@runReadAction childTemplateFiles.single()
+            }
         }
+
+        return@runReadAction null
     }
 
-    return@runReadAction null
+    fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? =
+        try {
+            project.validateSamTemplateHasResources(templateFile)
+        } catch (e: Exception) {
+            message("serverless.application.deploy.error.bad_parse", templateFile.path, e)
+        }
+
+    fun retrieveSamTemplate(e: AnActionEvent, project: Project): VirtualFile? {
+        if (e.place == ToolkitPlaces.EXPLORER_TOOL_WINDOW) {
+            return runBlocking(getCoroutineUiContext()) {
+                FileChooser.chooseFile(
+                    FileChooserDescriptorFactory.createSingleFileDescriptor(YAMLFileType.YML),
+                    project,
+                    project.guessProjectDir()
+                )
+            } ?: return null
+        } else {
+            val file = getSamTemplateFile(e)
+            if (file == null) {
+                Exception(message("serverless.application.deploy.toast.template_file_failure"))
+                    .notifyError(message("aws.notification.title"), project)
+                return null
+            }
+            return file
+        }
+    }
 }
 
 fun getSamCli(): GeneralCommandLine {

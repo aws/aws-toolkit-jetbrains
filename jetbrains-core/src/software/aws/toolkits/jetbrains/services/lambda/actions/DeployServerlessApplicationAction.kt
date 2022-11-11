@@ -5,23 +5,16 @@ package software.aws.toolkits.jetbrains.services.lambda.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.fileChooser.FileChooser
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -35,13 +28,15 @@ import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
 import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
 import software.aws.toolkits.jetbrains.services.cloudformation.executeChangeSetAndWait
 import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
-import software.aws.toolkits.jetbrains.services.cloudformation.validateSamTemplateHasResources
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationExperiment
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationSettings
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateFileUtils
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateFileUtils.getSamTemplateFile
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateFileUtils.validateTemplateFile
+import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationExperiment
 import software.aws.toolkits.jetbrains.services.lambda.steps.DeployLambda
 import software.aws.toolkits.jetbrains.services.lambda.steps.createDeployWorkflow
 import software.aws.toolkits.jetbrains.services.lambda.upload.UploadFunctionContinueDialog
@@ -63,7 +58,6 @@ class DeployServerlessApplicationAction : AnAction(
     AwsIcons.Resources.SERVERLESS_APP
 ) {
     private val edtContext = getCoroutineUiContext()
-    private val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
@@ -82,23 +76,7 @@ class DeployServerlessApplicationAction : AnAction(
                 return@thenAccept
             }
 
-            val templateFile = if (e.place == ToolkitPlaces.EXPLORER_TOOL_WINDOW) {
-                runBlocking(edtContext) {
-                    FileChooser.chooseFile(
-                        FileChooserDescriptorFactory.createSingleFileDescriptor(YAMLFileType.YML),
-                        project,
-                        project.guessProjectDir()
-                    )
-                } ?: return@thenAccept
-            } else {
-                val file = getSamTemplateFile(e)
-                if (file == null) {
-                    Exception(message("serverless.application.deploy.toast.template_file_failure"))
-                        .notifyError(message("aws.notification.title"), project)
-                    return@thenAccept
-                }
-                file
-            }
+            val templateFile = SamTemplateFileUtils.retrieveSamTemplate(e, project) ?: return@thenAccept
 
             validateTemplateFile(project, templateFile)?.let {
                 notifyError(content = it, project = project)
@@ -223,33 +201,6 @@ class DeployServerlessApplicationAction : AnAction(
         } else false
     }
 
-    /**
-     * Determines the relevant Sam Template, returns null if one can't be found.
-     */
-    private fun getSamTemplateFile(e: AnActionEvent): VirtualFile? = runReadAction {
-        val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return@runReadAction null
-        val virtualFile = virtualFiles.singleOrNull() ?: return@runReadAction null
-
-        if (templateYamlRegex.matches(virtualFile.name)) {
-            return@runReadAction virtualFile
-        }
-
-        // If the module node was selected, see if there is a template file in the top level folder
-        val module = e.getData(LangDataKeys.MODULE_CONTEXT)
-        if (module != null) {
-            // It is only acceptable if one template file is found
-            val childTemplateFiles = ModuleRootManager.getInstance(module).contentRoots.flatMap { root ->
-                root.children.filter { child -> templateYamlRegex.matches(child.name) }
-            }
-
-            if (childTemplateFiles.size == 1) {
-                return@runReadAction childTemplateFiles.single()
-            }
-        }
-
-        return@runReadAction null
-    }
-
     private fun saveSettings(project: Project, templateFile: VirtualFile, settings: DeployServerlessApplicationSettings) {
         ModuleUtil.findModuleForFile(templateFile, project)?.let { module ->
             relativeSamPath(module, templateFile)?.let { samPath ->
@@ -264,11 +215,4 @@ class DeployServerlessApplicationAction : AnAction(
             }
         }
     }
-
-    private fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? =
-        try {
-            project.validateSamTemplateHasResources(templateFile)
-        } catch (e: Exception) {
-            message("serverless.application.deploy.error.bad_parse", templateFile.path, e)
-        }
 }

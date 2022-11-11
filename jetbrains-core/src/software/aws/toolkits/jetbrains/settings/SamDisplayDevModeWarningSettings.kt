@@ -25,7 +25,7 @@ class SamDisplayDevModeWarningSettings : PersistentStateComponent<SamDevModeWarn
         }
 
     companion object {
-        fun getInstance(): SamDisplayDevModeWarningSettings = service() // ApplicationManager.getApplication().getService(SamDisplayDevModeWarningSettings::class.java)
+        fun getInstance(): SamDisplayDevModeWarningSettings = service()
     }
 }
 

@@ -8,11 +8,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationCodeExperiment
-import software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationExperiment
-import software.aws.toolkits.jetbrains.services.lambda.sam.getSamTemplateFile
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateFileUtils.getSamTemplateFile
+import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationCodeExperiment
+import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationExperiment
+import software.aws.toolkits.resources.message
 
-class SyncServerlessApplicationCodeAction : AnAction({ "Sync Serverless Application(skip Infra)" }, AwsIcons.Resources.SERVERLESS_APP) {
+class SyncServerlessApplicationCodeAction : AnAction(message("serverless.application.sync.code"), null, AwsIcons.Resources.SERVERLESS_APP) {
     override fun actionPerformed(e: AnActionEvent) {
         SyncServerlessAppAction(true).actionPerformed(e)
     }

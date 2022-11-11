@@ -24,7 +24,6 @@ import com.intellij.openapi.util.Key
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
-import software.aws.toolkits.jetbrains.services.lambda.wizard.SyncServerlessApplicationSettings
 import java.nio.charset.Charset
 import java.nio.file.Path
 import javax.swing.Icon

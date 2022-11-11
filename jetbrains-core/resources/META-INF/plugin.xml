@@ -364,8 +364,8 @@ with what features/services are supported.
         <experiment implementation="software.aws.toolkits.jetbrains.services.codewhisperer.experiment.CodeWhispererExperiment"/>
         <experiment implementation="software.aws.toolkits.jetbrains.services.ecs.EcsExecExperiment"/>
         <experiment implementation="software.aws.toolkits.jetbrains.services.dynamic.JsonResourceModificationExperiment"/>
-        <experiment implementation="software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationExperiment"/>
-        <experiment implementation="software.aws.toolkits.jetbrains.services.lambda.SyncServerlessApplicationCodeExperiment"/>
+        <experiment implementation="software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationExperiment"/>
+        <experiment implementation="software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationCodeExperiment"/>
 
         <tool implementation="software.aws.toolkits.jetbrains.services.ssm.SsmPlugin"/>
     </extensions>
