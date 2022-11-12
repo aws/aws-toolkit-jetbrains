@@ -4,6 +4,7 @@ cache:
   paths:
 #    - '/root/.gradle/caches/**/*'
     - '/root/.gradle/wrapper/**/*'
+    - '/root/.dotnet/tools'
 
 env:
   variables:

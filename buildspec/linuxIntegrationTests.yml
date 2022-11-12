@@ -4,6 +4,7 @@ cache:
   paths:
 #    - '/root/.gradle/caches/**/*'
     - '/root/.gradle/wrapper/**/*'
+    - '/root/.dotnet/tools'
 
 env:
   variables:
@@ -22,6 +23,7 @@ phases:
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
       - DOTNET_ROOT="/root/.dotnet" /usr/local/bin/dotnet-install.sh --channel 6.0
       - dotnet codeartifact-creds install
+
   build:
     commands:
       - |
