@@ -4,7 +4,6 @@ cache:
   paths:
 #    - '/root/.gradle/caches/**/*'
     - '/root/.gradle/wrapper/**/*'
-    - '/root/.dotnet/tools'
 
 env:
   variables:
@@ -13,9 +12,8 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      dotnet: latest
     commands:
+      - PATH="/root/.dotnet/:/root/.dotnet/tools/"
       - dotnet codeartifact-creds install
 
   build:
