@@ -14,6 +14,8 @@ env:
 
 phases:
   install:
+    runtime-versions:
+      dotnet: latest
     commands:
       - n install 16
       - startDocker.sh

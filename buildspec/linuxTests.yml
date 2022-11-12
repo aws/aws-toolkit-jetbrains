@@ -13,6 +13,8 @@ env:
 
 phases:
   install:
+    runtime-versions:
+      dotnet: latest
     commands:
       - dotnet codeartifact-creds install
 

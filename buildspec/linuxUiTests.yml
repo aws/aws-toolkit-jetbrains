@@ -19,6 +19,8 @@ env:
 
 phases:
   install:
+    runtime-versions:
+      dotnet: latest
     commands:
       - startDesktop.sh
 

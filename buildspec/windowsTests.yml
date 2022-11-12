@@ -1,8 +1,5 @@
 version: 0.2
 
-cache:
-  paths:
-    - '/root/.dotnet/tools'
 env:
   variables:
     CI: true
@@ -10,6 +7,8 @@ env:
 
 phases:
   install:
+    runtime-versions:
+      dotnet: latest
     commands:
       - |
         $url = 'https://corretto.aws/downloads/latest/amazon-corretto-17-x64-windows-jdk.msi';
@@ -31,8 +30,8 @@ phases:
       - "Remove-Item -Recurse -Force 'C:\\Program\ Files\\dotnet\\sdk\\5.0.100'"
       - "Remove-Item -Recurse -Force 'C:\\Program\ Files\\dotnet\\sdk\\6.0.202'"
       - choco install -y dotnet-5.0-sdk
+      - dotnet codeartifact-creds install
       - dotnet --list-sdks
-      - dotnet codeartifact-creds install 
 
   build:
     commands:
