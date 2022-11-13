@@ -174,19 +174,16 @@ class SyncServerlessApplicationDialog(
                             }
                         }
                     cell(stackNameField)
-                        .apply {
-                            this.horizontalAlign(HorizontalAlign.FILL)
-                            this.enabledIf(createStackButton.component.selected)
-                        }.bindText(::newStackName)
-                        .applyToComponent {
-                            this.toolTipText = message("serverless.application.sync.tooltip.createStack")
-                        }.validationOnApply { field ->
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .enabledIf(createStackButton.component.selected)
+                        .bindText(::newStackName)
+                        .validationOnApply { field ->
                             if (!field.isEnabled) {
                                 null
                             } else {
                                 validateStackName(field.text, stackSelector)?.let { field.validationInfo(it) }
                             }
-                        }
+                        }.component.toolTipText = message("serverless.application.sync.tooltip.createStack")
                 }
 
                 row {
@@ -208,43 +205,35 @@ class SyncServerlessApplicationDialog(
                         }
                     }
 
-                    cell(stackSelector).apply {
-                        this.horizontalAlign(HorizontalAlign.FILL)
-                        this.enabledIf(updateStackButton.component.selected)
-                        this.errorOnApply(message("serverless.application.sync.validation.stack.missing")) {
+                    cell(stackSelector)
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .enabledIf(updateStackButton.component.selected)
+                        .errorOnApply(message("serverless.application.sync.validation.stack.missing")) {
                             it.isEnabled && (it.isLoading || it.selected() == null)
-                        }
-                    }.applyToComponent {
-                        this.toolTipText = message("serverless.application.sync.tooltip.updateStack")
-                    }
+                        }.component.toolTipText = message("serverless.application.sync.tooltip.updateStack")
                 }
             }.bind({ createNewStack }, { createNewStack = it })
 
             row(message("serverless.application.sync.template.parameters")) {
-                cell(parametersField).apply {
-                    this.withBinding(::templateParameters.toMutableProperty())
-                }
+                cell(parametersField)
+                    .withBinding(::templateParameters.toMutableProperty())
                     .validationOnApply {
                         validateParameters(it, templateFileParameters)
-                    }.applyToComponent {
-                        this.toolTipText = message("serverless.application.sync.tooltip.template.parameters")
                     }.horizontalAlign(HorizontalAlign.FILL)
+                    .component.toolTipText = message("serverless.application.sync.tooltip.template.parameters")
             }
             val tagsString = message("tags.title")
             row(tagsString) {
-                cell(tagsField).apply {
-                    this.horizontalAlign(HorizontalAlign.FILL)
-                    this.withBinding(::tags.toMutableProperty())
-                }
+                cell(tagsField)
+                    .horizontalAlign(HorizontalAlign.FILL)
+                    .withBinding(::tags.toMutableProperty())
             }
 
             row(message("serverless.application.sync.label.bucket")) {
-                cell(s3BucketSelector).apply {
-                    this.horizontalAlign(HorizontalAlign.FILL)
-                    this.errorOnApply(message("serverless.application.sync.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
-                }.applyToComponent {
-                    this.toolTipText = message("serverless.application.sync.tooltip.s3Bucket")
-                }
+                cell(s3BucketSelector)
+                    .horizontalAlign(HorizontalAlign.FILL)
+                    .errorOnApply(message("serverless.application.sync.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
+                    .component.toolTipText = message("serverless.application.sync.tooltip.s3Bucket")
 
                 button(message("general.create")) {
                     val bucketDialog = CreateS3BucketDialog(
@@ -263,14 +252,11 @@ class SyncServerlessApplicationDialog(
             }
 
             row(message("serverless.application.sync.label.repo")) {
-                cell(ecrRepoSelector).apply {
-                    this.horizontalAlign(HorizontalAlign.FILL)
-                    this.errorOnApply(message("serverless.application.sync.validation.ecr.repo.empty")) {
+                cell(ecrRepoSelector)
+                    .horizontalAlign(HorizontalAlign.FILL)
+                    .errorOnApply(message("serverless.application.sync.validation.ecr.repo.empty")) {
                         it.isVisible && (it.isLoading || it.selected() == null)
-                    }
-                }.applyToComponent {
-                    this.toolTipText = message("serverless.application.sync.tooltip.ecrRepo")
-                }
+                    }.component.toolTipText = message("serverless.application.sync.tooltip.ecrRepo")
 
                 button(message("general.create")) {
                     val ecrDialog = CreateEcrRepoDialog(
@@ -287,9 +273,8 @@ class SyncServerlessApplicationDialog(
             }.visible(showImageOptions)
 
             row {
-                label(message("cloudformation.capabilities")).applyToComponent {
-                    this.toolTipText = message("cloudformation.capabilities.toolTipText")
-                }
+                label(message("cloudformation.capabilities"))
+                    .component.toolTipText = message("cloudformation.capabilities.toolTipText")
 
                 capabilitiesSelector.checkboxes.forEach {
                     cell(it)
@@ -297,9 +282,9 @@ class SyncServerlessApplicationDialog(
             }
 
             row {
-                checkBox(message("serverless.application.sync.use_container")).applyToComponent {
-                    this.toolTipText = message("lambda.sam.buildInContainer.tooltip")
-                }.bindSelected(::useContainer)
+                checkBox(message("serverless.application.sync.use_container"))
+                    .bindSelected(::useContainer)
+                    .component.toolTipText = message("lambda.sam.buildInContainer.tooltip")
             }
         }
     }

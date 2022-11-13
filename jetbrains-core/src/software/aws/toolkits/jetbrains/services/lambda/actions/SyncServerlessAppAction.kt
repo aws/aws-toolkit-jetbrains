@@ -56,21 +56,25 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             }
 
             val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
-            val devMode = if (warningSettings.showDevModeWarning) SyncServerlessAppWarningDialog(project).showAndGet() else true
-            if (devMode) {
-                runInEdt {
-                    FileDocumentManager.getInstance().saveAllDocuments()
-                    val parameterDialog = SyncServerlessApplicationDialog(project, templateFile)
-                    if (!parameterDialog.showAndGet()) {
-                        // add telemetry
-                        return@runInEdt
-                    }
-                    val settings = parameterDialog.settings()
 
-                    // TODO: saveSettings(project, templateFile, settings)
-
-                    syncApp(templateFile, project, settings)
+            if (warningSettings.showDevModeWarning) {
+                if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
+                    return@thenAccept
                 }
+            }
+
+            runInEdt {
+                FileDocumentManager.getInstance().saveAllDocuments()
+                val parameterDialog = SyncServerlessApplicationDialog(project, templateFile)
+                if (!parameterDialog.showAndGet()) {
+                    // add telemetry
+                    return@runInEdt
+                }
+                val settings = parameterDialog.settings()
+
+                // TODO: saveSettings(project, templateFile, settings)
+
+                syncApp(templateFile, project, settings)
             }
         }
     }

@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.panel
 import software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings
 import software.aws.toolkits.resources.message
@@ -13,7 +13,9 @@ import javax.swing.JComponent
 
 class SyncServerlessAppWarningDialog(private val project: Project) : DialogWrapper(project) {
     private val settings = SamDisplayDevModeWarningSettings.getInstance()
-    var dontDisplayWarning = false
+    private val dontDisplayWarning = JBCheckBox(message("general.notification.action.hide_forever")).also {
+        it.isSelected = false
+    }
     private val component by lazy {
         panel {
             row {
@@ -22,7 +24,7 @@ class SyncServerlessAppWarningDialog(private val project: Project) : DialogWrapp
                 )
             }
             row {
-                checkBox(message("general.notification.action.hide_forever")).bindSelected({ dontDisplayWarning }, { dontDisplayWarning = it })
+                cell(dontDisplayWarning)
             }
         }
     }
@@ -37,7 +39,7 @@ class SyncServerlessAppWarningDialog(private val project: Project) : DialogWrapp
 
     override fun doOKAction() {
         super.doOKAction()
-        if (dontDisplayWarning) {
+        if (dontDisplayWarning.isSelected) {
             settings.showDevModeWarning = false
         }
     }

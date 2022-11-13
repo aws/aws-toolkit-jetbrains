@@ -21,9 +21,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import icons.AwsIcons
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
+import software.aws.toolkits.jetbrains.utils.notifyError
 import java.nio.charset.Charset
 import java.nio.file.Path
 import javax.swing.Icon
@@ -39,10 +41,11 @@ class SyncApplicationRunProfile(
 
     override fun getName(): String = settings.stackName
 
-    override fun getIcon(): Icon? = null
+    override fun getIcon(): Icon? = AwsIcons.Resources.SERVERLESS_APP
 
     inner class SyncApplicationRunProfileState(environment: ExecutionEnvironment) : CommandLineState(environment) {
         val stackName = settings.stackName
+
         override fun startProcess(): ProcessHandler {
             val processHandler = KillableProcessHandler(getSamSyncCommand())
             ProcessTerminatedListener.attach(processHandler)
@@ -101,34 +104,36 @@ class SyncApplicationRunProfile(
             return quote + param + quote
         }
 
-        override fun execute(executor: Executor, runner: ProgramRunner<*>) = super.execute(executor, runner).apply {
-            processHandler?.addProcessListener(object : ProcessAdapter() {
+        override fun execute(executor: Executor, runner: ProgramRunner<*>) =
+            super.execute(executor, runner).apply {
+                processHandler?.addProcessListener(object : ProcessAdapter() {
+                    private var insertAssertionNow = false
+                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                        if (outputType === ProcessOutputTypes.STDOUT ||
+                            outputType === ProcessOutputTypes.STDERR
+                        ) {
+                            try {
+                                if (event.text.contains("[Y/n]:")) {
+                                    insertAssertionNow = true
 
-                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                    if (outputType === ProcessOutputTypes.STDOUT ||
-                        outputType === ProcessOutputTypes.STDERR
-                    ) {
-                        if (event.text.contains("[Y/n]:")) {
-                            insertAssertionNow = true
-
-                            ApplicationManager.getApplication().executeOnPooledThread {
-                                while (insertAssertionNow) {
-                                    processHandler.processInput?.write("Y\n".toByteArray(Charset.defaultCharset()))
+                                    ApplicationManager.getApplication().executeOnPooledThread {
+                                        while (insertAssertionNow) {
+                                            processHandler.processInput?.write("Y\n".toByteArray(Charset.defaultCharset()))
+                                        }
+                                    }
+                                } else {
+                                    insertAssertionNow = false
                                 }
+                                runInEdt {
+                                    RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
+                                }
+                            } catch (e: Exception) {
+                                notifyError("Sam Sync Failed")
                             }
-                        } else {
-                            insertAssertionNow = false
-                        }
-                        runInEdt {
-                            RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
                         }
                     }
-                }
-            })
-        }
+                })
+            }
     }
 
-    companion object {
-        private var insertAssertionNow = false
-    }
 }

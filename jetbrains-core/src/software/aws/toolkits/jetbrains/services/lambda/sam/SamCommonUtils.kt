@@ -15,12 +15,12 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.runInEdtAndGet
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.aws.toolkits.jetbrains.ToolkitPlaces
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
@@ -34,11 +34,12 @@ import software.aws.toolkits.resources.message
 import java.util.regex.PatternSyntaxException
 
 object SamTemplateFileUtils {
+    val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
+
     /**
      * Determines the relevant Sam Template, returns null if one can't be found.
      */
     fun getSamTemplateFile(e: AnActionEvent): VirtualFile? = runReadAction {
-        val templateYamlRegex = Regex("template\\.y[a]?ml", RegexOption.IGNORE_CASE)
         val virtualFiles = e.getData(PlatformDataKeys.VIRTUAL_FILE_ARRAY) ?: return@runReadAction null
         val virtualFile = virtualFiles.singleOrNull() ?: return@runReadAction null
 
@@ -71,7 +72,7 @@ object SamTemplateFileUtils {
 
     fun retrieveSamTemplate(e: AnActionEvent, project: Project): VirtualFile? {
         if (e.place == ToolkitPlaces.EXPLORER_TOOL_WINDOW) {
-            return runBlocking(getCoroutineUiContext()) {
+            return runInEdtAndGet {
                 FileChooser.chooseFile(
                     FileChooserDescriptorFactory.createSingleFileDescriptor(YAMLFileType.YML),
                     project,
