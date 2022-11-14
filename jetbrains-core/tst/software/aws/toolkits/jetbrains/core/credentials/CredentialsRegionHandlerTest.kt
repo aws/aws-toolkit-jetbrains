@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.notification.Notification
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
-import com.intellij.testFramework.TestDataProvider
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
