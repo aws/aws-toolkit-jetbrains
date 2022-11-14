@@ -25,7 +25,6 @@ import icons.AwsIcons
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
-import software.aws.toolkits.jetbrains.utils.notifyError
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.Path
@@ -114,19 +113,20 @@ class SyncApplicationRunProfile(
                         if (outputType === ProcessOutputTypes.STDOUT ||
                             outputType === ProcessOutputTypes.STDERR
                         ) {
-                            if(event.text.contains("Confirm that you are synchronizing a development stack.")) {
+                            if (event.text.contains("Confirm that you are synchronizing a development stack.")) {
                                 isDevStack = true
                             }
                             if (event.text.contains("[Y/n]:") && isDevStack) {
                                 insertAssertionNow = true
                                 isDevStack = false
                                 ApplicationManager.getApplication().executeOnPooledThread {
-                                    try{
+                                    try {
                                         while (insertAssertionNow) {
                                             processHandler.processInput?.write("Y\n".toByteArray(Charset.defaultCharset()))
                                         }
-                                    } catch (e: IOException) {}
-
+                                    } catch (e: IOException) {
+                                        /* no-op */
+                                    }
                                 }
                             } else {
                                 insertAssertionNow = false
@@ -134,15 +134,9 @@ class SyncApplicationRunProfile(
                             runInEdt {
                                 RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
                             }
-
                         }
                     }
                 })
             }
-
-
     }
-
-
-
 }

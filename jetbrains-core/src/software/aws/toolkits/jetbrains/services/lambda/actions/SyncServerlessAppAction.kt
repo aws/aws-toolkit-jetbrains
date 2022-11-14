@@ -31,7 +31,11 @@ import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.jetbrains.utils.notifySamCliNotValidError
 import software.aws.toolkits.resources.message
 
-class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(message("serverless.application.sync"), null, AwsIcons.Resources.SERVERLESS_APP) {
+class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
+    message("serverless.application.sync"),
+    null,
+    AwsIcons.Resources.SERVERLESS_APP
+) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
@@ -58,12 +62,11 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
 
             val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
             runInEdt {
-            if (warningSettings.showDevModeWarning) {
-                if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
-                    return@runInEdt
+                if (warningSettings.showDevModeWarning) {
+                    if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
+                        return@runInEdt
+                    }
                 }
-            }
-
 
                 FileDocumentManager.getInstance().saveAllDocuments()
                 val parameterDialog = SyncServerlessApplicationDialog(project, templateFile)
