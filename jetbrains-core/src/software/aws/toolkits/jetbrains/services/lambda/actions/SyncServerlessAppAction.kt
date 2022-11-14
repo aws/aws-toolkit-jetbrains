@@ -41,8 +41,13 @@ import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 import software.aws.toolkits.telemetry.SyncedResources
+import software.aws.toolkits.resources.message
 
-class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction("Sync Serverless Application", null, AwsIcons.Resources.SERVERLESS_APP) {
+class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
+    message("serverless.application.sync"),
+    null,
+    AwsIcons.Resources.SERVERLESS_APP
+) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
@@ -73,18 +78,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val syncedResourceType = if(codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
 
             val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
-            warningSettings.showDevModeWarning = true
-            if (warningSettings.showDevModeWarning) {
-                runInEdt {
-                    SyncServerlessAppWarningDialog(project).showAndGet()
-                }
-                /*if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
-                    SamTelemetry.sync(project = project, result = Result.Cancelled, syncedResources = syncedResourceType, lambdaPackageType = lambdaType, version = SamCommon.getVersionString())
-                    return@thenAccept
-                }*/
-            }
-
             runInEdt {
+                if (warningSettings.showDevModeWarning) {
+                    if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
+                        SamTelemetry.sync(project = project, result = Result.Cancelled, syncedResources = syncedResourceType, lambdaPackageType = lambdaType, version = SamCommon.getVersionString())
+                        return@runInEdt
+                    }
+                }
+
                 FileDocumentManager.getInstance().saveAllDocuments()
                 val parameterDialog = SyncServerlessApplicationDialog(project, templateFile)
 

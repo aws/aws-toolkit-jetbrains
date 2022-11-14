@@ -98,7 +98,7 @@ fun getSamCli(): GeneralCommandLine {
     val samExecutable = when (executable) {
         is ExecutableInstance.Executable -> executable
         else -> {
-            throw RuntimeException((executable as? ExecutableInstance.BadExecutable)?.validationError ?: "")
+            throw RuntimeException((executable as? ExecutableInstance.BadExecutable)?.validationError.orEmpty())
         }
     }
 
@@ -146,7 +146,7 @@ object ValidateSamParameters {
     }
 
     private fun validateStringParameter(name: String, providedValue: String?, parameterDeclaration: Parameter): ValidationInfo? {
-        val value = providedValue ?: ""
+        val value = providedValue.orEmpty()
         val minValue = parameterDeclaration.getOptionalScalarProperty("MinLength")
         val maxValue = parameterDeclaration.getOptionalScalarProperty("MaxLength")
         val allowedPattern = parameterDeclaration.getOptionalScalarProperty("AllowedPattern")
@@ -180,7 +180,7 @@ object ValidateSamParameters {
     private fun validateNumberParameter(name: String, value: String?, parameterDeclaration: Parameter): ValidationInfo? {
         // cfn numbers can be integer or float. assume real implementation refers to java floats
         val number = value?.toFloatOrNull()
-            ?: return ValidationInfo(message("serverless.application.deploy.validation.template.values.notANumber", name, value ?: ""))
+            ?: return ValidationInfo(message("serverless.application.deploy.validation.template.values.notANumber", name, value.orEmpty()))
         val minValue = parameterDeclaration.getOptionalScalarProperty("MinValue")
         val maxValue = parameterDeclaration.getOptionalScalarProperty("MaxValue")
 
