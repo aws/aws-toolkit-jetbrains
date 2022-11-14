@@ -235,11 +235,11 @@ class SyncServerlessApplicationDialog(
                     .errorOnApply(message("serverless.application.sync.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
                     .component.toolTipText = message("serverless.application.sync.tooltip.s3Bucket")
 
-                button(message("general.create")) {
+                button(message("general.create")) { actionEvent ->
                     val bucketDialog = CreateS3BucketDialog(
                         project = project,
                         s3Client = s3Client,
-                        parent = it.source as? Component
+                        parent = actionEvent.source as? Component
                     )
 
                     if (bucketDialog.showAndGet()) {
@@ -258,11 +258,11 @@ class SyncServerlessApplicationDialog(
                         it.isVisible && (it.isLoading || it.selected() == null)
                     }.component.toolTipText = message("serverless.application.sync.tooltip.ecrRepo")
 
-                button(message("general.create")) {
+                button(message("general.create")) { actionEvent ->
                     val ecrDialog = CreateEcrRepoDialog(
                         project = project,
                         ecrClient = ecrClient,
-                        parent = it.source as? Component
+                        parent = actionEvent.source as? Component
                     )
 
                     if (ecrDialog.showAndGet()) {
@@ -376,7 +376,7 @@ class SyncServerlessApplicationDialog(
 
         if (forceStackName || stackName != null) {
             if (syncType == SyncType.CREATE) {
-                newStackName = stackName ?: ""
+                newStackName = stackName.orEmpty()
             } else {
                 stackSelector.selectedItem = stacks?.first { it.stackName() == stackName }
             }
@@ -414,7 +414,7 @@ class SyncServerlessApplicationDialog(
     // visible for testing
     internal fun populateParameters(parameters: List<Parameter>, templateFileDeclarationOverrides: List<Parameter>? = null) {
         // TODO: would be nice to be able to pipe through the description
-        parametersField.envVars = parameters.associate { it.logicalName to (it.defaultValue() ?: "") }
+        parametersField.envVars = parameters.associate { it.logicalName to (it.defaultValue().orEmpty()) }
         templateFileParameters = templateFileDeclarationOverrides ?: CloudFormationTemplate.parse(project, templateFile).parameters().toList()
     }
 

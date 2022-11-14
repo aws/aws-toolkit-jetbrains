@@ -26,6 +26,7 @@ import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
 import software.aws.toolkits.jetbrains.utils.notifyError
+import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.Path
 import javax.swing.Icon
@@ -106,34 +107,42 @@ class SyncApplicationRunProfile(
 
         override fun execute(executor: Executor, runner: ProgramRunner<*>) =
             super.execute(executor, runner).apply {
+                var isDevStack = false
                 processHandler?.addProcessListener(object : ProcessAdapter() {
                     private var insertAssertionNow = false
                     override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                         if (outputType === ProcessOutputTypes.STDOUT ||
                             outputType === ProcessOutputTypes.STDERR
                         ) {
-                            try {
-                                if (event.text.contains("[Y/n]:")) {
-                                    insertAssertionNow = true
-
-                                    ApplicationManager.getApplication().executeOnPooledThread {
+                            if(event.text.contains("Confirm that you are synchronizing a development stack.")) {
+                                isDevStack = true
+                            }
+                            if (event.text.contains("[Y/n]:") && isDevStack) {
+                                insertAssertionNow = true
+                                isDevStack = false
+                                ApplicationManager.getApplication().executeOnPooledThread {
+                                    try{
                                         while (insertAssertionNow) {
                                             processHandler.processInput?.write("Y\n".toByteArray(Charset.defaultCharset()))
                                         }
-                                    }
-                                } else {
-                                    insertAssertionNow = false
+                                    } catch (e: IOException) {}
+
                                 }
-                                runInEdt {
-                                    RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
-                                }
-                            } catch (e: Exception) {
-                                notifyError("Sam Sync Failed")
+                            } else {
+                                insertAssertionNow = false
                             }
+                            runInEdt {
+                                RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
+                            }
+
                         }
                     }
                 })
             }
+
+
     }
+
+
 
 }
