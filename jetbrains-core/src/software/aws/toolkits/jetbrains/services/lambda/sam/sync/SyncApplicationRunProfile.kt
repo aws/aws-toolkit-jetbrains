@@ -106,12 +106,14 @@ class SyncApplicationRunProfile(
 
         override fun execute(executor: Executor, runner: ProgramRunner<*>) =
             super.execute(executor, runner).apply {
+
                 processHandler?.addProcessListener(object : ProcessAdapter() {
                     private var insertAssertionNow = false
                     override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                         if (outputType === ProcessOutputTypes.STDOUT ||
                             outputType === ProcessOutputTypes.STDERR
                         ) {
+
                             try {
                                 if (event.text.contains("[Y/n]:")) {
                                     insertAssertionNow = true
@@ -123,6 +125,7 @@ class SyncApplicationRunProfile(
                                     }
                                 } else {
                                     insertAssertionNow = false
+
                                 }
                                 runInEdt {
                                     RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
@@ -132,6 +135,7 @@ class SyncApplicationRunProfile(
                             }
                         }
                     }
+
                 })
             }
     }

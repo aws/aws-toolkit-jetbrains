@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.settings
 
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleServiceManager
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
