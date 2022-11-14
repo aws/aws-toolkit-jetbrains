@@ -21,7 +21,8 @@ phases:
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
       - DOTNET_ROOT="/root/.dotnet" /usr/local/bin/dotnet-install.sh --channel 6.0
-      - PATH="/root/.dotnet/:/root/.dotnet/tools/"
+      - export PATH="${PATH}:${DOTNET_ROOT}"
+      - export PATH="$PATH:$HOME/.dotnet/tools"
       - dotnet codeartifact-creds install
 
   build:

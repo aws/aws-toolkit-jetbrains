@@ -13,7 +13,7 @@ env:
 phases:
   install:
     commands:
-      - PATH="/root/.dotnet/:/root/.dotnet/tools/"
+      - export PATH="$PATH:$HOME/.dotnet/tools"
       - dotnet codeartifact-creds install
 
   build:

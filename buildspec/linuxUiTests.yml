@@ -25,7 +25,7 @@ phases:
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
-      - PATH="/root/.dotnet/:/root/.dotnet/tools/"
+      - export PATH="$PATH:$HOME/.dotnet/tools"
       - dotnet codeartifact-creds install
 
   build:
