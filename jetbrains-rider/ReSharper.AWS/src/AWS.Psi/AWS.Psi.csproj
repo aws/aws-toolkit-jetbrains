@@ -3,7 +3,6 @@
     <PropertyGroup>
         <TargetFramework>$(NetFrameworkTarget)</TargetFramework>
         <RootNamespace>AWS.Psi</RootNamespace>
-        <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
 
     <ItemGroup>
