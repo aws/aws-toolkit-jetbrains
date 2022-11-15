@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>$(NetFrameworkTarget)</TargetFramework>
         <RootNamespace>AWS.Daemon</RootNamespace>
+        <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
 
     <ItemGroup>

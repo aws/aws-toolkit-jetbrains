@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>$(NetFrameworkTarget)</TargetFramework>
         <RootNamespace>AWS.Localization</RootNamespace>
+        <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
 
     <ItemGroup>
