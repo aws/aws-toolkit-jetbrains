@@ -30,7 +30,7 @@ phases:
       - choco install -y dotnet-5.0-sdk
       - $DOTNET_ROOT = "$Env:USERPROFILE\.dotnet"
       - $Env:PATH = "$Env:PATH;$DOTNET_ROOT;$DOTNET_ROOT\tools"
-      - set $DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = 1
+      - $DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = 1
       - echo $Env:PATH
       - dotnet codeartifact-creds install
       - dotnet --list-sdks
