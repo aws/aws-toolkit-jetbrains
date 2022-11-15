@@ -21,6 +21,7 @@ import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
 import software.aws.toolkits.jetbrains.uitests.fixtures.DialogFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.JTreeFixture
 import software.aws.toolkits.jetbrains.uitests.fixtures.findAndClick
+import software.aws.toolkits.jetbrains.uitests.fixtures.ideMajorVersion
 import software.aws.toolkits.jetbrains.uitests.fixtures.idea
 import software.aws.toolkits.jetbrains.uitests.fixtures.pressOk
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
