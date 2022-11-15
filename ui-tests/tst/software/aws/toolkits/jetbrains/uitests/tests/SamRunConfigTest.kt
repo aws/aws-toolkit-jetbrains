@@ -10,6 +10,7 @@ import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.keyboard
+import com.intellij.remoterobot.utils.waitFor
 import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
@@ -55,6 +56,10 @@ class SamRunConfigTest {
 
             idea {
                 waitForBackgroundTasks()
+                waitFor(duration = Duration.ofMinutes(5), interval = Duration.ofSeconds(5)) {
+                    isDumbMode().not()
+                }
+
                 findAndClick("//div[@class='RunConfigurationsComboBoxButton']")
                 // FIX_WHEN_MIN_IS_222
                 if (ideMajorVersion() > 221) {
