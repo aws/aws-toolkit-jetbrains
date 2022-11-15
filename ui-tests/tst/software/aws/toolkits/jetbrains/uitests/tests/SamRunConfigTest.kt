@@ -55,7 +55,7 @@ class SamRunConfigTest {
             idea {
                 waitForBackgroundTasks()
                 findAndClick("//div[@class='RunConfigurationsComboBoxButton']")
-                find<JListFixture>(byXpath("//div[@class='MyList']")).clickItem("Edit Configurations", fullMatch = false)
+                find<JListFixture>(byXpath("//div[@class='MyList']"), timeout = Duration.ofSeconds(5)).clickItem("Edit Configurations", fullMatch = false)
                 step("Create and populate template based run configuration") {
                     addRunConfig()
                     step("Populate run configuration") {
