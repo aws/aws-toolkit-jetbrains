@@ -28,7 +28,9 @@ phases:
       - "Remove-Item -Recurse -Force 'C:\\Program\ Files\\dotnet\\sdk\\5.0.100'"
       - "Remove-Item -Recurse -Force 'C:\\Program\ Files\\dotnet\\sdk\\6.0.202'"
       - choco install -y dotnet-5.0-sdk
-      - set PATH = $PATH;'C:\Program Files\.dotnet\tools'
+      - DOTNET_ROOT="$HOME\.dotnet"
+      - set PATH="${PATH};${DOTNET_ROOT}"
+      - set PATH="$PATH;$HOME\.dotnet\tools"
       - dotnet codeartifact-creds install
       - dotnet --list-sdks
 
