@@ -106,7 +106,6 @@ class SyncApplicationRunProfile(
 
         override fun execute(executor: Executor, runner: ProgramRunner<*>) =
             super.execute(executor, runner).apply {
-
                 var isDevStack = false
                 processHandler?.addProcessListener(object : ProcessAdapter() {
                     private var insertAssertionNow = false
@@ -114,7 +113,6 @@ class SyncApplicationRunProfile(
                         if (outputType === ProcessOutputTypes.STDOUT ||
                             outputType === ProcessOutputTypes.STDERR
                         ) {
-
                             if (event.text.contains("Confirm that you are synchronizing a development stack.")) {
                                 isDevStack = true
                             }
@@ -138,7 +136,6 @@ class SyncApplicationRunProfile(
                             }
                         }
                     }
-
                 })
             }
     }

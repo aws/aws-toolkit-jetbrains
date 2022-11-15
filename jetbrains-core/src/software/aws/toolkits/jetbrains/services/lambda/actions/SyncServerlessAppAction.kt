@@ -30,18 +30,17 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncApplicationRunProfile
 import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationDialog
 import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationSettings
-import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings
 import software.aws.toolkits.jetbrains.settings.SyncSettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.jetbrains.utils.notifySamCliNotValidError
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 import software.aws.toolkits.telemetry.SyncedResources
-import software.aws.toolkits.resources.message
 
 class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
     message("serverless.application.sync"),
@@ -74,14 +73,20 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
 
             val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
             val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
-            val lambdaType = if(hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
-            val syncedResourceType = if(codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
+            val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
+            val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
 
             val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
             runInEdt {
                 if (warningSettings.showDevModeWarning) {
                     if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
-                        SamTelemetry.sync(project = project, result = Result.Cancelled, syncedResources = syncedResourceType, lambdaPackageType = lambdaType, version = SamCommon.getVersionString())
+                        SamTelemetry.sync(
+                            project = project,
+                            result = Result.Cancelled,
+                            syncedResources = syncedResourceType,
+                            lambdaPackageType = lambdaType,
+                            version = SamCommon.getVersionString()
+                        )
                         return@runInEdt
                     }
                 }
@@ -90,7 +95,13 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 val parameterDialog = SyncServerlessApplicationDialog(project, templateFile)
 
                 if (!parameterDialog.showAndGet()) {
-                    SamTelemetry.sync(project = project, result = Result.Cancelled, syncedResources = syncedResourceType, lambdaPackageType = lambdaType, version = SamCommon.getVersionString())
+                    SamTelemetry.sync(
+                        project = project,
+                        result = Result.Cancelled,
+                        syncedResources = syncedResourceType,
+                        lambdaPackageType = lambdaType,
+                        version = SamCommon.getVersionString()
+                    )
                     return@runInEdt
                 }
                 val settings = parameterDialog.settings()
@@ -121,11 +132,22 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             ).build()
 
             environment.runner.execute(environment)
-            SamTelemetry.sync(project = project, result = Result.Succeeded, syncedResources = syncedResources, lambdaPackageType = lambdaPackageType, version = SamCommon.getVersionString())
+            SamTelemetry.sync(
+                project = project,
+                result = Result.Succeeded,
+                syncedResources = syncedResources,
+                lambdaPackageType = lambdaPackageType,
+                version = SamCommon.getVersionString()
+            )
         } catch (e: Exception) {
-            SamTelemetry.sync(project = project, result = Result.Failed, syncedResources = syncedResources, lambdaPackageType = lambdaPackageType, version = SamCommon.getVersionString())
+            SamTelemetry.sync(
+                project = project,
+                result = Result.Failed,
+                syncedResources = syncedResources,
+                lambdaPackageType = lambdaPackageType,
+                version = SamCommon.getVersionString()
+            )
         }
-
     }
 
     private fun saveSettings(project: Project, templateFile: VirtualFile, settings: SyncServerlessApplicationSettings) {
@@ -137,6 +159,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     setSamEcrRepoUri(samPath, settings.ecrRepo)
                     setSamUseContainer(samPath, settings.useContainer)
                     setEnabledCapabilities(samPath, settings.capabilities)
+                    setSamTags(samPath, settings.tags)
                 }
             }
         }

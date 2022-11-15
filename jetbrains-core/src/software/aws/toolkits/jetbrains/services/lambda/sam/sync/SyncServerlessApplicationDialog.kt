@@ -292,7 +292,6 @@ class SyncServerlessApplicationDialog(
     override fun createCenterPanel() = component
 
     init {
-        super.init()
         title = message("serverless.application.sync")
         setOKButtonText(message("serverless.application.sync.action.name"))
         setOKButtonTooltip(message("serverless.application.sync.action.description"))
@@ -302,14 +301,18 @@ class SyncServerlessApplicationDialog(
             stackSelector.selectedItem { it.stackName() == stackName }
             refreshTemplateParametersAndTags(stackName)
         } ?: refreshTemplateParametersAndTags()
-
+        if (showImageOptions) {
+            ecrRepoSelector.selectedItem = settings?.samEcrRepoUri(samPath)
+        }
         s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
         useContainer = (settings?.samUseContainer(samPath) ?: false)
         capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)
             ?: CreateCapabilities.values().filter {
-                it.capability == Capability.CAPABILITY_NAMED_IAM.toString() ||
-                    it.capability == Capability.CAPABILITY_AUTO_EXPAND.toString()
+                it.capability == Capability.CAPABILITY_NAMED_IAM.name ||
+                    it.capability == Capability.CAPABILITY_AUTO_EXPAND.name
             }
+        // TODO: Prepopulate tags and template parameters
+        init()
     }
 
     private fun refreshTemplateParametersAndTags(stackName: String? = null) {
