@@ -67,22 +67,6 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
     }
 
-    fun openEditConfigurationDialog() {
-        waitFor(duration = Duration.ofSeconds(10)) {
-            callJs(
-                """
-                var frameHelper = com.intellij.openapi.wm.impl.ProjectFrameHelper.getFrameHelper(component);
-                if (frameHelper.project != null) {
-                    new com.intellij.execution.impl.EditConfigurationsDialog(frameHelper.project).show()
-                } else {
-                    false
-                }
-                """.trimIndent(),
-                runInEdt = true
-            )
-        }
-    }
-
     private fun isDumbMode(): Boolean = callJs(
         """
             var frameHelper = com.intellij.openapi.wm.impl.ProjectFrameHelper.getFrameHelper(component);
