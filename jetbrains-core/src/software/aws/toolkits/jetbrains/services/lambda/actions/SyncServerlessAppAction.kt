@@ -16,8 +16,8 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
-import software.amazon.awssdk.services.lambda.model.PackageType
 import kotlinx.coroutines.runBlocking
+import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
@@ -112,8 +112,6 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
 
                 saveSettings(project, templateFile, settings)
 
-                syncApp(templateFile, project, settings, syncedResourceType, lambdaType)
-
                 if (settings.useContainer) {
                     val checkDocker = runBlocking(getCoroutineBgContext()) {
                         ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
@@ -136,7 +134,6 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
         lambdaPackageType: LambdaPackageType
     ) {
         try {
-
             val templatePath = templateFile.toNioPath()
             val environment = ExecutionEnvironmentBuilder.create(
                 project,
