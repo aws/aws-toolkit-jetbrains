@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.actions
 
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
+import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -15,6 +17,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import software.amazon.awssdk.services.lambda.model.PackageType
+import kotlinx.coroutines.runBlocking
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
@@ -109,6 +113,17 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 saveSettings(project, templateFile, settings)
 
                 syncApp(templateFile, project, settings, syncedResourceType, lambdaType)
+
+                if (settings.useContainer) {
+                    val checkDocker = runBlocking(getCoroutineBgContext()) {
+                        ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                    }
+                    if (checkDocker.getStderrLines(true).size != 0) {
+                        notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
+                        return@runInEdt
+                    }
+                }
+                syncApp(templateFile, project, settings, syncedResourceType, lambdaType)
             }
         }
     }
@@ -121,9 +136,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
         lambdaPackageType: LambdaPackageType
     ) {
         try {
-            if (settings.useContainer) {
-                // TODO: Check if docker exists
-            }
+
             val templatePath = templateFile.toNioPath()
             val environment = ExecutionEnvironmentBuilder.create(
                 project,

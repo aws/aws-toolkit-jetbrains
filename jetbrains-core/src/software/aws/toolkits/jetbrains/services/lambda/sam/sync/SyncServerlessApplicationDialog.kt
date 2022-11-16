@@ -155,6 +155,7 @@ class SyncServerlessApplicationDialog(
         panel {
             buttonsGroup {
                 row {
+                    // TODO: Find a better way to bind the radio buttons
                     val createStackButton = radioButton(message("serverless.application.sync.label.stack.new"), true).applyToComponent {
                         this.isSelected = createNewStack
                         this.toolTipText = (message("serverless.application.sync.tooltip.createStack"))
