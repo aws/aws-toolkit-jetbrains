@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.testFramework.ProjectRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.test.TestCoroutineScope
 import org.junit.After
 import org.junit.Rule
@@ -25,9 +24,10 @@ abstract class BaseCoroutineTest(timeoutSeconds: Int = 15) {
     @Rule
     val mockClientManagerRule = MockClientManagerRule()
 
-    @JvmField
-    @Rule
-    val timeout = CoroutinesTimeout.seconds(timeoutSeconds)
+    // TODO: figure out why this doesn't work on 223 Windows
+//    @JvmField
+//    @Rule
+//    val timeout = CoroutinesTimeout.seconds(timeoutSeconds)
 
     val testCoroutineScope: TestCoroutineScope = TestCoroutineScope()
 
