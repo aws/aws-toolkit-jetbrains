@@ -174,7 +174,7 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
 
     doLast {
         val nugetPath = getNugetPackagesPath()
-        val configText = """<?xml version="1.0" encoding="utf-8"?>
+        val codeArtifactConfigText = """<?xml version="1.0" encoding="utf-8"?>
   <configuration>
     <packageSources> 
     ${
@@ -187,11 +187,18 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
             ""
         }
         }
-       <add key="resharper-sdk" value="$nugetPath" />
     </packageSources>
   </configuration>
 """
-        nugetConfigPath.writeText(configText)
+        val configText = """<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="resharper-sdk" value="$nugetPath" />
+  </packageSources>
+</configuration>
+"""
+        nugetConfigPath.writeText(codeArtifactConfigText)
         nugetConfigPath211.writeText(configText)
     }
 }
