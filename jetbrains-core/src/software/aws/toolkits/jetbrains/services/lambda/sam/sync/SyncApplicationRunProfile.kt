@@ -108,6 +108,13 @@ class SyncApplicationRunProfile(
             super.execute(executor, runner).apply {
                 var isDevStack = false
                 processHandler?.addProcessListener(object : ProcessAdapter() {
+                    override fun startNotified(event: ProcessEvent) {
+                        super.startNotified(event)
+                        runInEdt {
+                            RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
+                        }
+
+                    }
                     private var insertAssertionNow = false
                     override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                         if (outputType === ProcessOutputTypes.STDOUT ||
@@ -131,9 +138,7 @@ class SyncApplicationRunProfile(
                             } else {
                                 insertAssertionNow = false
                             }
-                            runInEdt {
-                                RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
-                            }
+
                         }
                     }
                 })
