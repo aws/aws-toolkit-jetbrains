@@ -87,6 +87,9 @@ class SyncApplicationRunProfile(
                     )
                 }
             }
+            if (settings.useContainer) {
+                addParameter("--use-container")
+            }
             addParameter("--no-dependency-layer")
             if (syncOnlyCode) {
                 addParameter("--code")
@@ -113,7 +116,6 @@ class SyncApplicationRunProfile(
                         runInEdt {
                             RunContentManager.getInstance(project).toFrontRunContent(executor, processHandler)
                         }
-
                     }
                     private var insertAssertionNow = false
                     override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
@@ -138,7 +140,6 @@ class SyncApplicationRunProfile(
                             } else {
                                 insertAssertionNow = false
                             }
-
                         }
                     }
                 })
