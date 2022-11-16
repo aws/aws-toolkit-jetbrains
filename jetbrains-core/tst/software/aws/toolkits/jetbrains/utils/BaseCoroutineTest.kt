@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerRule
  * have to be copy pasted. It is abstract so it is not implemented.
  */
 @ExperimentalCoroutinesApi
-abstract class BaseCoroutineTest(timeoutSeconds: Int = 15) {
+abstract class BaseCoroutineTest(@Suppress("UnusedPrivateMember") timeoutSeconds: Int = 15) {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
