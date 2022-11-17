@@ -14,6 +14,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.text.SemVer
 import icons.AwsIcons
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
@@ -57,6 +58,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 return@thenAccept
             }
 
+            val execVersion = SemVer.parseFromText(samExecutable.version) ?: throw error(" SAM CLI version could not detected")
+            val minVersion = SemVer("1.53.0", 1, 53, 0)
+            val minVersionForUseContainer = SemVer("1.57.0", 1, 57, 0)
+            if (!execVersion.isGreaterOrEqualThan(minVersion)) {
+                notifyError(message("sam.cli.version.warning"), message("sam.cli.version.upgrade.required"), project = project)
+                return@thenAccept
+            }
+
             val templateFile = retrieveSamTemplate(e, project) ?: return@thenAccept
 
             validateTemplateFile(project, templateFile)?.let {
@@ -84,15 +93,18 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 // TODO: saveSettings(project, templateFile, settings)
 
                 if (settings.useContainer) {
+                    if (!execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
+                        notifyError(message("sam.cli.version.warning"), message("sam.cli.version.upgrade.required"), project = project)
+                        return@runInEdt
+                    }
                     val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {
-                        try{
+                        try {
                             ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
                             true
                         } catch (e: Exception) {
                             notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
                             false
                         }
-
                     }
                     if (dockerDoesntExist) {
                         return@runInEdt

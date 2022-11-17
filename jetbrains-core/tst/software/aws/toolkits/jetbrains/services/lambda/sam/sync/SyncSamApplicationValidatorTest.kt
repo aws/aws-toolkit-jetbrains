@@ -65,8 +65,7 @@ class SyncSamApplicationValidatorTest {
 
         runInEdtAndWait {
             val template = VfsUtil.findFileByIoFile(dir.writeChild("path.yaml", byteArrayOf()).toFile(), true)
-            if(template != null)
-            {
+            if (template != null) {
                 sut = SyncServerlessApplicationDialog(
                     projectRule.project,
                     template,

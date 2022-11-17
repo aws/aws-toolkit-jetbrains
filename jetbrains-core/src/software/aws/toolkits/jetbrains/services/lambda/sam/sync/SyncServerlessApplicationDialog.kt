@@ -116,7 +116,7 @@ class SyncServerlessApplicationDialog(
         }
         .build()
 
-    private val parametersField = KeyValueTextField()
+    private val parametersField = KeyValueTextField(message("serverless.application.sync.template.parameters"))
     private val tagsField = KeyValueTextField(message("tags.title"))
     private val capabilitiesSelector = CapabilitiesEnumCheckBoxes()
 
