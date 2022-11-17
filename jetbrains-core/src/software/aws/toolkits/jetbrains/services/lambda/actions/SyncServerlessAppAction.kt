@@ -78,16 +78,23 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     // add telemetry
                     return@runInEdt
                 }
+
                 val settings = parameterDialog.settings()
 
                 // TODO: saveSettings(project, templateFile, settings)
 
                 if (settings.useContainer) {
-                    val checkDocker = runBlocking(getCoroutineBgContext()) {
-                        ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                    val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {
+                        try{
+                            ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                            true
+                        } catch (e: Exception) {
+                            notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
+                            false
+                        }
+
                     }
-                    if (checkDocker.getStderrLines(true).size != 0) {
-                        notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
+                    if (dockerDoesntExist) {
                         return@runInEdt
                     }
                 }
