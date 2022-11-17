@@ -56,7 +56,7 @@ class SamRunConfigTest {
 
             idea {
                 waitForBackgroundTasks()
-                waitFor(duration = Duration.ofMinutes(5), interval = Duration.ofSeconds(5)) {
+                waitFor(duration = Duration.ofMinutes(2), interval = Duration.ofSeconds(5)) {
                     isDumbMode().not()
                 }
 
