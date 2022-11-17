@@ -193,7 +193,6 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
         val configText = """<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
-    <clear />
     <add key="resharper-sdk" value="$nugetPath" />
   </packageSources>
 </configuration>
