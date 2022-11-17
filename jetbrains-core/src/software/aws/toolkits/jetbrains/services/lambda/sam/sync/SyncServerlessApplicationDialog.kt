@@ -132,7 +132,7 @@ class SyncServerlessApplicationDialog(
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
 
     fun settings() = SyncServerlessApplicationSettings(
-        stackName = if (syncType == SyncType.CREATE) {
+        stackName = if (createNewStack) {
             newStackName.nullize()
         } else {
             stackSelector.selected()?.stackName()
@@ -172,6 +172,7 @@ class SyncServerlessApplicationDialog(
                             if (syncType != SyncType.CREATE) {
                                 syncType = SyncType.CREATE
                                 refreshTemplateParametersAndTags()
+                                createNewStack = true
                             }
                         }
                     cell(stackNameField)
@@ -203,6 +204,7 @@ class SyncServerlessApplicationDialog(
                         if (syncType != SyncType.UPDATE) {
                             syncType = SyncType.UPDATE
                             refreshTemplateParametersAndTags()
+                            createNewStack = false
                         }
                     }
 
