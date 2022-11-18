@@ -24,6 +24,7 @@ import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.cloudformation.model.Tag
 import software.amazon.awssdk.services.ecr.EcrClient
@@ -73,7 +74,6 @@ class SyncServerlessApplicationDialog(
 ) : DialogWrapper(project) {
     var useContainer: Boolean = false
     var newStackName: String = ""
-
     var templateParameters: Map<String, String> = emptyMap()
     var tags: Map<String, String> = emptyMap()
     var showImageOptions: Boolean = false
@@ -114,7 +114,8 @@ class SyncServerlessApplicationDialog(
         }
         .build()
 
-    private val parametersField = KeyValueTextField()
+
+    private val parametersField = KeyValueTextField(message("serverless.application.sync.template.parameters"))
     private val tagsField = KeyValueTextField(message("tags.title"))
     private val capabilitiesSelector = CapabilitiesEnumCheckBoxes()
     private var templateFileParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
@@ -307,6 +308,7 @@ class SyncServerlessApplicationDialog(
         if (showImageOptions) {
             ecrRepoSelector.selectedItem = settings?.samEcrRepoUri(samPath)
         }
+
         s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
         useContainer = (settings?.samUseContainer(samPath) ?: false)
         capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)

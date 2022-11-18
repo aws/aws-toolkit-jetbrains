@@ -18,6 +18,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import icons.AwsIcons
 import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.lambda.model.PackageType
+import com.intellij.util.text.SemVer
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
@@ -68,6 +69,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 return@thenAccept
             }
 
+            val execVersion = SemVer.parseFromText(samExecutable.version) ?: error(" SAM CLI version could not detected")
+            val minVersion = SemVer("1.53.0", 1, 53, 0)
+            val minVersionForUseContainer = SemVer("1.57.0", 1, 57, 0)
+            if (!execVersion.isGreaterOrEqualThan(minVersion)) {
+                notifyError(message("sam.cli.version.warning"), message("sam.cli.version.upgrade.required"), project = project)
+                return@thenAccept
+            }
+
             val templateFile = retrieveSamTemplate(e, project) ?: return@thenAccept
 
             validateTemplateFile(project, templateFile)?.let {
@@ -91,6 +100,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                             lambdaPackageType = lambdaType,
                             version = SamCommon.getVersionString()
                         )
+
                         return@runInEdt
                     }
                 }
@@ -113,14 +123,24 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 saveSettings(project, templateFile, settings)
 
                 if (settings.useContainer) {
-                    val checkDocker = runBlocking(getCoroutineBgContext()) {
-                        ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                    if (!execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
+                        notifyError(message("sam.cli.version.warning"), message("sam.cli.version.upgrade.required"), project = project)
+                        return@runInEdt
                     }
-                    if (checkDocker.getStderrLines(true).size != 0) {
+                    val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {
+                        try {
+                            val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                            processOutput.exitCode != 0
+                        } catch (e: Exception) {
+                            true
+                        }
+                    }
+                    if (dockerDoesntExist) {
                         notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
                         return@runInEdt
                     }
                 }
+
                 syncApp(templateFile, project, settings, syncedResourceType, lambdaType)
             }
         }
