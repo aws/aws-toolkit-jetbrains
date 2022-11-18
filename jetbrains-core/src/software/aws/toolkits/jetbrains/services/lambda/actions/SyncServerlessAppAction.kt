@@ -99,14 +99,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     }
                     val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {
                         try {
-                            ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
-                            true
+                            val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                            processOutput.exitCode != 0
                         } catch (e: Exception) {
-                            notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
-                            false
+                            true
                         }
                     }
                     if (dockerDoesntExist) {
+                        notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
                         return@runInEdt
                     }
                 }
