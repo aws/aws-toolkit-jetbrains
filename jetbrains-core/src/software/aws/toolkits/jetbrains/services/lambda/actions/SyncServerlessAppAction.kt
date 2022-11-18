@@ -14,11 +14,12 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.text.SemVer
 import icons.AwsIcons
 import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.lambda.model.PackageType
-import com.intellij.util.text.SemVer
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
@@ -136,7 +137,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                         }
                     }
                     if (dockerDoesntExist) {
-                        notifyError(message("docker.not.found"), message("lambda.debug.docker.not_connected"))
+                        Messages.showWarningDialog(message("lambda.debug.docker.not_connected"), message("docker.not.found"))
                         return@runInEdt
                     }
                 }

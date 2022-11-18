@@ -22,15 +22,17 @@ import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
-import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.cloudformation.model.Tag
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
@@ -41,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFo
 import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
-import software.aws.toolkits.jetbrains.services.lambda.deploy.CapabilitiesEnumCheckBoxes
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters.validateParameters
@@ -114,22 +115,30 @@ class SyncServerlessApplicationDialog(
         }
         .build()
 
-
     private val parametersField = KeyValueTextField(message("serverless.application.sync.template.parameters"))
     private val tagsField = KeyValueTextField(message("tags.title"))
-    private val capabilitiesSelector = CapabilitiesEnumCheckBoxes()
     private var templateFileParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
     private val module = ModuleUtilCore.findModuleForFile(templateFile, project)
     private val settings: SyncSettings? = module?.let { SyncSettings.getInstance(it) }
     private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
     private val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
     private val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
-    var syncType: SyncType = if (settings?.samStackName(samPath).isNullOrEmpty()) SyncType.CREATE else SyncType.UPDATE
-    var createNewStack = settings?.samStackName(samPath).isNullOrEmpty()
+    val activeStacks = runBlocking(getCoroutineBgContext()) {
+        project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
+    }
+    private val checkStack = checkIfStackInSettingsExists()
+
+    private var syncType: SyncType = if (checkStack) SyncType.CREATE else SyncType.UPDATE
+    var createNewStack = checkStack
+    private val capabilitiesList = settings?.enabledCapabilities(samPath)?.toMutableList()
+        ?: mutableListOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
 
     private val s3Client: S3Client = project.awsClient()
     private val ecrClient: EcrClient = project.awsClient()
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
+    private fun checkIfStackInSettingsExists(): Boolean = if (!settings?.samStackName(samPath).isNullOrEmpty()) {
+        !activeStacks.map { it.stackName() }.contains(settings?.samStackName(samPath))
+    } else true
 
     fun settings() = SyncServerlessApplicationSettings(
         stackName = if (createNewStack) {
@@ -146,7 +155,7 @@ class SyncServerlessApplicationDialog(
         parameters = templateParameters,
         tags = tags,
         useContainer = useContainer,
-        capabilities = capabilitiesSelector.selected
+        capabilities = capabilitiesList
     )
 
     // TODO: Add Help for Dialog
@@ -278,9 +287,13 @@ class SyncServerlessApplicationDialog(
             row {
                 label(message("cloudformation.capabilities"))
                     .component.toolTipText = message("cloudformation.capabilities.toolTipText")
-
-                capabilitiesSelector.checkboxes.forEach {
-                    cell(it)
+                CreateCapabilities.values().forEach {
+                    checkBox(it.text).actionListener { event, component ->
+                        if (component.isSelected) capabilitiesList.add(it) else capabilitiesList.remove(it)
+                    }.applyToComponent {
+                        this.isSelected = it in capabilitiesList
+                        this.toolTipText = it.toolTipText
+                    }
                 }
             }
 
@@ -299,22 +312,22 @@ class SyncServerlessApplicationDialog(
         setOKButtonText(message("serverless.application.sync.action.name"))
         setOKButtonTooltip(message("serverless.application.sync.action.description"))
         showImageOptions = hasImageFunctions
+
         settings?.samStackName(samPath)?.let { stackName ->
-            syncType = SyncType.UPDATE
-            createNewStack = false
-            stackSelector.selectedItem { it.stackName() == stackName }
-            refreshTemplateParametersAndTags(stackName)
+            if (activeStacks.map { it.stackName() }.contains(stackName)) {
+                syncType = SyncType.UPDATE
+                createNewStack = false
+                stackSelector.selectedItem { it.stackName() == stackName }
+                refreshTemplateParametersAndTags(stackName)
+            }
         } ?: refreshTemplateParametersAndTags()
+
         if (showImageOptions) {
             ecrRepoSelector.selectedItem = settings?.samEcrRepoUri(samPath)
         }
 
         s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
         useContainer = (settings?.samUseContainer(samPath) ?: false)
-        capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)
-            ?: CreateCapabilities.values().filter {
-                it.defaultEnabled
-            }
         tagsField.envVars = settings?.samTags(samPath) ?: emptyMap()
         parametersField.envVars = settings?.samTempParameterOverrides(samPath) ?: emptyMap()
 
