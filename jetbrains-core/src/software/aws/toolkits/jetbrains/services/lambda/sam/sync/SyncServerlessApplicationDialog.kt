@@ -24,7 +24,6 @@ import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
-import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.cloudformation.model.Tag
 import software.amazon.awssdk.services.ecr.EcrClient
@@ -35,7 +34,7 @@ import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
-import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
+import software.aws.toolkits.jetbrains.services.cloudformation.describeStackForSync
 import software.aws.toolkits.jetbrains.services.cloudformation.mergeRemoteParameters
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
@@ -74,8 +73,7 @@ class SyncServerlessApplicationDialog(
 ) : DialogWrapper(project) {
     var useContainer: Boolean = false
     var newStackName: String = ""
-    var syncType: SyncType = SyncType.CREATE
-    var createNewStack = true
+
     var templateParameters: Map<String, String> = emptyMap()
     var tags: Map<String, String> = emptyMap()
     var showImageOptions: Boolean = false
@@ -119,13 +117,14 @@ class SyncServerlessApplicationDialog(
     private val parametersField = KeyValueTextField()
     private val tagsField = KeyValueTextField(message("tags.title"))
     private val capabilitiesSelector = CapabilitiesEnumCheckBoxes()
-
     private var templateFileParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
     private val module = ModuleUtilCore.findModuleForFile(templateFile, project)
     private val settings: SyncSettings? = module?.let { SyncSettings.getInstance(it) }
     private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
     private val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
     private val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
+    var syncType: SyncType = if (settings?.samStackName(samPath).isNullOrEmpty()) SyncType.CREATE else SyncType.UPDATE
+    var createNewStack = settings?.samStackName(samPath).isNullOrEmpty()
 
     private val s3Client: S3Client = project.awsClient()
     private val ecrClient: EcrClient = project.awsClient()
@@ -207,7 +206,7 @@ class SyncServerlessApplicationDialog(
                             createNewStack = false
                         }
                     }
-
+                    stackSelector.reload(forceFetch = true)
                     cell(stackSelector)
                         .horizontalAlign(HorizontalAlign.FILL)
                         .enabledIf(updateStackButton.component.selected)
@@ -301,6 +300,7 @@ class SyncServerlessApplicationDialog(
         showImageOptions = hasImageFunctions
         settings?.samStackName(samPath)?.let { stackName ->
             syncType = SyncType.UPDATE
+            createNewStack = false
             stackSelector.selectedItem { it.stackName() == stackName }
             refreshTemplateParametersAndTags(stackName)
         } ?: refreshTemplateParametersAndTags()
@@ -311,30 +311,31 @@ class SyncServerlessApplicationDialog(
         useContainer = (settings?.samUseContainer(samPath) ?: false)
         capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)
             ?: CreateCapabilities.values().filter {
-                it.capability == Capability.CAPABILITY_NAMED_IAM.name ||
-                    it.capability == Capability.CAPABILITY_AUTO_EXPAND.name
+                it.defaultEnabled
             }
-        // TODO: Prepopulate tags and template parameters
+        tagsField.envVars = settings?.samTags(samPath) ?: emptyMap()
+        parametersField.envVars = settings?.samTempParameterOverrides(samPath) ?: emptyMap()
+
         init()
     }
 
     private fun refreshTemplateParametersAndTags(stackName: String? = null) {
-        when (syncType.name) {
-            SyncType.CREATE.name -> {
+        when (createNewStack) {
+            true -> {
                 populateParameters(templateFileParameters)
             }
 
-            SyncType.UPDATE.name -> {
+            false -> {
                 val selectedStackName = stackName ?: stackSelector.selected()?.stackName()
                 if (selectedStackName == null) {
                     populateParameters(emptyList())
                 } else {
-                    cloudFormationClient.describeStack(selectedStackName) {
+                    cloudFormationClient.describeStackForSync(selectedStackName) {
                         it?.let {
                             runInEdt(ModalityState.any()) {
                                 // This check is here in-case createStack was selected before we got this update back
                                 // TODO: should really create a queuing pattern here so we can cancel on user-action
-                                if (syncType == SyncType.UPDATE) {
+                                if (!createNewStack) {
                                     populateParameters(templateFileParameters.mergeRemoteParameters(it.parameters()))
                                     populateTags(it.tags())
                                 }

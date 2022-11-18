@@ -8,7 +8,7 @@ import com.intellij.execution.configurations.CommandLineState
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.configurations.RunProfile
 import com.intellij.execution.configurations.RunProfileState
-import com.intellij.execution.process.KillableProcessHandler
+import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandler
@@ -47,7 +47,7 @@ class SyncApplicationRunProfile(
         val stackName = settings.stackName
 
         override fun startProcess(): ProcessHandler {
-            val processHandler = KillableProcessHandler(getSamSyncCommand())
+            val processHandler = KillableColoredProcessHandler(getSamSyncCommand())
             ProcessTerminatedListener.attach(processHandler)
             return processHandler
         }

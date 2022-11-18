@@ -49,6 +49,11 @@ class SyncSettings : PersistentStateComponent<SyncConfigs> {
         state.samConfigs.computeIfAbsent(samPath) { SyncSamConfig() }.tags = value
     }
 
+    fun samTempParameterOverrides(samPath: String): Map<String, String>? = state.samConfigs[samPath]?.tempParameterOverrides
+    fun setSamTempParameterOverrides(samPath: String, value: Map<String, String>) {
+        state.samConfigs.computeIfAbsent(samPath) { SyncSamConfig() }.tempParameterOverrides = value
+    }
+
     companion object {
         fun getInstance(module: Module): SyncSettings? = ModuleServiceManager.getService(module, SyncSettings::class.java)
     }
@@ -64,5 +69,6 @@ data class SyncSamConfig(
     var repoUri: String? = null,
     var useContainer: Boolean = false,
     var enabledCapabilities: List<CreateCapabilities>? = null,
-    var tags: Map<String, String>? = null
+    var tags: Map<String, String>? = null,
+    var tempParameterOverrides: Map<String, String>? = null
 )

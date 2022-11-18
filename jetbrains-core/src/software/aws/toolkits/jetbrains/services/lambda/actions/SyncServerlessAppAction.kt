@@ -170,6 +170,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     setSamUseContainer(samPath, settings.useContainer)
                     setEnabledCapabilities(samPath, settings.capabilities)
                     setSamTags(samPath, settings.tags)
+                    setSamTempParameterOverrides(samPath, settings.parameters)
                 }
             }
         }
