@@ -40,7 +40,9 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "Pythonid:213.5744.248",
-                    "org.jetbrains.plugins.go:213.5744.223"
+                    "org.jetbrains.plugins.go:213.5744.223",
+                    // Testing only: Required for software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionRunConfigurationExtensionIntegrationTest
+                    "NodeJS"
                 )
             ),
             rider = RiderProfile(
@@ -77,7 +79,9 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "Pythonid:221.5080.212",
-                    "org.jetbrains.plugins.go:221.5080.210"
+                    "org.jetbrains.plugins.go:221.5080.210",
+                    // Testing only: Required for software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionRunConfigurationExtensionIntegrationTest
+                    "NodeJS"
                 )
             ),
             rider = RiderProfile(
@@ -116,7 +120,9 @@ object IdeVersions {
                     "Pythonid:222.3345.118",
                     "org.jetbrains.plugins.go:222.3345.118",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
-                    "org.intellij.intelliLang"
+                    "org.intellij.intelliLang",
+                    // Testing only: Required for software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionRunConfigurationExtensionIntegrationTest
+                    "NodeJS"
                 )
             ),
             rider = RiderProfile(
@@ -155,7 +161,9 @@ object IdeVersions {
                     "Pythonid:223.7571.4",
                     "org.jetbrains.plugins.go:223.7571.4",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
-                    "org.intellij.intelliLang"
+                    "org.intellij.intelliLang",
+                    // Testing only: Required for software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionRunConfigurationExtensionIntegrationTest
+                    "NodeJS"
                 )
             ),
             rider = RiderProfile(

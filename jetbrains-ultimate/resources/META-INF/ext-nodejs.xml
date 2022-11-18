@@ -1,23 +1,11 @@
-<!-- Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin>
-    <extensions defaultExtensionNs="com.intellij">
-        <codeInsight.lineMarkerProvider language="JavaScript" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
+    <extensions defaultExtensionNs="JavaScript">
+        <nodeRunConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionRunConfigurationExtension"/>
     </extensions>
-
-    <extensions defaultExtensionNs="aws.toolkit.lambda">
-        <runtimeGroup implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsRuntimeGroup"/>
-        <builder id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaBuilder"/>
-        <handlerResolver id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaHandlerResolver"/>
-        <sam.runtimeDebugSupport id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsRuntimeDebugSupport"/>
-        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJs12ImageDebug"/>
-        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJs14ImageDebug"/>
-        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJs16ImageDebug"/>
-        <sam.projectWizard id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsSamProjectWizard"/>
-    </extensions>
-    <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
-        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript"/>
-        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx"/>
+    <extensions defaultExtensionNs="aws.toolkit">
+        <experiment implementation="software.aws.toolkits.jetbrains.core.execution.NodeJsAwsConnectionExperiment"/>
     </extensions>
 </idea-plugin>
