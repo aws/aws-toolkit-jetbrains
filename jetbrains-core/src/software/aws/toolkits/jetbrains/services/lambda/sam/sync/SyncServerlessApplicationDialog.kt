@@ -1,7 +1,7 @@
-// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.lambda.deploy
+package software.aws.toolkits.jetbrains.services.lambda.sam.sync
 
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
@@ -12,20 +12,25 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.ui.SimpleListCellRenderer
-import com.intellij.ui.layout.applyToComponent
-import com.intellij.ui.layout.panel
+import com.intellij.ui.components.JBTextField
+import com.intellij.ui.dsl.builder.actionListener
+import com.intellij.ui.dsl.builder.bind
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.toMutableProperty
+import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.selected
-import com.intellij.ui.layout.toBinding
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.cloudformation.model.Tag
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
@@ -36,48 +41,49 @@ import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFo
 import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
+import software.aws.toolkits.jetbrains.services.lambda.deploy.CapabilitiesEnumCheckBoxes
+import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters.validateParameters
 import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters.validateStackName
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
-import software.aws.toolkits.jetbrains.settings.DeploySettings
+import software.aws.toolkits.jetbrains.settings.SyncSettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.ui.bindValueToProperty
-import software.aws.toolkits.jetbrains.utils.ui.installOnParent
-import software.aws.toolkits.jetbrains.utils.ui.toolTipText
 import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.jetbrains.utils.ui.withBinding
 import software.aws.toolkits.resources.message
 import java.awt.Component
 
-data class DeployServerlessApplicationSettings(
+data class SyncServerlessApplicationSettings(
     val stackName: String,
     val bucket: String,
     val ecrRepo: String?,
-    val autoExecute: Boolean,
     val parameters: Map<String, String>,
     val tags: Map<String, String>,
     val useContainer: Boolean,
     val capabilities: List<CreateCapabilities>
 )
 
-class DeployServerlessApplicationDialog(
+class SyncServerlessApplicationDialog(
     private val project: Project,
     private val templateFile: VirtualFile,
     private val loadResourcesOnCreate: Boolean = true
 ) : DialogWrapper(project) {
     var useContainer: Boolean = false
     var newStackName: String = ""
-    var requireReview: Boolean = false
-    var deployType: DeployType = DeployType.CREATE
+    var syncType: SyncType = SyncType.CREATE
+    var createNewStack = true
     var templateParameters: Map<String, String> = emptyMap()
     var tags: Map<String, String> = emptyMap()
     var showImageOptions: Boolean = false
 
-    // non-dsl components
+    private val stackNameField = JBTextField().apply {
+        this.isEnabled = false
+    }
+
     private val stackSelector = ResourceSelector.builder()
         .resource(CloudFormationResources.ACTIVE_STACKS)
         .awsConnection(project)
@@ -110,13 +116,13 @@ class DeployServerlessApplicationDialog(
         }
         .build()
 
-    private val parametersField = KeyValueTextField()
+    private val parametersField = KeyValueTextField(message("serverless.application.sync.template.parameters"))
     private val tagsField = KeyValueTextField(message("tags.title"))
     private val capabilitiesSelector = CapabilitiesEnumCheckBoxes()
 
     private var templateFileParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
     private val module = ModuleUtilCore.findModuleForFile(templateFile, project)
-    private val settings: DeploySettings? = module?.let { DeploySettings.getInstance(it) }
+    private val settings: SyncSettings? = module?.let { SyncSettings.getInstance(it) }
     private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
     private val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
     private val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
@@ -125,140 +131,116 @@ class DeployServerlessApplicationDialog(
     private val ecrClient: EcrClient = project.awsClient()
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
 
-    init {
-        title = message("serverless.application.deploy.title")
-        setOKButtonText(message("serverless.application.deploy.action.name"))
-        setOKButtonTooltip(message("serverless.application.deploy.action.description"))
-
-        // populate dialog before init
-        showImageOptions = hasImageFunctions
-        settings?.samStackName(samPath)?.let { stackName ->
-            // If the module has been deployed once, select updateStack
-            deployType = DeployType.UPDATE
-            stackSelector.selectedItem { it.stackName() == stackName }
-            // async populate parameters from remote
-            refreshTemplateParametersAndTags(stackName)
-        } ?: refreshTemplateParametersAndTags()
-
-        s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
-        requireReview = !(settings?.samAutoExecute(samPath) ?: true)
-        useContainer = (settings?.samUseContainer(samPath) ?: false)
-        capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)
-            ?: CreateCapabilities.values().filter { it.defaultEnabled }
-
-        init()
-    }
-
-    fun settings() = DeployServerlessApplicationSettings(
-        // fields should have been validated at this point
-        stackName = if (deployType == DeployType.CREATE) {
+    fun settings() = SyncServerlessApplicationSettings(
+        stackName = if (syncType == SyncType.CREATE) {
             newStackName.nullize()
         } else {
             stackSelector.selected()?.stackName()
-        } ?: throw RuntimeException(message("serverless.application.deploy.validation.stack.missing")),
+        } ?: throw RuntimeException(message("serverless.application.sync.validation.stack.missing")),
         bucket = s3BucketSelector.selected() ?: throw RuntimeException("s3 bucket selected was null"),
         ecrRepo = if (hasImageFunctions) {
             ecrRepoSelector.selected()?.repositoryUri
         } else {
             null
         },
-        autoExecute = !requireReview,
         parameters = templateParameters,
         tags = tags,
         useContainer = useContainer,
         capabilities = capabilitiesSelector.selected
     )
 
-    override fun getHelpId(): String = HelpIds.DEPLOY_SERVERLESS_APPLICATION_DIALOG.id
+    // TODO: Add Help for Dialog
 
-    override fun createCenterPanel() = buildPanel()
-
-    internal fun buildPanel() =
+    private val component by lazy {
         panel {
-            val wideInputSizeGroup = "wideInputSizeGroup"
-            // create stack
-            buttonGroup {
+            buttonsGroup {
                 row {
-                    val createStackButton = radioButton(
-                        message("serverless.application.deploy.label.stack.new")
-                    )
-                        .bindValueToProperty(::deployType.toBinding(), DeployType.CREATE)
-                        .toolTipText(message("serverless.application.deploy.tooltip.createStack"))
-
-                    createStackButton.selected.addListener {
-                        if (it && deployType != DeployType.CREATE) {
-                            deployType = DeployType.CREATE
-                            refreshTemplateParametersAndTags()
+                    // TODO: Find a better way to bind the radio buttons
+                    val createStackButton = radioButton(message("serverless.application.sync.label.stack.new"), true).applyToComponent {
+                        this.isSelected = createNewStack
+                        this.toolTipText = (message("serverless.application.sync.tooltip.createStack"))
+                    }.bindSelected(
+                        { createNewStack },
+                        {
+                            if (it) {
+                                createNewStack = true
+                                syncType = SyncType.CREATE
+                            }
                         }
-                    }
-
-                    textField(::newStackName)
-                        .sizeGroup(wideInputSizeGroup)
-                        .constraints(growX)
-                        .enableIf(createStackButton.selected)
-                        .toolTipText(message("serverless.application.deploy.tooltip.createStack"))
-                        .withValidationOnApply { field ->
+                    )
+                        .actionListener { event, component ->
+                            if (syncType != SyncType.CREATE) {
+                                syncType = SyncType.CREATE
+                                refreshTemplateParametersAndTags()
+                            }
+                        }
+                    cell(stackNameField)
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .enabledIf(createStackButton.component.selected)
+                        .bindText(::newStackName)
+                        .validationOnApply { field ->
                             if (!field.isEnabled) {
                                 null
                             } else {
                                 validateStackName(field.text, stackSelector)?.let { field.validationInfo(it) }
                             }
-                        }
+                        }.component.toolTipText = message("serverless.application.sync.tooltip.createStack")
                 }
 
-                // update stack
                 row {
-                    val updateStackButton = radioButton(
-                        message("serverless.application.deploy.label.stack.select"),
-                    )
-                        .bindValueToProperty(::deployType.toBinding(), DeployType.UPDATE)
-                        .toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
-
-                    updateStackButton.selected.addListener {
-                        if (it && deployType != DeployType.UPDATE) {
-                            deployType = DeployType.UPDATE
+                    val updateStackButton = radioButton(message("serverless.application.sync.label.stack.select"), false).applyToComponent {
+                        isSelected = !createNewStack
+                        this.toolTipText = (message("serverless.application.sync.tooltip.createStack"))
+                    }.bindSelected(
+                        { !createNewStack },
+                        {
+                            if (it) {
+                                createNewStack = false
+                                syncType = SyncType.UPDATE
+                            }
+                        }
+                    ).actionListener { event, component ->
+                        if (syncType != SyncType.UPDATE) {
+                            syncType = SyncType.UPDATE
                             refreshTemplateParametersAndTags()
                         }
                     }
 
-                    stackSelector()
-                        .sizeGroup(wideInputSizeGroup)
-                        .constraints(growX)
-                        .enableIf(updateStackButton.selected)
-                        .withErrorOnApplyIf(message("serverless.application.deploy.validation.stack.missing")) {
+                    cell(stackSelector)
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .enabledIf(updateStackButton.component.selected)
+                        .errorOnApply(message("serverless.application.sync.validation.stack.missing")) {
                             it.isEnabled && (it.isLoading || it.selected() == null)
-                        }
-                        .toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
-                }.largeGapAfter()
-            }
+                        }.component.toolTipText = message("serverless.application.sync.tooltip.updateStack")
+                }
+            }.bind({ createNewStack }, { createNewStack = it })
 
-            // stack parameters
-            row(message("serverless.application.deploy.template.parameters")) {
-                parametersField()
-                    .withBinding(::templateParameters.toBinding())
-                    .toolTipText(message("serverless.application.deploy.tooltip.template.parameters"))
-                    .withValidationOnApply { validateParameters(it, templateFileParameters) }
+            row(message("serverless.application.sync.template.parameters")) {
+                cell(parametersField)
+                    .withBinding(::templateParameters.toMutableProperty())
+                    .validationOnApply {
+                        validateParameters(it, templateFileParameters)
+                    }.horizontalAlign(HorizontalAlign.FILL)
+                    .component.toolTipText = message("serverless.application.sync.tooltip.template.parameters")
             }
-
-            // deploy tags
             val tagsString = message("tags.title")
             row(tagsString) {
-                tagsField()
-                    .withBinding(::tags.toBinding())
+                cell(tagsField)
+                    .horizontalAlign(HorizontalAlign.FILL)
+                    .withBinding(::tags.toMutableProperty())
             }
 
-            // s3 bucket
-            row(message("serverless.application.deploy.label.bucket")) {
-                s3BucketSelector()
-                    .constraints(growX)
-                    .withErrorOnApplyIf(message("serverless.application.deploy.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
-                    .toolTipText(message("serverless.application.deploy.tooltip.s3Bucket"))
+            row(message("serverless.application.sync.label.bucket")) {
+                cell(s3BucketSelector)
+                    .horizontalAlign(HorizontalAlign.FILL)
+                    .errorOnApply(message("serverless.application.sync.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
+                    .component.toolTipText = message("serverless.application.sync.tooltip.s3Bucket")
 
-                button(message("serverless.application.deploy.button.bucket.create")) {
+                button(message("general.create")) { actionEvent ->
                     val bucketDialog = CreateS3BucketDialog(
                         project = project,
                         s3Client = s3Client,
-                        parent = it.source as? Component
+                        parent = actionEvent.source as? Component
                     )
 
                     if (bucketDialog.showAndGet()) {
@@ -270,74 +252,74 @@ class DeployServerlessApplicationDialog(
                 }
             }
 
-            // ecr repo
-            val ecrSelectorPanel = panel {
-                row(message("serverless.application.deploy.label.repo")) {
-                    ecrRepoSelector()
-                        .constraints(growX)
-                        .withErrorOnApplyIf(message("serverless.application.deploy.validation.ecr.repo.empty")) {
-                            it.isLoading || it.selected() == null
-                        }
-                        .toolTipText(message("serverless.application.deploy.tooltip.ecrRepo"))
+            row(message("serverless.application.sync.label.repo")) {
+                cell(ecrRepoSelector)
+                    .horizontalAlign(HorizontalAlign.FILL)
+                    .errorOnApply(message("serverless.application.sync.validation.ecr.repo.empty")) {
+                        it.isVisible && (it.isLoading || it.selected() == null)
+                    }.component.toolTipText = message("serverless.application.sync.tooltip.ecrRepo")
 
-                    button(message("serverless.application.deploy.button.bucket.create")) {
-                        val ecrDialog = CreateEcrRepoDialog(
-                            project = project,
-                            ecrClient = ecrClient,
-                            parent = it.source as? Component
-                        )
+                button(message("general.create")) { actionEvent ->
+                    val ecrDialog = CreateEcrRepoDialog(
+                        project = project,
+                        ecrClient = ecrClient,
+                        parent = actionEvent.source as? Component
+                    )
 
-                        if (ecrDialog.showAndGet()) {
-                            ecrRepoSelector.reload(forceFetch = true)
-                            ecrRepoSelector.selectedItem { it.repositoryName == ecrDialog.repoName }
-                        }
+                    if (ecrDialog.showAndGet()) {
+                        ecrRepoSelector.reload(forceFetch = true)
+                        ecrRepoSelector.selectedItem { it.repositoryName == ecrDialog.repoName }
                     }
                 }
-            }
-            row {
-                ecrSelectorPanel(grow)
-                    .installOnParent { showImageOptions }
-                    .applyToComponent {
-                        isVisible = showImageOptions
-                    }
-            }
+            }.visible(showImageOptions)
 
-            // cfn caps
             row {
                 label(message("cloudformation.capabilities"))
-                    .toolTipText(message("cloudformation.capabilities.toolTipText"))
+                    .component.toolTipText = message("cloudformation.capabilities.toolTipText")
 
-                cell(isFullWidth = true) {
-                    capabilitiesSelector.checkboxes.forEach {
-                        it()
-                    }
+                capabilitiesSelector.checkboxes.forEach {
+                    cell(it)
                 }
             }
 
-            // confirmation
             row {
-                cell(isFullWidth = true) {
-                    checkBox(message("serverless.application.deploy.review_required"), ::requireReview)
-                        .toolTipText(message("serverless.application.deploy.tooltip.deploymentConfirmation"))
-                }
-            }
-
-            // in container
-            row {
-                cell(isFullWidth = true) {
-                    checkBox(message("serverless.application.deploy.use_container"), ::useContainer)
-                        .toolTipText(message("lambda.sam.buildInContainer.tooltip"))
-                }
+                checkBox(message("serverless.application.sync.use_container"))
+                    .bindSelected(::useContainer)
+                    .component.toolTipText = message("lambda.sam.buildInContainer.tooltip")
             }
         }
+    }
+
+    override fun createCenterPanel() = component
+
+    init {
+        super.init()
+        title = message("serverless.application.sync")
+        setOKButtonText(message("serverless.application.sync.action.name"))
+        setOKButtonTooltip(message("serverless.application.sync.action.description"))
+        showImageOptions = hasImageFunctions
+        settings?.samStackName(samPath)?.let { stackName ->
+            syncType = SyncType.UPDATE
+            stackSelector.selectedItem { it.stackName() == stackName }
+            refreshTemplateParametersAndTags(stackName)
+        } ?: refreshTemplateParametersAndTags()
+
+        s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
+        useContainer = (settings?.samUseContainer(samPath) ?: false)
+        capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)
+            ?: CreateCapabilities.values().filter {
+                it.capability == Capability.CAPABILITY_NAMED_IAM.toString() ||
+                    it.capability == Capability.CAPABILITY_AUTO_EXPAND.toString()
+            }
+    }
 
     private fun refreshTemplateParametersAndTags(stackName: String? = null) {
-        when (deployType.name) {
-            DeployType.CREATE.name -> {
+        when (syncType.name) {
+            SyncType.CREATE.name -> {
                 populateParameters(templateFileParameters)
             }
 
-            DeployType.UPDATE.name -> {
+            SyncType.UPDATE.name -> {
                 val selectedStackName = stackName ?: stackSelector.selected()?.stackName()
                 if (selectedStackName == null) {
                     populateParameters(emptyList())
@@ -347,7 +329,7 @@ class DeployServerlessApplicationDialog(
                             runInEdt(ModalityState.any()) {
                                 // This check is here in-case createStack was selected before we got this update back
                                 // TODO: should really create a queuing pattern here so we can cancel on user-action
-                                if (deployType == DeployType.UPDATE) {
+                                if (syncType == SyncType.UPDATE) {
                                     populateParameters(templateFileParameters.mergeRemoteParameters(it.parameters()))
                                     populateTags(it.tags())
                                 }
@@ -358,6 +340,9 @@ class DeployServerlessApplicationDialog(
             }
         }
     }
+
+    @TestOnly
+    fun getParameterDialog(): DialogPanel = component
 
     @TestOnly
     fun forceUi(
@@ -373,7 +358,6 @@ class DeployServerlessApplicationDialog(
         bucket: String? = null,
         forceEcrRepo: Boolean = false,
         ecrRepo: String? = null,
-        autoExecute: Boolean? = null,
         useContainer: Boolean? = null
     ) {
         if (stacks != null) {
@@ -382,14 +366,18 @@ class DeployServerlessApplicationDialog(
         }
 
         if (isCreateStack == true) {
-            deployType = DeployType.CREATE
+            syncType = SyncType.CREATE
+            stackNameField.isEnabled = true
+            stackSelector.isEnabled = false
         } else if (isCreateStack == false) {
-            deployType = DeployType.UPDATE
+            syncType = SyncType.UPDATE
+            stackNameField.isEnabled = false
+            stackSelector.isEnabled = true
         }
 
         if (forceStackName || stackName != null) {
-            if (deployType == DeployType.CREATE) {
-                newStackName = stackName ?: ""
+            if (syncType == SyncType.CREATE) {
+                newStackName = stackName.orEmpty()
             } else {
                 stackSelector.selectedItem = stacks?.first { it.stackName() == stackName }
             }
@@ -409,16 +397,12 @@ class DeployServerlessApplicationDialog(
             ecrRepoSelector.forceLoaded()
         }
 
-        if (forceEcrRepo || ecrRepo != null) {
-            ecrRepoSelector.selectedItem = ecrRepo
-        }
-
         if (hasImageFunctions != null) {
             showImageOptions = hasImageFunctions
         }
 
-        if (autoExecute != null) {
-            requireReview = autoExecute
+        if (forceEcrRepo || ecrRepo != null) {
+            ecrRepoSelector.selectedItem = ecrRepo
         }
 
         if (useContainer != null) {
@@ -431,7 +415,7 @@ class DeployServerlessApplicationDialog(
     // visible for testing
     internal fun populateParameters(parameters: List<Parameter>, templateFileDeclarationOverrides: List<Parameter>? = null) {
         // TODO: would be nice to be able to pipe through the description
-        parametersField.envVars = parameters.associate { it.logicalName to (it.defaultValue() ?: "") }
+        parametersField.envVars = parameters.associate { it.logicalName to (it.defaultValue().orEmpty()) }
         templateFileParameters = templateFileDeclarationOverrides ?: CloudFormationTemplate.parse(project, templateFile).parameters().toList()
     }
 
@@ -439,7 +423,7 @@ class DeployServerlessApplicationDialog(
         tagsField.envVars = tags.associate { it.key() to it.value() }
     }
 
-    enum class DeployType {
+    enum class SyncType {
         CREATE,
         UPDATE
     }
