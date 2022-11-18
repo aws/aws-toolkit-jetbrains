@@ -49,7 +49,6 @@ fun CloudFormationClient.describeStackForSync(stackName: String, callback: (Stac
             callback(stack)
         } catch (e: Exception) {
             /* no-op */
-            println("HEllloooooooooooo")
         }
     }
 }
