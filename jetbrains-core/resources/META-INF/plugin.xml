@@ -602,7 +602,6 @@ with what features/services are supported.
             <reference id="serverless.application.deploy"/>
             <separator/>
             <reference id="serverless.sync.infra"/>
-            <separator/>
             <reference id="serverless.sync.code"/>
             <separator/>
         </group>

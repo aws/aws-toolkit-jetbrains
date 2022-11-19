@@ -74,7 +74,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val minVersion = SemVer("1.53.0", 1, 53, 0)
             val minVersionForUseContainer = SemVer("1.57.0", 1, 57, 0)
             if (!execVersion.isGreaterOrEqualThan(minVersion)) {
-                notifyError(message("sam.cli.version.warning"), message("sam.cli.version.upgrade.required"), project = project)
+                notifyError(
+                    message("sam.cli.version.warning"),
+                    message(
+                        "sam.cli.version.upgrade.required",
+                        execVersion.parsedVersion, minVersion.parsedVersion
+                    ),
+                    project = project
+                )
                 return@thenAccept
             }
 
@@ -125,7 +132,15 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
 
                 if (settings.useContainer) {
                     if (!execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
-                        notifyError(message("sam.cli.version.warning"), message("sam.cli.version.upgrade.required"), project = project)
+                        notifyError(
+                            message("sam.cli.version.warning"),
+                            message(
+                                "sam.cli.version.upgrade.required",
+                                execVersion.parsedVersion,
+                                minVersionForUseContainer.parsedVersion
+                            ),
+                            project = project
+                        )
                         return@runInEdt
                     }
                     val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {

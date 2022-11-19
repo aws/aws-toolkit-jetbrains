@@ -123,13 +123,13 @@ class SyncServerlessApplicationDialog(
     private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
     private val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
     private val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
-    val activeStacks = runBlocking(getCoroutineBgContext()) {
+    private val activeStacks = runBlocking(getCoroutineBgContext()) {
         project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
     }
     private val checkStack = checkIfStackInSettingsExists()
 
     private var syncType: SyncType = if (checkStack) SyncType.CREATE else SyncType.UPDATE
-    var createNewStack = checkStack
+    private var createNewStack = checkStack
     private val capabilitiesList = settings?.enabledCapabilities(samPath)?.toMutableList()
         ?: mutableListOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
 
