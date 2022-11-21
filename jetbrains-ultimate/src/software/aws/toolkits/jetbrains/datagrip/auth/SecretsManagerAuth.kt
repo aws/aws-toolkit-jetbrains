@@ -8,7 +8,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.credentialStore.Credentials
 import com.intellij.database.access.DatabaseCredentials
-import com.intellij.database.dataSource.DatabaseAuthProvider
 import com.intellij.database.dataSource.DatabaseAuthProvider.AuthWidget
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConnection
 import com.intellij.database.dataSource.DatabaseCredentialsAuthProvider
@@ -21,6 +20,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.datagrip.auth.compatability.DatabaseAuthProviderCompatabilityAdapter
+import software.aws.toolkits.jetbrains.datagrip.auth.compatability.project
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
 import software.aws.toolkits.jetbrains.datagrip.getDatabaseEngine
 import software.aws.toolkits.jetbrains.datagrip.secretsManagerIsApplicable
@@ -36,7 +37,7 @@ data class SecretsManagerConfiguration(
     val secretId: String
 )
 
-class SecretsManagerAuth : DatabaseAuthProvider {
+class SecretsManagerAuth : DatabaseAuthProviderCompatabilityAdapter {
     private val objectMapper = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
     override fun getId(): String = providerId
@@ -52,16 +53,16 @@ class SecretsManagerAuth : DatabaseAuthProvider {
         silent: Boolean
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
-        val scope = projectCoroutineScope(connection.runConfiguration.project)
+        val project = connection.project()
+        val scope = projectCoroutineScope(project)
         return scope.future {
             var result = Result.Succeeded
-            val project = connection.runConfiguration.project
             try {
                 val connectionSettings = getConfiguration(connection)
                 val dbSecret = getDbSecret(connectionSettings)
                 if (
                     connection.connectionPoint.dataSource.sshConfiguration?.isEnabled != true &&
-                    connection.connectionPoint.additionalJdbcProperties[GET_URL_FROM_SECRET]?.toBoolean() == true
+                    connection.connectionPoint.additionalProperties[GET_URL_FROM_SECRET]?.toBoolean() == true
                 ) {
                     dbSecret.host ?: throw IllegalArgumentException(message("datagrip.secretsmanager.validation.no_host", connectionSettings.secretId))
                     dbSecret.port ?: throw IllegalArgumentException(message("datagrip.secretsmanager.validation.no_port", connectionSettings.secretId))
@@ -93,7 +94,7 @@ class SecretsManagerAuth : DatabaseAuthProvider {
 
     private fun getConfiguration(connection: ProtoConnection): SecretsManagerConfiguration {
         val connectionSettings = connection.getAwsConnectionSettings()
-        val secretId = connection.connectionPoint.additionalJdbcProperties[SECRET_ID_PROPERTY]
+        val secretId = connection.connectionPoint.additionalProperties[SECRET_ID_PROPERTY]
             ?: throw IllegalArgumentException(message("datagrip.secretsmanager.validation.no_secret"))
         return SecretsManagerConfiguration(
             connectionSettings,
