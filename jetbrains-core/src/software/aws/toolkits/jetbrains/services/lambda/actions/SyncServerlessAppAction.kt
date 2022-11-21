@@ -70,7 +70,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 return@thenAccept
             }
 
-            val execVersion = SemVer.parseFromText(samExecutable.version) ?: error(" SAM CLI version could not detected")
+            val execVersion = SemVer.parseFromText(samExecutable.version) ?: error("SAM CLI version could not detected")
             val minVersion = SemVer("1.53.0", 1, 53, 0)
             val minVersionForUseContainer = SemVer("1.57.0", 1, 57, 0)
             if (!execVersion.isGreaterOrEqualThan(minVersion)) {

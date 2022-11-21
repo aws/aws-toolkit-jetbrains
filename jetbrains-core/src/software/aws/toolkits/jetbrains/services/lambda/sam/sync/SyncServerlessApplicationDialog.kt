@@ -328,8 +328,8 @@ class SyncServerlessApplicationDialog(
 
         s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
         useContainer = (settings?.samUseContainer(samPath) ?: false)
-        tagsField.envVars = settings?.samTags(samPath) ?: emptyMap()
-        parametersField.envVars = settings?.samTempParameterOverrides(samPath) ?: emptyMap()
+        tagsField.envVars = settings?.samTags(samPath).orEmpty()
+        parametersField.envVars = settings?.samTempParameterOverrides(samPath).orEmpty()
 
         init()
     }
@@ -345,7 +345,7 @@ class SyncServerlessApplicationDialog(
                 if (selectedStackName == null) {
                     populateParameters(emptyList())
                 } else {
-                    cloudFormationClient.describeStackForSync(selectedStackName) {
+                    cloudFormationClient.describeStackForSync(selectedStackName, ::enableParamsAndTags) {
                         it?.let {
                             runInEdt(ModalityState.any()) {
                                 // This check is here in-case createStack was selected before we got this update back
@@ -360,6 +360,11 @@ class SyncServerlessApplicationDialog(
                 }
             }
         }
+    }
+
+    fun enableParamsAndTags(enabled: Boolean) {
+        tagsField.isEnabled = enabled
+        parametersField.isEnabled = enabled
     }
 
     @TestOnly
