@@ -4,7 +4,9 @@
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.TableUtil
 import com.intellij.ui.table.TableView
 import com.intellij.util.ExceptionUtil
@@ -24,6 +26,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResourceNotFoundException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
@@ -254,12 +257,17 @@ class LogStreamFilterActor(
         return getSearchLogEvents(request)
     }
 
-    private fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> {
+    private fun getSearchLogEvents(request: FilterLogEventsRequest): List<LogStreamEntry> = try {
         val response = client.filterLogEvents(request)
         val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
         nextForwardToken = response.nextToken()
 
-        return events
+        events
+    } catch (e: Exception) {
+        runInEdt {
+            Messages.showErrorDialog(project, e.localizedMessage, message("cloudwatch.logs.failed_to_load_stream", logStream))
+        }
+        listOf()
     }
 }
 
@@ -507,15 +515,15 @@ class InsightsQueryResultsActor(
             }.chunked(1000)
 
             dedupedResults.forEach { chunk ->
-                LOG.info("loading block of ${chunk.size}")
+                LOG.info { "loading block of ${chunk.size}" }
                 table.listTableModel.addRows(chunk)
             }
         } while (isQueryRunning(response.status()))
 
-        LOG.info("done, ${loadedQueryResults.size} entries in set")
+        LOG.info { "done, ${loadedQueryResults.size} entries in set" }
         tableDoneLoading()
         table.emptyText.text = emptyText
-        LOG.info("total items in table: ${table.listTableModel.items.size}")
+        LOG.info { "total items in table: ${table.listTableModel.items.size}" }
         channel.close()
     }.also {
         loadJob = it
@@ -540,7 +548,7 @@ class InsightsQueryResultsActor(
                 }
             } catch (e: Exception) {
                 // best effort; this will fail if the query raced to completion or user does not have permission
-                LOG.warn("Failed to stop query", e)
+                LOG.warn(e) { "Failed to stop query" }
             }
         }
     }

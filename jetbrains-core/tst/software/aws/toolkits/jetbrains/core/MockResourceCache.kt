@@ -8,7 +8,14 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationRule
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.extension.AfterEachCallback
+import org.junit.jupiter.api.extension.BeforeEachCallback
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.runner.Description
+import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.credentials.ToolkitAuthenticationProvider
+import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
@@ -45,10 +52,35 @@ class MockResourceCache : AwsResourceCache {
         }
     }
 
+    override fun <T> getResourceIfPresent(
+        resource: Resource<T>,
+        region: AwsRegion,
+        tokenProvider: ToolkitBearerTokenProvider,
+        useStale: Boolean
+    ): T? = when (resource) {
+        is Resource.View<*, T> -> getResourceIfPresent(resource.underlying, region, tokenProvider)?.let { resource.doMap(it, region) }
+        is Resource.Cached<T> -> mockResourceIfPresent(resource, region, tokenProvider)
+    }
+
+    override fun <T> getResource(
+        resource: Resource<T>,
+        region: AwsRegion,
+        tokenProvider: ToolkitBearerTokenProvider,
+        useStale: Boolean,
+        forceFetch: Boolean
+    ): CompletionStage<T> = when (resource) {
+        is Resource.View<*, T> -> getResource(resource.underlying, region, tokenProvider, useStale, forceFetch).thenApply {
+            resource.doMap(it as Any, region)
+        }
+        is Resource.Cached<T> -> {
+            mockResource(resource, region, tokenProvider)
+        }
+    }
+
     private fun <T> mockResourceIfPresent(
         resource: Resource.Cached<T>,
         region: AwsRegion,
-        credentials: ToolkitCredentialsProvider
+        credentials: ToolkitAuthenticationProvider
     ): T? = when (val value = map[CacheKey(resource.id, region.id, credentials.id)]) {
         is CompletableFuture<*> -> if (value.isDone) value.get() as T else null
         else -> value as? T?
@@ -57,7 +89,7 @@ class MockResourceCache : AwsResourceCache {
     private fun <T> mockResource(
         resource: Resource.Cached<T>,
         region: AwsRegion,
-        credentials: ToolkitCredentialsProvider
+        credentials: ToolkitAuthenticationProvider
     ) = when (val value = map[CacheKey(resource.id, region.id, credentials.id)]) {
         is CompletableFuture<*> -> value as CompletionStage<T>
         else -> {
@@ -70,15 +102,15 @@ class MockResourceCache : AwsResourceCache {
         }
     }
 
-    override fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings) {
+    override fun clear(resource: Resource<*>, connectionSettings: ClientConnectionSettings<*>) {
         when (resource) {
-            is Resource.Cached<*> -> map.remove(CacheKey(resource.id, connectionSettings.region.id, connectionSettings.credentials.id))
+            is Resource.Cached<*> -> map.remove(CacheKey(resource.id, connectionSettings.region.id, connectionSettings.providerId))
             is Resource.View<*, *> -> clear(resource.underlying, connectionSettings)
         }
     }
 
-    override fun clear(connectionSettings: ConnectionSettings) {
-        map.keys.removeIf { it.credentialsId == connectionSettings.credentials.id && it.regionId == connectionSettings.region.id }
+    override fun clear(connectionSettings: ClientConnectionSettings<*>) {
+        map.keys.removeIf { it.credentialsId == connectionSettings.providerId && it.regionId == connectionSettings.region.id }
     }
 
     override suspend fun clear() {
@@ -99,12 +131,30 @@ class MockResourceCache : AwsResourceCache {
     }
 }
 
-class MockResourceCacheRule : ApplicationRule() {
-    private val cache by lazy { MockResourceCache.getInstance() }
+class MockResourceCacheRule : ApplicationRule(), MockResourceCacheInterface by MockResourceCacheInterface.delegate() {
+    public override fun before(description: Description) {
+        super.before(description)
+    }
 
-    override fun after() {
+    public override fun after() {
         runBlocking { cache.clear() }
     }
+}
+
+class MockResourceCacheExtension : BeforeEachCallback, AfterEachCallback, MockResourceCacheInterface by MockResourceCacheInterface.delegate() {
+    private val rule = MockResourceCacheRule()
+
+    override fun beforeEach(context: ExtensionContext) {
+        rule.before(Description.EMPTY)
+    }
+
+    override fun afterEach(context: ExtensionContext) {
+        rule.after()
+    }
+}
+
+interface MockResourceCacheInterface {
+    val cache: MockResourceCache
 
     fun addEntry(resourceId: String, regionId: String, credentialsId: String, value: Any) {
         cache.addEntry(resourceId, regionId, credentialsId, value)
@@ -145,4 +195,10 @@ class MockResourceCacheRule : ApplicationRule() {
     }
 
     fun size() = cache.entryCount()
+
+    companion object {
+        fun delegate() = object : MockResourceCacheInterface {
+            override val cache by lazy { MockResourceCache.getInstance() }
+        }
+    }
 }

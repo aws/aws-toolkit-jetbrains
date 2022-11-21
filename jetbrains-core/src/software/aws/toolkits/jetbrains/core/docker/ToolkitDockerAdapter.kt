@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.docker
 
 import com.intellij.docker.DockerDeploymentConfiguration
 import com.intellij.docker.DockerServerRuntimeInstance
+import com.intellij.docker.agent.DockerAgentDeploymentConfig
 import com.intellij.docker.agent.DockerAgentProgressCallback
 import com.intellij.docker.agent.DockerAgentSourceType
 import com.intellij.docker.agent.progress.DockerResponseItem
@@ -12,6 +13,7 @@ import com.intellij.docker.registry.DockerAgentRepositoryConfigImpl
 import com.intellij.docker.registry.DockerRepositoryModel
 import com.intellij.docker.remote.run.runtime.DockerAgentDeploymentConfigImpl
 import com.intellij.docker.runtimes.DockerApplicationRuntime
+import com.intellij.docker.runtimes.DockerImageRuntime
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.application.runInEdt
@@ -27,11 +29,13 @@ import com.intellij.remoteServer.runtime.deployment.DeploymentTask
 import com.intellij.remoteServer.runtime.ui.RemoteServersView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.FileUtils
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.await
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.ecr.DockerfileEcrPushRequest
 import software.aws.toolkits.jetbrains.services.ecr.EcrUtils
@@ -41,6 +45,7 @@ import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.ObjectInputStream
 import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 abstract class AbstractToolkitDockerAdapter(protected val project: Project, protected val serverRuntime: DockerServerRuntimeInstance) {
@@ -81,7 +86,7 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, prot
         // unfortunately no callbacks available to grab the Deployment instance
         val deploymentPromise = AsyncPromise<Deployment>()
         serverConnection.deploy(task) { deploymentName ->
-            EcrUtils.LOG.debug("Retrieving Deployment associated with '$deploymentName'")
+            LOG.debug { "Retrieving Deployment associated with '$deploymentName'" }
             RemoteServersView.getInstance(project).showDeployment(serverConnection, deploymentName)
             runInEdt {
                 deploymentPromise.setResult(serverConnection.deployments.first { it.name == deploymentName })
@@ -110,7 +115,7 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, prot
         }
 
         if (!wasBuildOnly) {
-            EcrUtils.LOG.debug("Configuration specified additional 'run' parameters in Dockerfile that will be ignored")
+            LOG.debug { "Configuration specified additional 'run' parameters in Dockerfile that will be ignored" }
             logHandler.print("Skipping 'Run' portion of Dockerfile build configuration\n")
         }
 
@@ -187,6 +192,16 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, prot
         }.withEnvs(dockerConfig.envVars.toTypedArray())
             .withBuildArgs(dockerConfig.buildArgs.toTypedArray())
 
+        return buildImage(project, serverRuntime, config, dockerfilePath, tag)
+    }
+
+    protected suspend fun buildImage(
+        project: Project,
+        serverRuntime: DockerServerRuntimeInstance,
+        config: DockerAgentDeploymentConfig,
+        dockerfilePath: String,
+        tag: String
+    ): String? {
         val queue = serverRuntime.agent.createImageBuilder().asyncBuildImage(config).await()
         val future = CompletableFuture<String?>()
         object : Task.Backgroundable(project, message("dockerfile.building", dockerfilePath), false) {
@@ -203,7 +218,7 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, prot
                         indicator.text2 = message
                     }
 
-                    LOG.debug { message ?: deserialized.toString() }
+                    AbstractToolkitDockerAdapter.LOG.debug { message ?: deserialized.toString() }
                 }
 
                 future.complete(serverRuntime.agent.getImages(null).firstOrNull { it.imageRepoTags.contains("$tag:latest") }?.imageId)
@@ -217,6 +232,33 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, prot
         const val NO_TAG_TAG = "<none>:<none>"
 
         val LOG = getLogger<AbstractToolkitDockerAdapter>()
+    }
+}
+
+// TODO: merge with abstract class
+class ToolkitDockerAdapter(project: Project, serverRuntime: DockerServerRuntimeInstance) : AbstractToolkitDockerAdapter(project, serverRuntime) {
+    @TestOnly
+    override fun buildLocalImage(dockerfile: File): String? {
+        val tag = UUID.randomUUID().toString()
+        val config = object : DockerAgentDeploymentConfigImpl(tag, null) {
+            override fun getFile() = dockerfile
+
+            override fun sourceType() = DockerAgentSourceType.FILE.toString()
+        }
+
+        return runBlocking { buildImage(project, serverRuntime, config, dockerfile.absolutePath, tag) }
+    }
+
+    override suspend fun hackyBuildDockerfileWithUi(project: Project, pushRequest: DockerfileEcrPushRequest) =
+        hackyBuildDockerfileUnderIndicator(project, pushRequest)
+
+    override suspend fun pushImage(localTag: String, config: DockerRepositoryModel) {
+        val physicalLocalRuntime = serverRuntime.findRuntimeLater(localTag, false).await()
+        (physicalLocalRuntime as? DockerImageRuntime)?.pushImage(project, config) ?: LOG.error { "couldn't map tag to appropriate docker runtime" }
+    }
+
+    companion object {
+        val LOG = getLogger<ToolkitDockerAdapter>()
     }
 }
 

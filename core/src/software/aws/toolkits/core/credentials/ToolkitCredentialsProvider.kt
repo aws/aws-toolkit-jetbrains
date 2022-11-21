@@ -4,6 +4,7 @@
 package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 
 enum class CredentialType {
     StaticProfile,
@@ -80,9 +81,17 @@ abstract class CredentialIdentifierBase(override val credentialType: CredentialT
     final override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
-class ToolkitCredentialsProvider(val identifier: CredentialIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
-    val id: String = identifier.id
-    val displayName = identifier.displayName
+interface ToolkitAuthenticationProvider {
+    val id: String
+    val displayName: String
+}
+
+class ToolkitCredentialsProvider(
+    val identifier: CredentialIdentifier,
+    delegate: AwsCredentialsProvider
+) : ToolkitAuthenticationProvider, AwsCredentialsProvider by delegate {
+    override val id: String = identifier.id
+    override val displayName = identifier.displayName
     val shortName = identifier.shortName
 
     override fun equals(other: Any?): Boolean {
@@ -99,4 +108,16 @@ class ToolkitCredentialsProvider(val identifier: CredentialIdentifier, delegate:
     override fun hashCode(): Int = identifier.hashCode()
 
     override fun toString(): String = "${this::class.simpleName}(identifier='$identifier')"
+}
+
+interface ToolkitBearerTokenProviderDelegate : SdkTokenProvider, ToolkitAuthenticationProvider
+
+class ToolkitBearerTokenProvider(val delegate: ToolkitBearerTokenProviderDelegate) : SdkTokenProvider by delegate, ToolkitAuthenticationProvider by delegate {
+    companion object {
+        fun identifier(startUrl: String) = "sso;$startUrl"
+        fun displayName(startUrl: String) = "SSO ($startUrl)"
+
+        fun diskSessionIdentifier(profileName: String) = "diskSessionProfile;$profileName"
+        fun diskSessionDisplayName(profileName: String) = "IAM Identity Center Session ($profileName)"
+    }
 }

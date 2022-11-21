@@ -1,5 +1,6 @@
 {
-    "types": [],
+    "types": [
+    ],
     "metrics": [
         {
             "name": "aws_openLocalTerminal",

@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.eclipse.jgit.api.Git
+import org.gradle.internal.os.OperatingSystem
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
+import org.jetbrains.intellij.utils.OpenedPackages
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -56,6 +58,16 @@ configurations {
 
         // Exclude dependencies we don't use to make plugin smaller
         exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
+    }
+
+    // TODO: https://github.com/gradle/gradle/issues/15383
+    val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+    dependencies {
+        testImplementation(platform(versionCatalog.findLibrary("junit5-bom").get()))
+        testImplementation(versionCatalog.findLibrary("junit5-jupiterApi").get())
+
+        testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterEngine").get())
+        testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterVintage").get())
     }
 }
 
@@ -120,9 +132,30 @@ tasks.buildSearchableOptions {
     enabled = false
 }
 
+// https://github.com/JetBrains/gradle-intellij-plugin/blob/829786d5d196ab942d7e6eb3e472ac0af776d3fa/src/main/kotlin/org/jetbrains/intellij/tasks/RunIdeBase.kt#L315
+val openedPackages = OpenedPackages + listOf(
+    // very noisy in UI tests
+    "--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED",
+) + with(OperatingSystem.current()) {
+    when {
+        isWindows -> listOf(
+            "--add-opens=java.base/sun.nio.fs=ALL-UNNAMED",
+        )
+        else -> emptyList()
+    }
+}
+
 tasks.withType<Test>().all {
     systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
+    val jetbrainsCoreTestResources = project(":jetbrains-core").projectDir.resolve("tst-resources")
+    // FIX_WHEN_MIN_IS_221: log4j 1.2 removed in 221
+    systemProperty("log4j.configuration", jetbrainsCoreTestResources.resolve("log4j.xml"))
+    systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
+
+    jvmArgs(openedPackages)
+
+    useJUnitPlatform()
 }
 
 tasks.withType<JavaExec> {
@@ -134,7 +167,7 @@ tasks.runIde {
     systemProperty("ide.plugins.snapshot.on.unload.fail", true)
     systemProperty("memory.snapshots.path", project.rootDir)
 
-    val alternativeIde = providers.environmentVariable("ALTERNATIVE_IDE").forUseAtConfigurationTime()
+    val alternativeIde = providers.environmentVariable("ALTERNATIVE_IDE")
     if (alternativeIde.isPresent) {
         // remove the trailing slash if there is one or else it will not work
         val value = alternativeIde.get()
@@ -159,7 +192,12 @@ ciOnly {
 }
 tasks.withType<RunIdeForUiTestTask>().all {
     systemProperty("robot-server.port", remoteRobotPort)
+    // mac magic
+    systemProperty("ide.mac.message.dialogs.as.sheets", "false")
+    systemProperty("jbScreenMenuBar.enabled", "false")
+    systemProperty("apple.laf.useScreenMenuBar", "false")
     systemProperty("ide.mac.file.chooser.native", "false")
+
     systemProperty("jb.consents.confirmation.enabled", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")
@@ -167,6 +205,7 @@ tasks.withType<RunIdeForUiTestTask>().all {
 
     systemProperty("aws.telemetry.skip_prompt", "true")
     systemProperty("aws.suppress_deprecation_prompt", true)
+    systemProperty("idea.trust.all.projects", "true")
 
     // These are experiments to enable for UI tests
     systemProperty("aws.experiment.connectedLocalTerminal", true)
@@ -176,6 +215,8 @@ tasks.withType<RunIdeForUiTestTask>().all {
         enabled.set(true)
         suspend.set(false)
     }
+
+    jvmArgs(openedPackages)
 
     ciOnly {
         configure<JacocoTaskExtension> {

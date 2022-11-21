@@ -16,15 +16,15 @@ fun IdeaFrame.awsExplorer(
     timeout: Duration = Duration.ofSeconds(20),
     function: AwsExplorer.() -> Unit
 ) {
-    val locator = byXpath("//div[@accessiblename='AWS Explorer Tool Window']")
+    val locator = byXpath("//div[@accessiblename='AWS Toolkit Tool Window']")
 
-    step("AWS explorer") {
+    step("AWS toolkit tool window") {
         val explorer = try {
             find<AwsExplorer>(locator)
         } catch (e: Exception) {
             step("Open tool window") {
                 // Click the tool window stripe
-                find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
+                find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Toolkit' and @class='StripeButton' and @text='AWS Toolkit']")).click()
                 find(locator, timeout)
             }
         }
@@ -38,7 +38,7 @@ open class AwsExplorer(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : CommonContainerFixture(remoteRobot, remoteComponent) {
-    fun explorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']")).also { it.waitUntilLoaded() }
+    fun explorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']"), timeout = Duration.ofSeconds(5)).also { it.waitUntilLoaded() }
 
     fun openExplorerActionMenu(vararg path: String) {
         explorerTree().rightClickPath(*path)
