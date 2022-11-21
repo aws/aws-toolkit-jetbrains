@@ -7,6 +7,8 @@ import com.intellij.database.dataSource.DatabaseConnectionInterceptor.ProtoConne
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.testFramework.ProjectRule
+import io.mockk.every
+import io.mockk.mockkStatic
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -34,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRul
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.auth.compatability.project
 
 class IamAuthTest {
     @Rule
@@ -188,7 +191,7 @@ class IamAuthTest {
             on { username } doReturn if (hasUsername) username else ""
         }
         val dbConnectionPoint = mock<DatabaseConnectionPoint> {
-            on { additionalJdbcProperties } doAnswer {
+            on { additionalProperties } doAnswer {
                 val m = mutableMapOf<String, String>()
                 if (hasCredentials) {
                     m[CREDENTIAL_ID_PROPERTY] = credentialId
@@ -203,15 +206,15 @@ class IamAuthTest {
             }
             on { dataSource } doReturn mockConnection
         }
-        return mock {
+        return mock<ProtoConnection> {
             val m = mutableMapOf<String, String>()
             on { connectionPoint } doReturn dbConnectionPoint
-            on { runConfiguration } doAnswer {
-                mock {
-                    on { project } doAnswer { projectRule.project }
-                }
-            }
             on { connectionProperties } doReturn m
+        }.also {
+            mockkStatic("software.aws.toolkits.jetbrains.datagrip.auth.compatability.DatabaseAuthProviderCompatabilityAdapterKt")
+            every {
+                it.project()
+            } returns projectRule.project
         }
     }
 

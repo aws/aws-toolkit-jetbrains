@@ -19,6 +19,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaArchitecture
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
@@ -642,6 +643,7 @@ class LocalLambdaRunConfigurationTest {
             """
             <configuration name="HelloWorldFunction" type="aws.lambda" factoryName="Local" temporary="true" nameIsGenerated="true">
               <option name="credentialProviderId" value="profile:default" />
+              <option name="architecture" value="arm64" />
               <option name="environmentVariables">
                 <map>
                   <entry key="Foo" value="Bar" />
@@ -652,7 +654,7 @@ class LocalLambdaRunConfigurationTest {
               <option name="inputIsFile" value="false" />
               <option name="logicalFunctionName" />
               <option name="regionId" value="us-west-2" />
-              <option name="runtime" value="python3.6" />
+              <option name="runtime" value="python3.9" />
               <option name="templateFile" />
               <option name="useTemplate" value="false" />
               <method v="2" />
@@ -669,7 +671,8 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration.templateFile()).isNull()
             assertThat(runConfiguration.logicalId()).isNull()
             assertThat(runConfiguration.handler()).isEqualTo("helloworld.App::handleRequest")
-            assertThat(runConfiguration.runtime()).isEqualTo(LambdaRuntime.PYTHON3_6)
+            assertThat(runConfiguration.architecture()).isEqualTo(LambdaArchitecture.ARM64.toString())
+            assertThat(runConfiguration.runtime()).isEqualTo(LambdaRuntime.PYTHON3_9)
             assertThat(runConfiguration.environmentVariables()).containsAllEntriesOf(mapOf("Foo" to "Bar"))
             assertThat(runConfiguration.regionId()).isEqualTo("us-west-2")
             assertThat(runConfiguration.credentialProviderId()).isEqualTo("profile:default")
