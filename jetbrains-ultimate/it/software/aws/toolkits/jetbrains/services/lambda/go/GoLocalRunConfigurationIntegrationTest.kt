@@ -69,41 +69,43 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private lateinit var goModFile: VirtualFile
 
+    // language=go
     private val fileContents = """
         package main
-
+        
         import (
-	        "github.com/aws/aws-lambda-go/lambda"
-	        "strings"
+        	"github.com/aws/aws-lambda-go/lambda"
+        	"strings"
         )
-
+        
         func handler(request string) (string, error) {
         	return strings.ToUpper(request), nil
         }
-
+        
         func main() {
         	lambda.Start(handler)
         }
     """.trimIndent()
 
+    // language=go
     private val envVarsFileContents = """
         package main
 
         import (
-            "github.com/aws/aws-lambda-go/lambda"
-	        "os"
-	        "strings"
+        	"github.com/aws/aws-lambda-go/lambda"
+        	"os"
+        	"strings"
         )
-
+        
         func handler() (interface{}, error) {
         	entries := map[string]string{}
         	for _, item := range os.Environ() {
-	        	entry := strings.Split(item, "=")
+        		entry := strings.Split(item, "=")
         		entries[entry[0]] = entry[1]
         	}
         	return entries, nil
         }
-
+        
         func main() {
         	lambda.Start(handler)
         }
@@ -272,7 +274,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
     fun samIsExecutedImage(): Unit = samImageRunDebugTest(
         projectRule = projectRule,
         relativePath = "samProjects/image/$runtime",
-        templatePatches = mapOf("[GoVersion]" to (compatibleGoForIde() ?: "1")),
+        templatePatches = mapOf("[GoVersion]" to (compatibleGoForIde())),
         sourceFileName = "main.go",
         runtime = runtime,
         mockCredentialsId = mockId,
@@ -285,7 +287,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
         samImageRunDebugTest(
             projectRule = projectRule,
             relativePath = "samProjects/image/$runtime",
-            templatePatches = mapOf("[GoVersion]" to (compatibleGoForIde() ?: "1")),
+            templatePatches = mapOf("[GoVersion]" to (compatibleGoForIde())),
             sourceFileName = "main.go",
             runtime = runtime,
             mockCredentialsId = mockId,

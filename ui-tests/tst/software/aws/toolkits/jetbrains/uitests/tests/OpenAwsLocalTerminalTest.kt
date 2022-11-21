@@ -46,10 +46,10 @@ class OpenAwsLocalTerminalTest {
                     findText(Predicate { it.text.startsWith("AWS: ") }).text.substringAfter("AWS: ")
                 }
                 step("confirm terminal tab showing with connection $connection") {
-                    findByXpath("//div[@accessiblename='$connection' and @class='ContentTabLabel' and @text='$connection']")
+                    findByXpath("//div[@class='ContentTabLabel' and contains(@text,'$connection')]")
                 }
                 val terminal = step("find terminal window") {
-                    findByXpath("//div[@class='ShellTerminalWidget' and @name='terminal']")
+                    findByXpath("//div[@class='ShellTerminalWidget']")
                 }
                 step("click in terminal") {
                     terminal.click()

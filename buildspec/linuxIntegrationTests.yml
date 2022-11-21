@@ -2,7 +2,7 @@ version: 0.2
 
 cache:
   paths:
-    - '/root/.gradle/caches/**/*'
+#    - '/root/.gradle/caches/**/*'
     - '/root/.gradle/wrapper/**/*'
 
 env:
@@ -14,11 +14,13 @@ env:
 phases:
   install:
     commands:
+      - n install 16
       - startDocker.sh
       # login to DockerHub so we don't get throttled
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
+      - DOTNET_ROOT="/root/.dotnet" /usr/local/bin/dotnet-install.sh --channel 6.0
 
   build:
     commands:
