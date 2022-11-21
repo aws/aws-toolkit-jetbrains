@@ -25,6 +25,7 @@ import icons.AwsIcons
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
+import software.aws.toolkits.jetbrains.services.lambda.sam.samSyncCommand
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.Path
@@ -44,7 +45,6 @@ class SyncApplicationRunProfile(
     override fun getIcon(): Icon? = AwsIcons.Resources.SERVERLESS_APP
 
     inner class SyncApplicationRunProfileState(environment: ExecutionEnvironment) : CommandLineState(environment) {
-        val stackName = settings.stackName
 
         override fun startProcess(): ProcessHandler {
             val processHandler = KillableColoredProcessHandler(getSamSyncCommand())
@@ -52,60 +52,12 @@ class SyncApplicationRunProfile(
             return processHandler
         }
 
-        private fun getSamSyncCommand(): GeneralCommandLine = getSamCli().apply {
-            withEnvironment(connection.toEnvironmentVariables())
-            withWorkDirectory(templatePath.toAbsolutePath().parent.toString())
-            addParameter("sync")
-            addParameter("--stack-name")
-            addParameter(stackName)
-            addParameter("--template-file")
-            addParameter(templatePath.toString())
-            addParameter("--s3-bucket")
-            addParameter(settings.bucket)
-            settings.ecrRepo?.let {
-                addParameter("--image-repository")
-                addParameter(it)
-            }
-            if (settings.capabilities.isNotEmpty()) {
-                addParameter("--capabilities")
-                addParameters(settings.capabilities.map { it.capability })
-            }
-            if (settings.parameters.isNotEmpty()) {
-                addParameter("--parameter-overrides")
-                settings.parameters.forEach { (key, value) ->
-                    addParameter(
-                        "${escapeParameter(key)}=${escapeParameter(value)}"
-                    )
-                }
-            }
-
-            if (settings.tags.isNotEmpty()) {
-                addParameter("--tags")
-                settings.tags.forEach { (key, value) ->
-                    addParameter(
-                        "${escapeParameter(key)}=${escapeParameter(value)}"
-                    )
-                }
-            }
-            if (settings.useContainer) {
-                addParameter("--use-container")
-            }
-            addParameter("--no-dependency-layer")
-            if (syncOnlyCode) {
-                addParameter("--code")
-            }
-        }
-
-        private fun escapeParameter(param: String): String {
-            // Invert the quote if the string is already quoted
-            val quote = if (param.startsWith("\"") || param.endsWith("\"")) {
-                "'"
-            } else {
-                "\""
-            }
-
-            return quote + param + quote
-        }
+        private fun getSamSyncCommand(): GeneralCommandLine = getSamCli().samSyncCommand(
+            connection.toEnvironmentVariables(),
+            templatePath,
+            settings,
+            syncOnlyCode
+        )
 
         override fun execute(executor: Executor, runner: ProgramRunner<*>) =
             super.execute(executor, runner).apply {

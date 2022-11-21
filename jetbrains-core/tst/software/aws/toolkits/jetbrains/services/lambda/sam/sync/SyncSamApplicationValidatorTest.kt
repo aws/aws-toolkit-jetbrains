@@ -22,16 +22,23 @@ import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
+import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.nio.file.Files
+import java.util.concurrent.CompletableFuture
 
 @RunsInEdt
 class SyncSamApplicationValidatorTest {
     private val projectRule = JavaCodeInsightTestFixtureRule()
+
+    @JvmField
+    @Rule
+    val resourceCache = MockResourceCacheRule()
 
     @Rule
     @JvmField
@@ -62,9 +69,10 @@ class SyncSamApplicationValidatorTest {
         }
 
         val dir = Files.createDirectory(tempDir.newPath()).toAbsolutePath()
-
+        stacksWithNames(listOf("sampleStack"))
         runInEdtAndWait {
             val template = VfsUtil.findFileByIoFile(dir.writeChild("path.yaml", byteArrayOf()).toFile(), true)
+
             if (template != null) {
                 sut = SyncServerlessApplicationDialog(
                     projectRule.project,
@@ -384,12 +392,27 @@ class SyncSamApplicationValidatorTest {
     @Test
     fun `s3 bucket must be specified`() {
         sut.forceUi(sutPanel, forceBucket = true, bucket = null)
+
         assertThat(validateAll()).singleElement()
             .matches { it.validate()?.message?.contains(message("serverless.application.sync.validation.s3.bucket.empty")) == true }
     }
 
     private fun validateAll(): List<DialogValidation> =
         sutPanel.validationsOnApply.flatMap { it.value }.filter { it.validate() != null }
+
+    private fun stacksWithNames(names: List<String>) {
+        resourceCache.addEntry(
+            projectRule.project,
+            CloudFormationResources.ACTIVE_STACKS,
+            CompletableFuture.completedFuture(
+                names.map {
+                    StackSummary.builder()
+                        .stackName(it)
+                        .build()
+                }
+            )
+        )
+    }
 
     private class TestParameter(
         override val logicalName: String,
