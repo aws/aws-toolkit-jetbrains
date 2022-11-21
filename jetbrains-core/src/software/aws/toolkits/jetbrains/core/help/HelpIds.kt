@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.help
 
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+
 enum class HelpIds(shortId: String, val url: String) {
     // App Runner
     APPRUNNER_PAUSE_RESUME(
@@ -22,16 +24,6 @@ enum class HelpIds(shortId: String, val url: String) {
     EXPLORER_WINDOW(
         "explorerWindow",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer"
-    ),
-
-    // Cloud Debugging
-    CLOUD_DEBUG_ENABLE(
-        "enableCloudDebugging",
-        "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/cloud-debug"
-    ),
-    CLOUD_DEBUG_RUN_CONFIGURATION(
-        "cloudDebugRunConfiguration",
-        "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/run-debug-config-dialog-cloud-debug"
     ),
 
     // Lambda
@@ -100,6 +92,12 @@ enum class HelpIds(shortId: String, val url: String) {
     ECS_EXEC_PERMISSIONS_REQUIRED(
         "ecsExecPermissions",
         "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html#ecs-exec-enabling-and-using"
+    ),
+
+    // CodeWhisperer
+    CODEWHISPERER_TOKEN(
+        "CodeWhispererToken",
+        CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI
     )
     ;
 

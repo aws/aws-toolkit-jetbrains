@@ -4,7 +4,6 @@
 import com.jetbrains.rd.generator.gradle.RdGenExtension
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
-import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
@@ -18,6 +17,7 @@ buildscript {
 
     repositories {
         maven("https://www.myget.org/F/rd-snapshots/maven/")
+        mavenCentral()
     }
 
     dependencies {
@@ -36,6 +36,10 @@ plugins {
 
 intellijToolkit {
     ideFlavor.set(IdeFlavor.RD)
+}
+
+intellij {
+    type.set("RD")
 }
 
 sourceSets {
@@ -98,6 +102,7 @@ configure<RdGenExtension> {
     packages = "model"
 }
 
+// TODO: migrate to official rdgen gradle plugin https://www.jetbrains.com/help/resharper/sdk/Rider.html#plugin-project-jvm
 val generateModels = tasks.register<RdGenTask>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
@@ -192,6 +197,8 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     doLast {
         val arguments = listOf(
             "build",
+            "--verbosity",
+            "normal",
             "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
         )
         exec {
@@ -285,11 +292,4 @@ tasks.integrationTest {
     // test detection is broken for tests inheriting from JB test framework: https://youtrack.jetbrains.com/issue/IDEA-278926
     setScanForTestClasses(false)
     include("**/*Test.class")
-
-    ciOnly {
-        // disable retries so that logs aren't overwritten
-        retry {
-            maxRetries.set(0)
-        }
-    }
 }

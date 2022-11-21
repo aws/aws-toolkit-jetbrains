@@ -75,7 +75,7 @@ data class DefaultMetricEvent internal constructor(
         private var createTime: Instant = Instant.now()
         private var awsAccount: String = METADATA_NA
         private var awsRegion: String = METADATA_NA
-        private var data: MutableCollection<MetricEvent.Datum> = mutableListOf()
+        private val data: MutableCollection<MetricEvent.Datum> = mutableListOf()
 
         override fun createTime(createTime: Instant): MetricEvent.Builder {
             this.createTime = createTime
@@ -149,11 +149,6 @@ data class DefaultMetricEvent internal constructor(
                     return this
                 }
 
-                if (metadata.size > MAX_METADATA_ENTRIES) {
-                    LOG.warn { "Each metric datum may contain a maximum of $MAX_METADATA_ENTRIES metadata entries" }
-                    return this
-                }
-
                 metadata[key] = value
                 return this
             }
@@ -171,8 +166,6 @@ data class DefaultMetricEvent internal constructor(
             private val LOG = getLogger<DefaultDatum>()
 
             fun builder(name: String): MetricEvent.Datum.Builder = BuilderImpl(name)
-
-            const val MAX_METADATA_ENTRIES: Int = 10
         }
     }
 }

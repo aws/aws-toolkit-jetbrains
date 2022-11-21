@@ -6,8 +6,6 @@ package software.aws.toolkits.jetbrains.utils.rules
 import com.goide.GoConstants
 import com.goide.project.GoModuleSettings
 import com.goide.psi.GoFile
-import com.goide.sdk.GoSdk
-import com.goide.sdk.GoSdkImpl
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.Disposable
@@ -100,10 +98,12 @@ fun runGoModTidy(goModFile: VirtualFile) {
     }
 }
 
-fun compatibleGoForIde() = when (ApplicationInfo.getInstance().build.baselineVersion) {
-    203 -> "1.15.14" // TODO: FIX_WHEN_MIN_IS_211
-    211 -> "1.16.6" // TODO: FIX_WHEN_MIN_IS_212
-    else -> null
+fun compatibleGoForIde(): String {
+    val baseline = ApplicationInfo.getInstance().build.baselineVersion
+    return when {
+        baseline < 221 -> "1.17.8" // TODO: FIX_WHEN_MIN_IS_221
+        else -> "1.18.0"
+    }
 }
 
 fun CodeInsightTestFixture.ensureCorrectGoVersion(disposable: Disposable) {
@@ -117,7 +117,7 @@ fun CodeInsightTestFixture.ensureCorrectGoVersion(disposable: Disposable) {
     }
 
     val goVersionOverride = compatibleGoForIde()
-    goVersionOverride?.let {
+    goVersionOverride.let {
         val overrideLocation = this.tempDirPath
 
         installGoSdk(overrideLocation, it)
@@ -148,5 +148,3 @@ private fun GeneralCommandLine.runAndValidateCommand() {
     val output = ExecUtil.execAndGetOutput(this)
     check(output.exitCode == 0) { "${this.commandLineString} failed!\n ${output.stderr}" }
 }
-
-fun createMockSdk(root: String, version: String): GoSdk = GoSdkImpl(root, version, null)
