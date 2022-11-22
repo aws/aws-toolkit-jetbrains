@@ -13,12 +13,16 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleUtil
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.text.SemVer
 import icons.AwsIcons
 import kotlinx.coroutines.runBlocking
+import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
@@ -26,7 +30,9 @@ import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrT
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutable
+import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
+import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.lambda.SyncServerlessAppWarningDialog
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
@@ -97,68 +103,80 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
             val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
 
-            val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
-            runInEdt {
-                if (warningSettings.showDevModeWarning) {
-                    if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
-                        SamTelemetry.sync(
-                            project = project,
-                            result = Result.Cancelled,
-                            syncedResources = syncedResourceType,
-                            lambdaPackageType = lambdaType,
-                            version = SamCommon.getVersionString()
-                        )
-
-                        return@runInEdt
+            ProgressManager.getInstance().run(
+                object : Task.Backgroundable(project, "Fetching stacks", false) {
+                    var activeStacks = emptyList<StackSummary>()
+                    override fun run(indicator: ProgressIndicator) {
+                        activeStacks = project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
+                        activeStacks.size // no-op to ensure previous command is completed
                     }
-                }
 
-                FileDocumentManager.getInstance().saveAllDocuments()
-                val parameterDialog = SyncServerlessApplicationDialog(project, templateFile)
+                    override fun onFinished() {
+                        val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
+                        runInEdt {
+                            if (warningSettings.showDevModeWarning) {
+                                if (!SyncServerlessAppWarningDialog(project).showAndGet()) {
+                                    SamTelemetry.sync(
+                                        project = project,
+                                        result = Result.Cancelled,
+                                        syncedResources = syncedResourceType,
+                                        lambdaPackageType = lambdaType,
+                                        version = SamCommon.getVersionString()
+                                    )
 
-                if (!parameterDialog.showAndGet()) {
-                    SamTelemetry.sync(
-                        project = project,
-                        result = Result.Cancelled,
-                        syncedResources = syncedResourceType,
-                        lambdaPackageType = lambdaType,
-                        version = SamCommon.getVersionString()
-                    )
-                    return@runInEdt
-                }
-                val settings = parameterDialog.settings()
+                                    return@runInEdt
+                                }
+                            }
 
-                saveSettings(project, templateFile, settings)
+                            FileDocumentManager.getInstance().saveAllDocuments()
+                            val parameterDialog = SyncServerlessApplicationDialog(project, templateFile, activeStacks)
 
-                if (settings.useContainer) {
-                    if (!execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
-                        notifyError(
-                            message("sam.cli.version.warning"),
-                            message(
-                                "sam.cli.version.upgrade.required",
-                                execVersion.parsedVersion,
-                                minVersionForUseContainer.parsedVersion
-                            ),
-                            project = project
-                        )
-                        return@runInEdt
-                    }
-                    val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {
-                        try {
-                            val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
-                            processOutput.exitCode != 0
-                        } catch (e: Exception) {
-                            true
+                            if (!parameterDialog.showAndGet()) {
+                                SamTelemetry.sync(
+                                    project = project,
+                                    result = Result.Cancelled,
+                                    syncedResources = syncedResourceType,
+                                    lambdaPackageType = lambdaType,
+                                    version = SamCommon.getVersionString()
+                                )
+                                return@runInEdt
+                            }
+                            val settings = parameterDialog.settings()
+
+                            saveSettings(project, templateFile, settings)
+
+                            if (settings.useContainer) {
+                                if (!execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
+                                    notifyError(
+                                        message("sam.cli.version.warning"),
+                                        message(
+                                            "sam.cli.version.upgrade.required",
+                                            execVersion.parsedVersion,
+                                            minVersionForUseContainer.parsedVersion
+                                        ),
+                                        project = project
+                                    )
+                                    return@runInEdt
+                                }
+                                val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {
+                                    try {
+                                        val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                                        processOutput.exitCode != 0
+                                    } catch (e: Exception) {
+                                        true
+                                    }
+                                }
+                                if (dockerDoesntExist) {
+                                    Messages.showWarningDialog(message("lambda.debug.docker.not_connected"), message("docker.not.found"))
+                                    return@runInEdt
+                                }
+                            }
+
+                            syncApp(templateFile, project, settings, syncedResourceType, lambdaType)
                         }
                     }
-                    if (dockerDoesntExist) {
-                        Messages.showWarningDialog(message("lambda.debug.docker.not_connected"), message("docker.not.found"))
-                        return@runInEdt
-                    }
                 }
-
-                syncApp(templateFile, project, settings, syncedResourceType, lambdaType)
-            }
+            )
         }
     }
 

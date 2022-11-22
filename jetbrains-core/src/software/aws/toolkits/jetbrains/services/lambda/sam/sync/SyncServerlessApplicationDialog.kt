@@ -22,7 +22,6 @@ import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
@@ -31,8 +30,6 @@ import software.amazon.awssdk.services.ecr.EcrClient
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.s3.S3Client
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
@@ -71,6 +68,7 @@ data class SyncServerlessApplicationSettings(
 class SyncServerlessApplicationDialog(
     private val project: Project,
     private val templateFile: VirtualFile,
+    private val activeStacks: List<StackSummary>,
     private val loadResourcesOnCreate: Boolean = true
 ) : DialogWrapper(project) {
     var useContainer: Boolean = false
@@ -123,9 +121,6 @@ class SyncServerlessApplicationDialog(
     private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
     private val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
     private val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
-    private val activeStacks = runBlocking(getCoroutineBgContext()) {
-        project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
-    }
     private val checkStack = checkIfStackInSettingsExists()
 
     private var syncType: SyncType = if (checkStack) SyncType.CREATE else SyncType.UPDATE
