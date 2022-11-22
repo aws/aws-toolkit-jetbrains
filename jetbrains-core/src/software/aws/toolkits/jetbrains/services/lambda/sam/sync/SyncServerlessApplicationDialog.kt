@@ -362,9 +362,11 @@ class SyncServerlessApplicationDialog(
         }
     }
 
-    fun enableParamsAndTags(enabled: Boolean) {
-        tagsField.isEnabled = enabled
-        parametersField.isEnabled = enabled
+    private fun enableParamsAndTags(enabled: Boolean) {
+        runInEdt(ModalityState.any()) {
+            tagsField.isEnabled = enabled
+            parametersField.isEnabled = enabled
+        }
     }
 
     @TestOnly
