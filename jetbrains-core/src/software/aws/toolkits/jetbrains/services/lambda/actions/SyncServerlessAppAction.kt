@@ -97,7 +97,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             }
 
             val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
-            val hasImageFunctions = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
+            val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
             val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
             val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
 
