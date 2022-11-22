@@ -101,16 +101,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
             val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
 
-            var dockerDoesntExist: Boolean? = null
-
             ProgressManager.getInstance().run(
-                object : Task.WithResult<List<StackSummary>, Exception>(
+                object : Task.WithResult<PreSyncRequirements, Exception>(
                     project,
                     message("serverless.application.sync.fetch.stacks.progress.bar"),
                     false
                 ) {
-                    override fun compute(indicator: ProgressIndicator): List<StackSummary> {
-                        dockerDoesntExist = if (execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
+                    override fun compute(indicator: ProgressIndicator): PreSyncRequirements {
+                        val dockerDoesntExist = if (execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
                             try {
                                 val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
                                 processOutput.exitCode != 0
@@ -121,7 +119,8 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                             null
                         }
 
-                        return project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
+                        val activeStacks = project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
+                        return PreSyncRequirements(dockerDoesntExist, activeStacks)
                     }
 
                     override fun onFinished() {
@@ -142,7 +141,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                             }
 
                             FileDocumentManager.getInstance().saveAllDocuments()
-                            val parameterDialog = SyncServerlessApplicationDialog(project, templateFile, result)
+                            val parameterDialog = SyncServerlessApplicationDialog(project, templateFile, result.activeStacks)
 
                             if (!parameterDialog.showAndGet()) {
                                 SamTelemetry.sync(
@@ -172,7 +171,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                                     return@runInEdt
                                 }
 
-                                when (dockerDoesntExist) {
+                                when (result.dockerDoesntExist) {
                                     null -> return@runInEdt
                                     true -> {
                                         Messages.showWarningDialog(message("lambda.debug.docker.not_connected"), message("docker.not.found"))
@@ -242,3 +241,8 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
         }
     }
 }
+
+data class PreSyncRequirements(
+    val dockerDoesntExist: Boolean? = null,
+    val activeStacks: List<StackSummary>
+)
