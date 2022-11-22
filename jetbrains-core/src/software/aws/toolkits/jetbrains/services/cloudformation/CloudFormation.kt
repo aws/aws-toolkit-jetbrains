@@ -47,9 +47,10 @@ fun CloudFormationClient.describeStackForSync(stackName: String, enableParamsAnd
         try {
             enableParamsAndTags(false)
             val stack = this.describeStacks { it.stackName(stackName) }.stacks().firstOrNull()
-            enableParamsAndTags(true)
             callback(stack)
         } catch (e: Exception) {
+            /* no-op */
+        } finally {
             enableParamsAndTags(true)
         }
     }
