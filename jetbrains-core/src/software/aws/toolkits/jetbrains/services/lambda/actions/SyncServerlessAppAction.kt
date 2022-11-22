@@ -21,10 +21,8 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.text.SemVer
 import icons.AwsIcons
-import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.lambda.model.PackageType
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
@@ -99,9 +97,11 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             }
 
             val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
-            val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
+            val hasImageFunctions = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
             val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
             val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
+
+            var dockerDoesntExist: Boolean? = null
 
             ProgressManager.getInstance().run(
                 object : Task.WithResult<List<StackSummary>, Exception>(
@@ -109,8 +109,20 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     message("serverless.application.sync.fetch.stacks.progress.bar"),
                     false
                 ) {
-                    override fun compute(indicator: ProgressIndicator): List<StackSummary> =
-                        project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
+                    override fun compute(indicator: ProgressIndicator): List<StackSummary> {
+                        dockerDoesntExist = if (execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
+                            try {
+                                val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                                processOutput.exitCode != 0
+                            } catch (e: Exception) {
+                                true
+                            }
+                        } else {
+                            null
+                        }
+
+                        return project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
+                    }
 
                     override fun onFinished() {
                         val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
@@ -159,17 +171,15 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                                     )
                                     return@runInEdt
                                 }
-                                val dockerDoesntExist = runBlocking(getCoroutineBgContext()) {
-                                    try {
-                                        val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
-                                        processOutput.exitCode != 0
-                                    } catch (e: Exception) {
-                                        true
+
+                                when (dockerDoesntExist) {
+                                    null -> return@runInEdt
+                                    true -> {
+                                        Messages.showWarningDialog(message("lambda.debug.docker.not_connected"), message("docker.not.found"))
+                                        return@runInEdt
                                     }
-                                }
-                                if (dockerDoesntExist) {
-                                    Messages.showWarningDialog(message("lambda.debug.docker.not_connected"), message("docker.not.found"))
-                                    return@runInEdt
+
+                                    else -> {}
                                 }
                             }
 
