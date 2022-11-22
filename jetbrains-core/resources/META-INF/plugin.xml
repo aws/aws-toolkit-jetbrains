@@ -180,6 +180,7 @@ with what features/services are supported.
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.DeploySettings"/>
+        <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.SyncSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.UpdateLambdaState"/>
 
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings"/>
@@ -601,7 +602,6 @@ with what features/services are supported.
             <reference id="serverless.application.deploy"/>
             <separator/>
             <reference id="serverless.sync.infra"/>
-            <separator/>
             <reference id="serverless.sync.code"/>
             <separator/>
         </group>

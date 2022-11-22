@@ -9,7 +9,6 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleServiceManager
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 
-// TODO : save settings
 @State(name = "syncSettings")
 class SyncSettings : PersistentStateComponent<SyncConfigs> {
     private var state = SyncConfigs()
@@ -45,8 +44,17 @@ class SyncSettings : PersistentStateComponent<SyncConfigs> {
         state.samConfigs.computeIfAbsent(samPath) { SyncSamConfig() }.enabledCapabilities = value
     }
 
+    fun samTags(samPath: String): Map<String, String>? = state.samConfigs[samPath]?.tags
+    fun setSamTags(samPath: String, value: Map<String, String>) {
+        state.samConfigs.computeIfAbsent(samPath) { SyncSamConfig() }.tags = value
+    }
+
+    fun samTempParameterOverrides(samPath: String): Map<String, String>? = state.samConfigs[samPath]?.tempParameterOverrides
+    fun setSamTempParameterOverrides(samPath: String, value: Map<String, String>) {
+        state.samConfigs.computeIfAbsent(samPath) { SyncSamConfig() }.tempParameterOverrides = value
+    }
+
     companion object {
-        @JvmStatic
         fun getInstance(module: Module): SyncSettings? = ModuleServiceManager.getService(module, SyncSettings::class.java)
     }
 }
@@ -60,5 +68,7 @@ data class SyncSamConfig(
     var bucketName: String? = null,
     var repoUri: String? = null,
     var useContainer: Boolean = false,
-    var enabledCapabilities: List<CreateCapabilities>? = null
+    var enabledCapabilities: List<CreateCapabilities>? = null,
+    var tags: Map<String, String>? = null,
+    var tempParameterOverrides: Map<String, String>? = null
 )

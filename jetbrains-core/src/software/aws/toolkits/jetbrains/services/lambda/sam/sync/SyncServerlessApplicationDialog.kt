@@ -24,7 +24,6 @@ import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
-import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.cloudformation.model.Tag
 import software.amazon.awssdk.services.ecr.EcrClient
@@ -35,13 +34,12 @@ import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.Parameter
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
-import software.aws.toolkits.jetbrains.services.cloudformation.describeStack
+import software.aws.toolkits.jetbrains.services.cloudformation.describeStackForSync
 import software.aws.toolkits.jetbrains.services.cloudformation.mergeRemoteParameters
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
-import software.aws.toolkits.jetbrains.services.lambda.deploy.CapabilitiesEnumCheckBoxes
 import software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters.validateParameters
@@ -70,12 +68,11 @@ data class SyncServerlessApplicationSettings(
 class SyncServerlessApplicationDialog(
     private val project: Project,
     private val templateFile: VirtualFile,
+    private val activeStacks: List<StackSummary>,
     private val loadResourcesOnCreate: Boolean = true
 ) : DialogWrapper(project) {
     var useContainer: Boolean = false
     var newStackName: String = ""
-    var syncType: SyncType = SyncType.CREATE
-    var createNewStack = true
     var templateParameters: Map<String, String> = emptyMap()
     var tags: Map<String, String> = emptyMap()
     var showImageOptions: Boolean = false
@@ -118,21 +115,28 @@ class SyncServerlessApplicationDialog(
 
     private val parametersField = KeyValueTextField(message("serverless.application.sync.template.parameters"))
     private val tagsField = KeyValueTextField(message("tags.title"))
-    private val capabilitiesSelector = CapabilitiesEnumCheckBoxes()
-
     private var templateFileParameters = CloudFormationTemplate.parse(project, templateFile).parameters().toList()
     private val module = ModuleUtilCore.findModuleForFile(templateFile, project)
     private val settings: SyncSettings? = module?.let { SyncSettings.getInstance(it) }
     private val samPath: String = module?.let { relativeSamPath(it, templateFile) } ?: templateFile.name
     private val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
     private val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
+    private val checkStack = checkIfStackInSettingsExists()
+
+    private var syncType: SyncType = if (checkStack) SyncType.CREATE else SyncType.UPDATE
+    private var createNewStack = checkStack
+    private val capabilitiesList = settings?.enabledCapabilities(samPath)?.toMutableList()
+        ?: mutableListOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
 
     private val s3Client: S3Client = project.awsClient()
     private val ecrClient: EcrClient = project.awsClient()
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
+    private fun checkIfStackInSettingsExists(): Boolean = if (!settings?.samStackName(samPath).isNullOrEmpty()) {
+        !activeStacks.map { it.stackName() }.contains(settings?.samStackName(samPath))
+    } else true
 
     fun settings() = SyncServerlessApplicationSettings(
-        stackName = if (syncType == SyncType.CREATE) {
+        stackName = if (createNewStack) {
             newStackName.nullize()
         } else {
             stackSelector.selected()?.stackName()
@@ -146,7 +150,7 @@ class SyncServerlessApplicationDialog(
         parameters = templateParameters,
         tags = tags,
         useContainer = useContainer,
-        capabilities = capabilitiesSelector.selected
+        capabilities = capabilitiesList
     )
 
     // TODO: Add Help for Dialog
@@ -172,6 +176,7 @@ class SyncServerlessApplicationDialog(
                             if (syncType != SyncType.CREATE) {
                                 syncType = SyncType.CREATE
                                 refreshTemplateParametersAndTags()
+                                createNewStack = true
                             }
                         }
                     cell(stackNameField)
@@ -203,9 +208,10 @@ class SyncServerlessApplicationDialog(
                         if (syncType != SyncType.UPDATE) {
                             syncType = SyncType.UPDATE
                             refreshTemplateParametersAndTags()
+                            createNewStack = false
                         }
                     }
-
+                    stackSelector.reload(forceFetch = true)
                     cell(stackSelector)
                         .horizontalAlign(HorizontalAlign.FILL)
                         .enabledIf(updateStackButton.component.selected)
@@ -276,9 +282,13 @@ class SyncServerlessApplicationDialog(
             row {
                 label(message("cloudformation.capabilities"))
                     .component.toolTipText = message("cloudformation.capabilities.toolTipText")
-
-                capabilitiesSelector.checkboxes.forEach {
-                    cell(it)
+                CreateCapabilities.values().forEach {
+                    checkBox(it.text).actionListener { event, component ->
+                        if (component.isSelected) capabilitiesList.add(it) else capabilitiesList.remove(it)
+                    }.applyToComponent {
+                        this.isSelected = it in capabilitiesList
+                        this.toolTipText = it.toolTipText
+                    }
                 }
             }
 
@@ -293,43 +303,49 @@ class SyncServerlessApplicationDialog(
     override fun createCenterPanel() = component
 
     init {
-        super.init()
         title = message("serverless.application.sync")
         setOKButtonText(message("serverless.application.sync.action.name"))
         setOKButtonTooltip(message("serverless.application.sync.action.description"))
         showImageOptions = hasImageFunctions
+
         settings?.samStackName(samPath)?.let { stackName ->
-            syncType = SyncType.UPDATE
-            stackSelector.selectedItem { it.stackName() == stackName }
-            refreshTemplateParametersAndTags(stackName)
+            if (activeStacks.map { it.stackName() }.contains(stackName)) {
+                syncType = SyncType.UPDATE
+                createNewStack = false
+                stackSelector.selectedItem { it.stackName() == stackName }
+                refreshTemplateParametersAndTags(stackName)
+            }
         } ?: refreshTemplateParametersAndTags()
+
+        if (showImageOptions) {
+            ecrRepoSelector.selectedItem = settings?.samEcrRepoUri(samPath)
+        }
 
         s3BucketSelector.selectedItem = settings?.samBucketName(samPath)
         useContainer = (settings?.samUseContainer(samPath) ?: false)
-        capabilitiesSelector.selected = settings?.enabledCapabilities(samPath)
-            ?: CreateCapabilities.values().filter {
-                it.capability == Capability.CAPABILITY_NAMED_IAM.toString() ||
-                    it.capability == Capability.CAPABILITY_AUTO_EXPAND.toString()
-            }
+        tagsField.envVars = settings?.samTags(samPath).orEmpty()
+        parametersField.envVars = settings?.samTempParameterOverrides(samPath).orEmpty()
+
+        init()
     }
 
     private fun refreshTemplateParametersAndTags(stackName: String? = null) {
-        when (syncType.name) {
-            SyncType.CREATE.name -> {
+        when (createNewStack) {
+            true -> {
                 populateParameters(templateFileParameters)
             }
 
-            SyncType.UPDATE.name -> {
+            false -> {
                 val selectedStackName = stackName ?: stackSelector.selected()?.stackName()
                 if (selectedStackName == null) {
                     populateParameters(emptyList())
                 } else {
-                    cloudFormationClient.describeStack(selectedStackName) {
+                    cloudFormationClient.describeStackForSync(selectedStackName, ::enableParamsAndTags) {
                         it?.let {
                             runInEdt(ModalityState.any()) {
                                 // This check is here in-case createStack was selected before we got this update back
                                 // TODO: should really create a queuing pattern here so we can cancel on user-action
-                                if (syncType == SyncType.UPDATE) {
+                                if (!createNewStack) {
                                     populateParameters(templateFileParameters.mergeRemoteParameters(it.parameters()))
                                     populateTags(it.tags())
                                 }
@@ -338,6 +354,13 @@ class SyncServerlessApplicationDialog(
                     }
                 }
             }
+        }
+    }
+
+    private fun enableParamsAndTags(enabled: Boolean) {
+        runInEdt(ModalityState.any()) {
+            tagsField.isEnabled = enabled
+            parametersField.isEnabled = enabled
         }
     }
 
