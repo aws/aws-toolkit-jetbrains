@@ -104,12 +104,13 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
 
             ProgressManager.getInstance().run(
-                object : Task.Backgroundable(project, "Fetching stacks", false) {
-                    var activeStacks = emptyList<StackSummary>()
-                    override fun run(indicator: ProgressIndicator) {
-                        activeStacks = project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
-                        activeStacks.size // no-op to ensure previous command is completed
-                    }
+                object : Task.WithResult<List<StackSummary>, Exception>(
+                    project,
+                    message("serverless.application.sync.fetch.stacks.progress.bar"),
+                    false
+                ) {
+                    override fun compute(indicator: ProgressIndicator): List<StackSummary> =
+                        project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
 
                     override fun onFinished() {
                         val warningSettings = SamDisplayDevModeWarningSettings.getInstance()
@@ -129,7 +130,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                             }
 
                             FileDocumentManager.getInstance().saveAllDocuments()
-                            val parameterDialog = SyncServerlessApplicationDialog(project, templateFile, activeStacks)
+                            val parameterDialog = SyncServerlessApplicationDialog(project, templateFile, result)
 
                             if (!parameterDialog.showAndGet()) {
                                 SamTelemetry.sync(
@@ -176,6 +177,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                         }
                     }
                 }
+
             )
         }
     }
