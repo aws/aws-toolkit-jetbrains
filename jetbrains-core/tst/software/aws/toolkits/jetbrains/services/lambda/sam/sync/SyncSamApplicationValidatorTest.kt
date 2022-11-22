@@ -62,13 +62,14 @@ class SyncSamApplicationValidatorTest {
         }
 
         val dir = Files.createDirectory(tempDir.newPath()).toAbsolutePath()
-
         runInEdtAndWait {
             val template = VfsUtil.findFileByIoFile(dir.writeChild("path.yaml", byteArrayOf()).toFile(), true)
+
             if (template != null) {
                 sut = SyncServerlessApplicationDialog(
                     projectRule.project,
                     template,
+                    emptyList<StackSummary>(),
                     loadResourcesOnCreate = false
                 )
             }
@@ -384,6 +385,7 @@ class SyncSamApplicationValidatorTest {
     @Test
     fun `s3 bucket must be specified`() {
         sut.forceUi(sutPanel, forceBucket = true, bucket = null)
+
         assertThat(validateAll()).singleElement()
             .matches { it.validate()?.message?.contains(message("serverless.application.sync.validation.s3.bucket.empty")) == true }
     }
@@ -397,7 +399,7 @@ class SyncSamApplicationValidatorTest {
         private val defaultValue: String?,
         private val additionalProperties: Map<String, String> = emptyMap()
     ) : Parameter {
-        override fun getScalarProperty(key: String): String = getOptionalScalarProperty(key) ?: throw Exception("Cennot be null")
+        override fun getScalarProperty(key: String): String = getOptionalScalarProperty(key) ?: throw Exception("Cannot be null")
 
         override fun getOptionalScalarProperty(key: String): String? {
             if (key == "Type") {
