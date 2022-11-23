@@ -36,6 +36,8 @@ class DevToolsToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     private val tree = Tree(AsyncTreeModel(treeModel, true, this))
 
     init {
+        isOpaque = false
+
         TreeUIHelper.getInstance().installTreeSpeedSearch(tree)
         tree.isRootVisible = false
         tree.autoscrolls = true
