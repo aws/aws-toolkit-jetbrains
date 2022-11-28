@@ -213,7 +213,9 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         !hasAcceptedTermsOfService() -> CodeWhispererLoginType.Logout
         actionState.token != null -> CodeWhispererLoginType.Accountless
         else -> {
-            val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+            val conn = with(ToolkitConnectionManager.getInstance(project)) {
+                activeConnectionForFeature(CodeWhispererConnection.getInstance()) ?: activeConnection()
+            }
             if (conn != null) {
                 if (conn.isSono()) {
                     CodeWhispererLoginType.Sono
