@@ -15,6 +15,7 @@ internal val CODEWHISPERER_SCOPES = listOf(
 internal val CODECATALYST_SCOPES = listOf(
     "codecatalyst:read_write"
 )
+
 // limit of 10
 // at least one scope must be provided
 internal val ALL_SSO_SCOPES = CODEWHISPERER_SCOPES
