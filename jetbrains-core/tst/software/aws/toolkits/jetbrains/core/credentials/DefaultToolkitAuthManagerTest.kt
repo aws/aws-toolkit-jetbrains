@@ -246,12 +246,12 @@ class DefaultToolkitAuthManagerTest {
             val captor = argumentCaptor<ManagedBearerSsoConnection>()
             verify(connectionManager).switchConnection(captor.capture())
             assertThat(captor.allValues.size).isEqualTo(1)
-            assertThat(captor.firstValue).satisfies {
-                assertThat(it.scopes).usingRecursiveComparison().isEqualTo(newScopes)
+            assertThat(captor.firstValue).satisfies { connection ->
+                assertThat(connection.scopes).usingRecursiveComparison().isEqualTo(newScopes)
             }
-            assertThat(sut.listConnections()).singleElement().isInstanceOfSatisfying<BearerSsoConnection>() {
-                assertThat(it).usingRecursiveComparison().isNotEqualTo(existingConnection)
-                assertThat(it.scopes).usingRecursiveComparison().isEqualTo(newScopes)
+            assertThat(sut.listConnections()).singleElement().isInstanceOfSatisfying<BearerSsoConnection>() { connection ->
+                assertThat(connection).usingRecursiveComparison().isNotEqualTo(existingConnection)
+                assertThat(connection.scopes).usingRecursiveComparison().isEqualTo(newScopes)
             }
         }
     }
