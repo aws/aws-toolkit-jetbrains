@@ -19,6 +19,7 @@ import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.layout.panel
@@ -49,7 +50,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManag
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.gateway.connection.GitSettings
-import software.aws.toolkits.jetbrains.gateway.connection.IDE_BACKEND_DIR
 import software.aws.toolkits.jetbrains.gateway.connection.StdOutResult
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.connection.resultFromStdOut
@@ -57,13 +57,14 @@ import software.aws.toolkits.jetbrains.gateway.connection.workflow.CloneCode
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.CopyScripts
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.InstallPluginBackend.InstallLocalPluginBackend
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.InstallPluginBackend.InstallMarketplacePluginBackend
-import software.aws.toolkits.jetbrains.gateway.connection.workflow.PatchBackend
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.PrimeSshAgent
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.StartBackend
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.TabbedWorkflowEmitter
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.installBundledPluginBackend
+import software.aws.toolkits.jetbrains.gateway.connection.workflow.v2.StartBackendV2
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.WorkspaceListStateChangeContext
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.WorkspaceNotifications
+import software.aws.toolkits.jetbrains.services.caws.CawsConstants.CAWS_ENV_IDE_BACKEND_DIR
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
@@ -107,6 +108,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         val spaceName = connectionParams.space
         val projectName = connectionParams.project
         val envId = connectionParams.envId
+        val id = WorkspaceIdentifier(CawsProject(spaceName, projectName), envId)
 
         val lifetime = Lifetime.Eternal.createNested()
 
@@ -151,7 +153,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     )
                             }
 
-                            val pluginPath = "$IDE_BACKEND_DIR/plugins/${AwsToolkit.pluginPath().fileName}"
+                            val pluginPath = "$CAWS_ENV_IDE_BACKEND_DIR/plugins/${AwsToolkit.pluginPath().fileName}"
                             var retries = 3
                             val toolkitInstallSettings: ToolkitInstallSettings? = coroutineScope {
                                 while (retries > 0) {
@@ -232,7 +234,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 parameters,
                                 executor,
                                 handle,
-                                envId,
+                                id,
                                 connectionParams.gitSettings,
                                 toolkitInstallSettings
                             ).await()
@@ -344,7 +346,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         parameters: Map<String, String>,
         executor: CawsCommandExecutor,
         gatewayHandle: GatewayConnectionHandle,
-        envId: String,
+        id: WorkspaceIdentifier,
         gitSettings: GitSettings,
         toolkitInstallSettings: ToolkitInstallSettings,
     ): AsyncPromise<Unit> {
@@ -371,20 +373,21 @@ class CawsConnectionProvider : GatewayConnectionProvider {
             when (toolkitInstallSettings) {
                 is ToolkitInstallSettings.None -> {}
                 is ToolkitInstallSettings.UseSelf -> {
-                    add(installBundledPluginBackend(executor, remoteScriptPath, IDE_BACKEND_DIR))
+                    add(installBundledPluginBackend(executor, remoteScriptPath, CAWS_ENV_IDE_BACKEND_DIR))
                 }
                 is ToolkitInstallSettings.UseArbitraryLocalPath -> {
-                    add(InstallLocalPluginBackend(toolkitInstallSettings, executor, remoteScriptPath, IDE_BACKEND_DIR))
+                    add(InstallLocalPluginBackend(toolkitInstallSettings, executor, remoteScriptPath, CAWS_ENV_IDE_BACKEND_DIR))
                 }
                 is ToolkitInstallSettings.UseMarketPlace -> {
-                    add(InstallMarketplacePluginBackend(null, executor, remoteScriptPath, IDE_BACKEND_DIR))
+                    add(InstallMarketplacePluginBackend(null, executor, remoteScriptPath, CAWS_ENV_IDE_BACKEND_DIR))
                 }
             }
 
-            if (AwsToolkit.isDeveloperMode()) {
-                add(PatchBackend(gatewayHandle, executor, lifetime))
+            if (Registry.`is`("aws.codecatalyst.experimentalConnect", false)) {
+                add(StartBackendV2(lifetime, indicator, id))
+            } else {
+                add(StartBackend(gatewayHandle, remoteScriptPath, remoteProjectName, executor, lifetime, id.id))
             }
-            add(StartBackend(gatewayHandle, remoteScriptPath, remoteProjectName, executor, lifetime, envId))
         }
 
         val promise = AsyncPromise<Unit>()

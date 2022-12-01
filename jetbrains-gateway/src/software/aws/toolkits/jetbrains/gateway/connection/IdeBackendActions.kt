@@ -23,14 +23,14 @@ import software.aws.toolkits.jetbrains.gateway.CawsWizardCloneType
 import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.WorkspaceIdentifier
 import software.aws.toolkits.jetbrains.gateway.toWorkspace
+import software.aws.toolkits.jetbrains.services.caws.CawsConstants.CAWS_ENV_IDE_BACKEND_DIR
+import software.aws.toolkits.jetbrains.services.caws.CawsConstants.CAWS_ENV_PROJECT_DIR
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI
 import java.time.Duration
 import software.aws.toolkits.telemetry.Result as TelemetryResult
 
-private const val PROJECT_PATH = "/projects"
-const val IDE_BACKEND_DIR = "/aws/mde/ide-runtimes/jetbrains/runtime/"
-private const val REMOTE_SERVER_CMD = "$IDE_BACKEND_DIR/bin/remote-dev-server.sh"
+private const val REMOTE_SERVER_CMD = "$CAWS_ENV_IDE_BACKEND_DIR/bin/remote-dev-server.sh"
 
 class IdeBackendActions(
     private val remoteScriptPath: String,
@@ -39,13 +39,13 @@ class IdeBackendActions(
 ) {
     // use projectPath if it exists, otherwise fallback to the default root
     private val projectPath by lazy {
-        projectName ?: return@lazy PROJECT_PATH
+        projectName ?: return@lazy CAWS_ENV_PROJECT_DIR
 
-        val path = "$PROJECT_PATH/$projectName".trimEnd('/')
+        val path = "$CAWS_ENV_PROJECT_DIR/$projectName".trimEnd('/')
         if (remoteCommandExecutor.remoteDirectoryExistsUnsafe(path)) {
             path
         } else {
-            PROJECT_PATH
+            CAWS_ENV_PROJECT_DIR
         }
     }
 

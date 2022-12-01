@@ -11,6 +11,8 @@
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CawsSpaceTracker"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.caws.projectstate.CawsProjectSettings"/>
+
+        <registryKey key="aws.codecatalyst.experimentalConnect" description="Use the experimental dev environment connection workflow" defaultValue="false" restartRequired="false"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
