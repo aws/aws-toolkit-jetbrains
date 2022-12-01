@@ -4,4 +4,5 @@
 <idea-plugin>
     <depends>com.intellij.modules.lang</depends>
     <depends>org.jetbrains.plugins.yaml</depends>
+    <depends>AWSCloudFormation</depends>
 </idea-plugin>
