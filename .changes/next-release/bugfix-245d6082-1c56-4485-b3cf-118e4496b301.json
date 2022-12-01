@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Only list dev environments under projects that space admins are a member of"
+}
