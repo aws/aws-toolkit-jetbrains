@@ -17,7 +17,6 @@ class CawsSshConnectionConfigModifier : SshConnectionConfigService.Modifier {
         }
 
         val (space, project, envId) = initialHost.substringAfter(HOST_PREFIX).split('/')
-        // jetbrains-gateway://connect#aws.codecatalyst.space=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&aws.codecatalyst.project=webproject&aws.codecatalyst.env.id=6bb6eeda-a0fd-4281-bae5-0a57db2fbdce
         val executor = CawsCommandExecutor(
             SonoCredentialManager.getInstance(null).getSettingsAndPromptAuth().awsClient(),
             ssmTarget = envId,
