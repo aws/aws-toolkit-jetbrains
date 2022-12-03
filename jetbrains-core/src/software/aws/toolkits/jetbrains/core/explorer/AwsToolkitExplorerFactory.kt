@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
@@ -19,7 +20,6 @@ import software.aws.toolkits.resources.message
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.helpId = HelpIds.EXPLORER_WINDOW.id
-        toolWindow.installWatcher(toolWindow.contentManager)
 
         if (toolWindow is ToolWindowEx) {
             val actionManager = ActionManager.getInstance()
@@ -29,21 +29,21 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                     add(
                         OpenBrowserAction(
                             title = message("explorer.view_documentation"),
-                            url = "https://docs.aws.amazon.com/console/toolkit-for-jetbrains"
+                            url = AwsToolkit.AWS_DOCS_URL
                         )
                     )
                     add(
                         OpenBrowserAction(
                             title = message("explorer.view_source"),
                             icon = AllIcons.Vcs.Vendors.Github,
-                            url = "https://github.com/aws/aws-toolkit-jetbrains"
+                            url = AwsToolkit.GITHUB_URL
                         )
                     )
                     add(
                         OpenBrowserAction(
                             title = message("explorer.create_new_issue"),
                             icon = AllIcons.Vcs.Vendors.Github,
-                            url = "https://github.com/aws/aws-toolkit-jetbrains/issues/new/choose"
+                            url = "${AwsToolkit.GITHUB_URL}/issues/new/choose"
                         )
                     )
                     add(actionManager.getAction("aws.toolkit.showFeedback"))
@@ -53,8 +53,14 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             )
         }
 
-        // content will be added to tool window in initialization of AwsToolkitExplorerToolWindow
-        AwsToolkitExplorerToolWindow.getInstance(project)
+        val contentManager = toolWindow.contentManager
+        val content = contentManager.factory.createContent(AwsToolkitExplorerToolWindow.getInstance(project), null, false).also {
+            it.isCloseable = true
+            it.isPinnable = true
+        }
+        contentManager.addContent(content)
+        toolWindow.activate(null)
+        contentManager.setSelectedContent(content)
     }
     override fun init(toolWindow: ToolWindow) {
         toolWindow.stripeTitle = message("aws.notification.title")

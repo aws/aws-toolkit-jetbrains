@@ -4,6 +4,8 @@
 package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
+import software.aws.toolkits.resources.message
 
 enum class CredentialType {
     StaticProfile,
@@ -80,9 +82,17 @@ abstract class CredentialIdentifierBase(override val credentialType: CredentialT
     final override fun toString(): String = "${this::class.simpleName}(id='$id')"
 }
 
-class ToolkitCredentialsProvider(val identifier: CredentialIdentifier, delegate: AwsCredentialsProvider) : AwsCredentialsProvider by delegate {
-    val id: String = identifier.id
-    val displayName = identifier.displayName
+interface ToolkitAuthenticationProvider {
+    val id: String
+    val displayName: String
+}
+
+class ToolkitCredentialsProvider(
+    val identifier: CredentialIdentifier,
+    val delegate: AwsCredentialsProvider
+) : ToolkitAuthenticationProvider, AwsCredentialsProvider by delegate {
+    override val id: String = identifier.id
+    override val displayName = identifier.displayName
     val shortName = identifier.shortName
 
     override fun equals(other: Any?): Boolean {
@@ -100,3 +110,27 @@ class ToolkitCredentialsProvider(val identifier: CredentialIdentifier, delegate:
 
     override fun toString(): String = "${this::class.simpleName}(identifier='$identifier')"
 }
+
+// TODO: try to get rid of this because it's really annoying casting the delegate everywhere
+interface ToolkitBearerTokenProviderDelegate : SdkTokenProvider, ToolkitAuthenticationProvider
+
+class ToolkitBearerTokenProvider(val delegate: ToolkitBearerTokenProviderDelegate) : SdkTokenProvider by delegate, ToolkitAuthenticationProvider by delegate {
+    companion object {
+        // TODO: is there a better place for this
+        fun ssoIdentifier(startUrl: String) = "sso;$startUrl"
+
+        // TODO: For AWS Builder ID, we only have startUrl for now instead of each users' metadata data i.e. Email address
+        fun ssoDisplayName(startUrl: String) = if (startUrl == SONO_URL) {
+            message("aws_builder_id.service_name")
+        } else {
+            message("iam_identity_center.service_name", extractOrgID(startUrl))
+        }
+
+        fun diskSessionIdentifier(profileName: String) = "diskSessionProfile;$profileName"
+        fun diskSessionDisplayName(profileName: String) = "IAM Identity Center Session ($profileName)"
+    }
+}
+
+private const val SONO_URL = "https://view.awsapps.com/start"
+
+private fun extractOrgID(startUrl: String) = startUrl.removePrefix("https://").removeSuffix(".awsapps.com/start")
