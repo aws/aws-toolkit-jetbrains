@@ -77,7 +77,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
             result = Result.Failed
             throw e
         } finally {
-            CloudwatchlogsTelemetry.open(project, result, CloudWatchResourceType.LogStream, source = "logGroup")
+            CloudwatchlogsTelemetry.open(project, result, CloudWatchResourceType.LogStream, source = "logStream")
         }
     }
 

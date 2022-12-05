@@ -178,7 +178,7 @@ class LogStreamDownloadToFileTask(
                     }
                 )
             )
-            CloudwatchlogsTelemetry.download(project, Result.Succeeded, CloudWatchResourceType.LogStream)
+            CloudwatchlogsTelemetry.download(project, success = true, CloudWatchResourceType.LogStream)
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while downloading large log stream" }
             e.notifyError(project = project, title = message("cloudwatch.logs.saving_to_disk_failed", logStream))
