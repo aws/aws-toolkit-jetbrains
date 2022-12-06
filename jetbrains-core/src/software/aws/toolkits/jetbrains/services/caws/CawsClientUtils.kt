@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.caws
 
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.ListProjectsRequest
-import software.amazon.awssdk.services.codecatalyst.model.ProjectListFilter
 
 fun CodeCatalystClient.listAccessibleProjectsPaginator(listProjectsRequest: (ListProjectsRequest.Builder) -> Unit) = listProjectsPaginator {
     it.filters({ filter ->
