@@ -20,6 +20,7 @@ import com.intellij.ui.JreHiDpiUtil
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.dsl.builder.MutableProperty
 import com.intellij.ui.layout.Cell
 import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.ComponentPredicate
@@ -27,6 +28,7 @@ import com.intellij.ui.layout.PropertyBinding
 import com.intellij.ui.layout.Row
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.toBinding
+import com.intellij.ui.layout.withSelectedBinding
 import com.intellij.ui.paint.LinePainter2D
 import com.intellij.ui.speedSearch.SpeedSearchSupply
 import com.intellij.util.text.DateFormatUtil
@@ -47,6 +49,7 @@ import java.awt.event.MouseEvent
 import java.awt.geom.RoundRectangle2D
 import java.text.SimpleDateFormat
 import javax.swing.AbstractButton
+import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JTable
@@ -306,6 +309,13 @@ fun CellBuilder<KeyValueTextField>.withBinding(binding: PropertyBinding<Map<Stri
         binding
     )
 
+fun com.intellij.ui.dsl.builder.Cell<KeyValueTextField>.withBinding(binding: MutableProperty<Map<String, String>>) =
+    this.bind(
+        componentGet = { component -> component.envVars },
+        componentSet = { component, value -> component.envVars = value },
+        binding
+    )
+
 fun Row.keyValueTextField(title: String? = null, property: KMutableProperty0<Map<String, String>>): CellBuilder<KeyValueTextField> {
     val field = if (title == null) {
         KeyValueTextField()
@@ -324,3 +334,19 @@ fun <T : JComponent> CellBuilder<T>.toolTipText(@Nls text: String): CellBuilder<
 
     return this
 }
+
+fun JButton.setEnabledAndVisible(state: Boolean) {
+    isEnabled = state
+    isVisible = state
+}
+
+fun<T> CellBuilder<JBRadioButton>.enumBinding(property: KMutableProperty0<T>, buttonValue: T) = this
+    .withSelectedBinding(
+        PropertyBinding(
+            get = { property.get() == buttonValue },
+            set = { if (it) property.set(buttonValue) }
+        )
+    )
+    .applyToComponent {
+        isSelected = property.get() == buttonValue
+    }

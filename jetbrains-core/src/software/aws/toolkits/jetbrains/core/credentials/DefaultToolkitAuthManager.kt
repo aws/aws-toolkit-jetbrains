@@ -10,14 +10,27 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 
 // TODO: unify with CredentialManager
 @State(name = "authManager", storages = [Storage("aws.xml")])
 class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<ToolkitAuthManagerState>, Disposable {
     private var state = ToolkitAuthManagerState()
     private val connections = mutableListOf<ToolkitConnection>()
+    private val transientConnections = let {
+        val factoryConnections = mutableListOf<ToolkitConnection>()
+        ToolkitStartupAuthFactory.EP_NAME.forEachExtensionSafe { factory ->
+            factoryConnections.addAll(
+                factory.buildConnections().also { connections ->
+                    LOG.info { "Found transient connections from $factory: ${connections.map { it.toString() }}" }
+                }
+            )
+        }
 
-    override fun listConnections(): List<ToolkitConnection> = connections.toList()
+        factoryConnections.toList()
+    }
+
+    override fun listConnections(): List<ToolkitConnection> = connections.toList() + transientConnections
 
     override fun createConnection(profile: AuthProfile): ToolkitConnection {
         val connection = connectionFromProfile(profile)
@@ -26,15 +39,25 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         return connection
     }
 
+    private fun deleteConnection(predicate: (ToolkitConnection) -> Boolean) {
+        connections.removeAll { connection ->
+            predicate(connection).also {
+                if (it && connection is Disposable) {
+                    Disposer.dispose(connection)
+                }
+            }
+        }
+    }
+
     override fun deleteConnection(connection: ToolkitConnection) {
-        connections.removeAll { it == connection }
+        deleteConnection { it == connection }
     }
 
     override fun deleteConnection(connectionId: String) {
-        connections.removeAll { it.id == connectionId }
+        deleteConnection { it.id == connectionId }
     }
 
-    override fun getConnection(connectionId: String) = connections.firstOrNull { it.id == connectionId }
+    override fun getConnection(connectionId: String) = listConnections().firstOrNull { it.id == connectionId }
 
     override fun getState(): ToolkitAuthManagerState? {
         val data = connections.mapNotNull {
@@ -77,7 +100,7 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         }
     }
 
-    private fun connectionFromProfile(profile: AuthProfile) = when (profile) {
+    private fun connectionFromProfile(profile: AuthProfile): ToolkitConnection = when (profile) {
         is ManagedSsoProfile -> {
             ManagedBearerSsoConnection(
                 startUrl = profile.startUrl,
@@ -85,6 +108,8 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
                 scopes = profile.scopes
             )
         }
+
+        is DiskSsoSessionProfile -> DiskSsoSessionConnection(sessionProfileName = profile.profileName, region = profile.ssoRegion)
     }
 
     companion object {

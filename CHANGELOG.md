@@ -1,8 +1,25 @@
+# _1.55_ (2022-12-01)
+- **(Feature)** Amazon CodeCatalyst: Connect JetBrains to your remote Dev Environments.
+- **(Feature)** Amazon CodeCatalyst: Clone your repositories to your local machine.
+- **(Feature)** Amazon CodeCatalyst: Connect using your AWS Builder ID.
+
+# _1.54_ (2022-11-28)
+- **(Feature)** Amazon CodeWhisperer now supports JavaScript for Security Scan to catch security vulnerabilities.
+- **(Feature)** Amazon CodeWhisperer recommendations are more context aware. We are removing the overlaps from CodeWhisperer suggestions specifically when the cursor is inside a code block.
+- **(Feature)** Amazon CodeWhisperer now supports TypeScript and C# programming languages.
+- **(Feature)** Amazon CodeWhisperer is now available as a supported feature and no longer an experimental feature.
+- **(Feature)** Amazon CodeWhisperer now adds new access methods with AWS Builder ID and AWS IAM Identity Center to enable and get started.
+
+# _1.53_ (2022-11-23)
+- **(Feature)** Sync Serverless Application(SAM Accelerate)
+- **(Feature)** New experiment to allow injection of AWS Connection details (region/credentials) into Golang Run Configurations
+- **(Removal)** Removed support for 2021.3.x IDEs
+
 # _1.52_ (2022-10-19)
 - **(Feature)** Added 2022.3 support
 - **(Bug Fix)** Fix `credential_process` retrieval when command contains quoted arguments on Windows ([#3322](https://github.com/aws/aws-toolkit-jetbrains/issues/3322))
-- **(Bug Fix)** Fix `java.lang.IllegalStateException: Region provider data is missing default data` ([#3264](https://github.com/aws/aws-toolkit-jetbrains/issues/3264))
 - **(Deprecation)** An upcoming release will remove support for IDEs based on the 2021.3 platform
+- **(Bug Fix)** Fix `java.lang.IllegalStateException: Region provider data is missing default data` ([#3264](https://github.com/aws/aws-toolkit-jetbrains/issues/3264))
 
 # _1.51_ (2022-09-22)
 - **(Feature)** Resources (in AWS Explorer) can list more resource types for EC2, IoT, RDS, Redshift, NetworkManager, and other services
