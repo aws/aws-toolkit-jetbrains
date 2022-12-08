@@ -9,8 +9,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAddConnectionDial
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
 
-// TODO: doesn't need to be a class, but need to minimize file deltas
-class CodeWhispererLoginDialog(project: Project) : ToolkitAddConnectionDialog(
+fun codeWhispererLoginDialog(project: Project) = ToolkitAddConnectionDialog(
     project,
     customizer = ConnectionDialogCustomizer(
         title = message("codewhisperer.credential.login.dialog.title"),

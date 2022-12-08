@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginDialog
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.codeWhispererLoginDialog
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.startup.CodeWhispererProjectStartupActivity
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
@@ -90,7 +90,7 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         } ?: run {
             runInEdt {
                 // Start from scratch if no active connection
-                if (CodeWhispererLoginDialog(project).showAndGet()) {
+                if (codeWhispererLoginDialog(project).showAndGet()) {
                     showCodeWhispererToSIfNeeded(project)
                     project.refreshDevToolTree()
                 }

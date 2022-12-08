@@ -27,7 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnecti
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginDialog
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.codeWhispererLoginDialog
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -77,7 +77,7 @@ class CodeWhispererExplorerActionManagerTest {
         sut = spy()
         whenever(connectionManager.activeConnectionForFeature(any())).thenReturn(null)
 
-        mockConstruction(CodeWhispererLoginDialog::class.java) { loginDialogMock, _ ->
+        mockConstruction(codeWhispererLoginDialog::class.java) { loginDialogMock, _ ->
             whenever(loginDialogMock.showAndGet()).thenReturn(true)
         }.use {
             mockConstruction(CodeWhispererTermsOfServiceDialog::class.java) { tosMock, _ ->

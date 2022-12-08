@@ -47,12 +47,11 @@ data class ConnectionDialogCustomizer(
     val replaceIamComment: String? = null,
 )
 
-open class ToolkitAddConnectionDialog(
+class ToolkitAddConnectionDialog(
     private val project: Project,
     connection: ToolkitConnection? = null,
     private val customizer: ConnectionDialogCustomizer? = null
 ) : DialogWrapper(project), Disposable {
-    // TODO: update fields
     private class Modal {
         // Default option AWS Builder ID to be selected
         var loginType: LoginOptions = LoginOptions.AWS_BUILDER_ID
