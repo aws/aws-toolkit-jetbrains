@@ -419,7 +419,6 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                         var error: Throwable? = null
                         try {
                             step.run(context, stepEmitter)
-                            error("aaaaaaaaaa")
                         } catch (e: Throwable) {
                             error = e
                             throw e
