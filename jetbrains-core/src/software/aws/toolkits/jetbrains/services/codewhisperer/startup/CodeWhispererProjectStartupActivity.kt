@@ -17,6 +17,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import java.util.Date
 import java.util.Timer
 import kotlin.concurrent.schedule
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
 class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
@@ -41,9 +43,16 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
 
     private fun showAccountlessNotificationIfNeeded(project: Project) {
         if (CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Accountless) {
+
             // simply show a notification when user login with Accountless, and it's still supported by CodeWhisperer
             if (!isExpired()) {
+                // don't show warn notification if user selected Don't Show Again or if notification was shown less than a week ago
+                if(!CodeWhispererExplorerActionManager.getInstance().showAccessTokenWarn()) {
+                    return
+                }
+
                 notifyWarnAccountless()
+                CodeWhispererExplorerActionManager.getInstance().saveTimestamp()
 
                 // to handle the case when user open the IDE when Accountless not yet expired but expire soon e.g. 30min etc.
                 Timer().schedule(CodeWhispererConstants.EXPIRE_DATE) { notifyErrorAndDisableAccountless(project) }
