@@ -184,7 +184,8 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2022.3",
+                // fix is in 2022.3.1: https://youtrack.jetbrains.com/issue/RIDER-86051
+                sdkVersion = "2022.3-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
