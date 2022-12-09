@@ -39,7 +39,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.net.URI
-import java.util.Date
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -187,9 +186,8 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         }
     }
 
-    private fun timestampFormatter(): DateTimeFormatter {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-    }
+    private fun timestampFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
     fun saveTimestamp() {
         actionState.timestamp = LocalDateTime.now().format(timestampFormatter())
     }
@@ -209,7 +207,7 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         return timeToShowAccessTokenWarn() && !doNotShowAgain
     }
 
-    fun saveDoNotShowAgain(){
+    fun saveDoNotShowAgain() {
         actionState.doNotShowAgain = "true"
     }
 
@@ -273,7 +271,7 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         actionState.token = state.token
         actionState.value.putAll(state.value)
         actionState.timestamp = state.timestamp
-        actionState.doNotShowAgain = if(state.doNotShowAgain == null || state.doNotShowAgain == "false") "false" else "true"
+        actionState.doNotShowAgain = if (state.doNotShowAgain == null || state.doNotShowAgain == "false") "false" else "true"
     }
 
     companion object {
