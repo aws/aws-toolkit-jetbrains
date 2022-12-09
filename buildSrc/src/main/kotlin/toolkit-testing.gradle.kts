@@ -3,10 +3,6 @@
 
 import software.aws.toolkits.gradle.ciOnly
 
-val mockitoVersion: String by project
-val mockitoKotlinVersion: String by project
-val assertjVersion: String by project
-
 plugins {
     id("java") // Needed for referencing "implementation" configuration
     id("jacoco")
@@ -18,7 +14,7 @@ plugins {
 val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 dependencies {
     testImplementation(versionCatalog.findBundle("mockito").get())
-    testImplementation(versionCatalog.findDependency("assertj").get())
+    testImplementation(versionCatalog.findLibrary("assertj").get())
 
     // Don't add a test framework by default since we use junit4, junit5, and testng depending on project
 }

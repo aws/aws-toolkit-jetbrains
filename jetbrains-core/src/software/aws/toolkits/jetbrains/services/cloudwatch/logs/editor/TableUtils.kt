@@ -27,7 +27,7 @@ class LogStreamsStreamColumn(private val sortable: Boolean) : ColumnInfo<LogStre
     override fun getComparator(): Comparator<LogStream>? = if (sortable) Comparator.comparing { it.logStreamName() } else null
 }
 
-class LogStreamsStreamColumnRenderer() : TableCellRenderer {
+class LogStreamsStreamColumnRenderer : TableCellRenderer {
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = SimpleColoredComponent()
         component.append((value as? String)?.trim() ?: "")
@@ -54,7 +54,7 @@ class LogStreamsDateColumn(
 
     override fun isCellEditable(item: LogStream?): Boolean = false
     override fun getRenderer(item: LogStream?): TableCellRenderer = renderer
-    override fun getComparator(): Comparator<LogStream>? = if (sortable) Comparator.comparing { it.lastEventTimestamp() } else null
+    override fun getComparator(): Comparator<LogStream>? = if (sortable) Comparator.comparing { it.lastEventTimestamp() ?: Long.MIN_VALUE } else null
 }
 
 class LogStreamDateColumn(private val format: SyncDateFormat? = null) : ColumnInfo<LogStreamEntry, String>(message("general.time")) {

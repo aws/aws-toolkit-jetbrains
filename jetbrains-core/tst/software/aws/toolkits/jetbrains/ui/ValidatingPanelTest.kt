@@ -115,6 +115,7 @@ class ValidatingPanelTest {
         lateinit var normalButton: JButton
             private set
 
+        @Suppress("UnusedPrivateMember")
         private val panel = validatingPanel(disposableRule.disposable) {
             row {
                 validatingButton(validatingButtonName) {
@@ -153,6 +154,6 @@ class ValidatingPanelTest {
         }
 
         val textFieldValidator: ComponentValidator?
-            get() = ComponentValidator.getInstance(textFieldComponent).orElseGet(null)
+            get() = ComponentValidator.getInstance(textFieldComponent).orElse(null)
     }
 }

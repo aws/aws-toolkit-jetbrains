@@ -1,6 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("LazyLog")
 package software.aws.toolkits.core.utils
 
 import org.assertj.core.api.Assertions.assertThat
@@ -174,5 +175,6 @@ class LogUtilsTest {
         "hello"
     }
 
+    @Suppress("FunctionOnlyReturningConstant")
     private fun willNeverBeNull(): String = "hello"
 }

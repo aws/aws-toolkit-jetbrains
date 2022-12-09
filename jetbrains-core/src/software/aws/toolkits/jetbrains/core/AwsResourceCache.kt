@@ -11,12 +11,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.core.SdkClient
+import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.credentials.toEnvironmentVariables
@@ -27,6 +32,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
@@ -70,10 +76,24 @@ interface AwsResourceCache {
      */
     fun <T> getResource(
         resource: Resource<T>,
-        connectionSettings: ConnectionSettings,
+        region: AwsRegion,
+        tokenProvider: ToolkitBearerTokenProvider,
         useStale: Boolean = true,
         forceFetch: Boolean = false
-    ): CompletionStage<T> = getResource(resource, connectionSettings.region, connectionSettings.credentials, useStale, forceFetch)
+    ): CompletionStage<T>
+
+    /**
+     * @see [getResource]
+     */
+    fun <T> getResource(
+        resource: Resource<T>,
+        connectionSettings: ClientConnectionSettings<*>,
+        useStale: Boolean = true,
+        forceFetch: Boolean = false
+    ): CompletionStage<T> = when (connectionSettings) {
+        is ConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.credentials, useStale, forceFetch)
+        is TokenConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale, forceFetch)
+    }
 
     /**
      * Blocking version of [getResource]
@@ -95,11 +115,26 @@ interface AwsResourceCache {
      */
     fun <T> getResourceNow(
         resource: Resource<T>,
-        connectionSettings: ConnectionSettings,
+        region: AwsRegion,
+        tokenProvider: ToolkitBearerTokenProvider,
         timeout: Duration = DEFAULT_TIMEOUT,
         useStale: Boolean = true,
         forceFetch: Boolean = false
-    ): T = getResourceNow(resource, connectionSettings.region, connectionSettings.credentials, timeout, useStale, forceFetch)
+    ): T = wait(timeout) { getResource(resource, region, tokenProvider, useStale, forceFetch) }
+
+    /**
+     * Blocking version of [getResource]
+     */
+    fun <T> getResourceNow(
+        resource: Resource<T>,
+        connectionSettings: ClientConnectionSettings<*>,
+        timeout: Duration = DEFAULT_TIMEOUT,
+        useStale: Boolean = true,
+        forceFetch: Boolean = false
+    ): T = when (connectionSettings) {
+        is ConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.credentials, timeout, useStale, forceFetch)
+        is TokenConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.tokenProvider, timeout, useStale, forceFetch)
+    }
 
     /**
      * Gets the [resource] if it exists in the cache.
@@ -112,8 +147,16 @@ interface AwsResourceCache {
     /**
      * Gets the [resource] if it exists in the cache.
      */
-    fun <T> getResourceIfPresent(resource: Resource<T>, connectionSettings: ConnectionSettings, useStale: Boolean = true): T? =
-        getResourceIfPresent(resource, connectionSettings.region, connectionSettings.credentials, useStale)
+    fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, tokenProvider: ToolkitBearerTokenProvider, useStale: Boolean = true): T?
+
+    /**
+     * Gets the [resource] if it exists in the cache.
+     */
+    fun <T> getResourceIfPresent(resource: Resource<T>, connectionSettings: ClientConnectionSettings<*>, useStale: Boolean = true): T? =
+        when (connectionSettings) {
+            is ConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.credentials, useStale)
+            is TokenConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale)
+        }
 
     /**
      * Clears the contents of the cache across all regions, credentials and resource types.
@@ -121,14 +164,14 @@ interface AwsResourceCache {
     suspend fun clear() // TODO: ultimately all of these calls need to be made suspend - start with this one to resolve UI lock
 
     /**
-     * Clears the contents of the cache for the specific [ConnectionSettings]
+     * Clears the contents of the cache for the specific [ClientConnectionSettings]
      */
-    fun clear(connectionSettings: ConnectionSettings)
+    fun clear(connectionSettings: ClientConnectionSettings<*>)
 
     /**
-     * Clears the contents of the cache for the specific [resource] type] & [ConnectionSettings]
+     * Clears the contents of the cache for the specific [resource] type] & [ClientConnectionSettings]
      */
-    fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings)
+    fun clear(resource: Resource<*>, connectionSettings: ClientConnectionSettings<*>)
 
     companion object {
         @JvmStatic
@@ -195,7 +238,7 @@ sealed class Resource<T> {
      * A [Cached] resource is one whose fetch is potentially expensive, the result of which should be memoized for a period of time ([expiry]).
      */
     abstract class Cached<T> : Resource<T>() {
-        abstract fun fetch(region: AwsRegion, credentials: ToolkitCredentialsProvider): T
+        abstract fun fetch(connectionSettings: ClientConnectionSettings<*>): T
         open fun expiry(): Duration = DEFAULT_EXPIRY
         abstract val id: String
 
@@ -235,8 +278,8 @@ class ClientBackedCachedResource<ReturnType, ClientType : SdkClient>(
 
     constructor(sdkClientClass: KClass<ClientType>, id: String, fetchCall: ClientType.() -> ReturnType) : this(sdkClientClass, id, null, fetchCall)
 
-    override fun fetch(region: AwsRegion, credentials: ToolkitCredentialsProvider): ReturnType {
-        val client = AwsClientManager.getInstance().getClient(sdkClientClass, ConnectionSettings(credentials, region))
+    override fun fetch(connectionSettings: ClientConnectionSettings<*>): ReturnType {
+        val client = AwsClientManager.getInstance().getClient(sdkClientClass, connectionSettings)
         return fetchCall(client)
     }
 
@@ -251,7 +294,7 @@ class ExecutableBackedCacheResource<ReturnType, ExecType : ExecutableType<*>>(
     private val fetchCall: GeneralCommandLine.() -> ReturnType
 ) : Resource.Cached<ReturnType>() {
 
-    override fun fetch(region: AwsRegion, credentials: ToolkitCredentialsProvider): ReturnType {
+    override fun fetch(connectionSettings: ClientConnectionSettings<*>): ReturnType {
         val executableType = ExecutableType.getExecutable(executableTypeClass.java)
 
         val executable = ExecutableManager.getInstance().getExecutableIfPresent(executableType).let {
@@ -264,8 +307,12 @@ class ExecutableBackedCacheResource<ReturnType, ExecType : ExecutableType<*>>(
 
         return fetchCall(
             executable.getCommandLine()
-                .withEnvironment(region.toEnvironmentVariables())
-                .withEnvironment(credentials.resolveCredentials().toEnvironmentVariables())
+                .withEnvironment(connectionSettings.region.toEnvironmentVariables())
+                .apply {
+                    if (connectionSettings is ConnectionSettings) {
+                        withEnvironment(connectionSettings.credentials.resolveCredentials().toEnvironmentVariables())
+                    }
+                }
         )
     }
 
@@ -273,6 +320,7 @@ class ExecutableBackedCacheResource<ReturnType, ExecType : ExecutableType<*>>(
     override fun toString(): String = "ExecutableBackedCacheResource(id='$id')"
 }
 
+@ExperimentalCoroutinesApi
 class DefaultAwsResourceCache(
     private val clock: Clock,
     private val maximumCacheEntries: Int,
@@ -287,7 +335,18 @@ class DefaultAwsResourceCache(
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
 
     init {
-        ApplicationManager.getApplication().messageBus.connect(this).subscribe(CredentialManager.CREDENTIALS_CHANGED, this)
+        ApplicationManager.getApplication().messageBus.connect(this).apply {
+            subscribe(CredentialManager.CREDENTIALS_CHANGED, this@DefaultAwsResourceCache)
+
+            subscribe(
+                BearerTokenProviderListener.TOPIC,
+                object : BearerTokenProviderListener {
+                    override fun onChange(providerId: String) {
+                        clearByCredential(providerId)
+                    }
+                }
+            )
+        }
         scheduleCacheMaintenance()
     }
 
@@ -305,7 +364,28 @@ class DefaultAwsResourceCache(
             useStale,
             forceFetch
         ).thenApply { resource.doMap(it as Any, region) }
-        is Resource.Cached<T> -> Context(resource, region, credentialProvider, useStale, forceFetch).also { getCachedResource(it) }.future
+        is Resource.Cached<T> -> Context(resource, region, ConnectionSettings(credentialProvider, region), useStale, forceFetch)
+            .also { getCachedResource(it) }
+            .future
+    }
+
+    override fun <T> getResource(
+        resource: Resource<T>,
+        region: AwsRegion,
+        tokenProvider: ToolkitBearerTokenProvider,
+        useStale: Boolean,
+        forceFetch: Boolean
+    ): CompletionStage<T> = when (resource) {
+        is Resource.View<*, T> -> getResource(
+            resource.underlying,
+            region,
+            tokenProvider,
+            useStale,
+            forceFetch
+        ).thenApply { resource.doMap(it as Any, region) }
+        is Resource.Cached<T> -> Context(resource, region, TokenConnectionSettings(tokenProvider, region), useStale, forceFetch)
+            .also { getCachedResource(it) }
+            .future
     }
 
     private fun <T> getCachedResource(context: Context<T>) {
@@ -322,9 +402,9 @@ class DefaultAwsResourceCache(
                     try {
                         context.future.complete(result.value.await())
                     } catch (e: Throwable) {
-                        val deferred = currentValue
-                        if (context.useStale && deferred != null && deferred.value.isCompleted) {
-                            context.future.complete(deferred.value.getCompleted())
+                        val previousValue = currentValue
+                        if (context.useStale && previousValue != null && previousValue.value.isCompleted && !previousValue.value.isCompletedExceptionally) {
+                            context.future.complete(previousValue.value.getCompleted())
                         } else {
                             context.future.completeExceptionally(e)
                         }
@@ -338,18 +418,24 @@ class DefaultAwsResourceCache(
 
     private fun runCacheMaintenance() {
         try {
-            var totalWeight = 0
-            val entries = cache.entries.asSequence().filter { it.value.value.isCompleted }.onEach { totalWeight += it.value.weight }.toList()
-            var exceededWeight = totalWeight - maximumCacheEntries
-            if (exceededWeight <= 0) return
-            entries.sortedBy { it.value.expiry }.forEach { (key, value) ->
-                if (exceededWeight <= 0) return@runCacheMaintenance
-                if (cache.computeRemoveIf(key) { it === value }) {
-                    exceededWeight -= value.weight
-                }
-            }
+            doRunCacheMaintenance()
         } finally {
             scheduleCacheMaintenance()
+        }
+    }
+
+    @VisibleForTesting
+    internal fun doRunCacheMaintenance() {
+        var totalWeight = 0
+        cache.entries.removeIf { it.value.value.isCompletedExceptionally }
+        val entries = cache.entries.asSequence().filter { it.value.value.isCompleted }.onEach { totalWeight += it.value.weight }.toList()
+        var exceededWeight = totalWeight - maximumCacheEntries
+        if (exceededWeight <= 0) return
+        entries.sortedBy { it.value.expiry }.forEach { (key, value) ->
+            if (exceededWeight <= 0) return@doRunCacheMaintenance
+            if (cache.computeRemoveIf(key) { it === value }) {
+                exceededWeight -= value.weight
+            }
         }
     }
 
@@ -378,9 +464,28 @@ class DefaultAwsResourceCache(
             }
         }
 
-    override fun clear(resource: Resource<*>, connectionSettings: ConnectionSettings) {
+    override fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, tokenProvider: ToolkitBearerTokenProvider, useStale: Boolean): T? =
         when (resource) {
-            is Resource.Cached<*> -> cache.remove(CacheKey(resource.id, connectionSettings.region.id, connectionSettings.credentials.id))
+            is Resource.Cached<T> -> {
+                val key = CacheKey(resource.id, region.id, tokenProvider.id)
+                val entry = cache.getTyped<T>(key)
+                when {
+                    entry != null && (useStale || entry.notExpired) &&
+                        entry.value.isCompleted && entry.value.getCompletionExceptionOrNull() == null -> entry.value.getCompleted()
+                    else -> null
+                }
+            }
+            is Resource.View<*, T> -> getResourceIfPresent(resource.underlying, region, tokenProvider, useStale)?.let {
+                resource.doMap(
+                    it,
+                    region
+                )
+            }
+        }
+
+    override fun clear(resource: Resource<*>, connectionSettings: ClientConnectionSettings<*>) {
+        when (resource) {
+            is Resource.Cached<*> -> cache.remove(CacheKey(resource.id, connectionSettings.region.id, connectionSettings.providerId))
             is Resource.View<*, *> -> clear(resource.underlying, connectionSettings)
         }
     }
@@ -389,8 +494,8 @@ class DefaultAwsResourceCache(
         coroutineScope { launch { cache.clear() } }
     }
 
-    override fun clear(connectionSettings: ConnectionSettings) {
-        cache.keys.removeIf { it.credentialsId == connectionSettings.credentials.id && it.regionId == connectionSettings.region.id }
+    override fun clear(connectionSettings: ClientConnectionSettings<*>) {
+        cache.keys.removeIf { it.providerId == connectionSettings.providerId && it.regionId == connectionSettings.region.id }
     }
 
     override fun dispose() {
@@ -402,15 +507,18 @@ class DefaultAwsResourceCache(
     override fun providerModified(identifier: CredentialIdentifier) = clearByCredential(identifier.id)
 
     private fun clearByCredential(providerId: String) {
-        cache.keys.removeIf { it.credentialsId == providerId }
+        cache.keys.removeIf { it.providerId == providerId }
     }
 
     private fun <T> fetchIfNeeded(context: Context<T>, currentEntry: Entry<T>?) = when {
         currentEntry == null -> fetch(context)
+        currentEntry.value.isCompletedExceptionally -> fetch(context)
         currentEntry.notExpired && !context.forceFetch -> currentEntry
         context.useStale -> fetchWithFallback(context, currentEntry)
         else -> fetch(context)
     }
+
+    private val Deferred<*>.isCompletedExceptionally get() = isCompleted && getCompletionExceptionOrNull() != null
 
     private fun <T> fetchWithFallback(context: Context<T>, currentEntry: Entry<T>) = try {
         fetch(context)
@@ -421,7 +529,7 @@ class DefaultAwsResourceCache(
 
     private fun <T> fetch(context: Context<T>): Entry<T> {
         val value = coroutineScope.async {
-            context.resource.fetch(context.region, context.credentials)
+            context.resource.fetch(context.connectionSettings)
         }
 
         return Entry(clock.instant().plus(context.resource.expiry()), value)
@@ -429,21 +537,24 @@ class DefaultAwsResourceCache(
 
     private val Entry<*>.notExpired get() = value.isActive || clock.instant().isBefore(expiry)
 
+    @VisibleForTesting
+    internal fun hasCacheEntry(resourceId: String): Boolean = cache.filterKeys { it.resourceId == resourceId }.isNotEmpty()
+
     companion object {
         private val LOG = getLogger<DefaultAwsResourceCache>()
         private const val MAXIMUM_CACHE_ENTRIES = 1000
         private val DEFAULT_MAINTENANCE_INTERVAL: Duration = Duration.ofMinutes(5)
 
-        private data class CacheKey(val resourceId: String, val regionId: String, val credentialsId: String)
+        private data class CacheKey(val resourceId: String, val regionId: String, val providerId: String)
 
         private class Context<T>(
             val resource: Resource.Cached<T>,
             val region: AwsRegion,
-            val credentials: ToolkitCredentialsProvider,
+            val connectionSettings: ClientConnectionSettings<*>,
             val useStale: Boolean,
             val forceFetch: Boolean
         ) {
-            val cacheKey = CacheKey(resource.id, region.id, credentials.id)
+            val cacheKey = CacheKey(resource.id, region.id, connectionSettings.providerId)
             val future = CompletableFuture<T>()
         }
 

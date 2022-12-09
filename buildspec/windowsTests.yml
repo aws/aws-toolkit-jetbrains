@@ -7,21 +7,44 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      java: openjdk11
-
     commands:
+      - |
+        $url = 'https://corretto.aws/downloads/latest/amazon-corretto-17-x64-windows-jdk.msi';
+        Write-Host ('Downloading from {0}' -f $url);
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+        Invoke-WebRequest -Uri $url -OutFile 'corretto_jdk_build.msi';
+        Start-Process 'corretto_jdk_build.msi' -PassThru | Wait-Process
+      - |
+        $javaName = "C:\Program Files\Amazon Corretto" | ForEach-Object {
+          ls $_ | Sort-Object -Descending -Property Name | Select-Object -first 1 -expandproperty Name
+        }
+        $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             choco install -y --no-progress codecov
         }
       - dotnet --list-sdks
+      - choco uninstall -y dotnet-sdk --version 5.0.100 dotnet-5.0-sdk --version 5.0.100
+      - "Remove-Item -Recurse -Force 'C:\\Program\ Files\\dotnet\\sdk\\5.0.100'"
+      - "Remove-Item -Recurse -Force 'C:\\Program\ Files\\dotnet\\sdk\\6.0.202'"
+      - choco install -y dotnet-5.0-sdk
+      - |
+        $DOTNET_ROOT = "$Env:USERPROFILE\.dotnet"
+        $Env:PATH = "$Env:PATH;$DOTNET_ROOT;$DOTNET_ROOT\tools"
+        dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
+        dotnet codeartifact-creds install
+      - dotnet --list-sdks
 
   build:
     commands:
       - |
+        # See https://github.com/NuGet/NuGet.Client/pull/4259
+        $Env:NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY = "3,1000"
+
+        $Env:JAVA_HOME = $JAVA_HOME
         if ($Env:CODEARTIFACT_DOMAIN_NAME -and $Env:CODEARTIFACT_REPO_NAME) {
           $Env:CODEARTIFACT_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text
+          $Env:CODEARTIFACT_NUGET_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text
           $Env:CODEARTIFACT_AUTH_TOKEN=aws codeartifact get-authorization-token --domain $Env:CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600
         }
 
@@ -52,8 +75,8 @@ phases:
             copyFolder $root "build/idea-sandbox/system-test/log/" $script:TEST_ARTIFACTS
             copyFolder $root "build/test-results/test/" $script:TEST_REPORTS
         }
-
-        copyArtifacts "."
+        
+        copyArtifacts "."  
         Get-ChildItem -Directory | ForEach-Object { copyArtifacts $_.Name }
 
         if(-Not($Env:CODEBUILD_BUILD_SUCCEEDING -eq "0" -Or $Env:CODE_COV_TOKEN -eq $null)) {

@@ -11,18 +11,17 @@ import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ide.util.treeView.TreeState
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.ActionToolbar.WRAP_LAYOUT_POLICY
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DoubleClickListener
@@ -33,6 +32,7 @@ import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.panels.NonOpaquePanel
+import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.Tree
@@ -42,12 +42,15 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
 import org.jetbrains.concurrency.CancellablePromise
+import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
-import software.aws.toolkits.jetbrains.core.credentials.ProjectLevelSettingSelector
-import software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorComboBoxAction
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -73,33 +76,30 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
 import kotlin.reflect.KClass
 
-class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), ConnectionSettingsStateChangeNotifier, Disposable {
+class ExplorerToolWindow(project: Project) :
+    SimpleToolWindowPanel(true, true),
+    ConnectionSettingsStateChangeNotifier,
+    ToolkitConnectionManagerListener,
+    Disposable {
     private val actionManager = ActionManagerEx.getInstanceEx()
     private val treePanelWrapper = NonOpaquePanel()
     private val awsTreeModel = AwsExplorerTreeStructure(project)
 
     // The 4 max threads is arbitrary, but we want > 1 so that we can load more than one node at a time
-    private val structureTreeModel = StructureTreeModel(awsTreeModel, null, Invoker.Background(this, 4), this)
+    private val structureTreeModel = StructureTreeModel(awsTreeModel, null, Invoker.forBackgroundPoolWithReadAction(this), this)
     private val awsTree = createTree(AsyncTreeModel(structureTreeModel, true, this))
     private val awsTreePanel = ScrollPaneFactory.createScrollPane(awsTree)
     private val accountSettingsManager = AwsConnectionManager.getInstance(project)
+    private val connectionManager = ToolkitConnectionManager.getInstance(project)
 
     init {
-        val group = DefaultActionGroup(
-            SettingsSelectorComboBoxAction(ProjectLevelSettingSelector(project, ChangeSettingsMode.CREDENTIALS)),
-            SettingsSelectorComboBoxAction(ProjectLevelSettingSelector(project, ChangeSettingsMode.REGIONS))
-        )
-
-        toolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
-            layoutPolicy = WRAP_LAYOUT_POLICY
-            setTargetComponent(this@ExplorerToolWindow)
-        }.component
-
         background = UIUtil.getTreeBackground()
         setContent(treePanelWrapper)
 
         project.messageBus.connect(this).subscribe(AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED, this)
-        settingsStateChanged(accountSettingsManager.connectionState)
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(ToolkitConnectionManagerListener.TOPIC, this)
+
+        connectionChanged()
     }
 
     private fun createInfoPanel(state: ConnectionState): JComponent {
@@ -153,17 +153,44 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
         return label
     }
 
+    override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+        connectionChanged()
+    }
+
     override fun settingsStateChanged(newState: ConnectionState) {
-        runInEdt {
-            treePanelWrapper.setContent(
-                when (newState) {
-                    is ConnectionState.ValidConnection -> {
-                        invalidateTree()
-                        awsTreePanel
-                    }
-                    else -> createInfoPanel(newState)
+        connectionChanged()
+    }
+
+    private fun connectionChanged() {
+        val connection = connectionManager.activeConnection()
+        val credentialstate = accountSettingsManager.connectionState
+
+        when (connection) {
+            is AwsConnectionManagerConnection -> {
+                runInEdt {
+                    treePanelWrapper.setContent(
+                        when (credentialstate) {
+                            is ConnectionState.ValidConnection -> {
+                                invalidateTree()
+                                awsTreePanel
+                            }
+                            else -> createInfoPanel(credentialstate)
+                        }
+                    )
                 }
-            )
+            }
+            null, is AwsBearerTokenConnection -> {
+                runInEdt {
+                    treePanelWrapper.setContent(
+                        buildIamHelpPanel(connection).apply {
+                            isOpaque = false
+                        }
+                    )
+                }
+            }
+            else -> {
+                // TODO: tree doesn't support other connection types yet
+            }
         }
     }
 
@@ -247,7 +274,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
 
                     val actionGroup = DefaultActionGroup(totalActions)
                     if (actionGroup.childrenCount > 0) {
-                        val popupMenu = actionManager.createActionPopupMenu(explorerToolWindowPlace, actionGroup)
+                        val popupMenu = actionManager.createActionPopupMenu(ToolkitPlaces.EXPLORER_TOOL_WINDOW, actionGroup)
                         popupMenu.component.show(comp, x, y)
                     }
                 }
@@ -326,8 +353,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
     }
 
     companion object {
-        fun getInstance(project: Project): ExplorerToolWindow = ServiceManager.getService(project, ExplorerToolWindow::class.java)
-        const val explorerToolWindowPlace = "ExplorerToolWindow"
+        fun getInstance(project: Project): ExplorerToolWindow = project.service()
     }
 }
 

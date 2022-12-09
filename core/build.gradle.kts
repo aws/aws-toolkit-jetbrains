@@ -1,10 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-val awsSdkVersion: String by project
-val jacksonVersion: String by project
-val junitVersion: String by project
-
 plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
@@ -26,4 +22,10 @@ dependencies {
     api(libs.bundles.jackson)
 
     testImplementation(libs.junit4)
+
+    testRuntimeOnly(libs.junit5.jupiterVintage)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
