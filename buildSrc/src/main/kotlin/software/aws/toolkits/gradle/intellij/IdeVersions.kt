@@ -195,14 +195,15 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2022.3-EAP6-SNAPSHOT",
+                // fix is in 2022.3.1: https://youtrack.jetbrains.com/issue/RIDER-86051
+                sdkVersion = "2022.3-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "AWSCloudFormation:223.7571.175",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2022.3.4",
-                nugetVersion = "2022.3.0-eap06"
+                nugetVersion = "2022.3.0"
             )
         ),
 
