@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionError
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainAction
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
@@ -87,6 +86,7 @@ object CodeWhispererUtil {
         null,
         listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionError())
     )
+
     fun isConnectionExpired(project: Project): Boolean {
         val tokenProvider = tokenProvider(project) ?: return false
         val state = tokenProvider.state()
