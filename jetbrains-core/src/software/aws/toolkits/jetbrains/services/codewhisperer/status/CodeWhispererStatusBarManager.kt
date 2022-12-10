@@ -1,0 +1,64 @@
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.codewhisperer.status
+
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.StatusBarWidgetFactory
+import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetSettings
+import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
+import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+
+/**
+ * Manager visibility of CodeWhisperer status bar widget, only display it when CodeWhisperer is connected
+ */
+@Service(Service.Level.PROJECT)
+class CodeWhispererStatusBarManager(private val project: Project) {
+    private val widgetsManager = project.getService(StatusBarWidgetsManager::class.java)
+    private val settings = ApplicationManager.getApplication().getService(StatusBarWidgetSettings::class.java)
+
+    init {
+        ApplicationManager.getApplication().messageBus.connect().subscribe(
+            ToolkitConnectionManagerListener.TOPIC,
+            object : ToolkitConnectionManagerListener {
+                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    if (newConnection == null || newConnection is AwsConnectionManagerConnection) {
+                        toggleCodeWhispererWidget(false)
+                    } else if (newConnection is ManagedBearerSsoConnection) {
+                        ExtensionPointName<StatusBarWidgetFactory>("com.intellij.statusBarWidgetFactory").extensionList.find {
+                            it.id ==  CodeWhispererStatusBarWidgetFactory.ID
+                        }?.let {
+                            settings.setEnabled(it, true)
+                            widgetsManager.updateWidget(it)
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    fun updateWidget() {
+        toggleCodeWhispererWidget(isCodeWhispererEnabled(project))
+    }
+
+    fun toggleCodeWhispererWidget(isVisible: Boolean) {
+        if (isCodeWhispererEnabled(project) == isVisible) {
+            widgetsManager.findWidgetFactory(CodeWhispererStatusBarWidget.ID)?.let {
+                settings.setEnabled(it, isVisible)
+                widgetsManager.updateWidget(it)
+            }
+        }
+    }
+
+    companion object {
+        fun getInstance(project: Project): CodeWhispererStatusBarManager = project.service()
+    }
+}
