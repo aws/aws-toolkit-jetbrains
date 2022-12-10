@@ -11,8 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetSettings
 import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -30,31 +28,18 @@ class CodeWhispererStatusBarManager(private val project: Project) {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    if (newConnection == null || newConnection is AwsConnectionManagerConnection) {
-                        toggleCodeWhispererWidget(false)
-                    } else if (newConnection is ManagedBearerSsoConnection) {
-                        ExtensionPointName<StatusBarWidgetFactory>("com.intellij.statusBarWidgetFactory").extensionList.find {
-                            it.id ==  CodeWhispererStatusBarWidgetFactory.ID
-                        }?.let {
-                            settings.setEnabled(it, true)
-                            widgetsManager.updateWidget(it)
-                        }
-                    }
+                    updateWidget()
                 }
             }
         )
     }
 
     fun updateWidget() {
-        toggleCodeWhispererWidget(isCodeWhispererEnabled(project))
-    }
-
-    fun toggleCodeWhispererWidget(isVisible: Boolean) {
-        if (isCodeWhispererEnabled(project) == isVisible) {
-            widgetsManager.findWidgetFactory(CodeWhispererStatusBarWidget.ID)?.let {
-                settings.setEnabled(it, isVisible)
-                widgetsManager.updateWidget(it)
-            }
+        ExtensionPointName<StatusBarWidgetFactory>("com.intellij.statusBarWidgetFactory").extensionList.find {
+            it.id == CodeWhispererStatusBarWidgetFactory.ID
+        }?.let {
+            settings.setEnabled(it, isCodeWhispererEnabled(project))
+            widgetsManager.updateWidget(it)
         }
     }
 
