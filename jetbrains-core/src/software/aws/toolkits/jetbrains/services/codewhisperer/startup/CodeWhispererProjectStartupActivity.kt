@@ -48,7 +48,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
                     return
                 }
                 notifyWarnAccountless()
-                CodeWhispererExplorerActionManager.getInstance().saveTimestamp()
+                CodeWhispererExplorerActionManager.getInstance().setAccountlessNotificationTimestamp()
 
                 // to handle the case when user open the IDE when Accountless not yet expired but expire soon e.g. 30min etc.
                 Timer().schedule(CodeWhispererConstants.EXPIRE_DATE) { notifyErrorAndDisableAccountless(project) }

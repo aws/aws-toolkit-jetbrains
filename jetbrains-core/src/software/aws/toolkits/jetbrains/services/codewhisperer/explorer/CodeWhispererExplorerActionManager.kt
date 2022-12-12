@@ -188,25 +188,26 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
 
     private fun timestampFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
-    fun saveTimestamp() {
+    fun setAccountlessNotificationTimestamp() {
         actionState.timestamp = LocalDateTime.now().format(timestampFormatter())
     }
 
+    fun getAccountlessNotificationTimestamp(): String? = actionState.timestamp
+
     fun timeToShowAccessTokenWarn(): Boolean {
-        val lastShown = actionState.timestamp
+        val lastShown = getAccountlessNotificationTimestamp()
         return lastShown?.let {
             val parsedLastShown = LocalDateTime.parse(lastShown, timestampFormatter())
-            parsedLastShown.plusDays <= LocalDateTime.now()
+            parsedLastShown.plusDays(7) <= LocalDateTime.now()
         } ?: true
     }
 
-    fun showAccessTokenWarn(): Boolean {
-        val doNotShowAgain = actionState.doNotShowAgain.toBoolean()
-        return timeToShowAccessTokenWarn() && !doNotShowAgain
-    }
+    fun showAccessTokenWarn(): Boolean = timeToShowAccessTokenWarn() && !doNotShowAgain()
 
-    fun saveDoNotShowAgain() {
-        actionState.doNotShowAgain = "true"
+    fun doNotShowAgain(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.DoNotShowAgain, false)
+
+    fun setDoNotShowAgain(doNotShowAgain: Boolean) {
+        actionState.value[CodeWhispererExploreStateType.DoNotShowAgain] = doNotShowAgain
     }
 
     private fun setAutoSuggestion(project: Project, isAutoEnabled: Boolean) {
@@ -261,7 +262,6 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         value.putAll(actionState.value)
         token = actionState.token
         timestamp = actionState.timestamp
-        doNotShowAgain = actionState.doNotShowAgain
     }
 
     override fun loadState(state: CodeWhispererExploreActionState) {
@@ -269,7 +269,6 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         actionState.token = state.token
         actionState.value.putAll(state.value)
         actionState.timestamp = state.timestamp
-        actionState.doNotShowAgain = if (state.doNotShowAgain == null || state.doNotShowAgain == "false") "false" else "true"
     }
 
     companion object {
@@ -300,8 +299,8 @@ internal class CodeWhispererExploreActionState : BaseState() {
     @get:Property
     var timestamp by string()
 
-    @get:Property
-    var doNotShowAgain by string()
+//    @get:Property
+//    var doNotShowAgain by map<CodeWhispererExploreStateType, Boolean>()
 }
 
 // TODO: Don't remove IsManualEnabled
@@ -309,7 +308,8 @@ internal enum class CodeWhispererExploreStateType {
     IsAutoEnabled,
     IsManualEnabled,
     HasAcceptedTermsOfServices,
-    HasShownHowToUseCodeWhisperer
+    HasShownHowToUseCodeWhisperer,
+    DoNotShowAgain,
 }
 
 interface CodeWhispererActivationChangedListener {

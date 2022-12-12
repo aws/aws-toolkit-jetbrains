@@ -13,6 +13,6 @@ import software.aws.toolkits.resources.message
 class DoNotShowAgainAction : AnAction(message("codewhisperer.notification.accountless.warn.dont.show.again")), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         notifyInfoAccountless()
-        CodeWhispererExplorerActionManager.getInstance().saveDoNotShowAgain()
+        CodeWhispererExplorerActionManager.getInstance().setDoNotShowAgain(true)
     }
 }
