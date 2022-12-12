@@ -113,20 +113,16 @@ object CodeWhispererUtil {
 
     private fun notifyConnectionExpired(project: Project, connection: ToolkitConnection?) {
         connection ?: return
+        logoutFromSsoConnection(project, connection) {
+            UiTelemetry.click(project, "signout_codewhisperer_expired_connection")
+        }
         notifyError(
             message("toolkit.sso_expire.dialog.title", connection.label),
             message("toolkit.sso_expire.dialog_message"),
             project,
             listOf(
-                NotificationAction.create(
-                    message("toolkit.sso_expire.dialog.yes_button")
-                ) { _, notification ->
-                    logoutFromSsoConnection(project, connection) {
-                        UiTelemetry.click(project, "signout_codewhisperer_expired_connection")
-                    }
-                    runInEdt {
-                        ToolkitAddConnectionDialog(project, connection).show()
-                    }
+                NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
+                    runInEdt { ToolkitAddConnectionDialog(project, connection).show() }
                     notification.expire()
                 },
                 NotificationAction.createSimple(message("aws.settings.learn_more")) {
