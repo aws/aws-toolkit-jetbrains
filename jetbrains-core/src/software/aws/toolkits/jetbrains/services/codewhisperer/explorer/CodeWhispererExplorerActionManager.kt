@@ -194,12 +194,10 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
 
     fun timeToShowAccessTokenWarn(): Boolean {
         val lastShown = actionState.timestamp
-        var show = true
-        if (lastShown != null) {
+        return lastShown?.let {
             val parsedLastShown = LocalDateTime.parse(lastShown, timestampFormatter())
-            show = parsedLastShown.plusDays(7) <= LocalDateTime.now()
-        }
-        return show
+            parsedLastShown.plusDays <= LocalDateTime.now()
+        } ?: true
     }
 
     fun showAccessTokenWarn(): Boolean {
