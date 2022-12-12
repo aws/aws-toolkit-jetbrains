@@ -13,6 +13,9 @@ import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetSettings
 import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 
 /**
@@ -28,6 +31,16 @@ class CodeWhispererStatusBarManager(private val project: Project) {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    updateWidget()
+                }
+            }
+        )
+
+        project.messageBus.connect().subscribe(
+            ConnectionPinningManagerListener.TOPIC,
+            object : ConnectionPinningManagerListener {
+                override fun pinnedConnectionChanged(feature: FeatureWithPinnedConnection, newConnection: ToolkitConnection?) {
+                    if (feature !is CodeWhispererConnection) return
                     updateWidget()
                 }
             }
