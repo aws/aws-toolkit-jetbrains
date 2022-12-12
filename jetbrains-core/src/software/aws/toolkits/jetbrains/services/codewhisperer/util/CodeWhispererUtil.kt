@@ -118,13 +118,16 @@ object CodeWhispererUtil {
             message("toolkit.sso_expire.dialog_message"),
             project,
             listOf(
-                NotificationAction.createSimpleExpiring(message("toolkit.sso_expire.dialog.yes_button")) {
+                NotificationAction.create(
+                    message("toolkit.sso_expire.dialog.yes_button")
+                ) { _, notification ->
+                    logoutFromSsoConnection(project, connection) {
+                        UiTelemetry.click(project, "signout_codewhisperer_expired_connection")
+                    }
                     runInEdt {
                         ToolkitAddConnectionDialog(project, connection).show()
-                        logoutFromSsoConnection(project, connection) {
-                            UiTelemetry.click(project, "signout_codewhisperer_expired_connection")
-                        }
                     }
+                    notification.expire()
                 },
                 NotificationAction.createSimple(message("aws.settings.learn_more")) {
                     BrowserUtil.browse(URI("https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer.html"))
