@@ -19,7 +19,6 @@ import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.regions.Region
@@ -319,32 +318,5 @@ class DefaultToolkitAuthManagerTest {
         assertThat(callbackInvoked).isEqualTo(1)
         verify(authManager).deleteConnection(eq("sso;startUrl000"))
         verify(connectionManager).switchConnection(eq(null))
-    }
-
-    @Test
-    fun `logoutFromConnection should do nothing if the connection is not SSO based`() {
-        val connection = AwsConnectionManagerConnection(projectRule.project)
-
-        val connectionManager: ToolkitConnectionManager = mock()
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
-        val authManager: ToolkitAuthManager = mock()
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, authManager, disposableRule.disposable)
-
-        var messageReceived = 0
-        var callbackInvoked = 0
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
-            BearerTokenProviderListener.TOPIC,
-            object : BearerTokenProviderListener {
-                override fun invalidate(providerId: String) {
-                    messageReceived += 1
-                }
-            }
-        )
-
-        logoutFromSsoConnection(projectRule.project, connection) { callbackInvoked += 1 }
-        assertThat(messageReceived).isEqualTo(0)
-        assertThat(callbackInvoked).isEqualTo(0)
-        verifyNoInteractions(authManager)
-        verifyNoInteractions(connectionManager)
     }
 }
