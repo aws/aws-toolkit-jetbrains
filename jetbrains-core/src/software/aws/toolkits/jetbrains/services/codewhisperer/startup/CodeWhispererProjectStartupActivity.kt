@@ -66,7 +66,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         invokeLater { project.refreshDevToolTree() }
     }
 
-    fun timeToShowAccessTokenWarn(): Boolean {
+    private fun timeToShowAccessTokenWarn(): Boolean {
         val lastShown = CodeWhispererExplorerActionManager.getInstance().getAccountlessNotificationTimestamp()
         return lastShown?.let {
             val parsedLastShown = LocalDateTime.parse(lastShown, CodeWhispererConstants.TIMESTAMP_FORMATTER)
