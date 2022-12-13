@@ -202,8 +202,6 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         } ?: true
     }
 
-    fun showAccessTokenWarn(): Boolean = timeToShowAccessTokenWarn() && !doNotShowAgain()
-
     fun doNotShowAgain(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.DoNotShowAgain, false)
 
     fun setDoNotShowAgain(doNotShowAgain: Boolean) {

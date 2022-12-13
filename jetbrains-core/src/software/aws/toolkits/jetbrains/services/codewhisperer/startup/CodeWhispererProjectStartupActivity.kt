@@ -44,7 +44,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             // simply show a notification when user login with Accountless, and it's still supported by CodeWhisperer
             if (!isExpired()) {
                 // don't show warn notification if user selected Don't Show Again or if notification was shown less than a week ago
-                if (!CodeWhispererExplorerActionManager.getInstance().showAccessTokenWarn()) {
+                if (!showAccessTokenWarn()) {
                     return
                 }
                 notifyWarnAccountless()
@@ -63,6 +63,12 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         notifyErrorAccountless()
         CodeWhispererExplorerActionManager.getInstance().nullifyAccountlessCredentialIfNeeded()
         invokeLater { project.refreshDevToolTree() }
+    }
+
+    fun showAccessTokenWarn(): Boolean {
+        val timeToShowAccessToken = CodeWhispererExplorerActionManager.getInstance().timeToShowAccessTokenWarn()
+        val doNotShowAgain = CodeWhispererExplorerActionManager.getInstance().doNotShowAgain()
+        return timeToShowAccessToken && !doNotShowAgain
     }
 }
 
