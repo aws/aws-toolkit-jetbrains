@@ -40,7 +40,6 @@ import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.net.URI
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 // TODO: refactor this class, now it's managing action and state
 @State(name = "codewhispererStates", storages = [Storage("aws.xml")])
@@ -186,21 +185,11 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         }
     }
 
-    private fun timestampFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-
     fun setAccountlessNotificationTimestamp() {
-        actionState.timestamp = LocalDateTime.now().format(timestampFormatter())
+        actionState.timestamp = LocalDateTime.now().format(CodeWhispererConstants.TIMESTAMP_FORMATTER)
     }
 
     fun getAccountlessNotificationTimestamp(): String? = actionState.timestamp
-
-    fun timeToShowAccessTokenWarn(): Boolean {
-        val lastShown = getAccountlessNotificationTimestamp()
-        return lastShown?.let {
-            val parsedLastShown = LocalDateTime.parse(lastShown, timestampFormatter())
-            parsedLastShown.plusDays(7) <= LocalDateTime.now()
-        } ?: true
-    }
 
     fun doNotShowAgain(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.DoNotShowAgain, false)
 
@@ -296,9 +285,6 @@ internal class CodeWhispererExploreActionState : BaseState() {
 
     @get:Property
     var timestamp by string()
-
-//    @get:Property
-//    var doNotShowAgain by map<CodeWhispererExploreStateType, Boolean>()
 }
 
 // TODO: Don't remove IsManualEnabled
