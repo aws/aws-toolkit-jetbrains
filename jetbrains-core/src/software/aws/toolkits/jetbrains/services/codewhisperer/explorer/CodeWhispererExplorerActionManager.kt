@@ -186,12 +186,12 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
     }
 
     fun setAccountlessNotificationTimestamp() {
-        actionState.timestamp = LocalDateTime.now().format(CodeWhispererConstants.TIMESTAMP_FORMATTER)
+        actionState.accountlessWarnTimestamp = LocalDateTime.now().format(CodeWhispererConstants.TIMESTAMP_FORMATTER)
     }
 
-    fun getAccountlessNotificationTimestamp(): String? = actionState.timestamp
+    fun getAccountlessNotificationTimestamp(): String? = actionState.accountlessWarnTimestamp
 
-    fun doNotShowAgain(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.DoNotShowAgain, false)
+    fun getDoNotShowAgain(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.DoNotShowAgain, false)
 
     fun setDoNotShowAgain(doNotShowAgain: Boolean) {
         actionState.value[CodeWhispererExploreStateType.DoNotShowAgain] = doNotShowAgain
@@ -248,14 +248,14 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
     override fun getState(): CodeWhispererExploreActionState = CodeWhispererExploreActionState().apply {
         value.putAll(actionState.value)
         token = actionState.token
-        timestamp = actionState.timestamp
+        accountlessWarnTimestamp = actionState.accountlessWarnTimestamp
     }
 
     override fun loadState(state: CodeWhispererExploreActionState) {
         actionState.value.clear()
         actionState.token = state.token
         actionState.value.putAll(state.value)
-        actionState.timestamp = state.timestamp
+        actionState.accountlessWarnTimestamp = state.accountlessWarnTimestamp
     }
 
     companion object {
@@ -284,7 +284,7 @@ internal class CodeWhispererExploreActionState : BaseState() {
     var token by string()
 
     @get:Property
-    var timestamp by string()
+    var accountlessWarnTimestamp by string()
 }
 
 // TODO: Don't remove IsManualEnabled

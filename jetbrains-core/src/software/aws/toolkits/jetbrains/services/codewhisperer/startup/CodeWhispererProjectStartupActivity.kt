@@ -45,7 +45,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             // simply show a notification when user login with Accountless, and it's still supported by CodeWhisperer
             if (!isExpired()) {
                 // don't show warn notification if user selected Don't show again or if notification was shown less than a week ago
-                if (!timeToShowAccessTokenWarn() || CodeWhispererExplorerActionManager.getInstance().doNotShowAgain()) {
+                if (!timeToShowAccessTokenWarn() || CodeWhispererExplorerActionManager.getInstance().getDoNotShowAgain()) {
                     return
                 }
                 notifyWarnAccountless()
