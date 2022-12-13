@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
-import software.aws.toolkits.telemetry.UiTelemetry
 import java.net.URI
 
 object CodeWhispererUtil {
@@ -115,9 +114,7 @@ object CodeWhispererUtil {
 
     private fun notifyConnectionExpired(project: Project, connection: BearerSsoConnection?) {
         connection ?: return
-        logoutFromSsoConnection(project, connection) {
-            UiTelemetry.click(project, "signout_codewhisperer_expired_connection")
-        }
+        logoutFromSsoConnection(project, connection)
         notifyError(
             message("toolkit.sso_expire.dialog.title", connection.label),
             message("toolkit.sso_expire.dialog_message"),
