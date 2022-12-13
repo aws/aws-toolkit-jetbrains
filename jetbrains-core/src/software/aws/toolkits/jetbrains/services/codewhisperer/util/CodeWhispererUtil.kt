@@ -10,10 +10,11 @@ import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAddConnectionDialog
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
@@ -90,6 +91,7 @@ object CodeWhispererUtil {
 
     fun promptReAuth(project: Project, callback: () -> Unit = {}) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        if (connection !is BearerSsoConnection) return
         val tokenProvider = tokenProvider(project) ?: return
         val state = tokenProvider.state()
         if (state == BearerTokenAuthState.NEEDS_REFRESH) {
@@ -111,7 +113,7 @@ object CodeWhispererUtil {
         }
     }
 
-    private fun notifyConnectionExpired(project: Project, connection: ToolkitConnection?) {
+    private fun notifyConnectionExpired(project: Project, connection: BearerSsoConnection?) {
         connection ?: return
         logoutFromSsoConnection(project, connection) {
             UiTelemetry.click(project, "signout_codewhisperer_expired_connection")
@@ -122,7 +124,9 @@ object CodeWhispererUtil {
             project,
             listOf(
                 NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
-                    runInEdt { ToolkitAddConnectionDialog(project, connection).show() }
+                    getConnectionStartUrl(connection)?.let { startUrl ->
+                        loginSso(project, startUrl, connection.scopes)
+                    }
                     notification.expire()
                 },
                 NotificationAction.createSimple(message("aws.settings.learn_more")) {
