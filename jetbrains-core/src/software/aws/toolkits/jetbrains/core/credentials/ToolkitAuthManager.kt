@@ -145,9 +145,8 @@ fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SON
 }
 
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
-    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC).invalidate(connection.id)
-
     try {
+        ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC).invalidate(connection.id)
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)
         project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(null) }
     } finally {
