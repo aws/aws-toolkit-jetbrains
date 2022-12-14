@@ -132,9 +132,11 @@ object CodeWhispererUtil {
             project,
             listOf(
                 NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
-                    ApplicationManager.getApplication().executeOnPooledThread { getConnectionStartUrl(connection)?.let { startUrl ->
-                        loginSso(project, startUrl, connection.scopes)
-                    } }
+                    ApplicationManager.getApplication().executeOnPooledThread {
+                        getConnectionStartUrl(connection)?.let { startUrl ->
+                            loginSso(project, startUrl, connection.scopes)
+                        }
+                    }
                     notification.expire()
                 },
                 NotificationAction.createSimple(message("aws.settings.learn_more")) {
