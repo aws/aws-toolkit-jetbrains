@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.codewhisperer.model.Recommendation
@@ -121,9 +122,9 @@ object CodeWhispererUtil {
             project,
             listOf(
                 NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
-                    getConnectionStartUrl(connection)?.let { startUrl ->
+                    ApplicationManager.getApplication().executeOnPooledThread { getConnectionStartUrl(connection)?.let { startUrl ->
                         loginSso(project, startUrl, connection.scopes)
-                    }
+                    } }
                     notification.expire()
                 },
                 NotificationAction.createSimple(message("aws.settings.learn_more")) {
