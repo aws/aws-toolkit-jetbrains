@@ -3,26 +3,35 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.ide.BrowserUtil
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.SsoConnectionExpiredDialog
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.loginSso
+import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLoginLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererSsoLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionError
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionWarn
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainAction
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
+import java.net.URI
 
 object CodeWhispererUtil {
 
@@ -61,13 +70,20 @@ object CodeWhispererUtil {
     }
 
     // show when user login with Accountless
-    fun notifyWarnAccountless() =
-        notifyWarn(
-            "",
-            message("codewhisperer.notification.accountless.warn.message"),
-            null,
-            listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionWarn())
-        )
+    fun notifyWarnAccountless() = notifyWarn(
+        "",
+        message("codewhisperer.notification.accountless.warn.message"),
+        null,
+        listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionWarn(), DoNotShowAgainAction())
+    )
+
+    // show after user selects Don't Show Again in Accountless login message
+    fun notifyInfoAccountless() = notifyInfo(
+        "",
+        message("codewhisperer.notification.accountless.info.dont.show.again.message"),
+        null,
+        listOf(CodeWhispererLoginLearnMoreAction())
+    )
 
     // show when user login with Accountless and Accountless is not supported by CW
     fun notifyErrorAccountless() = notifyError(
@@ -85,6 +101,7 @@ object CodeWhispererUtil {
 
     fun promptReAuth(project: Project, callback: () -> Unit = {}) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        if (connection !is BearerSsoConnection) return
         val tokenProvider = tokenProvider(project) ?: return
         val state = tokenProvider.state()
         if (state == BearerTokenAuthState.NEEDS_REFRESH) {
@@ -94,16 +111,39 @@ object CodeWhispererUtil {
                 }
             } catch (e: SsoOidcException) {
                 runInEdt {
-                    SsoConnectionExpiredDialog(project, connection).show()
+                    notifyConnectionExpired(project, connection)
                     callback()
                 }
             }
         } else if (state == BearerTokenAuthState.NOT_AUTHENTICATED) {
             runInEdt {
-                SsoConnectionExpiredDialog(project, connection).show()
+                notifyConnectionExpired(project, connection)
                 callback()
             }
         }
+    }
+
+    private fun notifyConnectionExpired(project: Project, connection: BearerSsoConnection?) {
+        connection ?: return
+        logoutFromSsoConnection(project, connection)
+        notifyError(
+            message("toolkit.sso_expire.dialog.title", connection.label),
+            message("toolkit.sso_expire.dialog_message"),
+            project,
+            listOf(
+                NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
+                    ApplicationManager.getApplication().executeOnPooledThread {
+                        getConnectionStartUrl(connection)?.let { startUrl ->
+                            loginSso(project, startUrl, connection.scopes)
+                        }
+                    }
+                    notification.expire()
+                },
+                NotificationAction.createSimple(message("aws.settings.learn_more")) {
+                    BrowserUtil.browse(URI("https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer.html"))
+                }
+            )
+        )
     }
 
     fun getConnectionStartUrl(connection: ToolkitConnection?): String? {

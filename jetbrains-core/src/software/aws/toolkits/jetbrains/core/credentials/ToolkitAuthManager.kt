@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
@@ -11,8 +12,10 @@ import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.ALL_AVAILABLE_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.ALL_SONO_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
@@ -93,18 +96,26 @@ interface ToolkitConnectionManager {
 /**
  * Individual service should subscribe [ToolkitConnectionManagerListener.TOPIC] to fire their service activation / UX update
  */
-fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_AVAILABLE_SCOPES): BearerTokenProvider {
+fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SONO_SCOPES): BearerTokenProvider {
     val connectionId = ToolkitBearerTokenProvider.ssoIdentifier(startUrl)
     val manager = ToolkitAuthManager.getInstance()
 
-    return manager.getConnection(connectionId)?.let {
+    return manager.getConnection(connectionId)?.let { connection ->
         // There is an existing connection we can use
+        if (connection is BearerSsoConnection && !scopes.all { it in connection.scopes }) {
+            getLogger<ToolkitAuthManager>().info {
+                "Forcing reauth on ${connection.id} since requested scopes ($scopes) are not a complete subset of current scopes (${connection.scopes})"
+            }
+            // can't reuse since requested scopes are not in current connection. forcing reauth
+            manager.deleteConnection(connection)
+            return@let null
+        }
 
         // For the case when the existing connection is in invalid state, we need to re-auth
-        if (it is AwsBearerTokenConnection) {
-            val tokenProvider = reauthProviderIfNeeded(it)
+        if (connection is AwsBearerTokenConnection) {
+            val tokenProvider = reauthProviderIfNeeded(connection)
 
-            ToolkitConnectionManager.getInstance(project).switchConnection(it)
+            ToolkitConnectionManager.getInstance(project).switchConnection(connection)
 
             return tokenProvider
         }
@@ -130,6 +141,16 @@ fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_AVA
             manager.deleteConnection(connection)
             throw e
         }
+    }
+}
+
+fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
+    try {
+        ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC).invalidate(connection.id)
+        ToolkitAuthManager.getInstance().deleteConnection(connection.id)
+        project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(null) }
+    } finally {
+        callback()
     }
 }
 

@@ -30,6 +30,11 @@ phases:
       - |
         Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile 'dotnet-install.ps1';
         ./dotnet-install.ps1 -Verbose -InstallDir 'C:\Program Files\dotnet' -Channel '5.0'
+      - |
+        $DOTNET_ROOT = "$Env:USERPROFILE\.dotnet"
+        $Env:PATH = "$Env:PATH;$DOTNET_ROOT;$DOTNET_ROOT\tools"
+        dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
+        dotnet codeartifact-creds install
       - dotnet --list-sdks
 
   build:
@@ -41,6 +46,7 @@ phases:
         $Env:JAVA_HOME = $JAVA_HOME
         if ($Env:CODEARTIFACT_DOMAIN_NAME -and $Env:CODEARTIFACT_REPO_NAME) {
           $Env:CODEARTIFACT_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text
+          $Env:CODEARTIFACT_NUGET_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text
           $Env:CODEARTIFACT_AUTH_TOKEN=aws codeartifact get-authorization-token --domain $Env:CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600
         }
 

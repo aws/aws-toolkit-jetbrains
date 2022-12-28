@@ -66,6 +66,7 @@ import software.aws.toolkits.jetbrains.services.caws.CawsProject
 import software.aws.toolkits.jetbrains.services.caws.InactivityTimeout
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
 import software.aws.toolkits.jetbrains.services.caws.isSupportedInFreeTier
+import software.aws.toolkits.jetbrains.services.caws.listAccessibleProjectsPaginator
 import software.aws.toolkits.jetbrains.services.caws.loadParameterDescriptions
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.jetbrains.utils.ui.find
@@ -82,7 +83,6 @@ import software.aws.toolkits.telemetry.Result as TelemetryResult
 class CawsSettings(
     // ui initialization params
     var initialSpace: String? = null,
-    var initialProject: String = "",
 
     // core bindings
     var project: CawsProject? = null,
@@ -244,9 +244,9 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
     override fun getContent(connectionSettings: ClientConnectionSettings<*>): JComponent {
         context.connectionSettings = connectionSettings
         val client = AwsClientManager.getInstance().getClient<CodeCatalystClient>(connectionSettings)
-        val spaces = context.initialSpace?.let {
-            listOf(it)
-        } ?: tryOrNull { getSpaces(client) }
+        val spaces = context.initialSpace?.let { listOf(it) }
+            ?: context.project?.space?.let { listOf(it) }
+            ?: tryOrNull { getSpaces(client) }
         return if (spaces.isNullOrEmpty()) {
             InfoPanel()
                 .addLine(message("caws.workspace.details.introduction_message"))
@@ -269,7 +269,6 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                     }
                 }
 
-                val projects = getProjects(client, spaces)
                 val projectCombo = AsyncComboBox<CawsProject> { label, value, _ ->
                     value ?: return@AsyncComboBox
                     label.text = "${value.project} (${value.space})"
@@ -436,7 +435,12 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                 }
 
                 // need here to force comboboxes to load
-                projects.forEach { projectCombo.addItem(it) }
+                if (context.project == null) {
+                    getProjects(client, spaces).forEach { projectCombo.addItem(it) }
+                } else {
+                    projectCombo.addItem(context.project)
+                }
+
                 val propertyGraph = PropertyGraph()
                 val projectProperty = propertyGraph.property(projectCombo.selected())
                 projectCombo.addItemListener {
@@ -528,7 +532,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
 
     private fun getProjects(client: CodeCatalystClient, spaces: List<String>) = spaces
         .flatMap { space ->
-            client.listProjectsPaginator { it.spaceName(space) }.items()
+            client.listAccessibleProjectsPaginator { it.spaceName(space) }.items()
                 .map { project -> CawsProject(space, project.name()) }
         }
         .sortedByDescending { it.project }
