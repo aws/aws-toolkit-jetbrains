@@ -1,3 +1,20 @@
+# _1.57_ (2022-12-15)
+- **(Feature)** Change reauthentication prompt to be non-distruptive notification.
+- **(Bug Fix)** Add do not show again button for CodeWhisperer accountless usage notification
+- **(Bug Fix)** Fix CodeWhisperer status widget is shown even when users are disconnected
+
+# _1.56_ (2022-12-08)
+- **(Bug Fix)** Remove redundant calls in certain Gateway UI panels
+- **(Bug Fix)** Fix threading issue while attempting to login to CodeCatalyst
+- **(Bug Fix)** Only list dev environments under projects that users are a member of
+- **(Bug Fix)** Fix 'Learn more' link in Gateway 2022.2
+- **(Bug Fix)** Fix connection issue with CodeCatalyst when user is already logged into CodeWhisperer
+
+# _1.55_ (2022-12-01)
+- **(Feature)** Amazon CodeCatalyst: Connect JetBrains to your remote Dev Environments.
+- **(Feature)** Amazon CodeCatalyst: Clone your repositories to your local machine.
+- **(Feature)** Amazon CodeCatalyst: Connect using your AWS Builder ID.
+
 # _1.54_ (2022-11-28)
 - **(Feature)** Amazon CodeWhisperer now supports JavaScript for Security Scan to catch security vulnerabilities.
 - **(Feature)** Amazon CodeWhisperer recommendations are more context aware. We are removing the overlaps from CodeWhisperer suggestions specifically when the cursor is inside a code block.
