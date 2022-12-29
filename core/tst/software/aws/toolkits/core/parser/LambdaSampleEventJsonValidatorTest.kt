@@ -10,7 +10,7 @@ import software.aws.toolkits.core.lambda.LambdaSampleEventJsonValidator
 class LambdaSampleEventJsonValidatorTest {
     @Test
     fun isJsonParse() {
-        LambdaSampleEventJsonValidatorTest::class.java.getResourceAsStream("/jsonSampleSuccess.json").use {
+        LambdaSampleEventJsonValidatorTest::class.java.getResourceAsStream("/sampleLambdaEvent.json").use {
             assertTrue(LambdaSampleEventJsonValidator.canBeParsed(it))
         }
     }
