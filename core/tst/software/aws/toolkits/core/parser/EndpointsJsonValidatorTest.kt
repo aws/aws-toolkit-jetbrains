@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.core.parser
 
-import junit.framework.TestCase
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.core.region.EndpointsJsonValidator
 
@@ -11,13 +11,13 @@ class EndpointsJsonValidatorTest {
     @Test
     fun isJsonSuccess() {
         EndpointsJsonValidatorTest::class.java.getResourceAsStream("/jsonSampleSuccess.json").use {
-            TestCase.assertTrue(EndpointsJsonValidator.canBeParsed(it))
+            assertThat(EndpointsJsonValidator.canBeParsed(it)).isTrue
         }
     }
     @Test
     fun isJsonFail() {
         EndpointsJsonValidatorTest::class.java.getResourceAsStream("/jsonSampleFailure.json").use {
-            TestCase.assertFalse(EndpointsJsonValidator.canBeParsed(it))
+            assertThat(EndpointsJsonValidator.canBeParsed(it)).isFalse
         }
     }
 }

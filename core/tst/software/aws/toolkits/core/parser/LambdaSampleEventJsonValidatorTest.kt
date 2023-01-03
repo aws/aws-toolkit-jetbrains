@@ -3,21 +3,20 @@
 
 package software.aws.toolkits.core.parser
 
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertTrue
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.core.lambda.LambdaSampleEventJsonValidator
 class LambdaSampleEventJsonValidatorTest {
     @Test
     fun isJsonParse() {
         LambdaSampleEventJsonValidatorTest::class.java.getResourceAsStream("/sampleLambdaEvent.json").use {
-            assertTrue(LambdaSampleEventJsonValidator.canBeParsed(it))
+            assertThat(LambdaSampleEventJsonValidator.canBeParsed(it)).isTrue
         }
     }
     @Test
     fun isJsonParseFail() {
         LambdaSampleEventJsonValidatorTest::class.java.getResourceAsStream("/jsonSampleFailure.json").use {
-            assertFalse(LambdaSampleEventJsonValidator.canBeParsed(it))
+            assertThat(LambdaSampleEventJsonValidator.canBeParsed(it)).isFalse
         }
     }
 }
