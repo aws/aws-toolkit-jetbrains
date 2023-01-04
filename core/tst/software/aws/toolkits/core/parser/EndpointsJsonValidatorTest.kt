@@ -9,13 +9,13 @@ import software.aws.toolkits.core.region.EndpointsJsonValidator
 
 class EndpointsJsonValidatorTest {
     @Test
-    fun isJsonSuccess() {
+    fun isEndpointsJsonFileParsingSuccess() {
         EndpointsJsonValidatorTest::class.java.getResourceAsStream("/jsonSampleSuccess.json").use {
             assertThat(EndpointsJsonValidator.canBeParsed(it)).isTrue
         }
     }
     @Test
-    fun isJsonFail() {
+    fun isEndpointsJsonFileParsingFailure() {
         EndpointsJsonValidatorTest::class.java.getResourceAsStream("/jsonSampleFailure.json").use {
             assertThat(EndpointsJsonValidator.canBeParsed(it)).isFalse
         }

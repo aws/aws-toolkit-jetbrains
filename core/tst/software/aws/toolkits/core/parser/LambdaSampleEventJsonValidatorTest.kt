@@ -8,13 +8,13 @@ import org.junit.Test
 import software.aws.toolkits.core.lambda.LambdaSampleEventJsonValidator
 class LambdaSampleEventJsonValidatorTest {
     @Test
-    fun isJsonParse() {
+    fun isLambdaSampleEventJsonFileParsingSuccessful() {
         LambdaSampleEventJsonValidatorTest::class.java.getResourceAsStream("/sampleLambdaEvent.json").use {
             assertThat(LambdaSampleEventJsonValidator.canBeParsed(it)).isTrue
         }
     }
     @Test
-    fun isJsonParseFail() {
+    fun isLambdaSampleEventJsonFileParsingFailure() {
         LambdaSampleEventJsonValidatorTest::class.java.getResourceAsStream("/jsonSampleFailure.json").use {
             assertThat(LambdaSampleEventJsonValidator.canBeParsed(it)).isFalse
         }
