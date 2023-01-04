@@ -117,7 +117,7 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
 
     override fun doOKAction() {
         if (okAction.isEnabled) {
-            super.applyFields()
+            dialogPanel.apply()
             setOKButtonText(message("feedback.submitting"))
             isOKActionEnabled = false
             var result = Result.Succeeded
@@ -148,7 +148,7 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
         val comment = commentText
 
         return when {
-            comment.isNullOrEmpty() -> null
+            comment.isEmpty() -> null
             comment.length >= MAX_LENGTH -> ValidationInfo(message("feedback.validation.comment_too_long"))
             else -> null
         }
