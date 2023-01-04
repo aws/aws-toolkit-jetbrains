@@ -15,6 +15,7 @@ import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
 import java.io.File
+import java.time.Duration
 
 /**
  * Base test class that uses the same solution per test class.
@@ -41,7 +42,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     override val testCaseNameToTempDir: String
         get() = getSolutionDirectoryName()
 
-    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_212
+    // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_213
     @BeforeClass
     fun allowDotnetRoots() {
         allowCustomDotnetRoots()
@@ -76,6 +77,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
         GeneralSettings.getInstance().isConfirmExit = false
 
         val params = OpenSolutionParams()
+        params.backendLoadedTimeout = backendStartTimeout
         params.customSolutionName = getCustomSolutionFileName()
         params.preprocessTempDirectory = { preprocessTempDirectory(it) }
         params.persistCaches = persistCaches
@@ -86,4 +88,6 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
 
         myProject = openSolution(solutionDirName, params)
     }
+
+    override val backendShellLoadTimeout: Duration = backendStartTimeout
 }

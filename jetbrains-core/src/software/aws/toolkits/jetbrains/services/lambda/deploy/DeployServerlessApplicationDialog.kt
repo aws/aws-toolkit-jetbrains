@@ -9,12 +9,10 @@ import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.layout.applyToComponent
-import com.intellij.ui.layout.buttonGroup
 import com.intellij.ui.layout.panel
 import com.intellij.ui.layout.selected
 import com.intellij.ui.layout.toBinding
@@ -39,20 +37,21 @@ import software.aws.toolkits.jetbrains.services.ecr.CreateEcrRepoDialog
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters.validateParameters
+import software.aws.toolkits.jetbrains.services.lambda.sam.ValidateSamParameters.validateStackName
 import software.aws.toolkits.jetbrains.services.s3.CreateS3BucketDialog
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.settings.DeploySettings
 import software.aws.toolkits.jetbrains.settings.relativeSamPath
 import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
-import software.aws.toolkits.jetbrains.utils.ui.find
+import software.aws.toolkits.jetbrains.utils.ui.bindValueToProperty
 import software.aws.toolkits.jetbrains.utils.ui.installOnParent
 import software.aws.toolkits.jetbrains.utils.ui.toolTipText
 import software.aws.toolkits.jetbrains.utils.ui.validationInfo
 import software.aws.toolkits.jetbrains.utils.ui.withBinding
 import software.aws.toolkits.resources.message
 import java.awt.Component
-import java.util.regex.PatternSyntaxException
 
 data class DeployServerlessApplicationSettings(
     val stackName: String,
@@ -70,13 +69,13 @@ class DeployServerlessApplicationDialog(
     private val templateFile: VirtualFile,
     private val loadResourcesOnCreate: Boolean = true
 ) : DialogWrapper(project) {
-    private var useContainer: Boolean = false
-    private var newStackName: String = ""
-    private var requireReview: Boolean = false
-    private var deployType: DeployType = DeployType.CREATE
-    private var templateParameters: Map<String, String> = emptyMap()
-    private var tags: Map<String, String> = emptyMap()
-    private var showImageOptions: Boolean = false
+    var useContainer: Boolean = false
+    var newStackName: String = ""
+    var requireReview: Boolean = false
+    var deployType: DeployType = DeployType.CREATE
+    var templateParameters: Map<String, String> = emptyMap()
+    var tags: Map<String, String> = emptyMap()
+    var showImageOptions: Boolean = false
 
     // non-dsl components
     private val stackSelector = ResourceSelector.builder()
@@ -178,15 +177,19 @@ class DeployServerlessApplicationDialog(
         panel {
             val wideInputSizeGroup = "wideInputSizeGroup"
             // create stack
-            buttonGroup(::deployType) {
+            buttonGroup {
                 row {
                     val createStackButton = radioButton(
-                        message("serverless.application.deploy.label.stack.new"),
-                        value = DeployType.CREATE
-                    ).toolTipText(message("serverless.application.deploy.tooltip.createStack"))
+                        message("serverless.application.deploy.label.stack.new")
+                    )
+                        .bindValueToProperty(::deployType.toBinding(), DeployType.CREATE)
+                        .toolTipText(message("serverless.application.deploy.tooltip.createStack"))
 
                     createStackButton.selected.addListener {
-                        refreshTemplateParametersAndTags()
+                        if (it && deployType != DeployType.CREATE) {
+                            deployType = DeployType.CREATE
+                            refreshTemplateParametersAndTags()
+                        }
                     }
 
                     textField(::newStackName)
@@ -198,7 +201,7 @@ class DeployServerlessApplicationDialog(
                             if (!field.isEnabled) {
                                 null
                             } else {
-                                validateStackName(field.text)?.let { field.validationInfo(it) }
+                                validateStackName(field.text, stackSelector)?.let { field.validationInfo(it) }
                             }
                         }
                 }
@@ -207,11 +210,15 @@ class DeployServerlessApplicationDialog(
                 row {
                     val updateStackButton = radioButton(
                         message("serverless.application.deploy.label.stack.select"),
-                        value = DeployType.UPDATE
-                    ).toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
+                    )
+                        .bindValueToProperty(::deployType.toBinding(), DeployType.UPDATE)
+                        .toolTipText(message("serverless.application.deploy.tooltip.updateStack"))
 
                     updateStackButton.selected.addListener {
-                        refreshTemplateParametersAndTags()
+                        if (it && deployType != DeployType.UPDATE) {
+                            deployType = DeployType.UPDATE
+                            refreshTemplateParametersAndTags()
+                        }
                     }
 
                     stackSelector()
@@ -230,7 +237,7 @@ class DeployServerlessApplicationDialog(
                 parametersField()
                     .withBinding(::templateParameters.toBinding())
                     .toolTipText(message("serverless.application.deploy.tooltip.template.parameters"))
-                    .withValidationOnApply { validateParameters(it) }
+                    .withValidationOnApply { validateParameters(it, templateFileParameters) }
             }
 
             // deploy tags
@@ -352,41 +359,6 @@ class DeployServerlessApplicationDialog(
         }
     }
 
-    private fun validateStackName(name: String?): String? {
-        if (name == null || name.isEmpty()) {
-            return message("serverless.application.deploy.validation.new.stack.name.missing")
-        }
-        if (!STACK_NAME_PATTERN.matches(name)) {
-            return message("serverless.application.deploy.validation.new.stack.name.invalid")
-        }
-        if (name.length > MAX_STACK_NAME_LENGTH) {
-            return message("serverless.application.deploy.validation.new.stack.name.too.long", MAX_STACK_NAME_LENGTH)
-        }
-        // Check if the new stack name is same as an existing stack name
-        stackSelector.model.find { it.stackName() == name }?.let {
-            return message("serverless.application.deploy.validation.new.stack.name.duplicate")
-        }
-        return null
-    }
-
-    private fun validateParameters(parametersComponent: KeyValueTextField): ValidationInfo? {
-        // validate on ui element because value hasn't been committed yet
-        val parameters = parametersComponent.envVars
-        val parameterDeclarations = templateFileParameters.associateBy { it.logicalName }
-
-        val invalidParameters = parameters.entries.mapNotNull { (name, value) ->
-            val cfnParameterDeclaration = parameterDeclarations[name] ?: return ValidationInfo("parameter declared but not in template")
-            when (cfnParameterDeclaration.getOptionalScalarProperty("Type")) {
-                "String" -> validateStringParameter(name, value, cfnParameterDeclaration)
-                "Number" -> validateNumberParameter(name, value, cfnParameterDeclaration)
-                // not implemented: List<Number>, CommaDelimitedList, AWS-specific parameters, SSM parameters
-                else -> null
-            }
-        }
-
-        return invalidParameters.firstOrNull()
-    }
-
     @TestOnly
     fun forceUi(
         panel: DialogPanel,
@@ -467,68 +439,7 @@ class DeployServerlessApplicationDialog(
         tagsField.envVars = tags.associate { it.key() to it.value() }
     }
 
-    companion object {
-        // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-console-create-stack-parameters.html
-        //  A stack name can contain only alphanumeric characters (case-sensitive) and hyphens. It must start with an alphabetic character and can't be longer than 128 characters.
-        private val STACK_NAME_PATTERN = "[a-zA-Z][a-zA-Z0-9-]*".toRegex()
-        const val MAX_STACK_NAME_LENGTH = 128
-
-        private fun validateStringParameter(name: String, providedValue: String?, parameterDeclaration: Parameter): ValidationInfo? {
-            val value = providedValue ?: ""
-            val minValue = parameterDeclaration.getOptionalScalarProperty("MinLength")
-            val maxValue = parameterDeclaration.getOptionalScalarProperty("MaxLength")
-            val allowedPattern = parameterDeclaration.getOptionalScalarProperty("AllowedPattern")
-
-            minValue?.toIntOrNull()?.let {
-                if (value.length < it) {
-                    return ValidationInfo(message("serverless.application.deploy.validation.template.values.tooShort", name, minValue))
-                }
-            }
-
-            maxValue?.toIntOrNull()?.let {
-                if (value.length > it) {
-                    return ValidationInfo(message("serverless.application.deploy.validation.template.values.tooLong", name, maxValue))
-                }
-            }
-
-            allowedPattern?.let {
-                try {
-                    val regex = it.toRegex()
-                    if (!regex.matches(value)) {
-                        return ValidationInfo(message("serverless.application.deploy.validation.template.values.failsRegex", name, regex))
-                    }
-                } catch (e: PatternSyntaxException) {
-                    return ValidationInfo(message("serverless.application.deploy.validation.template.values.badRegex", name, e.message ?: it))
-                }
-            }
-
-            return null
-        }
-
-        private fun validateNumberParameter(name: String, value: String?, parameterDeclaration: Parameter): ValidationInfo? {
-            // cfn numbers can be integer or float. assume real implementation refers to java floats
-            val number = value?.toFloatOrNull()
-                ?: return ValidationInfo(message("serverless.application.deploy.validation.template.values.notANumber", name, value ?: ""))
-            val minValue = parameterDeclaration.getOptionalScalarProperty("MinValue")
-            val maxValue = parameterDeclaration.getOptionalScalarProperty("MaxValue")
-
-            minValue?.toFloatOrNull()?.let {
-                if (number < it) {
-                    return ValidationInfo(message("serverless.application.deploy.validation.template.values.tooSmall", name, minValue))
-                }
-            }
-
-            maxValue?.toFloatOrNull()?.let {
-                if (number > it) {
-                    return ValidationInfo(message("serverless.application.deploy.validation.template.values.tooBig", name, maxValue))
-                }
-            }
-
-            return null
-        }
-    }
-
-    private enum class DeployType {
+    enum class DeployType {
         CREATE,
         UPDATE
     }

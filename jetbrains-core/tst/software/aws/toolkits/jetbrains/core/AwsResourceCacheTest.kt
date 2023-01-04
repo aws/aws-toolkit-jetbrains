@@ -7,12 +7,15 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.RuleChain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
@@ -23,6 +26,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -33,6 +37,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.core.utils.buildList
+import software.aws.toolkits.jetbrains.utils.hasCauseWithMessage
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
 import software.aws.toolkits.jetbrains.utils.value
@@ -42,6 +47,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -83,8 +89,10 @@ class AwsResourceCacheTest {
 
         connectionSettings = ConnectionSettings(credentialsManager.createCredentialProvider(), regionProvider.createAwsRegion())
 
+        if (this::sut.isInitialized) {
+            (sut as DefaultAwsResourceCache).dispose()
+        }
         sut = DefaultAwsResourceCache(mockClock, 1000, Duration.ofMinutes(1))
-        runBlocking { sut.clear() }
 
         reset(mockClock, mockResource)
         whenever(mockResource.expiry()).thenReturn(DEFAULT_EXPIRY)
@@ -94,7 +102,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun basicCachingWorks() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
@@ -104,7 +112,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun expirationWorks() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
         whenever(mockClock.instant()).thenReturn(Instant.now().plus(DEFAULT_EXPIRY))
@@ -115,13 +123,13 @@ class AwsResourceCacheTest {
 
     @Test
     fun exceptionsAreBubbledWhenNoEntry() {
-        doAnswer { throw Throwable("Bang!") }.whenever(mockResource).fetch(any(), any())
-        assertThat(sut.getResource(mockResource, connectionSettings)).hasException.withFailMessage("Bang!")
+        doAnswer { throw Throwable("Bang!") }.whenever(mockResource).fetch(any())
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Bang!")
     }
 
     @Test
     fun exceptionsAreLoggedButStaleEntryReturnedByDefault() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello").doThrow(RuntimeException("BOOM"))
+        whenever(mockResource.fetch(any())).thenReturn("hello").doThrow(RuntimeException("BOOM"))
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
         whenever(mockClock.instant()).thenReturn(Instant.now().plus(DEFAULT_EXPIRY))
@@ -130,7 +138,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun exceptionsAreBubbledWhenExistingEntryExpiredAndUseStaleIsFalse() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello").doThrow(RuntimeException("BOOM"))
+        whenever(mockResource.fetch(any())).thenReturn("hello").doThrow(RuntimeException("BOOM"))
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
         whenever(mockClock.instant()).thenReturn(Instant.now().plus(DEFAULT_EXPIRY))
@@ -139,9 +147,8 @@ class AwsResourceCacheTest {
 
     @Test
     fun cacheEntriesAreSeparatedByRegionAndCredentials() {
-        whenever(mockResource.fetch(any(), any())).thenAnswer {
-            val region = it.getArgument<AwsRegion>(0)
-            val cred = it.getArgument<ToolkitCredentialsProvider>(1)
+        whenever(mockResource.fetch(any())).thenAnswer {
+            val (cred, region) = it.getArgument<ConnectionSettings>(0)
             "${region.id}-${cred.id}"
         }
 
@@ -156,7 +163,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun cacheCanBeCleared() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello").thenReturn("goodbye")
+        whenever(mockResource.fetch(any())).thenReturn("hello").thenReturn("goodbye")
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
@@ -171,7 +178,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun cacheCanBeClearedByKey() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello").thenReturn("goodbye")
+        whenever(mockResource.fetch(any())).thenReturn("hello").thenReturn("goodbye")
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
@@ -187,9 +194,8 @@ class AwsResourceCacheTest {
     @Test
     fun cacheCanBeClearedByKeyAndConnection() {
         val incrementer = AtomicInteger(0)
-        whenever(mockResource.fetch(any(), any())).thenAnswer {
-            val region = it.getArgument<AwsRegion>(0)
-            val cred = it.getArgument<ToolkitCredentialsProvider>(1)
+        whenever(mockResource.fetch(any())).thenAnswer {
+            val (cred, region) = it.getArgument<ConnectionSettings>(0)
             "${region.id}-${cred.id}-${incrementer.getAndIncrement()}"
         }
 
@@ -209,7 +215,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun canForceCacheRefresh() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello").thenReturn("goodbye")
+        whenever(mockResource.fetch(any())).thenReturn("hello").thenReturn("goodbye")
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
         assertThat(sut.getResource(mockResource, connectionSettings, forceFetch = true)).hasValue("goodbye")
@@ -227,7 +233,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun viewsCanBeCreatedOnTopOfOtherCachedItems() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         val viewResource = Resource.view(mockResource) { toList() }
 
         assertThat(sut.getResource(mockResource, connectionSettings)).hasValue("hello")
@@ -237,7 +243,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun mapFilterAndFindExtensionsToEasilyCreateViews() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         val viewResource = Resource.view(mockResource) { toList() }
 
         val filteredAndMapped = viewResource.filter { it != 'l' }.map { it.toUpperCase() }
@@ -249,7 +255,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun clearingViewsClearTheUnderlyingCachedResource() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         val viewResource = Resource.view(mockResource) { toList() }
         sut.getResource(viewResource, connectionSettings).value
         sut.clear(viewResource, connectionSettings)
@@ -260,7 +266,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun viewsCanBeRegionAware() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         val viewResource = Resource.View(mockResource) { _, region -> region }
 
         assertThat(sut.getResource(viewResource, connectionSettings)).hasValue(connectionSettings.region)
@@ -312,7 +318,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun multipleCallsInDifferentThreadsStillOnlyCallTheUnderlyingResourceOnce() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         val concurrency = 200
 
         val latch = CountDownLatch(1)
@@ -343,7 +349,7 @@ class AwsResourceCacheTest {
     @Test
     fun multipleCallsWhileFetchPendingCallTheUnderlyingResourceOnce() {
         val latch = CountDownLatch(1)
-        whenever(mockResource.fetch(any(), any())).thenAnswer {
+        whenever(mockResource.fetch(any())).thenAnswer {
             // don't allow the task to finish until all futures have been created
             latch.await()
             return@thenAnswer "hello"
@@ -378,58 +384,58 @@ class AwsResourceCacheTest {
 
     @Test
     fun whenACredentialIdIsRemovedItsEntriesAreRemovedFromTheCache() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         getAllRegionAndCredPermutations()
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerRemoved(cred1Identifier)
 
         getAllRegionAndCredPermutations()
 
-        verify(mockResource, times(2)).fetch(US_WEST_1, cred1Provider)
-        verify(mockResource, times(2)).fetch(US_WEST_2, cred1Provider)
-        verify(mockResource, times(1)).fetch(US_WEST_1, cred2Provider)
-        verify(mockResource, times(1)).fetch(US_WEST_2, cred2Provider)
+        verify(mockResource, times(2)).fetch(ConnectionSettings(cred1Provider, US_WEST_1))
+        verify(mockResource, times(2)).fetch(ConnectionSettings(cred1Provider, US_WEST_2))
+        verify(mockResource, times(1)).fetch(ConnectionSettings(cred2Provider, US_WEST_1))
+        verify(mockResource, times(1)).fetch(ConnectionSettings(cred2Provider, US_WEST_2))
     }
 
     @Test
     fun whenACredentialIdIsModifiedItsEntriesAreRemovedFromTheCache() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         getAllRegionAndCredPermutations()
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CredentialManager.CREDENTIALS_CHANGED).providerModified(cred1Identifier)
 
         getAllRegionAndCredPermutations()
 
-        verify(mockResource, times(2)).fetch(US_WEST_1, cred1Provider)
-        verify(mockResource, times(2)).fetch(US_WEST_2, cred1Provider)
-        verify(mockResource, times(1)).fetch(US_WEST_1, cred2Provider)
-        verify(mockResource, times(1)).fetch(US_WEST_2, cred2Provider)
+        verify(mockResource, times(2)).fetch(ConnectionSettings(cred1Provider, US_WEST_1))
+        verify(mockResource, times(2)).fetch(ConnectionSettings(cred1Provider, US_WEST_2))
+        verify(mockResource, times(1)).fetch(ConnectionSettings(cred2Provider, US_WEST_1))
+        verify(mockResource, times(1)).fetch(ConnectionSettings(cred2Provider, US_WEST_2))
     }
 
     @Test
     fun cacheExposesBlockingApi() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         assertThat(sut.getResourceNow(mockResource, connectionSettings)).isEqualTo("hello")
     }
 
     @Test
     fun cacheExposesBlockingApiWithRegionAndCred() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         assertThat(sut.getResourceNow(mockResource, US_WEST_1, cred1Provider)).isEqualTo("hello")
-        verify(mockResource).fetch(US_WEST_1, cred1Provider)
+        verify(mockResource).fetch(ConnectionSettings(cred1Provider, US_WEST_1))
     }
 
     @Test
     fun cacheExposesBlockingApiWhereExecutionExceptionIsUnwrapped() {
-        whenever(mockResource.fetch(any(), any())).thenThrow(RuntimeException("boom"))
+        whenever(mockResource.fetch(any())).thenThrow(RuntimeException("boom"))
         assertThatThrownBy { sut.getResourceNow(mockResource, connectionSettings, timeout = Duration.ofSeconds(1)) }
             .isInstanceOf(RuntimeException::class.java)
-            .withFailMessage("boom")
+            .hasMessage("boom")
     }
 
     @Test
     fun cacheExposesBlockingApiWithTimeout() {
-        whenever(mockResource.fetch(any(), any())).thenAnswer {
+        whenever(mockResource.fetch(any())).thenAnswer {
             Thread.sleep(50)
             "hello"
         }
@@ -438,7 +444,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun canConditionallyFetchOnlyIfAvailableInCache() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
 
         assertThat(sut.getResourceIfPresent(mockResource, US_WEST_1, cred1Provider)).isNull()
         sut.getResource(mockResource, US_WEST_1, cred1Provider).value
@@ -447,7 +453,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun canConditionallyFetchOnlyIfAvailableInCacheAndRespectExpiry() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
 
         val now = Instant.now()
         whenever(mockClock.instant()).thenReturn(now)
@@ -459,7 +465,7 @@ class AwsResourceCacheTest {
 
     @Test
     fun canConditionallyFetchViewOnlyIfAvailableInCache() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         val viewResource = Resource.view(mockResource) { reversed() }
 
         assertThat(sut.getResourceIfPresent(viewResource, US_WEST_1, cred1Provider)).isNull()
@@ -469,10 +475,55 @@ class AwsResourceCacheTest {
 
     @Test
     fun canConditionallyFetchOnlyIfAvailableWithoutExplicitCredentialsRegion() {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello")
+        whenever(mockResource.fetch(any())).thenReturn("hello")
         sut.getResource(mockResource, connectionSettings).value
 
         assertThat(sut.getResourceIfPresent(mockResource, connectionSettings)).isEqualTo("hello")
+    }
+
+    @Test
+    fun concurrentlyRunningExceptionalResourcesGetTheSameException() {
+        val latch = CountDownLatch(1)
+        whenever(mockResource.fetch(any())).then {
+            latch.await()
+            // exception gets thrown fast enough where the second fetchIfNeeded check occurs after the first call throws
+            runBlockingTest {
+                delay(500)
+            }
+            throw RuntimeException("Boom")
+        }
+
+        val first = sut.getResource(mockResource, connectionSettings)
+        val second = sut.getResource(mockResource, connectionSettings)
+        latch.countDown()
+        assertThatThrownBy { first.value }.hasCauseWithMessage("Boom")
+        assertThatThrownBy { second.value }.hasCauseWithMessage("Boom")
+        verifyResourceCalled(1, mockResource)
+    }
+
+    @Test
+    fun canRecoverFromACachedException() {
+        whenever(mockResource.fetch(any())).thenThrow(RuntimeException("Boom")).thenReturn("Success!")
+        assertThrows<ExecutionException> { sut.getResource(mockResource, connectionSettings).value }
+        assertThat(sut.getResource(mockResource, connectionSettings).value).isEqualTo("Success!")
+    }
+
+    @Test
+    fun retriesReturnTheMostRecentException() {
+        whenever(mockResource.fetch(any())).thenThrow(RuntimeException("Boom"), RuntimeException("Ouch"))
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Boom")
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Ouch")
+    }
+
+    @Test
+    fun exceptionalEntriesAreRemovedFromTheCache() {
+        whenever(mockResource.fetch(any())).thenThrow(RuntimeException("Boom"))
+        assertThrows<ExecutionException> { sut.getResource(mockResource, connectionSettings).value }
+
+        with(sut as DefaultAwsResourceCache) {
+            doRunCacheMaintenance()
+            assertThat(hasCacheEntry(mockResource.id)).isFalse
+        }
     }
 
     private fun getAllRegionAndCredPermutations() {
@@ -483,7 +534,7 @@ class AwsResourceCacheTest {
     }
 
     private fun assertExpectedExpiryFunctions(expiryFunction: Instant.() -> Instant, shouldExpire: Boolean) {
-        whenever(mockResource.fetch(any(), any())).thenReturn("hello", "goodbye")
+        whenever(mockResource.fetch(any())).thenReturn("hello", "goodbye")
         whenever(mockResource.expiry()).thenReturn(Duration.ofSeconds(1))
         val now = Instant.now()
         val expiry = now.plus(Duration.ofSeconds(1))
@@ -500,7 +551,7 @@ class AwsResourceCacheTest {
     }
 
     private fun verifyResourceCalled(times: Int, resource: Resource.Cached<*> = mockResource) {
-        verify(resource, times(times)).fetch(any(), any())
+        verify(resource, times(times)).fetch(any())
         verify(resource, times(times)).expiry()
         verify(resource, atLeastOnce()).id
         verifyNoMoreInteractions(resource)
@@ -515,7 +566,7 @@ class AwsResourceCacheTest {
         private open class DummyResource<T>(override val id: String, private val value: T) : Resource.Cached<T>() {
             val callCount = AtomicInteger(0)
 
-            override fun fetch(region: AwsRegion, credentials: ToolkitCredentialsProvider): T {
+            override fun fetch(connectionSettings: ClientConnectionSettings<*>): T {
                 callCount.getAndIncrement()
                 return value
             }

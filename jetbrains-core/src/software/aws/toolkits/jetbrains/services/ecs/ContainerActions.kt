@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import kotlinx.coroutines.launch
@@ -24,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeA
 import software.aws.toolkits.jetbrains.core.getResource
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
-import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
 import software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecUtils
@@ -46,7 +46,6 @@ class ContainerActions(
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-        StartRemoteShellAction(project, container),
         ContainerLogsAction(project, container),
         Separator.getInstance(),
         ExecuteCommandAction(project, container),
@@ -61,7 +60,7 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
         val containers = try {
             selected.nodeProject.getResourceNow(EcsResources.listContainers(selected.value.taskDefinition()))
         } catch (e: Exception) {
-            e.notifyError(message("cloud_debug.ecs.run_config.container.loading.error", e.localizedMessage), selected.nodeProject)
+            e.notifyError(message("ecs.run_config.container.loading.error", e.localizedMessage), selected.nodeProject)
             return emptyList()
         }
 
@@ -84,7 +83,7 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
 class ContainerLogsAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.service.container_logs.action_label"), null, AwsIcons.Resources.CloudWatch.LOGS) {
+) : DumbAwareAction(message("ecs.service.container_logs.action_label"), null, AwsIcons.Resources.CloudWatch.LOGS) {
 
     private val logConfiguration: Pair<String, String>? by lazy {
         container.containerDefinition.logConfiguration().takeIf { it.logDriver() == LogDriver.AWSLOGS }?.options()?.let {
@@ -136,7 +135,7 @@ class ContainerLogsAction(
 class ExecuteCommandAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.execute_command_run"), null, null) {
+) : DumbAwareAction(message("ecs.execute_command_run"), null, null) {
     private val coroutineScope = projectCoroutineScope(project)
     override fun actionPerformed(e: AnActionEvent) {
         coroutineScope.launch {
@@ -154,14 +153,14 @@ class ExecuteCommandAction(
 
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn()) && EcsExecExperiment.isEnabled()
+            EcsExecExperiment.isEnabled()
     }
 }
 
 class ExecuteCommandInShellAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
+) : DumbAwareAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
     private val coroutineScope = projectCoroutineScope(project)
     override fun actionPerformed(e: AnActionEvent) {
         coroutineScope.launch {
@@ -182,7 +181,6 @@ class ExecuteCommandInShellAction(
 
     override fun update(e: AnActionEvent) {
         e.presentation.isVisible = container.service.enableExecuteCommand() &&
-            !EcsUtils.isInstrumented(container.service.serviceArn()) &&
             pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal") && EcsExecExperiment.isEnabled()
     }
 }

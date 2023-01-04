@@ -12,6 +12,10 @@ import com.intellij.util.text.SemVer
 import com.jetbrains.rider.test.base.PrepareTestEnvironment
 import java.io.File
 import java.nio.file.Paths
+import java.time.Duration
+
+// sometimes Windows Rider tests time out while starting the backend
+val backendStartTimeout = Duration.ofMinutes(3)
 
 val versions by lazy {
     // would be nice if this were json https://github.com/dotnet/runtime/issues/3049
@@ -52,7 +56,7 @@ val msBuild by lazy {
     Paths.get(dotNetSdk, "MSBuild.dll").toAbsolutePath().toString()
 }
 
-// TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_212
+// TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_213
 fun allowCustomDotnetRoots() {
     // Rider Test Framework miss VFS root access for the case when running tests on local environment with custom SDK path
     // This should be fixed on Rider Test Framework level. Workaround it until related ticket RIDER-47995 is fixed.
