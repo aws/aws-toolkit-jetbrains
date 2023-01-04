@@ -129,7 +129,6 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                 isIndeterminate = true
             ) {
                 val userId = lazilyGetUserId()
-                val time: Long
                 val start = System.currentTimeMillis()
                 val env = try {
                     val cawsClient = connectionSettings.awsClient<CodeCatalystClient>()
@@ -157,7 +156,13 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                             CawsWizardCloneType.UNLINKED_3P -> CodecatalystCreateDevEnvironmentRepoType.Unlinked
                             CawsWizardCloneType.NONE -> CodecatalystCreateDevEnvironmentRepoType.None
                         }
-
+                        CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                            project = null,
+                            userId = userId,
+                            result = TelemetryResult.Succeeded,
+                            duration = (System.currentTimeMillis() - start).toDouble(),
+                            codecatalystDevEnvironmentWorkflowStep = "createDevEnvironment"
+                        )
                         CodecatalystTelemetry.createDevEnvironment(
                             project = null,
                             userId = userId,
@@ -171,25 +176,16 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                     withUiContext {
                         Messages.showErrorDialog(e.message ?: message("general.unknown_error"), message)
                     }
-                    time = System.currentTimeMillis() - start
                     CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
                         project = null,
                         userId = userId,
                         result = TelemetryResult.Failed,
-                        duration = time.toDouble(),
+                        duration = (System.currentTimeMillis() - start).toDouble(),
                         codecatalystDevEnvironmentWorkflowStep = "createDevEnvironment"
                     )
                     CodecatalystTelemetry.createDevEnvironment(project = null, userId = userId, result = TelemetryResult.Failed)
                     return@startUnderModalProgressAsync
                 }
-                time = System.currentTimeMillis() - start
-                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
-                    project = null,
-                    userId = userId,
-                    result = TelemetryResult.Succeeded,
-                    duration = time.toDouble(),
-                    codecatalystDevEnvironmentWorkflowStep = "createDevEnvironment"
-                )
 
                 val parameters = mapOf(
                     CawsConnectionParameters.CAWS_SPACE to env.identifier.project.space,
