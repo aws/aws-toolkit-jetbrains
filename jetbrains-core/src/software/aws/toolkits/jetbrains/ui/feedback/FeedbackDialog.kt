@@ -117,7 +117,7 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
 
     override fun doOKAction() {
         if (okAction.isEnabled) {
-            applyFields()
+            super.applyFields()
             setOKButtonText(message("feedback.submitting"))
             isOKActionEnabled = false
             var result = Result.Succeeded
