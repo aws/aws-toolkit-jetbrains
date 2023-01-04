@@ -10,13 +10,13 @@ import software.aws.toolkits.core.lambda.LambdaManifestValidator
 class LambdaManifestValidatorTest {
 
     @Test
-    fun isManifestXmlFileParsingSuccess() {
+    fun `manifest xml file parsing succeeds`() {
         LambdaManifestValidatorTest::class.java.getResourceAsStream("/xmlSampleSuccess.xml").use {
             assertThat(LambdaManifestValidator.canBeParsed(it)).isTrue
         }
     }
     @Test
-    fun isManifestXmlFileParsingFailure() {
+    fun `manifest xml file parsing fails`() {
         LambdaManifestValidatorTest::class.java.getResourceAsStream("/xmlSampleFailure.xml").use {
             assertThat(LambdaManifestValidator.canBeParsed(it)).isFalse
         }
