@@ -23,6 +23,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
@@ -97,7 +98,7 @@ class CodeWhispererActionNodeTest {
     fun `getStartedNode - if there is active connection(nonnull), will not show tos if already accepted`() {
         sut = GetStartedNode(project)
 
-        whenever(connectionManager.activeConnectionForFeature(isA<CodeWhispererConnection>())).thenReturn(mock())
+        whenever(connectionManager.activeConnectionForFeature(isA<CodeWhispererConnection>())).thenReturn(mock<AwsBearerTokenConnection>())
         explorerManager.loadState(
             CodeWhispererExploreActionState().apply {
                 this.value[CodeWhispererExploreStateType.HasAcceptedTermsOfServices] = true
@@ -119,7 +120,7 @@ class CodeWhispererActionNodeTest {
     fun `getStartedNode - if there is active connection(nonnull), will show CW tos if not yet accepted`() {
         sut = GetStartedNode(project)
 
-        whenever(connectionManager.activeConnectionForFeature(isA<CodeWhispererConnection>())).thenReturn(mock())
+        whenever(connectionManager.activeConnectionForFeature(isA<CodeWhispererConnection>())).thenReturn(mock<AwsBearerTokenConnection>())
         explorerManager.loadState(
             CodeWhispererExploreActionState().apply {
                 this.value[CodeWhispererExploreStateType.HasAcceptedTermsOfServices] = false
@@ -159,7 +160,7 @@ class CodeWhispererActionNodeTest {
                 mockConstruction(CodeWhispererLoginDialog::class.java) { loginDialogMock, _ ->
                     whenever(loginDialogMock.showAndGet()).thenAnswer {
                         // simulate login succeed
-                        whenever(connectionManager.activeConnectionForFeature(isA<CodeWhispererConnection>())).thenReturn(mock())
+                        whenever(connectionManager.activeConnectionForFeature(isA<CodeWhispererConnection>())).thenReturn(mock<AwsBearerTokenConnection>())
                         true
                     }
                 }.use { loginDialogConstruction ->
