@@ -21,7 +21,9 @@ phases:
         $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
-            choco install -y --no-progress codecov
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe
+            -Outfile codecov.exe
         }
       - dotnet --list-sdks
       - choco uninstall -y dotnet-sdk --version 5.0.100 dotnet-5.0-sdk --version 5.0.100
@@ -85,7 +87,7 @@ phases:
           $env:VCS_COMMIT_ID=$Env:CODEBUILD_RESOLVED_SOURCE_VERSION;
           $env:CI_BUILD_URL=[uri]::EscapeUriString($Env:CODEBUILD_BUILD_URL);
           $env:CI_BUILD_ID=$Env:CODEBUILD_BUILD_ID;
-          codecov -t $Env:CODE_COV_TOKEN `
+          codecov.exe -t $Env:CODE_COV_TOKEN `
             --flag unittest `
             -f "build/reports/jacoco/coverageReport/coverageReport.xml" `
             -c $Env:CODEBUILD_RESOLVED_SOURCE_VERSION
