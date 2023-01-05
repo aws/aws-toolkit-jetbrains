@@ -21,9 +21,8 @@ phases:
         $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
-            $ProgressPreference = 'SilentlyContinue'
-            Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe
-            -Outfile codecov.exe
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+            Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
         }
       - dotnet --list-sdks
       - choco uninstall -y dotnet-sdk --version 5.0.100 dotnet-5.0-sdk --version 5.0.100
