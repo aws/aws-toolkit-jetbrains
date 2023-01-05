@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.ide.ActivityTracker
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
@@ -12,6 +13,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ex.ComboBoxAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareToggleAction
 import com.intellij.openapi.project.Project
@@ -24,6 +26,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.BOTH
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.CREDENTIALS
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.REGIONS
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.Companion.connectionSettingsMenuBuilder
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.ui.ActionPopupComboLogic
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
@@ -167,6 +170,21 @@ open class ProjectLevelSettingSelector(private val project: Project, settingsMod
 }
 
 class ToolkitConnectionComboBoxAction(private val project: Project) : ComboBoxAction(), DumbAware {
+    init {
+        ApplicationManager.getApplication().messageBus.connect().subscribe(
+            BearerTokenProviderListener.TOPIC,
+            object : BearerTokenProviderListener {
+                override fun invalidate(providerId: String) {
+                    val connectionManager = ToolkitConnectionManager.getInstance(project)
+                    if (connectionManager.activeConnection()?.id == providerId) {
+                        connectionManager.switchConnection(null)
+                        ActivityTracker.getInstance().inc()
+                    }
+                }
+            }
+        )
+    }
+
     private val logic = object : ProjectLevelSettingSelector(project, CREDENTIALS) {
         override fun currentCredentials(): CredentialIdentifier? {
             val active = ToolkitConnectionManager.getInstance(project).activeConnection()
