@@ -104,7 +104,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     @Test
     fun `test pre-setup failure will send service invocation event with failed status`() {
         val codewhispererServiceSpy = spy(codewhispererService) {
-            onGeneric { getRequestContext(any(), any(), any(), any()) }
+            onGeneric { getRequestContext(any(), any(), any(), any(), any()) }
                 .doAnswer { throw Exception() }
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
