@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.codewhisperer.model.Recommendation
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
@@ -23,6 +24,7 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
 class CodeWhispererTelemetryService {
     companion object {
@@ -215,6 +217,42 @@ class CodeWhispererTelemetryService {
             codewhispererTriggerType = triggerTypeInfo.triggerType,
             duration = latency,
             passive = true,
+            credentialStartUrl = startUrl
+        )
+    }
+    fun sendClientComponentLatencyEvent(states: InvocationContext) {
+        val requestContext = states.requestContext
+        val responseContext = states.responseContext
+        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
+        val startUrl = getConnectionStartUrl(requestContext.connection)
+        CodewhispererTelemetry.clientComponentLatency(
+            project = requestContext.project,
+            codewhispererSessionId = responseContext.sessionId,
+            codewhispererRequestId = requestContext.latencyContext.firstRequestId,
+            codewhispererFirstCompletionLatency = requestContext.latencyContext.paginationFirstCompletionTime,
+            codewhispererPreprocessingLatency = TimeUnit.NANOSECONDS.toMillis(
+                requestContext.latencyContext.codewhispererPreprocessingEnd -
+                    requestContext.latencyContext.codewhispererPreprocessingStart
+            ).toDouble(),
+            codewhispererEndToEndLatency = TimeUnit.NANOSECONDS.toMillis(
+                requestContext.latencyContext.codewhispererEndToEndEnd -
+                    requestContext.latencyContext.codewhispererEndToEndStart
+            ).toDouble(),
+            codewhispererAllCompletionsLatency = TimeUnit.NANOSECONDS.toMillis(
+                requestContext.latencyContext.paginationAllCompletionsEnd -
+                    requestContext.latencyContext.paginationAllCompletionsStart
+            ).toDouble(),
+            codewhispererPostprocessingLatency = TimeUnit.NANOSECONDS.toMillis(
+                requestContext.latencyContext.codewhispererPostprocessingEnd -
+                    requestContext.latencyContext.codewhispererPostprocessingStart
+            ).toDouble(),
+            codewhispererCredentialFetchingLatency = TimeUnit.NANOSECONDS.toMillis(
+                requestContext.latencyContext.credentialFetchingEnd -
+                    requestContext.latencyContext.credentialFetchingStart
+            ).toDouble(),
+            codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
+            codewhispererCompletionType = responseContext.completionType,
+            codewhispererLanguage = codewhispererLanguage,
             credentialStartUrl = startUrl
         )
     }

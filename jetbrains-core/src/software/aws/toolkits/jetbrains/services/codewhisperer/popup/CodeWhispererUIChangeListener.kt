@@ -8,7 +8,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.inlay.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 
 class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
     override fun stateChanged(states: InvocationContext, sessionContext: SessionContext) {
@@ -92,5 +94,8 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
 
     override fun recommendationAdded(states: InvocationContext, sessionContext: SessionContext) {
         CodeWhispererPopupManager.getInstance().updatePopupPanel(states, sessionContext)
+        if (!CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+            CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
+        }
     }
 }

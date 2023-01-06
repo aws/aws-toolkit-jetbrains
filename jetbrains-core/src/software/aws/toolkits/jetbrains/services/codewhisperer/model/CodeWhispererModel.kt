@@ -92,3 +92,23 @@ data class CodeScanResponseContext(
     val codeScanTotalIssues: Int = 0,
     val reason: String? = null
 )
+data class LatencyContext(
+    var credentialFetchingStart: Long = 0L,
+    var credentialFetchingEnd: Long = 0L,
+
+    var codewhispererPreprocessingStart: Long = 0L,
+    var codewhispererPreprocessingEnd: Long = 0L,
+
+    var paginationFirstCompletionTime: Double = 0.0,
+
+    var codewhispererPostprocessingStart: Long = 0L,
+    var codewhispererPostprocessingEnd: Long = 0L,
+
+    var codewhispererEndToEndStart: Long = 0L,
+    var codewhispererEndToEndEnd: Long = 0L,
+
+    var paginationAllCompletionsStart: Long = 0L,
+    var paginationAllCompletionsEnd: Long = 0L,
+
+    var firstRequestId: String = ""
+)

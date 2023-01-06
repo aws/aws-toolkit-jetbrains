@@ -306,6 +306,12 @@ class CodeWhispererPopupManager {
         } else {
             WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 0.1f)
         }
+        states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
+        states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
+
+        if (!CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+            CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
+        }
     }
 
     fun initPopup(): JBPopup = JBPopupFactory.getInstance()
