@@ -31,12 +31,11 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
      * (2) existing users open the IDE (automatically triggered)
      */
     override fun runActivity(project: Project) {
+        CodeWhispererStatusBarManager.getInstance(project).updateWidget()
         if (!isCodeWhispererEnabled(project)) return
         if (runOnce) return
 
         promptReAuth(project)
-
-        CodeWhispererStatusBarManager.getInstance(project).updateWidget()
 
         // install intellsense autotrigger listener, this only need to be executed 1 time
         project.messageBus.connect().subscribe(LookupManagerListener.TOPIC, CodeWhispererIntlliSenseAutoTriggerListener)
