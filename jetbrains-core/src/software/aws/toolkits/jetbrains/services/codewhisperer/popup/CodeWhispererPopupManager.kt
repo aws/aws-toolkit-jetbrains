@@ -249,7 +249,7 @@ class CodeWhispererPopupManager {
         sessionContext: SessionContext,
         popup: JBPopup,
         p: Point,
-        overlappingLinesCount: Int,
+        overlappingLinesCount: Int
     ) {
         val editor = states.requestContext.editor
         val detailContexts = states.recommendationContext.details
