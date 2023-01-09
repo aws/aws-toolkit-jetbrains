@@ -24,7 +24,6 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 class CodeWhispererTelemetryService {
     companion object {
@@ -230,26 +229,11 @@ class CodeWhispererTelemetryService {
             codewhispererSessionId = responseContext.sessionId,
             codewhispererRequestId = requestContext.latencyContext.firstRequestId,
             codewhispererFirstCompletionLatency = requestContext.latencyContext.paginationFirstCompletionTime,
-            codewhispererPreprocessingLatency = TimeUnit.NANOSECONDS.toMillis(
-                requestContext.latencyContext.codewhispererPreprocessingEnd -
-                    requestContext.latencyContext.codewhispererPreprocessingStart
-            ).toDouble(),
-            codewhispererEndToEndLatency = TimeUnit.NANOSECONDS.toMillis(
-                requestContext.latencyContext.codewhispererEndToEndEnd -
-                    requestContext.latencyContext.codewhispererEndToEndStart
-            ).toDouble(),
-            codewhispererAllCompletionsLatency = TimeUnit.NANOSECONDS.toMillis(
-                requestContext.latencyContext.paginationAllCompletionsEnd -
-                    requestContext.latencyContext.paginationAllCompletionsStart
-            ).toDouble(),
-            codewhispererPostprocessingLatency = TimeUnit.NANOSECONDS.toMillis(
-                requestContext.latencyContext.codewhispererPostprocessingEnd -
-                    requestContext.latencyContext.codewhispererPostprocessingStart
-            ).toDouble(),
-            codewhispererCredentialFetchingLatency = TimeUnit.NANOSECONDS.toMillis(
-                requestContext.latencyContext.credentialFetchingEnd -
-                    requestContext.latencyContext.credentialFetchingStart
-            ).toDouble(),
+            codewhispererPreprocessingLatency = requestContext.latencyContext.getCodeWhispererPreprocessingLatency(),
+            codewhispererEndToEndLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency(),
+            codewhispererAllCompletionsLatency = requestContext.latencyContext.getCodeWhispererAllCompletionsLatency(),
+            codewhispererPostprocessingLatency = requestContext.latencyContext.getCodeWhispererPostprocessingLatency(),
+            codewhispererCredentialFetchingLatency = requestContext.latencyContext.getCodeWhispererCredentialFetchingLatency(),
             codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
             codewhispererCompletionType = responseContext.completionType,
             codewhispererLanguage = codewhispererLanguage,

@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseCo
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
+import java.util.concurrent.TimeUnit
 
 data class CaretContext(val leftFileContext: String, val rightFileContext: String, val leftContextOnCurrentLine: String = "")
 
@@ -111,4 +112,24 @@ data class LatencyContext(
     var paginationAllCompletionsEnd: Long = 0L,
 
     var firstRequestId: String = ""
-)
+) {
+    fun getCodeWhispererEndToEndLatency() = TimeUnit.NANOSECONDS.toMillis(
+        codewhispererEndToEndEnd - codewhispererEndToEndStart
+    ).toDouble()
+
+    fun getCodeWhispererAllCompletionsLatency() = TimeUnit.NANOSECONDS.toMillis(
+        paginationAllCompletionsEnd - paginationAllCompletionsStart
+    ).toDouble()
+
+    fun getCodeWhispererPostprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
+        codewhispererPostprocessingEnd - codewhispererPostprocessingStart
+    ).toDouble()
+
+    fun getCodeWhispererCredentialFetchingLatency() = TimeUnit.NANOSECONDS.toMillis(
+        credentialFetchingEnd - credentialFetchingStart
+    ).toDouble()
+
+    fun getCodeWhispererPreprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
+        codewhispererPreprocessingEnd - codewhispererPreprocessingStart
+    ).toDouble()
+}
