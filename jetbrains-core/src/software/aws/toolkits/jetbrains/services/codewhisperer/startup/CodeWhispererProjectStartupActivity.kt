@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
@@ -31,7 +32,9 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
      * (2) existing users open the IDE (automatically triggered)
      */
     override fun runActivity(project: Project) {
-        CodeWhispererStatusBarManager.getInstance(project).updateWidget()
+        if (!ApplicationManager.getApplication().isUnitTestMode) {
+            CodeWhispererStatusBarManager.getInstance(project).updateWidget()
+        }
         if (!isCodeWhispererEnabled(project)) return
         if (runOnce) return
 
