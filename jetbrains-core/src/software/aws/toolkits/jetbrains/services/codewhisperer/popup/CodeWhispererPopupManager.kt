@@ -300,17 +300,17 @@ class CodeWhispererPopupManager {
                 states.responseContext,
                 perceivedLatency
             )
+            states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
+            states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
+
+            if (!CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+                CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
+            }
         }
         if (shouldHidePopup) {
             WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 1f)
         } else {
             WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 0.1f)
-        }
-        states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
-        states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
-
-        if (!CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
-            CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
         }
     }
 
