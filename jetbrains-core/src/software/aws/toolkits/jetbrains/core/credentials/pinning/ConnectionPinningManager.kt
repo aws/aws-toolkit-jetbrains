@@ -63,7 +63,6 @@ class DefaultConnectionPinningManager(private val project: Project) :
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun invalidate(providerId: String) {
-                    if (project.isDisposed) return
                     pinnedConnections.entries.removeIf { (_, v) -> v.id == providerId }
                 }
             }
