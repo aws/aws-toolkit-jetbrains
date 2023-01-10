@@ -31,6 +31,7 @@ class CodeWhispererStatusBarManager(private val project: Project) {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    if (project.isDisposed) return
                     updateWidget()
                 }
             }
