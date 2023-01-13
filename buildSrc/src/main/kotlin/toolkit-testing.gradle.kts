@@ -67,6 +67,7 @@ tasks.withType<Test>().all {
     }
 
     configure<JacocoTaskExtension> {
+        // sync with intellij-subplugin
         // don't instrument sdk, icons, etc.
         includes = listOf("software.aws.toolkits.*")
         excludes = listOf("software.aws.toolkits.telemetry.*")
