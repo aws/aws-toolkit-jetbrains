@@ -7,10 +7,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.project.DumbAwareAction
-import icons.AwsIcons
 import software.aws.toolkits.resources.message
 
-class SubmitFeedbackInGateway : DumbAwareAction(message("feedback.title"), message("feedback.description"), AwsIcons.Misc.SMILE_GREY) {
+class SubmitFeedbackInGateway : DumbAwareAction(message("feedback.title")) {
     override fun actionPerformed(e: AnActionEvent) {
         runInEdt {
             FeedbackDialog(DefaultProjectFactory.getInstance().defaultProject).show()
