@@ -27,6 +27,9 @@ comments:
     licenseTemplateFile: ./license.template
     licenseTemplateIsRegex: true
 
+complexity:
+  active: false
+
 coroutines:
   active: true
   GlobalCoroutineUsage:
@@ -37,6 +40,14 @@ coroutines:
     active: true
   SuspendFunWithFlowReturnType:
     active: true
+
+empty-blocks:
+  EmptyFunctionBlock:
+    active: false
+
+exceptions:
+  # there might actually be some useful rules in here
+  active: false
 
 # unfortunately, does not respect .editorconfig in the project folder
 # also needs to be manually updated if there are new rules upstream
@@ -64,8 +75,6 @@ formatting:
   EnumEntryNameCase:
     active: false
     autoCorrect: true
-  ExpressionBodySyntax:
-    includeLineWrapping: true
   Filename:
     active: true
   FinalNewline:
@@ -130,7 +139,8 @@ formatting:
     active: true
     autoCorrect: true
   ParameterListWrapping:
-    active: false
+    active: true
+    autoCorrect: true
   SpacingAroundAngleBrackets:
     active: false
     autoCorrect: true
@@ -173,6 +183,9 @@ formatting:
   StringTemplate:
     active: true
     autoCorrect: true
+  Wrapping:
+    active: true
+    autoCorrect: true
 
 naming:
   active: true
@@ -199,6 +212,11 @@ naming:
     parameterPattern: '[a-z][A-Za-z0-9]*'
     excludeClassPattern: '$^'
     ignoreOverridden: true
+  # prefer rule provided by ktlint
+  MatchingDeclarationName:
+    active: false
+  MemberNameEqualsClassName:
+    active: false
   NoNameShadowing:
     active: true
   ObjectPropertyNaming:
@@ -220,6 +238,10 @@ naming:
     privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
     excludeClassPattern: '$^'
     ignoreOverridden: true
+
+performance:
+  SpreadOperator:
+    active: false
 
 potential-bugs:
   active: true
@@ -283,3 +305,27 @@ potential-bugs:
     active: false
   WrongEqualsTypeParameter:
     active: true
+
+style:
+  ExpressionBodySyntax:
+    active: true
+    includeLineWrapping: true
+  ForbiddenComment:
+    active: false
+  MagicNumber:
+    active: false
+  # prefer rule provided by ktlint in the formatting section
+  MaxLineLength:
+    active: false
+  NoTabs:
+    active: true
+  ReturnCount:
+    active: false
+  ThrowsCount:
+    active: false
+  UnnecessaryAbstractClass:
+    active: false
+  UnusedPrivateMember:
+    allowedNames: '(_|ignored|expected|serialVersionUID|createUIComponents)'
+  VarCouldBeVal:
+    active: false

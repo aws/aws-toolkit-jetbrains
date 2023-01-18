@@ -63,6 +63,16 @@ class NodeJs14ImageDebug : NodeJsImageDebugSupport() {
     override fun displayName() = LambdaRuntime.NODEJS14_X.toString().capitalize()
 }
 
+class NodeJs16ImageDebug : NodeJsImageDebugSupport() {
+    override val id: String = LambdaRuntime.NODEJS16_X.toString()
+    override fun displayName() = LambdaRuntime.NODEJS16_X.toString().capitalize()
+}
+
+class NodeJs18ImageDebug : NodeJsImageDebugSupport() {
+    override val id: String = LambdaRuntime.NODEJS18_X.toString()
+    override fun displayName() = LambdaRuntime.NODEJS18_X.toString().capitalize()
+}
+
 object NodeJsDebugUtils {
     private const val NODE_MODULES = "node_modules"
 

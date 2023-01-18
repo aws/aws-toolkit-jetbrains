@@ -1,8 +1,8 @@
 version: 0.2
 
-#cache:
-#  paths:
-#    - '/root/.gradle/caches/**/*'
+cache:
+  paths:
+    - '/root/.gradle/caches/modules-2/**/*'
 #    - '/root/.gradle/wrapper/**/*'
 
 env:
@@ -18,23 +18,23 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      java: corretto11
-      dotnet: 3.1
-
     commands:
+      - rm -rf /root/.gradle/caches/modules-2/{*.lock,gc.properties}
       - startDesktop.sh
 
       # login to DockerHub so we don't get throttled
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
+      - export PATH="$PATH:$HOME/.dotnet/tools"
+      - dotnet codeartifact-creds install
 
   build:
     commands:
       - |
         if [ "$CODEARTIFACT_DOMAIN_NAME" ] && [ "$CODEARTIFACT_REPO_NAME" ]; then
           CODEARTIFACT_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text)
+          CODEARTIFACT_NUGET_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text) 
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
 

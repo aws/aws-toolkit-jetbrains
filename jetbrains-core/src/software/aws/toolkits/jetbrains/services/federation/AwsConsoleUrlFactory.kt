@@ -7,22 +7,32 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.message.BasicNameValuePair
-import software.amazon.awssdk.auth.credentials.AwsCredentials
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sts.StsClient
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
+import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
+import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.DeeplinkTelemetry
+import software.aws.toolkits.telemetry.Result
+import java.net.URLEncoder
 import java.time.Duration
 
-class AwsConsoleUrlFactory(
-    private val httpClientBuilder: HttpClientBuilder = HttpClientBuilder.create()
-) {
+object AwsConsoleUrlFactory {
+    private val defaultHttpClientBuilder: HttpClientBuilder by lazy { HttpClientBuilder.create() }
+
     fun federationUrl(region: AwsRegion): String {
         // https://docs.aws.amazon.com/general/latest/gr/signin-service.html
         // https://docs.amazonaws.cn/en_us/aws/latest/userguide/endpoints-Beijing.html
@@ -63,28 +73,36 @@ class AwsConsoleUrlFactory(
         return "$consoleHome${fragment ?: "/"}"
     }
 
-    fun getSigninToken(credentials: AwsCredentials, region: AwsRegion): String {
-        val creds = if (credentials !is AwsSessionCredentials) {
-            val stsClient: StsClient = AwsClientManager.getInstance()
-                .createUnmanagedClient(AwsCredentialsProvider { credentials }, Region.of(region.id))
+    fun getSigninUrl(connectionSettings: ConnectionSettings, destination: String?, httpClientBuilder: HttpClientBuilder = defaultHttpClientBuilder): String =
+        getSigninUrl(getSigninToken(connectionSettings, httpClientBuilder), destination, connectionSettings.region)
+
+    fun getSigninToken(connectionSettings: ConnectionSettings, httpClientBuilder: HttpClientBuilder = defaultHttpClientBuilder): String {
+        val resolvedCreds = connectionSettings.credentials.resolveCredentials()
+        val sessionCredentials = if (resolvedCreds !is AwsSessionCredentials) {
+            val stsClient = AwsClientManager.getInstance().getClient<StsClient>(connectionSettings)
 
             val tokenResponse = stsClient.use { client ->
                 client.getFederationToken {
                     it.durationSeconds(Duration.ofMinutes(15).toSeconds().toInt())
                     it.name("FederationViaAWSJetBrainsToolkit")
+                    // policy is required otherwise resulting session has no permissions
+                    // session will have the intersection of role permissions and this policy
+                    it.policyArns({ builder ->
+                        builder.arn("arn:aws:iam::aws:policy/AdministratorAccess")
+                    })
                 }
             }
 
             tokenResponse.credentials().let { AwsSessionCredentials.create(it.accessKeyId(), it.secretAccessKey(), it.sessionToken()) }
         } else {
-            credentials
+            resolvedCreds
         }
 
         val sessionJson = mapper.writeValueAsString(
             GetSigninTokenRequest(
-                sessionId = creds.accessKeyId(),
-                sessionKey = creds.secretAccessKey(),
-                sessionToken = creds.sessionToken()
+                sessionId = sessionCredentials.accessKeyId(),
+                sessionKey = sessionCredentials.secretAccessKey(),
+                sessionToken = sessionCredentials.sessionToken()
             )
         )
 
@@ -94,7 +112,7 @@ class AwsConsoleUrlFactory(
             "Session" to sessionJson
         ).map { BasicNameValuePair(it.key, it.value) }
 
-        val request = HttpPost(federationUrl(region))
+        val request = HttpPost(federationUrl(connectionSettings.region))
             .apply {
                 entity = UrlEncodedFormEntity(params)
             }
@@ -125,11 +143,35 @@ class AwsConsoleUrlFactory(
         return "${federationUrl(region)}?${UrlEncodedFormEntity(params).toUrlEncodedString()}"
     }
 
-    fun getSigninUrl(credentials: AwsCredentials, destination: String?, region: AwsRegion): String {
-        return getSigninUrl(getSigninToken(credentials, region), destination, region)
+    fun openArnInConsole(project: Project, place: String, arn: String) {
+        val connectionSettings = project.getConnectionSettings()
+
+        if (connectionSettings == null) {
+            notifyNoActiveCredentialsError(project)
+            return
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            try {
+                val encodedArn = URLEncoder.encode(arn, Charsets.UTF_8)
+                val encodedUa = URLEncoder.encode(AwsClientManager.userAgent, Charsets.UTF_8)
+                val url = AwsConsoleUrlFactory.getSigninUrl(
+                    connectionSettings,
+                    "/go/view?arn=$encodedArn&source=$encodedUa"
+                )
+                BrowserUtil.browse(url)
+                DeeplinkTelemetry.open(project, source = place, passive = false, result = Result.Succeeded)
+            } catch (e: Exception) {
+                val message = message("general.open_in_aws_console.error")
+                notifyError(content = message, project = project)
+                LOG.error(e) { message }
+                DeeplinkTelemetry.open(project, source = place, passive = false, result = Result.Failed)
+            }
+        }
     }
 
     private val mapper = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    private val LOG = getLogger<AwsConsoleUrlFactory>()
 }
 
 private data class GetSigninTokenRequest(

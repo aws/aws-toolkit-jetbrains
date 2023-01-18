@@ -27,6 +27,7 @@ import javax.swing.JComponent
 
 class ValidatingPanel internal constructor(
     parentDisposable: Disposable,
+    private val checkContinuously: Boolean,
     val contentPanel: DialogPanel,
     validatingButtons: Map<JButton, (event: ActionEvent) -> Unit>
 ) : BorderLayoutPanel() {
@@ -58,7 +59,8 @@ class ValidatingPanel internal constructor(
         }
     }
 
-    private fun updateActionButtons(panelIsValid: Boolean) {
+    // TODO: change back to private after moving to 221 release targets
+    internal fun updateActionButtons(panelIsValid: Boolean) {
         validatingActions.forEach { it.isEnabled = panelIsValid }
     }
 
@@ -109,6 +111,8 @@ class ValidatingPanel internal constructor(
 
     fun runValidation(): Boolean {
         val errorList = performValidation()
+        updateErrorInfo(errorList)
+
         return if (errorList.isNotEmpty()) {
             // Give the first error focus
             val info = errorList.first()
@@ -116,8 +120,9 @@ class ValidatingPanel internal constructor(
                 IdeFocusManager.getInstance(null).requestFocus(it, true)
             }
 
-            updateErrorInfo(errorList)
-            startTrackingValidation()
+            if (checkContinuously) {
+                startTrackingValidation()
+            }
             false
         } else {
             updateErrorInfo(emptyList())
@@ -196,15 +201,16 @@ class ValidatingPanelBuilderImpl(private val contentBuilder: LayoutBuilder) :
         return component(button)
     }
 
-    fun build(parentDisposable: Disposable, contentPanel: DialogPanel): ValidatingPanel = ValidatingPanel(parentDisposable, contentPanel, actions)
+    fun build(parentDisposable: Disposable, checkContinuously: Boolean, contentPanel: DialogPanel): ValidatingPanel =
+        ValidatingPanel(parentDisposable, checkContinuously, contentPanel, actions)
 }
 
-fun validatingPanel(disposable: Disposable, init: ValidatingPanelBuilder.() -> Unit): ValidatingPanel {
+fun validatingPanel(disposable: Disposable, checkContinuously: Boolean = true, init: ValidatingPanelBuilder.() -> Unit): ValidatingPanel {
     lateinit var builder: ValidatingPanelBuilderImpl
     val contentPanel = panel {
         builder = ValidatingPanelBuilderImpl(this)
         builder.init()
     }
 
-    return builder.build(disposable, contentPanel)
+    return builder.build(disposable, checkContinuously, contentPanel)
 }

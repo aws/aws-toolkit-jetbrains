@@ -4,41 +4,39 @@
 package software.aws.toolkits.jetbrains.services.lambda.completion
 
 import base.allowCustomDotnetRoots
+import base.backendStartTimeout
 import base.msBuild
-import com.intellij.openapi.application.ApplicationInfo
+import base.setUpCustomToolset
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.IconLoader
-import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.rd.ide.model.IconModel
+import com.jetbrains.rd.ui.icons.toIdeaIcon
 import com.jetbrains.rider.test.annotations.TestEnvironment
 import com.jetbrains.rider.test.base.BaseTestWithSolution
-import com.jetbrains.rider.test.base.PrepareTestEnvironment
-import com.jetbrains.rider.test.scriptingApi.setUpCustomToolset
-import com.jetbrains.rider.test.scriptingApi.setUpDotNetCoreCliPath
+import com.jetbrains.rider.test.protocol.testProtocolHost
 import org.assertj.core.api.Assertions.assertThat
-import org.testng.annotations.BeforeClass
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
+import java.time.Duration
 
 class DotNetHandlerCompletionTest : BaseTestWithSolution() {
+    override val backendLoadedTimeout: Duration = backendStartTimeout
+    override val backendShellLoadTimeout: Duration = backendStartTimeout
 
     override fun getSolutionDirectoryName(): String = ""
 
     override val waitForCaches = true
 
+    @BeforeSuite
+    fun setMsBuildVersion() {
+        val host = ApplicationManager.getApplication().testProtocolHost
+        setUpCustomToolset(msBuild, host)
+    }
+
     // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_203
     @BeforeSuite
     fun allowDotnetRoots() {
         allowCustomDotnetRoots()
-    }
-
-    @BeforeClass
-    fun setUpBuildToolPath() {
-        // TODO: Does not appear to be needed in 203+ FIX_WHEN_MIN_IS_203
-        if (SystemInfo.isWindows) {
-            PrepareTestEnvironment.dotnetCoreCliPath = "C:\\Program Files\\dotnet\\dotnet.exe"
-            setUpDotNetCoreCliPath(PrepareTestEnvironment.dotnetCoreCliPath)
-            setUpCustomToolset(msBuild)
-        }
     }
 
     @Test(description = "Check a single handler is shown in lookup when one is defined in a project.")
@@ -73,15 +71,8 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     @Suppress("SameParameterValue")
     private fun assertIconPath(iconModel: IconModel?, expectedPath: String) {
         assertThat(iconModel).isNotNull
-        val ideaIconSecond = iconModel?.let { completionItemToIcon(project, iconModel) as? IconLoader.CachedImageIcon }
+        val ideaIconSecond = iconModel?.let { iconModel.toIdeaIcon(project) as? IconLoader.CachedImageIcon }
         assertThat(ideaIconSecond).isNotNull
-        // FIX_WHEN_MIN_IS_211 The icon path changed on 211 to not have a leading slash. This comes
-        // straight from the backend (`_psiIconManager.GetImage(method.GetElementType())`). For what it's worth
-        // originalPath is probably marked unstable for a reason
-        if (ApplicationInfo.getInstance().let { info -> info.majorVersion == "2020" }) {
-            assertThat(ideaIconSecond?.originalPath).isEqualTo(expectedPath)
-        } else {
-            assertThat(ideaIconSecond?.originalPath).isEqualTo(expectedPath.trimStart('/'))
-        }
+        assertThat(ideaIconSecond?.url?.path).endsWith(expectedPath.trimStart('/'))
     }
 }

@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.federation.psireferences
 
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiReferenceRegistrar
 import com.intellij.util.ProcessingContext
@@ -15,15 +16,9 @@ class ArnPsiReferenceContributor : PsiReferenceContributor() {
             object : PsiElementPattern.Capture<PsiElement>(
                 PsiElement::class.java
             ) {
-                override fun accepts(o: Any?, context: ProcessingContext): Boolean {
-                    if (o == null || o !is PsiElement) return false
-
-                    if (o.text.contains("arn:")) {
-                        return true
-                    }
-
-                    return false
-                }
+                override fun accepts(o: Any?, context: ProcessingContext): Boolean =
+                    // this is lower fidelity than we'd like but avoids resolving the entire PSI tree
+                    o is PsiLiteralValue && o.value is String
             },
             ArnPsiReferenceProvider(),
             PsiReferenceRegistrar.LOWER_PRIORITY

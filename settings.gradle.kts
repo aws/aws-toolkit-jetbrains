@@ -1,6 +1,22 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-enableFeaturePreview("VERSION_CATALOGS")
+pluginManagement {
+    repositories {
+        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
+            maven {
+                url = uri(codeArtifactUrl.get())
+                credentials {
+                    username = "aws"
+                    password = codeArtifactToken.get()
+                }
+            }
+        }
+        gradlePluginPortal()
+    }
+}
 
 rootProject.name = "aws-toolkit-jetbrains"
 
@@ -8,6 +24,16 @@ include("resources")
 include("sdk-codegen")
 include("core")
 include("jetbrains-core")
+
+when (providers.gradleProperty("ideProfileName").get()) {
+    // FIX_WHEN_MIN_IS_222
+    // TODO: see if we can key this off the prescence of a gateway SDK declared in IdeVersions
+    "2021.2", "2021.3", "2022.1" -> {}
+    else -> {
+        include("jetbrains-gateway")
+    }
+}
+
 include("jetbrains-ultimate")
 include("jetbrains-rider")
 include("intellij")
@@ -29,9 +55,9 @@ gradleEnterprise {
     }
 }
 
-val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION").forUseAtConfigurationTime()
-val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET").forUseAtConfigurationTime()
-val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX").forUseAtConfigurationTime()
+val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION")
+val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET")
+val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX")
 if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
     buildCache {
         local {

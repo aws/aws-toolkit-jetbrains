@@ -14,9 +14,14 @@ plugins {
 val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 dependencies {
     testImplementation(versionCatalog.findBundle("mockito").get())
-    testImplementation(versionCatalog.findDependency("assertj").get())
+    testImplementation(versionCatalog.findLibrary("assertj").get())
 
     // Don't add a test framework by default since we use junit4, junit5, and testng depending on project
+}
+
+jacoco {
+    // need to probe resolved dependencies directly if moved to rich version declaration
+    version = versionCatalog.findVersion("jacoco").get().toString()
 }
 
 // TODO: Can we model this using https://docs.gradle.org/current/userguide/java_testing.html#sec:java_test_fixtures
@@ -62,8 +67,13 @@ tasks.withType<Test>().all {
     }
 
     configure<JacocoTaskExtension> {
+        // sync with intellij-subplugin
         // don't instrument sdk, icons, etc.
         includes = listOf("software.aws.toolkits.*")
+        excludes = listOf("software.aws.toolkits.telemetry.*")
+
+        // 221+ uses a custom classloader and jacoco fails to find classes
+        isIncludeNoLocationClasses = true
     }
 }
 
