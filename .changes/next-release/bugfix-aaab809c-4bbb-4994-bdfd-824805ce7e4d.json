@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix annoying NPE that may occur when installing the toolkit for the first time (#3433)"
+  "description" : "Fix NPE that may occur when installing the toolkit for the first time (#3433)"
 }
