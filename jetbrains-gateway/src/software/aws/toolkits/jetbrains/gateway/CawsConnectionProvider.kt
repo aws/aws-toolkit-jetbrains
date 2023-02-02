@@ -197,42 +197,6 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 return@startUnderModalProgressAsync JLabel()
                             }
 
-                            val fsTestTime = measureTimeMillis {
-                                val attempts = 15
-                                run repeatBlock@{
-                                    repeat(attempts) {
-                                        indicator.checkCanceled()
-                                        val testFs = executor.executeCommandNonInteractive(
-                                            "sh", "-c", "mkdir -p '$pluginPath' && echo true || echo false",
-                                            timeout = Duration.ofSeconds(15)
-                                        )
-
-                                        LOG.debug { "$testFs" }
-                                        when (testFs.resultFromStdOut()) {
-                                            StdOutResult.SUCCESS -> {
-                                                LOG.info { "Filesystem writablity test succeeded for $pluginPath on attempt $it" }
-                                                return@repeatBlock
-                                            }
-
-                                            StdOutResult.FAILED -> LOG.warn { "Filesystem writability test failed (#$it)" }
-                                            StdOutResult.TIMEOUT -> LOG.warn {
-                                                """
-                                                    |Filesystem writability test timed out (#$it)"
-                                                    |available stdout: ${testFs.fullStdout}
-                                                    |available stderr: ${testFs.stderr}
-                                                """.trimMargin()
-                                            }
-                                            StdOutResult.UNKNOWN -> LOG.warn { "Unknown status: ${testFs.stdout}" }
-                                        }
-
-                                        if (it == attempts - 1) {
-                                            error("Dev Environment did not have a writable filesystem after $attempts attempts")
-                                        }
-                                    }
-                                }
-                            }
-                            LOG.info { "FS test took ${fsTestTime}ms" }
-
                             runBackendWorkflow(
                                 view,
                                 workflowEmitter,
