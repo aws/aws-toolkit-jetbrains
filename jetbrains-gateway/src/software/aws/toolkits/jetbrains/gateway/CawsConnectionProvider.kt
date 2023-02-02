@@ -39,7 +39,6 @@ import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
 import software.amazon.awssdk.services.codecatalyst.model.InstanceType
 import software.aws.toolkits.core.utils.AttributeBagKey
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -51,9 +50,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.gateway.connection.GitSettings
 import software.aws.toolkits.jetbrains.gateway.connection.IDE_BACKEND_DIR
-import software.aws.toolkits.jetbrains.gateway.connection.StdOutResult
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
-import software.aws.toolkits.jetbrains.gateway.connection.resultFromStdOut
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.CloneCode
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.CopyScripts
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.InstallPluginBackend.InstallLocalPluginBackend
@@ -76,7 +73,6 @@ import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.time.Duration
 import java.util.UUID
 import javax.swing.JLabel
-import kotlin.system.measureTimeMillis
 import com.intellij.ui.dsl.builder.panel as panelv2
 import software.aws.toolkits.telemetry.Result as TelemetryResult
 
