@@ -14,7 +14,6 @@ import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
 import software.amazon.awssdk.services.apprunner.model.DeleteServiceRequest
 import software.amazon.awssdk.services.apprunner.model.DeleteServiceResponse
-import software.amazon.awssdk.services.apprunner.model.ServiceSummary
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
@@ -37,7 +36,7 @@ class DeleteServiceActionTest {
         client.stub {
             on { deleteService(any<DeleteServiceRequest>()) } doAnswer { DeleteServiceResponse.builder().build() }
         }
-        val node = AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(arn).build())
+        val node = AppRunnerServiceNode(projectRule.project, aServiceSummary { serviceArn(arn) })
         action.performDelete(node)
         verify(client, times(1)).deleteService(DeleteServiceRequest.builder().serviceArn(arn).build())
     }

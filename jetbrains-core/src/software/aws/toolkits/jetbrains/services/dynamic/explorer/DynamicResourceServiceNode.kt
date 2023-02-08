@@ -12,6 +12,8 @@ import software.amazon.awssdk.services.cloudcontrol.model.UnsupportedActionExcep
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
@@ -31,7 +33,8 @@ import software.aws.toolkits.telemetry.Result
 class DynamicResourceResourceTypeNode(project: Project, val resourceType: String) :
     AwsExplorerNode<String>(project, resourceType, null),
     ResourceParentNode,
-    ResourceActionNode {
+    ResourceActionNode,
+    CloudFormationResourceParentNode {
 
     override fun displayName(): String = resourceType
     override fun isAlwaysShowPlus(): Boolean = true
@@ -51,6 +54,7 @@ class DynamicResourceResourceTypeNode(project: Project, val resourceType: String
                 DynamicresourceTelemetry.listResource(project = nodeProject, result = Result.Cancelled, resourceType = resourceType)
                 listOf(AwsExplorerEmptyNode(nodeProject, message("dynamic_resources.unavailable_in_region", region.id)))
             }
+
             else -> {
                 DynamicresourceTelemetry.listResource(project = nodeProject, success = false, resourceType = resourceType)
                 throw e
@@ -59,17 +63,22 @@ class DynamicResourceResourceTypeNode(project: Project, val resourceType: String
     }
 
     override fun actionGroupName(): String = "aws.toolkit.explorer.dynamic.resource.type"
+    override fun cfnResourceTypes() = setOf(resourceType)
 }
 
-class UnavailableDynamicResourceTypeNode(project: Project, resourceType: String) : AwsExplorerNode<String>(project, resourceType, null) {
+class UnavailableDynamicResourceTypeNode(project: Project, private val resourceType: String) :
+    AwsExplorerNode<String>(project, resourceType, null),
+    CloudFormationResourceParentNode {
     override fun statusText(): String = message("dynamic_resources.unavailable_in_region", region.id)
     override fun getChildren(): List<AwsExplorerNode<*>> = emptyList()
     override fun isAlwaysLeaf(): Boolean = true
+    override fun cfnResourceTypes() = setOf(resourceType)
 }
 
 class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     AwsExplorerNode<DynamicResource>(project, resource, null),
-    ResourceActionNode {
+    ResourceActionNode,
+    CloudFormationResourceNode {
 
     override fun actionGroupName() = "aws.toolkit.explorer.dynamic.resource"
     override fun displayName(): String = CloudControlApiResources.getResourceDisplayName(resource.identifier)
@@ -125,6 +134,9 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     private companion object {
         val LOG = getLogger<DynamicResourceNode>()
     }
+
+    override val cfnResourceType = resource.type.fullName
+    override val cfnPhysicalIdentifier = resource.identifier
 }
 
 enum class OpenResourceModelSourceAction {

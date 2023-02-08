@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
@@ -16,9 +18,10 @@ import software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow
 import software.aws.toolkits.resources.message
 
 class SqsServiceNode(project: Project, service: AwsExplorerServiceNode) :
-    CacheBackedAwsExplorerServiceRootNode<String>(project, service, SqsResources.LIST_QUEUE_URLS) {
+    CacheBackedAwsExplorerServiceRootNode<String>(project, service, SqsResources.LIST_QUEUE_URLS), CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.sqs")
     override fun toNode(child: String): AwsExplorerNode<*> = SqsQueueNode(nodeProject, child)
+    override fun cfnResourceTypes() = setOf("AWS::SQS::Queue")
 }
 
 class SqsQueueNode(
@@ -29,8 +32,11 @@ class SqsQueueNode(
     SqsClient.SERVICE_NAME,
     queueUrl,
     AwsIcons.Resources.Sqs.SQS_QUEUE
-) {
+),
+    CloudFormationResourceNode {
     val queue = Queue(queueUrl, nodeProject.activeRegion())
+    override val cfnResourceType = "AWS::SQS::Queue"
+    override val cfnPhysicalIdentifier = queueUrl
 
     override fun resourceType() = "queue"
 

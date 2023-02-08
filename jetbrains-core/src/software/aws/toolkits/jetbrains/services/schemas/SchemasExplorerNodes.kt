@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.schemas.SchemasClient
 import software.amazon.awssdk.services.schemas.model.RegistrySummary
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
@@ -18,9 +20,11 @@ import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResourc
 import software.aws.toolkits.resources.message
 
 class SchemasServiceNode(project: Project, service: AwsExplorerServiceNode) :
-    CacheBackedAwsExplorerServiceRootNode<RegistrySummary>(project, service, SchemasResources.LIST_REGISTRIES) {
+    CacheBackedAwsExplorerServiceRootNode<RegistrySummary>(project, service, SchemasResources.LIST_REGISTRIES),
+    CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.schemas")
     override fun toNode(child: RegistrySummary): AwsExplorerNode<*> = SchemaRegistryNode(nodeProject, child)
+    override fun cfnResourceTypes() = setOf("AWS::EventSchemas::Schema", "AWS::EventSchemas::Registry")
 }
 
 open class SchemaRegistryNode(
@@ -32,10 +36,15 @@ open class SchemaRegistryNode(
     registry,
     AwsIcons.Resources.SCHEMA_REGISTRY
 ),
-    ResourceParentNode {
+    ResourceParentNode,
+    CloudFormationResourceNode,
+    CloudFormationResourceParentNode {
     override fun resourceType() = "registry"
 
     override fun resourceArn(): String = value.registryArn() ?: value.registryName()
+    override val cfnResourceType = "AWS::EventSchemas::Registry"
+    override val cfnPhysicalIdentifier: String = registry.registryArn()
+    override fun cfnResourceTypes() = setOf("AWS::EventSchemas::Schema")
 
     override fun toString(): String = value.registryName()
 
@@ -69,10 +78,13 @@ open class SchemaNode(
     SchemasClient.SERVICE_NAME,
     schema,
     AwsIcons.Resources.SCHEMA
-) {
+),
+    CloudFormationResourceNode {
     override fun resourceType() = "schema"
 
-    override fun resourceArn() = value.arn ?: value.name
+    override fun resourceArn() = cfnPhysicalIdentifier
+    override val cfnResourceType = "AWS::EventSchemas::Schema"
+    override val cfnPhysicalIdentifier = value.arn ?: value.name
 
     override fun toString(): String = value.name
 

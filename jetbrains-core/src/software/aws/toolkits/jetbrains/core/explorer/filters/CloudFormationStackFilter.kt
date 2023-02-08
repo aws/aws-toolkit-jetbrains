@@ -11,8 +11,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateC
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
-import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationServiceNode
-import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.resources.message
 
@@ -31,22 +29,21 @@ class CloudFormationStackFilter private constructor(
     override fun displayName() = message("cloudformation.filter.text", stackName)
 
     override fun show(node: AwsExplorerNode<*>) = when {
-        node is CloudFormationResourceNode && showResource(node) -> true
+        node is CloudFormationResourceNode && node is CloudFormationResourceParentNode -> showResource(node) || showParent(node)
+        node is CloudFormationResourceNode -> showResource(node)
         node is CloudFormationResourceParentNode -> showParent(node)
         else -> true
     }
 
-    private fun showResource(node: CloudFormationResourceNode) = (node is CloudFormationStackNode && node.stackName == stackName) ||
-        resources[node.cfnResourceType]?.contains(node.cfnPhysicalIdentifier) == true
+    private fun showResource(node: CloudFormationResourceNode) = resources[node.cfnResourceType]?.contains(node.cfnPhysicalIdentifier) == true
 
-    private fun showParent(node: CloudFormationResourceParentNode) =
-        node is CloudFormationServiceNode || node.cfnResourceTypes().intersect(resources.keys).isNotEmpty()
+    private fun showParent(node: CloudFormationResourceParentNode) = node.cfnResourceTypes().intersect(resources.keys).isNotEmpty()
 
     companion object {
-        fun newInstance(project: Project, stackName: String): CloudFormationStackFilter {
+        fun newInstance(project: Project, stackName: String, stackId: String): CloudFormationStackFilter {
             val resources = project.getResourceNow(CloudFormationResources.stackResources(stackName))
                 .groupBy { it.resourceType() }
-                .mapValues { it.value.map { summary -> summary.physicalResourceId() }.toSet() }
+                .mapValues { it.value.map { summary -> summary.physicalResourceId() }.toSet() } + mapOf("AWS::CloudFormation::Stack" to setOf(stackId))
 
             return CloudFormationStackFilter(stackName, project, resources)
         }

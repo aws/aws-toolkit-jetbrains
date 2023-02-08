@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
 import software.amazon.awssdk.services.apprunner.model.ServiceSummary
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
@@ -16,9 +18,10 @@ import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
 class AppRunnerNode(project: Project, service: AwsExplorerServiceNode) :
-    CacheBackedAwsExplorerServiceRootNode<ServiceSummary>(project, service, AppRunnerResources.LIST_SERVICES) {
+    CacheBackedAwsExplorerServiceRootNode<ServiceSummary>(project, service, AppRunnerResources.LIST_SERVICES), CloudFormationResourceParentNode {
     override fun displayName() = message("explorer.node.apprunner")
     override fun toNode(child: ServiceSummary): AwsExplorerNode<*> = AppRunnerServiceNode(nodeProject, child)
+    override fun cfnResourceTypes() = setOf("AWS::AppRunner::Service")
 }
 
 class AppRunnerServiceNode(
@@ -29,11 +32,14 @@ class AppRunnerServiceNode(
     AppRunnerClient.SERVICE_NAME,
     service.serviceName(),
     AwsIcons.Resources.APPRUNNER_SERVICE
-) {
+),
+    CloudFormationResourceNode {
     override fun resourceType(): String = "service"
     override fun resourceArn(): String = service.serviceArn()
     override fun statusText(): String = service.status().toString().toHumanReadable()
 
     override fun isAlwaysShowPlus(): Boolean = false
     override fun isAlwaysLeaf(): Boolean = true
+    override val cfnResourceType = "AWS::AppRunner::Service"
+    override val cfnPhysicalIdentifier: String = service.serviceArn()
 }

@@ -18,7 +18,7 @@ class FilterByStackAction :
     DumbAware {
     override fun actionPerformed(selected: CloudFormationStackNode, e: AnActionEvent) {
         ApplicationManager.getApplication().executeOnPooledThread {
-            val filter = CloudFormationStackFilter.newInstance(selected.nodeProject, selected.stackName)
+            val filter = CloudFormationStackFilter.newInstance(selected.nodeProject, selected.stackName, selected.stackId)
             AwsExplorerFilterManager.getInstance(selected.nodeProject).setFilter(filter)
         }
     }
