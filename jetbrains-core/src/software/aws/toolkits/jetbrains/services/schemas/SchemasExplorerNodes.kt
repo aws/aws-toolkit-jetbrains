@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplore
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class SchemasServiceNode(project: Project, service: AwsExplorerServiceNode) :
@@ -24,7 +25,7 @@ class SchemasServiceNode(project: Project, service: AwsExplorerServiceNode) :
     CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.schemas")
     override fun toNode(child: RegistrySummary): AwsExplorerNode<*> = SchemaRegistryNode(nodeProject, child)
-    override fun cfnResourceTypes() = setOf("AWS::EventSchemas::Schema", "AWS::EventSchemas::Registry")
+    override fun cfnResourceTypes() = setOf(AWS.EventSchemas.Schema, AWS.EventSchemas.Registry)
 }
 
 open class SchemaRegistryNode(
@@ -42,9 +43,9 @@ open class SchemaRegistryNode(
     override fun resourceType() = "registry"
 
     override fun resourceArn(): String = value.registryArn() ?: value.registryName()
-    override val cfnResourceType = "AWS::EventSchemas::Registry"
+    override val resourceType = AWS.EventSchemas.Registry
     override val cfnPhysicalIdentifier: String = registry.registryArn()
-    override fun cfnResourceTypes() = setOf("AWS::EventSchemas::Schema")
+    override fun cfnResourceTypes() = setOf(AWS.EventSchemas.Schema)
 
     override fun toString(): String = value.registryName()
 
@@ -83,7 +84,7 @@ open class SchemaNode(
     override fun resourceType() = "schema"
 
     override fun resourceArn() = cfnPhysicalIdentifier
-    override val cfnResourceType = "AWS::EventSchemas::Schema"
+    override val resourceType = AWS.EventSchemas.Schema
     override val cfnPhysicalIdentifier = value.arn ?: value.name
 
     override fun toString(): String = value.name

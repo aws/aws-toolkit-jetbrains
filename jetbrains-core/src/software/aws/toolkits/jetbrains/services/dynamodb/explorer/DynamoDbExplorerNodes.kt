@@ -18,13 +18,14 @@ import software.aws.toolkits.jetbrains.core.getResourceIfPresent
 import software.aws.toolkits.jetbrains.services.dynamodb.DynamoDbResources
 import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditorProvider
 import software.aws.toolkits.jetbrains.services.sts.StsResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class DynamoDbServiceNode(project: Project, service: AwsExplorerServiceNode) :
     CacheBackedAwsExplorerServiceRootNode<String>(project, service, DynamoDbResources.LIST_TABLES), CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.dynamo")
     override fun toNode(child: String): AwsExplorerNode<*> = DynamoDbTableNode(nodeProject, child)
-    override fun cfnResourceTypes() = setOf("AWS::DynamoDB::Table")
+    override fun cfnResourceTypes() = setOf(AWS.DynamoDB.Table)
 }
 
 class DynamoDbTableNode(project: Project, private val tableName: String) :
@@ -43,6 +44,6 @@ class DynamoDbTableNode(project: Project, private val tableName: String) :
         DynamoDbTableEditorProvider.openViewer(nodeProject, resourceArn())
     }
 
-    override val cfnResourceType = "AWS::DynamoDB::Table"
+    override val resourceType = AWS.DynamoDB.Table
     override val cfnPhysicalIdentifier = tableName
 }

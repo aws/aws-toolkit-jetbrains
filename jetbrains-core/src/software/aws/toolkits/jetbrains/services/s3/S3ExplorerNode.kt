@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class S3ServiceNode(project: Project, service: AwsExplorerServiceNode) :
@@ -22,7 +23,7 @@ class S3ServiceNode(project: Project, service: AwsExplorerServiceNode) :
     CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.s3")
     override fun toNode(child: Bucket): AwsExplorerNode<*> = S3BucketNode(nodeProject, child)
-    override fun cfnResourceTypes() = setOf("AWS::S3::Bucket")
+    override fun cfnResourceTypes() = setOf(AWS.S3.Bucket)
 }
 
 class S3BucketNode(project: Project, val bucket: Bucket) :
@@ -40,6 +41,6 @@ class S3BucketNode(project: Project, val bucket: Bucket) :
     }
 
     override fun displayName(): String = bucket.name()
-    override val cfnResourceType = "AWS::S3::Bucket"
-    override val cfnPhysicalIdentifier = bucket.name()
+    override val resourceType = AWS.S3.Bucket
+    override val cfnPhysicalIdentifier: String = bucket.name()
 }

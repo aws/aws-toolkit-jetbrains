@@ -17,13 +17,14 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplore
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaLocation
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class LambdaServiceNode(project: Project, service: AwsExplorerServiceNode) :
     CacheBackedAwsExplorerServiceRootNode<FunctionConfiguration>(project, service, LambdaResources.LIST_FUNCTIONS), CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.lambda")
     override fun toNode(child: FunctionConfiguration): AwsExplorerNode<*> = LambdaFunctionNode(nodeProject, child.toDataClass())
-    override fun cfnResourceTypes() = setOf("AWS::Lambda::Function")
+    override fun cfnResourceTypes() = setOf(AWS.Lambda.Function)
 }
 
 open class LambdaFunctionNode(
@@ -41,7 +42,7 @@ open class LambdaFunctionNode(
     override fun resourceType() = "function"
 
     override fun resourceArn() = value.arn
-    override val cfnResourceType: String = "AWS::Lambda::Function"
+    override val resourceType = AWS.Lambda.Function
     override val cfnPhysicalIdentifier: String = functionName()
 
     override fun toString(): String = functionName()

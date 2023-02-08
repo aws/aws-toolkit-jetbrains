@@ -12,12 +12,14 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
+import software.aws.toolkits.resources.cloudformation.AWS
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import software.aws.toolkits.resources.message
 
 class CloudFormationStackFilter private constructor(
     private val stackName: String,
     private val project: Project,
-    private val resources: Map<String, Set<String>>
+    private val resources: Map<CloudFormationResourceType, Set<String>>
 ) :
     AwsExplorerFilter, Disposable, ConnectionSettingsStateChangeNotifier {
 
@@ -35,15 +37,15 @@ class CloudFormationStackFilter private constructor(
         else -> true
     }
 
-    private fun showResource(node: CloudFormationResourceNode) = resources[node.cfnResourceType]?.contains(node.cfnPhysicalIdentifier) == true
+    private fun showResource(node: CloudFormationResourceNode) = resources[node.resourceType]?.contains(node.cfnPhysicalIdentifier) == true
 
     private fun showParent(node: CloudFormationResourceParentNode) = node.cfnResourceTypes().intersect(resources.keys).isNotEmpty()
 
     companion object {
         fun newInstance(project: Project, stackName: String, stackId: String): CloudFormationStackFilter {
             val resources = project.getResourceNow(CloudFormationResources.stackResources(stackName))
-                .groupBy { it.resourceType() }
-                .mapValues { it.value.map { summary -> summary.physicalResourceId() }.toSet() } + mapOf("AWS::CloudFormation::Stack" to setOf(stackId))
+                .groupBy { CloudFormationResourceType(it.resourceType()) }
+                .mapValues { it.value.map { summary -> summary.physicalResourceId() }.toSet() } + mapOf(AWS.CloudFormation.Stack to setOf(stackId))
 
             return CloudFormationStackFilter(stackName, project, resources)
         }
@@ -68,13 +70,13 @@ interface CloudFormationResourceParentNode {
     /**
      * The types of CloudFormation resources that this parent node has as children.
      */
-    fun cfnResourceTypes(): Set<String>
+    fun cfnResourceTypes(): Set<CloudFormationResourceType>
 }
 
 /**
  * Marker interface used for filtering now, but in the future can also be used by CloudAPI
  */
 interface CloudFormationResourceNode {
-    val cfnResourceType: String
+    val resourceType: CloudFormationResourceType
     val cfnPhysicalIdentifier: String
 }

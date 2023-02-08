@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNode) :
@@ -25,7 +26,7 @@ class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNod
     CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.cloudwatch")
     override fun toNode(child: LogGroup): AwsExplorerNode<*> = CloudWatchLogsNode(nodeProject, child.arn(), child.logGroupName())
-    override fun cfnResourceTypes() = setOf("AWS::Logs::LogGroup")
+    override fun cfnResourceTypes() = setOf(AWS.Logs.LogGroup)
 }
 
 class CloudWatchLogsNode(
@@ -49,6 +50,6 @@ class CloudWatchLogsNode(
         CloudWatchLogWindow.getInstance(nodeProject).showLogGroup(logGroupName)
     }
 
-    override val cfnResourceType = "AWS::Logs::LogGroup"
+    override val resourceType = AWS.Logs.LogGroup
     override val cfnPhysicalIdentifier = logGroupName
 }

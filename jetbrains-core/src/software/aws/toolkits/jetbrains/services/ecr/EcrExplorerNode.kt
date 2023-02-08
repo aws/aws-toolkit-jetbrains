@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.ecr.resources.EcrResources
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class EcrServiceNode(project: Project, service: AwsExplorerServiceNode) : AwsExplorerServiceRootNode(project, service), CloudFormationResourceParentNode {
@@ -25,7 +26,7 @@ class EcrServiceNode(project: Project, service: AwsExplorerServiceNode) : AwsExp
 
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> =
         nodeProject.getResourceNow(EcrResources.LIST_REPOS).map { EcrRepositoryNode(nodeProject, it) }
-    override fun cfnResourceTypes() = setOf("AWS::ECR::Repository")
+    override fun cfnResourceTypes() = setOf(AWS.ECR.Repository)
 }
 
 class EcrRepositoryNode(
@@ -52,7 +53,7 @@ class EcrRepositoryNode(
         .getResourceNow(EcrResources.listTags(repository.repositoryName))
         .map { EcrTagNode(nodeProject, repository, it) }
 
-    override val cfnResourceType = "AWS::ECR::Repository"
+    override val resourceType = AWS.ECR.Repository
     override val cfnPhysicalIdentifier = repository.repositoryName
 }
 

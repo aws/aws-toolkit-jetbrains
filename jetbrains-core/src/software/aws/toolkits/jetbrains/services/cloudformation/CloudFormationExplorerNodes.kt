@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplore
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class CloudFormationServiceNode(project: Project, service: AwsExplorerServiceNode) :
@@ -28,7 +29,7 @@ class CloudFormationServiceNode(project: Project, service: AwsExplorerServiceNod
     CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.cloudformation")
     override fun toNode(child: StackSummary): AwsExplorerNode<*> = CloudFormationStackNode(nodeProject, child.stackName(), child.stackStatus(), child.stackId())
-    override fun cfnResourceTypes() = setOf("AWS::CloudFormation::Stack")
+    override fun cfnResourceTypes() = setOf(AWS.CloudFormation.Stack)
 }
 
 class CloudFormationStackNode(
@@ -55,6 +56,6 @@ class CloudFormationStackNode(
         StackWindowManager.getInstance(nodeProject).openStack(stackName, stackId)
     }
 
-    override val cfnResourceType = "AWS::CloudFormation::Stack"
+    override val resourceType = AWS.CloudFormation.Stack
     override val cfnPhysicalIdentifier = stackId
 }

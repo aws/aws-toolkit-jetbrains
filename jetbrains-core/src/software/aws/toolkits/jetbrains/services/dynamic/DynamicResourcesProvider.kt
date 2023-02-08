@@ -8,10 +8,11 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.ProvisioningType
 import software.amazon.awssdk.services.cloudformation.model.Visibility
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import kotlin.coroutines.coroutineContext
 
 class DynamicResourcesProvider(private val cfnClient: CloudFormationClient) {
-    suspend fun listSupportedTypes(): List<ResourceType> = withContext(coroutineContext) {
+    suspend fun listSupportedTypes(): List<CloudFormationResourceType> = withContext(coroutineContext) {
         val mutable = async {
             cfnClient.listTypesPaginator {
                 it.visibility(Visibility.PUBLIC)
@@ -29,11 +30,10 @@ class DynamicResourcesProvider(private val cfnClient: CloudFormationClient) {
 
         types.flatMap { resp ->
             resp.typeSummaries().map { summary ->
-                CloudControlApiResources.resourceTypeFromResourceTypeName(summary.typeName())
+                CloudFormationResourceType(summary.typeName())
             }
         }
     }
 }
 
-data class ResourceType(val fullName: String, val service: String, val name: String)
-data class DynamicResource(val type: ResourceType, val identifier: String)
+data class DynamicResource(val type: CloudFormationResourceType, val identifier: String)

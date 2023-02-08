@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.utils.buildMap
 import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_CLUSTERS
 import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_INSTANCES
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class RdsExplorerParentNode(project: Project, service: AwsExplorerServiceNode) : AwsExplorerServiceRootNode(project, service) {
@@ -40,6 +41,6 @@ class RdsNode(project: Project, val database: RdsDatabase, private val rdsEngine
     override fun resourceArn(): String = database.arn
     override fun resourceType(): String = "instance"
     override fun statusText(): String? = rdsEngine.additionalInfo
-    override val cfnResourceType = "AWS::RDS::DBInstance"
+    override val resourceType = AWS.RDS.DBInstance
     override val cfnPhysicalIdentifier = database.identifier
 }

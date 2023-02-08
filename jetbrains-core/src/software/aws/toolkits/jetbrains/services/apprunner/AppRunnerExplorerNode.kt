@@ -15,13 +15,14 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNod
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.apprunner.resources.AppRunnerResources
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class AppRunnerNode(project: Project, service: AwsExplorerServiceNode) :
     CacheBackedAwsExplorerServiceRootNode<ServiceSummary>(project, service, AppRunnerResources.LIST_SERVICES), CloudFormationResourceParentNode {
     override fun displayName() = message("explorer.node.apprunner")
     override fun toNode(child: ServiceSummary): AwsExplorerNode<*> = AppRunnerServiceNode(nodeProject, child)
-    override fun cfnResourceTypes() = setOf("AWS::AppRunner::Service")
+    override fun cfnResourceTypes() = setOf(AWS.AppRunner.Service)
 }
 
 class AppRunnerServiceNode(
@@ -40,6 +41,6 @@ class AppRunnerServiceNode(
 
     override fun isAlwaysShowPlus(): Boolean = false
     override fun isAlwaysLeaf(): Boolean = true
-    override val cfnResourceType = "AWS::AppRunner::Service"
+    override val resourceType = AWS.AppRunner.Service
     override val cfnPhysicalIdentifier: String = service.serviceArn()
 }
