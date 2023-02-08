@@ -8,6 +8,8 @@ import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
@@ -17,13 +19,16 @@ import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindow
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
 import software.aws.toolkits.resources.message
 
-class CloudFormationServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<StackSummary>(
-    project,
-    service,
-    CloudFormationResources.ACTIVE_STACKS
-) {
+class CloudFormationServiceNode(project: Project, service: AwsExplorerServiceNode) :
+    CacheBackedAwsExplorerServiceRootNode<StackSummary>(
+        project,
+        service,
+        CloudFormationResources.ACTIVE_STACKS
+    ),
+    CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.cloudformation")
     override fun toNode(child: StackSummary): AwsExplorerNode<*> = CloudFormationStackNode(nodeProject, child.stackName(), child.stackStatus(), child.stackId())
+    override fun cfnResourceTypes() = setOf("AWS::CloudFormation::Stack")
 }
 
 class CloudFormationStackNode(
@@ -36,7 +41,8 @@ class CloudFormationStackNode(
     CloudFormationClient.SERVICE_NAME,
     stackName,
     AwsIcons.Resources.CLOUDFORMATION_STACK
-) {
+),
+    CloudFormationResourceNode {
     override fun resourceType() = "stack"
 
     override fun resourceArn() = stackId
@@ -48,4 +54,7 @@ class CloudFormationStackNode(
     override fun onDoubleClick() {
         StackWindowManager.getInstance(nodeProject).openStack(stackName, stackId)
     }
+
+    override val cfnResourceType = "AWS::CloudFormation::Stack"
+    override val cfnPhysicalIdentifier = stackId
 }
