@@ -166,6 +166,7 @@ with what features/services are supported.
         <extensionPoint name="executable" interface="software.aws.toolkits.jetbrains.core.executables.ExecutableType" dynamic="true"/>
 
         <extensionPoint name="explorer.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode" dynamic="true"/>
+        <extensionPoint name="explorer.actionContributor" interface="software.aws.toolkits.jetbrains.core.explorer.actions.AwsExplorerActionContributor" dynamic="true"/>
         <extensionPoint name="explorer.nodeProcessor" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerNodeProcessor" dynamic="true"/>
         <extensionPoint name="explorer.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.AwsExplorerTreeStructureProvider" dynamic="true"/>
         <extensionPoint name="sdk.clientCustomizer" interface="software.aws.toolkits.core.ToolkitClientCustomizer" dynamic="true"/>
@@ -367,6 +368,11 @@ with what features/services are supported.
 
         <!-- Executables -->
         <executable implementation="software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable"/>
+
+        <!-- Explorer action contributors -->
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNodeContributor"/>
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.actions.CopyArnAction"/>
+        <explorer.actionContributor implementation="software.aws.toolkits.jetbrains.core.explorer.actions.ExplorerActionSorter" order="last"/>
 
         <!-- Explorer nodes -->
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceTreeStructureProvider"/>

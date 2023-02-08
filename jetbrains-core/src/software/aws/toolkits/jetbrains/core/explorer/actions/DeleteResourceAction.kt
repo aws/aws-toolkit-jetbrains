@@ -5,9 +5,12 @@ package software.aws.toolkits.jetbrains.core.explorer.actions
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.explorer.DeleteResourceDialog
+import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -43,4 +46,15 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>> : SingleR
     }
 
     abstract fun performDelete(selected: T)
+}
+
+class ExplorerActionSorter : AwsExplorerActionContributor {
+    override fun process(group: DefaultActionGroup, node: AwsExplorerNode<*>) {
+        // Ensure the `DeleteResourceAction` is last
+        group.getChildren(null).find { it is DeleteResourceAction<*> }?.let {
+            group.remove(it)
+            group.add(Separator.create())
+            group.add(it)
+        }
+    }
 }

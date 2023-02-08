@@ -10,13 +10,11 @@ import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ide.util.treeView.TreeState
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -54,12 +52,10 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
-import software.aws.toolkits.jetbrains.core.explorer.actions.CopyArnAction
-import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
+import software.aws.toolkits.jetbrains.core.explorer.actions.AwsExplorerActionContributor
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceResourceTypeNode
 import java.awt.Component
@@ -256,23 +252,10 @@ class ExplorerToolWindow(project: Project) :
                     // Build a right click menu based on the selected first node
                     // All nodes must be the same type (e.g. all S3 buckets, or a service node)
                     val explorerNode = getSelectedNodesSameType<AwsExplorerNode<*>>()?.get(0) ?: return
-                    val actionGroupName = (explorerNode as? ResourceActionNode)?.actionGroupName()
-
-                    val totalActions = mutableListOf<AnAction>()
-
-                    (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { totalActions.addAll(it.getChildren(null)) }
-
-                    if (explorerNode is AwsExplorerResourceNode<*>) {
-                        totalActions.add(CopyArnAction())
+                    val actionGroup = DefaultActionGroup()
+                    AwsExplorerActionContributor.EP_NAME.forEachExtensionSafe {
+                        it.process(actionGroup, explorerNode)
                     }
-
-                    totalActions.find { it is DeleteResourceAction<*> }?.let {
-                        totalActions.remove(it)
-                        totalActions.add(Separator.create())
-                        totalActions.add(it)
-                    }
-
-                    val actionGroup = DefaultActionGroup(totalActions)
                     if (actionGroup.childrenCount > 0) {
                         val popupMenu = actionManager.createActionPopupMenu(ToolkitPlaces.EXPLORER_TOOL_WINDOW, actionGroup)
                         popupMenu.component.show(comp, x, y)
