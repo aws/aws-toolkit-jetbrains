@@ -1,3 +1,9 @@
+# _1.60_ (2023-02-01)
+- **(Bug Fix)** Fix Small Dev Environment instance sizes not connecting to the thin clients
+
+# _1.59_ (2023-01-27)
+- **(Feature)** Added an option to submit feedback for the AWS Toolkit in JetBrains Gateway
+
 # _1.58_ (2023-01-12)
 - **(Feature)** CodeWhisperer: more responsive Auto-Suggestions
 - **(Feature)** Added Nodejs18.x Lambda runtime support
