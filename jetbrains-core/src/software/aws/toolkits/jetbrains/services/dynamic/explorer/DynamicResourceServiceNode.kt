@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationResource
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceIdentifier
@@ -24,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateMan
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager.Companion.isTerminal
 import software.aws.toolkits.jetbrains.services.dynamic.OpenViewEditableDynamicResourceVirtualFile
 import software.aws.toolkits.jetbrains.services.dynamic.ViewEditableDynamicResourceVirtualFile
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -69,7 +71,8 @@ class UnavailableDynamicResourceTypeNode(project: Project, resourceType: String)
 
 class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     AwsExplorerNode<DynamicResource>(project, resource, null),
-    ResourceActionNode {
+    ResourceActionNode,
+    CloudFormationResource {
 
     override fun actionGroupName() = "aws.toolkit.explorer.dynamic.resource"
     override fun displayName(): String = CloudControlApiResources.getResourceDisplayName(resource.identifier)
@@ -125,6 +128,9 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     private companion object {
         val LOG = getLogger<DynamicResourceNode>()
     }
+
+    override val resourceType = CloudFormationResourceType(resource.type.fullName)
+    override val cfnPhysicalIdentifier = resource.identifier
 }
 
 enum class OpenResourceModelSourceAction {

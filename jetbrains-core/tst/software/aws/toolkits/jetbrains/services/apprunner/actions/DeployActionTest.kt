@@ -23,7 +23,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
-import software.amazon.awssdk.services.apprunner.model.ServiceSummary
 import software.amazon.awssdk.services.apprunner.model.StartDeploymentRequest
 import software.amazon.awssdk.services.apprunner.model.StartDeploymentResponse
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
@@ -85,7 +84,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
 
         runBlockingTest {
             action.deploy(
-                AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(aString()).build()),
+                AppRunnerServiceNode(projectRule.project, aServiceSummary()),
                 appRunnerClient,
                 cloudwatchClient
             )
@@ -114,7 +113,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
 
         runBlockingTest {
             action.deploy(
-                AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(aString()).build()),
+                AppRunnerServiceNode(projectRule.project, aServiceSummary()),
                 appRunnerClient,
                 cloudwatchClient
             )
@@ -141,7 +140,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
 
         runBlocking {
             action.deploy(
-                AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(aString()).build()),
+                AppRunnerServiceNode(projectRule.project, aServiceSummary()),
                 appRunnerClient,
                 cloudwatchClient
             )

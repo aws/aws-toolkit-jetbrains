@@ -11,8 +11,10 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNod
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.utils.buildMap
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationResource
 import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_CLUSTERS
 import software.aws.toolkits.jetbrains.services.rds.resources.LIST_SUPPORTED_INSTANCES
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class RdsExplorerParentNode(project: Project, service: AwsExplorerServiceNode) : AwsExplorerServiceRootNode(project, service) {
@@ -27,14 +29,18 @@ class RdsExplorerParentNode(project: Project, service: AwsExplorerServiceNode) :
     }
 }
 
-class RdsNode(project: Project, val database: RdsDatabase, private val rdsEngine: RdsEngine = database.rdsEngine()) : AwsExplorerResourceNode<String>(
-    project,
-    RdsClient.SERVICE_NAME,
-    database.arn,
-    rdsEngine.icon
-) {
+class RdsNode(project: Project, val database: RdsDatabase, private val rdsEngine: RdsEngine = database.rdsEngine()) :
+    AwsExplorerResourceNode<String>(
+        project,
+        RdsClient.SERVICE_NAME,
+        database.arn,
+        rdsEngine.icon
+    ),
+    CloudFormationResource {
     override fun displayName(): String = database.identifier
     override fun resourceArn(): String = database.arn
     override fun resourceType(): String = "instance"
     override fun statusText(): String? = rdsEngine.additionalInfo
+    override val resourceType = AWS.RDS.DBInstance
+    override val cfnPhysicalIdentifier = database.identifier
 }

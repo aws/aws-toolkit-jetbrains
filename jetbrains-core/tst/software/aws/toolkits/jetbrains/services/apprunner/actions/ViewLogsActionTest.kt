@@ -56,7 +56,7 @@ class ViewLogsActionTest {
         (ToolWindowManager.getInstance(projectRule.project) as ToolWindowHeadlessManagerImpl)
             .doRegisterToolWindow(CloudWatchLogsToolWindowFactory.TOOLWINDOW_ID)
         toolWindow = CloudWatchLogWindow.getInstance(projectRule.project)
-        node = AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceId(aString()).build())
+        node = AppRunnerServiceNode(projectRule.project, aServiceSummary())
     }
 
     @After
@@ -127,3 +127,10 @@ class ViewLogsActionTest {
         }
     }
 }
+
+fun aServiceSummary(block: ServiceSummary.Builder.() -> Unit = {}) = ServiceSummary.builder()
+    .serviceName(aString())
+    .serviceId(aString())
+    .serviceArn(aString())
+    .apply(block)
+    .build()

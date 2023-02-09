@@ -11,8 +11,10 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationResource
 import software.aws.toolkits.jetbrains.services.sqs.resources.SqsResources
 import software.aws.toolkits.jetbrains.services.sqs.toolwindow.SqsWindow
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class SqsServiceNode(project: Project, service: AwsExplorerServiceNode) :
@@ -29,8 +31,11 @@ class SqsQueueNode(
     SqsClient.SERVICE_NAME,
     queueUrl,
     AwsIcons.Resources.Sqs.SQS_QUEUE
-) {
+),
+    CloudFormationResource {
     val queue = Queue(queueUrl, nodeProject.activeRegion())
+    override val resourceType = AWS.SQS.Queue
+    override val cfnPhysicalIdentifier = queueUrl
 
     override fun resourceType() = "queue"
 
