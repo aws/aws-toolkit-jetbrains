@@ -199,7 +199,8 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings"
-                            serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
+                            serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.settings.MockDynamicResourcesSettings"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
@@ -254,7 +255,9 @@ with what features/services are supported.
                             serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.MockResourceCache"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSchemaMapping"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes"
+                            serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DefaultDynamicResourceSupportedTypes"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.services.dynamic.MockDynamicResourceSupportedTypes"/>
 
         <projectService serviceImplementation = "software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager"/>
@@ -514,7 +517,7 @@ with what features/services are supported.
             <action id="dynamic.resource.type.explorer.createResource" class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.CreateResourceAction"/>
             <action id="dynamic.resource.type.explorer.viewDocumentation" class="software.aws.toolkits.jetbrains.services.dynamic.explorer.actions.ViewDocumentationAction"/>
         </group>
-        
+
         <group id="aws.toolkit.dynamic.resource.editor">
             <action id="dynamic.resource.editor.submitResourceCreationRequest" class="software.aws.toolkits.jetbrains.services.dynamic.editor.actions.SubmitResourceCreationRequestAction"/>
             <action id="dynamic.resource.editor.enableEditingResource" class="software.aws.toolkits.jetbrains.services.dynamic.editor.actions.EnableEditingResourceAction"/>

@@ -40,5 +40,6 @@ fun <SELF : AbstractThrowableAssert<SELF, ACTUAL>, ACTUAL : Throwable> AbstractT
     return this
 }
 
-inline fun <reified T> AbstractAssert<*, *>.isInstanceOf() = isInstanceOf(T::class.java)
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T> AbstractAssert<*, *>.isInstanceOf() = isInstanceOf(T::class.java) as AbstractAssert<*, T>
 inline fun <reified T> AbstractAssert<*, *>.isInstanceOfSatisfying(checker: Consumer<T>) = isInstanceOfSatisfying(T::class.java, checker)
