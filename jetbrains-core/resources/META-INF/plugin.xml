@@ -425,7 +425,7 @@ with what features/services are supported.
         </group>
 
         <action id="aws.toolkit.explorer.filter.clear"
-                class="software.aws.toolkits.jetbrains.core.explorer.filters.AwsExplorerFilterClear"
+                class="software.aws.toolkits.jetbrains.core.explorer.filters.AwsExplorerFilterClearAction"
                 icon="AllIcons.General.Reset"
         />
         <group id="aws.toolkit.explorer.filter" popup="true" compact="false">
