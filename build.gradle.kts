@@ -26,6 +26,14 @@ allprojects {
         }
         mavenCentral()
         gradlePluginPortal()
+
+        maven {
+            url = uri("https://jitpack.io")
+            content {
+                // only allowed to pull lsp4intellij
+                includeModule("com.github.ballerina-platform", "lsp4intellij")
+            }
+        }
     }
 }
 

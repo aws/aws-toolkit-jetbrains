@@ -152,6 +152,8 @@ dependencies {
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
 
+    implementation("com.github.ballerina-platform:lsp4intellij:+")
+
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
     testImplementation(libs.wiremock)
     testImplementation(libs.kotlin.coroutinesTest)

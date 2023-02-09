@@ -1,0 +1,68 @@
+<!-- https://github.com/ballerina-platform/lsp4intellij/blob/master/resources/plugin.xml.example -->
+
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- register a preloading activity. You need to init IntellijLanguageClient with your config, see readme -->
+        <preloadingActivity implementation="software.aws.toolkits.jetbrains.LspPreloadingActivity" id="aws.toolkit.LspPreloadingActivity"/>
+
+        <!-- register intellijLanguageClient as a Service OR as a plugin component (see readme)... -->
+        <applicationService serviceImplementation="org.wso2.lsp4intellij.IntellijLanguageClient"/>
+
+        <!-- register a listener on editor events, required for lsp file sync -->
+        <editorFactoryListener implementation="org.wso2.lsp4intellij.listeners.LSPEditorListener"/>
+        <fileDocumentManagerListener implementation="org.wso2.lsp4intellij.listeners.LSPFileDocumentManagerListener"/>
+
+        <!-- for displaying notifications by lsp -->
+        <notificationGroup id="lsp" displayType="STICKY_BALLOON"/>
+
+        <!-- for displaying the statusbar icon -->
+        <statusBarWidgetFactory implementation="org.wso2.lsp4intellij.statusbar.LSPServerStatusWidgetFactory"
+                                id="org.wso2.lsp4intellij.statusbar.LSPServerStatusWidgetFactory"
+                                order="first" />
+
+        <!-- needed for completion -->
+        <completion.contributor implementationClass="org.wso2.lsp4intellij.contributors.LSPCompletionContributor"
+                                id="org.wso2.lsp4intellij.contributors.LSPCompletionContributor" language="yaml"/>
+        <!-- needed for completion as well as signature help -->
+        <typedHandler implementation="org.wso2.lsp4intellij.listeners.LSPTypedHandler"
+                      id="LSPTypedHandler"/>
+
+        <!-- needed for code diagnostics -->
+        <externalAnnotator id="LSPAnnotator" language="yaml"
+                           implementationClass="org.wso2.lsp4intellij.contributors.annotator.LSPAnnotator"/>
+
+        <!-- needed for Workspace Symbols -->
+        <gotoSymbolContributor implementation="org.wso2.lsp4intellij.contributors.symbol.LSPSymbolContributor"
+                               id="LSPSymbolContributor"/>
+
+        <fileType name="bspec"
+                  implementationClass="software.aws.toolkits.jetbrains.bspec"
+                  fieldName="INSTANCE"
+                  language="bspec"
+                  extensions="bspec"
+        />
+
+        <!-- needed for renaming -->
+        <renameHandler implementation="org.wso2.lsp4intellij.contributors.rename.LSPRenameHandler" id="LSPRenameHandler" order="first"/>
+        <renamePsiElementProcessor implementation="org.wso2.lsp4intellij.contributors.rename.LSPRenameProcessor" id="LSPRenameProcessor" order="first"/>
+    </extensions>
+
+    <actions>
+        <!-- needed for hover -->
+        <action id="org.intellij.sdk.action.QuicskDocAction" class="org.wso2.lsp4intellij.actions.LSPQuickDocAction">
+            <keyboard-shortcut first-keystroke="F7" keymap="$default"/>
+        </action>
+
+        <!-- needed for find references -->
+        <action class="org.wso2.lsp4intellij.actions.LSPReferencesAction" id="LSPFindUsages">
+            <keyboard-shortcut first-keystroke="shift alt F7" keymap="$default"/>
+        </action>
+    </actions>
+    <applicationListeners>
+        <!-- required for lsp file sync -->
+        <listener class="org.wso2.lsp4intellij.listeners.VFSListener"
+                  topic="com.intellij.openapi.vfs.VirtualFileListener"/>
+        <listener class="org.wso2.lsp4intellij.listeners.LSPProjectManagerListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </applicationListeners>
+</idea-plugin>

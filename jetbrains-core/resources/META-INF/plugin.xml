@@ -91,6 +91,10 @@ with what features/services are supported.
     <depends optional="true" config-file="ext-json.xml">com.intellij.modules.json</depends>
     <depends optional="true" config-file="ext-gateway.xml">com.jetbrains.gateway</depends>
 
+    <xi:include href="services/lsp.xml" xpointer="xpointer(/idea-plugin/*)">
+        <xi:fallback/>
+    </xi:include>
+
     <xi:include href="services/caws.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
     </xi:include>
