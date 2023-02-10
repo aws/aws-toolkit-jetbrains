@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.ecr.actions
 
 import com.intellij.docker.DockerCloudType
-import com.intellij.docker.DockerServerRuntimeInstance
 import com.intellij.docker.deploymentSource.DockerFileDeploymentSourceType
 import com.intellij.docker.dockerFile.DockerFileType
+import com.intellij.docker.runtimes.DockerServerRuntime
 import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.RunManager
 import com.intellij.execution.impl.RunDialog
@@ -30,12 +30,12 @@ import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.COLUMNS_MEDIUM
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
+import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.listCellRenderer
 import com.intellij.ui.layout.panel
 import com.intellij.ui.layout.selected
-import com.intellij.ui.layout.toBinding
 import com.intellij.util.text.nullize
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
@@ -75,7 +75,7 @@ class PushToRepositoryAction : EcrDockerAction() {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: EcrClient = project.awsClient()
         val scope = projectCoroutineScope(project)
-        val dialog = PushToEcrDialog(project, selected.repository, scope.dockerServerRuntimeAsync())
+        val dialog = PushToEcrDialog(project, selected.repository, scope.dockerServerRuntimeAsync(project))
         if (!dialog.showAndGet()) {
             // user cancelled; noop
             EcrTelemetry.deployImage(project, Result.Cancelled)
@@ -125,7 +125,7 @@ class PushToRepositoryAction : EcrDockerAction() {
 internal class PushToEcrDialog(
     private val project: Project,
     selectedRepository: Repository,
-    private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance>
+    private val dockerRuntime: Deferred<DockerServerRuntime>
 ) : DialogWrapper(project, null, false, IdeModalityType.PROJECT) {
     private val coroutineScope = projectCoroutineScope(project)
     private val defaultTag = "latest"
@@ -151,7 +151,7 @@ internal class PushToEcrDialog(
         init()
 
         coroutineScope.launch {
-            val dockerAdapter = ToolkitDockerAdapter(project, dockerServerRuntime.await())
+            val dockerAdapter = ToolkitDockerAdapter(project, dockerRuntime.await())
             localImageRepoTags.add(dockerAdapter.getLocalImages())
             localImageRepoTags.update()
         }
@@ -165,12 +165,12 @@ internal class PushToEcrDialog(
         lateinit var fromLocalImageButton: JBRadioButton
         lateinit var fromDockerfileButton: JBRadioButton
 
-        buttonGroup(::type.toBinding(), type = BuildType::class.java) {
+        buttonsGroup {
             row {
                 fromLocalImageButton = radioButton(message("ecr.push.type.local_image.label"), BuildType.LocalImage).component
                 fromDockerfileButton = radioButton(message("ecr.push.type.dockerfile.label"), BuildType.Dockerfile).component
             }
-        }
+        }.bind(::type.toMutableProperty(), type = BuildType::class.java)
 
         val imageSelectorPanel = localImageSelectorPanel()
         val dockerfilePanel = dockerfileConfigurationSelectorPanel()
@@ -323,7 +323,7 @@ internal class PushToEcrDialog(
 
         return when (type.ordinal) {
             BuildType.LocalImage.ordinal -> ImageEcrPushRequest(
-                dockerServerRuntime.await(),
+                dockerRuntime.await(),
                 localImage?.imageId ?: throw IllegalStateException("image id was null"),
                 selectedRepo(),
                 tag

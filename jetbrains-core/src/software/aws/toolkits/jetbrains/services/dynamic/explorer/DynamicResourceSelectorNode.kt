@@ -14,7 +14,7 @@ import software.aws.toolkits.jetbrains.settings.DynamicResourcesSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
 
-class DynamicResourceSelectorNode(nodeProject: Project) : AwsExplorerNode<Unit>(nodeProject, Unit, IconUtil.getEditIcon()) {
+class DynamicResourceSelectorNode(nodeProject: Project) : AwsExplorerNode<Unit>(nodeProject, Unit, IconUtil.editIcon) {
     override fun displayName() = message("explorer.node.other.add_remove")
 
     override fun getChildren(): List<AwsExplorerNode<*>> = emptyList()

@@ -294,7 +294,7 @@ potential-bugs:
   UnreachableCatchBlock:
     active: true
   UnreachableCode:
-    active: true
+    active: false
   UnsafeCallOnNullableType:
     active: true
   UnsafeCast:

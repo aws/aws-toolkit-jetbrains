@@ -59,16 +59,16 @@ class EcrPushIntegrationTest {
 
         val project = projectRule.project
         runBlocking {
-            val serverInstance = EcrUtils.getDockerServerRuntimeInstance().runtimeInstance
+            val serverRuntime = EcrUtils.getDockerServerRuntimeInstance(project)
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
-            val dockerAdapter = ToolkitDockerAdapter(project, serverInstance)
+            val dockerAdapter = ToolkitDockerAdapter(project, serverRuntime)
             val imageId = dockerAdapter.buildLocalImage(dockerfile)!!
 
             // gross transform because we only have the short SHA right now
-            val localImage = serverInstance.agent.getImages(null).first { it.imageId.startsWith(EcrIntegrationTestUtils.getImagePrefix(imageId)) }
+            val localImage = serverRuntime.agent.getImages(null).first { it.imageId.startsWith(EcrIntegrationTestUtils.getImagePrefix(imageId)) }
             val localImageId = localImage.imageId
             val pushRequest = ImageEcrPushRequest(
-                serverInstance,
+                serverRuntime,
                 localImageId,
                 remoteRepo,
                 remoteTag
@@ -112,8 +112,8 @@ class EcrPushIntegrationTest {
             EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest)
 
             // find our local image id
-            val serverInstance = EcrUtils.getDockerServerRuntimeInstance().runtimeInstance
-            val localImageId = serverInstance.agent.getImages(null).first { it.imageRepoTags.contains("${remoteRepo.repositoryUri}:$remoteTag") }.imageId
+            val serverRuntime = EcrUtils.getDockerServerRuntimeInstance(projectRule.project)
+            val localImageId = serverRuntime.agent.getImages(null).first { it.imageRepoTags.contains("${remoteRepo.repositoryUri}:$remoteTag") }.imageId
 
             assertThat(
                 ecrClient.batchGetImage {

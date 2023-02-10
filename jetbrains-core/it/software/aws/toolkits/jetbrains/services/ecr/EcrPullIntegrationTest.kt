@@ -56,17 +56,17 @@ class EcrPullIntegrationTest {
 
         val project = projectRule.project
         runBlocking {
-            val serverInstance = EcrUtils.getDockerServerRuntimeInstance().runtimeInstance
+            val serverRuntime = EcrUtils.getDockerServerRuntimeInstance(project)
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
-            val dockerAdapter = ToolkitDockerAdapter(project, serverInstance)
+            val dockerAdapter = ToolkitDockerAdapter(project, serverRuntime)
             val imageId = dockerAdapter.buildLocalImage(dockerfile)!!
 
             // gross transform because we only have the short SHA right now
-            val localImage = serverInstance.agent.getImages(null).first { it.imageId.startsWith(EcrIntegrationTestUtils.getImagePrefix(imageId)) }
+            val localImage = serverRuntime.agent.getImages(null).first { it.imageId.startsWith(EcrIntegrationTestUtils.getImagePrefix(imageId)) }
             val localImageId = localImage.imageId
             val config = EcrUtils.buildDockerRepositoryModel(ecrLogin, remoteRepo, remoteTag)
             val pushRequest = ImageEcrPushRequest(
-                serverInstance,
+                serverRuntime,
                 localImageId,
                 remoteRepo,
                 remoteTag
@@ -74,11 +74,11 @@ class EcrPullIntegrationTest {
             // push up and image and then delete the local tag
             EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest)
             localImage.deleteImage()
-            assertThat(serverInstance.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
+            assertThat(serverRuntime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
 
             // pull it from the remote
             dockerAdapter.pullImage(config).await()
-            assertThat(serverInstance.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
+            assertThat(serverRuntime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
         }
     }
 }

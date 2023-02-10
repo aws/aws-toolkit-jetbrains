@@ -3,8 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.ecr.actions
 
-import com.intellij.docker.DockerServerRuntimeInstance
+import com.intellij.docker.runtimes.DockerServerRuntime
 import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -18,7 +19,7 @@ abstract class EcrDockerAction :
     DumbAware {
 
     protected companion object {
-        fun CoroutineScope.dockerServerRuntimeAsync(): Deferred<DockerServerRuntimeInstance> =
-            async(start = CoroutineStart.LAZY) { EcrUtils.getDockerServerRuntimeInstance().runtimeInstance }
+        fun CoroutineScope.dockerServerRuntimeAsync(project: Project): Deferred<DockerServerRuntime> =
+            async(start = CoroutineStart.LAZY) { EcrUtils.getDockerServerRuntimeInstance(project) }
     }
 }

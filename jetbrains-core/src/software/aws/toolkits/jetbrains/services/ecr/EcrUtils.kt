@@ -6,29 +6,22 @@ package software.aws.toolkits.jetbrains.services.ecr
 import com.intellij.docker.DockerCloudConfiguration
 import com.intellij.docker.DockerCloudType
 import com.intellij.docker.DockerDeploymentConfiguration
-import com.intellij.docker.DockerServerRuntimeInstance
+import com.intellij.docker.DockerServerRuntimesManager
 import com.intellij.docker.deploymentSource.DockerFileDeploymentSourceType
 import com.intellij.docker.registry.DockerRepositoryModel
+import com.intellij.docker.runtimes.DockerServerRuntime
 import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.openapi.project.Project
 import com.intellij.remoteServer.configuration.RemoteServer
 import com.intellij.remoteServer.configuration.RemoteServersManager
-import com.intellij.remoteServer.configuration.deployment.DeploymentConfiguration
 import com.intellij.remoteServer.impl.configuration.RemoteServerImpl
 import com.intellij.remoteServer.impl.configuration.deployment.DeployToServerRunConfiguration
-import com.intellij.remoteServer.runtime.ServerConnection
-import com.intellij.remoteServer.runtime.ServerConnectionManager
-import com.intellij.remoteServer.runtime.ServerConnector
-import com.intellij.remoteServer.runtime.deployment.ServerRuntimeInstance
 import com.intellij.util.Base64
-import kotlinx.coroutines.withContext
-import org.jetbrains.concurrency.AsyncPromise
-import org.jetbrains.concurrency.await
+import kotlinx.coroutines.future.await
 import software.amazon.awssdk.services.ecr.model.AuthorizationData
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.core.docker.compatability.DockerRegistry
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
@@ -47,7 +40,7 @@ data class EcrLogin(
 
 sealed class EcrPushRequest
 data class ImageEcrPushRequest(
-    val dockerServerRuntime: DockerServerRuntimeInstance,
+    val dockerRuntime: DockerServerRuntime,
     val localImageId: String,
     val remoteRepo: Repository,
     val remoteTag: String
@@ -59,50 +52,31 @@ data class DockerfileEcrPushRequest(
     val remoteTag: String
 ) : EcrPushRequest()
 
-data class DockerConnection(
-    val serverConnection: ServerConnection<DeploymentConfiguration>,
-    val runtimeInstance: DockerServerRuntimeInstance
-)
-
 object EcrUtils {
     val LOG = getLogger<EcrUtils>()
 
-    private fun getTemporaryDockerConnection() = ServerConnectionManager.getInstance().createTemporaryConnection(
-        RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
-    )
+    private fun defaultDockerConnection() = RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
 
     fun buildDockerRepositoryModel(ecrLogin: EcrLogin?, repository: Repository, tag: String) = DockerRepositoryModel().also {
         val repoUri = repository.repositoryUri
         it.repository = repoUri
         it.tag = tag
-        it.registry = DockerRegistry()
-        it.registry.address = repoUri
-        ecrLogin?.let { login ->
-            val (username, password) = login
-            it.registry.username = username
-            it.registry.password = password
+        it.registry = DockerRegistry().also { registry ->
+            registry.address = repoUri
+
+            ecrLogin?.let { login ->
+                val (username, password) = login
+                registry.username = username
+                registry.password = password
+            }
         }
     }
 
-    suspend fun getDockerServerRuntimeInstance(server: RemoteServer<DockerCloudConfiguration>? = null): DockerConnection {
-        val instancePromise = AsyncPromise<DockerServerRuntimeInstance>()
-        val connection = server?.let {
-            withContext(getCoroutineUiContext()) {
-                ServerConnectionManager.getInstance().getOrCreateConnection(server)
-            }
-        } ?: getTemporaryDockerConnection()
+    suspend fun getDockerServerRuntimeInstance(project: Project, server: RemoteServer<DockerCloudConfiguration>? = null): DockerServerRuntime {
+        val connectionConfig = server ?: defaultDockerConnection()
+        val runtime = DockerServerRuntimesManager.getInstance(project).getOrCreateConnection(connectionConfig).await()
 
-        connection.connectIfNeeded(object : ServerConnector.ConnectionCallback<DeploymentConfiguration> {
-            override fun errorOccurred(errorMessage: String) {
-                instancePromise.setError(errorMessage)
-            }
-
-            override fun connected(serverRuntimeInstance: ServerRuntimeInstance<DeploymentConfiguration>) {
-                instancePromise.setResult(serverRuntimeInstance as DockerServerRuntimeInstance)
-            }
-        })
-
-        return DockerConnection(connection, instancePromise.await())
+        return runtime
     }
 
     suspend fun pushImage(project: Project, ecrLogin: EcrLogin, pushRequest: EcrPushRequest) {
@@ -114,7 +88,7 @@ object EcrUtils {
             is ImageEcrPushRequest -> {
                 LOG.debug { "Pushing '${pushRequest.localImageId}' to ECR" }
                 val model = buildDockerRepositoryModel(ecrLogin, pushRequest.remoteRepo, pushRequest.remoteTag)
-                ToolkitDockerAdapter(project, pushRequest.dockerServerRuntime).pushImage(pushRequest.localImageId, model)
+                ToolkitDockerAdapter(project, pushRequest.dockerRuntime).pushImage(pushRequest.localImageId, model)
             }
         }
     }
@@ -123,7 +97,7 @@ object EcrUtils {
         val (runConfiguration, remoteRepo, remoteTag) = pushRequest
         // use connection specified in run configuration
         val server = RemoteServersManager.getInstance().findByName(runConfiguration.serverName, runConfiguration.serverType)
-        val (_, dockerRuntime) = getDockerServerRuntimeInstance(server)
+        val dockerRuntime = getDockerServerRuntimeInstance(project, server)
 
         // find the built image and send to ECR
         val imageIdPrefix = ToolkitDockerAdapter(project, dockerRuntime).hackyBuildDockerfileWithUi(project, pushRequest)
