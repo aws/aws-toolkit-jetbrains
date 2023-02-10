@@ -10,9 +10,10 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.core.utils.replace
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 
 interface DynamicResourcesSettings {
-    var selected: Set<String>
+    var selected: Set<CloudFormationResourceType>
 
     companion object {
         fun getInstance(): DynamicResourcesSettings = service()
@@ -23,10 +24,12 @@ interface DynamicResourcesSettings {
 internal class DefaultDynamicResourcesSettings :
     DynamicResourcesSettings,
     SimplePersistentStateComponent<DynamicResourcesConfiguration>(DynamicResourcesConfiguration()) {
-    override var selected: Set<String>
-        get() = state.selected.toSet()
+    override var selected: Set<CloudFormationResourceType>
+        get() {
+            return state.selected.map { CloudFormationResourceType(it) }.toSet()
+        }
         set(value) {
-            state.selected.replace(value)
+            state.selected.replace(value.map { it.fullName })
         }
 }
 

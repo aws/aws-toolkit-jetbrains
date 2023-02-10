@@ -14,17 +14,18 @@ import software.amazon.awssdk.services.cloudcontrol.CloudControlClient
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.OpenResourceModelSourceAction
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
 
-sealed class DynamicResourceVirtualFile(fileName: String, val dynamicResourceType: String, fileContent: String) :
+sealed class DynamicResourceVirtualFile(fileName: String, val dynamicResourceType: CloudFormationResourceType, fileContent: String) :
     LightVirtualFile(
         fileName,
         JsonFileType.INSTANCE,
         fileContent
     )
 
-class CreateDynamicResourceVirtualFile(val connectionSettings: ConnectionSettings, dynamicResourceType: String) :
+class CreateDynamicResourceVirtualFile(val connectionSettings: ConnectionSettings, dynamicResourceType: CloudFormationResourceType) :
     DynamicResourceVirtualFile(
         message("dynamic_resources.create_resource_file_name", dynamicResourceType),
         dynamicResourceType,
@@ -43,12 +44,17 @@ object InitialCreateDynamicResourceContent {
 }
 
 object OpenViewEditableDynamicResourceVirtualFile {
-    fun openFile(project: Project, file: ViewEditableDynamicResourceVirtualFile, sourceAction: OpenResourceModelSourceAction, resourceType: String) {
+    fun openFile(
+        project: Project,
+        file: ViewEditableDynamicResourceVirtualFile,
+        sourceAction: OpenResourceModelSourceAction,
+        resourceType: CloudFormationResourceType
+    ) {
         WriteCommandAction.runWriteCommandAction(project) {
             CodeStyleManager.getInstance(project).reformat(PsiUtilCore.getPsiFile(project, file))
             if (sourceAction == OpenResourceModelSourceAction.READ) {
                 file.isWritable = false
-                DynamicresourceTelemetry.getResource(project, success = true, resourceType = resourceType)
+                DynamicresourceTelemetry.getResource(project, success = true, resourceType = resourceType.fullName)
             } else if (sourceAction == OpenResourceModelSourceAction.EDIT) {
                 file.isWritable = true
             }
@@ -56,9 +62,9 @@ object OpenViewEditableDynamicResourceVirtualFile {
         }
     }
 
-    fun getResourceModel(project: Project, client: CloudControlClient, resourceType: String, resourceIdentifier: String): String? = try {
+    fun getResourceModel(project: Project, client: CloudControlClient, resourceType: CloudFormationResourceType, resourceIdentifier: String): String? = try {
         client.getResource {
-            it.typeName(resourceType)
+            it.typeName(resourceType.fullName)
             it.identifier(resourceIdentifier)
         }
             .resourceDescription()
@@ -69,7 +75,7 @@ object OpenViewEditableDynamicResourceVirtualFile {
             title = message("dynamic_resources.fetch.fail.title"),
             content = message("dynamic_resources.fetch.fail.content", resourceIdentifier)
         )
-        DynamicresourceTelemetry.getResource(project, success = false, resourceType = resourceType)
+        DynamicresourceTelemetry.getResource(project, success = false, resourceType = resourceType.fullName)
         null
     }
 }

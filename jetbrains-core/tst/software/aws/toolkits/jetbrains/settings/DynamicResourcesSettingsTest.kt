@@ -7,13 +7,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.deserializeState
 import software.aws.toolkits.jetbrains.utils.serializeState
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 
 class DynamicResourcesSettingsTest {
     @Test
     fun `can round trip settings`() {
         val sut = DefaultDynamicResourcesSettings()
 
-        sut.selected = setOf("a", "b", "c")
+        sut.selected = setOf(CloudFormationResourceType("a"), CloudFormationResourceType("b"), CloudFormationResourceType("c"))
 
         val serialized = serializeState("settings", sut)
         val newSut = DefaultDynamicResourcesSettings()

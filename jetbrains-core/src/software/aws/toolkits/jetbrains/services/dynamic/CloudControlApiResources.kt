@@ -14,23 +14,20 @@ import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.map
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
+import software.aws.toolkits.resources.cloudformation.AWS
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 
 object CloudControlApiResources {
-    fun listResources(typeName: String): Resource<List<DynamicResource>> =
+    fun listResources(typeName: CloudFormationResourceType): Resource<List<DynamicResource>> =
         when (typeName) {
-            S3_BUCKET -> S3Resources.LIST_BUCKETS.map { it.name() }
+            AWS.S3.Bucket -> S3Resources.LIST_BUCKETS.map { it.name() }
             else -> ClientBackedCachedResource(CloudControlClient::class, "cloudcontrolapi.dynamic.resources.$typeName") {
-                this.listResourcesPaginator { req -> req.typeName(typeName) }
+                this.listResourcesPaginator { req -> req.typeName(typeName.fullName) }
                     .flatMap { page -> page.resourceDescriptions().map { it.identifier() } }
             }
-        }.map { DynamicResource(resourceTypeFromResourceTypeName(typeName), it) }
+        }.map { DynamicResource(typeName, it) }
 
-    fun resourceTypeFromResourceTypeName(typeName: String): ResourceType {
-        val (_, svc, type) = typeName.split("::")
-        return ResourceType(typeName, svc, type)
-    }
-
-    fun listResources(resourceType: ResourceType): Resource<List<DynamicResource>> = listResources(resourceType.fullName)
+    fun listResources(resourceType: String): Resource<List<DynamicResource>> = listResources(CloudFormationResourceType(resourceType))
 
     fun getResourceDisplayName(identifier: String): String =
         if (identifier.startsWith("arn:")) {
@@ -39,22 +36,21 @@ object CloudControlApiResources {
             identifier
         }
 
-    fun getResourceSchema(resourceType: String): Resource.Cached<VirtualFile> =
+    fun getResourceSchema(resourceType: CloudFormationResourceType): Resource.Cached<VirtualFile> =
         ClientBackedCachedResource(CloudFormationClient::class, "cloudformation.dynamic.resources.schema.$resourceType") {
             val schema = this.describeType {
                 it.type(RegistryType.RESOURCE)
-                it.typeName(resourceType)
+                it.typeName(resourceType.fullName)
             }.schema()
             LightVirtualFile("${resourceType}Schema.json", schema)
         }
 
-    fun listTypes(): Resource.Cached<List<String>> = ClientBackedCachedResource(CloudFormationClient::class, "cloudformation.listTypes") {
+    fun listTypes(): Resource.Cached<List<CloudFormationResourceType>> = ClientBackedCachedResource(CloudFormationClient::class, "cloudformation.listTypes") {
         this.listTypesPaginator {
             it.visibility(Visibility.PUBLIC)
             it.type(RegistryType.RESOURCE)
-        }.flatMap { it.typeSummaries().map { it.typeName() } }
+        }.flatMap { it.typeSummaries().map { CloudFormationResourceType(it.typeName()) } }
     }
-    private const val S3_BUCKET = "AWS::S3::Bucket"
 }
 
 data class ResourceDetails(val operations: List<PermittedOperation>, val arnRegex: String?, val documentation: String?)

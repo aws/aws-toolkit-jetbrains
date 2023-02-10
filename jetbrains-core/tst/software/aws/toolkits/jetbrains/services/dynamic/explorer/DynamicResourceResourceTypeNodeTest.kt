@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.id
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import software.aws.toolkits.resources.message
 
 class DynamicResourceResourceTypeNodeTest {
@@ -29,7 +30,7 @@ class DynamicResourceResourceTypeNodeTest {
 
     @Test
     fun returnsListFromProvider() {
-        val type = "AWS::${aString()}::${aString()}"
+        val type = CloudFormationResourceType("AWS::${aString()}::${aString()}")
         val identifier = aString()
         resourceCache.addEntry(projectRule.project, CloudControlApiResources.listResources(type).id, listOf(identifier))
 
@@ -42,7 +43,7 @@ class DynamicResourceResourceTypeNodeTest {
 
     @Test
     fun unsupportedExceptionResultsInEmptyNode() {
-        val type = aString()
+        val type = CloudFormationResourceType(aString())
         resourceCache.addEntry(projectRule.project, CloudControlApiResources.listResources(type).id, throws = UnsupportedActionException.builder().build())
 
         val sut = DynamicResourceResourceTypeNode(projectRule.project, type)
@@ -54,7 +55,7 @@ class DynamicResourceResourceTypeNodeTest {
 
     @Test
     fun otherExceptionsBubble() {
-        val type = aString()
+        val type = CloudFormationResourceType(aString())
         resourceCache.addEntry(projectRule.project, CloudControlApiResources.listResources(type).id, throws = RuntimeException())
 
         val sut = DynamicResourceResourceTypeNode(projectRule.project, type)

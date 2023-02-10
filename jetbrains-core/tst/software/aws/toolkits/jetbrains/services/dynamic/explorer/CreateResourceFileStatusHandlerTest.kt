@@ -28,8 +28,8 @@ import software.aws.toolkits.jetbrains.services.dynamic.CreateDynamicResourceVir
 import software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource
 import software.aws.toolkits.jetbrains.services.dynamic.ResourceMutationState
-import software.aws.toolkits.jetbrains.services.dynamic.ResourceType
 import software.aws.toolkits.jetbrains.services.dynamic.ViewEditableDynamicResourceVirtualFile
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import java.time.Instant
 
 class CreateResourceFileStatusHandlerTest {
@@ -45,7 +45,7 @@ class CreateResourceFileStatusHandlerTest {
     private lateinit var createResourceHandler: CreateResourceFileStatusHandler
     private lateinit var connectionSettings: ConnectionSettings
     private lateinit var fileEditorManager: FileEditorManager
-    private val resource = DynamicResource(ResourceType("AWS::SampleService::Type", "SampleService", "Type"), "sampleIdentifier")
+    private val resource = DynamicResource(CloudFormationResourceType("AWS::SampleService::Type"), "sampleIdentifier")
 
     @Before
     fun setup() {
@@ -70,7 +70,7 @@ class CreateResourceFileStatusHandlerTest {
                     .build()
             }
         }
-        val sampleFile = CreateDynamicResourceVirtualFile(connectionSettings, resource.type.fullName)
+        val sampleFile = CreateDynamicResourceVirtualFile(connectionSettings, resource.type)
         runInEdtAndWait {
             fileEditorManager.openFile(sampleFile, false)
         }
@@ -81,7 +81,7 @@ class CreateResourceFileStatusHandlerTest {
             connectionSettings,
             "sampleToken",
             Operation.CREATE,
-            resource.type.fullName,
+            resource.type,
             OperationStatus.SUCCESS,
             resource.identifier,
             "",
