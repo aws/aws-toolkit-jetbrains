@@ -351,7 +351,7 @@ internal data class CodeScanRecommendation(
     val description: Description
 )
 
-internal data class Description(val text: String, val markdown: String)
+data class Description(val text: String, val markdown: String)
 
 internal data class CodeScanSessionContext(
     val project: Project,
