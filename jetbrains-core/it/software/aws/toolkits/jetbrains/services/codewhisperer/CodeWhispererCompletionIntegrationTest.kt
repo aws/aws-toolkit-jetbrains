@@ -21,15 +21,6 @@ import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials.Requir
 
 @RequiresRealCredentials
 class CodeWhispererCompletionIntegrationTest : CodeWhispererIntegrationTestBase() {
-
-    @Before
-    override fun setUp() {
-        super.setUp()
-        scanManager = spy(CodeWhispererCodeScanManager.getInstance(projectRule.project))
-        doNothing().whenever(scanManager).addCodeScanUI(any())
-        projectRule.project.replaceService(CodeWhispererCodeScanManager::class.java, scanManager, disposableRule.disposable)
-    }
-
     @Test
     fun testInvokeCompletionManualTrigger() {
         assertDoesNotThrow {
