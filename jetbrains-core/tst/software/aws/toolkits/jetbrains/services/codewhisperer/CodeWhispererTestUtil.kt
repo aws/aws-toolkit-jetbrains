@@ -24,6 +24,7 @@ object CodeWhispererTestUtil {
     const val testRequestId = "test_aws_request_id"
     const val testRequestIdForCodeWhispererException = "test_request_id_for_codewhispererException"
     const val codeWhispererRecommendationActionId = "CodeWhispererRecommendationAction"
+    const val codeWhispererCodeScanActionId = "codewhisperer.toolbar.security.scan"
     const val testValidAccessToken = "test_valid_access_token"
     const val testNextToken = "test_next_token"
     private val testReferenceInfoPair = listOf(

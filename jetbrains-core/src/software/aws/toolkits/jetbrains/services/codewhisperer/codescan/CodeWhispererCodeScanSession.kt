@@ -51,7 +51,7 @@ import java.time.Instant
 import java.util.Base64
 import java.util.UUID
 
-internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
+class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     private val clientToken: UUID = UUID.randomUUID()
     private val urlResponse = mutableMapOf<ArtifactType, CreateUploadUrlResponse>()
 
@@ -279,7 +279,7 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
         return scanRecommendations.mapNotNull {
             val file = try {
                 LocalFileSystem.getInstance().findFileByIoFile(
-                    Path.of(it.filePath).toFile()
+                    Path.of(File.separator, it.filePath).toFile()
                 )
             } catch (e: Exception) {
                 LOG.debug { "Cannot find file at location ${it.filePath}" }
@@ -327,7 +327,7 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
     }
 }
 
-internal sealed class CodeScanResponse {
+sealed class CodeScanResponse {
     abstract val issues: List<CodeWhispererCodeScanIssue>
     abstract val responseContext: CodeScanResponseContext
 
@@ -353,7 +353,7 @@ internal data class CodeScanRecommendation(
 
 data class Description(val text: String, val markdown: String)
 
-internal data class CodeScanSessionContext(
+data class CodeScanSessionContext(
     val project: Project,
     val sessionConfig: CodeScanSessionConfig
 )
