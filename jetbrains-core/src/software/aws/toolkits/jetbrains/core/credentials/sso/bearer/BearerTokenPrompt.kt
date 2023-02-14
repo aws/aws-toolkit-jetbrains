@@ -4,14 +4,31 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso.bearer
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.project.ProjectManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.Authorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoLoginCallback
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialType
+import software.aws.toolkits.telemetry.Result
 
 object BearerTokenPrompt : SsoLoginCallback {
     override fun tokenPending(authorization: Authorization) {
+
+
         computeOnEdt {
-            BrowserUtil.browse(authorization.verificationUriComplete)
+
+                val codeCopied = CopyUserCodeForLoginDialog(ProjectManager.getInstance().defaultProject, authorization.userCode, credentialType = CredentialType.BearerToken).showAndGet()
+                if(codeCopied){
+                    BrowserUtil.browse(authorization.verificationUri)
+                    //AwsTelemetry.loginWithBrowser(project = null, Result.Succeeded, CredentialType.BearerToken)
+                } else {
+                    //AwsTelemetry.loginWithBrowser(project = null, Result.Failed, CredentialType.BearerToken)
+                }
+
+
+
+            //BrowserUtil.browse(authorization.verificationUriComplete)
         }
     }
 
