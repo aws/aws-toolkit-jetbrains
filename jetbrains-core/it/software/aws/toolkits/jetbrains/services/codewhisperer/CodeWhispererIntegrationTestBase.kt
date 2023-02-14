@@ -104,7 +104,7 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
 
         popupManager = spy(CodeWhispererPopupManager.getInstance())
         popupManager.reset()
-        doNothing().`when`(popupManager).showPopup(any(), any(), any(), any(), any())
+        doNothing().whenever(popupManager).showPopup(any(), any(), any(), any(), any())
         ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManager, disposableRule.disposable)
 
         codewhispererService = spy(CodeWhispererService.getInstance())
