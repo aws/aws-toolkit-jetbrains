@@ -76,6 +76,7 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
     internal lateinit var scanManager: CodeWhispererCodeScanManager
     protected lateinit var telemetryServiceSpy: CodeWhispererTelemetryService
 
+    @Suppress("UnreachableCode")
     @Before
     open fun setUp() {
         MockClientManager.useRealImplementations(disposableRule.disposable)
