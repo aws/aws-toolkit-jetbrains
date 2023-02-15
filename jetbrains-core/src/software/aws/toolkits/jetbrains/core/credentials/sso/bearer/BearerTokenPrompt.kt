@@ -14,21 +14,18 @@ import software.aws.toolkits.telemetry.Result
 
 object BearerTokenPrompt : SsoLoginCallback {
     override fun tokenPending(authorization: Authorization) {
-
-
         computeOnEdt {
-
-                val codeCopied = CopyUserCodeForLoginDialog(ProjectManager.getInstance().defaultProject, authorization.userCode, credentialType = CredentialType.BearerToken).showAndGet()
-                if(codeCopied){
-                    BrowserUtil.browse(authorization.verificationUri)
-                    //AwsTelemetry.loginWithBrowser(project = null, Result.Succeeded, CredentialType.BearerToken)
-                } else {
-                    //AwsTelemetry.loginWithBrowser(project = null, Result.Failed, CredentialType.BearerToken)
-                }
-
-
-
-            //BrowserUtil.browse(authorization.verificationUriComplete)
+            val codeCopied = CopyUserCodeForLoginDialog(
+                ProjectManager.getInstance().defaultProject,
+                authorization.userCode,
+                credentialType = CredentialType.BearerToken
+            ).showAndGet()
+            if (codeCopied) {
+                AwsTelemetry.loginWithBrowser(project = null, Result.Succeeded, CredentialType.BearerToken)
+                BrowserUtil.browse(authorization.verificationUri)
+            } else {
+                AwsTelemetry.loginWithBrowser(project = null, Result.Cancelled, CredentialType.BearerToken)
+            }
         }
     }
 

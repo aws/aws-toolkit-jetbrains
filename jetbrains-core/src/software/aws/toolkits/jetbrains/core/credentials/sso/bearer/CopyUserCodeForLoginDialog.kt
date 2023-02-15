@@ -13,25 +13,26 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
-import com.intellij.ui.dsl.builder.RowLayout
 import com.intellij.ui.dsl.builder.panel
-
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
-import com.intellij.util.IconUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
 import java.awt.datatransfer.StringSelection
 import javax.swing.JComponent
-import javax.swing.SwingConstants
 
-class CopyUserCodeForLoginDialog(project: Project, authCode: String, private val title2: String = "Sign in with AWS Builder ID", private val credentialType: CredentialType): DialogWrapper(project) {
+class CopyUserCodeForLoginDialog(
+    project: Project,
+    private val authCode: String,
+    private val dialogTitle: String = message("credentials.sono.login"),
+    private val credentialType: CredentialType
+) : DialogWrapper(project) {
 
-    private val pane =  panel {
+    private val pane = panel {
         row {
-            text("To proceed, open the login page and provide this code to confirm the access request from AWS Toolkit:", maxLineLength = -1)
+            text(message("aws.sso.signing.device.code.copy.dialog.text"), maxLineLength = -1)
         }
 
         row {
@@ -47,20 +48,24 @@ class CopyUserCodeForLoginDialog(project: Project, authCode: String, private val
     override fun createCenterPanel(): JComponent? = pane
 
     init {
-        title = title2
+        title = dialogTitle
+        setOKButtonText(message("aws.sso.signing.device.code"))
         super.init()
+    }
+
+    override fun doOKAction() {
+        CopyPasteManager.getInstance().setContents(StringSelection(authCode))
+        super.doOKAction()
     }
 
     override fun doCancelAction() {
         super.doCancelAction()
-        //AwsTelemetry.loginWithBrowser(project = null, Result.Cancelled, credentialType)
+        AwsTelemetry.loginWithBrowser(project = null, Result.Cancelled, credentialType)
     }
-
 }
 
-class CopyUserCodeForLogin(private val authCode: String) : AnAction("Copy Code", "", AllIcons.Actions.Copy) {
+class CopyUserCodeForLogin(private val authCode: String) : AnAction(message("aws.sso.signing.device.code.copy"), "", AllIcons.Actions.Copy) {
     override fun actionPerformed(e: AnActionEvent) {
         CopyPasteManager.getInstance().setContents(StringSelection(authCode))
     }
-
 }
