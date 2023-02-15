@@ -39,6 +39,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.relativeTo
 import kotlin.test.assertNotNull
 
 open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule) {
@@ -108,7 +111,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     protected fun defaultCodeScanFindings(file: VirtualFile? = null) = """
         [
             {
-                "filePath": "${file?.path}",
+                "filePath": "${file?.toNioPath()?.relativeTo(Path.of(File.separator.repeat(1)))}",
                 "startLine": 1,
                 "endLine": 2,
                 "title": "test",
@@ -118,7 +121,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
                 }                    
             },
             {
-                "filePath": "${file?.path}",
+                "filePath": "${file?.toNioPath()?.relativeTo(Path.of(File.separator.repeat(1)))}",
                 "startLine": 1,
                 "endLine": 2,
                 "title": "test",

@@ -279,7 +279,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         return scanRecommendations.mapNotNull {
             val file = try {
                 LocalFileSystem.getInstance().findFileByIoFile(
-                    Path.of(File.separator, it.filePath).toFile()
+                    Path.of(File.separator, File.separator, it.filePath).toFile()
                 )
             } catch (e: Exception) {
                 LOG.debug { "Cannot find file at location ${it.filePath}" }
