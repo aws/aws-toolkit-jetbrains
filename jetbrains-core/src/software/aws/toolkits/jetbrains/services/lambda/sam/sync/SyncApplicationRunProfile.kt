@@ -47,6 +47,7 @@ class SyncApplicationRunProfile(
     inner class SyncApplicationRunProfileState(environment: ExecutionEnvironment) : CommandLineState(environment) {
 
         override fun startProcess(): ProcessHandler {
+            println(getSamSyncCommand().environment.keys)
             val processHandler = KillableColoredProcessHandler(getSamSyncCommand())
             ProcessTerminatedListener.attach(processHandler)
             return processHandler

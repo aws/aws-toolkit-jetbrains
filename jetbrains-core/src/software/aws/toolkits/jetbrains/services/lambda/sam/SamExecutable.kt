@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedImageTempl
 import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedZipTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.LocationBasedTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
+import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.ExecutableDetector
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -267,7 +268,7 @@ fun GeneralCommandLine.samSyncCommand(
     settings: SyncServerlessApplicationSettings,
     syncOnlyCode: Boolean
 ) = this.apply {
-    withEnvironment(environmentVariables)
+    withEnvironment(addSourceAsToolkitInEnvVariable(environmentVariables))
     withWorkDirectory(templatePath.toAbsolutePath().parent.toString())
     addParameter("sync")
     addParameter("--stack-name")
@@ -309,3 +310,13 @@ fun GeneralCommandLine.samSyncCommand(
         addParameter("--code")
     }
 }
+
+fun addSourceAsToolkitInEnvVariable(environmentVariables: Map<String, String>) : Map<String, String> {
+    val metadata = ClientMetadata.DEFAULT_METADATA
+
+    val a = environmentVariables.toMutableMap()
+    a.put(SAM_CLI_ENVIRONMENT_VARIABLE,"AWS-Toolkit-For-JetBrains/${metadata.productName.name}:${metadata.productVersion}" )
+    return environmentVariables
+}
+
+private const val SAM_CLI_ENVIRONMENT_VARIABLE = "SAM_CLI_TELEMETRY_FROM_IDE"
