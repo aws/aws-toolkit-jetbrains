@@ -7,7 +7,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.text.SemVer
+import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.core.lambda.LambdaArchitecture
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
 import software.aws.toolkits.jetbrains.core.executables.ExecutableCommon
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
@@ -87,7 +89,7 @@ fun GeneralCommandLine.samBuildCommand(
     environmentVariables: Map<String, String>,
     samOptions: SamOptions
 ) = this.apply {
-    withEnvironment(environmentVariables)
+    withEnvironment(addSourceAsToolkitInEnvVariable(environmentVariables))
     withWorkDirectory(templatePath.toAbsolutePath().parent.toString())
 
     addParameter("build")
@@ -130,7 +132,7 @@ fun GeneralCommandLine.samPackageCommand(
     s3Bucket: String?,
     ecrRepo: String?
 ) = this.apply {
-    withEnvironment(environmentVariables)
+    withEnvironment(addSourceAsToolkitInEnvVariable(environmentVariables))
     withWorkDirectory(templatePath.parent.toAbsolutePath().toString())
 
     addParameter("package")
@@ -153,7 +155,7 @@ fun GeneralCommandLine.samDeployCommand(
     templatePath: Path,
     settings: DeployServerlessApplicationSettings
 ) = this.apply {
-    withEnvironment(environmentVariables)
+    withEnvironment(addSourceAsToolkitInEnvVariable(environmentVariables))
     withWorkDirectory(templatePath.parent.toAbsolutePath().toString())
 
     addParameter("deploy")
@@ -212,6 +214,7 @@ fun GeneralCommandLine.samInitCommand(
     parameters: TemplateParameters,
     extraContext: Map<String, String>
 ) = this.apply {
+    withEnvironment(mapOf(SAM_CLI_ENVIRONMENT_VARIABLE to "${AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS}/${AwsToolkit.PLUGIN_VERSION}"))
     addParameter("init")
     addParameter("--no-input")
     addParameter("--output-dir")
@@ -311,12 +314,11 @@ fun GeneralCommandLine.samSyncCommand(
     }
 }
 
-fun addSourceAsToolkitInEnvVariable(environmentVariables: Map<String, String>) : Map<String, String> {
+fun addSourceAsToolkitInEnvVariable(environmentVariables: Map<String, String>): Map<String, String> {
     val metadata = ClientMetadata.DEFAULT_METADATA
-
-    val a = environmentVariables.toMutableMap()
-    a.put(SAM_CLI_ENVIRONMENT_VARIABLE,"AWS-Toolkit-For-JetBrains/${metadata.productName.name}:${metadata.productVersion}" )
-    return environmentVariables
+    val newEnironmentVariables = environmentVariables.toMutableMap()
+    newEnironmentVariables.put(SAM_CLI_ENVIRONMENT_VARIABLE, "${metadata.productName}/${metadata.productVersion}")
+    return newEnironmentVariables
 }
 
 private const val SAM_CLI_ENVIRONMENT_VARIABLE = "SAM_CLI_TELEMETRY_FROM_IDE"
