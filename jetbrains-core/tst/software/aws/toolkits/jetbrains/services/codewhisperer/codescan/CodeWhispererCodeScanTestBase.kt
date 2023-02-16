@@ -111,7 +111,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     protected fun defaultCodeScanFindings(file: VirtualFile? = null) = """
         [
             {
-                "filePath": "${file?.toNioPath()?.relativeTo(Path.of(File.separator.repeat(1)))}",
+                "filePath": "${file?.toNioPath()?.relativeTo(Path.of(File.separator.repeat(2)))}",
                 "startLine": 1,
                 "endLine": 2,
                 "title": "test",
@@ -121,7 +121,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
                 }                    
             },
             {
-                "filePath": "${file?.toNioPath()?.relativeTo(Path.of(File.separator.repeat(1)))}",
+                "filePath": "${file?.toNioPath()?.relativeTo(Path.of(File.separator.repeat(2)))}",
                 "startLine": 1,
                 "endLine": 2,
                 "title": "test",

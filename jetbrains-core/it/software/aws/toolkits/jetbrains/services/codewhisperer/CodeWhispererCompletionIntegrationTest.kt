@@ -12,6 +12,7 @@ import org.mockito.kotlin.verify
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.cppFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials.RequiresRealCredentials
+import software.aws.toolkits.resources.message
 
 @RequiresRealCredentials
 class CodeWhispererCompletionIntegrationTest : CodeWhispererIntegrationTestBase() {
@@ -48,11 +49,12 @@ class CodeWhispererCompletionIntegrationTest : CodeWhispererIntegrationTestBase(
 
     @Test
     fun testInvokeCompletionUnsupportedLanguage() {
-        setFileContext(cppFileName, CodeWhispererTestUtil.cppTestLeftContext, "")
+        val file = setFileContext(cppFileName, CodeWhispererTestUtil.cppTestLeftContext, "")
         assertDoesNotThrow {
             invokeCodeWhispererService()
             verify(popupManager, never()).showPopup(any(), any(), any(), any(), any())
             verify(clientAdaptor, never()).listRecommendationsPaginator(any(), any())
+            testMessageShown(message("codewhisperer.language.error", file.fileType.name))
         }
     }
 }

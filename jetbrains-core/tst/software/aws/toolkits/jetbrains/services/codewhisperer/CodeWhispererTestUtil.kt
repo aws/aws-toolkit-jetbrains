@@ -121,6 +121,7 @@ object CodeWhispererTestUtil {
     const val pythonFileName = "test.py"
     const val javaFileName = "test.java"
     const val cppFileName = "test.cpp"
+    const val jsFileName = "test.js"
     const val pythonTestLeftContext = "def addTwoNumbers"
     const val cppTestLeftContext = "int addTwoNumbers"
     const val javaTestContext = "public class Test {\n    public static void main\n}"

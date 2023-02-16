@@ -7,6 +7,7 @@ import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
@@ -23,6 +24,7 @@ import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.timeout
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsResponse
@@ -135,9 +137,11 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
 
     @After
     open fun tearDown() {
-        stateManager.loadState(originalExplorerActionState)
-        settingsManager.loadState(originalSettings)
-        popupManager.reset()
+        runInEdtAndWait {
+            stateManager.loadState(originalExplorerActionState)
+            settingsManager.loadState(originalSettings)
+            popupManager.reset()
+        }
     }
 
     fun withCodeWhispererServiceInvokedAndWait(manual: Boolean = true, runnable: (ListRecommendationsResponse) -> Unit) {
@@ -173,11 +177,12 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         }
     }
 
-    fun setFileContext(filename: String, leftContext: String, rightContext: String) {
-        projectRule.fixture.configureByText(filename, leftContext + rightContext)
+    fun setFileContext(filename: String, leftContext: String, rightContext: String): PsiFile {
+        val file = projectRule.fixture.configureByText(filename, leftContext + rightContext)
         runInEdtAndWait {
             projectRule.fixture.editor.caretModel.primaryCaret.moveToOffset(leftContext.length)
         }
+        return file
     }
 
     fun runCodeScan(success: Boolean = true): CodeScanResponse {
@@ -208,5 +213,17 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         val e = exceptionCaptor.lastValue
         assertThat(e is CodeWhispererCodeScanException).isTrue
         assertThat(e.message).isEqualTo(message)
+    }
+
+    fun testMessageShown(message: String, info: Boolean = true) {
+        val messageCaptor = argumentCaptor<String>()
+        if (info) {
+            verify(codewhispererService, timeout(5000).times(1))
+                .showCodeWhispererInfoHint(any(), messageCaptor.capture())
+        } else {
+            verify(codewhispererService, timeout(5000).times(1))
+                .showCodeWhispererErrorHint(any(), messageCaptor.capture())
+        }
+        assertThat(messageCaptor.lastValue).isEqualTo(message)
     }
 }
