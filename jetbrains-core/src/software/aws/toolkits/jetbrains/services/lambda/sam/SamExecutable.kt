@@ -214,7 +214,7 @@ fun GeneralCommandLine.samInitCommand(
     parameters: TemplateParameters,
     extraContext: Map<String, String>
 ) = this.apply {
-    withEnvironment(mapOf(SAM_CLI_ENVIRONMENT_VARIABLE to "${AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS}/${AwsToolkit.PLUGIN_VERSION}"))
+    withEnvironment(addSourceAsToolkitInEnvVariable(mutableMapOf()))
     addParameter("init")
     addParameter("--no-input")
     addParameter("--output-dir")
