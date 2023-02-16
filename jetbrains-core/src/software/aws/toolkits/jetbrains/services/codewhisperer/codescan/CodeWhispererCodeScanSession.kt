@@ -10,6 +10,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.TimeoutUtil.sleep
 import com.intellij.util.io.HttpRequests
@@ -278,9 +279,13 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         LOG.debug { "Total code scan issues returned from service: ${scanRecommendations.size}" }
         return scanRecommendations.mapNotNull {
             val file = try {
-                LocalFileSystem.getInstance().findFileByIoFile(
-                    Path.of(File.separator, File.separator, it.filePath).toFile()
-                )
+                val path =
+                    if (SystemInfo.isWindows) {
+                        Path.of(it.filePath)
+                    } else {
+                        Path.of(File.separator, it.filePath)
+                    }
+                LocalFileSystem.getInstance().findFileByIoFile(path.toFile())
             } catch (e: Exception) {
                 LOG.debug { "Cannot find file at location ${it.filePath}" }
                 null
