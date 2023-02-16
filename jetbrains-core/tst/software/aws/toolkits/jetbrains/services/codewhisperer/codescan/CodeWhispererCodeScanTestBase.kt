@@ -39,9 +39,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.relativeTo
 import kotlin.test.assertNotNull
 
 open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule) {
