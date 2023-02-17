@@ -25,6 +25,8 @@ coverage:
         target: 75%
         paths:
           - jetbrains-core/src/software/aws/toolkits/jetbrains/services/codewhisperer/*
+        flags:
+          - "codewhisperer"
     patch:
       default:
         threshold: 1
@@ -46,3 +48,8 @@ ignore:
   - "sdk-codegen/**/*"
   - "jetbrains-rider/**/*.Generated.kt"
   - "**/TelemetryDefinitions.kt"
+
+flags:
+  codewhisperer:
+    paths:
+      - jetbrains-core/src/software/aws/toolkits/jetbrains/services/codewhisperer/
