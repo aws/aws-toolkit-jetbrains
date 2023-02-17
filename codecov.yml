@@ -20,6 +20,9 @@ coverage:
         only_pulls: true
         flags:
           - "unittest"
+      codewhisperer:
+        target: 75%
+        paths: "jetbrains-core/src/software/aws/toolkits/jetbrains/services/codewhisperer/*"
     patch:
       default:
         threshold: 1
