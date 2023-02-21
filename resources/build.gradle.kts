@@ -1,8 +1,8 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import de.undercouch.gradle.tasks.download.Download
 import software.aws.toolkits.gradle.resources.ValidateMessages
+import de.undercouch.gradle.tasks.download.Download
 
 plugins {
     id("toolkit-kotlin-conventions")
